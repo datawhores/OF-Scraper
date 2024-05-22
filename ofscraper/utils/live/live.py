@@ -4,7 +4,9 @@ import contextlib
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 
-from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,live,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
+import ofscraper.utils.live.progress as progress
+
+from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
 
 from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group,activity_group
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
@@ -14,15 +16,15 @@ from ofscraper.utils.live.updater import update_activity_task,increment_activity
 #main context and switches
 @contextlib.contextmanager
 def live_progress_context(stop=False,revert=True):
-    if not live.is_started:
-        live.start()
-    old_render=live.renderable
+    if not progress.live.is_started:
+        progress.live.start()
+    old_render=progress.live.renderable
     yield
     if revert and old_render:
-        live.update(old_render)
+        progress.live.update(old_render)
     if stop:
         remove_task()
-        live.stop()
+        progress.live.stop()
 def remove_task():
     if activity_task:
         activity_progress.remove_task(
@@ -46,16 +48,16 @@ def setup_download_progress_live(multi=False,stop=False):
         single_panel.height=height
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_DOWNLOAD_DISPLAY")
         if multi:
-            live.update(get_multi_download_progress_group(),refresh=True)
+            progress.live.update(get_multi_download_progress_group(),refresh=True)
         else:
-            live.update(get_download_group(),refresh=True)
+            progress.live.update(get_download_group(),refresh=True)
         yield
 @contextlib.contextmanager
 
 def setup_api_split_progress_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
-        live.update(api_progress_group,refresh=True)
+        progress.live.update(api_progress_group,refresh=True)
         yield
 
 
@@ -63,7 +65,7 @@ def setup_api_split_progress_live(stop=False):
 def setup_subscription_progress_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_SUBSCRIPTION_DISPLAY")
-        live.update(userlist_group,refresh=True)
+        progress.live.update(userlist_group,refresh=True)
         yield
 
 
@@ -71,7 +73,7 @@ def setup_subscription_progress_live(stop=False):
 def setup_like_progress_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_LIKE_DISPLAY")
-        live.update(like_progress_group,refresh=True)
+        progress.live.update(like_progress_group,refresh=True)
         yield
 
 def switch_api_progress():
@@ -80,23 +82,15 @@ def switch_api_progress():
     if not api_progress_group:
         return
     console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
-    live.update(api_progress_group,refresh=True)
+    progress.live.update(api_progress_group,refresh=True)
 
 @contextlib.contextmanager
 def setup_all_paid_database_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
-        live.update(activity_group,refresh=True)
+        progress.live.update(activity_group,refresh=True)
         yield
 @contextlib.contextmanager
-
-def prompt_live():
-    old_render=live.renderable
-    live.stop()
-    yield
-    live.start()
-    live.update(old_render)
-
 
 def get_quiet_toggle_helper(key):
     return constants.getattr(key) if constants.getattr(key)!=None else console_.get_shared_console().quiet

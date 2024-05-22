@@ -8,7 +8,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.utils.console as console
-import ofscraper.utils.live.live as progress_utils
+from ofscraper.utils.live.empty import prompt_live
 
 
 
@@ -18,7 +18,7 @@ def wrapper(funct):
         # setup
         console.get_shared_console().clear()
         console.get_shared_console().clear_live()
-        with progress_utils.prompt_live():
+        with prompt_live():
             long_message = functools.partial(
                 handle_skip_helper,
                 kwargs.pop("long_message", None) or get_default_instructions(funct),
