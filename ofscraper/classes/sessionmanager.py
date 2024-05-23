@@ -242,7 +242,6 @@ class sessionManager:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
-        await asyncio.sleep(2)
 
 
     def __enter__(self):

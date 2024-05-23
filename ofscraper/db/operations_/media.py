@@ -362,7 +362,7 @@ def download_media_update(
         )
 
 
-@wrapper.operation_wrapper_async
+@wrapper.operation_wrapper
 def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
@@ -387,8 +387,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         curr.executemany(mediaInsertAPI, insertData)
         conn.commit()
 
-
-@wrapper.operation_wrapper_async
+@wrapper.operation_wrapper
 def update_media_table_via_api_batch(
     medias, model_id=None, conn=None, **kwargs
 ) -> list:
@@ -593,30 +592,31 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
 async def batch_mediainsert(media, **kwargs):
     lock=None
     try:
-        lock= FileLock(common_paths.getMediaDB(), timeout=-1)
+        # lock= FileLock(common_paths.getMediaDB(), timeout=-1)
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None,lock.acquire)
+        # await loop.run_in_executor(None,lock.acquire)
         curr = set(await get_media_ids(**kwargs) or [])
         mediaDict = {}
         for ele in media:
             mediaDict[ele.id] = ele
-        await write_media_table_via_api_batch(
+        write_media_table_via_api_batch(
             list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
         )
 
-        await update_media_table_via_api_batch(
+        update_media_table_via_api_batch(
             list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
         )
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
-            if lock:
-                lock.release(True)
+            # if lock:
+            #     lock.release(True)
             raise E
     except Exception as E:
         raise E
     finally:
-        if lock:
-            await loop.run_in_executor(None,partial(lock.release, force=True))
+        pass
+        # if lock:
+        #     await loop.run_in_executor(None,partial(lock.release, force=True))
 
 
 

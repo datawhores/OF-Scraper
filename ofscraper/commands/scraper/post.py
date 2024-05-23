@@ -79,12 +79,7 @@ async def process_messages(model_id, username, c):
         unlocked = [item for message in messages_ for item in message.media]
         log.debug(f"[bold]Messages media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Messages media count without locked[/bold] {len(unlocked)}")
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+        
         # Update after database
         cache.set(
             f"{model_id}_scrape_messages",
@@ -118,12 +113,7 @@ async def process_paid_post(model_id, username, c):
         log.debug(f"[bold]Paid media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Paid media count without locked[/bold] {len(unlocked)}")
 
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+        
 
         return (
             all_output,
@@ -154,12 +144,7 @@ async def process_stories(model_id, username, c):
         log.debug(f"[bold]Stories media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Stories media count without locked[/bold] {len(unlocked)}")
 
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+        
 
         return all_output, stories,"Stories"
     except Exception as E:
@@ -187,12 +172,7 @@ async def process_highlights(model_id, username, c):
 
         log.debug(f"[bold]Highlights media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Highlights media count without locked[/bold] {len(unlocked)}")
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+        
 
         return (
             all_output,
@@ -228,16 +208,11 @@ async def process_timeline_posts(model_id, username, c):
         unlocked = [item for post in timeline_only_posts for item in post.all_media]
         log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Timeline media count without locked[/bold] {len(unlocked)}")
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
         cache.set(
             f"{model_id}_full_timeline_scrape",
             read_args.retriveArgs().after is not None,
         )
+        log.debug("Returning timeline results")
         return (
             all_output,
             timeline_only_posts,
@@ -272,12 +247,7 @@ async def process_archived_posts(model_id, username, c):
         log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Archived media count without locked[/bold] {len(unlocked)}")
 
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+       
         cache.set(
             f"{model_id}_full_archived_scrape",
             read_args.retriveArgs().after is not None,
@@ -309,12 +279,7 @@ async def process_pinned_posts(model_id, username, c):
         unlocked = [item for post in pinned_posts for item in post.all_media]
         log.debug(f"[bold]Pinned media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Pinned media count without locked[/bold] {len(unlocked)}")
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+       
 
         return (
             all_output,
@@ -453,12 +418,7 @@ async def process_labels(model_id, username, c):
         log.debug(
             f"[bold]Label media count without locked[/bold] {sum(map(lambda x:len(x),unlocked_output))}"
         )
-        await batch_mediainsert(
-            all_output,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+        a
 
         return [item for sublist in all_output for item in sublist], [
             post for ele in labelled_posts_labels for post in ele.posts
@@ -474,6 +434,12 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
         username = ele.name
         output = []
         medias, posts,like_post = await process_tasks(model_id, username,ele,c=c)
+        await batch_mediainsert(
+            medias,
+            model_id=model_id,
+            username=username,
+            downloaded=False,
+        )
         output.extend(medias)
         return (
             medias,
@@ -536,25 +502,24 @@ async def process_tasks(model_id, username,ele, c=None):
                 tasks.append(asyncio.create_task(process_single_task(partial(process_pinned_posts,model_id, username, c))(sem=sem)))
 
             if "Timeline" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_timeline_posts,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_timeline_posts,model_id, username, c))(sem=sem)))
             if "Archived" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_archived_posts,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_archived_posts,model_id, username, c))(sem=sem)))
 
             if "Purchased" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_paid_post,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_paid_post,model_id, username, c))(sem=sem)))
             if "Messages" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_messages,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_messages,model_id, username, c))(sem=sem)))
 
             if "Highlights" in final_post_areas:
-
-                tasks.append(asyncio.create_task(process_single_task(partial(process_highlights,model_id, username, c))(sem)))
-
+                tasks.append(asyncio.create_task(process_single_task(partial(process_highlights,model_id, username, c))(sem=sem)))
 
             if "Stories" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_stories,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_stories,model_id, username, c))(sem=sem)))
 
             if "Labels" in final_post_areas and ele.active:
-                tasks.append(asyncio.create_task(process_single_task(partial(process_labels,model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_labels,model_id, username, c))(sem=sem)))
+    
             for results in asyncio.as_completed(tasks):
                 try:
                     medias, posts,area = await results
@@ -563,9 +528,7 @@ async def process_tasks(model_id, username,ele, c=None):
                     if area in download_area:
                         mediaObjs.extend(medias or [])
                         postObjs.extend(posts or [])
-                    await asyncio.sleep(1)
                 except Exception as E:
-                    await asyncio.sleep(1)
                     log.debug(E)
     return mediaObjs, postObjs,likeObjs
 

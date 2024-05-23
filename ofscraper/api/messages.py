@@ -291,7 +291,7 @@ async def scrape_messages(
     new_tasks = []
     task = None
 
-    await asyncio.sleep(1)
+    #await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = (
@@ -364,7 +364,7 @@ async def scrape_messages(
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        await asyncio.sleep(1)
+        #await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

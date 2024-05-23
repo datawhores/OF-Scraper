@@ -314,7 +314,7 @@ async def scrape_timeline_posts(
     new_tasks = []
     task = None
 
-    await asyncio.sleep(1)
+    #await asyncio.sleep(1)
 
     try:
         task = (
@@ -383,7 +383,7 @@ async def scrape_timeline_posts(
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        await asyncio.sleep(1)
+        #await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
