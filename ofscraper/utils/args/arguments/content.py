@@ -134,6 +134,17 @@ force_model_unique_option = click.option(
     is_flag=True,
 )
 
+like_toggle_force = click.option(
+    "-fl",
+    "--force-like",
+    "--force-like-toggle",
+    "--no-cache-like"
+    "force_like",
+    help="force toggling of posts to like or unlike status regardless of cache",
+    default=False,
+    is_flag=True,
+)
+
 label_option = click.option(
     "-lb",
     "--label",
@@ -198,6 +209,7 @@ content_options = click.option_group(
     item_sort_option,
     force_all_option,
     force_model_unique_option,
+    like_toggle_force,
     label_option,
     before_option,
     after_option,

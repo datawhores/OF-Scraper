@@ -23,6 +23,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.cache as cache
+import ofscraper.utils.args.read as read_args
+
 
 
 
@@ -137,7 +139,7 @@ def _like(model_id, ids: list, like_action: bool):
             progress_utils.remove_like_task(task)
 
 def _toggle_like_requests(c, id, model_id):
-    if cache.get(f"liked_status_{id}",None):
+    if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}",None):
         log.debug(
         f"ID: {id} marked as liked in cache"
         )
@@ -160,7 +162,7 @@ def _toggle_like_requests(c, id, model_id):
     return out
 
 def _toggle_unlike_requests(c, id, model_id):
-    if cache.get(f"liked_status_{id}",None)==False:
+    if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}",None)==False:
         log.debug(
         f"ID: {id} marked as unliked in cache"
         )
