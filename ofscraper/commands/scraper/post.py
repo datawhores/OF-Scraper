@@ -255,7 +255,7 @@ async def process_archived_posts(model_id, username, c):
         return (
             all_output,
             archived_posts,
-            "get_like_area()"
+            "archived"
         )
     except Exception as E:
         log.traceback_(E)
