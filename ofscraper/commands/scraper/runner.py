@@ -16,6 +16,7 @@ import ofscraper.commands.scraper.actions.download as download_action
 import ofscraper.commands.scraper.actions.like as like_action
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
+import ofscraper.utils.actions as actions
 
 
 
@@ -56,6 +57,8 @@ def prepare():
     download_action.unique_name_warning()
     profile_tools.print_current_profile()
     init.print_sign_status()
+    actions.select_areas()
+
     userdata = userselector.getselected_usernames(rescan=False)
     return userdata,session
 @exit.exit_wrapper
