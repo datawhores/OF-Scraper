@@ -22,6 +22,9 @@ import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.cache as cache
+
+
 
 
 
@@ -61,13 +64,17 @@ def get_posts_for_like(post):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited is False and x.opened, posts))
+    # output = list(filter(lambda x: x.favorited is False and x.opened, posts))
+    output = list(filter(lambda x:  x.opened, posts))
+
     log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
 def filter_for_favorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited is True and x.opened, posts))
+    # output = list(filter(lambda x: x.favorited is True and x.opened, posts))
+    output = list(filter(lambda x:  x.opened, posts))
+
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
@@ -92,7 +99,8 @@ def unlike(model_id, ids: list):
 
 
 def _like(model_id, ids: list, like_action: bool):
-    title = "Liking" if like_action else "Unliking"
+    title = "Liked" if like_action else "Unlikied"
+    like_func=_toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
         with sessionManager.sessionManager(
             sem=1,
@@ -102,31 +110,82 @@ def _like(model_id, ids: list, like_action: bool):
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             tasks = []
-            task=progress_utils.add_like_task(f"{title} posts...\n", total=len(ids))
+            task=progress_utils.add_like_task(f"checked posts...\n", total=len(ids))
+            task2=progress_utils.add_like_task(f"Posts toggle to {title}...\n", total=None)
 
             [
-                tasks.append(functools.partial(_like_request, c, id, model_id))
+                tasks.append(functools.partial(like_func, c, id, model_id))
                 for id in ids
             ]
-            sleep_duration = 5
-            for count, func in enumerate(tasks):
-                id = func()
-                log.debug(
-                    f"ID: {id} Performed {'like' if like_action is True else 'unlike'} action"
-                )
-                if count + 1 % 60 == 0 and count + 1 % 50 == 0:
+            count=1
+            for  count,func in enumerate(tasks):
+                out = func()
+                if out==0:
+                    sleep_duration = 0 
+                elif count + 1 % 60 == 0 and count + 1 % 50 == 0:
                     sleep_duration = 40
                 elif count % 60 == 0:
                     sleep_duration = 1  # Divisible by 60 - 1 second sleep
                 elif count % 50 == 0:
                     sleep_duration = 30  # Divisible by 50 - 30 seconds sleep
+                else:
+                    sleep_duration=5
+                if out==1:
+                    progress_utils.increment_like_task(task2)
                 progress_utils.increment_like_task(task)
                 time.sleep(sleep_duration)
             progress_utils.remove_like_task(task)
 
+def _toggle_like_requests(c, id, model_id):
+    if cache.get(f"liked_status_{id}",None):
+        log.debug(
+        f"ID: {id} marked as liked in cache"
+        )
+        return 0
+    sleep_duration =5
+    favorited,id=_like_request(c, id, model_id)
+    if favorited:
+        log.debug(
+        f"ID: {id} changed to liked"
+        )   
+        out=1
+    else:
+        log.debug(
+        f"ID: {id} restored to liked"
+        )
+        time.sleep(sleep_duration)
+        _like_request(c, id, model_id)
+        out=2
+    cache.set(f"liked_status_{id}",True)
+    return out
+
+def _toggle_unlike_requests(c, id, model_id):
+    if cache.get(f"liked_status_{id}",None)==False:
+        log.debug(
+        f"ID: {id} marked as unliked in cache"
+        )
+
+        return 0
+    sleep_duration =5
+    favorited,id=_like_request(c, id, model_id)
+    if not favorited:
+        log.debug(
+        f"ID: {id} changed to unliked"
+        )
+        out=1
+    else:
+        log.debug(
+        f"ID: {id} restored to unlike"
+        )
+        time.sleep(sleep_duration)
+        _like_request(c, id, model_id)
+        out=2
+    cache.set(f"liked_status_{id}",False)
+    return out
 
 def _like_request(c, id, model_id):
     with c.requests(
         constants.getattr("favoriteEP").format(id, model_id), method="post"
-    ) as _:
-        return id
+    ) as r:
+        return r.json_()["isFavorite"], r.json_()["id"]
+

@@ -57,7 +57,7 @@ class Post(base.base):
 
     @property
     def favorited(self):
-        return self.post.get("canToggleFavorite")  or self.post.get("isFavorite") 
+        self.post.get("canToggleFavorite")==False if self.post.get("canToggleFavorite")!=None else self.post.get("isFavorite")
 
     @property
     def opened(self):
