@@ -109,7 +109,7 @@ async def process_paid_post(model_id, username, c):
             username=username,
         )
         all_output = [item for post in paid_content for item in post.all_media]
-        unlocked = [item for post in paid_content for item in post.all_media]
+        unlocked = [item for post in paid_content for item in post.media]
         log.debug(f"[bold]Paid media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Paid media count without locked[/bold] {len(unlocked)}")
 
@@ -140,7 +140,7 @@ async def process_stories(model_id, username, c):
             username=username,
         )
         all_output = [item for post in stories for item in post.all_media]
-        unlocked = [item for post in stories for item in post.all_media]
+        unlocked = [item for post in stories for item in post.media]
         log.debug(f"[bold]Stories media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Stories media count without locked[/bold] {len(unlocked)}")
 
@@ -168,7 +168,7 @@ async def process_highlights(model_id, username, c):
             username=username,
         )
         all_output = [item for post in highlights_ for item in post.all_media]
-        unlocked = [item for post in highlights_ for item in post.all_media]
+        unlocked = [item for post in highlights_ for item in post.media]
 
         log.debug(f"[bold]Highlights media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Highlights media count without locked[/bold] {len(unlocked)}")
@@ -205,7 +205,7 @@ async def process_timeline_posts(model_id, username, c):
             username=username,
         )
         all_output = [item for post in timeline_only_posts for item in post.all_media]
-        unlocked = [item for post in timeline_only_posts for item in post.all_media]
+        unlocked = [item for post in timeline_only_posts for item in post.media]
         log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Timeline media count without locked[/bold] {len(unlocked)}")
         cache.set(
@@ -243,7 +243,7 @@ async def process_archived_posts(model_id, username, c):
         )
 
         all_output = [item for post in archived_posts for item in post.all_media]
-        unlocked = [item for post in archived_posts for item in post.all_media]
+        unlocked = [item for post in archived_posts for item in post.media]
         log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Archived media count without locked[/bold] {len(unlocked)}")
 
@@ -276,7 +276,7 @@ async def process_pinned_posts(model_id, username, c):
         )
 
         all_output = [item for post in pinned_posts for item in post.all_media]
-        unlocked = [item for post in pinned_posts for item in post.all_media]
+        unlocked = [item for post in pinned_posts for item in post.media]
         log.debug(f"[bold]Pinned media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Pinned media count without locked[/bold] {len(unlocked)}")
        
@@ -408,7 +408,7 @@ async def process_labels(model_id, username, c):
         ]
 
         unlocked_output = [
-            post.all_media
+            post.media
             for labelled_post in labelled_posts_labels
             for post in labelled_post.posts
         ]

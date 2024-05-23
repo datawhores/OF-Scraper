@@ -363,6 +363,7 @@ class sessionManager:
                         sleeper.toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
+                    sync_sem.release()
                     raise E
         yield r
         sync_sem.release()
