@@ -124,10 +124,9 @@ def filterPost(post):
 
 def post_filter_for_like(post, like=False):
     post = helpers.temp_post_filter(post)
-    post=helpers.likable_post_filter(post)
     post_type = "likable" if like else "unlikable"
     log.debug(
-        f"[bold]Number of {post_type} posts left after date filter[/bold] {len(post)}"
+        f"[bold]Number of {post_type} posts left after filtering for likeable posts[/bold] {len(post)}"
     )
     post = helpers.final_post_sort(post)
     post = helpers.ele_count_filter(post)
