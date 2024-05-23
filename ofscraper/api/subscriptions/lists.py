@@ -49,7 +49,7 @@ async def get_otherlist():
                 for ele in read_args.retriveArgs().user_list or []
             ]
         ):
-        return
+        return []
     with progress_utils.setup_subscription_progress_live(
         ):
         out.extend(await get_lists())
