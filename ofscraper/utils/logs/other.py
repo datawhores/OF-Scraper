@@ -82,6 +82,8 @@ def logger_other(input_, name=None, stop_count=1, event=None):
             end_funct()
         except:
             break
+    for handler in log.handlers:
+        handler.close()
     log.handlers.clear()
 
 
@@ -134,7 +136,7 @@ def start_other_process(input_=None, count=1):
 def start_other_helper():
     if log_globals.other_log_thread:
         return
-    if system.getcpu_count() >= 2:
+    if system.getcpu_count() >= 200:
         log_globals.other_log_thread = start_other_process()
     else:
         log_globals.other_log_thread = start_other_thread(

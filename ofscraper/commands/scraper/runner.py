@@ -20,7 +20,7 @@ import ofscraper.utils.actions as actions
 
 
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
+from ofscraper.commands.helpers.context import user_first_data_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
 
 log = logging.getLogger("shared")
 

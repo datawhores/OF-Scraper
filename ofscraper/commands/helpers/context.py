@@ -7,6 +7,7 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.helpers.strings import avatar_str,area_str,progress_str,data_str
 import ofscraper.utils.args.areas as areas
 import ofscraper.models.selector as selector
+import ofscraper.utils.args.read as read_args
 
 
 
@@ -20,7 +21,7 @@ def get_user_action_execution_function(func):
     async def wrapper(*args, **kwargs):
         ele=kwargs.get("ele")
         avatar=ele.avatar
-        if constants.getattr("SHOW_AVATAR") and avatar:
+        if constants.getattr("SHOW_AVATAR") and avatar and read_args.retriveArgs().userfirst:
             logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
         await func(*args, **kwargs)
         progress_utils.increment_user_activity()
@@ -63,12 +64,7 @@ def user_first_data_inner_context(session,user):
 
 
 
-@contextlib.contextmanager
-def user_first_action_runner_inner_context(avatar):
-    if constants.getattr("SHOW_AVATAR") and avatar:
-        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-    yield 
-    progress_utils.increment_user_activity()
+
 
 
     

@@ -233,7 +233,7 @@ class sessionManager:
                 )
             elif self._backend == "aio":
                 raise Exception("aiohttp is async only")
-            return self
+        return self._session
 
     #https://github.com/aio-libs/aiohttp/issues/1925
     async def __aenter__(self):
