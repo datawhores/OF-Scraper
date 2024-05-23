@@ -37,6 +37,7 @@ console_output_level_option = click.option(
 )
 
 console_rich_toggle = click.option(
+    "-nl",
     "--no-live-screen",
     "--no-live",
     "--no-rich",

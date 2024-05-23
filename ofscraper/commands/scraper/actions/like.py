@@ -101,7 +101,8 @@ def unlike(model_id, ids: list):
 
 
 def _like(model_id, ids: list, like_action: bool):
-    title = "Liked" if like_action else "Unlikied"
+    like_str = "Posts toggled from unlike to like...\n" if like_action else "Posts toggled from like to unlike...\n"
+
     like_func=_toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
         with sessionManager.sessionManager(
@@ -113,7 +114,7 @@ def _like(model_id, ids: list, like_action: bool):
         ) as c:
             tasks = []
             task=progress_utils.add_like_task(f"checked posts...\n", total=len(ids))
-            task2=progress_utils.add_like_task(f"Posts toggle to {title}...\n", total=None)
+            task2=progress_utils.add_like_task(like_str, total=None)
 
             [
                 tasks.append(functools.partial(like_func, c, id, model_id))

@@ -138,7 +138,7 @@ like_toggle_force = click.option(
     "-fl",
     "--force-like",
     "--force-like-toggle",
-    "--no-cache-like"
+    "--no-cache-like",
     "force_like",
     help="force toggling of posts to like or unlike status regardless of cache",
     default=False,
