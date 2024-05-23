@@ -21,7 +21,7 @@ def get_like_area():
         post.update({"Labels"})
         post.discard("Labels*")
         post.discard("Labels+")
-    return list(
+    return set(list(
         filter(
             lambda x: x != "All"
             and x[0] != "-"
@@ -29,7 +29,7 @@ def get_like_area():
             and x in all_choices + ["Labels"],
             post,
         )
-    )
+    ))
 
 
 def get_download_area():
@@ -56,7 +56,7 @@ def get_download_area():
         post.update({"Labels"})
         post.discard("Labels*")
         post.discard("Laabels+")
-    return list(
+    return set(list(
         filter(
             lambda x: x != "All"
             and x[0] != "-"
@@ -64,7 +64,7 @@ def get_download_area():
             and x in all_choices + ["Labels"],
             post,
         )
-    )
+    ))
 
 def get_final_posts_area():
     final_post_areas = set()
