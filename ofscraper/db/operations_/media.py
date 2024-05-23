@@ -26,7 +26,6 @@ from filelock import FileLock
 import ofscraper.db.operations_.wrapper as wrapper
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.paths.common as common_paths
 
 console = Console()
 log = logging.getLogger("shared")
@@ -590,33 +589,17 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
 
 @run
 async def batch_mediainsert(media, **kwargs):
-    lock=None
-    try:
-        # lock= FileLock(common_paths.getMediaDB(), timeout=-1)
-        loop = asyncio.get_event_loop()
-        # await loop.run_in_executor(None,lock.acquire)
-        curr = set(await get_media_ids(**kwargs) or [])
-        mediaDict = {}
-        for ele in media:
-            mediaDict[ele.id] = ele
-        write_media_table_via_api_batch(
-            list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
-        )
+    curr = set(await get_media_ids(**kwargs) or [])
+    mediaDict = {}
+    for ele in media:
+        mediaDict[ele.id] = ele
+    write_media_table_via_api_batch(
+        list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
+    )
 
-        update_media_table_via_api_batch(
-            list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
-        )
-    except KeyboardInterrupt as E:
-        with exit.DelayedKeyboardInterrupt():
-            # if lock:
-            #     lock.release(True)
-            raise E
-    except Exception as E:
-        raise E
-    finally:
-        pass
-        # if lock:
-        #     await loop.run_in_executor(None,partial(lock.release, force=True))
+    update_media_table_via_api_batch(
+        list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
+    )
 
 
 
