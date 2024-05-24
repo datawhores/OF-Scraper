@@ -31,8 +31,8 @@ def get_user_action_execution_function(func):
 
 def get_userfirst_data_function(funct):
     async def wrapper(*args,**kwargs):
-        progress_utils.update_activity_task(description="Getting all user Data First")
-        progress_utils.update_user_activity(description="Users with Data Retrived")
+        progress_utils.update_activity_task(description="Getting all user data first")
+        progress_utils.update_user_activity(description="Users with Data Retrieved")
         progress_utils.update_activity_count(description="Overall progress",total=2)
         data=await funct(*args, **kwargs)
         return data

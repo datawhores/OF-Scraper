@@ -54,17 +54,57 @@ from ofscraper.commands.helpers.shared import run_action_bool
 
 log = logging.getLogger("shared")
 
-def force_change_download():
-    args = read_args.retriveArgs()
-    args.action = "download"
-    write_args.setArgs(args)
+def metadata():
+        with progress_utils.setup_init_live(stop=True):
+            if read_args.retriveArgs().scrape_paid:
+                progress_utils.update_activity_task(description="Updating Metadata for  Entire Paid page")
+                metadata_paid_all()
+            if not run_action_bool():
+                return
+            userdata,session=prepare()
+            if not read_args.retriveArgs().users_first:
+                process_users_metadata_normal(userdata,session)
+            else:
+                metadata_user_first(userdata,session)
 
+@run
+async def process_users_metadata_normal(userdata,session):
+    user_action_funct=get_user_action_function(process_metadata_for_user)
+    progress_utils.update_activity_count(description="Users with Updated Metadata")
+    async with session:
+        for ele in userdata:
+            await user_action_funct(user=ele,session=session)
+@run
+async def metadata_user_first(userdata,session):
+    data=await get_userfirst_data_function(metadata_data_user_first)(userdata,session)
 
-def force_change_metadata():
-    args = read_args.retriveArgs()
-    args.metadata = args.scrape_paid
-    write_args.setArgs(args)
+    await get_userfirst_action_execution_function(execute_metadata_action_user_first)(data)
 
+def metadata_paid_all(user_dict=None):
+    progress_utils.update_activity_task("Scraping Entire Paid page")
+    old_args = copy.deepcopy(read_args.retriveArgs())
+    force_change_metadata()
+    user_dict = process_all_paid()
+    oldUsers = userselector.get_ALL_SUBS_DICT()
+    length = len(list(user_dict.keys()))
+    for count, value in enumerate(user_dict.values()):
+        model_id = value["model_id"]
+        username = value["username"]
+        posts = value["posts"]
+        medias = value["medias"]
+        avatar=value["avatar"]
+        if constants.getattr("SHOW_AVATAR") and avatar:
+                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+        log.warning(
+            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
+        )
+        userselector.set_ALL_SUBS_DICTVManger(
+            {username: models.Model(profile.scrape_profile(model_id))}
+        )
+        download.download_process(username, model_id, medias, posts=posts)
+    # restore settings
+    userselector.set_ALL_SUBS_DICT(oldUsers)
+    write_args.setArgs(old_args)
 
 def metadata_stray_media(username, model_id, media):
     all_media = []
@@ -92,13 +132,7 @@ def metadata_stray_media(username, model_id, media):
     log.info(f"Found {len(filtered_media)} stray items to mark as locked")
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
-@run
-async def process_users_metadata_normal(userdata,session):
-    user_action_funct=get_user_action_function(process_metadata_for_user)
-    progress_utils.update_activity_count(description="Users with Updated Metadata")
-    async with session:
-        for ele in userdata:
-            await user_action_funct(user=ele,session=session)
+
 
 
 async def process_metadata_for_user(user=None,session=None):
@@ -106,14 +140,14 @@ async def process_metadata_for_user(user=None,session=None):
 
         model_id = user.id
         all_media, _,_ = await process_areas_helper(user, model_id,c=session)
-        await get_user_action_execution_function(execute_metadata_action)(user=user,media=all_media)
+        await get_user_action_execution_function(execute_metadata_action_on_user)(user=user,media=all_media)
     except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
 
-async def execute_metadata_action(user=None,media=None):
+async def execute_metadata_action_on_user(user=None,media=None):
     username=user.name
 
     model_id = user.id
@@ -126,83 +160,67 @@ async def execute_metadata_action(user=None,media=None):
     metadata_stray_media(username, model_id, media)
 
 
-def metadata_user_first(userdata,session):
-    data=metadata_process_user_first_data_retriver(userdata,session)
-    metadata_user_first_action_runner(data)
     
 
-@run
-async def metadata_user_first_action_runner(data):
-    progress_utils.update_activity_task(description="Updating Actions on Users")
-    with user_first_action_runner_outer_context():
-        for model_id, val in data.items():
-            username = val["username"]
-            media = val["media"]
-            progress_utils.update_activity_task(description=metadata_str.format(username=username))
-            with user_first_action_runner_inner_context(val["avatar"]):
-                try:
-                    filterMedia = filters.filterMedia(
-                        media, username=username, model_id=model_id
-                    )
-                    await download.download_process(username, model_id, filterMedia)
-                    metadata_stray_media(username, model_id, media)
-                except Exception as e:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())
+
+async def execute_metadata_action_user_first(data):
+    progress_utils.update_activity_task(description="Performing Metadata Actions on Users")
+    progress_utils.update_user_activity(description="Users with Metadata updated",completed=0)
+    for model_id, val in data.items():
+        username = val["username"]
+        media = val["media"]
+        ele =val["ele"]
+        progress_utils.update_activity_task(description=metadata_str.format(username=username))
+        try:
+            
+            await get_user_action_execution_function(execute_metadata_action_on_user)(media=media ,user=ele)
+            # await download.download_process(username, model_id, filterMedia)
+            # metadata_stray_media(username, model_id, media)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
 
 
 
 
 @run
-async def metadata_process_user_first_data_retriver(userdata,session):
+async def metadata_data_user_first(userdata,session):
     data={}
-    user_first_data_preparer()
     async with session:
         length=len(userdata)
-        for count, ele in enumerate(userdata):
-            with user_first_data_inner_context(session,length,count,ele):
-                progress_utils.switch_api_progress()
+        for ele in userdata:
+            progress_utils.switch_api_progress()
+            model_id = ele.id
+            username = ele.name
+            avatar = ele.avatar
+            active=ele.active
+            metadata_action = read_args.retriveArgs().metadata
+            mark_stray = read_args.retriveArgs().mark_stray
+            log.warning(
+            f"""
+            Perform Meta {metadata_action} with 
+            Mark Stray: {mark_stray}
+            for [bold]{username}[/bold]\n[bold]
+            Subscription Active:[/bold] {active}
+            """
+            )
+            try:
                 model_id = ele.id
                 username = ele.name
-                avatar = ele.avatar
-                metadata_action = read_args.retriveArgs().metadata
-                mark_stray = read_args.retriveArgs().mark_stray
-                log.warning(
-                    f"""
-                Perform Meta {metadata_action} with 
-                Mark Stray: {mark_stray}
-                for [bold]{ele.name}[/bold]\n[bold]
-                Subscription Active:[/bold] {ele.active}
-                """
-                )
-                try:
-                    model_id = ele.id
-                    username = ele.name
-                    await operations.table_init_create(model_id=model_id, username=username)
-                    media, _ ,_= await process_areas_helper(ele, model_id,c=session)
-                    data.update( {model_id: {"username": username, "media": media, "avatar": avatar}})
-                except Exception as e:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())
+                await operations.table_init_create(model_id=model_id, username=username)
+                media, _ ,_= await process_areas_helper(ele, model_id,c=session)
+                data.update( {model_id: {"username": username, "media": media, "avatar": avatar,"ele":ele}})
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise e
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
     return data
 
 
-def metadata():
-        with progress_utils.setup_init_live(stop=True):
-            if read_args.retriveArgs().scrape_paid:
-                progress_utils.update_activity_task(description="Updating Metadata for  Entire Paid page")
-                metadata_paid_all()
-            if not run_action_bool():
-                return
-            userdata,session=prepare()
-            if not read_args.retriveArgs().users_first:
-                process_users_metadata_normal(userdata,session)
-            else:
-                metadata_user_first(userdata,session)
+
 
 
 
@@ -227,28 +245,15 @@ def prepare():
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
     return userdata,session
-def metadata_paid_all(user_dict=None):
-    progress_utils.update_activity_task("Scraping Entire Paid page")
-    old_args = copy.deepcopy(read_args.retriveArgs())
-    force_change_metadata()
-    user_dict = process_all_paid()
-    oldUsers = userselector.get_ALL_SUBS_DICT()
-    length = len(list(user_dict.keys()))
-    for count, value in enumerate(user_dict.values()):
-        model_id = value["model_id"]
-        username = value["username"]
-        posts = value["posts"]
-        medias = value["medias"]
-        avatar=value["avatar"]
-        if constants.getattr("SHOW_AVATAR") and avatar:
-                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-        log.warning(
-            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
-        )
-        userselector.set_ALL_SUBS_DICTVManger(
-            {username: models.Model(profile.scrape_profile(model_id))}
-        )
-        download.download_process(username, model_id, medias, posts=posts)
-    # restore settings
-    userselector.set_ALL_SUBS_DICT(oldUsers)
-    write_args.setArgs(old_args)
+
+
+def force_change_download():
+    args = read_args.retriveArgs()
+    args.action = "download"
+    write_args.setArgs(args)
+
+
+def force_change_metadata():
+    args = read_args.retriveArgs()
+    args.metadata = args.scrape_paid
+    write_args.setArgs(args)

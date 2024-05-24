@@ -47,10 +47,10 @@ platform_name = platform.system()
 
 
 def process_dicts(username, model_id, filtered_medialist):
-    metadata=read_args.retriveArgs().metadata
+    metadata_md =read_args.retriveArgs().metadata
     log = logging.getLogger("shared")
     common_globals.log = log
-    live=partial(progress_utils.setup_download_progress_live,multi=True) if not metadata else partial(progress_utils.setup_metadata_progress_live)
+    live=partial(progress_utils.setup_download_progress_live,multi=True) if not metadata_mode else partial(progress_utils.setup_metadata_progress_live)
     try:
         common_globals.reset_globals()
         with live(
