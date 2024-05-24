@@ -118,21 +118,14 @@ async def execute_users_actions_user_first(data):
 
 
 
-async def get_users_data_user_first(userdata,session):
-    data={}
-    async with session:
-        for user in userdata:
-                try:
-                    with user_first_data_inner_context(session,user):
-                        data.update(await process_ele_user_first_data_retriver(user,session))
-                except Exception as e:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())   
-        return data
-
-
+async def get_users_data_user_first(session,ele):
+        try:
+            return await process_ele_user_first_data_retriver(ele,session)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())   
 
 async def process_ele_user_first_data_retriver(ele,session):
     model_id = ele.id
