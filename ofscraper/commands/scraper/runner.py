@@ -125,7 +125,7 @@ async def get_users_data_user_first(session,ele):
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())   
+            log.traceback_(traceback.format_exc())  
 
 async def process_ele_user_first_data_retriver(ele,session):
     model_id = ele.id

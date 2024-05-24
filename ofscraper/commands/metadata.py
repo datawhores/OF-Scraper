@@ -42,13 +42,12 @@ from ofscraper.db.operations_.media import (
 )
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.live.screens as progress_utils
-import ofscraper.utils.args.areas as areas
 
-from ofscraper.commands.helpers.strings import avatar_str,area_str
+from ofscraper.commands.helpers.strings import avatar_str
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.strings import metadata_str
 
-from ofscraper.commands.helpers.context import get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function,user_first_data_inner_context
+from ofscraper.commands.helpers.context import get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
 from ofscraper.commands.helpers.shared import run_action_bool
 
 

@@ -13,8 +13,10 @@ import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.utils.text import textDownloader
+from ofscraper.utils.context.run_async import run
 
 
+@run
 async def download_process(username, model_id, medialist, posts=None):
     if not read_args.retriveArgs().command == "metadata":
         await textDownloader(posts, username=username)
