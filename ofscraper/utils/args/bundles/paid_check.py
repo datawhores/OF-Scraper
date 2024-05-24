@@ -6,6 +6,8 @@ import ofscraper.utils.args.helpers.type as type
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
 from ofscraper.utils.args.bundles.common import common_args
 
+from ofscraper.utils.args.helpers.check import check_mode_changes
+
 
 def paid_check_args(func):
     @click.command(
@@ -30,7 +32,7 @@ def paid_check_args(func):
             multiple=True,
             type=type.check_strhelper,
             callback=lambda ctx, param, value: (
-                list(set(itertools.chain.d(value))) if value else []
+                list(set(itertools.chain.from_iterable(value))) if value else []
             ),
         ),
         click.option(
@@ -53,6 +55,7 @@ def paid_check_args(func):
         default=False,
     )
     @advanced_args
+    @check_mode_changes
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)

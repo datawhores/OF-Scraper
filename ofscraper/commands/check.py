@@ -412,11 +412,13 @@ def purchase_checker():
 @run
 async def purchase_checker_runner():
     async for user_name, model_id, final_post_array in purchase_check_retriver():
-        await process_post_media(user_name, model_id, final_post_array)
-        await operations.make_changes_to_content_tables(
-            final_post_array, model_id=model_id, username=user_name
-        )
-        await row_gather(user_name, model_id, paid=True)
+        with progress_utils.setup_api_split_progress_live(stop=True):
+            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Purchased posts"))
+            await process_post_media(user_name, model_id, final_post_array)
+            await operations.make_changes_to_content_tables(
+                final_post_array, model_id=model_id, username=user_name
+            )
+            await row_gather(user_name, model_id, paid=True)
 
 
 @run
@@ -649,7 +651,7 @@ async def row_gather(username, model_id, paid=False):
     media_sorted = sorted(
         ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
     )
-    
+
     out = []
     for count, ele in enumerate(media_sorted):
         out.append(
