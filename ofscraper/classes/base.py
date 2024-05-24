@@ -41,6 +41,7 @@ class base:
         return text
 
     def db_cleanup(self, string):
+        string=string or ""
         string = re.sub("<[^>]*>", "", string)
         string = " ".join(string.split())
         string = BeautifulSoup(string, html_parser).get_text()

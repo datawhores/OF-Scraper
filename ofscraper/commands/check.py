@@ -29,13 +29,16 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
 from ofscraper.download.shared.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.live.screens as progress_utils
+
+from ofscraper.commands.helpers.strings import check_str
+
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -160,11 +163,13 @@ def post_checker():
 @run
 async def post_check_runner():
     async for user_name, model_id, final_post_array in post_check_retriver():
-        await process_post_media(user_name, model_id, final_post_array)
-        await operations.make_changes_to_content_tables(
-            final_post_array, model_id=model_id, username=user_name
-        )
-        await row_gather(user_name, model_id, paid=True)
+        with progress_utils.setup_api_split_progress_live(stop=True):
+            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Timeline posts"))
+            await process_post_media(user_name, model_id, final_post_array)
+            await operations.make_changes_to_content_tables(
+                final_post_array, model_id=model_id, username=user_name
+            )
+            await row_gather(user_name, model_id, paid=True)
 
 
 @run
@@ -548,11 +553,9 @@ async def get_downloaded(user_name, model_id, paid=False):
 
     await operations.table_init_create(model_id=model_id, username=user_name)
     paid = await get_paid_ids(model_id, user_name) if paid else []
-    [
-        downloaded.update({ele: downloaded.get(ele, 0) + 1})
-        for ele in get_media_ids_downloaded(model_id=model_id, username=user_name)
-        + paid
-    ]
+    for ele in list(get_media_ids_downloaded(model_id=model_id,username=user_name))+list(paid):
+        downloaded.update( {ele: downloaded.get(ele, 0) + 1})
+    
 
     return downloaded
 
@@ -642,11 +645,12 @@ async def row_gather(username, model_id, paid=False):
         mediadict.update({ele.id: mediadict.get(ele.id, []) + [ele]})
         for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
     ]
-    out = []
 
     media_sorted = sorted(
         ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
     )
+    
+    out = []
     for count, ele in enumerate(media_sorted):
         out.append(
             {

@@ -72,6 +72,7 @@ async def process_tasks(tasks, model_id, after):
     seen = set()
     while tasks:
         new_tasks = []
+
         for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
@@ -107,7 +108,7 @@ async def process_tasks(tasks, model_id, after):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 continue
-            tasks = new_tasks
+        tasks = new_tasks
 
     progress_utils.remove_api_task(page_task)
 
