@@ -43,3 +43,5 @@ def get_multi_download_progress_group():
         multi_download_progress_group= Group(activity_group,overall_panel, multi_panel,fit=True) if settings.get_download_bars() else Group(activity_group,overall_panel,fit=True)
     return multi_download_progress_group
 
+#metadata
+metadata_group=Group(activity_group,overall_panel,fit=True )

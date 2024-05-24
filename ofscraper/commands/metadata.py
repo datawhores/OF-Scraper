@@ -48,7 +48,9 @@ from ofscraper.commands.helpers.strings import avatar_str,area_str
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.strings import metadata_str
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context
+from ofscraper.commands.helpers.context import user_first_data_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
+from ofscraper.commands.helpers.shared import run_action_bool
+
 
 log = logging.getLogger("shared")
 
@@ -91,50 +93,37 @@ def metadata_stray_media(username, model_id, media):
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 @run
-async def metadata_normal(userdata,session):
-    metadata_action = read_args.retriveArgs().metadata
-    mark_stray = read_args.retriveArgs().mark_stray
-    length = len(userdata)
-    progress_utils.update_activity_count(description="Updating Metadata")
+async def process_users_metadata_normal(userdata,session):
+    user_action_funct=get_user_action_function(process_metadata_for_user)
+    progress_utils.update_activity_count(description="Users with Updated Metadata")
     async with session:
-        for count, ele in enumerate(userdata):
-            active=ele.active
-            username=ele.name
-            progress_utils.update_activity_count(description="Users with metadata changed".format(username=username))
-            progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
+        for ele in userdata:
+            await user_action_funct(user=ele,session=session)
 
-            log.warning(
-                f"Metadata action progressing on model {count+1}/{length} models "
-            )
-            if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                log.warning(f"Avatar : {ele.avatar}")
 
-            log.warning(
-                f"""
-    Perform Meta {metadata_action} with
-    Mark Stray: {mark_stray}
-    for [bold]{ele.name}[/bold]\n[bold]
-    Subscription Active:[/bold] {ele.active}"""
-            )
-            try:
-                model_id = ele.id
-                username = ele.name
+async def process_metadata_for_user(user=None,session=None):
+    try:
 
-                media, _,_ = await process_areas_helper(ele, model_id,c=session)
-                operations.table_init_create(model_id=model_id, username=username)
-                filterMedia = filters.filterMedia(
-                    media, username=username, model_id=model_id
-                )
-                progress_utils.update_activity_task(description=metadata_str.format(username=username))
-                await download.download_process(username, model_id, filterMedia)
-                metadata_stray_media(username, model_id, media)
-                progress_utils.increment_activity_count()
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+        model_id = user.id
+        all_media, _,_ = await process_areas_helper(user, model_id,c=session)
+        await get_user_action_execution_function(execute_metadata_action)(user=user,media=all_media)
+    except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
 
+async def execute_metadata_action(user=None,media=None):
+    username=user.name
+
+    model_id = user.id
+    operations.table_init_create(model_id=model_id, username=username)
+    filterMedia = filters.filterMedia(
+            media, username=username, model_id=model_id
+    )
+    progress_utils.update_activity_task(description=metadata_str.format(username=username))
+    await download.download_process(username, model_id, filterMedia)
+    metadata_stray_media(username, model_id, media)
 
 
 def metadata_user_first(userdata,session):
@@ -203,11 +192,17 @@ async def metadata_process_user_first_data_retriver(userdata,session):
 
 
 def metadata():
-        userdata,session=prepare()
-        if not read_args.retriveArgs().users_first:
-            metadata_normal(userdata,session)
-        else:
-            metadata_user_first(userdata,session)
+        with progress_utils.setup_init_live(stop=True):
+            if read_args.retriveArgs().scrape_paid:
+                progress_utils.update_activity_task(description="Updating Metadata for  Entire Paid page")
+                metadata_paid_all()
+            if not run_action_bool():
+                return
+            userdata,session=prepare()
+            if not read_args.retriveArgs().users_first:
+                process_users_metadata_normal(userdata,session)
+            else:
+                metadata_user_first(userdata,session)
 
 
 
@@ -218,8 +213,7 @@ def process_selected_areas():
          with progress_utils.setup_init_live(stop=True):
             if read_args.retriveArgs().metadata:
                 metadata()
-            if read_args.retriveArgs().scrape_paid:
-                metadata_paid_all()
+            
 
 def prepare():
     profile_tools.print_current_profile()

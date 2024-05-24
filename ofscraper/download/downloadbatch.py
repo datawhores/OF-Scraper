@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from functools import partial
 import logging.handlers
 import os
 import platform
@@ -46,12 +47,13 @@ platform_name = platform.system()
 
 
 def process_dicts(username, model_id, filtered_medialist):
+    metadata=read_args.retriveArgs().metadata
     log = logging.getLogger("shared")
     common_globals.log = log
+    live=partial(progress_utils.setup_download_progress_live,multi=True) if not metadata else partial(progress_utils.setup_metadata_progress_live)
     try:
         common_globals.reset_globals()
-        with progress_utils.setup_download_progress_live(
-                multi=True
+        with live(
             ):
                 if not read_args.retriveArgs().item_sort:
                     random.shuffle(filtered_medialist)
@@ -391,6 +393,7 @@ async def process_dicts_split(username, model_id, medialist):
 
 def pid_log_helper():
     return f"PID: {os.getpid()}"
+
 
 
 async def download(c, ele, model_id, username):

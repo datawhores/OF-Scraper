@@ -13,13 +13,14 @@ import ofscraper.utils.args.read as read_args
 
 def get_user_action_function(func):
   async def wrapper(*args, **kwargs):                   
-    data_helper(kwargs.get("user"))
+    ele=kwargs.get("ele") or kwargs.get("user")
+    data_helper(ele)
     await func(*args, **kwargs)
   return wrapper
 
 def get_user_action_execution_function(func):
     async def wrapper(*args, **kwargs):
-        ele=kwargs.get("ele")
+        ele=kwargs.get("ele") or kwargs.get("user")
         avatar=ele.avatar
         if constants.getattr("SHOW_AVATAR") and avatar and read_args.retriveArgs().userfirst:
             logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
@@ -75,7 +76,7 @@ def data_helper(user):
     active=user.active
     final_post_areas=areas.get_final_posts_area()
     length=selector.get_num_selected()
-    count=progress_utils.get_user_task().completed
+    count=progress_utils.get_user_task_obj().completed
 
     progress_utils.switch_api_progress()
 

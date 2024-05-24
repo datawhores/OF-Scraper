@@ -18,6 +18,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 import ofscraper.utils.actions as actions
 
+from ofscraper.commands.helpers.shared import run_action_bool
 
 
 from ofscraper.commands.helpers.context import user_first_data_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
@@ -40,10 +41,9 @@ def runner():
             if read_args.retriveArgs().users_first:
                 process_users_actions_user_first(userdata,session)
             else:
-                process_users_actions(userdata,session)
+                process_users_actions_normal(userdata,session)
 
-def run_action_bool():
-    return len(read_args.retriveArgs().action)>0
+
 
 def prepare():
     session=sessionManager.sessionManager(
@@ -63,7 +63,7 @@ def prepare():
     return userdata,session
 @exit.exit_wrapper
 @run
-async def process_users_actions(userdata=None,session=None):
+async def process_users_actions_normal(userdata=None,session=None):
     user_action_funct=get_user_action_function(process_actions_for_user)
     progress_utils.update_user_activity(description="Users with Actions Completed")
     async with session as c:

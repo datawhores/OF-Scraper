@@ -2,37 +2,37 @@ import ofscraper.models.selector as selector
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress,like_overall_progress
 
 
-from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
+from ofscraper.utils.live.tasks import get_activity_counter_task,get_activity_task,get_user_first_task
 import ofscraper.utils.settings as settings
 def update_activity_task(**kwargs):
     activity_progress.update(
-           activity_task, **kwargs
+           get_activity_task(), **kwargs
     )
 
 def increment_activity_count(total=None,visible=True,advance=1,**kwargs):
     total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-           activity_counter_task,advance=advance,total=total,visible=visible,**kwargs
+           get_activity_counter_task(),advance=advance,total=total,visible=visible,**kwargs
     )
 
 
 def update_activity_count(visible=True,total=False,**kwargs):
     total=total if total!=False else selector.get_num_selected()
     activity_counter.update(
-           activity_counter_task,visible=visible,total=total,**kwargs
+            get_activity_counter_task(),visible=visible,total=total,**kwargs
     )
 
 
 def increment_user_activity(total=None,visible=True,advance=1,**kwargs):
     total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-           user_first_task,total=total,visible=visible,advance=advance,**kwargs
+           get_user_first_task(),total=total,visible=visible,advance=advance,**kwargs
     )
 
 def update_user_activity(visible=True,total=None,**kwargs):
     total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-          user_first_task, visible=visible, total=total,**kwargs
+          get_user_first_task(), visible=visible, total=total,**kwargs
     )
 
 
