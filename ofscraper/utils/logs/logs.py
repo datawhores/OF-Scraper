@@ -25,7 +25,7 @@ def printStartValues():
     )
 
     # print info
-    log.warning(f"Log Level: {settings.get_log_level()}")
+    log.info(f"Log Level: {settings.get_log_level()}")
     log.debug(args)
     log.debug(sys.argv[1:]) if len(sys.argv) > 1 else None
     log.debug(platform.platform())

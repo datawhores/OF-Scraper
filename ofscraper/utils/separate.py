@@ -16,7 +16,6 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.me as me_util
 
 
-
 def separate_by_id(data: list, media_ids: list) -> list:
     media_ids = set(media_ids)
     return list(filter(lambda x: x.id not in media_ids, data))
@@ -34,8 +33,8 @@ def seperate_avatar_helper(ele):
         return value
     return False
 
-def seperate_by_self(data):
-    my_id=me_util.get_id()
-    if constants.getattr("FILTER_SELF_MEDIA"):
-        return list(filter(lambda x: x.post.fromuser!= my_id, data))
 
+def seperate_by_self(data):
+    my_id = me_util.get_id(refresh=False)
+    if constants.getattr("FILTER_SELF_MEDIA"):
+        return list(filter(lambda x: x.post.fromuser != my_id, data))

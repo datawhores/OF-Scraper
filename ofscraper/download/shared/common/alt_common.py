@@ -13,7 +13,7 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
-
+from ofscraper.download.shared.utils.metadata import force_download
 
 
 async def handle_result_alt(
@@ -73,13 +73,14 @@ async def handle_result_alt(
     if ele.id:
         await download_media_update(
             ele,
-            filename=sharedPlaceholderObj.trunicated_filepath,
+            filepath=sharedPlaceholderObj.trunicated_filepath,
             model_id=model_id,
             username=username,
             downloaded=True,
             hashdata=await common.get_hash(
                 sharedPlaceholderObj, mediatype=ele.mediatype
             ),
+            size=sharedPlaceholderObj.size,
         )
     common.add_additional_data(sharedPlaceholderObj, ele)
     return ele.mediatype, video["total"] + audio["total"]
@@ -88,7 +89,7 @@ async def handle_result_alt(
 async def media_item_post_process_alt(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:
         if ele.mediatype != "forced_skipped":
-            await common.force_download(ele, username, model_id)
+            await force_download(ele, username, model_id)
         return ele.mediatype, 0
     for m in [audio, video]:
         m["total"] = common.get_item_total(m)

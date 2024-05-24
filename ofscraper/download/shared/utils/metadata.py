@@ -3,21 +3,24 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.db.operations as operations
 import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.utils.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.hash as hash
+from ofscraper.db.operations_.media import (
+    download_media_update,
+    prev_download_media_data,
+)
 from ofscraper.download.shared.utils.log import get_medialog
-from ofscraper.db.operations_.media import download_media_update
 
 
 async def force_download(ele, username, model_id):
     await download_media_update(
         ele,
-        filename=None,
+        filepath=None,
         model_id=model_id,
         username=username,
         downloaded=True,
@@ -33,33 +36,116 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
-        effected = await download_media_update(
+        prevData = (
+            await prev_download_media_data(ele, model_id=model_id, username=username)
+            or {}
+        )
+        await download_media_update(
             ele,
-            filename=placeholderObj.trunicated_filepath,
+            filename=metadata_file_helper(placeholderObj, prevData),
+            directory=metadata_dir_helper(placeholderObj, prevData),
             model_id=model_id,
             username=username,
-            downloaded=await metadata_downloaded_helper(placeholderObj),
-            changed=True,
+            downloaded=metadata_downloaded_helper(placeholderObj, prevData),
+            hashdata=metadata_hash_helper(placeholderObj, prevData, ele),
+            size=metadata_size_helper(placeholderObj, prevData),
         )
-
+        effected = prevData != await prev_download_media_data(
+            ele, model_id=model_id, username=username
+        )
     return (
         (ele.mediatype if effected else "forced_skipped"),
         0,
     )
 
 
-async def metadata_downloaded_helper(placeholderObj):
-    if read_args.retriveArgs().metadata == "none":
-        return None
-
+def metadata_downloaded_helper(placeholderObj, prevData):
+    if read_args.retriveArgs().metadata == "check":
+        return prevData["downloaded"] if prevData else None
     elif read_args.retriveArgs().metadata == "complete":
         return 1
+    # for update
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
+        return 1
+    elif pathlib.Path(prevData.get("filename") or "").is_file():
+        return 1
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
         return 1
     return 0
 
 
+def metadata_file_helper(placeholderObj, prevData):
+    if read_args.retriveArgs().metadata != "update":
+        return str(placeholderObj.trunicated_filename)
+    # for update
+    elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
+        return str(placeholderObj.trunicated_filename)
+    elif pathlib.Path(prevData.get("filename") or "").is_file():
+        return prevData.get("filename")
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return pathlib.Path(
+            prevData.get("directory") or "", prevData.get("filename") or ""
+        )
+    return str(placeholderObj.trunicated_filename)
+
+
+def metadata_dir_helper(placeholderObj, prevData):
+    if read_args.retriveArgs().metadata != "update":
+        return str(placeholderObj.trunicated_filedir)
+    # for update
+    elif pathlib.Path(placeholderObj.trunicated_filedir).exists():
+        return str(placeholderObj.trunicated_filedir)
+    elif pathlib.Path(prevData.get("directory") or "").is_dir():
+        return prevData.get("directory")
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return pathlib.Path(
+            prevData.get("directory") or "", prevData.get("filename") or ""
+        ).parent
+    return str(placeholderObj.trunicated_filedir)
+
+
+def metadata_hash_helper(placeholderObj, prevData, ele):
+    if not read_args.retriveArgs().get_hash:
+        return prevData.get("hash")
+    elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
+        return hash.get_hash(
+            pathlib.Path(placeholderObj.trunicated_filepath), mediatype=ele.mediatype
+        )
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return hash.get_hash(
+            pathlib.Path(
+                prevData.get("directory") or "", prevData.get("filename") or ""
+            )
+        )
+
+
+def metadata_size_helper(placeholderObj, prevData):
+    if placeholderObj.size:
+        return placeholderObj.size
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return (
+            pathlib.Path(
+                prevData.get("directory") or "", prevData.get("filename") or ""
+            )
+            .stat()
+            .st_size
+        )
+    else:
+        return prevData.get("size")
+
+
 async def metadata_helper(c, ele):
+    placeholderObj = None
     if not ele.url and not ele.mpd:
         placeholderObj = placeholder.Placeholders(
             ele, ext=media.content_type_missing(ele)
@@ -82,17 +168,6 @@ async def metadata_helper(c, ele):
         )
         async with c.requests_async(url=url, headers=None, params=params) as r:
             headers = r.headers
-            await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
-                partial(
-                    cache.set,
-                    f"{ele.id}_headers",
-                    {
-                        "content-length": headers.get("content-length"),
-                        "content-type": headers.get("content-type"),
-                    },
-                ),
-            )
             content_type = headers.get("content-type").split("/")[
                 -1
             ] or media.content_type_missing(ele)

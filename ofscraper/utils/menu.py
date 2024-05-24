@@ -1,6 +1,5 @@
 import logging
 
-import ofscraper.actions.process as process_actions
 import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
@@ -9,7 +8,7 @@ import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.run as run
+from ofscraper.commands.scraper.runner import runner
 
 log = logging.getLogger("shared")
 count = 0
@@ -39,8 +38,7 @@ def main_menu_action():
             else:
                 count > 0 and reset_menu_helper()
                 actions.set_scrape_paid()
-                functs = process_actions.add_selected_areas()
-                run.run_helper(*functs)
+                runner()
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file

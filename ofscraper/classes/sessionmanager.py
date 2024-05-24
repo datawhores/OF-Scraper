@@ -1,9 +1,9 @@
 import asyncio
-import time
 import contextlib
 import logging
 import ssl
 import threading
+import time
 import traceback
 
 import aiohttp
@@ -17,7 +17,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-
+from ofscraper.utils.context.run_async import run
 
 
 def is_rate_limited(exception):
@@ -40,44 +40,58 @@ def is_rate_limited(exception):
 
 
 class SessionSleep:
-    def __init__(self,sleep=None):
+    def __init__(self, sleep=None):
         self._sleep = sleep
+        self._init_sleep = sleep
         self._last_date = arrow.now()
-        self._alock=asyncio.Lock()
+        self._alock = asyncio.Lock()
+
+    def reset_sleep(self):
+        self._sleep = self._init_sleep
+        self._last_date = arrow.now()
+
     async def async_toomany_req(self):
         async with self._alock:
             self.toomany_req()
+
     def toomany_req(self):
-        log=logging.getLogger("shared")
-        dif_min=constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        log = logging.getLogger("shared")
+        dif_min = constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
         if self._sleep is None:
             self._sleep = constants.getattr("SESSION_SLEEP_INIT")
             log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
         elif arrow.now().float_timestamp - self._last_date.float_timestamp < dif_min:
-            log.debug(f"too many req => not changing sleep [{self._sleep} seconds] because last call less than {dif_min} seconds")
+            log.debug(
+                f"too many req => not changing sleep [{self._sleep} seconds] because last call less than {dif_min} seconds"
+            )
             return self._sleep
         else:
             self._sleep = self._sleep * 2
             log.debug(f"too many req => setting sleep to [{self._sleep} seconds]")
         self._last_date = arrow.now()
-        return self._sleep     
+        return self._sleep
+
     async def async_do_sleep(self):
         if self._sleep:
-            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            logging.getLogger("shared").debug(
+                f"too many req => waiting [{self._sleep} seconds] before next req"
+            )
             await asyncio.sleep(self._sleep)
+
     def do_sleep(self):
         if self._sleep:
-            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            logging.getLogger("shared").debug(
+                f"too many req => waiting [{self._sleep} seconds] before next req"
+            )
             time.sleep(self._sleep)
+
     @property
     def sleep(self):
         return self._sleep
+
     @sleep.setter
-    def sleep(self,val):
-        self._sleep=val
-
-
-
+    def sleep(self, val):
+        self._sleep = val
 
 
 class CustomTenacity(AsyncRetrying):
@@ -85,8 +99,7 @@ class CustomTenacity(AsyncRetrying):
     A custom context manager using tenacity for asynchronous retries with wait strategies and stopping without exceptions.
     """
 
-    def __init__(self,
-     wait_random=None, wait_exponential=None, *args, **kwargs):
+    def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, after=self._after_func, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
@@ -99,11 +112,6 @@ class CustomTenacity(AsyncRetrying):
         self.wait = self._wait_picker
 
     def _wait_picker(self, retry_state) -> None:
-        exception = retry_state.outcome.exception()
-        # if is_rate_limited(exception):
-        #     sleep = self.wait_exponential(retry_state)
-        # else:
-        #     sleep = self.wait_random(retry_state)
         sleep = self.wait_random(retry_state)
         logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
         return sleep
@@ -113,19 +121,18 @@ class CustomTenacity(AsyncRetrying):
         if (
             isinstance(exception, (aiohttp.ClientResponseError, aiohttp.ClientError))
             and (
-                getattr(exception, "status_code", None)
-                or getattr(exception, "status", None)
+                getattr(exception, "status_code", None) == 403
+                or getattr(exception, "status", None) == 403
             )
-            == 403
-        ) or (
-            isinstance(exception, httpx.HTTPStatusError)
-            and (
-                getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)
+            or (
+                isinstance(exception, httpx.HTTPStatusError)
+                and (
+                    getattr(exception.response, "status_code", None) == 403
+                    or getattr(exception.response, "status", None) == 403
+                )
             )
-            == 403
         ):
-            auth_requests.read_request_auth(forced=True)
+            auth_requests.read_request_auth()
 
 
 class sessionManager:
@@ -152,7 +159,7 @@ class sessionManager:
         semaphore=None,
         sync_sem=None,
         sync_semaphore=None,
-        new_request_auth=False,
+        refresh=True,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -187,62 +194,83 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth(forced=None) if new_request_auth else None
-        self._sleeper=SessionSleep()
+        auth_requests.read_request_auth() if refresh else None
+        self._sleeper = SessionSleep()
+        self._session = None
+
+    def _set_session(self, async_=True):
+        if self._session:
+            return
+        if async_:
+            self._async = True
+            if self._backend == "aio":
+                self._session = aiohttp.ClientSession(
+                    connector=aiohttp.TCPConnector(limit=self._connect_limit),
+                )
+
+            elif self._backend == "httpx":
+                self._session = httpx.AsyncClient(
+                    http2=True,
+                    proxies=self._proxy,
+                    limits=httpx.Limits(
+                        max_keepalive_connections=self._keep_alive,
+                        max_connections=self._connect_limit,
+                        keepalive_expiry=self._keep_alive_exp,
+                    ),
+                )
+        else:
+            self._async = False
+            if self._backend == "httpx":
+                self._session = httpx.Client(
+                    http2=True,
+                    proxies=self._proxy,
+                    limits=httpx.Limits(
+                        max_keepalive_connections=self._keep_alive,
+                        max_connections=self._connect_limit,
+                        keepalive_expiry=self._keep_alive_exp,
+                    ),
+                )
+            elif self._backend == "aio":
+                raise Exception("aiohttp is async only")
+        return self._session
+
+    # https://github.com/aio-libs/aiohttp/issues/1925
     async def __aenter__(self):
-        self._async = True
-        if self._backend == "aio":
-            self._session = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(limit=self._connect_limit),
-            )
-
-        elif self._backend == "httpx":
-            self._session = httpx.AsyncClient(
-                http2=True,
-                proxies=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-            )
-
+        self._set_session(async_=True)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
 
     def __enter__(self):
-        self._async = False
-        if self._backend == "httpx":
-            self._session = httpx.Client(
-                http2=True,
-                proxies=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-            )
-        elif self._backend == "aio":
-            raise Exception("aiohttp is async only")
+        self._set_session(async_=False)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
+        time.sleep(1)
 
-    def _create_headers(self, headers, url, sign):
+    def _create_headers(
+        self,
+        headers,
+        url,
+        sign,
+        forced,
+    ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url) if sign is None else headers
+        headers = self._create_sign(headers, url, forced) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url):
-        auth_requests.create_sign(url, headers)
+    def _create_sign(self, headers, url, refresh):
+        auth_requests.create_sign(url, headers, refresh=refresh)
         return headers
 
     def _create_cookies(self):
         return auth_requests.add_cookies()
+
+    def reset_sleep(self):
+        self._sleeper.reset_sleep()
 
     @contextlib.contextmanager
     def requests(
@@ -265,12 +293,9 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sync_sem=None,
-        sleeper=None
+        sleeper=None,
+        forced=False,
     ):
-        auth_requests.read_request_auth(forced=True) if sign else None
-
-        headers = self._create_headers(headers, url, sign) if headers is None else None
-        cookies = self._create_cookies() if cookies is None else None
         json = json or None
         params = params or None
         r = None
@@ -279,7 +304,7 @@ class sessionManager:
         max = wait_max or self._wait_max
         retries = retries or self._retries
         sync_sem = self._sync_sem or sync_sem
-        sleeper=sleeper or self._sleeper
+        sleeper = sleeper or self._sleeper
         for _ in Retrying(
             retry=retry_if_not_exception_type(
                 (KeyboardInterrupt, asyncio.TimeoutError)
@@ -297,6 +322,13 @@ class sessionManager:
             with _:
                 sync_sem.acquire()
                 sleeper.do_sleep()
+                # remake each time
+                headers = (
+                    self._create_headers(headers, url, sign, forced)
+                    if headers is None
+                    else None
+                )
+                cookies = self._create_cookies() if cookies is None else None
                 try:
                     r = self._httpx_funct(
                         method,
@@ -323,10 +355,11 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if(is_rate_limited(E)):
+                    if is_rate_limited(E):
                         sleeper.toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
+                    sync_sem.release()
                     raise E
         yield r
         sync_sem.release()
@@ -355,6 +388,7 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
+        forced=False,
         *args,
         **kwargs,
     ):
@@ -365,7 +399,7 @@ class sessionManager:
         log = log or self._log
         retries = retries or self._retries
         sem = sem or self._sem
-        sleeper=sleeper or self._sleeper
+        sleeper = sleeper or self._sleeper
         async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
@@ -388,7 +422,7 @@ class sessionManager:
                 await sleeper.async_do_sleep()
                 try:
                     headers = (
-                        self._create_headers(headers, url, sign)
+                        self._create_headers(headers, url, sign, forced)
                         if headers is None
                         else headers
                     )
@@ -441,7 +475,7 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if(is_rate_limited(E)):
+                    if is_rate_limited(E):
                         await sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
@@ -453,9 +487,10 @@ class sessionManager:
     @property
     def sleep(self):
         return self._sleeper._sleep
+
     @sleep.setter
-    def sleep(self,val):
-        self._sleeper._sleep=val
+    def sleep(self, val):
+        self._sleeper._sleep = val
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
@@ -464,6 +499,7 @@ class sessionManager:
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
+        t.iter_chunks = t.aiter_bytes
         t.read_ = t.aread
         return t
 
@@ -474,6 +510,8 @@ class sessionManager:
         t.text_ = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
+        t.iter_chunks = t.iter_bytes
+
         t.read_ = t.read
         return t
 
@@ -483,6 +521,8 @@ class sessionManager:
         r.text_ = r.text
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
+        r.iter_chunks = r.content.iter_chunks
+
         r.status_code = r.status
         r.read_ = r.content.read
         return r

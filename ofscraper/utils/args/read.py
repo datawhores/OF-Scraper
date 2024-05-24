@@ -1,5 +1,5 @@
-import sys
 import logging
+import sys
 
 import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.args.parse as parse_args

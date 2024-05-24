@@ -17,12 +17,11 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 
 import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -31,32 +30,23 @@ console = Console()
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
 
-        with Progress(
-            SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-        ) as job_progress:
-            task1 = job_progress.add_task(
-                f"Getting your {account} subscriptions (this may take awhile)..."
-            )
-            async with sessionManager.sessionManager(
-                sem=constants.getattr("SUBSCRIPTION_SEMS"),
-                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                new_request_auth=True,
-            ) as c:
-                if account == "active":
-                    out = await activeHelper(subscribe_count, c)
-                else:
-                    out = await expiredHelper(subscribe_count, c)
-                job_progress.remove_task(task1)
-
-        log.debug(f"Total {account} subscriptions found {len(out)}")
-        return out
+    task1 = progress_utils.add_userlist_task(
+        f"Getting your {account} subscriptions (this may take awhile)..."
+    )
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        if account == "active":
+            out = await activeHelper(subscribe_count, c)
+        else:
+            out = await expiredHelper(subscribe_count, c)
+    progress_utils.remove_userlist_task(task1)
+    log.debug(f"Total {account} subscriptions found {len(out)}")
+    return out
 
 
 async def activeHelper(subscribe_count, c):
@@ -162,70 +152,72 @@ async def process_task(tasks):
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    new_tasks = []
-    url = constants.getattr("subscriptionsActiveEP").format(offset)
-    try:
-        log.debug(f"usernames active offset {offset}")
-        async with c.requests_async(url=url) as r:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-            if len(subscriptions) == 0:
-                return subscriptions, new_tasks
-            elif recur is False:
-                pass
-            elif (await r.json_())["hasMore"] is True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_active(
-                            c,
-                            recur=True,
-                            offset=offset + len(subscriptions),
+    with progress_utils.setup_subscription_progress_live():
+        new_tasks = []
+        url = constants.getattr("subscriptionsActiveEP").format(offset)
+        try:
+            log.debug(f"usernames active offset {offset}")
+            async with c.requests_async(url=url) as r:
+                subscriptions = (await r.json_())["list"]
+                log.debug(
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+                )
+                if len(subscriptions) == 0:
+                    return subscriptions, new_tasks
+                elif recur is False:
+                    pass
+                elif (await r.json_())["hasMore"] is True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_active(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
+                            )
                         )
                     )
-                )
-            return subscriptions, new_tasks
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                return subscriptions, new_tasks
+        except asyncio.TimeoutError:
+            raise Exception(f"Task timed out {url}")
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            raise E
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    new_tasks = []
-    url = constants.getattr("subscriptionsExpiredEP").format(offset)
-    try:
-        log.debug(f"usernames offset expired {offset}")
-        async with c.requests_async(url=url) as r:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-
-            if len(subscriptions) == 0:
-                return subscriptions, new_tasks
-            elif recur is False:
-                pass
-            elif (await r.json_())["hasMore"] is True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_disabled(
-                            c,
-                            recur=True,
-                            offset=offset + len(subscriptions),
-                        )
-                    )
+    with progress_utils.setup_subscription_progress_live():
+        new_tasks = []
+        url = constants.getattr("subscriptionsExpiredEP").format(offset)
+        try:
+            log.debug(f"usernames offset expired {offset}")
+            async with c.requests_async(url=url) as r:
+                subscriptions = (await r.json_())["list"]
+                log.debug(
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
 
-            return subscriptions, new_tasks
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                if len(subscriptions) == 0:
+                    return subscriptions, new_tasks
+                elif recur is False:
+                    pass
+                elif (await r.json_())["hasMore"] is True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_disabled(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
+                            )
+                        )
+                    )
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+                return subscriptions, new_tasks
+        except asyncio.TimeoutError:
+            raise Exception(f"Task timed out {url}")
+
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            raise E

@@ -1,6 +1,8 @@
 import io
 import logging
+import queue
 import threading
+import traceback
 from collections import abc
 
 import aioprocessing
@@ -30,51 +32,58 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
-        # consume a log message, block until one arrives
-        if event and event.is_set():
-            return True
         try:
-            messages = funct()
-        except:
-            continue
-        if not isinstance(messages, list):
-            messages = [messages]
-        for message in messages:
-            # set close value
+            # consume a log message, block until one arrives
             if event and event.is_set():
+                return True
+
+            messages = funct()
+            if not isinstance(messages, list):
+                messages = [messages]
+            for message in messages:
+                # set close value
+                if event and event.is_set():
+                    break
+                elif message == "None":
+                    count = count + 1
+                    continue
+                elif isinstance(message, str):
+                    list(
+                        filter(
+                            lambda x: isinstance(x, log_class.DiscordHandler),
+                            log.handlers,
+                        )
+                    )[0].handle(message)
+                elif isinstance(message, io.TextIOBase):
+                    [
+                        ele.setStream(message)
+                        for ele in filter(
+                            lambda x: isinstance(x, logging.StreamHandler),
+                            log.handlers,
+                        )
+                    ]
+                    continue
+                elif message.message == "None":
+                    count = count + 1
+                    continue
+                elif message.message != "None":
+                    # log the message
+                    log.handle(message)
+            if count == stop_count:
                 break
-            elif message == "None":
-                count = count + 1
-                continue
-            elif isinstance(message, str):
-                list(
-                    filter(
-                        lambda x: isinstance(x, log_class.DiscordHandler),
-                        log.handlers,
-                    )
-                )[0].handle(message)
-            elif isinstance(message, io.TextIOBase):
-                [
-                    ele.setStream(message)
-                    for ele in filter(
-                        lambda x: isinstance(x, logging.StreamHandler),
-                        log.handlers,
-                    )
-                ]
-                continue
-            elif message.message == "None":
-                count = count + 1
-                continue
-            elif message.message != "None":
-                # log the message
-                log.handle(message)
-        if count == stop_count:
-            break
+        except queue.Empty as e:
+            continue
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            continue
     while True:
         try:
             end_funct()
         except:
             break
+    for handler in log.handlers:
+        handler.close()
     log.handlers.clear()
 
 

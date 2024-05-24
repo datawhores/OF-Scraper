@@ -7,8 +7,8 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.utils.log as common_logs
 import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates
-from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.system.system as system
+from ofscraper.db.operations_.media import download_media_update
 
 
 async def handle_result_main(result, ele, username, model_id):
@@ -40,11 +40,12 @@ async def handle_result_main(result, ele, username, model_id):
     if ele.id:
         await download_media_update(
             ele,
-            filename=path_to_file,
+            filepath=path_to_file,
             model_id=model_id,
             username=username,
             downloaded=True,
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+            size=placeholderObj.size,
         )
     await common.set_profile_cache_helper(ele)
     common.add_additional_data(placeholderObj, ele)

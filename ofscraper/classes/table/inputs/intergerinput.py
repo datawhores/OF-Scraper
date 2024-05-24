@@ -1,4 +1,5 @@
 from ofscraper.classes.table.inputs.filterinput import FilterInput
 
-class IntegerInput( FilterInput ):
+
+class IntegerInput(FilterInput):
     CAST = int

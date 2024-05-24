@@ -8,7 +8,7 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+                                         
 """
 
 import logging
@@ -22,9 +22,13 @@ import ofscraper.utils.console as console_
 
 console = console_.get_shared_console()
 log = logging.getLogger("shared")
+config = None
 
 
 def read_config(update=True):
+    global config
+    if config:
+        return config
     while True:
         with config_context.config_context():
             config = config_file.open_config()
@@ -36,6 +40,7 @@ def read_config(update=True):
 
 
 def update_config(field: str, value):
+    global config
     config = config_file.open_config()
     if config.get("config"):
         config = config["config"]
@@ -46,9 +51,10 @@ def update_config(field: str, value):
     return new_config
 
 
-def update_config_full(config, updated_config):
+def update_config_full(config_, updated_config):
+    global config
     if config.get("config"):
-        config = config["config"]
+        config = config_["config"]
     if updated_config.get("config"):
         updated_config = updated_config["config"]
     config.update(updated_config)
@@ -58,6 +64,7 @@ def update_config_full(config, updated_config):
 
 
 def update_mp4decrypt():
+    global config
     config = {"config": read_config()}
     if prompts.auto_download_mp4_decrypt() == "Yes":
         config["config"]["mp4decrypt"] = binaries.mp4decrypt_download()
@@ -67,6 +74,7 @@ def update_mp4decrypt():
 
 
 def update_ffmpeg():
+    global config
     config = {"config": read_config()}
     if prompts.auto_download_ffmpeg() == "Yes":
         config["config"]["ffmpeg"] = binaries.ffmpeg_download()

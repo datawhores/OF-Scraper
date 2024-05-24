@@ -16,6 +16,7 @@ import pathlib
 import re
 from functools import partial
 
+import psutil
 from humanfriendly import format_size
 
 import ofscraper.download.shared.globals as common_globals
@@ -49,6 +50,8 @@ def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
 
 async def size_checker(path, ele, total, name=None):
     name = name or ele.filename
+    if total == 0:
+        return True
     if not pathlib.Path(path).exists():
         s = f"{get_medialog(ele)} {path} was not created"
         raise Exception(s)
@@ -68,8 +71,10 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
 
 
-async def check_forced_skip(ele, *args):
-    total = sum(map(lambda x: int(x), args))
+async def check_forced_skip(ele, total):
+    if total == None:
+        return
+    total = int(total)
     if total == 0:
         return 0
     file_size_limit = settings.get_size_limit(mediatype=ele.mediatype)
@@ -145,22 +150,22 @@ def get_unknown_content_type(ele):
     )
 
 
-async def batch_total_change_helper(total, new_total):
-    if not new_total and not new_total:
+async def batch_total_change_helper(past_total, new_total):
+    if not new_total and not past_total:
         return
-    elif not total:
+    elif not past_total:
         await send_msg((None, 0, new_total))
-    elif total and new_total - total != 0:
-        await send_msg((None, 0, new_total - total))
+    elif past_total and new_total - past_total != 0:
+        await send_msg((None, 0, new_total - past_total))
 
 
-async def total_change_helper(total, new_total):
-    if not new_total and not new_total:
+async def total_change_helper(past_total, new_total):
+    if not new_total and not past_total:
         return
-    elif not total:
+    elif not past_total:
         await update_total(new_total)
-    elif total and new_total - total != 0:
-        await update_total(new_total - total)
+    elif past_total and new_total - past_total != 0:
+        await update_total(new_total - past_total)
 
 
 def is_bad_url(url):
@@ -171,3 +176,49 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
+
+
+def get_ideal_chunk_size(total_size, curr_file):
+    """
+    Suggests a chunk size based on file size and a calculated available memory buffer.
+
+    Args:
+        file_size (int): Size of the file being downloaded in bytes.
+
+    Returns:
+        int: Suggested chunk size in bytes.
+    """
+    curr_file_size = (
+        pathlib.Path(curr_file).absolute().stat().st_size
+        if pathlib.Path(curr_file).exists()
+        else 0
+    )
+    file_size = total_size - curr_file_size
+
+    # Estimate available memory (considering a buffer for system operations)
+    available_memory = (
+        psutil.virtual_memory().available - 1024 * 1024 * 512
+    )  # Reserve 512MB buffer
+
+    # Target a chunk size that utilizes a reasonable portion of available memory
+    max_chunk_size = min(
+        available_memory // 512, constants.getattr("MAX_CHUNK_SIZE")
+    )  # Max 10MB
+    # Adjust chunk size based on file size (consider smaller sizes for larger files, with minimum)
+    ideal_chunk_size = min(max_chunk_size, file_size // 512)
+    ideal_chunk_size = max(
+        ideal_chunk_size - (ideal_chunk_size % 4096),
+        constants.getattr("MIN_CHUNK_SIZE"),
+    )  # Minimum 4KB chunk
+    return ideal_chunk_size
+
+
+def get_update_count(total_size, curr_file, chunk_size):
+    curr_file_size = (
+        pathlib.Path(curr_file).absolute().stat().st_size
+        if pathlib.Path(curr_file).exists()
+        else 0
+    )
+    file_size = total_size - curr_file_size
+
+    return max((file_size // chunk_size) // constants.getattr("CHUNK_UPDATE_COUNT"), 1)

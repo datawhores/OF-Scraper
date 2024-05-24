@@ -11,15 +11,15 @@ from ofscraper.utils.context.run_async import run
 @run
 async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")
-    if objectdicts is None:
+    if not bool(objectdicts):
         return
     try:
-        objectdicts = (
-            [objectdicts] if not isinstance(objectdicts, list) else objectdicts
-        )
         if "Text" not in settings.get_mediatypes():
             log.info("Skipping Downloading of Text Files")
             return
+        objectdicts = (
+            [objectdicts] if not isinstance(objectdicts, list) else objectdicts
+        )
         log.info("Downloading Text Files")
         data = (
             {
