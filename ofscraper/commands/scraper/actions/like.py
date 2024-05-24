@@ -178,7 +178,12 @@ def _toggle_unlike_requests(c, id, model_id):
 
 
 def _like_request(c, id, model_id):
+    sleeper=sessionManager.SessionSleep(
+        sleep=constants.getattr("SESSION_429_STARTER_VAL=0"),
+        difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF")
+        )
     with c.requests(
-        constants.getattr("favoriteEP").format(id, model_id), method="post",sleeper=sessionManager(sleep_duration=None)
+        constants.getattr("favoriteEP").format(id, model_id),
+        method="post",sleeper=sleeper
     ) as r:
         return r.json_()["isFavorite"], r.json_()["id"]
