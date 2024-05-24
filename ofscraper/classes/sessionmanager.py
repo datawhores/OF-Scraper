@@ -41,10 +41,10 @@ def is_rate_limited(exception):
 
 class SessionSleep:
     def __init__(self, sleep=None,difmin=None):
-        self._sleep = sleep
-        self._init_sleep = sleep
+        self._sleep = None
+        self._init_sleep = sleep 
         self._last_date = arrow.now()
-        self._difmin=difmin or constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        self._difmin=difmin if difmin!=None else constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
         self._alock = asyncio.Lock()
     
 
@@ -58,8 +58,8 @@ class SessionSleep:
 
     def toomany_req(self):
         log = logging.getLogger("shared")
-        if self._sleep is None:
-            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
+        if not self._sleep:
+            self._sleep = self._init_sleep if self._init_sleep else constants.getattr("SESSION_SLEEP_INIT")
             log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
         elif arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin:
             log.debug(
@@ -358,6 +358,8 @@ class sessionManager:
                 except Exception as E:
                     if is_rate_limited(E):
                         sleeper.toomany_req()
+            
+
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     sync_sem.release()

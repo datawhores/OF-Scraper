@@ -138,24 +138,34 @@ def _like(model_id, ids: list, like_action: bool):
 
 
 def _toggle_like_requests(c, id, model_id):
+
+
+    sleeper=sessionManager.SessionSleep(
+        sleep=constants.getattr("SESSION_429_SLEEP_STARTER_VAL"),
+        difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
+    )
     if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}", None):
         log.debug(f"ID: {id} marked as liked in cache")
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
-    favorited, id = _like_request(c, id, model_id)
+    favorited, id = _like_request(c, id, model_id,sleeper)
     if favorited:
         log.debug(f"ID: {id} changed to liked")
         out = 1
     else:
         log.debug(f"ID: {id} restored to liked")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id)
+        _like_request(c, id, model_id,sleeper)
         out = 2
     cache.set(f"liked_status_{id}", True)
     return out
 
 
 def _toggle_unlike_requests(c, id, model_id):
+    sleeper=sessionManager.SessionSleep(
+        sleep=constants.getattr("SESSION_429_SLEEP_STARTER_VAL"),
+        difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF")
+    )
     if (
         not read_args.retriveArgs().force_like
         and cache.get(f"liked_status_{id}", None) == False
@@ -164,26 +174,24 @@ def _toggle_unlike_requests(c, id, model_id):
 
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
-    favorited, id = _like_request(c, id, model_id)
+    favorited, id = _like_request(c, id, model_id,sleeper)
     if not favorited:
         log.debug(f"ID: {id} changed to unliked")
         out = 1
     else:
         log.debug(f"ID: {id} restored to unlike")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id)
+        _like_request(c, id, model_id,sleeper)
         out = 2
     cache.set(f"liked_status_{id}", False)
     return out
 
 
-def _like_request(c, id, model_id):
-    sleeper=sessionManager.SessionSleep(
-        sleep=constants.getattr("SESSION_429_STARTER_VAL=0"),
-        difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF")
-        )
+def _like_request(c, id, model_id,sleeper):
+   
     with c.requests(
         constants.getattr("favoriteEP").format(id, model_id),
-        method="post",sleeper=sleeper
+        method="post",sleeper=sleeper,
+        retries=constants.getattr("LIKE_MAX_RETRIES")
     ) as r:
         return r.json_()["isFavorite"], r.json_()["id"]
