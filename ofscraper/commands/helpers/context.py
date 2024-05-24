@@ -5,7 +5,7 @@ import contextlib
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.helpers.strings import avatar_str,area_str,progress_str,data_str
-import ofscraper.utils.args.areas as areas
+import ofscraper.utils.args.helpers.areas as areas
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 

@@ -2,9 +2,10 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.type as type
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
 from ofscraper.utils.args.bundles.common import common_args
+from ofscraper.utils.args.helpers.check import check_mode_changes
 
 
 def post_check_args(func):
@@ -24,7 +25,7 @@ def post_check_args(func):
             help="Scan posts via space or comma seperated list of urls",
             default=None,
             multiple=True,
-            type=helpers.check_strhelper,
+            type=type.check_strhelper,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []
             ),
@@ -34,7 +35,7 @@ def post_check_args(func):
             "--file",
             help="Scan posts via a file with line-separated URL(s)",
             default=None,
-            type=helpers.check_filehelper,
+            type=type.check_filehelper,
             multiple=True,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []
@@ -57,11 +58,12 @@ def post_check_args(func):
             ["Timeline", "Pinned", "Archived", "Labels"], case_sensitive=False
         ),
         callback=lambda ctx, param, value: (
-            list(set(helpers.post_check_area(value))) if value else None
+            list(set(type.post_check_area(value))) if value else None
         ),
         multiple=True,
     )
     @advanced_args
+    @check_mode_changes
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)

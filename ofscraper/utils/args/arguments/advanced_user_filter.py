@@ -1,6 +1,6 @@
 import cloup as click
 
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.type as type
 
 promo_price_min_option = click.option(
     "-ppn",
@@ -80,7 +80,7 @@ last_seen_before_option = click.option(
     help="Filter accounts by last seen being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 last_seen_after_option = click.option(
@@ -89,7 +89,7 @@ last_seen_after_option = click.option(
     help="Filter accounts by last seen being at or after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 expired_after_option = click.option(
@@ -98,7 +98,7 @@ expired_after_option = click.option(
     help="Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 expired_before_option = click.option(
@@ -107,7 +107,7 @@ expired_before_option = click.option(
     help="Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 subscribed_after_option = click.option(
@@ -116,7 +116,7 @@ subscribed_after_option = click.option(
     help="Filter accounts by subscription date being after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 subscribed_before_option = click.option(
@@ -125,7 +125,7 @@ subscribed_before_option = click.option(
     help="Filter accounts by sub date being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    callback=lambda ctx, param, value: (helpers.arrow_helper(value) if value else None),
+    callback=lambda ctx, param, value: (type.arrow_helper(value) if value else None),
 )
 
 # Create the option group

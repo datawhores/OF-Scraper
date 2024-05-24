@@ -6,7 +6,7 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.type as type
 
 quality_option = click.option(
     "-q",
@@ -20,7 +20,7 @@ media_type_option = click.option(
     help="Filter by media type (Videos, Audios, Images)",
     default=[],
     required=False,
-    type=helpers.mediatype_helper,
+    type=type.mediatype_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),

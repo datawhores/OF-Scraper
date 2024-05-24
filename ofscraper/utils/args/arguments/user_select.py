@@ -3,7 +3,7 @@ import re
 
 import cloup as click
 
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.type as type
 
 usernames_option = click.option(
     "-u",
@@ -12,7 +12,7 @@ usernames_option = click.option(
     # "username",  # Comment out if not needed
     help="Select which username to process (name,name2). Set to ALL for all users",
     default=None,
-    type=helpers.username_helper,  # Assuming you'll still use this helper function
+    type=type.username_helper,  # Assuming you'll still use this helper function
     multiple=True,  # Use `multiple=True` for accepting multiple values
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
@@ -23,7 +23,7 @@ excluded_username_option = click.option(
     "-eu",
     "--excluded-username",
     help="Select which usernames to exclude (name,name2). Has preference over --username",
-    type=helpers.username_helper,
+    type=type.username_helper,
     default=None,
     multiple=True,
     callback=lambda ctx, param, value: (

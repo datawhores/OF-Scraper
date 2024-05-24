@@ -2,7 +2,7 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.type as type
 
 daemon_option = click.option(
     "-d",
@@ -19,7 +19,7 @@ action_option = click.option(
     Accepts space or comma-separated list. Like and unlike cannot be combined.
     """,
     multiple=True,
-    type=helpers.action_helper,  # Assuming helpers.action_helper is defined elsewhere
+    type=type.action_helper,  # Assuming helpers.action_helper is defined elsewhere
     default=None,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []

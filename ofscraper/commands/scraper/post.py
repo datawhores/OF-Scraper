@@ -30,7 +30,7 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-from ofscraper.utils.args.areas import get_download_area,get_like_area,get_final_posts_area
+from ofscraper.utils.args.helpers.areas import get_download_area,get_like_area,get_final_posts_area
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

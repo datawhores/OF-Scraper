@@ -2,8 +2,8 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.date as date_helper
-import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.helpers.date as date_helper
+import ofscraper.utils.args.helpers.type as type
 
 # Define individual options
 posts_option = click.option(
@@ -17,7 +17,7 @@ posts_option = click.option(
     """,
     default=[],
     required=False,
-    type=helpers.posttype_helper,
+    type=type.posttype_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
@@ -35,7 +35,7 @@ download_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=helpers.download_helper,
+    type=type.download_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
@@ -52,7 +52,7 @@ like_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=helpers.like_helper,
+    type=type.like_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
@@ -151,7 +151,7 @@ label_option = click.option(
     help="Filter by label (use helpers.label_helper to process)",
     default=[],
     required=False,
-    type=helpers.label_helper,
+    type=type.label_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
@@ -161,7 +161,7 @@ before_option = click.option(
     "-be",
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=helpers.arrow_helper,
+    type=type.arrow_helper,
     callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
 )
 
@@ -169,7 +169,7 @@ after_option = click.option(
     "-af",
     "--after",
     help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=helpers.arrow_helper,
+    type=type.arrow_helper,
 )
 
 mass_msg_option = click.option(
