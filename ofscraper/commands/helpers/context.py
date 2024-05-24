@@ -30,11 +30,15 @@ def get_user_action_execution_function(func):
     return wrapper
 
 def get_userfirst_data_function(funct):
-    async def wrapper(*args,**kwargs):
+    async def wrapper(userdata,session,*args,**kwargs):
         progress_utils.update_activity_task(description="Getting all user data first")
         progress_utils.update_user_activity(description="Users with Data Retrieved")
         progress_utils.update_activity_count(description="Overall progress",total=2)
-        data=await funct(*args, **kwargs)
+        data={}
+        async with session:
+            for ele in userdata:
+                with user_first_data_inner_context(session,ele):
+                    data.update(await funct(session,ele))
         return data
     return wrapper
 

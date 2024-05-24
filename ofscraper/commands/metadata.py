@@ -48,7 +48,7 @@ from ofscraper.commands.helpers.strings import avatar_str,area_str
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.strings import metadata_str
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
+from ofscraper.commands.helpers.context import get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function,user_first_data_inner_context
 from ofscraper.commands.helpers.shared import run_action_bool
 
 
@@ -186,37 +186,45 @@ async def execute_metadata_action_user_first(data):
 
 
 @run
-async def metadata_data_user_first(userdata,session):
+async def metadata_data_user_first(session,ele):
+    try:
+        return await process_ele_user_first_data_retriver(ele=ele,session=session)
+    except Exception as e:
+        if isinstance(e, KeyboardInterrupt):
+            raise e
+        log.traceback_(f"failed with exception: {e}")
+        log.traceback_(traceback.format_exc())
+
+
+
+async def process_ele_user_first_data_retriver(ele=None,session=None):
     data={}
-    async with session:
-        length=len(userdata)
-        for ele in userdata:
-            progress_utils.switch_api_progress()
-            model_id = ele.id
-            username = ele.name
-            avatar = ele.avatar
-            active=ele.active
-            metadata_action = read_args.retriveArgs().metadata
-            mark_stray = read_args.retriveArgs().mark_stray
-            log.warning(
-            f"""
-            Perform Meta {metadata_action} with 
-            Mark Stray: {mark_stray}
-            for [bold]{username}[/bold]\n[bold]
-            Subscription Active:[/bold] {active}
-            """
-            )
-            try:
-                model_id = ele.id
-                username = ele.name
-                await operations.table_init_create(model_id=model_id, username=username)
-                media, _ ,_= await process_areas_helper(ele, model_id,c=session)
-                data.update( {model_id: {"username": username, "media": media, "avatar": avatar,"ele":ele}})
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+    progress_utils.switch_api_progress()
+    model_id = ele.id
+    username = ele.name
+    avatar = ele.avatar
+    active=ele.active
+    metadata_action = read_args.retriveArgs().metadata
+    mark_stray = read_args.retriveArgs().mark_stray
+    log.warning(
+    f"""
+    Perform Meta {metadata_action} with
+    Mark Stray: {mark_stray}
+    for [bold]{username}[/bold]\n[bold]
+    Subscription Active:[/bold] {active}
+    """
+    )
+    try:
+        model_id = ele.id
+        username = ele.name
+        await operations.table_init_create(model_id=model_id, username=username)
+        media, _ ,_= await process_areas_helper(ele, model_id,c=session)
+        return {model_id: {"username": username, "media": media, "avatar": avatar,"ele":ele}}
+    except Exception as e:
+        if isinstance(e, KeyboardInterrupt):
+            raise e
+        log.traceback_(f"failed with exception: {e}")
+        log.traceback_(traceback.format_exc())
     return data
 
 
