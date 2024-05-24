@@ -32,7 +32,7 @@ def manual_download(urls=None):
         allow_manual_dupes()
         url_dicts = process_urls(urls)
         with progress_utils.setup_activity_live():
-            progress_utils.update_activity_task("Getting data from retrived posts")
+            progress_utils.update_activity_task(description="Getting data from retrived posts")
             all_media = [
                 item
                 for media_list in url_dicts.values()
@@ -56,7 +56,7 @@ def manual_download(urls=None):
                 model_id = value.get("model_id")
                 username = value.get("username")
                 log.info(download_manual_str.format(username=username))
-                progress_utils.update_activity_task(download_manual_str.format(username=username))
+                progress_utils.update_activity_task(description=download_manual_str.format(username=username))
                 operations.table_init_create(model_id=model_id, username=username)
                 operations.make_changes_to_content_tables(
                     value.get("post_list", []), model_id=model_id, username=username
