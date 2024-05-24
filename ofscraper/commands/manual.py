@@ -31,7 +31,7 @@ def manual_download(urls=None):
         network.check_cdm()
         allow_manual_dupes()
         url_dicts = process_urls(urls)
-        with progress_utils.setup_init_live():
+        with progress_utils.setup_activity_live():
             progress_utils.update_activity_task("Getting data from retrived posts")
             all_media = [
                 item
@@ -50,7 +50,7 @@ def manual_download(urls=None):
             set_user_data(url_dicts)
 
         for _, value in url_dicts.items():
-            with progress_utils.setup_init_live():
+            with progress_utils.setup_activity_live():
                 model_id = value.get("model_id")
                 username = value.get("username")
                 model_id = value.get("model_id")

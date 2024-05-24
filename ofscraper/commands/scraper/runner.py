@@ -29,7 +29,7 @@ log = logging.getLogger("shared")
 def runner():
     check_auth()
     with scrape_context_manager():
-        with progress_utils.setup_init_live(stop=True):
+        with progress_utils.setup_activity_live(stop=True):
             if read_args.retriveArgs().scrape_paid:
                 progress_utils.update_activity_task(description="Scraping Entire Paid page")
                 download_action.scrape_paid_all()

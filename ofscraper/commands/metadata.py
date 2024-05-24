@@ -54,7 +54,7 @@ from ofscraper.commands.helpers.shared import run_action_bool
 log = logging.getLogger("shared")
 
 def metadata():
-        with progress_utils.setup_init_live(stop=True):
+        with progress_utils.setup_activity_live(stop=True):
             if read_args.retriveArgs().scrape_paid:
                 progress_utils.update_activity_task(description="Updating Metadata for  Entire Paid page")
                 metadata_paid_all()
@@ -235,7 +235,7 @@ def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()
     with scrape_context_manager():
-         with progress_utils.setup_init_live(stop=True):
+         with progress_utils.setup_activity_live(stop=True):
             if read_args.retriveArgs().metadata:
                 metadata()
             
