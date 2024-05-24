@@ -29,6 +29,7 @@ import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.alt_common import (
@@ -50,8 +51,6 @@ from ofscraper.download.shared.utils.log import (
     path_to_file_logger,
     temp_file_logger,
 )
-import ofscraper.utils.live.screens as progress_utils
-
 
 
 async def alt_download(c, ele, username, model_id):
@@ -108,16 +107,12 @@ async def alt_download_downloader(item, c, ele):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    return await resume_data_handler(
-                        data, item, c, ele, placeholderObj
-                    )
+                    return await resume_data_handler(data, item, c, ele, placeholderObj)
 
                 else:
-                    return await fresh_data_handler(
-                        item, c, ele, placeholderObj
-                    )
+                    return await fresh_data_handler(item, c, ele, placeholderObj)
             except OSError as E:
-                #await asyncio.sleep(1)
+                # await asyncio.sleep(1)
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
                 )
@@ -126,7 +121,7 @@ async def alt_download_downloader(item, c, ele):
                 )
                 raise E
             except Exception as E:
-                #await asyncio.sleep(1)
+                # await asyncio.sleep(1)
                 common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
                 )
@@ -137,15 +132,21 @@ async def alt_download_downloader(item, c, ele):
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
-    item["total"] = int(data.get("content-total")) if data.get("content-total") else None
+    item["total"] = (
+        int(data.get("content-total")) if data.get("content-total") else None
+    )
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    if await check_forced_skip(ele, item["total"])==0:
+    if await check_forced_skip(ele, item["total"]) == 0:
         item["total"] = 0
         return item
     elif item["total"] == resume_size:
         temp_file_logger(placeholderObj, ele)
-        total=item["total"]
-        await common.total_change_helper(None, total) if common.alt_attempt_get(item).get() == 1 else None
+        total = item["total"]
+        (
+            await common.total_change_helper(None, total)
+            if common.alt_attempt_get(item).get() == 1
+            else None
+        )
         return item
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -181,11 +182,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 async def send_req_inner(c, ele, item, placeholderObj):
     try:
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = (
-            None
-            if not resume_size
-            else {"Range": f"bytes={resume_size}-"}
-        )
+        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         params = {
             "Policy": ele.policy,
             "Key-Pair-Id": ele.keypair,
@@ -200,8 +197,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=True
         ) as l:
-            item["total"]=item["total"] or  int(l.headers.get("content-length"))
-            total=item["total"]
+            item["total"] = item["total"] or int(l.headers.get("content-length"))
+            total = item["total"]
             await common.total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
@@ -215,24 +212,21 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 ),
             )
             temp_file_logger(placeholderObj, ele)
-            if await check_forced_skip(ele, total)==0:
+            if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
-                total=item["total"]
-                await common.total_change_helper(total,0)
+                total = item["total"]
+                await common.total_change_helper(total, 0)
             elif total != resume_size:
-                await download_fileobject_writer(
-                    total, l, ele, placeholderObj
-                )
+                await download_fileobject_writer(total, l, ele, placeholderObj)
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.total_change_helper(total,0)
+        await common.total_change_helper(total, 0)
         raise E
 
 
 async def download_fileobject_writer(total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
-
 
     task1 = progress_utils.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
@@ -241,9 +235,9 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
 
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-    chunk_size = get_ideal_chunk_size(total,placeholderObj.tempfilepath)
-    update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
-    count=1
+    chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
+    update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
+    count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):
             common_globals.log.trace(
@@ -254,7 +248,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                 await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(
-                         progress_utils.update_download_job_task,
+                        progress_utils.update_download_job_task,
                         task1,
                         completed=pathlib.Path(placeholderObj.tempfilepath)
                         .absolute()
@@ -262,7 +256,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                         .st_size,
                     ),
                 )
-            count+=1
+            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E

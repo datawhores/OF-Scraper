@@ -28,6 +28,7 @@ import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.general import (
@@ -44,7 +45,6 @@ from ofscraper.download.shared.common.general import (
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
-import ofscraper.utils.live.screens as progress_utils
 
 
 async def main_download(c, ele, username, model_id):
@@ -85,13 +85,11 @@ async def main_download_downloader(c, ele):
                     else None
                 )
                 if data:
-                    return await resume_data_handler(
-                        data, c, tempholderObj, ele
-                    )
+                    return await resume_data_handler(data, c, tempholderObj, ele)
                 else:
                     return await fresh_data_handler(c, tempholderObj, ele)
             except OSError as E:
-                #await asyncio.sleep(1)
+                # await asyncio.sleep(1)
                 common_globals.log.debug(
                     f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
                 )
@@ -100,7 +98,7 @@ async def main_download_downloader(c, ele):
                 )
                 raise E
             except Exception as E:
-                #await asyncio.sleep(1)
+                # await asyncio.sleep(1)
                 common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
                 )
@@ -131,7 +129,11 @@ async def resume_data_handler(data, c, tempholderObj, ele):
         path_to_file_logger(placeholderObj, ele)
         return [0]
     elif total == resume_size:
-        await common.total_change_helper(None, total) if common_globals.attempt.get() == 1 else None
+        (
+            await common.total_change_helper(None, total)
+            if common_globals.attempt.get() == 1
+            else None
+        )
         path_to_file_logger(placeholderObj, ele)
         return (
             total,
@@ -152,9 +154,7 @@ async def resume_data_handler(data, c, tempholderObj, ele):
             raise E
 
 
-async def main_download_sendreq(
-    c, ele, tempholderObj, total=None, placeholderObj=None
-):
+async def main_download_sendreq(c, ele, tempholderObj, total=None, placeholderObj=None):
     try:
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {tempholderObj.tempfilepath}"
@@ -172,16 +172,10 @@ async def main_download_sendreq(
         raise E
 
 
-async def send_req_inner(
-    c, ele, tempholderObj, placeholderObj=None, total=None
-):
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-        headers = (
-            None
-            if not resume_size
-            else {"Range": f"bytes={resume_size}-"}
-        )
+        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {ele.url}"
         )
@@ -206,9 +200,9 @@ async def send_req_inner(
                     ele, content_type
                 ).init()
             path_to_file_logger(placeholderObj, ele)
-            if await check_forced_skip(ele, total)==0:
+            if await check_forced_skip(ele, total) == 0:
                 total = 0
-                await common.total_change_helper(total,0)
+                await common.total_change_helper(total, 0)
             elif total != resume_size:
                 total = total
                 await download_fileobject_writer(
@@ -218,24 +212,23 @@ async def send_req_inner(
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)
     except Exception as E:
-        await common.total_change_helper(total,0)
+        await common.total_change_helper(total, 0)
         raise E
 
 
-async def download_fileobject_writer(
-    r, ele, tempholderObj, placeholderObj, total
-):
+async def download_fileobject_writer(r, ele, tempholderObj, placeholderObj, total):
     pathstr = str(placeholderObj.trunicated_filepath)
-    task1 =  progress_utils.add_download_job_task(
+    task1 = progress_utils.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-        total=total,    )
+        total=total,
+    )
     try:
         loop = asyncio.get_event_loop()
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
-        update_count=get_update_count(total,tempholderObj.tempfilepath,chunk_size)
-        count=1
+        chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
+        update_count = get_update_count(total, tempholderObj.tempfilepath, chunk_size)
+        count = 1
         async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             common_globals.log.trace(
@@ -253,7 +246,7 @@ async def download_fileobject_writer(
                         .st_size,
                     ),
                 )
-            count+=1
+            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E

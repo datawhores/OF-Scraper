@@ -26,7 +26,7 @@ def add_widget(widget):
 def get_shared_logger(main_=None, other_=None, name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")
-    logger_other = logging.getLogger(f"{name}_other" if  name else "shared_other")
+    logger_other = logging.getLogger(f"{name}_other" if name else "shared_other")
     logger.handlers.clear()
     log_helpers.addtraceback()
     log_helpers.addtrace()
@@ -52,7 +52,7 @@ def get_shared_logger(main_=None, other_=None, name=None):
     otherhandle.setLevel(min(file_level, discord_level))
     logger.addHandler(otherhandle)
     logger_other.addHandler(otherhandle)
-    if settings.get_output_level()=="LOW":
+    if settings.get_output_level() == "LOW":
         logger_other.addHandler(mainhandle)
     # log all messages, debug and up
     logger.setLevel(1)

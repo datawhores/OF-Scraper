@@ -1,9 +1,9 @@
 # logs stdout logs via a shared queue
 
 import logging
+import queue
 import threading
 import traceback
-import queue
 
 import aioprocessing
 from rich.logging import RichHandler

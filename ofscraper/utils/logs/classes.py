@@ -1,16 +1,13 @@
+import asyncio
 import copy
 import logging
 import re
-import asyncio
-
-
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.helpers as helpers
-
 
 
 class PipeHandler(logging.Handler):
@@ -138,11 +135,11 @@ class DiscordHandler(logging.Handler):
         self._baseurl = data.get_discord()
         self._url = self._baseurl
         self._appendhelper()
-        self._tasks=[]
+        self._tasks = []
         try:
-            self.loop=asyncio.get_running_loop()
+            self.loop = asyncio.get_running_loop()
         except:
-            self.loop=asyncio.new_event_loop()
+            self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
 
     def _appendhelper(self, date=None):
@@ -153,8 +150,7 @@ class DiscordHandler(logging.Handler):
                     method="post",
                     headers={"Content-type": "application/json"},
                     json={
-                        "thread_name": date
-                        or dates_manager.getLogDate().get("now"),
+                        "thread_name": date or dates_manager.getLogDate().get("now"),
                         "content": date or dates_manager.getLogDate().get("now"),
                     },
                 ) as _:
@@ -173,18 +169,17 @@ class DiscordHandler(logging.Handler):
             self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
         self._emit(log_entry)
         pass
+
     def close(self) -> None:
         if constants.getattr("DISCORD_ASYNC"):
             self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
             self.loop.close()
 
-
     def _emit(self, record):
         url = data.get_discord()
 
-
         try:
-            sess=self.sess
+            sess = self.sess
             if url is None or url == "":
                 return
             with sess.requests(
@@ -203,13 +198,11 @@ class DiscordHandler(logging.Handler):
         except Exception as e:
             pass
 
-
     async def _async_emit(self, record):
         url = data.get_discord()
 
-
         try:
-            sess=self.asess
+            sess = self.asess
             if url is None or url == "":
                 return
             async with sess.requests_async(

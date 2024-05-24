@@ -20,9 +20,8 @@ import ofscraper.api.profile as profile
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
-from ofscraper.utils.context.run_async import run
 import ofscraper.utils.live.screens as progress_utils
-
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 

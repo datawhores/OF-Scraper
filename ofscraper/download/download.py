@@ -1,8 +1,7 @@
+import json
 import logging
 import subprocess
 import traceback
-import json
-
 
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader

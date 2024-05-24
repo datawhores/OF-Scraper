@@ -17,11 +17,12 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Console
+
 import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
-from ofscraper.utils.context.run_async import run
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = Console()
@@ -29,7 +30,6 @@ console = Console()
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-
 
     task1 = progress_utils.add_userlist_task(
         f"Getting your {account} subscriptions (this may take awhile)..."

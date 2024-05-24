@@ -13,6 +13,7 @@ r"""
 
 import logging
 import traceback
+
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
@@ -24,7 +25,6 @@ import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
 from ofscraper.__version__ import __version__
 from ofscraper.commands.scraper.runner import runner
-
 
 log = logging.getLogger("shared")
 
@@ -45,9 +45,6 @@ def process_selected_areas():
             menu.get_count() > 0 and menu.reset_menu_helper()
             runner()
             menu.update_count()
-
-
-
 
 
 def daemon_process():

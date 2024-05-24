@@ -1,9 +1,9 @@
 import io
 import logging
+import queue
 import threading
 import traceback
 from collections import abc
-import queue
 
 import aioprocessing
 

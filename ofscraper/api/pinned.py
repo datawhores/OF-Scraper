@@ -36,7 +36,6 @@ async def get_pinned_posts(model_id, c=None):
             scrape_pinned_posts(
                 c,
                 model_id,
-                
                 timestamp=(
                     read_args.retriveArgs().after.float_timestamp
                     if read_args.retriveArgs().after
@@ -133,9 +132,7 @@ def set_check(unduped, model_id):
         cache.close()
 
 
-async def scrape_pinned_posts(
-    c, model_id, timestamp=None, count=0
-) -> list:
+async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
     posts = None
 
     if timestamp and (
@@ -147,15 +144,12 @@ async def scrape_pinned_posts(
 
     new_tasks = []
     posts = []
-    #await asyncio.sleep(1)
+    # await asyncio.sleep(1)
     try:
 
-        task = (
-            progress_utils.add_api_job_task(
-                f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-                visible=True,
-            )
-            
+        task = progress_utils.add_api_job_task(
+            f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            visible=True,
         )
         async with c.requests_async(url=url) as r:
             posts = (await r.json_())["list"]
@@ -198,7 +192,6 @@ async def scrape_pinned_posts(
                         scrape_pinned_posts(
                             c,
                             model_id,
-                            
                             timestamp=posts[-1]["postedAtPrecise"],
                             count=count + len(posts),
                         )
@@ -208,7 +201,7 @@ async def scrape_pinned_posts(
         raise Exception(f"Task timed out {url}")
 
     except Exception as E:
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

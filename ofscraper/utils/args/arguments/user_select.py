@@ -45,11 +45,7 @@ user_list_option = click.option(
         set(
             itertools.chain.from_iterable(
                 [
-                    (
-                        re.split(r"[,]+", item.lower())
-                        if isinstance(item, str)
-                        else item
-                    )
+                    (re.split(r"[,]+", item.lower()) if isinstance(item, str) else item)
                     for item in value
                 ]
             )
@@ -66,7 +62,6 @@ black_list_option = click.option(
     "--blacklist",
     "--blacklists",
     "--black-list",
-
     help="Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
     default=None,
     multiple=True,

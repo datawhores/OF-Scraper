@@ -11,17 +11,15 @@ r"""
                                                                                       
 """
 
+import asyncio
 import contextlib
 import logging
 import sqlite3
-import asyncio
 from functools import partial
 
-
 import arrow
-from rich.console import Console
 from filelock import FileLock
-
+from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
 from ofscraper.db.operations_.profile import get_single_model_via_profile
@@ -386,6 +384,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         curr.executemany(mediaInsertAPI, insertData)
         conn.commit()
 
+
 @wrapper.operation_wrapper
 def update_media_table_via_api_batch(
     medias, model_id=None, conn=None, **kwargs
@@ -600,7 +599,6 @@ async def batch_mediainsert(media, **kwargs):
     update_media_table_via_api_batch(
         list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
     )
-
 
 
 async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):

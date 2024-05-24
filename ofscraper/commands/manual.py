@@ -17,12 +17,11 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.network as network
+from ofscraper.commands.helpers.strings import download_manual_str, post_str_manual
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.helpers.strings import post_str_manual,download_manual_str
-
 
 
 def manual_download(urls=None):
@@ -32,7 +31,9 @@ def manual_download(urls=None):
         allow_manual_dupes()
         url_dicts = process_urls(urls)
         with progress_utils.setup_activity_live():
-            progress_utils.update_activity_task(description="Getting data from retrived posts")
+            progress_utils.update_activity_task(
+                description="Getting data from retrived posts"
+            )
             all_media = [
                 item
                 for media_list in url_dicts.values()
@@ -56,7 +57,9 @@ def manual_download(urls=None):
                 model_id = value.get("model_id")
                 username = value.get("username")
                 log.info(download_manual_str.format(username=username))
-                progress_utils.update_activity_task(description=download_manual_str.format(username=username))
+                progress_utils.update_activity_task(
+                    description=download_manual_str.format(username=username)
+                )
                 operations.table_init_create(model_id=model_id, username=username)
                 operations.make_changes_to_content_tables(
                     value.get("post_list", []), model_id=model_id, username=username
@@ -66,7 +69,7 @@ def manual_download(urls=None):
                 )
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
-            )
+                )
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
@@ -89,7 +92,9 @@ def process_urls(urls):
     out_dict = {}
     with progress_utils.setup_api_split_progress_live(stop=False):
         for url in url_helper(urls):
-            progress_utils.update_activity_task(description=post_str_manual.format(url=url))
+            progress_utils.update_activity_task(
+                description=post_str_manual.format(url=url)
+            )
             response = get_info(url)
             model = response[0]
             postid = response[1]
@@ -230,7 +235,7 @@ async def paid_failback(post_id, model_id, username):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        data = await paid.get_paid_posts(username,model_id, c=c) or []
+        data = await paid.get_paid_posts(username, model_id, c=c) or []
         posts = list(
             map(lambda x: posts_.Post(x, model_id, username, responsetype="paid"), data)
         )

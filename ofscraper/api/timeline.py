@@ -48,7 +48,6 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     return data
 
 
-
 async def process_tasks(tasks):
     responseArray = []
     page_count = 0
@@ -202,7 +201,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_timeline_posts(
                     c,
                     model_id,
-                    
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                     required_ids=set([before]),
@@ -216,7 +214,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_timeline_posts(
                     c,
                     model_id,
-                    
                     timestamp=after,
                     offset=True,
                     required_ids=set([before]),
@@ -314,15 +311,12 @@ async def scrape_timeline_posts(
     new_tasks = []
     task = None
 
-    #await asyncio.sleep(1)
+    # await asyncio.sleep(1)
 
     try:
-        task = (
-            progress_utils.add_api_job_task(
-                f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-                visible=True,
-            )
-            
+        task = progress_utils.add_api_job_task(
+            f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            visible=True,
         )
 
         async with c.requests_async(url=url) as r:
@@ -372,7 +366,6 @@ async def scrape_timeline_posts(
                             scrape_timeline_posts(
                                 c,
                                 model_id,
-                                
                                 timestamp=posts[-1]["postedAtPrecise"],
                                 required_ids=required_ids,
                                 offset=False,
@@ -383,13 +376,12 @@ async def scrape_timeline_posts(
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-            progress_utils.remove_api_job_task(task)
-
+        progress_utils.remove_api_job_task(task)
 
 
 def trace_log_task(responseArray):

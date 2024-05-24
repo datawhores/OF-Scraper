@@ -194,7 +194,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    
                     message_id=(splitArrays[0][0].get("post_id")),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
@@ -206,7 +205,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     scrape_messages(
                         c,
                         model_id,
-                        
                         message_id=splitArrays[i - 1][-1].get("post_id"),
                         required_ids=set(
                             [ele.get("created_at") for ele in splitArrays[i]]
@@ -222,7 +220,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    
                     message_id=splitArrays[-1][-1].get("post_id"),
                     required_ids=set([after]),
                 )
@@ -235,7 +232,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    
                     required_ids=set([after]),
                     message_id=(
                         splitArrays[0][0].get("post_id")
@@ -252,7 +248,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    
                     message_id=None,
                     required_ids=set([after]),
                 )
@@ -277,9 +272,7 @@ def set_check(unduped, model_id, after):
         cache.close()
 
 
-async def scrape_messages(
-    c, model_id, message_id=None, required_ids=None
-) -> list:
+async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
     messages = None
     ep = (
         constants.getattr("messagesNextEP")
@@ -291,14 +284,11 @@ async def scrape_messages(
     new_tasks = []
     task = None
 
-    #await asyncio.sleep(1)
+    # await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
-            task = (
-                progress_utils.add_api_job_task(
-                    f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
-                )
-
+            task = progress_utils.add_api_job_task(
+                f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
             messages = (await r.json_())["list"]
             log_id = (
@@ -355,7 +345,6 @@ async def scrape_messages(
                             scrape_messages(
                                 c,
                                 model_id,
-                                
                                 message_id=messages[-1]["id"],
                                 required_ids=required_ids,
                             )
@@ -364,12 +353,12 @@ async def scrape_messages(
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-       progress_utils.remove_api_job_task(task)
+        progress_utils.remove_api_job_task(task)
     return messages, new_tasks
 
 

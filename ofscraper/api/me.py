@@ -28,7 +28,7 @@ def scrape_user(refresh=True):
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_AUTH_MIN_WAIT"),
         wait_max=constants.getattr("OF_AUTH_MAX_WAIT"),
-        refresh=refresh
+        refresh=refresh,
     ) as c:
         return _scraper_user_helper(c)
 

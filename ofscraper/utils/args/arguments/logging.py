@@ -43,7 +43,7 @@ console_rich_toggle = click.option(
     "--no-rich",
     "no_rich",
     help="Turn off rich live display features",
-    is_flag=True
+    is_flag=True,
 )
 
 # Create the option group

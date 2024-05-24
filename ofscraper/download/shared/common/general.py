@@ -50,7 +50,7 @@ def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
 
 async def size_checker(path, ele, total, name=None):
     name = name or ele.filename
-    if total==0:
+    if total == 0:
         return True
     if not pathlib.Path(path).exists():
         s = f"{get_medialog(ele)} {path} was not created"
@@ -71,8 +71,8 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
 
 
-async def check_forced_skip(ele,total):
-    if total==None:
+async def check_forced_skip(ele, total):
+    if total == None:
         return
     total = int(total)
     if total == 0:
@@ -178,7 +178,7 @@ def is_bad_url(url):
         return True
 
 
-def get_ideal_chunk_size(total_size,curr_file):
+def get_ideal_chunk_size(total_size, curr_file):
     """
     Suggests a chunk size based on file size and a calculated available memory buffer.
 
@@ -188,8 +188,12 @@ def get_ideal_chunk_size(total_size,curr_file):
     Returns:
         int: Suggested chunk size in bytes.
     """
-    curr_file_size= pathlib.Path(curr_file).absolute().stat().st_size if pathlib.Path(curr_file).exists() else 0
-    file_size=total_size-curr_file_size
+    curr_file_size = (
+        pathlib.Path(curr_file).absolute().stat().st_size
+        if pathlib.Path(curr_file).exists()
+        else 0
+    )
+    file_size = total_size - curr_file_size
 
     # Estimate available memory (considering a buffer for system operations)
     available_memory = (
@@ -208,8 +212,13 @@ def get_ideal_chunk_size(total_size,curr_file):
     )  # Minimum 4KB chunk
     return ideal_chunk_size
 
-def get_update_count(total_size,curr_file,chunk_size):
-    curr_file_size= pathlib.Path(curr_file).absolute().stat().st_size if pathlib.Path(curr_file).exists() else 0
-    file_size=total_size-curr_file_size
 
-    return max((file_size//chunk_size)//constants.getattr("CHUNK_UPDATE_COUNT"),1)
+def get_update_count(total_size, curr_file, chunk_size):
+    curr_file_size = (
+        pathlib.Path(curr_file).absolute().stat().st_size
+        if pathlib.Path(curr_file).exists()
+        else 0
+    )
+    file_size = total_size - curr_file_size
+
+    return max((file_size // chunk_size) // constants.getattr("CHUNK_UPDATE_COUNT"), 1)

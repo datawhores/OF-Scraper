@@ -196,10 +196,9 @@ class sessionManager:
         self._log = log or logging.getLogger("shared")
         auth_requests.read_request_auth() if refresh else None
         self._sleeper = SessionSleep()
-        self._session=None
+        self._session = None
 
-
-    def _set_session(self,async_=True):
+    def _set_session(self, async_=True):
         if self._session:
             return
         if async_:
@@ -235,7 +234,7 @@ class sessionManager:
                 raise Exception("aiohttp is async only")
         return self._session
 
-    #https://github.com/aio-libs/aiohttp/issues/1925
+    # https://github.com/aio-libs/aiohttp/issues/1925
     async def __aenter__(self):
         self._set_session(async_=True)
         return self
@@ -243,12 +242,9 @@ class sessionManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
 
-
     def __enter__(self):
         self._set_session(async_=False)
         return self
-
-    
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)

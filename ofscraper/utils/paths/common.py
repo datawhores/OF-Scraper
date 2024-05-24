@@ -33,6 +33,8 @@ def getDB():
 
 def getMediaDB():
     return get_profile_path() / "media_db.lock"
+
+
 def get_config_home():
     return get_config_path().parent
 

@@ -27,10 +27,9 @@ import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-import ofscraper.utils.live.screens as progress_utils
-
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -40,22 +39,22 @@ attempt = contextvars.ContextVar("attempt")
 async def get_otherlist():
     out = []
     if not any(
-            [
-                ele
-                not in [
-                    constants.getattr("OFSCRAPER_RESERVED_LIST"),
-                    constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-                ]
-                for ele in read_args.retriveArgs().user_list or []
+        [
+            ele
+            not in [
+                constants.getattr("OFSCRAPER_RESERVED_LIST"),
+                constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
             ]
-        ):
+            for ele in read_args.retriveArgs().user_list or []
+        ]
+    ):
         return []
-    with progress_utils.setup_subscription_progress_live(
-        ):
+    with progress_utils.setup_subscription_progress_live():
         out.extend(await get_lists())
         out = list(
             filter(
-                lambda x: x.get("name").lower() in read_args.retriveArgs().user_list or [],
+                lambda x: x.get("name").lower() in read_args.retriveArgs().user_list
+                or [],
                 out,
             )
         )
@@ -70,13 +69,13 @@ async def get_blacklist():
     out = []
     if not read_args.retriveArgs().black_list:
         return []
-    with progress_utils.setup_subscription_progress_live(
-        ):
+    with progress_utils.setup_subscription_progress_live():
         if len(read_args.retriveArgs().black_list or []) >= 1:
             out.extend(await get_lists())
         out = list(
             filter(
-                lambda x: x.get("name").lower() in read_args.retriveArgs().black_list or [],
+                lambda x: x.get("name").lower() in read_args.retriveArgs().black_list
+                or [],
                 out,
             )
         )
@@ -88,7 +87,7 @@ async def get_blacklist():
 
 
 async def get_lists():
-   
+
     output = []
     tasks = []
     page_count = 0
@@ -174,9 +173,7 @@ async def scrape_for_list(c, offset=0):
 
             if data.get("hasMore") and len(out_list) > 0:
                 offset = offset + len(out_list)
-                new_tasks.append(
-                    asyncio.create_task(scrape_for_list(c, offset=offset))
-                )
+                new_tasks.append(asyncio.create_task(scrape_for_list(c, offset=offset)))
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
 
@@ -192,7 +189,6 @@ async def scrape_for_list(c, offset=0):
 
 async def get_list_users(lists):
 
-
     output = []
     tasks = []
     page_count = 0
@@ -202,12 +198,7 @@ async def get_list_users(lists):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        [
-            tasks.append(
-                asyncio.create_task(scrape_list_members(c, id))
-            )
-            for id in lists
-        ]
+        [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
         page_task = progress_utils.add_userlist_task(
             f"UserList Users Pages Progress: {page_count}", visible=True
         )
@@ -297,9 +288,7 @@ async def scrape_list_members(c, item, offset=0):
             ):
                 offset += len(users)
                 new_tasks.append(
-                    asyncio.create_task(
-                        scrape_list_members(c, item, offset=offset)
-                    )
+                    asyncio.create_task(scrape_list_members(c, item, offset=offset))
                 )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")

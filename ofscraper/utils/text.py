@@ -20,9 +20,7 @@ async def get_text(values):
         or read_args.retriveArgs().force_model_uniqueme
     )
     async with asyncio.TaskGroup() as tg:
-        tasks = [
-            tg.create_task(get_text_process(value, dupe=dupe)) for value in values
-        ]
+        tasks = [tg.create_task(get_text_process(value, dupe=dupe)) for value in values]
         results = []
     for task in asyncio.as_completed(tasks):
         result = await task

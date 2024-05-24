@@ -45,11 +45,7 @@ async def get_labels_progress(model_id, c=None):
 @run
 async def get_labels_data_progress(model_id, c=None):
     tasks = []
-    tasks.append(
-        asyncio.create_task(
-            scrape_labels(c, model_id)
-        )
-    )
+    tasks.append(asyncio.create_task(scrape_labels(c, model_id)))
     progress_utils.labelled_layout.visible = False
     return await process_tasks_labels(tasks)
 
@@ -59,13 +55,7 @@ async def get_posts_for_labels_progress(labels, model_id, c=None):
     tasks = []
 
     [
-        tasks.append(
-            asyncio.create_task(
-                scrape_posts_labels(
-                    c, label, model_id
-                )
-            )
-        )
+        tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
         for label in labels
     ]
     labels_final = await process_tasks_get_posts_for_labels(tasks, labels, model_id)
@@ -93,13 +83,7 @@ async def get_labels(model_id, c=None):
 async def get_labels_data(model_id, c=None):
     with progress_utils.set_up_api_labels():
         tasks = []
-        tasks.append(
-            asyncio.create_task(
-                scrape_labels(
-                    c, model_id
-                )
-            )
-        )
+        tasks.append(asyncio.create_task(scrape_labels(c, model_id)))
         return await process_tasks_labels(tasks)
 
 
@@ -108,15 +92,7 @@ async def get_posts_for_labels(labels, model_id, c=None):
     with progress_utils.set_up_api_posts_labels():
         tasks = []
         [
-            tasks.append(
-                asyncio.create_task(
-                    scrape_posts_labels(
-                        c,
-                        label,
-                        model_id
-                    )
-                )
-            )
+            tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
             for label in labels
         ]
         return await process_tasks_get_posts_for_labels(tasks, labels, model_id)
@@ -180,18 +156,15 @@ async def process_tasks_labels(tasks):
 async def scrape_labels(c, model_id, offset=0):
     labels = None
     new_tasks = []
-    #await asyncio.sleep(1)
+    # await asyncio.sleep(1)
     url = constants.getattr("labelsEP").format(model_id, offset)
     task = None
 
     try:
 
-        task = (
-            progress_utils.add_api_job_task(
-                f"labels offset -> {offset}",
-                visible=True,
-            )
-            
+        task = progress_utils.add_api_job_task(
+            f"labels offset -> {offset}",
+            visible=True,
         )
         async with c.requests_async(url) as r:
 
@@ -218,7 +191,6 @@ async def scrape_labels(c, model_id, offset=0):
                         scrape_labels(
                             c,
                             model_id,
-                            
                             offset=offset,
                         )
                     )
@@ -227,7 +199,7 @@ async def scrape_labels(c, model_id, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
 
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -316,15 +288,12 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     tasks = None
 
-    #await asyncio.sleep(1)
+    # await asyncio.sleep(1)
     try:
 
-        task = (
-            progress_utils.add_api_job_task(
-                f": getting posts from label -> {label['name']}",
-                visible=True,
-            )
-            
+        task = progress_utils.add_api_job_task(
+            f": getting posts from label -> {label['name']}",
+            visible=True,
         )
         async with c.requests_async(url) as r:
 
@@ -354,7 +323,6 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
                             c,
                             label,
                             model_id,
-                            
                             offset=offset,
                         )
                     )
@@ -363,7 +331,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

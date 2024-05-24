@@ -18,11 +18,10 @@ from ofscraper.const.values.live import *
 from ofscraper.const.values.logger import *
 from ofscraper.const.values.metadata import *
 from ofscraper.const.values.other_url import *
+from ofscraper.const.values.path import *
 from ofscraper.const.values.prompts import *
 from ofscraper.const.values.req import *
 from ofscraper.const.values.table import *
 from ofscraper.const.values.test_constants import *
 from ofscraper.const.values.time import *
 from ofscraper.const.values.url import *
-from ofscraper.const.values.path import *
-

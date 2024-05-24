@@ -21,15 +21,17 @@ def get_like_area():
         post.update({"Labels"})
         post.discard("Labels*")
         post.discard("Labels+")
-    return set(list(
-        filter(
-            lambda x: x != "All"
-            and x[0] != "-"
-            and f"-{x}" not in post
-            and x in all_choices + ["Labels"],
-            post,
+    return set(
+        list(
+            filter(
+                lambda x: x != "All"
+                and x[0] != "-"
+                and f"-{x}" not in post
+                and x in all_choices + ["Labels"],
+                post,
+            )
         )
-    ))
+    )
 
 
 def get_download_area():
@@ -56,20 +58,26 @@ def get_download_area():
         post.update({"Labels"})
         post.discard("Labels*")
         post.discard("Laabels+")
-    return set(list(
-        filter(
-            lambda x: x != "All"
-            and x[0] != "-"
-            and f"-{x}" not in post
-            and x in all_choices + ["Labels"],
-            post,
+    return set(
+        list(
+            filter(
+                lambda x: x != "All"
+                and x[0] != "-"
+                and f"-{x}" not in post
+                and x in all_choices + ["Labels"],
+                post,
+            )
         )
-    ))
+    )
+
 
 def get_final_posts_area():
     final_post_areas = set()
     if "download" in read_args.retriveArgs().action:
         final_post_areas.update(get_download_area())
-    if "like" in read_args.retriveArgs().action or "unlike" in read_args.retriveArgs().action:
+    if (
+        "like" in read_args.retriveArgs().action
+        or "unlike" in read_args.retriveArgs().action
+    ):
         final_post_areas.update(get_like_area())
     return final_post_areas

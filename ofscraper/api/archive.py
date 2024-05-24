@@ -61,7 +61,6 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     return data
 
 
-
 async def process_tasks(tasks, model_id, after):
     responseArray = []
     page_count = 0
@@ -150,7 +149,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
@@ -163,7 +161,6 @@ def get_tasks(splitArrays, c, model_id, after):
                     scrape_archived_posts(
                         c,
                         model_id,
-                        
                         required_ids=set(
                             [ele.get("created_at") for ele in splitArrays[i]]
                         ),
@@ -180,7 +177,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
                     required_ids=set([before]),
@@ -194,7 +190,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                     required_ids=set([before]),
@@ -208,7 +203,6 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    
                     timestamp=after,
                     offset=True,
                     required_ids=set([before]),
@@ -299,12 +293,9 @@ async def scrape_archived_posts(
     new_tasks = []
     posts = []
     try:
-        task = (
-            progress_utils.add_api_job_task(
-                f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-                visible=True,
-            )
-            
+        task = progress_utils.add_api_job_task(
+            f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            visible=True,
         )
         async with c.requests_async(url) as r:
 
@@ -353,7 +344,6 @@ async def scrape_archived_posts(
                             scrape_archived_posts(
                                 c,
                                 model_id,
-                                
                                 timestamp=posts[-1]["postedAtPrecise"],
                                 required_ids=required_ids,
                                 offset=False,

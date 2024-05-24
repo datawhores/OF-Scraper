@@ -14,8 +14,8 @@ r"""
 import logging
 import queue
 import threading
-import traceback
 import time
+import traceback
 from functools import partial
 
 import arrow
@@ -42,7 +42,9 @@ def set_schedule(*functs):
             jobqueue.join()
             next = arrow.now().shift(minutes=read_args.retriveArgs().daemon)
             log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
-            schedule.every().day.at(next.format("HH:mm:ss")).do(schedule_helper, *functs)
+            schedule.every().day.at(next.format("HH:mm:ss")).do(
+                schedule_helper, *functs
+            )
             while len(schedule.jobs) > 0:
                 schedule.run_pending()
                 time.sleep(sleep)
@@ -66,7 +68,7 @@ def daemon_run_helper():
     global jobqueue
     jobqueue = queue.Queue()
     worker_thread = None
-    jobqueue.put(runner) 
+    jobqueue.put(runner)
     if read_args.retriveArgs().output == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
@@ -105,5 +107,3 @@ def daemon_run_helper():
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 raise E
-
-

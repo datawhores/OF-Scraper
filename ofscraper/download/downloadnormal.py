@@ -16,11 +16,11 @@ import logging
 import traceback
 from functools import partial
 
-
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
@@ -34,17 +34,20 @@ from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live.screens as progress_utils
 
 
 @run
 async def process_dicts(username, model_id, medialist):
 
-    metadata_mode=read_args.retriveArgs().metadata
+    metadata_mode = read_args.retriveArgs().metadata
 
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-    live=partial(progress_utils.setup_download_progress_live,multi=False) if not metadata_mode else partial(progress_utils.setup_metadata_progress_live)
-    
+    live = (
+        partial(progress_utils.setup_download_progress_live, multi=False)
+        if not metadata_mode
+        else partial(progress_utils.setup_metadata_progress_live)
+    )
+
     with live():
         common_globals.reset_globals()
         try:
@@ -67,9 +70,7 @@ async def process_dicts(username, model_id, medialist):
             async with download_session() as c:
                 for ele in medialist:
                     aws.append(
-                        asyncio.create_task(
-                            download(c, ele, model_id, username)
-                        )
+                        asyncio.create_task(download(c, ele, model_id, username))
                     )
                 task1 = progress_utils.add_download_task(
                     common_globals.desc.format(

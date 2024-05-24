@@ -11,7 +11,6 @@ import ofscraper.utils.console as console
 from ofscraper.utils.live.empty import prompt_live
 
 
-
 def wrapper(funct):
     def inner(*args, **kwargs):
         # setup
@@ -40,7 +39,9 @@ def wrapper(funct):
                     )
                 )
             )
-            kwargs["message"] = f"{kwargs.get('message')}" if kwargs.get("message") else ""
+            kwargs["message"] = (
+                f"{kwargs.get('message')}" if kwargs.get("message") else ""
+            )
 
             altv_action = kwargs.pop("altv", None) or long_message
             altx_action = kwargs.pop("altx", None)

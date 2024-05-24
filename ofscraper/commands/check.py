@@ -29,16 +29,14 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
+from ofscraper.commands.helpers.strings import check_str
 from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
 from ofscraper.download.shared.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live.screens as progress_utils
-
-from ofscraper.commands.helpers.strings import check_str
-
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -164,7 +162,11 @@ def post_checker():
 async def post_check_runner():
     async for user_name, model_id, final_post_array in post_check_retriver():
         with progress_utils.setup_api_split_progress_live(stop=True):
-            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Timeline posts"))
+            progress_utils.update_activity_task(
+                description=check_str.format(
+                    username=user_name, activity="Timeline posts"
+                )
+            )
             await process_post_media(user_name, model_id, final_post_array)
             await operations.make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -330,7 +332,9 @@ def message_checker():
 async def message_checker_runner():
     async for user_name, model_id, final_post_array in message_check_retriver():
         with progress_utils.setup_api_split_progress_live(stop=True):
-            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Messages"))
+            progress_utils.update_activity_task(
+                description=check_str.format(username=user_name, activity="Messages")
+            )
             await process_post_media(user_name, model_id, final_post_array)
             await operations.make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -415,7 +419,11 @@ def purchase_checker():
 async def purchase_checker_runner():
     async for user_name, model_id, final_post_array in purchase_check_retriver():
         with progress_utils.setup_api_split_progress_live(stop=True):
-            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Purchased posts"))
+            progress_utils.update_activity_task(
+                description=check_str.format(
+                    username=user_name, activity="Purchased posts"
+                )
+            )
             await process_post_media(user_name, model_id, final_post_array)
             await operations.make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -475,7 +483,11 @@ def stories_checker():
 async def stories_checker_runner():
     async for user_name, model_id, final_post_array in stories_check_retriver():
         with progress_utils.setup_api_split_progress_live(stop=True):
-            progress_utils.update_activity_task(description=check_str.format(username=user_name, activity="Stories posts"))
+            progress_utils.update_activity_task(
+                description=check_str.format(
+                    username=user_name, activity="Stories posts"
+                )
+            )
             await process_post_media(user_name, model_id, final_post_array)
             await operations.make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -559,9 +571,10 @@ async def get_downloaded(user_name, model_id, paid=False):
 
     await operations.table_init_create(model_id=model_id, username=user_name)
     paid = await get_paid_ids(model_id, user_name) if paid else []
-    for ele in list(get_media_ids_downloaded(model_id=model_id,username=user_name))+list(paid):
-        downloaded.update( {ele: downloaded.get(ele, 0) + 1})
-    
+    for ele in list(
+        get_media_ids_downloaded(model_id=model_id, username=user_name)
+    ) + list(paid):
+        downloaded.update({ele: downloaded.get(ele, 0) + 1})
 
     return downloaded
 

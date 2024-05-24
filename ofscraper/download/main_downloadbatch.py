@@ -27,6 +27,7 @@ import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.classes.retries import download_retry
@@ -35,17 +36,16 @@ from ofscraper.download.shared.common.general import (
     downloadspace,
     get_data,
     get_ideal_chunk_size,
-    get_update_count,
     get_medialog,
     get_resume_size,
     get_unknown_content_type,
+    get_update_count,
     size_checker,
 )
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
 
-import ofscraper.utils.live.screens as progress_utils
 
 async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -127,7 +127,7 @@ async def resume_data_handler(data, c, ele, tempholderObj):
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     # other
-    if await check_forced_skip(ele, total)==0:
+    if await check_forced_skip(ele, total) == 0:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
         return (
             0,
@@ -136,7 +136,11 @@ async def resume_data_handler(data, c, ele, tempholderObj):
         )
     elif total == resume_size:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-        await common.batch_total_change_helper(None, total) if common_globals.attempt.get() == 1 else None
+        (
+            await common.batch_total_change_helper(None, total)
+            if common_globals.attempt.get() == 1
+            else None
+        )
         return (
             total,
             tempholderObj.tempfilepath,
@@ -169,15 +173,11 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, tota
 async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-        headers = (
-            None
-            if  not resume_size
-            else {"Range": f"bytes={resume_size}-"}
-        )
+        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {ele.url}"
         )
-        async with c.requests_async(url=ele.url, headers=headers) as r:      
+        async with c.requests_async(url=ele.url, headers=headers) as r:
             total = total or int(r.headers["content-length"])
             await common.batch_total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
@@ -217,39 +217,50 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
     pathstr = str(placeholderObj.trunicated_filepath)
     try:
         await common.send_msg(
-            partial(progress_utils.add_download_job_multi_task,f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                    ele.id,total=total)
+            partial(
+                progress_utils.add_download_job_multi_task,
+                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                ele.id,
+                total=total,
+            )
         )
 
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
-        await common.send_msg(  partial(progress_utils.update_download_multi_job_task,ele.id,visible=True))
-        chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
-        update_count=get_update_count(total,tempholderObj.tempfilepath,chunk_size)
+        await common.send_msg(
+            partial(progress_utils.update_download_multi_job_task, ele.id, visible=True)
+        )
+        chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
+        update_count = get_update_count(total, tempholderObj.tempfilepath, chunk_size)
 
-        count=1
+        count = 1
         async for chunk in r.iter_chunked(chunk_size):
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if count %update_count==0:
+            if count % update_count == 0:
                 await common.send_msg(
-
-                    partial(progress_utils.update_download_multi_job_task,ele.id,completed=pathlib.Path(tempholderObj.tempfilepath)
-                            .absolute()
-                            .stat()
-                            .st_size)
+                    partial(
+                        progress_utils.update_download_multi_job_task,
+                        ele.id,
+                        completed=pathlib.Path(tempholderObj.tempfilepath)
+                        .absolute()
+                        .stat()
+                        .st_size,
+                    )
                 )
-            count+=1
+            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         # reset download data
         raise E
     finally:
         try:
-            await common.send_msg(partial(progress_utils.remove_download_multi_job_task,ele.id))
+            await common.send_msg(
+                partial(progress_utils.remove_download_multi_job_task, ele.id)
+            )
         except:
             None
 
