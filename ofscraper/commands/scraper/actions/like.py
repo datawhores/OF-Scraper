@@ -112,18 +112,24 @@ def _like(model_id, ids: list, like_action: bool):
 
             [tasks.append(functools.partial(like_func, c, id, model_id)) for id in ids]
             count = 1
+
+            stable_sleep_duration=constants.getattr("STABLE_SLEEP_DURATION_LIKE")
+            sleep_duration_50=constants.getattr("SLEEP_DURATION_LIKE_50")
+            sleep_duration_60=constants.getattr("SLEEP_DURATION_LIKE_60")
+            sleep_duration_common=constants.getattr("COMMON_MULTIPLE_SLEEP_DURATION_LIKE")
+
             for count, func in enumerate(tasks):
                 out = func()
                 if out == 0:
                     sleep_duration = 0
                 elif count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    sleep_duration = 40
+                    sleep_duration = sleep_duration_common
                 elif count % 60 == 0:
-                    sleep_duration = 1  # Divisible by 60 - 1 second sleep
+                    sleep_duration = sleep_duration_60  # Divisible by 60 - 1 second sleep
                 elif count % 50 == 0:
-                    sleep_duration = 30  # Divisible by 50 - 30 seconds sleep
+                    sleep_duration = sleep_duration_50   # Divisible by 50 - 30 seconds sleep
                 else:
-                    sleep_duration = 5
+                    sleep_duration =  stable_sleep_duration
                 if out == 1:
                     progress_utils.increment_like_task(task2)
                 progress_utils.increment_like_task(task)

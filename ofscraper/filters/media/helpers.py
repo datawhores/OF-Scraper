@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 import random
 import re
 
@@ -22,13 +23,13 @@ def sort_by_date(media):
 
 
 def dupefilter(media):
-    output = []
-    ids = set()
+    output =defaultdict(None)
     for item in media:
-        if not item.id or item.id not in ids:
-            output.append(item)
-            ids.add(item.id)
-    return output
+        if not output[item.id]:
+            output[item.id]=item
+        elif item.canview and not output[item.id].canview:
+             output[item.id]=item
+    return output.values()
 
 
 def post_datesorter(output):
