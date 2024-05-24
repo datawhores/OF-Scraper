@@ -5,6 +5,7 @@ import cloup as click
 import ofscraper.utils.args.helpers.type as type
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
 from ofscraper.utils.args.bundles.common import common_args
+from ofscraper.utils.args.helpers.check import check_mode_changes
 
 
 def story_check_args(func):
@@ -54,6 +55,7 @@ def story_check_args(func):
         default=False,
     )
     @advanced_args
+    @check_mode_changes
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
