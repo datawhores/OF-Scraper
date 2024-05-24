@@ -122,11 +122,10 @@ def remove_userlist_job_task(task):
 
 
 downloads_pending = set()
-max_visible = constants.getattr("MAX_PROGRESS_BARS")
-min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
 
 
 def add_download_job_task(*args, **kwargs):
+    max_visible=constants.getattr("MAX_PROGRESS_BARS")
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
@@ -139,6 +138,8 @@ def add_download_job_task(*args, **kwargs):
 
 
 def add_download_job_multi_task(*args, **kwargs):
+    max_visible=constants.getattr("MAX_PROGRESS_BARS")
+
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
@@ -183,6 +184,8 @@ def update_download_multi_job_task(*args, **kwargs):
 
 
 def remove_download_job_task(task):
+    min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
+
     if task == None:
         return
     try:
@@ -199,6 +202,8 @@ def remove_download_job_task(task):
 
 
 def remove_download_multi_job_task(task):
+    min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
+
     if task == None:
         return
     try:
