@@ -14,6 +14,7 @@ r"""
 import asyncio
 import logging
 import traceback
+from functools import partial
 
 
 import ofscraper.download.shared.globals as common_globals
@@ -40,10 +41,9 @@ import ofscraper.utils.live.screens as progress_utils
 async def process_dicts(username, model_id, medialist):
     
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+    live=partial(progress_utils.setup_download_progress_live,multi=False) if not metadata else partial(progress_utils.setup_metadata_progress_live)
     
-     with progress_utils.setup_download_progress_live(
-            multi=False
-        ):
+    with live():
         common_globals.reset_globals()
         try:
             manager = manager_.get_manager()

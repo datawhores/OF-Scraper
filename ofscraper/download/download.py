@@ -2,8 +2,6 @@ import logging
 import subprocess
 import traceback
 import json
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
 
 
 import ofscraper.download.downloadbatch as batchdownloader
