@@ -62,6 +62,8 @@ def logger_process(input_, name=None, stop_count=1, event=None):
             end_funct()
         except:
             break
+    for handler in log.handlers:
+        handler.close()
     log.handlers.clear()
 
 
