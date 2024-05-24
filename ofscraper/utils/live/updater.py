@@ -4,6 +4,7 @@ from ofscraper.utils.live.progress import download_job_progress,download_overall
 
 from ofscraper.utils.live.tasks import get_activity_counter_task,get_activity_task,get_user_first_task
 import ofscraper.utils.settings as settings
+import ofscraper.utils.constants as constants
 def update_activity_task(**kwargs):
     activity_progress.update(
            get_activity_task(), **kwargs
@@ -94,8 +95,8 @@ def remove_userlist_job_task(task):
         pass
 
 downloads_pending=set()
-max_visible=
-min_add_visible=10
+max_visible=constants.getattr("MAX_PROGRESS_BARS")
+min_add_visible=constants.getattr("MIN_ADD_PROGRESS_BARS")
 
 def add_download_job_task(*args,**kwargs):
     visible=settings.get_download_bars() and len(download_job_progress.tasks)<max_visible
