@@ -25,3 +25,5 @@ from ofscraper.const.values.table import *
 from ofscraper.const.values.test_constants import *
 from ofscraper.const.values.time import *
 from ofscraper.const.values.url import *
+from ofscraper.const.values.like import *
+

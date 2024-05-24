@@ -141,7 +141,7 @@ def _toggle_like_requests(c, id, model_id):
     if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}", None):
         log.debug(f"ID: {id} marked as liked in cache")
         return 0
-    sleep_duration = 5
+    sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id)
     if favorited:
         log.debug(f"ID: {id} changed to liked")
@@ -163,7 +163,7 @@ def _toggle_unlike_requests(c, id, model_id):
         log.debug(f"ID: {id} marked as unliked in cache")
 
         return 0
-    sleep_duration = 5
+    sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id)
     if not favorited:
         log.debug(f"ID: {id} changed to unliked")
@@ -179,6 +179,6 @@ def _toggle_unlike_requests(c, id, model_id):
 
 def _like_request(c, id, model_id):
     with c.requests(
-        constants.getattr("favoriteEP").format(id, model_id), method="post"
+        constants.getattr("favoriteEP").format(id, model_id), method="post",sleeper=sessionManager(sleep_duration=None)
     ) as r:
         return r.json_()["isFavorite"], r.json_()["id"]
