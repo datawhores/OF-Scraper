@@ -63,7 +63,8 @@ def get_userfirst_data_function(funct):
         async with session:
             for ele in userdata:
                 try:
-                    with user_first_data_inner_context(session, ele):
+                    data_helper(ele)
+                    with progress_utils.setup_activity_counter_live(revert=False):
                         data.update(await funct(session, ele))
                 except Exception as e:
                     log.traceback_(f"failed with exception: {e}")
@@ -71,6 +72,7 @@ def get_userfirst_data_function(funct):
                     if isinstance(e, KeyboardInterrupt):
                         raise e
                 finally:
+                    session.reset_sleep()
                     progress_utils.increment_user_activity()
         return data
 
@@ -94,7 +96,7 @@ def get_userfirst_action_execution_function(funct):
                 ):
                     logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
                 try:
-                    while progress_utils.setup_activity_live():
+                    with progress_utils.setup_activity_counter_live(revert=False):
                         await funct(all_media, posts, like_posts,*args, ele=ele,**kwargs)
                 except Exception as e:
                     log.traceback_(f"failed with exception: {e}")
@@ -113,20 +115,6 @@ def get_userfirst_action_execution_function(funct):
 
     return wrapper
 
-
-@contextlib.contextmanager
-def normal_data_context(session, user):
-    data_helper(user)
-    yield
-    session.reset_sleep()
-
-
-@contextlib.contextmanager
-def user_first_data_inner_context(session, user):
-    data_helper(user)
-    yield
-    session.reset_sleep()
-    progress_utils.increment_user_activity()
 
 
 def data_helper(user):

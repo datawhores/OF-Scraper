@@ -27,6 +27,10 @@ activity_progress_group = Group(
 )
 
 
+activity_counter_group = Group(
+    Blue_Panel(Group(activity_counter, fit=True), title="Activity Progress")
+)
+
 # user
 userlist_group = Group(
     activity_group, Blue_Panel(Group(userlist_overall_progress, userlist_job_progress))
