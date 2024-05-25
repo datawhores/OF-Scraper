@@ -83,6 +83,7 @@ def get_userfirst_action_execution_function(funct):
     async def wrapper(data,*args, **kwargs):
         progress_utils.increment_activity_count(total=2)
         try:
+             progress_utils.update_user_activity(total=len(data.items()))
              for _, val in data.items():
                 all_media = val["media"]
                 posts = val["posts"]

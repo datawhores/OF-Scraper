@@ -65,18 +65,15 @@ from ofscraper.utils.live.updater import (
 
 # main context and switches
 @contextlib.contextmanager
-def live_progress_context(stop=False,revert=True):
+def live_progress_context(setup=False,revert=True):
+    old_render = get_live().renderable
+    if setup:
+        remove_task()
     if not get_live().is_started:
         get_live().start()
-    old_render = get_live().renderable
     yield
     if revert and old_render:
         get_live().update(old_render)
-    if stop:
-        remove_task()
-        get_live().stop()
-        set_live(None)
-
 
 def remove_task():
     for task in activity_progress.task_ids:
@@ -87,8 +84,8 @@ def remove_task():
 
 
 @contextlib.contextmanager
-def setup_download_progress_live(multi=False, stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_download_progress_live(multi=False, setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         height = max(15, console_.get_shared_console().size[-1] - 2)
         multi_panel.height = height
         single_panel.height = height
@@ -103,8 +100,8 @@ def setup_download_progress_live(multi=False, stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_metadata_progress_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_metadata_progress_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_DOWNLOAD_DISPLAY"
         )
@@ -113,8 +110,8 @@ def setup_metadata_progress_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_api_split_progress_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_api_split_progress_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_API_DISPLAY"
         )
@@ -123,8 +120,8 @@ def setup_api_split_progress_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_subscription_progress_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_subscription_progress_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_SUBSCRIPTION_DISPLAY"
         )
@@ -133,8 +130,8 @@ def setup_subscription_progress_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_like_progress_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_like_progress_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_LIKE_DISPLAY"
         )
@@ -152,8 +149,8 @@ def switch_api_progress():
 
 
 @contextlib.contextmanager
-def setup_activity_progress_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_activity_progress_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_API_DISPLAY"
         )
@@ -162,8 +159,8 @@ def setup_activity_progress_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_all_paid_database_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_all_paid_database_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_API_DISPLAY"
         )
@@ -172,8 +169,8 @@ def setup_all_paid_database_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_activity_group_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_activity_group_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_API_DISPLAY"
         )
@@ -182,8 +179,8 @@ def setup_activity_group_live(stop=False,revert=True):
 
 
 @contextlib.contextmanager
-def setup_activity_counter_live(stop=False,revert=True):
-    with live_progress_context(stop=stop,revert=revert):
+def setup_activity_counter_live(setup=False,revert=True):
+    with live_progress_context(setup=setup,revert=revert):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_API_DISPLAY"
         )

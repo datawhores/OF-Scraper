@@ -30,7 +30,7 @@ log = logging.getLogger("shared")
 def runner():
     check_auth()
     with scrape_context_manager():
-        with progress_utils.setup_activity_progress_live(stop=True):
+        with progress_utils.setup_activity_group_live(setup=True,revert=False):
             if read_args.retriveArgs().scrape_paid:
                 progress_utils.update_activity_task(
                     description="Scraping Entire Paid page"
@@ -107,8 +107,6 @@ async def execute_user_action(all_media, posts, like_posts, ele=None):
 @exit.exit_wrapper
 @run
 async def process_users_actions_user_first(userdata, session):
-    userdata=userdata[:4]
-
     data = await get_userfirst_data_function(get_users_data_user_first)(
         userdata, session
     )
