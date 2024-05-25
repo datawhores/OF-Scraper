@@ -23,17 +23,18 @@ def get_user_action_function(func):
         async with session as c:
             for ele in userdata:
                 try:
-                    progress_utils.switch_api_progress() 
-                    all_media, posts, like_posts = await post_media_process(ele, c=c)
-                    avatar = ele.avatar
-                    if (
-                        constants.getattr("SHOW_AVATAR")
-                        and avatar
-                        and read_args.retriveArgs().userfirst
-                    ):
-                        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                    data_helper(ele)
-                    await func(all_media, posts, like_posts,ele=ele)
+                    with progress_utils.setup_api_split_progress_live():
+                        all_media, posts, like_posts = await post_media_process(ele, c=c)
+                    with progress_utils.setup_activity_counter_live(revert=False):
+                        avatar = ele.avatar
+                        if (
+                            constants.getattr("SHOW_AVATAR")
+                            and avatar
+                            and read_args.retriveArgsgit ().userfirst
+                        ):
+                            logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+                        data_helper(ele)
+                        await func(all_media, posts, like_posts,ele=ele)
                 except Exception as e:
 
                     log.traceback_(f"failed with exception: {e}")
