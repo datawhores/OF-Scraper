@@ -60,6 +60,7 @@ from ofscraper.utils.live.updater import (
     update_download_multi_job_task,
     update_download_task,
     update_user_activity,
+    get_like_task
 )
 
 

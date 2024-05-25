@@ -77,31 +77,33 @@ async def execute_user_action(all_media, posts, like_posts, ele=None):
     actions = read_args.retriveArgs().action
     username = ele.name
     model_id = ele.id
+    out=[]
     for action in actions:
         if action == "download":
-            await download_action.downloader(
+            out.append(await download_action.downloader(
                 ele=ele,
                 posts=posts,
                 media=all_media,
                 model_id=model_id,
                 username=username,
-            )
+            ))
         elif action == "like":
-            like_action.process_like(
+            out.append(like_action.process_like(
                 ele=ele,
                 posts=like_posts,
                 media=all_media,
                 model_id=model_id,
                 username=username,
-            )
+            ))
         elif action == "unlike":
-            like_action.process_unlike(
+            out.append(like_action.process_unlike(
                 ele=ele,
                 posts=like_posts,
                 media=all_media,
                 model_id=model_id,
                 username=username,
-            )
+            ))
+        return out
 
 
 @exit.exit_wrapper

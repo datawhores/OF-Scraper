@@ -230,8 +230,8 @@ def remove_download_task(task):
 # like
 def add_like_task(*args, **kwargs):
     return like_overall_progress.add_task(*args, **kwargs)
-
-
+def get_like_task(task):
+    return like_overall_progress.tasks[task]
 def increment_like_task(*args, advance=1, **kwargs):
     like_overall_progress.update(*args, advance=advance, **kwargs)
 

@@ -21,6 +21,8 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.api.profile as profile
+
 
 log = logging.getLogger("shared")
 like_str = "Performing Like Action on {name}"
@@ -35,7 +37,7 @@ def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
     unfavorited_posts = get_posts_for_like(posts)
     posts = pre_filter(posts)
     post_ids = get_post_ids(unfavorited_posts)
-    like(model_id, post_ids)
+    return like(model_id, username,post_ids)
 
 
 @exit.exit_wrapper
@@ -46,7 +48,7 @@ def process_unlike(posts=None, model_id=None, task=None, username=None, **kwargs
     favorited_posts = get_posts_for_unlike(posts)
     posts = pre_filter(posts)
     post_ids = get_post_ids(favorited_posts)
-    unlike(model_id, post_ids)
+    return unlike(model_id, username,post_ids)
 
 
 def get_posts_for_unlike(post):
@@ -82,15 +84,15 @@ def get_post_ids(posts: list) -> list:
     return list(map(lambda x: x.id, posts))
 
 
-def like(model_id, ids: list):
-    _like(model_id, ids, True)
+def like(model_id, username,ids: list):
+   return _like(model_id,username, ids, True)
 
 
-def unlike(model_id, ids: list):
-    _like(model_id, ids, False)
+def unlike(model_id,username, ids: list):
+    return _like(model_id, username,ids, False)
 
 
-def _like(model_id, ids: list, like_action: bool):
+def _like(model_id, username,ids: list, like_action: bool):
     like_str = (
         "Posts toggled from unlike to like...\n"
         if like_action
@@ -131,10 +133,16 @@ def _like(model_id, ids: list, like_action: bool):
                 else:
                     sleep_duration =  stable_sleep_duration
                 if out == 1:
-                    progress_utils.increment_like_task(task2)
+                    progress_utils.increment_like_Ftask(task2)
                 progress_utils.increment_like_task(task)
                 time.sleep(sleep_duration)
+            out="[{username}] {post} post checked, {liked} post changes to {action}".format(post=progress_utils.get_like_task(task2).completed,liked=progress_utils.get_like_task(task).completed,
+            username = username,
+            action="liked" if like_action else "unliked"  
+            )
             progress_utils.remove_like_task(task)
+            progress_utils.remove_like_task(task2)
+    return out
 
 
 def _toggle_like_requests(c, id, model_id):
