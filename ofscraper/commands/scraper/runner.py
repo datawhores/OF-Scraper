@@ -18,7 +18,6 @@ from ofscraper.commands.helpers.context import (
     get_user_action_function,
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
-    user_first_data_inner_context,
 )
 from ofscraper.commands.helpers.shared import run_action_bool
 from ofscraper.commands.scraper.post import post_media_process
@@ -71,11 +70,8 @@ def prepare():
 @exit.exit_wrapper
 @run
 async def process_users_actions_normal(userdata=None, session=None):
-    user_action_funct = get_user_action_function(process_actions_for_user)
     progress_utils.update_user_activity(description="Users with Actions Completed")
-    async with session as c:
-        for ele in userdata:
-            await user_action_funct(user=ele, c=c)
+    await get_user_action_function(process_actions_for_user)(userdata,session)
 
 
 async def process_actions_for_user(user=None, c=None, *kwargs):
@@ -85,10 +81,7 @@ async def process_actions_for_user(user=None, c=None, *kwargs):
             all_media, posts, like_posts, ele=user
         )
     except Exception as e:
-        if isinstance(e, KeyboardInterrupt):
-            raise e
-        log.traceback_(f"failed with exception: {e}")
-        log.traceback_(traceback.format_exc())
+       raise e
 
 
 async def execute_user_action(all_media, posts, like_posts, ele=None):

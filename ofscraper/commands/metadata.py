@@ -189,8 +189,6 @@ async def execute_metadata_action_user_first(data):
             await get_user_action_execution_function(execute_metadata_action_on_user)(
                 media=media, user=ele
             )
-            # await download.download_process(username, model_id, filterMedia)
-            # metadata_stray_media(username, model_id, media)
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e

@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import traceback
 
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.helpers.areas as areas
@@ -12,17 +13,29 @@ from ofscraper.commands.helpers.strings import (
     data_str,
     progress_str,
 )
+log = logging.getLogger("shared")
 
 
 def get_user_action_function(func):
-    async def wrapper(*args, **kwargs):
-        ele = kwargs.get("ele") or kwargs.get("user")
-        data_helper(ele)
-        try:
-            await func(*args, **kwargs)
-        except Exception as e:
-            progress_utils.increment_user_activity()
-            raise e
+    async def wrapper(userdata,session,*args, **kwargs):
+        async with session as c:
+            for ele in userdata:
+                try:
+                    progress_utils.switch_api_progress() 
+                    await func(user=ele, c=c)
+                    ele = kwargs.get("ele") or kwargs.get("user")
+                    data_helper(ele)
+                    await func(*args, **kwargs)
+                except Exception as e:
+
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                finally:
+                    progress_utils.increment_user_activity()
+            
 
 
 
@@ -31,17 +44,16 @@ def get_user_action_function(func):
 
 def get_user_action_execution_function(func):
     async def wrapper(*args, **kwargs):
-        ele = kwargs.get("ele") or kwargs.get("user")
-        avatar = ele.avatar
-        if (
-            constants.getattr("SHOW_AVATAR")
-            and avatar
-            and read_args.retriveArgs().userfirst
-        ):
-            logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-        await func(*args, **kwargs)
-        progress_utils.increment_user_activity()
 
+            ele = kwargs.get("ele") or kwargs.get("user")
+            avatar = ele.avatar
+            if (
+                constants.getattr("SHOW_AVATAR")
+                and avatar
+                and read_args.retriveArgs().userfirst
+            ):
+                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+            await func(*args, **kwargs)
     return wrapper
 
 
@@ -92,7 +104,6 @@ def data_helper(user):
     length = selector.get_num_selected()
     count = progress_utils.get_user_task_obj().completed
 
-    progress_utils.switch_api_progress()
 
     logging.getLogger("shared_other").warning(
         progress_str.format(count=count + 1, length=length)
