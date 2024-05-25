@@ -32,7 +32,6 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.__version__ import __version__
 from ofscraper.commands.helpers.context import (
-    get_user_action_execution_function,
     get_user_action_function,
     get_userfirst_action_execution_function,
     get_userfirst_data_function,

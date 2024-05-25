@@ -154,7 +154,7 @@ def switch_api_progress():
 def setup_activity_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
-            "SUPRESS_API_DISPLAY"
+            "SUPRESS_A_DISPLAY"
         )
         get_live().update(activity_progress_group, refresh=True)
         yield

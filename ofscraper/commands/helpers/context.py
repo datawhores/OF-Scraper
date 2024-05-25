@@ -7,6 +7,8 @@ import ofscraper.utils.args.helpers.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.commands.scraper.post import post_media_process
+
 from ofscraper.commands.helpers.strings import (
     area_str,
     avatar_str,
@@ -22,7 +24,15 @@ def get_user_action_function(func):
             for ele in userdata:
                 try:
                     progress_utils.switch_api_progress() 
-                    await func(user=ele, c=c)
+                    all_media, posts, like_posts = await post_media_process(ele, c=c)
+                    avatar = ele.avatar
+                    if (
+                        constants.getattr("SHOW_AVATAR")
+                        and avatar
+                        and read_args.retriveArgs().userfirst
+                    ):
+                        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+                    await func(all_media, posts, like_posts)
                     ele = kwargs.get("ele") or kwargs.get("user")
                     data_helper(ele)
                     await func(*args, **kwargs)
@@ -42,19 +52,6 @@ def get_user_action_function(func):
     return wrapper
 
 
-def get_user_action_execution_function(func):
-    async def wrapper(*args, **kwargs):
-
-            ele = kwargs.get("ele") or kwargs.get("user")
-            avatar = ele.avatar
-            if (
-                constants.getattr("SHOW_AVATAR")
-                and avatar
-                and read_args.retriveArgs().userfirst
-            ):
-                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-            await func(*args, **kwargs)
-    return wrapper
 
 
 def get_userfirst_data_function(funct):
@@ -65,18 +62,54 @@ def get_userfirst_data_function(funct):
         data = {}
         async with session:
             for ele in userdata:
-                with user_first_data_inner_context(session, ele):
-                    data.update(await funct(session, ele))
+                try:
+                    with user_first_data_inner_context(session, ele):
+                        data.update(await funct(session, ele))
+                except Exception as e:
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                finally:
+                    progress_utils.increment_user_activity()
         return data
 
     return wrapper
 
 
 def get_userfirst_action_execution_function(funct):
-    async def wrapper(*args, **kwargs):
+    async def wrapper(data,*args, **kwargs):
         progress_utils.increment_activity_count(total=2)
-        await funct(*args, **kwargs)
-        progress_utils.increment_activity_count(description="Overall progress", total=2)
+        try:
+             for _, val in data.items():
+                all_media = val["media"]
+                posts = val["posts"]
+                like_posts = val["like_posts"]
+                ele = val["ele"]
+                avatar = ele.avatar
+                if (
+                    constants.getattr("SHOW_AVATAR")
+                    and avatar
+                    and read_args.retriveArgs().userfirst
+                ):
+                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+                try:
+                    while progress_utils.setup_activity_live():
+                        await funct(all_media, posts, like_posts,*args, ele=ele,**kwargs)
+                except Exception as e:
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                finally:
+                    progress_utils.increment_user_activity()
+        except Exception as e:
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+        finally:
+            progress_utils.increment_activity_count(description="Overall progress", total=2)
 
     return wrapper
 

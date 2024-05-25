@@ -14,7 +14,6 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.helpers.context import (
-    get_user_action_execution_function,
     get_user_action_function,
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
@@ -71,20 +70,12 @@ def prepare():
 @run
 async def process_users_actions_normal(userdata=None, session=None):
     progress_utils.update_user_activity(description="Users with Actions Completed")
-    await get_user_action_function(process_actions_for_user)(userdata,session)
+    await get_user_action_function( execute_user_action)(userdata,session)
 
-
-async def process_actions_for_user(user=None, c=None, *kwargs):
-    try:
-        all_media, posts, like_posts = await post_media_process(user, c=c)
-        await get_user_action_execution_function(execute_user_action)(
-            all_media, posts, like_posts, ele=user
-        )
-    except Exception as e:
-       raise e
 
 
 async def execute_user_action(all_media, posts, like_posts, ele=None):
+    raise Exception("dd")
     actions = read_args.retriveArgs().action
     username = ele.name
     model_id = ele.id
@@ -118,39 +109,35 @@ async def execute_user_action(all_media, posts, like_posts, ele=None):
 @exit.exit_wrapper
 @run
 async def process_users_actions_user_first(userdata, session):
+    userdata=userdata[:4]
 
     data = await get_userfirst_data_function(get_users_data_user_first)(
         userdata, session
     )
-
-    await get_userfirst_action_execution_function(execute_users_actions_user_first)(
-        data
-    )
-
-
-async def execute_users_actions_user_first(data):
     progress_utils.update_activity_task(description="Performing Actions on Users")
     progress_utils.update_user_activity(
         description="Users with Actions completed", completed=0
     )
-    for _, val in data.items():
-        all_media = val["media"]
-        posts = val["posts"]
-        like_posts = val["like_posts"]
-        ele = val["ele"]
-        await get_user_action_execution_function(execute_user_action)(
-            all_media, posts, like_posts, ele=ele
-        )
+
+    await get_userfirst_action_execution_function(execute_user_action)(
+        data
+    )
+
+
+# async def execute_users_actions_user_first(data):
+#     for _, val in data.items():
+#         all_media = val["media"]
+#         posts = val["posts"]
+#         like_posts = val["like_posts"]
+#         ele = val["ele"]
+#         await  get_userfirst_action_execution_function(execute_user_action)(
+#             all_media, posts, like_posts, ele=ele
+#         )
 
 
 async def get_users_data_user_first(session, ele):
-    try:
-        return await process_ele_user_first_data_retriver(ele, session)
-    except Exception as e:
-        if isinstance(e, KeyboardInterrupt):
-            raise e
-        log.traceback_(f"failed with exception: {e}")
-        log.traceback_(traceback.format_exc())
+    return await process_ele_user_first_data_retriver(ele, session)
+ 
 
 
 async def process_ele_user_first_data_retriver(ele, session):
