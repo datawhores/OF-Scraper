@@ -51,7 +51,7 @@ def process_dicts(username, model_id, filtered_medialist):
     common_globals.log = log
     live = (
         partial(progress_utils.setup_download_progress_live, multi=True)
-        if not metadata_mode
+        if not metadata_md
         else partial(progress_utils.setup_metadata_progress_live)
     )
     try:
