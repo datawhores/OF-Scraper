@@ -39,12 +39,12 @@ from ofscraper.utils.context.run_async import run
 @run
 async def process_dicts(username, model_id, medialist):
 
-    metadata_mode = read_args.retriveArgs().metadata
+    metadata_md= read_args.retriveArgs().metadata
 
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
     live = (
         partial(progress_utils.setup_download_progress_live, multi=False)
-        if not metadata_mode
+        if not metadata_md
         else partial(progress_utils.setup_metadata_progress_live)
     )
 
