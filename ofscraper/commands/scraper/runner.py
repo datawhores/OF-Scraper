@@ -120,21 +120,8 @@ async def process_users_actions_user_first(userdata, session):
     )
 
 
-# async def execute_users_actions_user_first(data):
-#     for _, val in data.items():
-#         all_media = val["media"]
-#         posts = val["posts"]
-#         like_posts = val["like_posts"]
-#         ele = val["ele"]
-#         await  get_userfirst_action_execution_function(execute_user_action)(
-#             all_media, posts, like_posts, ele=ele
-#         )
-
-
 async def get_users_data_user_first(session, ele):
     return await process_ele_user_first_data_retriver(ele, session)
- 
-
 
 async def process_ele_user_first_data_retriver(ele, session):
     model_id = ele.id

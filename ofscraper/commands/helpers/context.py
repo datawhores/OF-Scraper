@@ -32,10 +32,8 @@ def get_user_action_function(func):
                         and read_args.retriveArgs().userfirst
                     ):
                         logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                    await func(all_media, posts, like_posts)
-                    ele = kwargs.get("ele") or kwargs.get("user")
                     data_helper(ele)
-                    await func(*args, **kwargs)
+                    await func(all_media, posts, like_posts,ele=ele)
                 except Exception as e:
 
                     log.traceback_(f"failed with exception: {e}")
