@@ -23,7 +23,7 @@ def sort_by_date(media):
 
 
 def dupefilter(media):
-    output =defaultdict(None)
+    output =defaultdict(lambda:None)
     for item in media:
         if not output[item.id]:
             output[item.id]=item

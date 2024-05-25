@@ -358,7 +358,6 @@ class sessionManager:
                 except Exception as E:
                     if is_rate_limited(E):
                         sleeper.toomany_req()
-            
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
