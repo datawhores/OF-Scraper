@@ -18,7 +18,13 @@ def get_user_action_function(func):
     async def wrapper(*args, **kwargs):
         ele = kwargs.get("ele") or kwargs.get("user")
         data_helper(ele)
-        await func(*args, **kwargs)
+        try:
+            await func(*args, **kwargs)
+        except Exception as e:
+            progress_utils.increment_user_activity()
+            raise e
+
+
 
     return wrapper
 
