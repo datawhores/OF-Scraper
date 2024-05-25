@@ -69,7 +69,7 @@ def filterMedia(media, username=None, model_id=None):
 
     # additional filters
     if not read_args.retriveArgs().command == "metadata":
-        media = helpers.dupefilter(media)
+        media = helpers.dupefilterMedia(media)
         count += 1
         helpers.trace_log_media(count, media, "media dupe media_id filter:")
         log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
@@ -97,7 +97,7 @@ def filterPost(post):
     log.debug(f"filter {count}->  post date sort filter count: {len(post)}")
 
     count += 1
-    post = helpers.dupefilter(post)
+    post = helpers.dupefilterPost(post)
     helpers.trace_log_post(count, post, "post dupe filter:")
     log.debug(f"filter {count}-> post dupe filter count: {len(post)}")
 

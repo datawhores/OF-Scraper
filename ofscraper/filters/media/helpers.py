@@ -22,7 +22,7 @@ def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 
 
-def dupefilter(media):
+def dupefilterMedia(media):
     output =defaultdict(lambda:None)
     for item in media:
         if not output[item.id]:
@@ -31,6 +31,15 @@ def dupefilter(media):
              output[item.id]=item
     return output.values()
 
+
+def dupefilterPost(post):
+    output =defaultdict(lambda:None)
+    for item in post:
+        if not output[item.id]:
+            output[item.id]=item
+        elif item.open and not output[item.id].open:
+             output[item.id]=item
+    return output.values()
 
 def post_datesorter(output):
     return list(sorted(output, key=lambda x: x.date, reverse=True))
