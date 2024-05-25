@@ -21,6 +21,7 @@ log = logging.getLogger("shared")
 def get_user_action_function(func):
     async def wrapper(userdata,session,*args, **kwargs):
         async with session as c:
+            data=[]
             for ele in userdata:
                 try:
                     with progress_utils.setup_api_split_progress_live():
@@ -30,11 +31,11 @@ def get_user_action_function(func):
                         if (
                             constants.getattr("SHOW_AVATAR")
                             and avatar
-                            and read_args.retriveArgsgit ().userfirst
+                            and read_args.retriveArgs ().userfirst
                         ):
                             logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
                         data_helper(ele)
-                        await func(all_media, posts, like_posts,ele=ele)
+                        data.append(await func(all_media, posts, like_posts,ele=ele))
                 except Exception as e:
 
                     log.traceback_(f"failed with exception: {e}")
@@ -44,10 +45,7 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
-            
-
-
-
+            log.warning(data)
     return wrapper
 
 
