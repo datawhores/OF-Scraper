@@ -41,15 +41,16 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                 # check for shutdown
                 if event and event.is_set():
                     break
-                if message == "None":
-                    count = count + 1
-                    continue
-                if message.message == "None":
-                    count = count + 1
-                    continue
-                if message.message != "None":
-                    # log the message
+                if hasattr(message, "message") and message.message!="None":
                     log.handle(message)
+                elif hasattr(message, "message") and message.message=="None":
+                    count = count + 1
+                    continue
+                elif message != "None":
+                    log.handle(message)
+                elif message == "None":
+                    count = count + 1
+                    continue
             if count == stop_count:
                 break
         except queue.Empty:

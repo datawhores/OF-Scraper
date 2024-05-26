@@ -57,21 +57,30 @@ downloads total [{common_globals.video_count} videos, {common_globals.audio_coun
 
 
 def final_log(username, log=None):
+    (log or common_globals.log).error(
+            final_log_text(username)
+        )
+
+def final_log_text(username):
 
     if read_args.retriveArgs().metadata:
-        skipped_word = "media metadata unchanged"
-        (log or common_globals.log).error(
-            f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
-            f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-            f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
-        )
+        return (f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+        f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
+        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)")
     else:
         skipped_word = "skipped"
-        (log or common_globals.log).error(
-            f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
-            f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-            f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
-        )
+        return (f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+        f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
+        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)")
+
+
+def empty_log(username):
+    return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
+
+
+
+
+
 
 
 def text_log(username, value=0, fails=0, exists=0, log=None):

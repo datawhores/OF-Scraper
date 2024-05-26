@@ -13,6 +13,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run
+from ofscraper.download.shared.utils.log import empty_log
 
 
 @run
@@ -26,10 +27,11 @@ async def download_process(username, model_id, medialist, posts=None):
 
 async def download_picker(username, model_id, medialist):
     if len(medialist) == 0:
+        out=empty_log(username)
         logging.getLogger("shared").error(
-            f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
+            out
         )
-        return 0, 0, 0, 0, 0
+        return out
     elif (
         system.getcpu_count() > 1
         and (
@@ -71,7 +73,4 @@ def download_post_process(username, model_id, medialist, postlist):
         log.traceback_(traceback.format_exc())
 
 
-def empty_log(username):
-    logging.getLogger("shared").error(
-        f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
-    )
+

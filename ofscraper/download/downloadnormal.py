@@ -29,7 +29,7 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.main_download import main_download
 from ofscraper.download.shared.classes.session import download_session
 from ofscraper.download.shared.common.general import get_medialog
-from ofscraper.download.shared.utils.log import final_log, log_download_progress
+from ofscraper.download.shared.utils.log import final_log, final_log_text,log_download_progress
 from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
@@ -148,13 +148,8 @@ async def process_dicts(username, model_id, medialist):
             log_thread.join()
             other_thread.join() if other_thread else None
             final_log(username, log=logging.getLogger("shared"))
-            return (
-                common_globals.photo_count,
-                common_globals.video_count,
-                common_globals.audio_count,
-                common_globals.forced_skipped,
-                common_globals.skipped,
-            )
+            return final_log_text(username)
+
 
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():

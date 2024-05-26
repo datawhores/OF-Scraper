@@ -70,7 +70,7 @@ def process_item():
     try:
         row, key = table.row_queue.get()
     except Exception as E:
-        log.error(f"Error getting item from queue: {E}")
+        log.debug(f"Error getting item from queue: {E}")
         return
     for count, _ in enumerate(range(0, 2)):
         try:

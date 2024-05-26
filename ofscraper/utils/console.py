@@ -28,7 +28,7 @@ def get_console():
 def get_shared_console():
     global shared_console
     if not shared_console:
-        shared_console = Console(theme=theme, quiet=quiet)
+        shared_console = Console(theme=theme, quiet=quiet,markup=True)
 
     return shared_console
 
@@ -36,7 +36,7 @@ def get_shared_console():
 def get_other_console():
     global other_console
     if not other_console:
-        other_console = Console(theme=theme)
+        other_console = Console(theme=theme,markup=True)
     return other_console
 
 

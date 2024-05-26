@@ -8,6 +8,7 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.helpers as helpers
+from rich.text import Text
 
 
 class PipeHandler(logging.Handler):
@@ -163,7 +164,6 @@ class DiscordHandler(logging.Handler):
             self._url = record
             return
         log_entry = self.format(record)
-        log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
         log_entry = f"{log_entry}\n\n"
         if constants.getattr("DISCORD_ASYNC"):
             self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
@@ -261,11 +261,22 @@ class SensitiveFormatter(logging.Formatter):
         return self._filter(original)
 
 
+class DiscordFormatter(SensitiveFormatter):
+    """Formatter that removes sensitive information in logs."""
+
+    @staticmethod
+    def _filter(s):
+        t = SensitiveFormatter._filter(s)
+        s=re.sub("\\\\+","",t)
+        s=re.sub(r"\[(bold|/?bold(?:\s\w+\s\w+)?)\]","**",s)
+        return s
+
+
+
 class LogFileFormatter(SensitiveFormatter):
     """Formatter that removes sensitive information in logs."""
 
     @staticmethod
     def _filter(s):
         s = SensitiveFormatter._filter(s)
-        s = re.sub("\[bold\]|\[/bold\]", "", s)
-        return s
+        return Text.from_markup(Text(s).plain).plain

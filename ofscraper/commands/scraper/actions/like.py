@@ -21,7 +21,8 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-import ofscraper.api.profile as profile
+from rich.markup import escape
+from rich.text import Text
 
 
 log = logging.getLogger("shared")
@@ -133,17 +134,17 @@ def _like(model_id, username,ids: list, like_action: bool):
                 else:
                     sleep_duration =  stable_sleep_duration
                 if out == 1:
-                    progress_utils.increment_like_Ftask(task2)
+                    progress_utils.increment_like_task(task2)
                 progress_utils.increment_like_task(task)
                 time.sleep(sleep_duration)
-            out="[{username}] {post} post checked, {liked} post changes to {action}".format(post=progress_utils.get_like_task(task2).completed,liked=progress_utils.get_like_task(task).completed,
-            username = username,
-            action="liked" if like_action else "unliked"  
-            )
+                title="Liked" if like_action else "Unliked"
+                liked=progress_utils.get_like_task(task2).completed
+                post=progress_utils.get_like_task(task).completed
+                action=title.lower()
+                text_out=f"[bold]\\[{username}][/bold] [bold]\\[Action {title}][/bold] ({post} post checked, {liked} post changes to {action})"
             progress_utils.remove_like_task(task)
             progress_utils.remove_like_task(task2)
-    return out
-
+    return text_out
 
 def _toggle_like_requests(c, id, model_id):
 

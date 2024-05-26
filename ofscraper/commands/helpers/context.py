@@ -1,6 +1,8 @@
-import contextlib
 import logging
 import traceback
+from itertools import chain
+
+
 
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.helpers.areas as areas
@@ -45,7 +47,9 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
-            log.warning(data)
+            for record in chain.from_iterable(data):
+                log.warning(record)
+
     return wrapper
 
 

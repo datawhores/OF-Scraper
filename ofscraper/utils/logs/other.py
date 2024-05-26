@@ -171,7 +171,7 @@ def init_other_logger(name):
     # #discord
     cord = log_class.DiscordHandler()
     cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
-    cord.setFormatter(log_class.SensitiveFormatter("%(message)s"))
+    cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
     # console
     log.addHandler(cord)
     if settings.get_log_level() != "OFF":

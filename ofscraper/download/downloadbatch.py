@@ -36,7 +36,7 @@ from ofscraper.download.shared.common.general import (
     get_medialog,
     subProcessVariableInit,
 )
-from ofscraper.download.shared.utils.log import final_log, log_download_progress
+from ofscraper.download.shared.utils.log import final_log, final_log_text   ,log_download_progress
 from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
@@ -199,13 +199,7 @@ def process_dicts(username, model_id, filtered_medialist):
             with exit.DelayedKeyboardInterrupt():
                 raise E
     final_log(username)
-    return (
-        common_globals.photo_count,
-        common_globals.video_count,
-        common_globals.audio_count,
-        common_globals.forced_skipped,
-        common_globals.skipped,
-    )
+    return final_log_text(username)
 
 
 def queue_process(pipe_, task1, total):
