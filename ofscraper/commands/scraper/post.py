@@ -58,7 +58,6 @@ async def post_media_process(ele, c=None):
 
     username = ele.name
     model_id = ele.id
-    data = None
     console.get_shared_console().clear()
     console.get_shared_console().clear_live()
     await operations.table_init_create(model_id=model_id, username=username)

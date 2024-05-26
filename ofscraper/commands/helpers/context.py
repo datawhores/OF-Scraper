@@ -47,7 +47,9 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
+            records=list(chain.from_iterable(data))
             records=chain.from_iterable(data)
+
             if len(records)<2:
                 return
             for record in records:

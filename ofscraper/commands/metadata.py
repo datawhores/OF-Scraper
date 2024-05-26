@@ -54,9 +54,6 @@ log = logging.getLogger("shared")
 def metadata():
     with progress_utils.setup_activity_progress_live(stop=True):
         if read_args.retriveArgs().scrape_paid:
-            progress_utils.update_activity_task(
-                description="Updating Metadata for  Entire Paid page"
-            )
             metadata_paid_all()
         if not run_action_bool():
             return

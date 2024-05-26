@@ -20,18 +20,15 @@ def main():
         try:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
-                exit_manager.closeCache()
         except KeyboardInterrupt as E:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
-                raise E
     except Exception as E:
         logging.getLogger("shared").debug(traceback.format_exc())
         logging.getLogger("shared").debug(E)
         try:
             with exit_context.DelayedKeyboardInterrupt():
-                exit_manager.forcedShutDown()
-                exit_manager.closeCache()
+                exit_manager.shutdown()
         except KeyboardInterrupt as E:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
