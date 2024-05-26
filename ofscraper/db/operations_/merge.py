@@ -71,7 +71,7 @@ async def batch_database_changes(new_root, old_root, user_dbs=None):
 
         except Exception as E:
             failures.append({"path": str(ele), "reason": E})
-            log.error(f"Issue getting required info for {ele}")
+            log.warning(f"Issue getting required info for {ele}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     log.info(
