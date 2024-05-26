@@ -37,7 +37,7 @@ def dupefilterPost(post):
     for item in post:
         if not output[item.id]:
             output[item.id]=item
-        elif item.open and not output[item.id].open:
+        elif item.opened and not output[item.id].opened:
              output[item.id]=item
     return output.values()
 
