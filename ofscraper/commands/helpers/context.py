@@ -28,7 +28,7 @@ def get_user_action_function(func):
                 try:
                     with progress_utils.setup_api_split_progress_live():
                         all_media, posts, like_posts = await post_media_process(ele, c=c)
-                    with progress_utils.setup_activity_counter_live(revert=False):
+                    with progress_utils.setup_activity_group_live(revert=False):
                         avatar = ele.avatar
                         if (
                             constants.getattr("SHOW_AVATAR")
