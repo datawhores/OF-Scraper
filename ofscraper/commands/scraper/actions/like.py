@@ -144,6 +144,7 @@ def _like(model_id, username,ids: list, like_action: bool):
                 text_out=f"[bold]\\[{username}][/bold] [bold]\\[Action {title}][/bold] ({post} post checked, {liked} post changes to {action})"
             progress_utils.remove_like_task(task)
             progress_utils.remove_like_task(task2)
+    log.warning(text_out)
     return text_out
 
 def _toggle_like_requests(c, id, model_id):
