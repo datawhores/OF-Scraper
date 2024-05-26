@@ -7,7 +7,7 @@ import ofscraper.utils.paths.common as common_paths
 
 
 def shutdown():
-git     close_log.gracefulClose()
+    close_log.gracefulClose()
     manager.shutdown()
     closeCache()
 
