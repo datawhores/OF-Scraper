@@ -1,8 +1,5 @@
 
 import logging
-import traceback
-
-
 
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.helpers.areas as areas

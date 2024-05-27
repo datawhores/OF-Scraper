@@ -11,40 +11,7 @@ from ofscraper.commands.helpers.strings import (
     avatar_str,
 )
 log = logging.getLogger("shared")
-
-
-def get_user_action_function(func):
-    async def wrapper(userdata,session,*args, **kwargs):
-        async with session as c:
-            data=["[bold yellow]User First Progress[/bold yellow]"]
-            for ele in userdata:
-                try:
-                    with progress_utils.setup_api_split_progress_live():
-                        data_helper(ele)
-                        all_media, posts, like_posts = await post_media_process(ele, c=c)
-                    with progress_utils.setup_activity_group_live(revert=False):
-                        avatar = ele.avatar
-                        if (
-                            constants.getattr("SHOW_AVATAR")
-                            and avatar
-                            and read_args.retriveArgs ().userfirst
-                        ):
-                            logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                        data.append(await func(all_media, posts, like_posts,ele=ele))
-                except Exception as e:
-
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())
-
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                finally:
-                    progress_utils.increment_user_activity()
-            return data
-    return wrapper
-
-
-
+from ofscraper.commands.helpers.data import data_helper
 
 def get_userfirst_data_function(funct):
     async def wrapper(userdata, session, *args, **kwargs):
@@ -107,7 +74,4 @@ def get_userfirst_action_execution_function(funct):
             progress_utils.increment_activity_count(description="Overall progress", total=2)
 
     return wrapper
-
-
-
 

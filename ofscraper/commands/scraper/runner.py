@@ -12,11 +12,16 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.helpers.context import (
+from ofscraper.commands.helpers.normal import (
     get_user_action_function,
+
+)
+
+from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
+
 from ofscraper.commands.helpers.shared import run_action_bool
 
 from ofscraper.commands.helpers.final_log import final_log
