@@ -82,7 +82,7 @@ def final_log_text(username):
         skipped_log=f"[yellow]{common_globals.video_count} Metadata unchanged[/yellow]"if len(common_globals.skipped)>0 else f"{common_globals.skipped}"
     else:
         skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} skipped"
-    return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log)
+    return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
 
         
 
