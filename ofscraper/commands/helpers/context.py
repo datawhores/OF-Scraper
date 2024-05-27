@@ -48,9 +48,9 @@ def get_user_action_function(func):
                 finally:
                     progress_utils.increment_user_activity()
             records=list(chain.from_iterable(data))
-
             if len(records)<2:
                 return
+            log.warning("Final Results Log")
             for record in records:
                 log.warning(record)
 
