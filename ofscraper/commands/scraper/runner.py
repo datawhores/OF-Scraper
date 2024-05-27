@@ -54,7 +54,6 @@ def runner():
                 user_first_data=process_users_actions_user_first(userdata, session)
             else:
                 userdata, session = prepare()
-                userdata=userdata[:5]
                 normal_data=process_users_actions_normal(userdata, session)
         final_log(normal_data+scrape_paid_data+user_first_data)
 def prepare():
