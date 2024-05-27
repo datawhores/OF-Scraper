@@ -70,7 +70,6 @@ def metadata():
             normal_data=process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
-            userdata=userdata[:10]
             userfirst_data=metadata_user_first(userdata, session)
     final_log(normal_data+scrape_paid_data+userfirst_data)
 
