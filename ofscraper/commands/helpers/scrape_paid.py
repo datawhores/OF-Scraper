@@ -17,7 +17,7 @@ log = logging.getLogger("shared")
 @run
 async def process_scrape_paid(download_progress_message=None,log_progress_message=None):
     progress_utils.update_activity_task(
-                    description="Scraping Entire Paid page"
+                    description="[bold yellow]Scraping Entire Paid page[/bold yellow]"
     )
     oldUsers = userselector.get_ALL_SUBS_DICT()
     with progress_utils.setup_all_paid_database_live():

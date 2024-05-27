@@ -22,7 +22,7 @@ log = logging.getLogger("shared")
 def get_user_action_function(func):
     async def wrapper(userdata,session,*args, **kwargs):
         async with session as c:
-            data=["User First Progress"]
+            data=["[bold yellow]User First Progress[/bold yellow]"]
             for ele in userdata:
                 try:
                     with progress_utils.setup_api_split_progress_live():
