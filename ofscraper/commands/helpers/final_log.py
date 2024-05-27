@@ -7,7 +7,7 @@ def final_log(data):
 
     records=list(chain.from_iterable(data))
  
-    if len(records)<2:
+    if len(records)<3:
         return
     elif constants.getattr("SHOW_RESULTS_LOG"):
         log.warning("Final Results Log")
