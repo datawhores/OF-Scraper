@@ -32,9 +32,6 @@ def runner():
     with scrape_context_manager():
         with progress_utils.setup_activity_group_live(setup=True,revert=False):
             if read_args.retriveArgs().scrape_paid:
-                progress_utils.update_activity_task(
-                    description="Scraping Entire Paid page"
-                )
                 download_action.scrape_paid_all()
 
             if not run_action_bool():

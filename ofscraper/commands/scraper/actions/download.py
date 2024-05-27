@@ -35,9 +35,13 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
 
 @run
 async def scrape_paid_all(user_dict=None):
+    progress_utils.update_activity_task(
+                    description="Scraping Entire Paid page"
+    )
     user_dict = await OF.process_all_paid()
     oldUsers = userselector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
+   
     with progress_utils.setup_all_paid_database_live():
         progress_utils.update_activity_task(description="Downloading Paid Content")
         progress_utils.update_activity_count(totat=length, completed=0)

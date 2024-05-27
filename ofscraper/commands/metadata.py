@@ -85,7 +85,6 @@ async def metadata_user_first(userdata, session):
 
 
 def metadata_paid_all(user_dict=None):
-    progress_utils.update_activity_task("Scraping Entire Paid page")
     old_args = copy.deepcopy(read_args.retriveArgs())
     force_change_metadata()
     user_dict = process_all_paid()
