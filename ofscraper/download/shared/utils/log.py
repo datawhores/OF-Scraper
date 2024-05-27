@@ -80,10 +80,10 @@ def final_log_text(username):
     skipped_log=""
     if read_args.retriveArgs().metadata:
         log_format="[blue][bold][{username}][/bold] [bold][Action Metadata][/bold] ({size_log}) ([green]{total_count} downloads total[/green][{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} metadata unchanged"
+        skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} metadata unchanged"
     else:
         log_format="[blue][bold]\\[{username}][/bold][bold][Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green][{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} skipped"
+        skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
 
