@@ -95,10 +95,9 @@ async def metadata_user_first(userdata, session):
         description="Users with Metadata Changed", completed=0
     )
 
-    d=await get_userfirst_action_execution_function( execute_metadata_action_on_user)(
+    return await get_userfirst_action_execution_function( execute_metadata_action_on_user)(
         data
     )
-    return d
 
 
 def metadata_paid_all(user_dict=None):
