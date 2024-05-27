@@ -51,6 +51,7 @@ def runner():
 
             elif read_args.retriveArgs().users_first:
                 userdata, session = prepare()
+                userdata=userdata[:10]
                 user_first_data=process_users_actions_user_first(userdata, session)
             else:
                 userdata, session = prepare()
@@ -86,7 +87,7 @@ async def execute_user_action(all_media, posts, like_posts,ele=None):
     actions = read_args.retriveArgs().action
     username = ele.name
     model_id = ele.id
-    out=["[bold yellow]Normal Action Mode Results[/bold yellow]"]
+    out=[]
     for action in actions:
         if action == "download":
             out.append(await download_action.downloader(

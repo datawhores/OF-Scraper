@@ -1,4 +1,3 @@
-from itertools import chain
 import logging
 import ofscraper.utils.constants as constants
 
