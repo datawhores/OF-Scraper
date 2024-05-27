@@ -76,7 +76,7 @@ def final_log_text(username):
 
     failed_log=f"[red]{common_globals.video_count} failed[/red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
 
-    log_format="[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Download][/bold] (size_log) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+    log_format="[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
     skipped_log=""
     if read_args.retriveArgs().metadata:
         skipped_log=f"[yellow]{common_globals.video_count} Metadata unchanged[/yellow]"if len(common_globals.skipped)>0 else f"{common_globals.skipped}"
