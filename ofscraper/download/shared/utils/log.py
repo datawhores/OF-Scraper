@@ -63,7 +63,7 @@ def final_log(username, log=None):
 
 def final_log_text(username):
     total_count=common_globals.audio_count+common_globals.audio_count+common_globals.video_count
-    size_log=f"[/green]{format_size(common_globals.total_bytes )}[/green]"
+    size_log=f"[green]{format_size(common_globals.total_bytes )}[/green]"
 
     
     photo_log=f"[green]{common_globals.photo_count} photos[/green]"if common_globals.photo_count>0 else f"{common_globals.photo_count} photos"
