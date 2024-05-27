@@ -27,6 +27,7 @@ def get_user_action_function(func):
             for ele in userdata:
                 try:
                     with progress_utils.setup_api_split_progress_live():
+                        data_helper(ele)
                         all_media, posts, like_posts = await post_media_process(ele, c=c)
                     with progress_utils.setup_activity_group_live(revert=False):
                         avatar = ele.avatar
@@ -36,7 +37,6 @@ def get_user_action_function(func):
                             and read_args.retriveArgs ().userfirst
                         ):
                             logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                        data_helper(ele)
                         data.append(await func(all_media, posts, like_posts,ele=ele))
                 except Exception as e:
 
