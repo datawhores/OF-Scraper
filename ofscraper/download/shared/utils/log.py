@@ -64,18 +64,18 @@ def final_log(username, log=None):
 def final_log_text(username):
 
     if read_args.retriveArgs().metadata:
-        return (f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+        return (f"[dark_goldenrod][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
         f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)")
+        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)[/dark_goldenrod]")
     else:
         skipped_word = "skipped"
-        return (f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+        return (f"[dark_goldenrod][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
         f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)")
+        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)[/dark_goldenrod]")
 
 
 def empty_log(username):
-    return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
+    return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))"
 
 
 
