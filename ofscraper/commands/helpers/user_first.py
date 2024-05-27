@@ -58,7 +58,7 @@ def get_userfirst_action_execution_function(funct):
                     logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
                 try:
                     with progress_utils.setup_activity_counter_live(revert=False):
-                        out.extend(await funct(all_media, posts, like_posts,*args, ele=ele,**kwargs))
+                        out.append(await funct(posts, like_posts,*args,media=all_media, ele=ele,**kwargs))
                 except Exception as e:
                     log.traceback_(f"failed with exception: {e}")
                     log.traceback_(traceback.format_exc())

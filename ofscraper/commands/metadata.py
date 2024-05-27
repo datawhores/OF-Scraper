@@ -49,30 +49,40 @@ from ofscraper.db.operations_.media import (
     get_timeline_media,
 )
 from ofscraper.utils.context.run_async import run
+from ofscraper.commands.helpers.final_log import final_log
 
 log = logging.getLogger("shared")
 
 
 def metadata():
-    with progress_utils.setup_activity_progress_live(stop=True):
+    with progress_utils.setup_activity_progress_live(revert=True):
+        scrape_paid_data=[]
+        userfirst_data=[]
+        normal_data=[]
         if read_args.retriveArgs().scrape_paid:
-            metadata_paid_all()
+            scrape_paid_data=metadata_paid_all()
         if not run_action_bool():
-            return
-        userdata, session = prepare()
-        if not read_args.retriveArgs().users_first:
-            process_users_metadata_normal(userdata, session)
+            pass
+        
+        elif not read_args.retriveArgs().users_first:
+            userdata, session = prepare()
+            userdata=userdata[:10]
+            userfirst_data=process_users_metadata_normal(userdata, session)
         else:
-            metadata_user_first(userdata, session)
+            userdata, session = prepare()
+            userdata=userdata[:10]
+            normal_data=metadata_user_first(userdata, session)
+    final_log(normal_data+scrape_paid_data+userfirst_data)
 
 
 @run
 async def process_users_metadata_normal(userdata, session):
     user_action_funct = get_user_action_function(process_metadata_for_user)
     progress_utils.update_activity_count(description="Users with Updated Metadata")
+    out=[]
     async with session:
         for ele in userdata:
-            await user_action_funct(user=ele, session=session)
+            out.append(await user_action_funct(user=ele, session=session))
 
 
 @run
@@ -80,8 +90,12 @@ async def metadata_user_first(userdata, session):
     data = await get_userfirst_data_function(metadata_data_user_first)(
         userdata, session
     )
+    progress_utils.update_activity_task(description="Changing Metadata for Users")
+    progress_utils.update_user_activity(
+        description="Users with Metadata Changed", completed=0
+    )
 
-    await get_userfirst_action_execution_function(execute_metadata_action_user_first)(
+    return await get_userfirst_action_execution_function( execute_metadata_action_on_user)(
         data
     )
 
@@ -154,43 +168,40 @@ async def process_metadata_for_user(user=None, session=None):
         log.traceback_(traceback.format_exc())
 
 
-async def execute_metadata_action_on_user(user=None, media=None):
-    username = user.name
+async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
+    username = ele.name
 
-    model_id = user.id
+    model_id = ele.id
     operations.table_init_create(model_id=model_id, username=username)
     filterMedia = filters.filterMedia(media, username=username, model_id=model_id)
     progress_utils.update_activity_task(
         description=metadata_str.format(username=username)
     )
-    await download.download_process(username, model_id, filterMedia)
+    data=await download.download_process(username, model_id, filterMedia)
     metadata_stray_media(username, model_id, media)
+    return data
 
 
-async def execute_metadata_action_user_first(data):
-    progress_utils.update_activity_task(
-        description="Performing Metadata Actions on Users"
-    )
-    progress_utils.update_user_activity(
-        description="Users with Metadata updated", completed=0
-    )
-    for model_id, val in data.items():
-        username = val["username"]
-        media = val["media"]
-        ele = val["ele"]
-        progress_utils.update_activity_task(
-            description=metadata_str.format(username=username)
-        )
-        try:
+# async def execute_metadata_action_user_first(data):
+#     out=[]
+#     for model_id, val in data.items():
+#         username = val["username"]
+#         media = val["media"]
+#         ele = val["ele"]
+#         progress_utils.update_activity_task(
+#             description=metadata_str.format(username=username)
+#         )
+#         try:
 
-            await get_user_action_execution_function(execute_metadata_action_on_user)(
-                media=media, user=ele
-            )
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
+#             out.append(await get_user_action_execution_function(execute_metadata_action_on_user)(
+#                 media=media, user=ele
+#             ))
+#         except Exception as e:
+#             if isinstance(e, KeyboardInterrupt):
+#                 raise e
+#             log.traceback_(f"failed with exception: {e}")
+#             log.traceback_(traceback.format_exc())
+#     return out
 
 
 @run
@@ -232,6 +243,8 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
                 "media": media,
                 "avatar": avatar,
                 "ele": ele,
+                "posts":[],
+                "like_posts":[]
             }
         }
     except Exception as e:
@@ -246,7 +259,7 @@ def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()
     with scrape_context_manager():
-        with progress_utils.setup_activity_progress_live(stop=True):
+        with progress_utils.setup_activity_progress_live(revert=True):
             if read_args.retriveArgs().metadata:
                 metadata()
 
