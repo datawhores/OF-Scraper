@@ -76,12 +76,9 @@ def metadata():
 
 @run
 async def process_users_metadata_normal(userdata, session):
-    user_action_funct = get_user_action_function(process_metadata_for_user)
-    progress_utils.update_activity_count(description="Users with Updated Metadata")
-    out=[]
-    async with session:
-        for ele in userdata:
-            out.append(await user_action_funct(user=ele, session=session))
+    user_action_funct = get_user_action_function(execute_metadata_action_on_user)
+    progress_utils.update_user_activity(description="Users with Updated Metadata")
+    return await user_action_funct(userdata, session)
 
 
 @run
@@ -129,7 +126,7 @@ def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
-    progress_utils.activity_task(mark_stray_str.format(username=username))
+    progress_utils.update_activity_task(description=mark_stray_str.format(username=username))
     if "Timeline" in args.download_area:
         all_media.extend(get_timeline_media(model_id=model_id, username=username))
     if "Messages" in args.download_area:
@@ -153,21 +150,6 @@ def metadata_stray_media(username, model_id, media):
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 
-async def process_metadata_for_user(user=None, session=None):
-    try:
-
-        model_id = user.id
-        all_media, _, _ = await process_areas_helper(user, model_id, c=session)
-        await get_user_action_function(execute_metadata_action_on_user)(
-            user=user, media=all_media
-        )
-    except Exception as e:
-        if isinstance(e, KeyboardInterrupt):
-            raise e
-        log.traceback_(f"failed with exception: {e}")
-        log.traceback_(traceback.format_exc())
-
-
 async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
     username = ele.name
 
@@ -181,27 +163,6 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
     metadata_stray_media(username, model_id, media)
     return [data]
 
-
-# async def execute_metadata_action_user_first(data):
-#     out=[]
-#     for model_id, val in data.items():
-#         username = val["username"]
-#         media = val["media"]
-#         ele = val["ele"]
-#         progress_utils.update_activity_task(
-#             description=metadata_str.format(username=username)
-#         )
-#         try:
-
-#             out.append(await get_user_action_execution_function(execute_metadata_action_on_user)(
-#                 media=media, user=ele
-#             ))
-#         except Exception as e:
-#             if isinstance(e, KeyboardInterrupt):
-#                 raise e
-#             log.traceback_(f"failed with exception: {e}")
-#             log.traceback_(traceback.format_exc())
-#     return out
 
 
 @run
@@ -258,10 +219,10 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()
+    progress_utils.update_activity_task(description="Running Metadata Mode")
     with scrape_context_manager():
-        with progress_utils.setup_activity_progress_live(revert=True):
-            if read_args.retriveArgs().metadata:
-                metadata()
+        with progress_utils.setup_activity_group_live(revert=True):
+            metadata()
 
 
 def prepare():
