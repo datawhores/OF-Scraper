@@ -39,7 +39,7 @@ from ofscraper.commands.helpers.user_first import (
     get_userfirst_data_function,
 )
 from ofscraper.commands.helpers.shared import run_action_bool
-from ofscraper.commands.helpers.strings import avatar_str, metadata_str
+from ofscraper.commands.helpers.strings import avatar_str, metadata_str,mark_stray_str
 from ofscraper.commands.scraper.post import process_all_paid, process_areas_helper
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
@@ -66,11 +66,10 @@ def metadata():
         
         elif not read_args.retriveArgs().users_first:
             userdata, session = prepare()
-            userdata=userdata[:10]
+            userdata=userdata[:5]
             normal_data=process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
-            userdata=userdata[:5]
             userfirst_data=metadata_user_first(userdata, session)
     final_log(normal_data+scrape_paid_data+userfirst_data)
 
@@ -130,7 +129,7 @@ def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
-    progress_utils.activity_task(mark_str)
+    progress_utils.activity_task(mark_stray_str.format(username=username))
     if "Timeline" in args.download_area:
         all_media.extend(get_timeline_media(model_id=model_id, username=username))
     if "Messages" in args.download_area:
@@ -159,7 +158,7 @@ async def process_metadata_for_user(user=None, session=None):
 
         model_id = user.id
         all_media, _, _ = await process_areas_helper(user, model_id, c=session)
-        await get_user_action_execution_function(execute_metadata_action_on_user)(
+        await get_user_action_function(execute_metadata_action_on_user)(
             user=user, media=all_media
         )
     except Exception as e:

@@ -12,3 +12,5 @@ download_manual_str = "Downloading individual media for {username}"
 check_str = "Checking {activity} for {username}"
 
 all_paid_progress_download="[{model_id}_{username}] Downloading Progress :{count}/{length} models"
+
+mark_stray_str="Marking Stray Items for {username} as downloaded"

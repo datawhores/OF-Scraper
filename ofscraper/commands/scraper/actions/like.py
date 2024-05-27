@@ -120,9 +120,14 @@ def _like(model_id, username,ids: list, like_action: bool):
             sleep_duration_50=constants.getattr("SLEEP_DURATION_LIKE_50")
             sleep_duration_60=constants.getattr("SLEEP_DURATION_LIKE_60")
             sleep_duration_common=constants.getattr("COMMON_MULTIPLE_SLEEP_DURATION_LIKE")
+            failed=0
+            post=0
+            liked=0
 
             for count, func in enumerate(tasks):
                 out = func()
+                post+=1
+                #sleep
                 if out == 0:
                     sleep_duration = 0
                 elif count + 1 % 60 == 0 and count + 1 % 50 == 0:
@@ -133,18 +138,34 @@ def _like(model_id, username,ids: list, like_action: bool):
                     sleep_duration = sleep_duration_50   # Divisible by 50 - 30 seconds sleep
                 else:
                     sleep_duration =  stable_sleep_duration
+                #values
                 if out == 1:
+                    liked=+1
                     progress_utils.increment_like_task(task2)
+                elif out==3:
+                    failed+=1
                 progress_utils.increment_like_task(task)
                 time.sleep(sleep_duration)
-                title="Liked" if like_action else "Unliked"
-                liked=progress_utils.get_like_task(task2).completed
-                post=progress_utils.get_like_task(task).completed
-                action=title.lower()
-                text_out=f"[bold]\\[{username}][/bold] [bold]\\[Action {title}][/bold] ({post} post checked, {liked} post changes to {action})"
             progress_utils.remove_like_task(task)
             progress_utils.remove_like_task(task2)
-    log.warning(text_out)
+        return get_final_like_log(like_action,username,failed,post,liked) 
+
+def get_final_like_log(like_action,username,failed,post,liked):
+    title="Liked" if like_action else "Unliked"
+    action=title.lower()
+    unchanged=post-failed-liked
+
+    liked_log=f"{liked} post changes to {action}" if liked==0  else f"[green]{liked} post changes to {action}[/green]"
+    alt_liked_log=f"{unchanged} posts not changed" if unchanged==0  else f"[yellow]{unchanged} post not changed[/yellow]"
+    failed_log=f"{failed} post failed" if failed==0  else f"[red]{failed} post failed[/red]"
+
+    text_out=""
+    if post==0:
+        text_out=f"[bold][{username}][/bold] [bold][Action {title}][/bold] [{post} post checked), ({liked_log}, {alt_liked_log}), {failed} post failed]"
+        log.warning(text_out)
+    else:
+        text_out=f"[blue][bold][{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/blue]"
+        log.warning(text_out)
     return text_out
 
 def _toggle_like_requests(c, id, model_id):
@@ -159,7 +180,9 @@ def _toggle_like_requests(c, id, model_id):
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id,sleeper)
-    if favorited:
+    if favorited==None:
+        return 3
+    elif favorited:
         log.debug(f"ID: {id} changed to liked")
         out = 1
     else:
@@ -185,7 +208,9 @@ def _toggle_unlike_requests(c, id, model_id):
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id,sleeper)
-    if not favorited:
+    if favorited==None:
+        return 3
+    elif favorited==False:
         log.debug(f"ID: {id} changed to unliked")
         out = 1
     else:
@@ -204,4 +229,8 @@ def _like_request(c, id, model_id,sleeper):
         method="post",sleeper=sleeper,
         retries=constants.getattr("LIKE_MAX_RETRIES")
     ) as r:
-        return r.json_()["isFavorite"], r.json_()["id"]
+        try:
+            return r.json_()["isFavorite"], r.json_()["id"]
+        except:
+            return None
+
