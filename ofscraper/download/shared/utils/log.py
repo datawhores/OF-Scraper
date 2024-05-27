@@ -89,7 +89,7 @@ def final_log_text(username):
 def empty_log(username):
 
     if read_args.retriveArgs().metadata:
-        skipped_log=f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  Metadata unchanged, {0}  failed))"
+        return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  Metadata unchanged, {0}  failed))"
     else:
         return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))"
 
