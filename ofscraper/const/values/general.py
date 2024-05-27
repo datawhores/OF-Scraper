@@ -10,6 +10,7 @@ refreshScreen = 50
 NUMBER_REGEX = "[0-9]"
 USERNAME_REGEX = "[^/]"
 SHOW_AVATAR = True
+SHOW_RESULTS_LOG=True
 MODEL_PRICE_PLACEHOLDER = "Unknown_Price"
 disclaimers = [
     "This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.",

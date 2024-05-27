@@ -50,9 +50,10 @@ def get_user_action_function(func):
             records=list(chain.from_iterable(data))
             if len(records)<2:
                 return
-            log.warning("Final Results Log")
-            for record in records:
-                log.warning(record)
+            elif constants.getattr("SHOW_RESULTS_LOG"):
+                log.warning("Final Results Log")
+                for record in records:
+                    log.warning(record)
 
     return wrapper
 
