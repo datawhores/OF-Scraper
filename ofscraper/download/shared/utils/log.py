@@ -79,10 +79,10 @@ def final_log_text(username):
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
-        "[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Metadata][/bold] ({size_log}) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[yellow]{common_globals.skipped} Metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} Metadata unchanged"
+        log_format="[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Metadata][/bold] ({size_log}) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} metadata unchanged"
     else:
-        "[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[blue]\\[[bold]{username}[/bold]] [bold]\\[Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green] \\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
         skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
@@ -92,7 +92,7 @@ def final_log_text(username):
 def empty_log(username):
 
     if read_args.retriveArgs().metadata:
-        return f"[bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  Metadata unchanged, {0}  failed))"
+        return f"[bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  metadata unchanged, {0}  failed))"
     else:
         return f"[bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))"
 

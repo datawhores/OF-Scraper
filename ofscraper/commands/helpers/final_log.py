@@ -1,4 +1,5 @@
 import logging
+import time
 import ofscraper.utils.constants as constants
 
 def final_log(data):
@@ -9,3 +10,5 @@ def final_log(data):
         log.warning("[bold yellow]Final Results Logs[/bold yellow]")
         for record in data:
             log.warning(record)
+    #give time for last long to process
+    time.sleep(5)
