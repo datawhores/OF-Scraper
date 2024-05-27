@@ -66,7 +66,6 @@ def metadata():
         
         elif not read_args.retriveArgs().users_first:
             userdata, session = prepare()
-            userdata=userdata[:5]
             normal_data=process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
