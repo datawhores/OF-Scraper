@@ -17,7 +17,7 @@ from ofscraper.commands.helpers.data import data_helper
 def get_user_action_function(func):
     async def wrapper(userdata,session,*args, **kwargs):
         async with session as c:
-            data=["[bold yellow]User First Progress[/bold yellow]"]
+            data=["[bold yellow]User First Result[/bold yellow]"]
             for ele in userdata:
                 try:
                     with progress_utils.setup_api_split_progress_live():

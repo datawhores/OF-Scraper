@@ -32,7 +32,7 @@ async def process_paid_dict(download_progress_message=None,log_progress_message=
     length = len(list(user_dict.keys()))
     progress_utils.update_activity_count(totat=length, completed=0)
 
-    out=["[bold yellow]Scrape Paid Progress[/bold yellow]"]
+    out=["[bold yellow]Scrape Paid Results[/bold yellow]"]
 
     for count, value in enumerate(user_dict.values()):
             model_id = value["model_id"]
