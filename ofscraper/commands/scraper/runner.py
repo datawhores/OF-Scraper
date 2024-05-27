@@ -138,7 +138,7 @@ async def process_ele_user_first_data_retriver(ele, session):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
-    operations.table_init_create(model_id=model_id, username=username)
+    await operations.table_init_create(model_id=model_id, username=username)
     media, posts, like_posts = await post_media_process(ele, session)
     return {
         model_id: {

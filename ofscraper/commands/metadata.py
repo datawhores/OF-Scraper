@@ -172,7 +172,7 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
     username = ele.name
 
     model_id = ele.id
-    operations.table_init_create(model_id=model_id, username=username)
+    await operations.table_init_create(model_id=model_id, username=username)
     filterMedia = filters.filterMedia(media, username=username, model_id=model_id)
     progress_utils.update_activity_task(
         description=metadata_str.format(username=username)
