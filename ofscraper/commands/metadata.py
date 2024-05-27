@@ -70,6 +70,7 @@ def metadata():
             normal_data=process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
+            userdata=userdata[:5]
             userfirst_data=metadata_user_first(userdata, session)
     final_log(normal_data+scrape_paid_data+userfirst_data)
 
@@ -178,7 +179,7 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
     )
     data=await download.download_process(username, model_id, filterMedia)
     metadata_stray_media(username, model_id, media)
-    return data
+    return [data]
 
 
 # async def execute_metadata_action_user_first(data):
