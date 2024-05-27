@@ -18,6 +18,8 @@ from ofscraper.commands.helpers.context import (
     get_userfirst_data_function,
 )
 from ofscraper.commands.helpers.shared import run_action_bool
+
+from ofscraper.commands.helpers.final_log import final_log
 from ofscraper.commands.scraper.post import post_media_process
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth
@@ -29,21 +31,26 @@ log = logging.getLogger("shared")
 @exit.exit_wrapper
 def runner():
     check_auth()
-    with scrape_context_manager():
+    with scrape_context_manager(
+    ):
+        normal_data=[]
+        user_first_data=[
+        ]
+        scrape_paid_data=[]
         with progress_utils.setup_activity_group_live(setup=True,revert=False):
             if read_args.retriveArgs().scrape_paid:
-                download_action.scrape_paid_all()
+                scrape_paid_data=download_action.scrape_paid_all()
 
             if not run_action_bool():
-                return
-            userdata, session = prepare()
+                pass
 
-            if read_args.retriveArgs().users_first:
-                process_users_actions_user_first(userdata, session)
+            elif read_args.retriveArgs().users_first:
+                userdata, session = prepare()
+                user_first_data=process_users_actions_user_first(userdata, session)
             else:
-                process_users_actions_normal(userdata, session)
-
-
+                userdata, session = prepare()
+                normal_data=process_users_actions_normal(userdata, session)
+        final_log(normal_data+scrape_paid_data+user_first_data)
 def prepare():
     session = sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
@@ -66,11 +73,11 @@ def prepare():
 @run
 async def process_users_actions_normal(userdata=None, session=None):
     progress_utils.update_user_activity(description="Users with Actions Completed")
-    await get_user_action_function( execute_user_action)(userdata,session)
+    return await get_user_action_function( execute_user_action)(userdata,session)
 
 
 
-async def execute_user_action(all_media, posts, like_posts, ele=None):
+async def execute_user_action(all_media, posts, like_posts,ele=None):
     actions = read_args.retriveArgs().action
     username = ele.name
     model_id = ele.id
@@ -114,7 +121,7 @@ async def process_users_actions_user_first(userdata, session):
         description="Users with Actions completed", completed=0
     )
 
-    await get_userfirst_action_execution_function(execute_user_action)(
+    return await get_userfirst_action_execution_function(execute_user_action)(
         data
     )
 

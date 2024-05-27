@@ -10,3 +10,5 @@ metadata_str = "Updating Metadata for {username}"
 post_str_manual = "Manual Mode: Getting media from {url}"
 download_manual_str = "Downloading individual media for {username}"
 check_str = "Checking {activity} for {username}"
+
+all_paid_progress_download="[{model_id}_{username}] Downloading Progress :{count}/{length} models"

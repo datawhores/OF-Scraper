@@ -1,6 +1,5 @@
 import logging
 import traceback
-from itertools import chain
 
 
 
@@ -47,14 +46,7 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
-            records=list(chain.from_iterable(data))
-            if len(records)<2:
-                return
-            elif constants.getattr("SHOW_RESULTS_LOG"):
-                log.warning("Final Results Log")
-                for record in records:
-                    log.warning(record)
-
+            return data
     return wrapper
 
 

@@ -298,7 +298,8 @@ async def process_all_paid():
     output = {}
     with progress_utils.setup_all_paid_database_live():
         progress_utils.update_activity_task(description="Processsing Paid content data")
-        for model_id, value in paid_content.items():
+        temp= list(paid_content.items())[:10]
+        for model_id, value in temp:
             progress_utils.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
             )
