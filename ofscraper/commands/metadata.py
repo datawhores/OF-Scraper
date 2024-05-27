@@ -130,6 +130,7 @@ def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
+    progress_utils.activity_task(mark_str)
     if "Timeline" in args.download_area:
         all_media.extend(get_timeline_media(model_id=model_id, username=username))
     if "Messages" in args.download_area:
