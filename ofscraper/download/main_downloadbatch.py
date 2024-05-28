@@ -28,7 +28,6 @@ import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.general import (
@@ -112,6 +111,12 @@ async def main_download_downloader(c, ele):
                 )
                 common_globals.innerlog.get().traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
+                )
+                common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                )
+                common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
                 )
                 raise E
 
