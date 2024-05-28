@@ -26,7 +26,7 @@ def get_count():
 
 def main_menu_action():
     global count
-    log.debug("[bold blue] Running Prompt Menu Mode[/bold blue]")
+    log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt == "action":

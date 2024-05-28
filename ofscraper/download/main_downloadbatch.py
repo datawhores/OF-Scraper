@@ -122,7 +122,11 @@ async def main_download_downloader(c, ele):
 
 
 async def fresh_data_handler(c, ele, tempholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] fresh download for media {ele.url}"
+    )
     result = None
+
     try:
         result = await main_download_sendreq(
             c, ele, tempholderObj, placeholderObj=None, total=None
@@ -187,8 +191,6 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, tota
 
 async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
-        common_globals.log.debug(f"{get_medialog(ele)} writing item to disk")
-
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         common_globals.log.debug(
@@ -220,6 +222,9 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 total = 0
                 await common.batch_total_change_helper(total, 0)
             elif total != resume_size:
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing media to disk"
+                )       
                 await download_fileobject_writer(
                     r, ele, total, tempholderObj, placeholderObj
                 )

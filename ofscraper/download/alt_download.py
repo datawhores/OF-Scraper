@@ -167,6 +167,9 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
 
 
 async def fresh_data_handler(item, c, ele, placeholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] fresh download for media"
+    )
     result = None
     try:
         result = await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -195,7 +198,6 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 async def send_req_inner(c, ele, item, placeholderObj):
     try:
-        common_globals.log.debug(f"{get_medialog(ele)} writing item to disk")
 
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
@@ -208,7 +210,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         url = f"{base_url}{item['origname']}"
 
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {url}"
+            f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url  {ele.mpd}"
         )
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=True
@@ -233,6 +235,9 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 total = item["total"]
                 await common.total_change_helper(total, 0)
             elif total != resume_size:
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing media to disk"
+                )
                 await download_fileobject_writer(total, l, ele, placeholderObj)
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item

@@ -1,7 +1,7 @@
 progress_str = "Progress {count}/{length}"
 data_str = "Data Retrival on {name}"
 avatar_str = "Avatar : {avatar}"
-area_str = "Getting \[[bold blue]{areas}[/bold blue]] for [bold]{name}[/bold]\n[bold]Subscription Active:[/bold] {active}"
+area_str = "Getting \[[bold deep_sky_blue2]{areas}[/bold deep_sky_blue2]] for [bold]{name}[/bold]\n[bold]Subscription Active:[/bold] {active}"
 all_paid_model_id_str = "getting username data for {model_id}"
 all_paid_str = "Creating databases for {username}"
 download_activity_str = "Performing Downloading Action on {username}"

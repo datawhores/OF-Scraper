@@ -30,7 +30,7 @@ log = logging.getLogger("shared")
 
 
 def process_selected_areas():
-    log.debug("[bold blue] Running Action Mode [/bold blue]")
+    log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
     runner()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":

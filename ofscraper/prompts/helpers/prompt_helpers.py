@@ -26,36 +26,36 @@ def model_details(prompt_):
             f"""
         ========================================================================================================================================
 
-        Name: [bold blue]{selected.name}[/bold blue]
+        Name: [bold deep_sky_blue2]{selected.name}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        ID: [bold blue]{selected.id}[/bold blue]
+        ID: [bold deep_sky_blue2]{selected.id}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
+        Renewed Date: [bold deep_sky_blue2]{selected.renewed_string}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Subscribed Date: [bold blue]{selected.subscribed_string}[/bold blue]
+        Subscribed Date: [bold deep_sky_blue2]{selected.subscribed_string}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Expired Date: [bold blue]{selected.expired_string}[/bold blue]
+        Expired Date: [bold deep_sky_blue2]{selected.expired_string}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Last Seen: [bold blue] {selected.last_seen_formatted}[/bold blue]
+        Last Seen: [bold deep_sky_blue2] {selected.last_seen_formatted}[/bold deep_sky_blue2]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]   [Current Subscription Price]
+        Original Sub Price: [bold deep_sky_blue2]{selected.sub_price}[/bold deep_sky_blue2]   [Current Subscription Price]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Original Regular Price: [bold blue]{selected.regular_price}[/bold blue]   [Regular Subscription Price Set By Model]
+        Original Regular Price: [bold deep_sky_blue2]{selected.regular_price}[/bold deep_sky_blue2]   [Regular Subscription Price Set By Model]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Original Claimable Promo Price: [bold blue]{selected.lowest_promo_claim}[/bold blue]   [Lowest Promotional Price Marked as Claimable]
+        Original Claimable Promo Price: [bold deep_sky_blue2]{selected.lowest_promo_claim}[/bold deep_sky_blue2]   [Lowest Promotional Price Marked as Claimable]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Original Any Promo Price: [bold blue]{selected.lowest_promo_all}[/bold blue]   [Lowest of Any Promotional Price]
+        Original Any Promo Price: [bold deep_sky_blue2]{selected.lowest_promo_all}[/bold deep_sky_blue2]   [Lowest of Any Promotional Price]
         =======================================================================================================================================
         
         [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
         ---------------------------------------------------------------------------------------------------------------------------------------
-        Final Current Price: [bold blue]{selected.final_current_price}[/bold blue]   [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
+        Final Current Price: [bold deep_sky_blue2]{selected.final_current_price}[/bold deep_sky_blue2]   [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Final Promo Price: [bold blue]{selected.final_promo_price}[/bold blue]   [Lowest Any Promo Price or Regular Price | See Final Price Details]
+        Final Promo Price: [bold deep_sky_blue2]{selected.final_promo_price}[/bold deep_sky_blue2]   [Lowest Any Promo Price or Regular Price | See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Final Renewal Price: [bold blue]{selected.final_renewal_price}[/bold blue]   [Lowest Claimable Promo or Regular Price | See Final Price Details]
+        Final Renewal Price: [bold deep_sky_blue2]{selected.final_renewal_price}[/bold deep_sky_blue2]   [Lowest Claimable Promo or Regular Price | See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
-        Final Regular Price: [bold blue]{selected.final_regular_price}[/bold blue]   [Regular Price | See Final Price Details]
+        Final Regular Price: [bold deep_sky_blue2]{selected.final_regular_price}[/bold deep_sky_blue2]   [Regular Price | See Final Price Details]
         =======================================================================================================================================  
 
         PRESS ENTER TO RETURN
@@ -75,16 +75,16 @@ def price_info(prompt_):
 [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
-current_price => [bold blue]{read_args.retriveArgs().current_price if read_args.retriveArgs().current_price else 'paid and free'}[/bold blue]
+current_price => [bold deep_sky_blue2]{read_args.retriveArgs().current_price if read_args.retriveArgs().current_price else 'paid and free'}[/bold deep_sky_blue2]
 [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
 ---------------------------------------------------------------------------------------
-promo_price => [bold blue]{read_args.retriveArgs().promo_price if read_args.retriveArgs().promo_price else 'paid and free'}[/bold blue]
+promo_price => [bold deep_sky_blue2]{read_args.retriveArgs().promo_price if read_args.retriveArgs().promo_price else 'paid and free'}[/bold deep_sky_blue2]
 [Lowest Any Promo Price or Regular Price | See Final Price Details]
 ---------------------------------------------------------------------------------------
-regular_price => [bold blue]{read_args.retriveArgs().regular_price if read_args.retriveArgs().regular_price else 'paid and free'}[/bold blue]
+regular_price => [bold deep_sky_blue2]{read_args.retriveArgs().regular_price if read_args.retriveArgs().regular_price else 'paid and free'}[/bold deep_sky_blue2]
 [Lowest Claimable Promo or Regular Price | See Final Price Details]
 ---------------------------------------------------------------------------------------
-renewal_price => [bold blue]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold blue]
+renewal_price => [bold deep_sky_blue2]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold deep_sky_blue2]
 [Regular Price | See Final Price Details]
 ==========================================================================================================================================
 
@@ -103,9 +103,9 @@ def sort_info(prompt_):
             f"""
 ========================================================================================================================================
 
-sorting by =>  [bold blue]{read_args.retriveArgs().sort}[/bold blue]
+sorting by =>  [bold deep_sky_blue2]{read_args.retriveArgs().sort}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-sorting direction => [bold blue]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold blue]
+sorting direction => [bold deep_sky_blue2]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold deep_sky_blue2]
 ========================================================================================================================================
 PRESS ENTER TO RETURN
 
@@ -231,47 +231,47 @@ def get_current_filters(prompt_):
             f"""
 ========================================================================================================================================
 
-subscription => [bold blue]{'active' if read_args.retriveArgs().sub_status else 'expired' if read_args.retriveArgs().sub_status is False else 'expired and active'}[/bold blue]
+subscription => [bold deep_sky_blue2]{'active' if read_args.retriveArgs().sub_status else 'expired' if read_args.retriveArgs().sub_status is False else 'expired and active'}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-renew => [bold blue]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal is False else 'renew on/off'}[/bold blue]
+renew => [bold deep_sky_blue2]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal is False else 'renew on/off'}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-user-list in use=> [bold blue]{settings.get_userlist() or 'no userlist'}[/bold blue]
+user-list in use=> [bold deep_sky_blue2]{settings.get_userlist() or 'no userlist'}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-black-list in use=> [bold blue]{settings.get_blacklist() or 'no blacklist'}[/bold blue]
+black-list in use=> [bold deep_sky_blue2]{settings.get_blacklist() or 'no blacklist'}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-promo status => [bold blue]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo is False else 'promo off/on'}[/bold blue]
+promo status => [bold deep_sky_blue2]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo is False else 'promo off/on'}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-all promo status => [bold blue]{'all promo on' if read_args.retriveArgs().all_promo else 'all promo off' if read_args.retriveArgs().all_promo is False else 'all promo off/on'}[/bold blue]
+all promo status => [bold deep_sky_blue2]{'all promo on' if read_args.retriveArgs().all_promo else 'all promo off' if read_args.retriveArgs().all_promo is False else 'all promo off/on'}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-last-seen => [bold blue]{read_args.retriveArgs().last_seen}[/bold blue]
+last-seen => [bold deep_sky_blue2]{read_args.retriveArgs().last_seen}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-last-seen-before => [bold blue]{read_args.retriveArgs().last_seen_before}[/bold blue]
+last-seen-before => [bold deep_sky_blue2]{read_args.retriveArgs().last_seen_before}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-last-seen-after => [bold blue]{read_args.retriveArgs().last_seen_after}[/bold blue]
+last-seen-after => [bold deep_sky_blue2]{read_args.retriveArgs().last_seen_after}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
 [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
-current_price => [bold blue]{read_args.retriveArgs().current_price if read_args.retriveArgs().current_price else 'paid and free'}[/bold blue]
+current_price => [bold deep_sky_blue2]{read_args.retriveArgs().current_price if read_args.retriveArgs().current_price else 'paid and free'}[/bold deep_sky_blue2]
 [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
 ---------------------------------------------------------------------------------------
-promo_price => [bold blue]{read_args.retriveArgs().promo_price if read_args.retriveArgs().promo_price else 'paid and free'}[/bold blue]
+promo_price => [bold deep_sky_blue2]{read_args.retriveArgs().promo_price if read_args.retriveArgs().promo_price else 'paid and free'}[/bold deep_sky_blue2]
 [Lowest Any Promo Price or Regular Price | See Final Price Details]
 ---------------------------------------------------------------------------------------
-regular_price => [bold blue]{read_args.retriveArgs().regular_price if read_args.retriveArgs().regular_price else 'paid and free'}[/bold blue]
+regular_price => [bold deep_sky_blue2]{read_args.retriveArgs().regular_price if read_args.retriveArgs().regular_price else 'paid and free'}[/bold deep_sky_blue2]
 [Lowest Claimable Promo or Regular Price | See Final Price Details]
 ---------------------------------------------------------------------------------------
-renewal_price => [bold blue]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold blue]
+renewal_price => [bold deep_sky_blue2]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold deep_sky_blue2]
 [Regular Price | See Final Price Details]
 =======================================================================================================================================
 
-sorting by =>  [bold blue]{read_args.retriveArgs().sort}[/bold blue]
+sorting by =>  [bold deep_sky_blue2]{read_args.retriveArgs().sort}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-sorting direction => [bold blue]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold blue]
+sorting direction => [bold deep_sky_blue2]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold deep_sky_blue2]
 =======================================================================================================================================
 
 PRESS ENTER TO RETURN

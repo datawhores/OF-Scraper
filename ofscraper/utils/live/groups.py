@@ -49,9 +49,9 @@ api_progress_group = Group(
 
 # download
 
-overall_panel = Blue_Panel(download_overall_progress, style="bold blue")
-multi_panel = Blue_Panel(multi_download_job_progress, style="bold blue")
-single_panel = Blue_Panel(download_job_progress, style="bold blue")
+overall_panel = Blue_Panel(download_overall_progress, style="bold deep_sky_blue2")
+multi_panel = Blue_Panel(multi_download_job_progress, style="bold deep_sky_blue2")
+single_panel = Blue_Panel(download_job_progress, style="bold deep_sky_blue2")
 download_progress_group = None
 multi_download_progress_group = None
 

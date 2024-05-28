@@ -205,7 +205,7 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
 
 
 def process_selected_areas():
-    log.debug("[bold blue] Running Metadata Mode [/bold blue]")
+    log.debug("[bold deep_sky_blue2] Running Metadata Mode [/bold deep_sky_blue2]")
     force_change_download()
     progress_utils.update_activity_task(description="Running Metadata Mode")
     with scrape_context_manager():
