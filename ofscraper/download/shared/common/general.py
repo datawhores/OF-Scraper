@@ -222,3 +222,6 @@ def get_update_count(total_size, curr_file, chunk_size):
     file_size = total_size - curr_file_size
 
     return max((file_size // chunk_size) // constants.getattr("CHUNK_UPDATE_COUNT"), 1)
+
+
+def send_bar_message()

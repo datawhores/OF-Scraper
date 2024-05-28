@@ -38,6 +38,11 @@ from ofscraper.download.shared.utils.log import (
     temp_file_logger,
 )
 
+from ofscraper.download.shared.common.send_bar_msg import (
+    send_bar_msg_batch
+)
+
+
 
 async def alt_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -244,7 +249,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             )
             await fileobject.write(chunk)
             if count % update_count == 0:
-                await common.send_msg(
+                await send_bar_msg_batch(
                     {
                         partial(
                             progress_utils.update_download_multi_job_task,
