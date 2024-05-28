@@ -253,7 +253,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             )
             await fileobject.write(chunk)
             await send_bar_msg_batch(
-                    {
                         partial(
                             progress_utils.update_download_multi_job_task,
                             ele.id,
@@ -262,7 +261,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                             .stat()
                             .st_size,
                         ),count,update_count
-                    }
             )
             count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
