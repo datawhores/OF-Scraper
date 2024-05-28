@@ -15,8 +15,10 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.download as download
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.helpers.strings import  download_str,all_paid_progress_download_str
-from ofscraper.commands.helpers.scrape_paid import process_scrape_paid
+from ofscraper.commands.helpers.strings import  download_activity_str,all_paid_progress_download_str,all_paid_download_str
+from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
+from ofscraper.utils.context.run_async import run
+
 
 log = logging.getLogger("shared")
 
@@ -24,8 +26,8 @@ log = logging.getLogger("shared")
 async def downloader(ele=None, posts=None, media=None, **kwargs):
     model_id = ele.id
     username = ele.name
-    progress_utils.update_activity_task(description=download_str.format(name=username))
-    logging.getLogger("shared_other").warning(download_str.format(name=username))
+    progress_utils.update_activity_task(description=download_activity_str.format(username=username))
+    logging.getLogger("shared_other").warning(download_activity_str.format(username=username))
     return await download.download_process(username, model_id, media, posts=posts)
 
 
@@ -41,7 +43,19 @@ def unique_name_warning():
         )
         time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
 
+@run
+async def scrape_paid_all():
+    out=["[bold yellow]Scrape Paid Results[/bold yellow]"]
 
-def scrape_paid_all():
-    progress_utils.update_activity_task(description="Downloading Paid Content")
-    return process_scrape_paid(download_progress_message=download_str,log_progress_message=all_paid_progress_download_str)
+    async for count,value,length in process_scrape_paid():
+        process_user_info_printer(value,length,count,all_paid_update=all_paid_download_str,all_paid_activity=download_activity_str,
+        log_progress=all_paid_progress_download_str
+        )
+        out.append(await process_user(value,length))
+    return out
+
+
+
+
+    # progress_utils.update_activity_task(description="Downloading Paid Content")
+    # return process_scrape_paid(download_progress_message=download_activity_str,log_progress_message=all_paid_progress_download_str)

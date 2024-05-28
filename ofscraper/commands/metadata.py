@@ -36,7 +36,8 @@ from ofscraper.commands.helpers.user_first import (
     get_userfirst_data_function,
 )
 from ofscraper.commands.helpers.shared import run_metadata_bool
-from ofscraper.commands.helpers.strings import metadata_str,mark_stray_str,all_paid_metadata_str
+from ofscraper.commands.helpers.strings import metadata_activity_str,mark_stray_str,all_paid_metadata_str,all_paid_progress_metadata_str
+
 from ofscraper.commands.scraper.post import process_areas_helper
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
@@ -98,7 +99,11 @@ async def metadata_paid_all():
     out=["[bold yellow]Scrape Paid Results[/bold yellow]"]
 
     async for count,value,length in process_scrape_paid():
-        process_user_info_printer(value,length,count,all_paid_download=all_paid_metadata_str)
+        process_user_info_printer(value,length,count,all_paid_update=all_paid_metadata_str,all_paid_activity=metadata_activity_str,
+        log_progress=all_paid_progress_metadata_str
+
+                                  
+                                  )
         out.append(await process_user(value,length))
     write_args.setArgs(old_args)
     return out
@@ -140,7 +145,7 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
     await operations.table_init_create(model_id=model_id, username=username)
     filterMedia = filters.filterMedia(media, username=username, model_id=model_id)
     progress_utils.update_activity_task(
-        description=metadata_str.format(username=username)
+        description=metadata_activity_str.format(username=username)
     )
     data=await download.download_process(username, model_id, filterMedia)
     metadata_stray_media(username, model_id, media)
