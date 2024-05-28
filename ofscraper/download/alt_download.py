@@ -153,6 +153,8 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
         item["total"] = 0
         return item
     elif total == resume_size:
+        common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
+
         temp_file_logger(placeholderObj, ele)
         (
             await common.total_change_helper(None, total)
