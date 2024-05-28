@@ -267,12 +267,12 @@ class DiscordFormatter(SensitiveFormatter):
     @staticmethod
     def _filter(s):
         t = SensitiveFormatter._filter(s)
-        t=re.sub("\\\\+","",t)
+        t=re.sub("\\\\+","\\\\",t)
         t=re.sub(r"\[(bold|/?bold(?:\s\w+\s\w+)?)\]","**",t)
-        t=Text.from_markup(Text(t).plain).plain
+        t=Text.from_markup(Text(t).plain).plain    
         t=re.sub("\*\*+","**",t)
+        t=re.sub("\\\\+","",t)
         return t
-
 
 
 class LogFileFormatter(SensitiveFormatter):
