@@ -11,7 +11,7 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
