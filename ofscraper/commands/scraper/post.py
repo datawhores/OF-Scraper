@@ -365,7 +365,7 @@ async def process_all_paid():
 @free.space_checker
 async def process_labels(model_id, username, c):
     try:
-        labelled_posts_ = await labels_api.get_labels_progress(model_id, c=c)
+        labelled_posts_ = await labels_api.get_labels(model_id, c=c)
 
         labelled_posts_labels = list(
             map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
@@ -397,7 +397,6 @@ async def process_labels(model_id, username, c):
         log.debug(
             f"[bold]Label media count without locked[/bold] {sum(map(lambda x:len(x),unlocked_output))}"
         )
-        a
 
         return (
             [item for sublist in all_output for item in sublist],

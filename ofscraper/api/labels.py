@@ -27,43 +27,6 @@ log = logging.getLogger("shared")
 
 
 @run
-async def get_labels_progress(model_id, c=None):
-    labels_ = await get_labels_data_progress(model_id, c=c)
-    labels_ = (
-        labels_
-        if not read_args.retriveArgs().label
-        else list(
-            filter(
-                lambda x: x.get("name").lower() in read_args.retriveArgs().label,
-                labels_,
-            )
-        )
-    )
-    return await get_posts_for_labels_progress(labels_, model_id, c=c)
-
-
-@run
-async def get_labels_data_progress(model_id, c=None):
-    tasks = []
-    tasks.append(asyncio.create_task(scrape_labels(c, model_id)))
-    progress_utils.labelled_layout.visible = False
-    return await process_tasks_labels(tasks)
-
-
-@run
-async def get_posts_for_labels_progress(labels, model_id, c=None):
-    tasks = []
-
-    [
-        tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
-        for label in labels
-    ]
-    labels_final = await process_tasks_get_posts_for_labels(tasks, labels, model_id)
-    progress_utils.labelled_layout.visible = False
-    return labels_final
-
-
-@run
 async def get_labels(model_id, c=None):
     labels_ = await get_labels_data(model_id, c=c)
     labels_ = (
@@ -81,21 +44,25 @@ async def get_labels(model_id, c=None):
 
 @run
 async def get_labels_data(model_id, c=None):
-    with progress_utils.set_up_api_labels():
-        tasks = []
-        tasks.append(asyncio.create_task(scrape_labels(c, model_id)))
-        return await process_tasks_labels(tasks)
+    tasks = []
+    tasks.append(asyncio.create_task(scrape_labels(c, model_id)))
+    return await process_tasks_labels(tasks)
 
 
 @run
 async def get_posts_for_labels(labels, model_id, c=None):
-    with progress_utils.set_up_api_posts_labels():
-        tasks = []
-        [
-            tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
-            for label in labels
-        ]
-        return await process_tasks_get_posts_for_labels(tasks, labels, model_id)
+    tasks = []
+
+    [
+        tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
+        for label in labels
+    ]
+    labels_final = await process_tasks_get_posts_for_labels(tasks, labels, model_id)
+    return labels_final
+
+
+
+
 
 
 async def process_tasks_labels(tasks):
