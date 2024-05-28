@@ -30,7 +30,6 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-import ofscraper.utils.settings as settings
 from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.alt_common import (
     handle_result_alt,
@@ -52,6 +51,9 @@ from ofscraper.download.shared.utils.log import (
     temp_file_logger,
 )
 
+from ofscraper.download.shared.common.send_bar_msg import (
+    send_bar_msg
+)
 
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
@@ -244,18 +246,14 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if (count) % update_count == 0:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.thread,
-                    partial(
+            await send_bar_msg( partial(
                         progress_utils.update_download_job_task,
                         task1,
                         completed=pathlib.Path(placeholderObj.tempfilepath)
                         .absolute()
                         .stat()
                         .st_size,
-                    ),
-                )
+            ),count,update_count)
             count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:

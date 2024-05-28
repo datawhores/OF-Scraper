@@ -248,8 +248,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if count % update_count == 0:
-                await send_bar_msg_batch(
+            await send_bar_msg_batch(
                     {
                         partial(
                             progress_utils.update_download_multi_job_task,
@@ -258,9 +257,9 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                             .absolute()
                             .stat()
                             .st_size,
-                        )
+                        ),count,update_count
                     }
-                )
+            )
             count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
