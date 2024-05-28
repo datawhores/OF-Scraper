@@ -161,10 +161,10 @@ def get_final_like_log(like_action,username,failed,post,liked):
 
     text_out=""
     if post==0:
-        text_out=f"[bold][{username}][/bold] [bold][Action {title}][/bold] [{post} post checked), ({liked_log}, {alt_liked_log}), {failed} post failed]"
+        text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post} post checked), ({liked_log}, {alt_liked_log}), {failed} post failed]"
         log.warning(text_out)
     else:
-        text_out=f"[blue][bold][{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/blue]"
+        text_out=f"[blue][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/blue]"
         log.warning(text_out)
     return text_out
 

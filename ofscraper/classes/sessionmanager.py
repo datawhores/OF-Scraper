@@ -60,29 +60,29 @@ class SessionSleep:
         log = logging.getLogger("shared")
         if not self._sleep:
             self._sleep = self._init_sleep if self._init_sleep else constants.getattr("SESSION_SLEEP_INIT")
-            log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
+            log.debug(f"too many req => setting sleep to init \\[{self._sleep} seconds]")
         elif arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin:
             log.debug(
-                f"too many req => not changing sleep [{self._sleep} seconds] because last call less than {self._difmin} seconds"
+                f"too many req => not changing sleep \\[{self._sleep} seconds] because last call less than {self._difmin} seconds"
             )
             return self._sleep
         else:
             self._sleep = self._sleep * 2
-            log.debug(f"too many req => setting sleep to [{self._sleep} seconds]")
+            log.debug(f"too many req => setting sleep to \\[{self._sleep} seconds]")
         self._last_date = arrow.now()
         return self._sleep
 
     async def async_do_sleep(self):
         if self._sleep:
             logging.getLogger("shared").debug(
-                f"too many req => waiting [{self._sleep} seconds] before next req"
+                f"too many req => waiting \\[{self._sleep} seconds] before next req"
             )
             await asyncio.sleep(self._sleep)
 
     def do_sleep(self):
         if self._sleep:
             logging.getLogger("shared").debug(
-                f"too many req => waiting [{self._sleep} seconds] before next req"
+                f"too many req => waiting \\[{self._sleep} seconds] before next req"
             )
             time.sleep(self._sleep)
 

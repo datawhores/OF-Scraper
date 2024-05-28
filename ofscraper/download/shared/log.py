@@ -51,7 +51,7 @@ def log_download_progress(media_type):
     ) % 20 == 0:
         common_globals.log.debug(
             f"In progress -> {format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count} \
-downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], \
+downloads total \\[{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], \
             {common_globals.forced_skipped} skipped, {common_globals.skipped} failed)"
         )
 
@@ -79,10 +79,10 @@ def final_log_text(username):
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
-        log_format="[blue][bold][{username}][/bold] [bold][Action Metadata][/bold] ({size_log}) ([green]{total_count} changed media item total[/green][{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[blue][bold]\\[{username}][/bold] [bold][Action Metadata][/bold] ({size_log}) ([green]{total_count} changed media item total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
         skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} items unchanged"
     else:
-        log_format="[blue][bold]\\[{username}][/bold][bold][Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green][{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[blue][bold]\\[{username}][/bold][bold][Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
         skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
@@ -92,9 +92,9 @@ def final_log_text(username):
 def empty_log(username):
 
     if read_args.retriveArgs().metadata:
-        return f"[white][bold][{username}][/bold] [bold][Action Metadata][/bold] ({0} MB) ({0}  changed media items total [{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
+        return f"[white][bold]\\[{username}][/bold] [bold][Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
     else:
-        return f"[white][bold][{username}][/bold] [bold][Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
+        return f"[white][bold]\\[{username}][/bold] [bold][Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
 
