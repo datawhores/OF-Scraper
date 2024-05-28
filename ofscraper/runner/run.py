@@ -36,7 +36,7 @@ def main():
 
 
 def main_helper():
-    if vars(read_args.retriveArgs()).get("help"):
+    if read_args.retriveArgs().get("help"):
         return
     initLogs()
     time.sleep(3)
