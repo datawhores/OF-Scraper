@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -31,7 +31,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.classes.retries import download_retry
-from ofscraper.download.shared.common.general import (
+from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
     get_data,
@@ -40,15 +40,15 @@ from ofscraper.download.shared.common.general import (
     get_unknown_content_type,
     size_checker,
 )
-from ofscraper.download.shared.common.chunk import (
+from ofscraper.download.shared.progress.chunk import (
     get_ideal_chunk_size,
     get_update_count,
 )
-from ofscraper.download.shared.common.handle_result import handle_result_main
-from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
-from ofscraper.download.shared.utils.metadata import force_download
+from ofscraper.download.shared.handle_result import handle_result_main
+from ofscraper.download.shared.log import get_url_log, path_to_file_logger
+from ofscraper.download.shared.metadata import force_download
 
-from ofscraper.download.shared.common.send_bar_msg import (
+from ofscraper.download.shared.send.send_bar_msg import (
     send_bar_msg_batch
 )
 

@@ -32,14 +32,14 @@ import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.download.shared.classes.session import download_session
-from ofscraper.download.shared.common.general import (
+from ofscraper.download.shared.general import (
     get_medialog,
     subProcessVariableInit,
 )
-from ofscraper.download.shared.utils.log import final_log, final_log_text   ,log_download_progress
-from ofscraper.download.shared.utils.metadata import metadata
-from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
-from ofscraper.download.shared.utils.progress import convert_num_bytes
+from ofscraper.download.shared.log import final_log, final_log_text   ,log_download_progress
+from ofscraper.download.shared.metadata import metadata
+from ofscraper.download.shared.paths.paths import addGlobalDir, setDirectoriesDate
+from ofscraper.download.shared.progress.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
 
 platform_name = platform.system()

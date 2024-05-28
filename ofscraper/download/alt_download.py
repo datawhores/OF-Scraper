@@ -25,39 +25,39 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.download.shared.classes.retries import download_retry
-from ofscraper.download.shared.common.alt_common import (
+from ofscraper.download.shared.alt_common import (
     media_item_keys_alt,
     media_item_post_process_alt,
 )
 
-from ofscraper.download.shared.common.handle_result import (
+from ofscraper.download.shared.handle_result import (
     handle_result_alt,
 )
-from ofscraper.download.shared.common.general import (
+from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
     get_medialog,
     get_resume_size,
     size_checker,
 )
-from ofscraper.download.shared.utils.log import (
+from ofscraper.download.shared.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
 )
 
-from ofscraper.download.shared.common.chunk import (
+from ofscraper.download.shared.progress.chunk import (
     get_ideal_chunk_size,
     get_update_count,
 )
 
-from ofscraper.download.shared.common.send_bar_msg import (
+from ofscraper.download.shared.send.send_bar_msg import (
     send_bar_msg
 )
 

@@ -28,11 +28,11 @@ import ofscraper.utils.manager as manager_
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.main_download import main_download
 from ofscraper.download.shared.classes.session import download_session
-from ofscraper.download.shared.common.general import get_medialog
-from ofscraper.download.shared.utils.log import final_log, final_log_text,log_download_progress
-from ofscraper.download.shared.utils.metadata import metadata
-from ofscraper.download.shared.utils.paths import setDirectoriesDate
-from ofscraper.download.shared.utils.progress import convert_num_bytes
+from ofscraper.download.shared.general import get_medialog
+from ofscraper.download.shared.log import final_log, final_log_text,log_download_progress
+from ofscraper.download.shared.metadata import metadata
+from ofscraper.download.shared.paths.paths import setDirectoriesDate
+from ofscraper.download.shared.progress.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
 
 

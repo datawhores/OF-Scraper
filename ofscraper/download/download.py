@@ -11,9 +11,9 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.download.shared.utils.text import textDownloader
+from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
-from ofscraper.download.shared.utils.log import empty_log
+from ofscraper.download.shared.log import empty_log
 
 
 @run
