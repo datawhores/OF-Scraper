@@ -161,7 +161,7 @@ def post_checker():
 @run
 async def post_check_runner():
     async for user_name, model_id, final_post_array in post_check_retriver():
-        with progress_utils.setup_api_split_progress_live(stop=True):
+        with progress_utils.setup_api_split_progress_live(revert=True):
             progress_utils.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Timeline posts"
@@ -331,7 +331,7 @@ def message_checker():
 @run
 async def message_checker_runner():
     async for user_name, model_id, final_post_array in message_check_retriver():
-        with progress_utils.setup_api_split_progress_live(stop=True):
+        with progress_utils.setup_api_split_progress_live(revert=True):
             progress_utils.update_activity_task(
                 description=check_str.format(username=user_name, activity="Messages")
             )
@@ -418,7 +418,7 @@ def purchase_checker():
 @run
 async def purchase_checker_runner():
     async for user_name, model_id, final_post_array in purchase_check_retriver():
-        with progress_utils.setup_api_split_progress_live(stop=True):
+        with progress_utils.setup_api_split_progress_live(revert=True):
             progress_utils.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Purchased posts"
@@ -482,7 +482,7 @@ def stories_checker():
 @run
 async def stories_checker_runner():
     async for user_name, model_id, final_post_array in stories_check_retriver():
-        with progress_utils.setup_api_split_progress_live(stop=True):
+        with progress_utils.setup_api_split_progress_live(revert=True):
             progress_utils.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Stories posts"
