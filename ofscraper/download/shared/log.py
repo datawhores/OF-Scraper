@@ -66,24 +66,24 @@ def final_log_text(username):
     size_log=f"[green]{format_size(common_globals.total_bytes )}[/green]"
 
     
-    photo_log=f"[green]{common_globals.photo_count} photos[/green]"if common_globals.photo_count>0 else f"{common_globals.photo_count} photos"
+    photo_log=f"[bold green]{common_globals.photo_count} photos[/bold green]"if common_globals.photo_count>0 else f"{common_globals.photo_count} photos"
 
-    audio_log=f"[green]{common_globals.audio_count} audios[/green]"if common_globals.audio_count>0 else f"{common_globals.audio_count} audios"
-
-
-    video_log=f"[green]{common_globals.video_count} videos[/green]"if common_globals.video_count>0 else f"{common_globals.video_count} videos"
+    audio_log=f"[bold green]{common_globals.audio_count} audios[/bold green]"if common_globals.audio_count>0 else f"{common_globals.audio_count} audios"
 
 
-    failed_log=f"[red]{common_globals.video_count} failed[/red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
+    video_log=f"[bold green]{common_globals.video_count} videos[/bold green]"if common_globals.video_count>0 else f"{common_globals.video_count} videos"
+
+
+    failed_log=f"[bold red]{common_globals.video_count} failed[/bold red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
 
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
         log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([green]{total_count} changed media item total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} items unchanged"
+        skipped_log=f"[bold yellow]{common_globals.skipped} metadata unchanged[/bold yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} items unchanged"
     else:
         log_format="[blue][bold]\\[{username}][/bold][bold]\\[Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
+        skipped_log=f"[bold yellow]{common_globals.video_count} skipped[/bold yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
 
