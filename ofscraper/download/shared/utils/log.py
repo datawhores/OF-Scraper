@@ -92,9 +92,9 @@ def final_log_text(username):
 def empty_log(username):
 
     if read_args.retriveArgs().metadata:
-        return f"[bold][{username}][/bold] [bold][Action Metadata][/bold] ({0} MB) ({0}  changed media items total [{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))"
+        return f"[white][bold][{username}][/bold] [bold][Action Metadata][/bold] ({0} MB) ({0}  changed media items total [{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
     else:
-        return f"[bold][{username}][/bold] [bold][Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))"
+        return f"[white][bold][{username}][/bold] [bold][Action Download][/bold] ({0} MB) ({0}  downloads total [{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
 
