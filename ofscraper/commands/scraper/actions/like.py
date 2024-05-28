@@ -164,7 +164,7 @@ def get_final_like_log(like_action,username,failed,post,liked):
         text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post} post checked), ({liked_log}, {alt_liked_log}), {failed} post failed]"
         log.warning(text_out)
     else:
-        text_out=f"[blue][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/blue]"
+        text_out=f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/deep_sky_blue2]"
         log.warning(text_out)
     return text_out
 

@@ -79,10 +79,10 @@ def final_log_text(username):
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
-        log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
         skipped_log=f"[bold yellow]{common_globals.forced_skipped} metadata unchanged[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} items unchanged"
     else:
-        log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
         skipped_log=f"[bold yellow]{common_globals.forced_skipped} skipped[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
