@@ -1,6 +1,6 @@
-import ofscraper.download.shared.common.general as common
-import ofscraper.download.shared.utils.keyhelpers as keyhelpers
-from ofscraper.download.shared.utils.metadata import force_download
+import ofscraper.download.shared.general as common
+import ofscraper.download.shared.keyhelpers as keyhelpers
+from ofscraper.download.shared.metadata import force_download
 
 
 

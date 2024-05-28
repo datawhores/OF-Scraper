@@ -3,9 +3,9 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
-import ofscraper.download.shared.utils.media as media
+import ofscraper.download.shared.paths.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -14,7 +14,7 @@ from ofscraper.db.operations_.media import (
     download_media_update,
     prev_download_media_data,
 )
-from ofscraper.download.shared.utils.log import get_medialog
+from ofscraper.download.shared.log import get_medialog
 
 
 async def force_download(ele, username, model_id):

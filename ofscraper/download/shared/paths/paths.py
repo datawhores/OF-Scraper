@@ -8,7 +8,7 @@ from collections.abc import Iterable
 import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.common as common_paths
-from ofscraper.download.shared.utils.log import get_medialog
+from ofscraper.download.shared.log import get_medialog
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error

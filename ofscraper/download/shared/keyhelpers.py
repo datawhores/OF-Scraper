@@ -19,7 +19,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.download.shared.classes.retries import get_cmd_download_req_retries
 from ofscraper.download.shared.classes.session import cdm_session
-from ofscraper.download.shared.common.general import get_medialog
+from ofscraper.download.shared.general import get_medialog
 
 log = None
 

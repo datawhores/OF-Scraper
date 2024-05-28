@@ -3,10 +3,10 @@ import subprocess
 
 import arrow
 
-import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
-import ofscraper.download.shared.utils.log as common_logs
-import ofscraper.download.shared.utils.paths as common_paths
+import ofscraper.download.shared.log as common_logs
+import ofscraper.download.shared.paths.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.system.system as system
 import ofscraper.classes.placeholder as placeholder

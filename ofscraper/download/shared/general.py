@@ -28,10 +28,10 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as system
-from ofscraper.download.shared.utils.log import get_medialog
-from ofscraper.download.shared.utils.media import add_path
-from ofscraper.download.shared.utils.message import send_msg, set_send_msg
-from ofscraper.download.shared.utils.progress import update_total
+from ofscraper.download.shared.log import get_medialog
+from ofscraper.download.shared.paths.media import add_path
+from ofscraper.download.shared.send.message import send_msg, set_send_msg
+from ofscraper.download.shared.progress.progress import update_total
 
 
 def add_additional_data(placeholderObj, ele):
