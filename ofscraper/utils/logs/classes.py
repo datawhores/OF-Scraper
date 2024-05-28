@@ -270,7 +270,6 @@ class DiscordFormatter(SensitiveFormatter):
         t=re.sub("\\\\+","",t)
         t=re.sub(r"\[(bold|/?bold(?:\s\w+\s\w+)?)\]","**",t)
         t=Text.from_markup(Text(t).plain).plain
-        t=re.sub("**+","**",t)
         t=re.sub("\*\*+","**",t)
         return t
 
