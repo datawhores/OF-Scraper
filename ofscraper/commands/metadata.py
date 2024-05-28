@@ -10,7 +10,6 @@
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import time
 import copy
 import logging
 import traceback
@@ -18,8 +17,6 @@ import traceback
 import arrow
 
 import ofscraper.api.init as init
-import ofscraper.api.profile as profile
-import ofscraper.classes.models as models
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
@@ -38,9 +35,9 @@ from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
-from ofscraper.commands.helpers.shared import run_action_bool
-from ofscraper.commands.helpers.strings import avatar_str, metadata_str,mark_stray_str
-from ofscraper.commands.scraper.post import process_all_paid, process_areas_helper
+from ofscraper.commands.helpers.shared import run_metadata_bool
+from ofscraper.commands.helpers.strings import metadata_str,mark_stray_str,all_paid_metadata_str
+from ofscraper.commands.scraper.post import process_areas_helper
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
@@ -50,7 +47,7 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.final_log import final_log
-
+from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
 log = logging.getLogger("shared")
 
 
@@ -61,7 +58,7 @@ def metadata():
         normal_data=[]
         if read_args.retriveArgs().scrape_paid:
             scrape_paid_data=metadata_paid_all()
-        if not run_action_bool():
+        if not run_metadata_bool():
             pass
         
         elif not read_args.retriveArgs().users_first:
@@ -94,31 +91,18 @@ async def metadata_user_first(userdata, session):
         data
     )
 
-
-def metadata_paid_all(user_dict=None):
+@run
+async def metadata_paid_all():
     old_args = copy.deepcopy(read_args.retriveArgs())
     force_change_metadata()
-    user_dict = process_all_paid()
-    oldUsers = userselector.get_ALL_SUBS_DICT()
-    length = len(list(user_dict.keys()))
-    for count, value in enumerate(user_dict.values()):
-        model_id = value["model_id"]
-        username = value["username"]
-        posts = value["posts"]
-        medias = value["medias"]
-        avatar = value["avatar"]
-        if constants.getattr("SHOW_AVATAR") and avatar:
-            logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-        log.warning(
-            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
-        )
-        userselector.set_ALL_SUBS_DICTVManger(
-            {username: models.Model(profile.scrape_profile(model_id))}
-        )
-        download.download_process(username, model_id, medias, posts=posts)
-    # restore settings
-    userselector.set_ALL_SUBS_DICT(oldUsers)
+    out=["[bold yellow]Scrape Paid Results[/bold yellow]"]
+
+    async for count,value,length in process_scrape_paid():
+        process_user_info_printer(value,length,count,all_paid_download=all_paid_metadata_str)
+        out.append(await process_user(value,length))
     write_args.setArgs(old_args)
+    return out
+
 
 
 def metadata_stray_media(username, model_id, media):

@@ -15,7 +15,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.download as download
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.helpers.strings import  download_str,all_paid_progress_download
+from ofscraper.commands.helpers.strings import  download_str,all_paid_progress_download_str
 from ofscraper.commands.helpers.scrape_paid import process_scrape_paid
 
 log = logging.getLogger("shared")
@@ -44,4 +44,4 @@ def unique_name_warning():
 
 def scrape_paid_all():
     progress_utils.update_activity_task(description="Downloading Paid Content")
-    return process_scrape_paid(download_progress_message=download_str,log_progress_message=all_paid_progress_download)
+    return process_scrape_paid(download_progress_message=download_str,log_progress_message=all_paid_progress_download_str)
