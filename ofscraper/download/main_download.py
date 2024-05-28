@@ -34,11 +34,9 @@ from ofscraper.download.shared.common.general import (
     check_forced_skip,
     downloadspace,
     get_data,
-    get_ideal_chunk_size,
     get_medialog,
     get_resume_size,
     get_unknown_content_type,
-    get_update_count,
     size_checker,
 )
 from ofscraper.download.shared.common.handle_result import handle_result_main
@@ -46,6 +44,10 @@ from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
 from ofscraper.download.shared.common.send_bar_msg import (
     send_bar_msg
+)
+from ofscraper.download.shared.common.chunk import (
+    get_ideal_chunk_size,
+    get_update_count,
 )
 
 
