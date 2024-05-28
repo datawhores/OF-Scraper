@@ -19,9 +19,11 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.system as system
 from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.alt_common import (
-    handle_result_alt,
     media_item_keys_alt,
     media_item_post_process_alt,
+)
+from ofscraper.download.shared.common.handle_result import (
+    handle_result_alt,
 )
 from ofscraper.download.shared.common.general import (
     check_forced_skip,
