@@ -62,7 +62,7 @@ def final_log(username, log=None):
     )
 
 def final_log_text(username):
-    total_count=common_globals.audio_count+common_globals.audio_count+common_globals.video_count
+    total_count=common_globals.audio_count+common_globals.photo_count+common_globals.video_count
     size_log=f"[green]{format_size(common_globals.total_bytes )}[/green]"
 
     
