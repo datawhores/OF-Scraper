@@ -4,7 +4,7 @@ import subprocess
 import arrow
 
 import ofscraper.download.shared.common.general as common
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.download.shared.utils.log as common_logs
 import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates

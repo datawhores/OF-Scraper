@@ -4,7 +4,7 @@ from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.common.general as common
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.download.shared.utils.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
