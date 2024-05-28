@@ -193,6 +193,8 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 async def send_req_inner(c, ele, item, placeholderObj):
     try:
+        common_globals.log.debug(f"{get_medialog(ele)} writing item to disk")
+
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         params = {

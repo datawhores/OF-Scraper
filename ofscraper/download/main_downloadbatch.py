@@ -186,6 +186,8 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, tota
 
 async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
+        common_globals.log.debug(f"{get_medialog(ele)} writing item to disk")
+
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         common_globals.log.debug(
