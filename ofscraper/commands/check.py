@@ -35,7 +35,7 @@ import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.helpers.strings import check_str
 from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
-from ofscraper.download.shared.utils.text import textDownloader
+from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
