@@ -14,20 +14,20 @@ def get_medialog(ele):
 def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.filename}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path from config {placeholderObj.filepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path from config {placeholderObj.filepath}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
     )
 
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
     )
 
 
@@ -79,10 +79,10 @@ def final_log_text(username):
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
-        log_format="[blue][bold]\\[{username}][/bold] [bold][Action Metadata][/bold] ({size_log}) ([green]{total_count} changed media item total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([green]{total_count} changed media item total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
         skipped_log=f"[yellow]{common_globals.skipped} metadata unchanged[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} items unchanged"
     else:
-        log_format="[blue][bold]\\[{username}][/bold][bold][Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
+        log_format="[blue][bold]\\[{username}][/bold][bold]\\[Action Download][/bold] ({size_log}) ([green]{total_count} downloads total[/green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
         skipped_log=f"[yellow]{common_globals.video_count} skipped[/yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
@@ -92,9 +92,9 @@ def final_log_text(username):
 def empty_log(username):
 
     if read_args.retriveArgs().metadata:
-        return f"[white][bold]\\[{username}][/bold] [bold][Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
+        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
     else:
-        return f"[white][bold]\\[{username}][/bold] [bold][Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
+        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
 
