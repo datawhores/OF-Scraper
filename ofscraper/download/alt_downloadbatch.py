@@ -57,8 +57,17 @@ async def alt_download(c, ele, username, model_id):
     )
     async for _ in download_retry():
         with _:
-            sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-            audio, video = await ele.mpd_dict
+            try:
+                sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
+                audio, video = await ele.mpd_dict
+            except Exception as e:
+                common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                )
+                common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
+                )
+                raise e
     path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
     audio = await alt_download_downloader(audio, c, ele)
     video = await alt_download_downloader(video, c, ele)
@@ -120,6 +129,12 @@ async def alt_download_downloader(
                 )
                 common_globals.innerlog.get().traceback_(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
+                )
+                common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                )
+                common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
                 )
                 raise E
 
