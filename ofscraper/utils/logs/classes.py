@@ -249,12 +249,12 @@ class SensitiveFormatter(logging.Formatter):
 
     @staticmethod
     def _filter(s):
-        s = re.sub("&Policy=[^&\"']+", "&Policy={hidden}", s)
-        s = re.sub("&Signature=[^&\"']+", "&Signature={hidden}", s)
-        s = re.sub("&Key-Pair-Id=[^&\"']+", "&Key-Pair-Id={hidden}", s)
+        t = re.sub("&Policy=[^&\"']+", "&Policy={hidden}", s)
+        t = re.sub("&Signature=[^&\"']+", "&Signature={hidden}", t)
+        t = re.sub("&Key-Pair-Id=[^&\"']+", "&Key-Pair-Id={hidden}", t)
         for ele in helpers.getSenstiveDict().items():
-            s = re.sub(re.escape(str(ele[0])), str(ele[1]), s)
-        return s
+            t = re.sub(re.escape(str(ele[0])), str(ele[1]), t)
+        return t
 
     def format(self, record):
         original = logging.Formatter.format(self, record)  # call parent method
@@ -267,10 +267,12 @@ class DiscordFormatter(SensitiveFormatter):
     @staticmethod
     def _filter(s):
         t = SensitiveFormatter._filter(s)
-        s=re.sub("\\\\+","",t)
-        s=re.sub(r"\[(bold|/?bold(?:\s\w+\s\w+)?)\]","**",s)
-        s=Text.from_markup(Text(s).plain).plain
-        return s
+        t=re.sub("\\\\+","",t)
+        t=re.sub(r"\[(bold|/?bold(?:\s\w+\s\w+)?)\]","**",t)
+        t=Text.from_markup(Text(t).plain).plain
+        t=re.sub("**+","**",t)
+        t=re.sub("\*\*+","**",t)
+        return t
 
 
 
@@ -279,5 +281,5 @@ class LogFileFormatter(SensitiveFormatter):
 
     @staticmethod
     def _filter(s):
-        s = SensitiveFormatter._filter(s)
-        return Text.from_markup(Text(s).plain).plain
+        t= SensitiveFormatter._filter(s)
+        return Text.from_markup(Text(t).plain).plain
