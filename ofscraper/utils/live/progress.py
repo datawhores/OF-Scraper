@@ -17,17 +17,17 @@ from ofscraper.classes.multiprocessprogress import MultiprocessProgress as Multi
 
 # activity
 activity_progress = Progress(
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
 )
 activity_counter = Progress(
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
     BarColumn(table_column=Column(ratio=3), bar_width=100),
     MofNCompleteColumn(),
 )
 
 # download progress
 download_job_progress = Progress(
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
     BarColumn(),
     TaskProgressColumn(),
     console=console_.get_shared_console(),
@@ -35,7 +35,7 @@ download_job_progress = Progress(
 
 
 multi_download_job_progress = MultiProgress(
-    TextColumn("[white]{task.description}[/white]", table_column=Column(ratio=2)),
+    TextColumn("{task.description}", table_column=Column(ratio=2)),
     BarColumn(),
     TaskProgressColumn(),
     TransferSpeedColumn(),
@@ -43,7 +43,7 @@ multi_download_job_progress = MultiProgress(
 )
 
 download_overall_progress = Progress(
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
     BarColumn(),
     TaskProgressColumn(),
 )
@@ -52,25 +52,25 @@ download_overall_progress = Progress(
 # user progress
 userlist_overall_progress = Progress(
     SpinnerColumn(style=Style(color="blue")),
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
 )
-userlist_job_progress = Progress("[white]{task.description}[/white]")
+userlist_job_progress = Progress("{task.description}")
 
 
 # like progress
 
 like_overall_progress = Progress(
     SpinnerColumn(style=Style(color="blue")),
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
     BarColumn(table_column=Column(ratio=2)),
     MofNCompleteColumn(),
 )
 # api
 api_job_progress = Progress(
-    "[white]{task.description}[/white]", console=console_.get_shared_console()
+    "{task.description}", console=console_.get_shared_console()
 )
 api_overall_progress = Progress(
     SpinnerColumn(style=Style(color="blue")),
-    TextColumn("[white]{task.description}[/white]"),
+    TextColumn("{task.description}"),
     console=console_.get_shared_console(),
 )
