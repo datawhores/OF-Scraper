@@ -74,16 +74,16 @@ def final_log_text(username):
     video_log=f"[bold green]{common_globals.video_count} videos[/bold green]"if common_globals.video_count>0 else f"{common_globals.video_count} videos"
 
 
-    failed_log=f"[bold red]{common_globals.video_count} failed[/bold red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
+    failed_log=f"[bold red]{common_globals.skipped} failed[/bold red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
 
     log_format=None
     skipped_log=""
     if read_args.retriveArgs().metadata:
         log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[bold yellow]{common_globals.skipped} metadata unchanged[/bold yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} items unchanged"
+        skipped_log=f"[bold yellow]{common_globals.forced_skipped} metadata unchanged[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} items unchanged"
     else:
         log_format="[blue][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/blue]"
-        skipped_log=f"[bold yellow]{common_globals.video_count} skipped[/bold yellow]"if common_globals.skipped>0 else f"{common_globals.forced_skipped} skipped"
+        skipped_log=f"[bold yellow]{common_globals.forced_skipped} skipped[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} skipped"
 
     return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
 

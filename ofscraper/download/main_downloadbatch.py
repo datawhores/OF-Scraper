@@ -133,10 +133,13 @@ async def fresh_data_handler(c, ele, tempholderObj):
 
 
 async def resume_data_handler(data, c, ele, tempholderObj):
+    common_globals.log.debug(f"{get_medialog(ele)} Resume cached data {data}")
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-total")) if data.get("content-total") else None
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
+    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total}")
+
     # other
     if await check_forced_skip(ele, total) == 0:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())

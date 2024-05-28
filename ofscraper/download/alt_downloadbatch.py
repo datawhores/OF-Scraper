@@ -140,20 +140,24 @@ async def alt_download_downloader(
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
-    item["total"] = (
+    common_globals.log.debug(f"{get_medialog(ele)} Resume cached data {data}")
+    total=(
         int(data.get("content-total")) if data.get("content-total") else None
     )
+    item["total"] = total
+
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    if await check_forced_skip(ele, item["total"]) == 0:
+    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }")
+    if await check_forced_skip(ele,total) == 0:
         item["total"] = 0
         return item
-    elif item["total"] == resume_size:
-        total = item["total"]
+    elif total == resume_size:
         (
             await common.batch_total_change_helper(None, total)
             if common.alt_attempt_get(item).get() == 1
             else None
         )
+        return item
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
 

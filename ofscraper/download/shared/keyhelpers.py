@@ -37,7 +37,7 @@ async def un_encrypt(item, c, ele, input_=None):
         await asyncio.get_event_loop().run_in_executor(
             common_globals.thread, partial(cache.get, ele.license)
         )
-        if constants.getattr("USE_CACHE_KEY")
+        if constants.getattr("USE_WIV_CACHE_KEY")
         else None
     )
     if past_key:
