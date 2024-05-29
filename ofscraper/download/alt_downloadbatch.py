@@ -61,6 +61,8 @@ async def alt_download(c, ele, username, model_id):
                 sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
                 audio, video = await ele.mpd_dict
             except Exception as e:
+                common_globals.log.traceback_(e)
+                common_globals.log.traceback_(traceback.format_exc())
                 common_globals.log.handlers[1].queue.put(
                 list(common_globals.innerlog.get().handlers[1].queue.queue)
                 )
@@ -124,10 +126,10 @@ async def alt_download_downloader(
                 )
                 raise E
             except Exception as E:
-                common_globals.innerlog.get().traceback_(
+                common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
                 )
-                common_globals.innerlog.get().traceback_(
+                common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
                 )
                 common_globals.log.handlers[1].queue.put(

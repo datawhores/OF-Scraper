@@ -410,10 +410,10 @@ async def download(c, ele, model_id, username):
             elif ele.mpd:
                 return await alt_download(c, ele, username, model_id)
         except Exception as e:
-            common_globals.innerlog.get().traceback_(
+            common_globals.log.traceback_(
                 f"{get_medialog(ele)} Download Failed\n{e}"
             )
-            common_globals.innerlog.get().traceback_(
+            common_globals.log.traceback_(
                 f"{get_medialog(ele)} exception {traceback.format_exc()}"
             )
             # we can put into seperate otherqueue_
