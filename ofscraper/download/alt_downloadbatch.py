@@ -244,6 +244,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 item["total"] = 0
                 total = item["total"]
                 await common.batch_total_change_helper(total, 0)
+                return item
+
             elif total != resume_size:
                 common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing media to disk"
