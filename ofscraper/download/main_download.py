@@ -15,7 +15,7 @@ import asyncio
 import pathlib
 import traceback
 from functools import partial
-
+from humanfriendly import parse_size
 import aiofiles
 import psutil
 
@@ -128,6 +128,7 @@ async def fresh_data_handler(c, tempholderObj, ele):
 
 async def resume_data_handler(data, c, tempholderObj, ele):
     common_globals.log.debug(f"{get_medialog(ele)} Resume cached data {data}")
+    common_globals.log.debug(f"{get_medialog(ele)} Resume total {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-total")) if data.get("content-total") else None
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
