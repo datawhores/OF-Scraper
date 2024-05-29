@@ -54,7 +54,7 @@ def main_globals():
     global lock
     lock = asyncio.Lock()
     global maxfile_sem
-    maxfile_sem = asyncio.Semaphore(constants.getattr("MAXFILE_SEMAPHORE")) or (config_data.get_download_semaphores()*5)
+    maxfile_sem = asyncio.Semaphore(constants.getattr("MAXFILE_SEMAPHORE") or (config_data.get_download_semaphores()*5))
     global console
     console = console_.get_shared_console()
     global localDirSet
