@@ -308,6 +308,7 @@ def process_dict_starter(
         import uvloop
 
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+   
     try:
         process_dicts_split(username, model_id, ele)
     except KeyboardInterrupt as E:
@@ -353,6 +354,7 @@ async def process_dicts_split(username, model_id, medialist):
     other_logs.start_other_thread(
         input_=common_globals.log.handlers[1].queue, name=str(os.getpid()), count=1
     )
+    
     medialist = list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
 

@@ -16,6 +16,7 @@ import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+import ofscraper.utils.constants as constants
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -37,7 +38,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
             if event and event.is_set():
                 return True
 
-            messages = funct()
+            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
             if not isinstance(messages, list):
                 messages = [messages]
             for message in messages:
