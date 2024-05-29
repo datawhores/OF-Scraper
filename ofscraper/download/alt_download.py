@@ -142,7 +142,7 @@ async def alt_download_downloader(item, c, ele):
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
     common_globals.log.debug(f"{get_medialog(ele)} Resume cached data {data}")
-    common_globals.log.debug(f"{get_medialog(ele)} Resume total {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
+    common_globals.log.debug(f"{get_medialog(ele)} Resume total size {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
     total=(
         int(data.get("content-total")) if data.get("content-total") else None
     )

@@ -139,7 +139,7 @@ async def fresh_data_handler(c, ele, tempholderObj):
 
 async def resume_data_handler(data, c, ele, tempholderObj):
     common_globals.log.debug(f"{get_medialog(ele)} Resume cached data {data}")
-    common_globals.log.debug(f"{get_medialog(ele)} Resume total {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
+    common_globals.log.debug(f"{get_medialog(ele)} Resume total size {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
 
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-total")) if data.get("content-total") else None
