@@ -216,7 +216,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 await common.total_change_helper(total, 0)
             elif total != resume_size:
                 common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing to media to disk"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing media to disk"
                 )
                 await download_fileobject_writer(
                     r, ele, tempholderObj, placeholderObj, total

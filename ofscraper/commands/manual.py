@@ -90,7 +90,7 @@ def set_user_data(url_dicts):
 
 def process_urls(urls):
     out_dict = {}
-    with progress_utils.setup_api_split_progress_live(stop=False):
+    with progress_utils.setup_api_split_progress_live(revert=False):
         for url in url_helper(urls):
             progress_utils.update_activity_task(
                 description=post_str_manual.format(url=url)
