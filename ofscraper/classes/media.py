@@ -331,6 +331,10 @@ class Media(base.base):
             retries=constants.getattr("MPD_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            connect_timeout=constants.getattr("MPD_CONNECT_TIMEOUT"),
+            total_timeout=constants.getattr("MPD_TOTAL_TIMEOUT"),
+            read_timeout=constants.getattr("MPD_READ_TIMEOUT"),
+            pool_timeout=constants.getattr("MPD_POOL_CONNECT_TIMEOUT"),
             semaphore=semaphore,
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:
