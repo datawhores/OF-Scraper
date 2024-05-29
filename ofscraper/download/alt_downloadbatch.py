@@ -229,15 +229,20 @@ async def send_req_inner(c, ele, item, placeholderObj):
             item["total"] = item["total"] or int(l.headers.get("content-length"))
             total = item["total"]
             await common.batch_total_change_helper(None, total)
+            data={
+                        "content-total": total,
+                        "content-type": l.headers.get("content-type"),
+            }
+
+            common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
+            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
+            
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
                     cache.set,
                     f"{item['name']}_headers",
-                    {
-                        "content-total": total,
-                        "content-type": l.headers.get("content-type"),
-                    },
+                    data
                 ),
             )
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
