@@ -1,4 +1,4 @@
-MAXFILE_SEMAPHORE = 1000000
+MAXFILE_SEMAPHORE =None
 PATH_STR_MAX = 200
 TABLE_STR_MAX = 100
 SPACE_DOWNLOAD_MESSAGE = "Skipping download because space min has been reached"
