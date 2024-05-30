@@ -181,7 +181,7 @@ async def resume_data_handler(data, c, ele, tempholderObj):
             raise E
 
 
-async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, total=None):
+async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
     try:
         common_globals.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
