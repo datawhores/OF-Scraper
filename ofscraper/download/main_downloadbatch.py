@@ -187,7 +187,7 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
-            c, ele, tempholderObj, placeholderObj=placeholderObj.
+            c, ele, tempholderObj, placeholderObj=placeholderObj
         )
     except OSError as E:
         raise E
@@ -195,7 +195,7 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
         raise E
 
 
-async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None):
     total=None
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
