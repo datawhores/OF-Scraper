@@ -175,7 +175,7 @@ async def resume_data_handler(data, c, ele, tempholderObj):
     else:
         try:
             return await main_download_sendreq(
-                c, ele, tempholderObj, total=total, placeholderObj=placeholderObj
+                c, ele, tempholderObj ,placeholderObj=placeholderObj
             )
         except Exception as E:
             raise E
@@ -187,7 +187,7 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
-            c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
+            c, ele, tempholderObj, placeholderObj=placeholderObj.
         )
     except OSError as E:
         raise E
