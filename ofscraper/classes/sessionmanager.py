@@ -196,7 +196,8 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth(forced=forced) if (refresh or forced) else None
+        if (refresh or forced):
+            auth_requests.read_request_auth(forced=forced,refresh=refresh)
         self._sleeper = SessionSleep()
         self._session = None
 
@@ -258,14 +259,15 @@ class sessionManager:
         url,
         sign,
         forced,
+        refresh
     ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url, forced) if sign is None else headers
+        headers = self._create_sign(headers, url, forced=forced,refresh=refresh) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url, refresh):
-        auth_requests.create_sign(url, headers, refresh=refresh)
+    def _create_sign(self, headers, url, refresh=None,forced=None):
+        auth_requests.create_sign(url, headers, refresh=refresh,forced=forced)
         return headers
 
     def _create_cookies(self):
@@ -328,7 +330,7 @@ class sessionManager:
                     sleeper.do_sleep()
                     # remake each time
                     headers = (
-                    self._create_headers(headers, url, sign, forced)
+                    self._create_headers(headers, url, sign, refresh,forced)
                     if headers is None
                     else None
                     )
@@ -427,7 +429,7 @@ class sessionManager:
                 try:
                     await sleeper.async_do_sleep()
                     headers = (
-                        self._create_headers(headers, url, sign, forced)
+                        self._create_headers(headers, url, sign, forced,refresh)
                         if headers is None
                         else headers
                     )

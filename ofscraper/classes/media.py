@@ -339,9 +339,9 @@ class Media(base.base):
             semaphore=semaphore,
             log=self._log,
             refresh=False,
-            forced=True
+            forced=False
         ) as c:
-            async with c.requests_async(url=self.mpd, params=params) as r:
+            async with c.requests_async(url=self.mpd, params=params,forced=True,refresh=False) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
                 return self._cached_parse_mpd
 

@@ -77,7 +77,9 @@ def get_request_auth_deviint():
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
+        forced=False
     ) as c:
+        
         with c.requests(
             constants.getattr("DEVIINT"),
             headers=False,
@@ -105,6 +107,8 @@ def get_request_auth_sneaky():
             headers=False,
             cookies=False,
             sign=False,
+              refresh=False,
+        forced=False
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
@@ -121,6 +125,7 @@ def get_request_auth_digitalcriminals():
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
+        forced=False
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
@@ -163,11 +168,11 @@ def get_cookies():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers, refresh=False):
+def create_sign(link, headers, refresh=False,forced=False):
     """
     credit: DC and hippothon
     """
-    content = read_request_auth(refresh=refresh)
+    content = read_request_auth(refresh=refresh,forced=forced)
 
     time2 = str(round(time.time() * 1000))
 
