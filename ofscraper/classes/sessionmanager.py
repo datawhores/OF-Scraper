@@ -421,8 +421,8 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
-                await sleeper.async_do_sleep()
                 try:
+                    await sleeper.async_do_sleep()
                     headers = (
                         self._create_headers(headers, url, sign, forced)
                         if headers is None
