@@ -62,6 +62,9 @@ from ofscraper.download.shared.send.send_bar_msg import (
     send_bar_msg
 )
 
+from ofscraper.download.shared.send.chunk import (
+    send_chunk_msg
+)
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -199,6 +202,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
+    total=None
     try:
 
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
@@ -250,7 +254,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.total_change_helper(total, 0)
+        await common.total_change_helper(total, 0) if total else None
         raise E
 
 
@@ -269,9 +273,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):
-            common_globals.log.trace(
-                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
-            )
+            send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
             await send_bar_msg( partial(
                         progress_utils.update_download_job_task,

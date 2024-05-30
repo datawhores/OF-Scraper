@@ -46,6 +46,9 @@ from ofscraper.download.shared.send.send_bar_msg import (
     send_bar_msg_batch
 )
 
+from ofscraper.download.shared.send.chunk import (
+    send_chunk_msg
+)
 
 
 async def alt_download(c, ele, username, model_id):
@@ -208,6 +211,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
+    total=None
     try:        
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
@@ -249,7 +253,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
                 total = item["total"]
-                await common.batch_total_change_helper(total, 0)
+                await common.batch_total_change_helper(total, 0) if total else None
                 return item
 
             elif total != resume_size:
@@ -260,7 +264,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.batch_total_change_helper(total, 0)
+        await common.batch_total_change_helper(total, 0) if total else None
         raise E
 
 
@@ -286,9 +290,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
 
         async for chunk in l.iter_chunked(chunk_size):
-            common_globals.innerlog.get().trace(
-                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
-            )
+            send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
             await send_bar_msg_batch(
                         partial(

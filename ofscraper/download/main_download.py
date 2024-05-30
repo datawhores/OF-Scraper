@@ -49,6 +49,9 @@ from ofscraper.download.shared.progress.chunk import (
     get_ideal_chunk_size,
     get_update_count,
 )
+from ofscraper.download.shared.send.chunk import (
+    send_chunk_msg
+)
 
 
 async def main_download(c, ele, username, model_id):
@@ -119,7 +122,7 @@ async def fresh_data_handler(c, tempholderObj, ele):
     result = None
     try:
         result = await main_download_sendreq(
-            c, ele, tempholderObj, placeholderObj=None, total=None
+            c, ele, tempholderObj, placeholderObj=None
         )
     except Exception as E:
         raise E
@@ -159,14 +162,13 @@ async def resume_data_handler(data, c, tempholderObj, ele):
                 c,
                 ele,
                 tempholderObj,
-                total=total,
                 placeholderObj=placeholderObj,
             )
         except Exception as E:
             raise E
 
 
-async def main_download_sendreq(c, ele, tempholderObj, total=None, placeholderObj=None):
+async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
     try:
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {tempholderObj.tempfilepath}"
@@ -176,7 +178,6 @@ async def main_download_sendreq(c, ele, tempholderObj, total=None, placeholderOb
             ele,
             tempholderObj,
             placeholderObj=placeholderObj,
-            total=total,
         )
     except OSError as E:
         raise E
@@ -184,7 +185,8 @@ async def main_download_sendreq(c, ele, tempholderObj, total=None, placeholderOb
         raise E
 
 
-async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None):
+    total=None
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
@@ -231,7 +233,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)
     except Exception as E:
-        await common.total_change_helper(total, 0)
+        await common.total_change_helper(total, 0) if total else None
         raise E
 
 
@@ -249,9 +251,7 @@ async def download_fileobject_writer(r, ele, tempholderObj, placeholderObj, tota
         count = 1
         async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
-            common_globals.log.trace(
-                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
-            )
+            send_chunk_msg(ele,total,tempholderObj)
             await send_bar_msg( partial(
                         progress_utils.update_download_job_task,
                         task1,
