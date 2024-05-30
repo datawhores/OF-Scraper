@@ -49,7 +49,7 @@ def get_ideal_chunk_size(total_size, curr_file):
     # Adjust chunk size based on file size (consider smaller sizes for larger files, with minimum)
     ideal_chunk_size = min(max_chunk_size, file_size // 512)
     ideal_chunk_size = max(
-        ideal_chunk_size - (ideal_chunk_size % 4096),
+        ideal_chunk_size //4096,
         constants.getattr("MIN_CHUNK_SIZE"),
     )  # Minimum 4KB chunk
     return ideal_chunk_size
