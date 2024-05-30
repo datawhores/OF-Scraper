@@ -50,17 +50,6 @@ async def get_via_list(count):
     return models_objects
 
 
-async def get_main_list(count):
-    out = []
-    active_subscriptions = await subscriptions.get_subscriptions(count[0], forced=True)
-    expired_subscriptions = await subscriptions.get_subscriptions(
-        count[1], account="expired", forced=True
-    )
-    out.extend(active_subscriptions)
-    out.extend(expired_subscriptions)
-    return out
-
-
 async def get_via_individual():
     out = await individual.get_subscription()
     console.get_shared_console().print(
