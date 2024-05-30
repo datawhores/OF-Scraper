@@ -122,19 +122,24 @@ class CustomTenacity(AsyncRetrying):
         if (
             isinstance(exception, (aiohttp.ClientResponseError, aiohttp.ClientError))
             and (
-                getattr(exception, "status_code", None) == 403
-                or getattr(exception, "status", None) == 403
+                (getattr(exception, "status_code", None)
+                or getattr(exception, "status", None) in {403})
             )
-            or (
+        ):
+            auth_requests.read_request_auth(refresh=True)
+        elif(
+        
+            (
                 isinstance(exception, httpx.HTTPStatusError)
                 and (
-                    getattr(exception.response, "status_code", None) == 403
-                    or getattr(exception.response, "status", None) == 403
+                    (getattr(exception.response, "status_code", None)
+                    or getattr(exception.response, "status", None)) in {403}
                 )
             )
         ):
-            auth_requests.read_request_auth()
+            auth_requests.read_request_auth(refresh=True)
 
+            
 
 class sessionManager:
     def __init__(
