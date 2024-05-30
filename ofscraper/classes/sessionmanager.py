@@ -161,6 +161,7 @@ class sessionManager:
         sync_sem=None,
         sync_semaphore=None,
         refresh=True,
+        forced=False,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -195,7 +196,7 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth() if refresh else None
+        auth_requests.read_request_auth(forced=forced) if (refresh or forced) else None
         self._sleeper = SessionSleep()
         self._session = None
 
@@ -295,7 +296,8 @@ class sessionManager:
         read_timeout=None,
         sync_sem=None,
         sleeper=None,
-        forced=False,
+        refresh=False,
+        forced=False
     ):
         json = json or None
         params = params or None
@@ -391,6 +393,7 @@ class sessionManager:
         read_timeout=None,
         sleeper=None,
         forced=False,
+        refresh=False,
         *args,
         **kwargs,
     ):

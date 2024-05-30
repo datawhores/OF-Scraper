@@ -338,7 +338,8 @@ class Media(base.base):
             pool_timeout=constants.getattr("MPD_POOL_CONNECT_TIMEOUT"),
             semaphore=semaphore,
             log=self._log,
-            refresh=True
+            refresh=False,
+            forced=True
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
