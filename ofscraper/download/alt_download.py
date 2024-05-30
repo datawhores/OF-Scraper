@@ -226,7 +226,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             }
 
             common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
-            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get("content-total")) if data.get("content-total") else "unknown"}")
+            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
             await common.total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
