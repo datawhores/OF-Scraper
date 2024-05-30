@@ -133,7 +133,7 @@ async def fresh_data_handler(c, ele, tempholderObj):
 
     try:
         result = await main_download_sendreq(
-            c, ele, tempholderObj, placeholderObj=None, total=None
+            c, ele, tempholderObj, placeholderObj=None, 
         )
     except Exception as E:
         raise E
