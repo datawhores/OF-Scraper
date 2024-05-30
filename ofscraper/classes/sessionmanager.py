@@ -322,15 +322,15 @@ class sessionManager:
             r = None
             with _:
                 sync_sem.acquire()
-                sleeper.do_sleep()
-                # remake each time
-                headers = (
+                try:
+                    sleeper.do_sleep()
+                    # remake each time
+                    headers = (
                     self._create_headers(headers, url, sign, forced)
                     if headers is None
                     else None
-                )
-                cookies = self._create_cookies() if cookies is None else None
-                try:
+                    )
+                    cookies = self._create_cookies() if cookies is None else None
                     r = self._httpx_funct(
                         method,
                         timeout=httpx.Timeout(
