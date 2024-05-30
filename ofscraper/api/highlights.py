@@ -58,7 +58,7 @@ async def scrape_stories(c, user_id) -> list:
             f"[Stories] user id -> {user_id}",
             visible=True,
         )
-        async with c.requests_async(url=url) as r:
+        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             stories = await r.json_()
             log.debug(
@@ -290,7 +290,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
             f"[Highlights] scraping highlight list  offset-> {offset}",
             visible=True,
         )
-        async with c.requests_async(url) as r:
+        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             resp_data = await r.json_()
             log.trace(f"highlights list: -> found highlights list data {resp_data}")
@@ -322,7 +322,7 @@ async def scrape_highlights(c, id) -> list:
             f"[Highlights]  highlights id -> {id}",
             visible=True,
         )
-        async with c.requests_async(url=url) as r:
+        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             resp_data = await r.json_()
             log.trace(f"highlights: -> found highlights data {resp_data}")
@@ -373,6 +373,6 @@ def get_individual_stories(id, c=None):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
+        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id),forced=constants.getattr("API_FORCE_KEY")) as r:
             log.trace(f"highlight raw highlight individua; {r.json_()}")
             return r.json()

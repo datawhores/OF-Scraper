@@ -151,7 +151,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
             f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
-        async with c.requests_async(url=url) as r:
+        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
             posts = (await r.json_())["list"]
             posts = list(sorted(posts, key=lambda x: float(x["postedAtPrecise"])))
             posts = list(

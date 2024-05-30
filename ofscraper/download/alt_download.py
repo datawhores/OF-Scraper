@@ -219,7 +219,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
             f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
         )
         async with c.requests_async(
-            url=url, headers=headers, params=params, refresh=True
+            url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY")
+
         ) as l:
             item["total"] = item["total"] or int(l.headers.get("content-length"))
             total = item["total"]

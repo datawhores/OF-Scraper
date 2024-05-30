@@ -250,6 +250,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 total_timeout=constants.getattr("CDM_TIMEOUT"),
+                forced=constants.getattr("CDM_FORCE_KEY")
             ) as r:
                 cdm.parse_license(session_id, (await r.read_()))
                 keys = cdm.get_keys(session_id)

@@ -133,7 +133,7 @@ async def scrape_labels(c, model_id, offset=0):
             f"labels offset -> {offset}",
             visible=True,
         )
-        async with c.requests_async(url) as r:
+        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             data = await r.json_()
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -262,7 +262,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             f": getting posts from label -> {label['name']}",
             visible=True,
         )
-        async with c.requests_async(url) as r:
+        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             data = await r.json_()
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]

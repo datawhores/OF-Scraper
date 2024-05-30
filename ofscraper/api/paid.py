@@ -113,7 +113,7 @@ async def scrape_paid(c, username, offset=0):
             visible=True,
         )
 
-        async with c.requests_async(url) as r:
+        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             data = await r.json_()
             log.trace("paid raw {posts}".format(posts=data))
@@ -262,7 +262,7 @@ async def scrape_all_paid(c, offset=0, required=None):
             visible=True,
         )
 
-        async with c.requests_async(url) as r:
+        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
 
             log_id = f"offset {offset or 0}:"
             data = await r.json_()

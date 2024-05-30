@@ -319,7 +319,7 @@ async def scrape_timeline_posts(
             visible=True,
         )
 
-        async with c.requests_async(url=url) as r:
+        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
             posts = (await r.json_())["list"]
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):

@@ -228,7 +228,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         )
 
         async with c.requests_async(
-            url=url, headers=headers, params=params, forced=True
+            url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY")
         ) as l:
             item["total"] = item["total"] or int(l.headers.get("content-length"))
             total = item["total"]

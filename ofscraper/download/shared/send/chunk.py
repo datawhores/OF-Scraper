@@ -14,6 +14,4 @@ def send_chunk_msg(ele,total,placeholderObj):
     if constants.getattr("SHOW_DL_CHUNKS"):
         common_globals.log.log(getNumber(constants.getattr("SHOW_DL_CHUNKS_LEVEL")),msg)
     elif constants.getattr("SHOW_DL_CHUNKS"):
-        common_globals.log.trace(msg)  
-        
-   
+        common_globals.log.trace(msg)
