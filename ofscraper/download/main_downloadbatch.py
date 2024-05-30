@@ -30,7 +30,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.system as system
-from ofscraper.download.shared.classes.retries import download_retry
+from ofscraper.download.shared.classes.retries import download_retry,get_download_retries
 from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
@@ -54,6 +54,7 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
+
 
 async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -99,21 +100,21 @@ async def main_download_downloader(c, ele):
 
             except OSError as E:
                 common_globals.innerlog.get().debug(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
                 common_globals.innerlog.get().debug(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
                 )
                 common_globals.innerlog.get().debug(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
                 )
                 raise E
             except Exception as E:
                 common_globals.log.traceback_(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
                 )
                 common_globals.log.traceback_(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                 )
                 common_globals.log.handlers[1].queue.put(
                 list(common_globals.innerlog.get().handlers[1].queue.queue)
@@ -126,7 +127,7 @@ async def main_download_downloader(c, ele):
 
 async def fresh_data_handler(c, ele, tempholderObj):
     common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] fresh download for media {ele.url}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
     )
     result = None
 
@@ -183,7 +184,7 @@ async def resume_data_handler(data, c, ele, tempholderObj):
 async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
         common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {tempholderObj.tempfilepath}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
             c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
@@ -200,7 +201,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
         headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {ele.url}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             total = total or int(r.headers["content-length"])
@@ -234,7 +235,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 return (total, tempholderObj.tempfilepath, placeholderObj)
             elif total != resume_size:
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] writing media to disk"
+                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
                 )       
                 await download_fileobject_writer(
                     r, ele, total, tempholderObj, placeholderObj

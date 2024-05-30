@@ -18,9 +18,9 @@ def get_download_retries():
 
 def get_download_req_retries():
     return (
-        constants.getattr("DOWNLOAD_NUM_TRIES")
+        constants.getattr("DOWNLOAD_NUM_TRIES_REQ")
         if not in_check_mode()
-        else constants.getattr("DOWNLOAD_NUM_TRIES_CHECK")
+        else constants.getattr("DOWNLOAD_NUM_TRIES_CHECK_REQ")
     )
 
 

@@ -8,14 +8,13 @@ import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.download.shared.paths.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 from ofscraper.db.operations_.media import (
     download_media_update,
     prev_download_media_data,
 )
 from ofscraper.download.shared.log import get_medialog
-
+from ofscraper.download.shared.classes.retries import get_download_retries
 
 async def force_download(ele, username, model_id):
     await download_media_update(
@@ -164,7 +163,7 @@ async def metadata_helper(c, ele):
         )
         common_globals.attempt.set(common_globals.attempt.get() + 1)
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}]  Getting data for metadata insert"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}]  Getting data for metadata insert"
         )
         async with c.requests_async(url=url, headers=None, params=params) as r:
             headers = r.headers
