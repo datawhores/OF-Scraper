@@ -286,7 +286,7 @@ class sessionManager:
         self,
         url=None,
         method="get",
-        headers=None,
+        headers=False,
         cookies=None,
         json=None,
         params=None,
@@ -336,7 +336,7 @@ class sessionManager:
                     # remake each time
                     headers = (
                     self._create_headers(headers, url, sign, refresh,forced)
-                    if headers is None
+                    if headers!=False
                     else None
                     )
                     cookies = self._create_cookies() if cookies is None else None
@@ -385,7 +385,7 @@ class sessionManager:
         wait_max_exponential=None,
         retries=None,
         method="get",
-        headers=None,
+        headers=False,
         cookies=None,
         json=None,
         params=None,
@@ -435,7 +435,7 @@ class sessionManager:
                     await sleeper.async_do_sleep()
                     headers = (
                         self._create_headers(headers, url, sign, forced,refresh)
-                        if headers is None
+                        if headers!=False
                         else headers
                     )
                     cookies = self._create_cookies() if cookies is None else None
