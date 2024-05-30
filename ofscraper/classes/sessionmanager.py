@@ -493,6 +493,8 @@ class sessionManager:
     @sleep.setter
     def sleep(self, val):
         self._sleeper._sleep = val
+    
+    
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)

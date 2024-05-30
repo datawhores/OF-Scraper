@@ -35,6 +35,7 @@ class Media(base.base):
         self._final_url = None
         self._cached_parse_mpd = None
         self._mpd = None
+        self._log=None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -336,6 +337,8 @@ class Media(base.base):
             read_timeout=constants.getattr("MPD_READ_TIMEOUT"),
             pool_timeout=constants.getattr("MPD_POOL_CONNECT_TIMEOUT"),
             semaphore=semaphore,
+            log=self._log,
+            refresh=True
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
@@ -429,6 +432,14 @@ class Media(base.base):
     @property
     def duration_string(self):
         return dates.format_seconds(self.duration) if self.duration else None
+    
+    @property
+    def log(self):
+        return self._log
+
+    @log.setter
+    def log(self, val):
+        self._log=val
 
     def get_text(self):
         if self.responsetype != "Profile":

@@ -106,3 +106,6 @@ def text_log(username, value=0, fails=0, exists=0, log=None):
     (log or common_globals.log).warning(
         f"[bold]{username}[/bold] {value} text, {exists} skipped, {fails} failed"
     )
+
+def set_media_log(log,ele):
+    ele.log=log

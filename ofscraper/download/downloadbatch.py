@@ -36,7 +36,7 @@ from ofscraper.download.shared.general import (
     get_medialog,
     subProcessVariableInit,
 )
-from ofscraper.download.shared.log import final_log, final_log_text   ,log_download_progress
+from ofscraper.download.shared.log import final_log, final_log_text   ,log_download_progress,set_media_log
 from ofscraper.download.shared.metadata import metadata
 from ofscraper.download.shared.paths.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.progress.progress import convert_num_bytes
@@ -397,6 +397,8 @@ def pid_log_helper():
 
 
 async def download(c, ele, model_id, username):
+    #set logs for mpd
+    set_media_log(common_globals.log,ele)
     async with common_globals.maxfile_sem:
         templog_ = logger.get_shared_logger(
             name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
