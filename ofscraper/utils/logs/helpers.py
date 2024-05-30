@@ -72,7 +72,7 @@ def getLevel(input_):
 
 
 def getNumber(input_):
-    input_ = getLevel(input_.capitalize())
+    input_ = getLevel(input_.upper())
     if isinstance(input_, str):
         return logging.getLevelName(input_)
     return input_
