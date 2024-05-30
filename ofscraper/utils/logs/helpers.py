@@ -50,7 +50,7 @@ def getSenstiveDict():
     return senstiveDict
 
 
-def getLevel(input):
+def getLevel(input_):
     """
     CRITICAL 50
     ERROR 40
@@ -59,18 +59,19 @@ def getLevel(input):
     DEBUG 10
     TRACE 5
     """
+    if input_ in {"WARNING","ERROR","INFO","DEBUG","TRACE","CRITICAL"}:
+        return input
+    #for levels with different names
     return {
         "OFF": 100,
         "PROMPT": "ERROR",
         "LOW": "WARNING",
         "NORMAL": "INFO",
-        "DEBUG": "DEBUG",
-        "TRACE": "TRACE",
     }.get(input, 100)
 
 
 def getNumber(input_):
-    input_ = getLevel(input_)
+    input_ = getLevel(input_.capitalize())
     if isinstance(input_, str):
         return logging.getLevelName(input_)
     return input_
