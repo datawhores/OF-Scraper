@@ -66,6 +66,7 @@ def getLevel(input_):
         "OFF": 100,
         "PROMPT": "ERROR",
         "LOW": "WARNING",
+        "WARN":"WARNING",
         "NORMAL": "INFO",
     }.get(input, 100)
 
