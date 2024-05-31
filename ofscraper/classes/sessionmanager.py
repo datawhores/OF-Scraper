@@ -493,15 +493,15 @@ class sessionManager:
                         await sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    log.debug(f"releasing sem waiters:{sem._waiters} | value: {sem._value}")
+                    log.debug(f"releasing async sem waiters:{sem._waiters} | value: {sem._value}")
                     sem.release()
-                    log.debug(f"released sem waiters:{sem._waiters} | value: {sem._value}")
+                    log.debug(f"released async sem waiters:{sem._waiters} | value: {sem._value}")
 
                     raise E
         yield r
-        log.debug(f"releasing sem waiters:{sem._waiters} | value: {sem._value}")
+        log.debug(f"releasing async sem waiters:{sem._waiters} | value: {sem._value}")
         sem.release()
-        log.debug(f"released sem waiters:{sem._waiters} | value: {sem._value}")
+        log.debug(f"released async sem waiters:{sem._waiters} | value: {sem._value}")
 
     @property
     def sleep(self):
