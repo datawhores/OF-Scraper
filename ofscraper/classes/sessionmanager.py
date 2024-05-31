@@ -302,7 +302,7 @@ class sessionManager:
         read_timeout=None,
         sync_sem=None,
         sleeper=None,
-        forced=False
+        forced=False,
     ):
         json = json or None
         params = params or None
