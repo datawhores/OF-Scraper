@@ -368,14 +368,14 @@ class sessionManager:
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    log.debug(f"releasing sem value: {sync_sem._value}")
+                    # log.debug(f"releasing sem value: {sync_sem._value}")
                     sync_sem.release()
-                    log.debug(f"released value: {sync_sem._value}")
+                    # log.debug(f"released value: {sync_sem._value}")
                     raise E
         yield r
-        log.debug(f"releasing sem value: {sync_sem._value}")
+        # log.debug(f"releasing sem value: {sync_sem._value}")
         sync_sem.release()
-        log.debug(f"released sem value: {sync_sem._value}")
+        # log.debug(f"released sem value: {sync_sem._value}")
 
     @contextlib.asynccontextmanager
     async def requests_async(
@@ -493,15 +493,17 @@ class sessionManager:
                         await sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    log.debug(f"releasing async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
+                    # log.debug(f"releasing async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
                     sem.release()
-                    log.debug(f"released async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
+                    await asyncio.sleep(0)
+                    # log.debug(f"released async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
 
                     raise E
         yield r
-        log.debug(f"releasing async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
+        # log.debug(f"releasing async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
         sem.release()
-        log.debug(f"released async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
+        await asyncio.sleep(0)
+        # log.debug(f"released async sem waiters:{len(sem._waiters) if sem._waiters else 0} | value: {sem._value}")
 
     @property
     def sleep(self):
