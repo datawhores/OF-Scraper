@@ -263,15 +263,14 @@ class sessionManager:
         url,
         sign,
         forced,
-        refresh
     ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url, forced=forced,refresh=refresh) if sign is None else headers
+        headers = self._create_sign(headers, url, forced=forced) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url, refresh=None,forced=None):
-        auth_requests.create_sign(url, headers, refresh=refresh,forced=forced)
+    def _create_sign(self, headers, url,forced=None):
+        auth_requests.create_sign(url, headers,forced=forced)
         return headers
 
     def _create_cookies(self):
@@ -330,7 +329,7 @@ class sessionManager:
                     sleeper.do_sleep()
                     # remake each time
                     headers = (
-                    self._create_headers(headers, url, sign, False,forced)
+                    self._create_headers(headers, url, sign,forced)
                     if (headers is None) or forced or sign
                     else None
                     )
@@ -426,7 +425,7 @@ class sessionManager:
                 try:
                     await sleeper.async_do_sleep()
                     headers = (
-                        self._create_headers(headers, url, sign, forced,False)
+                        self._create_headers(headers, url, sign, forced)
                         if (headers is None) or forced or sign
                         else headers
                     )
