@@ -346,6 +346,35 @@ def setpriority():
         process.nice(10)
 
 
+async def producer(queue, aws):
+    for data in aws:
+        await queue.put(data)
+    queue.join()  # Wait for all tasks to finish
+
+
+async def consumer(queue):
+    while True:
+        data = await queue.get()
+        try:
+            pack= await download(*data)
+            queue.task_done()
+            common_globals.log.debug(f"unpack {pack} count {len(pack)}")
+            media_type, num_bytes_downloaded = pack
+            await common.send_msg((media_type, num_bytes_downloaded, 0))
+        except Exception as e:
+                common_globals.log.info(f"Download Failed because\n{e}")
+                common_globals.log.traceback_(traceback.format_exc())
+                media_type = "skipped"
+                num_bytes_downloaded = 0
+                await common.send_msg((media_type, num_bytes_downloaded, 0))
+
+
+async def producer(queue, aws):
+    for data in aws:
+        await queue.put(data)
+    queue.join()  # Wait for all tasks to finish
+
+
 @run
 async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
@@ -365,20 +394,12 @@ async def process_dicts_split(username, model_id, medialist):
     aws = []
     async with download_session() as c:
         for ele in medialist:
-            aws.append(asyncio.create_task(download(c, ele, model_id, username)))
-        for coro in asyncio.as_completed(aws):
-            try:
-                pack = await coro
-                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-                media_type, num_bytes_downloaded = pack
-                await common.send_msg((media_type, num_bytes_downloaded, 0))
-            except Exception as e:
-                common_globals.log.info(f"Download Failed because\n{e}")
-                common_globals.log.traceback_(traceback.format_exc())
-                media_type = "skipped"
-                num_bytes_downloaded = 0
-                await common.send_msg((media_type, num_bytes_downloaded, 0))
-
+            aws.append((c, ele, model_id, username))
+        concurrency_limit=10
+        queue = asyncio.Queue(maxsize=concurrency_limit)
+        consumers = [asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)]
+        await producer(queue, aws)
+        await asyncio.gather(*consumers)
     common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
     await asyncio.get_event_loop().run_in_executor(
@@ -394,6 +415,10 @@ async def process_dicts_split(username, model_id, medialist):
 
 def pid_log_helper():
     return f"PID: {os.getpid()}"
+
+
+
+
 
 
 async def download(c, ele, model_id, username):
