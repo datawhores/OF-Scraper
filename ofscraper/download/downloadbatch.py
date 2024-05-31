@@ -364,12 +364,15 @@ async def consumer(queue):
                 num_bytes_downloaded = 0
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
         queue.task_done()
+        await asyncio.sleep(3)
 
 
-async def producer(queue, aws):
+async def producer(queue, aws,concurrency_limit):
     for data in aws:
         await queue.put(data)
     await queue.put(None)
+    for _ in range(concurrency_limit):
+        await queue.put(None)
     queue.join()  # Wait for all tasks to finish
 
 
@@ -396,7 +399,7 @@ async def process_dicts_split(username, model_id, medialist):
         concurrency_limit= get_max_workers()
         queue = asyncio.Queue(maxsize=concurrency_limit)
         consumers = [asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)]
-        await producer(queue, aws)
+        await producer(queue, aws,concurrency_limit)
         await asyncio.gather(*consumers)
     common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
