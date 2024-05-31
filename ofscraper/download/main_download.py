@@ -229,6 +229,9 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None):
                 await download_fileobject_writer(
                     r, ele, tempholderObj, placeholderObj, total
                 )
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
+                )
 
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)

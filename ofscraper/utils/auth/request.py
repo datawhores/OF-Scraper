@@ -43,7 +43,7 @@ def read_request_auth(refresh=True,forced=False):
 
 
 def get_request_auth(refresh=False,forced=False):
-    # curr_auth = cache.get("api_onlyfans_sign")
+    #curr_auth = cache.get("api_onlyfans_sign")
     # if not (refresh or forced) and curr_auth:
     #     return curr_auth
     logging.getLogger("shared").debug("getting new signature")

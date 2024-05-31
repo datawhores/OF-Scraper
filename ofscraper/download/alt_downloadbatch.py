@@ -262,6 +262,9 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
                 )
                 await download_fileobject_writer(total, l, ele, placeholderObj)
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+                )
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
