@@ -368,10 +368,14 @@ class sessionManager:
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
+                    log.debug(f"releaing sem waiters:{sync_sem._waiters} | value: {sync_sem._value}")
                     sync_sem.release()
+                    log.debug(f"released sem waiters:{sync_sem._waiters} | value: {sync_sem._value}")
                     raise E
         yield r
+        log.debug(f"releaing sem waiters:{sync_sem._waiters} | value: {sync_sem._value}")
         sync_sem.release()
+        log.debug(f"released sem waiters:{sync_sem._waiters} | value: {sync_sem._value}")
 
     @contextlib.asynccontextmanager
     async def requests_async(
@@ -489,10 +493,15 @@ class sessionManager:
                         await sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
+                    log.debug(f"releasing sem waiters:{sem._waiters} | value: {sem._value}")
                     sem.release()
+                    log.debug(f"released sem waiters:{sem._waiters} | value: {sem._value}")
+
                     raise E
         yield r
+        log.debug(f"releasing sem waiters:{sem._waiters} | value: {sem._value}")
         sem.release()
+        log.debug(f"released sem waiters:{sem._waiters} | value: {sem._value}")
 
     @property
     def sleep(self):
