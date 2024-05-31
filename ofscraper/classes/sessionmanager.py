@@ -367,7 +367,7 @@ class sessionManager:
                     log.traceback_(traceback.format_exc())
                     raise E
         yield r
-        @contextlib.asynccontextmanager
+    @contextlib.asynccontextmanager
     async def requests_async(
         self,
         url=None,
@@ -422,6 +422,7 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
+                await asyncio.sleep(0)
                 try:
                     await sleeper.async_do_sleep()
                     headers = (
