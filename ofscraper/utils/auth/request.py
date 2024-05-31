@@ -77,7 +77,6 @@ def get_request_auth_deviint():
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
-        forced=False
     ) as c:
         
         with c.requests(
@@ -107,7 +106,6 @@ def get_request_auth_sneaky():
             headers=False,
             cookies=False,
             sign=False,
-              refresh=False,
         forced=False
         ) as r:
             content = r.json_()
@@ -125,7 +123,6 @@ def get_request_auth_digitalcriminals():
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
-        forced=False
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),

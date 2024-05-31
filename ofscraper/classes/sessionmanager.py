@@ -166,7 +166,6 @@ class sessionManager:
         sync_sem=None,
         sync_semaphore=None,
         refresh=True,
-        forced=False,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -201,8 +200,8 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        if (refresh or forced):
-            auth_requests.read_request_auth(forced=forced,refresh=refresh)
+        if refresh:
+            auth_requests.read_request_auth(forced=False,refresh=refresh)
         self._sleeper = SessionSleep()
         self._session = None
 
@@ -286,7 +285,7 @@ class sessionManager:
         self,
         url=None,
         method="get",
-        headers=False,
+        headers=None,
         cookies=None,
         json=None,
         params=None,
@@ -303,7 +302,6 @@ class sessionManager:
         read_timeout=None,
         sync_sem=None,
         sleeper=None,
-        refresh=False,
         forced=False
     ):
         json = json or None
@@ -335,8 +333,8 @@ class sessionManager:
                     sleeper.do_sleep()
                     # remake each time
                     headers = (
-                    self._create_headers(headers, url, sign, refresh,forced)
-                    if headers!=False
+                    self._create_headers(headers, url, sign, False,forced)
+                    if (headers is None) or forced or sign
                     else None
                     )
                     cookies = self._create_cookies() if cookies is None else None
@@ -385,7 +383,7 @@ class sessionManager:
         wait_max_exponential=None,
         retries=None,
         method="get",
-        headers=False,
+        headers=None,
         cookies=None,
         json=None,
         params=None,
@@ -400,7 +398,6 @@ class sessionManager:
         read_timeout=None,
         sleeper=None,
         forced=False,
-        refresh=False,
         *args,
         **kwargs,
     ):
@@ -434,10 +431,11 @@ class sessionManager:
                 try:
                     await sleeper.async_do_sleep()
                     headers = (
-                        self._create_headers(headers, url, sign, forced,refresh)
-                        if headers!=False
+                        self._create_headers(headers, url, sign, forced,False)
+                        if (headers is None) or forced or sign
                         else headers
                     )
+
                     cookies = self._create_cookies() if cookies is None else None
                     json = json
                     params = params

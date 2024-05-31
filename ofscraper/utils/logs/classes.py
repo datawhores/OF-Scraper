@@ -127,7 +127,6 @@ class DiscordHandler(logging.Handler):
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
-            refresh=False,
         )
         self.asess._set_session(async_=True)
         self.sess._set_session(async_=False)
