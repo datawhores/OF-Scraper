@@ -300,7 +300,6 @@ class sessionManager:
         connect_timeout=None,
         pool_connect_timeout=None,
         read_timeout=None,
-        sync_sem=None,
         sleeper=None,
         forced=False,
     ):
@@ -311,7 +310,6 @@ class sessionManager:
         min = wait_min or self._wait_min
         max = wait_max or self._wait_max
         retries = retries or self._retries
-        sync_sem = self._sync_sem or sync_sem
         sleeper = sleeper or self._sleeper
         for _ in Retrying(
             retry=retry_if_not_exception_type(
@@ -328,7 +326,6 @@ class sessionManager:
         ):
             r = None
             with _:
-                sync_sem.acquire()
                 try:
                     sleeper.do_sleep()
                     # remake each time
@@ -368,16 +365,10 @@ class sessionManager:
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    # log.debug(f"releasing sem value: {sync_sem._value}")
                     sync_sem.release()
-                    # log.debug(f"released value: {sync_sem._value}")
                     raise E
         yield r
-        # log.debug(f"releasing sem value: {sync_sem._value}")
-        sync_sem.release()
-        # log.debug(f"released sem value: {sync_sem._value}")
-
-    @contextlib.asynccontextmanager
+        @contextlib.asynccontextmanager
     async def requests_async(
         self,
         url=None,
