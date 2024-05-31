@@ -7,7 +7,6 @@ import aioprocessing
 
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
-import ofscraper.utils.constants as constants
 
 attempt = None
 attempt2 = None
@@ -53,8 +52,6 @@ def main_globals():
     dirSet = set()
     global lock
     lock = asyncio.Lock()
-    global maxfile_sem
-    maxfile_sem = asyncio.Semaphore(constants.getattr("MAXFILE_SEMAPHORE") or (config_data.get_download_semaphores()*10))
     global console
     console = console_.get_shared_console()
     global localDirSet
@@ -85,3 +82,4 @@ def process_split_globals(pipeCopy, logCopy):
     log = logCopy
     pipe_lock = threading.Lock()
     lock_pool = ThreadPoolExecutor(max_workers=1)
+

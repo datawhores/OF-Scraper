@@ -41,6 +41,7 @@ from ofscraper.download.shared.metadata import metadata
 from ofscraper.download.shared.paths.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.progress.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
+from ofscraper.download.shared.workers import get_max_workers
 
 platform_name = platform.system()
 
@@ -346,18 +347,13 @@ def setpriority():
         process.nice(10)
 
 
-async def producer(queue, aws):
-    for data in aws:
-        await queue.put(data)
-    queue.join()  # Wait for all tasks to finish
-
-
 async def consumer(queue):
     while True:
         data = await queue.get()
+        if data==None:
+            break
         try:
             pack= await download(*data)
-            queue.task_done()
             common_globals.log.debug(f"unpack {pack} count {len(pack)}")
             media_type, num_bytes_downloaded = pack
             await common.send_msg((media_type, num_bytes_downloaded, 0))
@@ -367,11 +363,13 @@ async def consumer(queue):
                 media_type = "skipped"
                 num_bytes_downloaded = 0
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
+        queue.task_done()
 
 
 async def producer(queue, aws):
     for data in aws:
         await queue.put(data)
+    await queue.put(None)
     queue.join()  # Wait for all tasks to finish
 
 
@@ -395,7 +393,7 @@ async def process_dicts_split(username, model_id, medialist):
     async with download_session() as c:
         for ele in medialist:
             aws.append((c, ele, model_id, username))
-        concurrency_limit=10
+        concurrency_limit= get_max_workers()
         queue = asyncio.Queue(maxsize=concurrency_limit)
         consumers = [asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)]
         await producer(queue, aws)
@@ -424,31 +422,30 @@ def pid_log_helper():
 async def download(c, ele, model_id, username):
     #set logs for mpd
     set_media_log(common_globals.log,ele)
-    async with common_globals.maxfile_sem:
-        templog_ = logger.get_shared_logger(
-            name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
+    templog_ = logger.get_shared_logger(
+        name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
+    )
+    common_globals.innerlog.set(templog_)
+    try:
+        if read_args.retriveArgs().metadata:
+            return await metadata(c, ele, username, model_id)
+        elif ele.url:
+            return await main_download(c, ele, username, model_id)
+        elif ele.mpd:
+            return await alt_download(c, ele, username, model_id)
+    except Exception as e:
+        common_globals.log.traceback_(
+            f"{get_medialog(ele)} Download Failed\n{e}"
         )
-        common_globals.innerlog.set(templog_)
-        try:
-            if read_args.retriveArgs().metadata:
-                return await metadata(c, ele, username, model_id)
-            elif ele.url:
-                return await main_download(c, ele, username, model_id)
-            elif ele.mpd:
-                return await alt_download(c, ele, username, model_id)
-        except Exception as e:
-            common_globals.log.traceback_(
-                f"{get_medialog(ele)} Download Failed\n{e}"
-            )
-            common_globals.log.traceback_(
-                f"{get_medialog(ele)} exception {traceback.format_exc()}"
-            )
-            # we can put into seperate otherqueue_
-            return "skipped", 0
-        finally:
-            common_globals.log.handlers[1].queue.put(
-                list(common_globals.innerlog.get().handlers[1].queue.queue)
-            )
-            common_globals.log.handlers[0].queue.put(
-                list(common_globals.innerlog.get().handlers[0].queue.queue)
-            )
+        common_globals.log.traceback_(
+            f"{get_medialog(ele)} exception {traceback.format_exc()}"
+        )
+        # we can put into seperate otherqueue_
+        return "skipped", 0
+    finally:
+        common_globals.log.handlers[1].queue.put(
+            list(common_globals.innerlog.get().handlers[1].queue.queue)
+        )
+        common_globals.log.handlers[0].queue.put(
+            list(common_globals.innerlog.get().handlers[0].queue.queue)
+        )
