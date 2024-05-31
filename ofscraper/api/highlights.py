@@ -51,7 +51,7 @@ async def scrape_stories(c, user_id) -> list:
     new_tasks = []
     task = None
 
-    # await asyncio.sleep(1)
+    
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         task = progress_utils.add_api_job_task(
@@ -77,7 +77,7 @@ async def scrape_stories(c, user_id) -> list:
     except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        # await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -281,7 +281,7 @@ async def process_task_highlights(tasks):
 
 async def scrape_highlight_list(c, user_id, offset=0) -> list:
     new_tasks = []
-    # await asyncio.sleep(1)
+    
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     task = None
 
@@ -300,7 +300,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        # await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -313,7 +313,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
 async def scrape_highlights(c, id) -> list:
     new_tasks = []
-    # await asyncio.sleep(1)
+    
     url = constants.getattr("storyEP").format(id)
     task = None
 
@@ -333,7 +333,7 @@ async def scrape_highlights(c, id) -> list:
         raise Exception(f"Task timed out {url}")
 
     except Exception as E:
-        # await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

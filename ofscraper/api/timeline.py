@@ -311,8 +311,6 @@ async def scrape_timeline_posts(
     new_tasks = []
     task = None
 
-    # await asyncio.sleep(1)
-
     try:
         task = progress_utils.add_api_job_task(
             f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
@@ -376,7 +374,6 @@ async def scrape_timeline_posts(
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

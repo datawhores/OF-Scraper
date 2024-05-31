@@ -102,7 +102,7 @@ async def scrape_paid(c, username, offset=0):
     """
     media = None
 
-    # await asyncio.sleep(1)
+    
 
     new_tasks = []
     url = constants.getattr("purchased_contentEP").format(offset, username)
@@ -134,7 +134,7 @@ async def scrape_paid(c, username, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        # await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -213,9 +213,9 @@ async def create_tasks_scrape_paid():
                         )
                     )
                     new_tasks.extend(new_tasks_batch)
-                    # await asyncio.sleep(1)
+                    
                 except Exception as E:
-                    # await asyncio.sleep(1)
+                    
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
             tasks = new_tasks
@@ -252,7 +252,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     """
     media = None
 
-    # await asyncio.sleep(1)
+    
     new_tasks = []
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
@@ -300,7 +300,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        # await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

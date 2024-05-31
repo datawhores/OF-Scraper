@@ -96,7 +96,6 @@ async def main_download_downloader(c, ele):
                 else:
                     return await fresh_data_handler(c, tempholderObj, ele)
             except OSError as E:
-                # await asyncio.sleep(1)
                 common_globals.log.debug(
                     f"[attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
                 )
@@ -105,7 +104,6 @@ async def main_download_downloader(c, ele):
                 )
                 raise E
             except Exception as E:
-                # await asyncio.sleep(1)
                 common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
                 )

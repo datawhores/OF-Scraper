@@ -144,7 +144,6 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
 
     new_tasks = []
     posts = []
-    # await asyncio.sleep(1)
     try:
 
         task = progress_utils.add_api_job_task(
@@ -201,7 +200,6 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
         raise Exception(f"Task timed out {url}")
 
     except Exception as E:
-        # await asyncio.sleep(1)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

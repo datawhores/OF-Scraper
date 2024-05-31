@@ -364,7 +364,7 @@ async def consumer(queue):
                 num_bytes_downloaded = 0
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
         queue.task_done()
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
 
 
 async def producer(queue, aws,concurrency_limit):
