@@ -43,9 +43,9 @@ def read_request_auth(refresh=True,forced=False):
 
 
 def get_request_auth(refresh=False,forced=False):
-    curr_auth = cache.get("api_onlyfans_sign")
-    if not (refresh or forced) and curr_auth:
-        return curr_auth
+    # curr_auth = cache.get("api_onlyfans_sign")
+    # if not (refresh or forced) and curr_auth:
+    #     return curr_auth
     logging.getLogger("shared").debug("getting new signature")
     if (settings.get_dynamic_rules()) in {
         "deviint",
@@ -61,12 +61,12 @@ def get_request_auth(refresh=False,forced=False):
         auth = get_request_auth_sneaky()
     else:
         auth = get_request_auth_digitalcriminals()
-    if not forced:
-        cache.set(
-            "api_onlyfans_sign",
-            auth,
-            expire=constants.getattr("HOURLY_EXPIRY") // 4,
-        )
+    # if not forced:
+    #     cache.set(
+    #         "api_onlyfans_sign",
+    #         auth,
+    #         expire=constants.getattr("HOURLY_EXPIRY") // 4,
+    #     )
     return auth
 
 
