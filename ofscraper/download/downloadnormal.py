@@ -34,6 +34,81 @@ from ofscraper.download.shared.metadata import metadata
 from ofscraper.download.shared.paths.paths import setDirectoriesDate
 from ofscraper.download.shared.progress.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
+from ofscraper.download.shared.workers import get_max_workers
+
+
+async def consumer(queue,task1,medialist):
+    while True:
+        data = await queue.get()
+        if data==None:
+            break
+        ele=data[1]
+        try:
+            pack= await download(*data)
+            common_globals.log.debug(f"unpack {pack} count {len(pack)}")
+            media_type, num_bytes_downloaded = pack
+        except Exception as e:
+            common_globals.log.info(f"{get_medialog(ele)} Download Failed because\n{e}" )
+            common_globals.log.traceback_(traceback.format_exc())
+            media_type = "skipped"
+            num_bytes_downloaded = 0
+        try:
+            common_globals.total_bytes_downloaded = (
+                common_globals.total_bytes_downloaded + num_bytes_downloaded
+            )
+            if media_type == "images":
+                common_globals.photo_count += 1
+
+            elif media_type == "videos":
+                common_globals.video_count += 1
+            elif media_type == "audios":
+                common_globals.audio_count += 1
+            elif media_type == "skipped":
+                common_globals.skipped += 1
+            elif media_type == "forced_skipped":
+                common_globals.forced_skipped += 1
+            sum_count = (
+                common_globals.photo_count
+                + common_globals.video_count
+                + common_globals.audio_count
+                + common_globals.skipped
+                + common_globals.forced_skipped
+            )
+            log_download_progress(media_type)
+            progress_utils.download_overall_progress.update(
+                task1,
+                description=common_globals.desc.format(
+                    p_count=common_globals.photo_count,
+                    v_count=common_globals.video_count,
+                    a_count=common_globals.audio_count,
+                    skipped=common_globals.skipped,
+                    forced_skipped=common_globals.forced_skipped,
+                    mediacount=len(medialist),
+                    sumcount=sum_count,
+                    total_bytes=convert_num_bytes(common_globals.total_bytes),
+                    total_bytes_download=convert_num_bytes(
+                        common_globals.total_bytes_downloaded
+                    ),
+                ),
+                refresh=True,
+                advance=1,
+            )
+            queue.task_done()
+            await asyncio.sleep(1)
+
+        except Exception as e:
+            common_globals.log.info(f"{get_medialog(ele)} Download Failed because\n{e}")
+            common_globals.log.traceback_(traceback.format_exc())
+
+async def producer(queue, aws,concurrency_limit):
+    for data in aws:
+        await queue.put(data)
+    await queue.put(None)
+    for _ in range(concurrency_limit):
+        await queue.put(None)
+    queue.join()  # Wait for all tasks to finish
+
+
 
 
 @run
@@ -70,7 +145,7 @@ async def process_dicts(username, model_id, medialist):
             async with download_session() as c:
                 for ele in medialist:
                     aws.append(
-                        asyncio.create_task(download(c, ele, model_id, username))
+                        (c, ele, model_id, username)
                     )
                 task1 = progress_utils.add_download_task(
                     common_globals.desc.format(
@@ -87,59 +162,12 @@ async def process_dicts(username, model_id, medialist):
                     total=len(aws),
                     visible=True,
                 )
-                for coro in asyncio.as_completed(aws):
-                    try:
-                        pack = await coro
-                        common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-                        media_type, num_bytes_downloaded = pack
-                    except Exception as e:
-                        common_globals.log.info(
-                            f"{get_medialog(ele)} Download Failed because\n{e}"
-                        )
-                        common_globals.log.traceback_(traceback.format_exc())
-                        media_type = "skipped"
-                        num_bytes_downloaded = 0
+                concurrency_limit= get_max_workers()
+                queue = asyncio.Queue(maxsize=concurrency_limit)
+                consumers = [asyncio.create_task(consumer(queue,task1,medialist)) for _ in range(concurrency_limit)]
+                await producer(queue, aws,concurrency_limit)
+                await asyncio.gather(*consumers)
 
-                    common_globals.total_bytes_downloaded = (
-                        common_globals.total_bytes_downloaded + num_bytes_downloaded
-                    )
-                    if media_type == "images":
-                        common_globals.photo_count += 1
-
-                    elif media_type == "videos":
-                        common_globals.video_count += 1
-                    elif media_type == "audios":
-                        common_globals.audio_count += 1
-                    elif media_type == "skipped":
-                        common_globals.skipped += 1
-                    elif media_type == "forced_skipped":
-                        common_globals.forced_skipped += 1
-                    sum_count = (
-                        common_globals.photo_count
-                        + common_globals.video_count
-                        + common_globals.audio_count
-                        + common_globals.skipped
-                        + common_globals.forced_skipped
-                    )
-                    log_download_progress(media_type)
-                    progress_utils.download_overall_progress.update(
-                        task1,
-                        description=common_globals.desc.format(
-                            p_count=common_globals.photo_count,
-                            v_count=common_globals.video_count,
-                            a_count=common_globals.audio_count,
-                            skipped=common_globals.skipped,
-                            forced_skipped=common_globals.forced_skipped,
-                            mediacount=len(medialist),
-                            sumcount=sum_count,
-                            total_bytes=convert_num_bytes(common_globals.total_bytes),
-                            total_bytes_download=convert_num_bytes(
-                                common_globals.total_bytes_downloaded
-                            ),
-                        ),
-                        refresh=True,
-                        advance=1,
-                    )
             progress_utils.remove_download_task(task1)
             setDirectoriesDate()
             # close thread
@@ -162,7 +190,6 @@ async def process_dicts(username, model_id, medialist):
 
 
 async def download(c, ele, model_id, username):
-    async with common_globals.maxfile_sem:
         try:
             if read_args.retriveArgs().metadata:
                 return await metadata(c, ele, username, model_id)
