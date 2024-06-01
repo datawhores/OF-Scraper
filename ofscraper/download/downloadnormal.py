@@ -109,8 +109,6 @@ async def producer(queue, aws,concurrency_limit):
     queue.join()  # Wait for all tasks to finish
 
 
-
-
 @run
 async def process_dicts(username, model_id, medialist):
 
