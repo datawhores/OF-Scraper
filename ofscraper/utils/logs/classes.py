@@ -273,6 +273,7 @@ class DiscordFormatter(SensitiveFormatter):
         t=re.sub("  +"," ",t)
         t=re.sub("\*\*+","**",t)
         t=re.sub("\\\\+","",t)
+        return t
 
 
 class LogFileFormatter(SensitiveFormatter):
