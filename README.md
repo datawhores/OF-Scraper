@@ -65,6 +65,9 @@ For detailed instructions on:
 
 Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
 
+### Feature request issues are fine
+### Bug Report Issues without required material will be closed
+
 ### Private Reports
 
 A ticket can be created in the ticket channel
