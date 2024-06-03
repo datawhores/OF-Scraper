@@ -1,9 +1,10 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report an issue with running the script
 title: "# Clear Description of issue"
-labels: ""
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
 
 <!---
