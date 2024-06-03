@@ -405,14 +405,14 @@ class Media(base.base):
     # for use in dynamic names
     @property
     def needs_count(self):
-        if set(["text", "postid", "post_id"]).isdisjoint(
-            [
+        non_unique=set(["text", "postid", "post_id","ext"])
+        file_format=set([
                 name
                 for text, name, spec, conv in list(
                     string.Formatter().parse(data.get_fileformat())
                 )
-            ]
-        ):
+        ])
+        if len(file_format)!=len((non_unique&file_format)):
             return False
         elif len(self._post.post_media) > 1 or self.responsetype in [
             "stories",
