@@ -14,6 +14,7 @@ r"""
 import functools
 import logging
 import time
+import random
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
@@ -22,12 +23,12 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from rich.markup import escape
-from rich.text import Text
 
 
 log = logging.getLogger("shared")
-like_str = "Performing Like Action on {name}"
-unlike_str = "Performing Unlike Action on {name}"
+warning_str="\n[red]Current Like rate will eat through the ~1000 like limit in less than 1 hour\nIncreasing the rate could lead to getting logged out[/red]"
+like_str = "Performing Like Action on {name}" + warning_str
+unlike_str = "Performing Unlike Action on {name}"+warning_str
 
 
 @exit.exit_wrapper
@@ -114,30 +115,20 @@ def _like(model_id, username,ids: list, like_action: bool):
             task2 = progress_utils.add_like_task(like_str, total=None)
 
             [tasks.append(functools.partial(like_func, c, id, model_id)) for id in ids]
-            count = 1
-
-            stable_sleep_duration=constants.getattr("STABLE_SLEEP_DURATION_LIKE")
-            sleep_duration_50=constants.getattr("SLEEP_DURATION_LIKE_50")
-            sleep_duration_60=constants.getattr("SLEEP_DURATION_LIKE_60")
-            sleep_duration_common=constants.getattr("COMMON_MULTIPLE_SLEEP_DURATION_LIKE")
+            max_duration=constants.getattr("MAX_SLEEP_DURATION_LIKE")
+            min_duration=constants.getattr("MIN_SLEEP_DURATION_LIKE")
             failed=0
             post=0
             liked=0
 
-            for count, func in enumerate(tasks):
+            for _, func in enumerate(tasks):
                 out = func()
                 post+=1
                 #sleep
                 if out == 0:
                     sleep_duration = 0
-                elif count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    sleep_duration = sleep_duration_common
-                elif count % 60 == 0:
-                    sleep_duration = sleep_duration_60  # Divisible by 60 - 1 second sleep
-                elif count % 50 == 0:
-                    sleep_duration = sleep_duration_50   # Divisible by 50 - 30 seconds sleep
                 else:
-                    sleep_duration =  stable_sleep_duration
+                    sleep_duration=random.uniform(min_duration, max_duration)
                 #values
                 if out == 1:
                     liked=+1
@@ -178,7 +169,10 @@ def _toggle_like_requests(c, id, model_id):
     if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}", None):
         log.debug(f"ID: {id} marked as liked in cache")
         return 0
-    sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
+    max_duration=constants.getattr("MAX_SLEEP_DURATION_LIKE")
+    min_duration=constants.getattr("MIN_SLEEP_DURATION_LIKE")
+
+    sleep_duration = random.uniform(min_duration, max_duration)
     favorited, id = _like_request(c, id, model_id,sleeper)
     if favorited==None:
         return 3
