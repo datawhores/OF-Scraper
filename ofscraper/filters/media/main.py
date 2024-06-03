@@ -142,7 +142,7 @@ def filterPostFinal(post):
     log.debug(f"filter {count}->  mass msg filter count {len(post)}")
 
     count += 1
-    post = helpers.final_media_sort(post)
+    post = helpers.final_post_sort(post)
     helpers.trace_log_post(count, post, "all post final sort:")
     return post
 
@@ -153,7 +153,7 @@ def post_filter_for_like(post, like=False):
     log.debug(
         f"[bold]Number of {post_type} posts left after filtering for likeable posts[/bold] {len(post)}"
     )
-    post = helpers.final_media_sort(post)
+    post = helpers.final_post_sort(post)
     post = helpers.ele_count_filter(post)
     log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(post)}")
     return post

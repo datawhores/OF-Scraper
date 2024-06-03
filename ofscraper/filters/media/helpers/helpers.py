@@ -259,3 +259,17 @@ def mass_msg_filter(media):
         return list((filter(lambda x: x.mass is True, media)))
     elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))
+
+def final_post_sort(post):
+    item_sort = read_args.retriveArgs().item_sort
+    log.debug(f"Using post sort {item_sort}")
+    if not item_sort:
+        pass
+    elif item_sort == "date-asc":
+        pass
+    elif item_sort == "date-desc":
+        post=list(reversed(post))
+    elif item_sort == "random":
+        random.shuffle(post)
+    return post
+    
