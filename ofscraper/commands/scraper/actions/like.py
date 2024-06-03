@@ -26,7 +26,7 @@ from rich.markup import escape
 
 
 log = logging.getLogger("shared")
-warning_str="\n[red]Current Like rate will eat through the ~1000 like limit in less than 1 hour\nIncreasing the rate could lead to getting logged out[/red]"
+warning_str="\n[red]Current Like rate can eat through the ~1000 like limit in ~1 hour\nIncreasing the rate could lead to getting logged out[/red]"
 like_str = "Performing Like Action on {name}" + warning_str
 unlike_str = "Performing Unlike Action on {name}"+warning_str
 
