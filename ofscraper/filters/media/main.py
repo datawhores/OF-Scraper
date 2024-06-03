@@ -7,7 +7,46 @@ import ofscraper.utils.constants as constants
 log = logging.getLogger("shared")
 
 
-def filterMedia(media, username=None, model_id=None):
+def filtermediaFinal(media,username=None,model_id=None):
+    count = 1
+
+    helpers.trace_log_media(count, media, "initial media no filter:")
+    log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
+
+    media = helpers.sort_by_date(media)
+    count += 1
+    helpers.trace_log_media(count, media, "sorted by date initial")
+    log.debug(f"filter {count}-> sorted media count: {len(media)}")
+
+
+    media = helpers.unviewable_media_filter(media)
+    count += 1
+    helpers.trace_log_media(count, media, "filtered viewable media")
+    log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
+
+
+    if not read_args.retriveArgs().command == "metadata":
+        media = helpers.dupefiltermedia(media)
+        count += 1
+        helpers.trace_log_media(count, media, "media dupe media_id filter:")
+        log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
+        media = helpers.unviewable_media_filter(media)
+        count += 1
+        helpers.trace_log_media(count, media, "unviewable media filter:")
+        log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
+    elif read_args.retriveArgs().command == "metadata":
+        if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
+            count += 1
+            helpers.trace_log_media(count, media, "unviewable media filter:")
+            log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
+    return helpers.previous_download_filter(media, username=username, model_id=model_id)
+
+
+
+
+
+
+def filtermediaAreas(media, username=None, model_id=None):
     count = 1
 
     helpers.trace_log_media(count, media, "initial media no filter:")
@@ -66,27 +105,9 @@ def filterMedia(media, username=None, model_id=None):
     count += 1
     helpers.trace_log_media(count, media, "final sort filter:")
     log.debug(f"filter {count}->  media final sort filter count: {len(media)}")
+    return media
 
-    # additional filters
-    if not read_args.retriveArgs().command == "metadata":
-        media = helpers.dupefilterMedia(media)
-        count += 1
-        helpers.trace_log_media(count, media, "media dupe media_id filter:")
-        log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
-        media = helpers.unviewable_media_filter(media)
-        count += 1
-        helpers.trace_log_media(count, media, "unviewable media filter:")
-        log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
-    elif read_args.retriveArgs().command == "metadata":
-        if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
-            media = helpers.unviewable_media_filter(media)
-            count += 1
-            helpers.trace_log_media(count, media, "unviewable media filter:")
-            log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
-    return helpers.previous_download_filter(media, username=username, model_id=model_id)
-
-
-def filterPost(post):
+def filterPostFinal(post):
     count = 1
     helpers.trace_log_post(count, post, "initial posts no filter:")
     log.debug(f"filter {count}-> initial posts no filter count: {len(post)}")

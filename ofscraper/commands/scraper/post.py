@@ -332,7 +332,7 @@ async def process_all_paid():
                 if post.id not in seen and not seen.add(post.id)
             ]
             new_medias = [item for post in new_posts for item in post.all_media]
-            new_medias = filters.filterMedia(
+            new_medias = filters.filtermediaAreas(
                 new_medias, model_id=model_id, username=username
             )
             new_posts = filters.filterPost(new_posts)
@@ -433,8 +433,8 @@ async def process_areas(ele, model_id, username, c=None):
     media, posts, like_post = await process_areas_helper(ele, model_id, c=c)
     try:
         return (
-            filters.filterMedia(media, model_id=model_id, username=username),
-            filters.filterPost(posts),
+            filters.filtermediaFinal(media, model_id=model_id, username=username),
+            filters.filterPostFinal(posts),
             filters.post_filter_for_like(like_post),
         )
     except Exception as E:

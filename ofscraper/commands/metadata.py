@@ -143,11 +143,11 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
 
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
-    filterMedia = filters.filterMedia(media, username=username, model_id=model_id)
+    filtermedia = filters.filtermediaFinal(media, username=username, model_id=model_id)
     progress_utils.update_activity_task(
         description=metadata_activity_str.format(username=username)
     )
-    data=await download.download_process(username, model_id, filterMedia)
+    data=await download.download_process(username, model_id, filtermedia)
     metadata_stray_media(username, model_id, media)
     return [data]
 
