@@ -605,11 +605,11 @@ async def batch_mediainsert(media, **kwargs):
     mediaDict = {}
     for ele in media:
         mediaDict[(ele.id, ele.postid)] = ele
-    await write_media_table_via_api_batch(
+    write_media_table_via_api_batch(
         list(filter(lambda x: (x.id, x.postid) not in curr, mediaDict.values())), **kwargs
     )
 
-    await update_media_table_via_api_batch(
+    update_media_table_via_api_batch(
         list(filter(lambda x: (x.id, x.postid) in curr, mediaDict.values())), **kwargs
     )
 
