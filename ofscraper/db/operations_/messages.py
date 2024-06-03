@@ -200,9 +200,7 @@ def add_column_messages_ID(conn=None, **kwargs):
             raise e
 
 
-async def modify_unique_constriant_messages(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_messages_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )
@@ -236,10 +234,10 @@ async def make_messages_table_changes(
 async def get_oldest_message_date(model_id=None, username=None, **kwargs):
     data = await media.get_messages_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"] or 0))[0]
-    return last_item["posted_at"] or 0
+    return last_item["posted_at"]
 
 
 async def get_youngest_message_date(model_id=None, username=None, **kwargs):
     data = await media.get_messages_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"] or 0))[-1]
-    return last_item["posted_at"] or 0
+    return last_item["posted_at"]

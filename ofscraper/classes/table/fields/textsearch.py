@@ -1,14 +1,11 @@
 import re
 
 from textual.containers import Horizontal
-from textual.widgets import (
-    Checkbox,
-    Input,
+from textual.widgets import Checkbox, Input
 
-)
 
 class TextSearch(Horizontal):
-    DEFAULT_CSS ="""
+    DEFAULT_CSS = """
         TextSearch Input{
     width:3fr;
     }
@@ -22,6 +19,7 @@ class TextSearch(Horizontal):
     }
     
 """
+
     def __init__(self, name: str) -> None:
         super().__init__(id=name)
         self.filter_name = name

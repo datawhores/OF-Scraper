@@ -276,10 +276,10 @@ def modify_promo_prompt(args):
                     "message": f"Filter accounts presence of {'Any Promotions' if promo_type=='all_promo' else 'Claimable Promotions'}",
                     "default": (
                         True
-                        if vars(read_args.retriveArgs())[promo_type]
+                        if read_args.retriveArgs()[promo_type]
                         else (
                             False
-                            if vars(read_args.retriveArgs())[promo_type] is False
+                            if read_args.retriveArgs()[promo_type] is False
                             else None
                         )
                     ),
@@ -294,7 +294,7 @@ def modify_promo_prompt(args):
 
     answer.update(free_trail)
     args.free_trial = answer["free-trial"]
-    vars(args).update(promo)
+    args.update(promo)
 
     return args
 
@@ -340,7 +340,7 @@ def modify_prices_prompt(args):
         altd=prompt_helpers.price_info,
         more_instruction=prompt_strings.PRICE_DETAILS,
     )
-    vars(args)[price_type["price"]]
+    args[price_type["price"]]
 
     answer = promptClasses.batchConverter(
         *[
@@ -348,7 +348,7 @@ def modify_prices_prompt(args):
                 "type": "list",
                 "name": "price",
                 "message": f"Filter accounts by {price_type['price'].title().replace('_',' ')}",
-                "default": vars(args)[price_type["price"]],
+                "default": args[price_type["price"]],
                 "choices": [
                     Choice("paid", "Paid Subscriptions Only"),
                     Choice("free", "Free Subscriptions Only"),
@@ -359,7 +359,7 @@ def modify_prices_prompt(args):
         altd=prompt_helpers.price_info,
         more_instruction=prompt_strings.PRICE_DETAILS,
     )
-    vars(args)[price_type["price"]] = answer["price"]
+    args[price_type["price"]] = answer["price"]
     return args
 
 

@@ -5,11 +5,9 @@ import pathlib
 import xxhash
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.db.operations as operations
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
-from ofscraper.db.operations_.media import get_dupe_media_files,get_dupe_media_hashes
-
+from ofscraper.db.operations_.media import get_dupe_media_files, get_dupe_media_hashes
 
 log = logging.getLogger("shared")
 
@@ -42,13 +40,9 @@ def get_hash(file_data, mediatype=None):
 def remove_dupes_hash(username, model_id, mediatype=None):
     if not config_data.get_hash(mediatype=mediatype):
         return
-    hashes = get_dupe_media_hashes(
-        username=username, model_id=model_id, mediatype=None
-    )
+    hashes = get_dupe_media_hashes(username=username, model_id=model_id, mediatype=None)
     for hash in hashes:
-        files = get_dupe_media_files(
-            username=username, model_id=model_id, hash=hash
-        )
+        files = get_dupe_media_files(username=username, model_id=model_id, hash=hash)
         filter_files = list(filter(lambda x: pathlib.Path(x).is_file(), files))
         if len(filter_files) < 2:
             continue

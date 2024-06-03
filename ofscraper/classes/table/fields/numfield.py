@@ -1,10 +1,11 @@
-from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 from textual.containers import Horizontal
+
+from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
 
 class NumField(Horizontal):
     def __init__(self, name: str) -> None:
-        name=name.lower()
+        name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
 

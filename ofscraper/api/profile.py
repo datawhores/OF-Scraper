@@ -31,14 +31,14 @@ log = logging.getLogger("shared")
 
 
 # can get profile from username or id
-def scrape_profile(username: Union[int, str]) -> dict:
+def scrape_profile(username: Union[int, str], refresh=True) -> dict:
     with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        new_request_auth=True,
+        refresh=refresh,
     ) as c:
         return scrape_profile_helper(c, username)
 
@@ -70,16 +70,13 @@ def scrape_profile_helper(c, username: Union[int, str]):
 async def scrape_profile_helper_async(c, username: Union[int, str]):
     data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
-    url=constants.getattr("profileEP").format(username)
+    url = constants.getattr("profileEP").format(username)
     if data and not read_args.retriveArgs().update_profile:
         return data
     try:
 
         log.info(f"getting {username} with {url}")
-        await asyncio.sleep(1)
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url,forced=constants.getattr("PROFILE_FORCE_KEY")) as r:
             if r.status == 404:
                 return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
             cache.set(
@@ -91,7 +88,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
             log.trace(f"username date: {await r.json_()}")
             return await r.json_()
     except Exception as E:
-        await asyncio.sleep(1)
+        
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

@@ -3,10 +3,7 @@ import pathlib
 import traceback
 
 import ofscraper.utils.paths.paths as paths
-from ofscraper.db.operations import (
-    create_tables,
-    modify_tables,
-)
+from ofscraper.db.operations import create_tables, modify_tables
 from ofscraper.db.operations_.labels import (
     get_all_labels_transition,
     write_labels_table_transition,
@@ -32,9 +29,9 @@ from ofscraper.db.operations_.posts import (
 from ofscraper.db.operations_.profile import (
     get_all_models,
     get_all_profiles,
+    get_single_model_via_profile,
     write_models_table,
     write_profile_table_transition,
-    get_single_model_via_profile
 )
 from ofscraper.db.operations_.stories import (
     get_all_stories_transition,
@@ -46,7 +43,7 @@ log = logging.getLogger("shared")
 
 
 @run
-async def batch_database_changes(new_root, old_root,user_dbs=None):
+async def batch_database_changes(new_root, old_root, user_dbs=None):
 
     if not pathlib.Path(old_root).is_dir():
         raise FileNotFoundError("Path is not dir")
@@ -57,7 +54,7 @@ async def batch_database_changes(new_root, old_root,user_dbs=None):
     db_merger = MergeDatabase(new_db_path)
 
     await create_tables(db_path=new_db_path)
-    failures=[]
+    failures = []
     for ele in user_dbs or paths.get_all_db(old_root):
         if ele == new_db_path:
             continue
@@ -73,20 +70,25 @@ async def batch_database_changes(new_root, old_root,user_dbs=None):
             await db_merger(ele)
 
         except Exception as E:
-            failures.append({"path":str(ele),"reason":E})
-            log.error(f"Issue getting required info for {ele}")
+            failures.append({"path": str(ele), "reason": E})
+            log.warning(f"Issue getting required info for {ele}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-    log.info("\n\n\n".join(list(map(lambda x:str([(key,value) for key,value in x.items()]),failures))))
+    log.info(
+        "\n\n\n".join(
+            list(
+                map(lambda x: str([(key, value) for key, value in x.items()]), failures)
+            )
+        )
+    )
     return failures
 
+
 @run
-async def merge_single_table(db_merger,ele,model_id):
+async def merge_single_table(db_merger, ele, model_id):
     await create_tables(db_path=ele)
     await modify_tables(model_id=model_id, db_path=ele)
     db_merger(ele)
-
-
 
 
 class MergeDatabase:

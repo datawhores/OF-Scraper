@@ -3,7 +3,7 @@ import pathlib
 import re
 import traceback
 from functools import partial
-
+from humanfriendly import format_size
 import aiofiles
 
 try:
@@ -11,28 +11,43 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.common.general as common
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.shared.general as common
+import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.system as system
-from ofscraper.download.shared.classes.retries import download_retry
-from ofscraper.download.shared.common.alt_common import (
-    handle_result_alt,
+from ofscraper.download.shared.classes.retries import download_retry,get_download_retries
+from ofscraper.download.shared.alt_common import (
     media_item_keys_alt,
     media_item_post_process_alt,
 )
-from ofscraper.download.shared.common.general import (
+from ofscraper.download.shared.handle_result import (
+    handle_result_alt,
+)
+from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
     get_medialog,
     get_resume_size,
     size_checker,
 )
-from ofscraper.download.shared.utils.log import (
+from ofscraper.download.shared.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
+)
+
+from ofscraper.download.shared.progress.chunk import (
+    get_ideal_chunk_size,
+    get_update_count,
+)
+from ofscraper.download.shared.send.send_bar_msg import (
+    send_bar_msg_batch
+)
+
+from ofscraper.download.shared.send.chunk import (
+    send_chunk_msg
 )
 
 
@@ -45,8 +60,19 @@ async def alt_download(c, ele, username, model_id):
     )
     async for _ in download_retry():
         with _:
-            sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-            audio, video = await ele.mpd_dict
+            try:
+                sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
+                audio, video = await ele.mpd_dict
+            except Exception as e:
+                common_globals.log.traceback_(e)
+                common_globals.log.traceback_(traceback.format_exc())
+                common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                )
+                common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
+                )
+                raise e
     path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
     audio = await alt_download_downloader(audio, c, ele)
     video = await alt_download_downloader(video, c, ele)
@@ -88,43 +114,67 @@ async def alt_download_downloader(
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    return await main_data_handler(data, item, c, ele, placeholderObj)
+                    return await resume_data_handler(data, item, c, ele, placeholderObj)
                 else:
-                    return await alt_data_handler(item, c, ele, placeholderObj)
+                    return await fresh_data_handler(item, c, ele, placeholderObj)
             except OSError as E:
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
                 )
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
                 )
                 raise E
             except Exception as E:
-                common_globals.innerlog.get().traceback_(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
                 )
-                common_globals.innerlog.get().traceback_(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
+                )
+                common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                )
+                common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
                 )
                 raise E
 
 
-async def main_data_handler(data, item, c, ele, placeholderObj):
-    item["total"] = int(data.get("content-length"))
+async def resume_data_handler(data, item, c, ele, placeholderObj):
+    common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
+    common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
+    total=(
+        int(data.get("content-total")) if data.get("content-total") else None
+    )
+    item["total"] = total
+
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    if await check_forced_skip(ele, item["total"]) == 0:
+    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }")
+    if await check_forced_skip(ele,total) == 0:
         item["total"] = 0
         return item
-    elif item["total"] == resume_size:
+    elif total == resume_size:
+        common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
+
+        (
+
+            await common.batch_total_change_helper(None, total)
+            if common.alt_attempt_get(item).get() == 1
+            else None
+        )
         return item
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
 
 
-async def alt_data_handler(item, c, ele, placeholderObj):
+async def fresh_data_handler(item, c, ele, placeholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
+    )
     result = None
     try:
         result = await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -141,12 +191,9 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
         f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
     )
     common_globals.innerlog.get().debug(
-        f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {placeholderObj.tempfilepath}"
+        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
     )
-    item["total"] = item["total"] if _attempt.get() == 1 else None
-
     try:
-        _attempt = common.alt_attempt_get(item)
         item["total"] = item["total"] if _attempt == 1 else None
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
@@ -154,7 +201,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
             f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
         )
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {placeholderObj.tempfilepath}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
         )
         return await send_req_inner(c, ele, item, placeholderObj)
     except OSError as E:
@@ -164,16 +211,10 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
-    old_total = item["total"]
-    total = old_total
-    try:
-        await common.batch_total_change_helper(None, total)
+    total=None
+    try:        
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = (
-            None
-            if resume_size == 0 or not total
-            else {"Range": f"bytes={resume_size}-{total}"}
-        )
+        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
         params = {
             "Policy": ele.policy,
             "Key-Pair-Id": ele.keypair,
@@ -183,78 +224,89 @@ async def send_req_inner(c, ele, item, placeholderObj):
         url = f"{base_url}{item['origname']}"
 
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {url}"
+            f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
         )
 
-        async with c.requests_async(url=url, headers=headers, params=params) as l:
+        async with c.requests_async(
+            url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
+             sign=True
+        ) as l:
+            item["total"] = item["total"] or int(l.headers.get("content-length"))
+            total = item["total"]
+            await common.batch_total_change_helper(None, total)
+            data={
+                        "content-total": total,
+                        "content-type": l.headers.get("content-type"),
+            }
+
+            common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
+            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
+            
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
                     cache.set,
                     f"{item['name']}_headers",
-                    {
-                        "content-length": l.headers.get("content-length"),
-                        "content-type": l.headers.get("content-type"),
-                    },
+                    data
                 ),
             )
-            new_total = int(l.headers["content-length"])
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-            if await check_forced_skip(ele, new_total) == 0:
+            if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
-                await common.batch_total_change_helper(old_total, 0)
+                total = item["total"]
+                await common.batch_total_change_helper(total, 0) if total else None
                 return item
+
             elif total != resume_size:
-                item["total"] = new_total
-                total = new_total
-                await common.batch_total_change_helper(old_total, total)
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
+                )
                 await download_fileobject_writer(total, l, ele, placeholderObj)
-        await size_checker(placeholderObj.tempfilepath, ele, item["total"])
+                common_globals.log.debug(
+                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+                )
+        await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.batch_total_change_helper(None, -(total or 0))
+        await common.batch_total_change_helper(total, 0) if total else None
         raise E
 
 
 async def download_fileobject_writer(total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
     try:
-        count = 0
+        count = 1
         await common.send_msg(
-            {
-                "type": "add_task",
-                "args": (
-                    f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                    ele.id,
-                ),
-                "total": total,
-                "visible": False,
-            }
+            partial(
+                progress_utils.add_download_job_multi_task,
+                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                ele.id,
+                total=total,
+            )
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
+        await common.send_msg(
+            partial(progress_utils.update_download_multi_job_task, ele.id, visible=True)
+        )
+        chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
 
-        async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
-            count = count + 1
-            common_globals.innerlog.get().trace(
-                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
-            )
+        update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
+
+        async for chunk in l.iter_chunked(chunk_size):
+            send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
-            if count == constants.getattr("CHUNK_ITER"):
-                await common.send_msg(
-                    {
-                        "type": "update",
-                        "args": (ele.id,),
-                        "completed": (
-                            pathlib.Path(placeholderObj.tempfilepath)
+            await send_bar_msg_batch(
+                        partial(
+                            progress_utils.update_download_multi_job_task,
+                            ele.id,
+                            completed=pathlib.Path(placeholderObj.tempfilepath)
                             .absolute()
                             .stat()
-                            .st_size
-                        ),
-                    }
-                )
-                count = 0
+                            .st_size,
+                        ),count,update_count
+            )
+            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E
@@ -266,6 +318,8 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             None
 
         try:
-            await common.send_msg({"type": "remove_task", "args": (ele.id,)})
+            await common.send_msg(
+                partial(progress_utils.remove_download_multi_job_task, ele.id)
+            )
         except Exception:
             None

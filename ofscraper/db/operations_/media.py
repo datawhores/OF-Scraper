@@ -8,16 +8,19 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+              >>>>>>> main
+45
+                                                                        
 """
 
+import asyncio
 import contextlib
 import logging
-import math
-import pathlib
 import sqlite3
+from functools import partial
 
 import arrow
+from filelock import FileLock
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
@@ -38,9 +41,9 @@ CREATE TABLE IF NOT EXISTS medias (
 	size INTEGER, 
 	api_type VARCHAR, 
 	media_type VARCHAR, 
-	preview INTEGER, 
-	linked VARCHAR, 
-	downloaded INTEGER, 
+	preview INTEGER,
+	linked BOOL,
+	downloaded BOOL,
 	created_at TIMESTAMP, 
     posted_at TIMESTAMP,
     duration VARCHAR,
@@ -53,14 +56,14 @@ CREATE TABLE IF NOT EXISTS medias (
 mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
 media_type,preview,linked,downloaded,created_at,unlocked,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
-       END AS model_id,
-      CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
+END AS model_id,
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
             THEN posted_at
             ELSE NULL
-       END AS posted_at,
+END AS posted_at,
         CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
             THEN hash
             ELSE NULL
@@ -123,14 +126,21 @@ created_at,posted_at,model_id,duration,unlocked)
 mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
-media_type,preview,linked,
+media_type,preview,link,
 downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+
+mediaDownloadForce = """
+Update 'medias'
+SET
+unlocked=0
+WHERE media_id=(?) and model_id=(?);
+"""
 mediaDownloadSelect = """
 SELECT  
-directory,filename,size
+directory,filename,size,
 downloaded,hash
-FROM medias where media_id=(?)
+FROM medias where media_id=(?) and model_id=(?)
 """
 allIDCheck = """
 SELECT media_id FROM medias
@@ -149,21 +159,23 @@ SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Timeline') and model_id=(?)
+FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Archived') and model_id=(?)
+FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
-media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
+media_id, post_id, link, directory,
+filename, size, api_type, media_type,
+preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
+FROM medias
+WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
+AND model_id = ?;  -- Prepared statement placeholder
 """
 
 
@@ -282,19 +294,18 @@ def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 
 
 @wrapper.operation_wrapper
-def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_media_ids_downloaded(conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLIDCheck)
-        return [dict(row)["media_id"] for row in cur.fetchall()]
+        return set([dict(row)["media_id"] for row in cur.fetchall()])
 
 
-@wrapper.operation_wrapper
-def get_media_ids_downloaded_model(
-    model_id=None, username=None, conn=None, **kwargs
-) -> list:
+@run
+@wrapper.operation_wrapper_async
+def get_media_ids_downloaded_model(model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLModelIDCheck, [model_id])
-        return [dict(row)["media_id"] for row in cur.fetchall()]
+        return set([dict(row)["media_id"] for row in cur.fetchall()])
 
 @wrapper.operation_wrapper
 def get_media_post_ids(
@@ -329,14 +340,19 @@ def get_dupe_media_files(
 def download_media_update(
     media,
     model_id=None,
+    username=None,
     conn=None,
+    filepath=None,
     filename=None,
+    directory=None,
     downloaded=None,
     hashdata=None,
-    changed=False,
+    size=None,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
+        filename = filename or (filepath.name if filepath != None else None)
+        directory = directory or (filepath.parent if filepath != None else None)
         update_media_table_via_api_helper(
             media, curr=curr, model_id=model_id, conn=conn
         )
@@ -344,15 +360,17 @@ def download_media_update(
             media,
             model_id,
             filename=filename,
+            directory=directory,
+            username=username,
             hashdata=hashdata,
             conn=conn,
             curr=curr,
             downloaded=downloaded,
+            size=size,
         )
-        return curr.rowcount if changed else None
 
 
-@wrapper.operation_wrapper_async
+@wrapper.operation_wrapper
 def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
@@ -378,7 +396,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         conn.commit()
 
 
-@wrapper.operation_wrapper_async
+@wrapper.operation_wrapper
 def update_media_table_via_api_batch(
     medias, model_id=None, conn=None, **kwargs
 ) -> list:
@@ -460,13 +478,19 @@ def drop_media_table(model_id=None, username=None, conn=None, **kwargs) -> list:
         conn.commit()
 
 
+@run
 @wrapper.operation_wrapper_async
 def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
             for ele in data
         ]
 
@@ -478,7 +502,12 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
             for ele in data
         ]
 
@@ -523,48 +552,51 @@ def update_media_table_download_helper(
     media,
     model_id,
     filename=None,
+    directory=None,
     hashdata=None,
     conn=None,
     downloaded=None,
     curr=None,
+    size=None,
     **kwargs,
 ) -> list:
-    prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetchall()
-    prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
-    insertData = media_exist_insert_helper(
-        filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
-    )
+    filename = str(filename) if filename else None
+    directory = str(directory) if directory else None
+    insertData = [
+        directory,
+        filename,
+        size,
+        downloaded,
+        hashdata,
+    ]
     insertData.extend([media.id, model_id])
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
 
 
-def media_exist_insert_helper(
-    filename=None, downloaded=None, hashdata=None, prevData=None, **kwargs
-):
-    directory = None
-    filename_path = None
-    size = None
-    if filename and pathlib.Path(filename).exists():
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-        size = math.ceil(pathlib.Path(filename).stat().st_size)
-    elif filename:
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-    elif prevData:
-        directory = prevData[0]
-        filename_path = prevData[1]
-        size = prevData[2]
-        hashdata = prevData[3] or hashdata
-    insertData = [
-        directory,
-        filename_path,
-        size,
-        downloaded,
-        hashdata,
-    ]
-    return insertData
+@run
+@wrapper.operation_wrapper_async
+def prev_download_media_data(media, model_id=None, username=None, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as curr:
+        prevData = curr.execute(mediaDownloadSelect, (media.id, model_id)).fetchone()
+        prevData = dict(prevData) if prevData else None
+        return prevData
+
+
+@wrapper.operation_wrapper
+def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = list(
+            map(
+                lambda media: [
+                    media["media_id"],
+                    model_id,
+                ],
+                medias,
+            )
+        )
+        curr.executemany(mediaDownloadForce, insertData)
+        conn.commit()
 
 
 @run
@@ -581,10 +613,7 @@ async def batch_mediainsert(media, **kwargs):
         list(filter(lambda x: (x.id, x.postid) in curr, mediaDict.values())), **kwargs
     )
 
-
-async def modify_unique_constraint_media(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )

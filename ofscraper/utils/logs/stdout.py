@@ -1,8 +1,11 @@
 # logs stdout logs via a shared queue
 
 import logging
+import queue
 import threading
+import traceback
 
+import aioprocessing
 from rich.logging import RichHandler
 
 import ofscraper.utils.args.read as read_args
@@ -25,37 +28,43 @@ def logger_process(input_, name=None, stop_count=1, event=None):
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
-        # consume a log message, block until one arrives
-        if len(log.handlers) == 0:
-            None
-        if event and event.is_set():
-            return
         try:
-            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
-        except:
-            continue
-        if not isinstance(messages, list):
-            messages = [messages]
-        for message in messages:
-            # check for shutdown
+            # consume a log message, block until one arrives
+            if len(log.handlers) == 0:
+                None
             if event and event.is_set():
+                return
+            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
+            if not isinstance(messages, list):
+                messages = [messages]
+            for message in messages:
+                # check for shutdown
+                if event and event.is_set():
+                    break
+                if hasattr(message, "message") and message.message!="None":
+                    log.handle(message)
+                elif hasattr(message, "message") and message.message=="None":
+                    count = count + 1
+                    continue
+                elif message != "None":
+                    log.handle(message)
+                elif message == "None":
+                    count = count + 1
+                    continue
+            if count == stop_count:
                 break
-            if message == "None":
-                count = count + 1
-                continue
-            if message.message == "None":
-                count = count + 1
-                continue
-            if message.message != "None":
-                # log the message
-                log.handle(message)
-        if count == stop_count:
-            break
+        except queue.Empty:
+            continue
+        except Exception as E:
+            print(E)
+            print(traceback.format_exc())
     while True:
         try:
             end_funct()
         except:
             break
+    for handler in log.handlers:
+        handler.close()
     log.handlers.clear()
 
 
@@ -73,7 +82,7 @@ def init_stdout_logger(name=None):
         tracebacks_show_locals=True,
         show_time=False,
         show_level=False,
-        console=console.get_shared_console(),
+        console=console.get_console(),
     )
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))

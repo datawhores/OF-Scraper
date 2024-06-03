@@ -82,7 +82,7 @@ class DelayedKeyboardInterrupt:
 def exit_wrapper(func):
     def inner(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except KeyboardInterrupt:
             with DelayedKeyboardInterrupt():
                 raise KeyboardInterrupt

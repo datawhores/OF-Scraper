@@ -79,7 +79,7 @@ def confirm_prompt_db(folder, new_db) -> bool:
                     Choice(False, "No"),
                     Choice(None, "Back to Main Menu"),
                 ],
-                "default":False
+                "default": False,
             }
         ]
     )
@@ -100,4 +100,3 @@ def model_id_prompt():
         ]
     )
     return answer["database"]
-

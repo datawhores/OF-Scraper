@@ -1,7 +1,7 @@
 # trunk-ignore-all(black)
 import ofscraper.utils.config.custom as custom_
 from ofscraper.const.constants import *
-from ofscraper.const.test_constants import *
+from ofscraper.const.values.test_constants import *
 
 custom=None
 

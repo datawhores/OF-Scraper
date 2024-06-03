@@ -49,9 +49,9 @@ def sendCloseMessage():
 def closeMain():
     if not log_globals.main_log_thread:
         return
-    elif log_globals.other_event.is_set():
+    elif log_globals.main_event.is_set():
         log_globals.main_log_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
-    elif not log_globals.other_event.is_set():
+    elif not log_globals.main_event.is_set():
         log_globals.main_log_thread.join()
     log_globals.main_log_thread = None
 

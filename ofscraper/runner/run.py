@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 
-import ofscraper.commands.picker as picker
+import ofscraper.commands.helpers.picker as picker
 import ofscraper.runner.exit as exit_manager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
@@ -20,18 +20,15 @@ def main():
         try:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
-                exit_manager.closeCache()
         except KeyboardInterrupt as E:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
-                raise E
     except Exception as E:
         logging.getLogger("shared").debug(traceback.format_exc())
         logging.getLogger("shared").debug(E)
         try:
             with exit_context.DelayedKeyboardInterrupt():
-                exit_manager.forcedShutDown()
-                exit_manager.closeCache()
+                exit_manager.shutdown()
         except KeyboardInterrupt as E:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
@@ -39,7 +36,7 @@ def main():
 
 
 def main_helper():
-    if vars(read_args.retriveArgs()).get("help"):
+    if read_args.retriveArgs().get("help"):
         return
     initLogs()
     time.sleep(3)
@@ -49,9 +46,8 @@ def main_helper():
 
 
 def print_name():
-    with stdout.lowstdout():
-        console.get_shared_console().print(
-            """ 
+    console.get_shared_console().print(
+        """ 
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
@@ -63,7 +59,7 @@ def print_name():
                                                                                                                                   
 
 """
-        )
+    )
 
 
 def initLogs():

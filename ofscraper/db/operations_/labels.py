@@ -199,9 +199,7 @@ def get_all_labels_transition(
         ]
 
 
-async def modify_unique_constriant_labels(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_labels_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )

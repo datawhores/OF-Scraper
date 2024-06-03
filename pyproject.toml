@@ -37,7 +37,6 @@ more-itertools = "^10.2.0"
 psutil = "^5.9.8"
 humanfriendly = "^10.0"
 filelock = "^3.13.1"
-aiofiles = "^23.2.1"
 uvloop = { version = "^0.19.0", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" }
 aiosqlite = "^0.20.0"
 speedtest-cli = "^2.1.3"
@@ -49,6 +48,7 @@ dill = "^0.3.8"
 cloup = "^3.0.5"
 pynumparser = "^1.4.1"
 idna = "3.7"
+aiofiles = "^23.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
