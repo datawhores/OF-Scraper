@@ -1,6 +1,6 @@
 import logging
 
-import ofscraper.filters.media.helpers as helpers
+import ofscraper.filters.media.helpers.helpers as helpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 

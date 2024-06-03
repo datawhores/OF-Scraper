@@ -13,7 +13,8 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.filters.media.helpers.sorter import post_datesorter
+from ofscraper.filters.media.helpers.trace import trace_log_media,trace_log_post
 
 log = logging.getLogger("shared")
 
@@ -21,7 +22,7 @@ log = logging.getLogger("shared")
 def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 
-
+#protect db from dupe inserts
 def dupefilter(media):
     ids=set()
     output=[]
@@ -32,7 +33,7 @@ def dupefilter(media):
             output.append(item)
     return output
 
-
+#filter that prioritize viewable
 def dupefiltermedia(media):
     output =defaultdict(lambda:None)
     for item in media:
@@ -50,9 +51,6 @@ def dupefilterPost(post):
         elif item.opened and not output[item.id].opened:
              output[item.id]=item
     return output.values()
-
-def post_datesorter(output):
-    return list(sorted(output, key=lambda x: x.date, reverse=True))
 
 
 def timeline_array_filter(posts):
@@ -288,52 +286,3 @@ def previous_download_filter(medialist, username=None, model_id=None):
     return medialist
 
 
-def trace_log_media(count, media, filter_str):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    logformater = "{} id: {} postid: {} data: {} "
-    for i in range(1, len(media) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(media))  # Adjust end_index calculation
-        chunk = media[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> {filter_str} ",
-                        x.id,
-                        x.postid,
-                        x.media,
-                    ),
-                    chunk,
-                )
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(media):
-            break  # Exit the loop if we've processed all elements
-
-
-def trace_log_post(count, media, filter_str):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    logformater = "{} id: {} data: {} "
-    for i in range(1, len(media) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(media))  # Adjust end_index calculation
-        chunk = media[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> {filter_str} ", x.id, x.post
-                    ),
-                    chunk,
-                )
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(media):
-            break  # Exit the loop if we've processed all elements
