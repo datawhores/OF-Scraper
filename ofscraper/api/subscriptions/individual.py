@@ -14,7 +14,6 @@ r"""
 import asyncio
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
 import ofscraper.api.profile as profile
 import ofscraper.classes.sessionmanager as sessionManager

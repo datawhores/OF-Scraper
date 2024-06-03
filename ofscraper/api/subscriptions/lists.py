@@ -15,17 +15,9 @@ import asyncio
 import contextvars
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
-
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run

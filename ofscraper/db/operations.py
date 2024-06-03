@@ -189,6 +189,8 @@ def create_backup_transition(model_id=None, username=None, db_path=None, **kwarg
         return new_backup_path
 
 
+
+
 async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs):
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
@@ -359,16 +361,6 @@ async def modify_tables_constraints_and_columns(
         )
         await add_flag_schema(
             "labels_model_id_constraint_added",
-            model_id=model_id,
-            username=username,
-            db_path=db_path,
-        )
-    if "media_post_id_constraint_added" in missing:
-        await modify_unique_constraint_media(
-            model_id=model_id, username=username, db_path=db_path
-        )
-        await add_flag_schema(
-            "media_post_id_constraint_added",
             model_id=model_id,
             username=username,
             db_path=db_path,
