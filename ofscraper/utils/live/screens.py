@@ -35,6 +35,7 @@ from ofscraper.utils.live.tasks import (
 )
 from ofscraper.utils.live.updater import (
     add_api_job_task,
+    update_userlist_task,
     add_api_task,
     add_download_job_multi_task,
     add_download_job_task,

@@ -103,6 +103,15 @@ def add_userlist_job_task(*args, **kwargs):
     return userlist_job_progress.add_task(*args, **kwargs)
 
 
+
+def update_userlist_task(task,*args, **kwargs):
+    if task == None:
+        return
+    try:
+        userlist_overall_progress.update(task,*args,**kwargs)
+    except KeyError:
+        pass
+
 def remove_userlist_task(task):
     if task == None:
         return

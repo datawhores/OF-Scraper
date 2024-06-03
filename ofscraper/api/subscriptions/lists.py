@@ -100,7 +100,7 @@ async def get_lists():
                     result, new_tasks_batch = await task
                     new_tasks.extend(new_tasks_batch)
                     page_count = page_count + 1
-                    progress_utils.userlist_overall_progress.update(
+                    progress_utils.update_userlist_task(
                         page_task,
                         description=f"UserList Pages Progress: {page_count}",
                     )
@@ -201,7 +201,7 @@ async def get_list_users(lists):
                     result, new_tasks_batch = await task
                     new_tasks.extend(new_tasks_batch)
                     page_count = page_count + 1
-                    progress_utils.userlist_overall_progress.update(
+                    progress_utils.update_userlist_task(
                         page_task,
                         description=f"UserList Users Pages Progress: {page_count}",
                     )
