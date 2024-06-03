@@ -33,7 +33,7 @@ def dupefilter(media):
             output.append(item)
     return output
 
-#filter that prioritize viewable
+#dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output =defaultdict(lambda:None)
     for item in media:
@@ -52,32 +52,7 @@ def dupefilterPost(post):
              output[item.id]=item
     return output.values()
 
-
-def timeline_array_filter(posts):
-    out = []
-    undated = list(filter(lambda x: x.get("postedAt") is None, posts))
-    dated = list(filter(lambda x: x.get("postedAt") is not None, posts))
-    dated = sorted(dated, key=lambda x: arrow.get(x.get("postedAt")))
-    if read_args.retriveArgs().before:
-        dated = list(
-            filter(
-                lambda x: arrow.get(x.get("postedAt"))
-                <= read_args.retriveArgs().before,
-                dated,
-            )
-        )
-    if read_args.retriveArgs().after:
-        dated = list(
-            filter(
-                lambda x: arrow.get(x.get("postedAt")) >= read_args.retriveArgs().after,
-                dated,
-            )
-        )
-    out.extend(undated)
-    out.extend(dated)
-    return out
-
-
+#media filters
 def ele_count_filter(media):
     count = settings.get_max_post_count() or None
     if count:
@@ -85,7 +60,7 @@ def ele_count_filter(media):
     return media
 
 
-def posts_type_filter(media):
+def mediatype_type_filter(media):
     filtersettings = settings.get_mediatypes()
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
@@ -121,6 +96,90 @@ def posts_date_filter_media(media):
         )
     return media
 
+
+
+def download_type_filter(media):
+    if read_args.retriveArgs().protected_only:
+        return list(filter(lambda x: x.protected, media))
+    elif read_args.retriveArgs().normal_only:
+        return list(filter(lambda x: not x.protected, media))
+    else:
+        return media
+
+
+def media_length_filter(media):
+    filteredMedia=media
+    max_length=read_args.retriveArgs().length_max
+    min_length=read_args.retriveArgs().length_min
+    if max_length:
+        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=max_length,filteredMedia))
+    if min_length:
+        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration>=min_length,filteredMedia))
+    return filteredMedia
+
+
+def url_filter(media):
+    return list((filter(lambda x: x.url or x.mpd, media)))
+
+
+def unviewable_media_filter(media):
+    return list(filter(lambda x: x.canview, media))
+
+
+def final_media_sort(media):
+    item_sort = read_args.retriveArgs().item_sort
+    log.debug(f"Using download sort {item_sort}")
+    if not item_sort:
+        return media
+    elif item_sort == "date-asc":
+        return media
+    elif item_sort == "date-desc":
+        return list(reversed(media))
+    elif item_sort == "random":
+        random.shuffle(media)
+        return media
+    elif item_sort == "text-asc":
+        return sorted(media, key=lambda x: x.text)
+    elif item_sort == "text-desc":
+        return sorted(media, key=lambda x: x.text, reverse=True)
+    elif item_sort == "filename-asc":
+        return sorted(media, key=lambda x: x.filename)
+    elif item_sort == "filename-desc":
+        return sorted(media, key=lambda x: x.filename, reverse=True)
+
+
+def previous_download_filter(medialist, username=None, model_id=None):
+    log = logging.getLogger("shared")
+    log.info("reading database to retrive previous downloads")
+    medialist = seperate.seperate_by_self(medialist)
+    if read_args.retriveArgs().force_all:
+        log.info("forcing all media to be downloaded")
+    elif read_args.retriveArgs().force_model_unique:
+        log.info("Downloading unique media for model")
+        media_ids = set(
+            get_media_ids_downloaded_model(model_id=model_id, username=username)
+        )
+        log.debug(
+            f"Number of unique media ids in database for {username}: {len(media_ids)}"
+        )
+        medialist = seperate.separate_by_id(medialist, media_ids)
+        log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
+        medialist = seperate.seperate_avatars(medialist)
+        log.debug("Removed previously downloaded avatars/headers")
+        log.debug(f"Final Number of media to download {len(medialist)}")
+    else:
+        log.info("Downloading unique media across all models")
+        media_ids = set(get_media_ids_downloaded(model_id=model_id, username=username))
+        log.debug("Number of unique media ids in database for all models")
+        medialist = seperate.separate_by_id(medialist, media_ids)
+        log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
+        medialist = seperate.seperate_avatars(medialist)
+        log.debug("Removed previously downloaded avatars/headers")
+        log.debug(f"Final Number of media to download {len(medialist)} ")
+    logging.getLogger().info(f"Final media count for download {len(medialist)}")
+    return medialist
+
+# post filters
 
 def posts_date_filter(media):
     if read_args.retriveArgs().before:
@@ -176,8 +235,7 @@ def post_text_filter(media):
                 media,
             )
         )
-
-
+    
 def post_neg_text_filter(media):
     userfilter = read_args.retriveArgs().neg_filter
     if not userfilter:
@@ -194,16 +252,6 @@ def post_neg_text_filter(media):
             )
         )
 
-
-def download_type_filter(media):
-    if read_args.retriveArgs().protected_only:
-        return list(filter(lambda x: x.protected, media))
-    elif read_args.retriveArgs().normal_only:
-        return list(filter(lambda x: not x.protected, media))
-    else:
-        return media
-
-
 def mass_msg_filter(media):
     if read_args.retriveArgs().mass_msg is None:
         return media
@@ -211,78 +259,3 @@ def mass_msg_filter(media):
         return list((filter(lambda x: x.mass is True, media)))
     elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))
-
-
-def media_length_filter(media):
-    filteredMedia=media
-    max_length=read_args.retriveArgs().length_max
-    min_length=read_args.retriveArgs().length_min
-    if max_length:
-        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=max_length,filteredMedia))
-    if min_length:
-        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration>=min_length,filteredMedia))
-    return filteredMedia
-
-
-def url_filter(media):
-    return list((filter(lambda x: x.url or x.mpd, media)))
-
-
-def unviewable_media_filter(media):
-    return list(filter(lambda x: x.canview, media))
-
-
-def final_post_sort(media):
-    item_sort = read_args.retriveArgs().item_sort
-    log.debug(f"Using download sort {item_sort}")
-    if not item_sort:
-        return media
-    elif item_sort == "date-asc":
-        return media
-    elif item_sort == "date-desc":
-        return list(reversed(media))
-    elif item_sort == "random":
-        random.shuffle(media)
-        return media
-    elif item_sort == "text-asc":
-        return sorted(media, key=lambda x: x.text)
-    elif item_sort == "text-desc":
-        return sorted(media, key=lambda x: x.text, reverse=True)
-    elif item_sort == "filename-asc":
-        return sorted(media, key=lambda x: x.filename)
-    elif item_sort == "filename-desc":
-        return sorted(media, key=lambda x: x.filename, reverse=True)
-
-
-def previous_download_filter(medialist, username=None, model_id=None):
-    log = logging.getLogger("shared")
-    log.info("reading database to retrive previous downloads")
-    medialist = seperate.seperate_by_self(medialist)
-    if read_args.retriveArgs().force_all:
-        log.info("forcing all media to be downloaded")
-    elif read_args.retriveArgs().force_model_unique:
-        log.info("Downloading unique media for model")
-        media_ids = set(
-            get_media_ids_downloaded_model(model_id=model_id, username=username)
-        )
-        log.debug(
-            f"Number of unique media ids in database for {username}: {len(media_ids)}"
-        )
-        medialist = seperate.separate_by_id(medialist, media_ids)
-        log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
-        medialist = seperate.seperate_avatars(medialist)
-        log.debug("Removed previously downloaded avatars/headers")
-        log.debug(f"Final Number of media to download {len(medialist)}")
-    else:
-        log.info("Downloading unique media across all models")
-        media_ids = set(get_media_ids_downloaded(model_id=model_id, username=username))
-        log.debug("Number of unique media ids in database for all models")
-        medialist = seperate.separate_by_id(medialist, media_ids)
-        log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
-        medialist = seperate.seperate_avatars(medialist)
-        log.debug("Removed previously downloaded avatars/headers")
-        log.debug(f"Final Number of media to download {len(medialist)} ")
-    logging.getLogger().info(f"Final media count for download {len(medialist)}")
-    return medialist
-
-

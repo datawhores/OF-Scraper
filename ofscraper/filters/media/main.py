@@ -61,7 +61,7 @@ def filtermediaAreas(media, username=None, model_id=None):
     helpers.trace_log_media(count, media, "media datesort:")
     log.debug(f"filter {count}-> media datesort count: {len(media)}")
 
-    media = helpers.posts_type_filter(media)
+    media = helpers.mediatype_type_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "media post media type filter:")
     log.debug(f"filter {count}-> media post media type filter count: {len(media)}")
@@ -101,7 +101,7 @@ def filtermediaAreas(media, username=None, model_id=None):
     count += 1
     helpers.trace_log_media(count, media, "media length filter:")
 
-    media = helpers.final_post_sort(media)
+    media = helpers.final_media_sort(media)
     count += 1
     helpers.trace_log_media(count, media, "final sort filter:")
     log.debug(f"filter {count}->  media final sort filter count: {len(media)}")
@@ -142,7 +142,7 @@ def filterPostFinal(post):
     log.debug(f"filter {count}->  mass msg filter count {len(post)}")
 
     count += 1
-    post = helpers.final_post_sort(post)
+    post = helpers.final_media_sort(post)
     helpers.trace_log_post(count, post, "all post final sort:")
     return post
 
@@ -153,7 +153,7 @@ def post_filter_for_like(post, like=False):
     log.debug(
         f"[bold]Number of {post_type} posts left after filtering for likeable posts[/bold] {len(post)}"
     )
-    post = helpers.final_post_sort(post)
+    post = helpers.final_media_sort(post)
     post = helpers.ele_count_filter(post)
     log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(post)}")
     return post
