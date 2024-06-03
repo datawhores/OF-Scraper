@@ -8,7 +8,9 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+              >>>>>>> main
+45
+                                                                        
 """
 
 import asyncio
@@ -49,7 +51,7 @@ CREATE TABLE IF NOT EXISTS medias (
 	hash VARCHAR,
     model_id INTEGER,
 	PRIMARY KEY (id), 
-	UNIQUE (media_id,model_id)
+	UNIQUE (media_id,model_id,post_id)
 );"""
 mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
@@ -77,8 +79,8 @@ drop table medias;
 """
 mediaUpdateAPI = """Update 'medias'
 SET
-media_id=?,post_id=?,link=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
-WHERE media_id=(?) and model_id=(?);"""
+media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
+WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 mediaUpdateDownload = """Update 'medias'
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
@@ -146,9 +148,11 @@ SELECT media_id FROM medias
 allDLIDCheck = """
 SELECT media_id FROM medias where downloaded=(1)
 """
-
 allDLModelIDCheck = """
 SELECT media_id FROM medias where downloaded=(1) and model_id=(?)
+"""
+allPostIDCheck = """
+SELECT media_id, post_id FROM medias
 """
 getTimelineMedia = """
 SELECT
@@ -303,6 +307,13 @@ def get_media_ids_downloaded_model(model_id=None, conn=None, **kwargs) -> list:
         cur.execute(allDLModelIDCheck, [model_id])
         return set([dict(row)["media_id"] for row in cur.fetchall()])
 
+@wrapper.operation_wrapper
+def get_media_post_ids(
+    model_id=None, username=None, conn=None, **kwargs
+) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(allPostIDCheck)
+        return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
 
 @wrapper.operation_wrapper
 def get_dupe_media_hashes(
@@ -406,6 +417,7 @@ def update_media_table_via_api_batch(
                     media.canview,
                     media.id,
                     model_id,
+                    media.postid,
                 ],
                 medias,
             )
@@ -530,6 +542,7 @@ def update_media_table_via_api_helper(
         media.canview,
         media.id,
         model_id,
+        media.postid,
     ]
     curr.execute(mediaUpdateAPI, insertData)
     conn.commit()
@@ -588,18 +601,17 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
 
 @run
 async def batch_mediainsert(media, **kwargs):
-    curr = set(await get_media_ids(**kwargs) or [])
+    curr = set(get_media_post_ids(**kwargs) or [])
     mediaDict = {}
     for ele in media:
-        mediaDict[ele.id] = ele
-    write_media_table_via_api_batch(
-        list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
+        mediaDict[(ele.id, ele.postid)] = ele
+    await write_media_table_via_api_batch(
+        list(filter(lambda x: (x.id, x.postid) not in curr, mediaDict.values())), **kwargs
     )
 
-    update_media_table_via_api_batch(
-        list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
+    await update_media_table_via_api_batch(
+        list(filter(lambda x: (x.id, x.postid) in curr, mediaDict.values())), **kwargs
     )
-
 
 async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(

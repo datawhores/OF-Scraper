@@ -158,12 +158,12 @@ def get_group_difference(model_id=None, username=None, db_path=None):
     groupB = [
         "profile_username_constraint_modified",
         "stories_model_id_constraint_added",
-        "media_model_id_constraint_added",
         "labels_model_id_constraint_added",
         "posts_model_id_constraint_added",
         "others_model_id_constraint_added",
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
+        "media_post_id_constraint_added",
         "media_bool_changes",
     ]
     return set((groupA + groupB)).difference(set(changes))
@@ -300,11 +300,10 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    # only do one
-    if "media_model_id_constraint_added" in missing or "media_bool_changes" in missing:
+    if "media_post_id_constraint_added" in missing or "media_bool_changes" in missing:
         await rebuild_media_table(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
-            "media_model_id_constraint_added",
+            "media_post_id_constraint_added",
             model_id=model_id,
             username=username,
             db_path=db_path,
@@ -364,7 +363,16 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-
+    if "media_post_id_constraint_added" in missing:
+        await modify_unique_constraint_media(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "media_post_id_constraint_added",
+            model_id=model_id,
+            username=username,
+            db_path=db_path,
+        )
 
 def check_backup(model_id, username, new_path, db_path=None, **kwargs):
     if not new_path.absolute().exists():

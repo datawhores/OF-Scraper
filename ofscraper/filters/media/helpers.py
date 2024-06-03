@@ -25,11 +25,12 @@ def sort_by_date(media):
 def dupefilterMedia(media):
     output =defaultdict(lambda:None)
     for item in media:
-        if not output[item.id]:
-            output[item.id]=item
-        elif item.canview and not output[item.id].canview:
-             output[item.id]=item
-    return output.values()
+        id_pair = (item.id, item.postid) if hasattr(item, 'postid') else (item.id, None)
+        if not id_pair or id_pair not in ids:
+            output.append(item)
+            ids.add(id_pair)
+    return output
+
 
 
 def dupefilterPost(post):
