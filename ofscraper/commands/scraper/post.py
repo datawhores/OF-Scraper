@@ -335,7 +335,7 @@ async def process_all_paid():
             new_medias = filters.filtermediaAreas(
                 new_medias, model_id=model_id, username=username
             )
-            new_posts = filters.filterPost(new_posts)
+            new_posts = filters.filterPostFinal(new_posts)
             await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,

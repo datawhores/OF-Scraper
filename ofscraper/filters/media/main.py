@@ -46,7 +46,7 @@ def filtermediaFinal(media,username=None,model_id=None):
 
 
 
-def filtermediaAreas(media, username=None, model_id=None):
+def filtermediaAreas(media, **kwargs):
     count = 1
 
     helpers.trace_log_media(count, media, "initial media no filter:")
