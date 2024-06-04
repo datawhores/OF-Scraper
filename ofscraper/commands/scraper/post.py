@@ -420,8 +420,7 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
             username=username,
             downloaded=False,
         )
-        final_medias=filters.filtermediaFinal(insert_medias)
-        return (final_medias, posts, like_post)
+        return (insert_medias, posts, like_post)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
