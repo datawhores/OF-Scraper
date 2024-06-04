@@ -42,6 +42,6 @@ def reset_activity_tasks():
 def get_user_task_obj():
     try:
         task = get_user_first_task()
-        return activity_counter._task[task]
+        return activity_counter._tasks[task]
     except:
         pass
