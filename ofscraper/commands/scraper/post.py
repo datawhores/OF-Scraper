@@ -412,16 +412,16 @@ async def process_labels(model_id, username, c):
 async def process_areas_helper(ele, model_id, c=None) -> list:
     try:
         username = ele.name
-        output = []
         medias, posts, like_post = await process_tasks(model_id, username, ele, c=c)
+        insert_medias=filters.filtermediaAreas(medias)
         await batch_mediainsert(
-            medias,
+            insert_medias,
             model_id=model_id,
             username=username,
             downloaded=False,
         )
-        output.extend(medias)
-        return (medias, posts, like_post)
+        final_medias=filters.filtermediaFinal(insert_medias)
+        return (final_medias, posts, like_post)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
