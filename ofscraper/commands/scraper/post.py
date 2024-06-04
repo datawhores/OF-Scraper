@@ -330,9 +330,9 @@ async def process_all_paid():
                 for post in all_posts
                 if post.id not in seen and not seen.add(post.id)
             ]
-            new_medias = [item for post in new_posts for item in post.all_media]
-            new_medias = filters.filtermediaAreas(
-                new_medias, model_id=model_id, username=username
+            all_medias = [item for post in new_posts for item in post.all_media]
+            insert_media = filters.filtermediaAreas(
+                all_medias, model_id=model_id, username=username
             )
             new_posts = filters.filterPostFinal(new_posts)
             await operations.make_post_table_changes(
@@ -341,17 +341,18 @@ async def process_all_paid():
                 username=username,
             )
             await batch_mediainsert(
-                new_medias,
+                insert_media,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
             )
+            final_medias=filters.filtermediaFinal(insert_media)
 
             output[model_id] = dict(
-                model_id=model_id, username=username, posts=new_posts, medias=new_medias
+                model_id=model_id, username=username, posts=new_posts, medias=final_medias
             )
             log.debug(
-                f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}"
+                f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
             )
             progress_utils.increment_activity_count(total=None)
 
