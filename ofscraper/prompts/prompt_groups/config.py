@@ -136,7 +136,7 @@ or human readable such as 10mb
 
 Enter 0 for no limit
 """,
-                "default": str(data.get_filesize_limit()),
+                "default": str(data.get_filesize_max()),
             },
             {
                 "type": "input",

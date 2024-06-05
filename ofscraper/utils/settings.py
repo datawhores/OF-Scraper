@@ -89,8 +89,8 @@ def get_dynamic_rules():
     return read_args.retriveArgs().dynamic_rules or config_data.get_dynamic()
 
 
-def get_size_limit(mediatype=None):
-    return read_args.retriveArgs().size_max or config_data.get_filesize_limit(
+def get_size_max(mediatype=None):
+    return read_args.retriveArgs().size_max or config_data.get_filesize_max(
         mediatype=mediatype
     )
 

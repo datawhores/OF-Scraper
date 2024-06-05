@@ -76,7 +76,7 @@ async def check_forced_skip(ele, total):
     total = int(total)
     if total == 0:
         return 0
-    file_size_max = settings.get_size_limit(mediatype=ele.mediatype)
+    file_size_max = settings.get_size_max(mediatype=ele.mediatype)
     file_size_min = settings.get_size_min(mediatype=ele.mediatype)
     if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
         ele.mediatype = "forced_skipped"
