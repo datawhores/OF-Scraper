@@ -94,7 +94,7 @@ def get_request_auth_deviint():
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
-            fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
+            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
             return (static_param, fmt, checksum_indexes, checksum_constant)
