@@ -7321,7 +7321,7 @@ DATE_ALT = "YY"
 CONFIG_KEYS = [
     "main_profile",
     "save_location",
-    "file_size_limit",
+    "file_size_max",
     "dir_format",
     "file_format",
     "textlength",

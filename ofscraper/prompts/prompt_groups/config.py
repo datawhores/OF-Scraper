@@ -60,7 +60,7 @@ def funct(prompt_):
     images: optional overwrties from images
     -----------------------------------
     [Download Options]
-    file_size_limit: max size allowed for download
+    file_size_max: max size allowed for download
     file_size_min: min size required for download
     filter: which media to download
     auto_resume: toggle for resuming downloads
@@ -127,8 +127,8 @@ def download_config():
         *[
             {
                 "type": "input",
-                "name": "file_size_limit",
-                "message": "file_size_limit: ",
+                "name": "file_size_max",
+                "message": "file_size_max: ",
                 "option_instruction": """
 File size limit
 Input can be int representing bytes

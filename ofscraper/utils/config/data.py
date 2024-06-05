@@ -32,11 +32,11 @@ def get_main_profile(config=None):
 @wrapper.config_reader
 def get_filesize_limit(config=None, mediatype=ModuleNotFoundError):
     if config is False:
-        return constants.FILE_SIZE_LIMIT_DEFAULT
+        return constants.FILE_SIZE_MAX_DEFAULT
     try:
         if config.get("file_size_max") is not None:
             size = config.get("file_size_max")
-
+       
         elif (
             config.get("overwrites", {})
             .get((mediatype or "").lower(), {})
@@ -49,6 +49,9 @@ def get_filesize_limit(config=None, mediatype=ModuleNotFoundError):
             )
         elif config.get("download_options", {}).get("file_size_max"):
             size = config.get("download_options", {}).get("file_size_max")
+        
+        elif config.get("download_options", {}).get("file_size_limit"):
+            size = config.get("download_options", {}).get("file_size_limit")
         return parse_size(
             str(
                 size

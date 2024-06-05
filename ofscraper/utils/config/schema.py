@@ -24,7 +24,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "truncation_default": data.get_truncation(config=config),
         },
         "download_options": {
-            "file_size_limit": data.get_filesize_limit(config=config),
+            "file_size_max": data.get_filesize_limit(config=config),
             "file_size_min": data.get_filesize_min(config=config),
             "filter": data.get_filter(config=config),
             "auto_resume": data.get_part_file_clean(config=config),
