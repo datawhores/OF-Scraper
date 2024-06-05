@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import re
+import string
 
 import arrow
 
@@ -342,7 +343,7 @@ class Placeholders(basePlaceholder):
     def _addcount(self, ele, out):
         if not constants.getattr("FILE_COUNT_PLACEHOLDER"):
             return
-        elif not ele.needs_count:
+        elif not self._needs_count():
             return out
         out = re.sub(" $", "", out)
         # insert count
@@ -351,6 +352,28 @@ class Placeholders(basePlaceholder):
         else:
             out = f"{out}_{ele.count}"
         return out
+
+    def _needs_count(self,ele):
+        non_unique=set(["text", "postid", "post_id","ext"])
+        file_format=set()
+        iter_parse=iter(string.Formatter().parse(data.get_fileformat()))
+        for ele in iter_parse:
+            try:
+                text, name, spec, conv=next(iter_parse.next)
+                set.add(name)
+            except ValueError:
+                continue
+            except StopIteration:
+                break
+
+        if len(file_format)!=len((non_unique&file_format)):
+            return False
+        elif len(ele._post.post_media) > 1 or ele.responsetype in [
+            "stories",
+            "highlights",
+        ]:
+            return True
+        return False
 
     @property
     def filepath(self):

@@ -402,25 +402,6 @@ class Media(base.base):
             return False
         return True
 
-    # for use in dynamic names
-    @property
-    def needs_count(self):
-        non_unique=set(["text", "postid", "post_id","ext"])
-        file_format=set([
-                name
-                for text, name, spec, conv in list(
-                    string.Formatter().parse(data.get_fileformat())
-                )
-        ])
-        if len(file_format)!=len((non_unique&file_format)):
-            return False
-        elif len(self._post.post_media) > 1 or self.responsetype in [
-            "stories",
-            "highlights",
-        ]:
-            return True
-        return False
-
     @property
     def username(self):
         return self._post.username
