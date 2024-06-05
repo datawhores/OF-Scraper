@@ -546,7 +546,7 @@ def get_dynamic(config=None):
                 "growik"
             ]
         )
-        else "deviint"
+        else "growik"
     )
 
 
