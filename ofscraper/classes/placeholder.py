@@ -357,10 +357,10 @@ class Placeholders(basePlaceholder):
         non_unique=set(["text", "postid", "post_id","ext"])
         file_format=set()
         iter_parse=iter(string.Formatter().parse(data.get_fileformat()))
-        for ele in iter_parse:
+        while True:
             try:
                 text, name, spec, conv=next(iter_parse)
-                set.add(name)
+                file_format.add(name)
             except ValueError:
                 continue
             except StopIteration:
