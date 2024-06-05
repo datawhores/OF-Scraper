@@ -22,7 +22,7 @@ try:
 
     __hardcoded__ = None
     __version__ = __hardcoded__ or Version.from_git(
-        pattern="(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))"
+        pattern="(?P<base>\d+\.\d+(\.(\d+\.\w+)|\w+))"
     ).serialize(format="{base}+{branch}.{commit}", metadata=False)
 except:
     import pkg_resources
