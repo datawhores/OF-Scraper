@@ -30,7 +30,7 @@ def get_main_profile(config=None):
 
 
 @wrapper.config_reader
-def get_filesize_max(config=None, mediatype=ModuleNotFoundError):
+def get_filesize_max(config=None, mediatype=None):
     if config is False:
         return constants.FILE_SIZE_MAX_DEFAULT
     try:
