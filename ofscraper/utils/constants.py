@@ -1,4 +1,4 @@
-# trunk-ignore-all(black)
+import os
 import ofscraper.utils.config.custom as custom_
 from ofscraper.const.constants import *
 from ofscraper.const.values.test_constants import *
@@ -13,8 +13,7 @@ def getattr(val):
             custom=custom_.get_custom()
         except Exception as E:
             print(E)
-            raise E
-    return (custom or {}).get(val) if (custom or {}).get(val) is not None else globals()[val]
+            raise E       return   os.environ.get(val) or (custom or {}).get(val) if (custom or {}).get(val) is not None else globals()[val]
 
 
 
