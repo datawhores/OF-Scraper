@@ -2,7 +2,6 @@ import logging
 import os
 import pathlib
 import re
-import string
 
 import arrow
 
@@ -18,6 +17,7 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
+from ofscraper.utils.string import parse_safe
 
 log = logging.getLogger("shared")
 
@@ -355,16 +355,7 @@ class Placeholders(basePlaceholder):
 
     def _needs_count(self,ele):
         non_unique=set(["text", "postid", "post_id","ext"])
-        file_format=set()
-        iter_parse=iter(string.Formatter().parse(data.get_fileformat()))
-        while True:
-            try:
-                text, name, spec, conv=next(iter_parse)
-                file_format.add(name)
-            except ValueError:
-                continue
-            except StopIteration:
-                break
+        file_format=parse_safe(data.get_fileformat())
 
         if len(file_format)!=len((non_unique&file_format)):
             return False

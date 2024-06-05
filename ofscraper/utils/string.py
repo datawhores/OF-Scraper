@@ -1,5 +1,6 @@
 import os
 import re
+import string
 
 ###
 # https://github.com/pypa/cibuildwheel/issues/840
@@ -44,3 +45,16 @@ def format_safe(template: str, **kwargs: str | os.PathLike[str]) -> str:
         result = result.replace(f"#{{{key}}}", f"{{{key}}}")
 
     return result
+
+def parse_safe(value):
+    file_format=set()
+    iter_parse=iter(string.Formatter().parse(value))
+    while True:
+        try:
+            text, name, spec, conv=next(iter_parse)
+            file_format.add(name)
+        except ValueError:
+            continue
+        except StopIteration:
+            break
+    return file_format
