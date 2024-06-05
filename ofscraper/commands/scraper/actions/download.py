@@ -32,7 +32,7 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
     model_id = ele.id
     username = ele.name
     progress_utils.update_activity_task(description=download_activity_str.format(username=username)+f"\nSaving files to [deep_sky_blue2]{pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat())}][/deep_sky_blue2")
-    logging.getLogger("shared_other").warning(download_activity_str.format(username=username))deep_skey_blue2
+    logging.getLogger("shared_other").warning(download_activity_str.format(username=username))
     return await download.download_process(username, model_id, media, posts=posts)
 
 
