@@ -64,6 +64,8 @@ async def post_media_process(ele, c=None):
     return data
 
 
+
+
 @free.space_checker
 async def process_messages(model_id, username, c):
     try:
@@ -408,8 +410,11 @@ async def process_labels(model_id, username, c):
         log.traceback_(traceback.format_exc())
 
 
+
+
+
 @run
-async def process_areas_helper(ele, model_id, c=None) -> list:
+async def process_areas(ele, model_id, username, c=None):
     try:
         username = ele.name
         medias, posts, like_post = await process_tasks(model_id, username, ele, c=c)
@@ -421,21 +426,6 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
             downloaded=False,
         )
         return (insert_medias, posts, like_post)
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-
-
-@run
-async def process_areas(ele, model_id, username, c=None):
-    
-    media, posts, like_post = await process_areas_helper(ele, model_id, c=c)
-    try:
-        return (
-            filters.filtermediaFinal(media, model_id=model_id, username=username),
-            filters.filterPostFinal(posts),
-            filters.post_filter_for_like(like_post),
-        )
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

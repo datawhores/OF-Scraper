@@ -29,7 +29,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.__version__ import __version__
 from ofscraper.commands.helpers.normal import (
-    get_user_action_function,
+    get_user_action_function_meta,
 )
 from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
@@ -38,7 +38,7 @@ from ofscraper.commands.helpers.user_first import (
 from ofscraper.commands.helpers.shared import run_metadata_bool
 from ofscraper.commands.helpers.strings import metadata_activity_str,mark_stray_str,all_paid_metadata_str,all_paid_progress_metadata_str
 
-from ofscraper.commands.scraper.post import process_areas_helper
+from ofscraper.commands.scraper.post import process_areas
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
@@ -73,7 +73,7 @@ def metadata():
 
 @run
 async def process_users_metadata_normal(userdata, session):
-    user_action_funct = get_user_action_function(execute_metadata_action_on_user)
+    user_action_funct = get_user_action_function_meta(execute_metadata_action_on_user)
     progress_utils.update_user_activity(description="Users with Updated Metadata")
     return await user_action_funct(userdata, session)
 
@@ -143,11 +143,10 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
 
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
-    filtermedia = filters.filtermediaFinal(media, username=username, model_id=model_id)
     progress_utils.update_activity_task(
         description=metadata_activity_str.format(username=username)
     )
-    data=await download.download_process(username, model_id, filtermedia)
+    data=await download.download_process(username, model_id, media)
     metadata_stray_media(username, model_id, media)
     return [data]
 
@@ -185,7 +184,7 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
         model_id = ele.id
         username = ele.name
         await operations.table_init_create(model_id=model_id, username=username)
-        media, _, _ = await process_areas_helper(ele, model_id, c=session)
+        media, _, _ = await process_areas(ele, model_id, c=session)
         return {
             model_id: {
                 "username": username,
