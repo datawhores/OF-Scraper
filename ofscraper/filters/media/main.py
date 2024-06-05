@@ -7,7 +7,7 @@ import ofscraper.utils.constants as constants
 log = logging.getLogger("shared")
 
 
-def filtermediaFinal(media,username=None,model_id=None):
+def filtermediaFinal(media,username,model_id):
     count = 1
 
     helpers.trace_log_media(count, media, "initial media no filter:")

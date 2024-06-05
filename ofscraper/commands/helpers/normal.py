@@ -27,7 +27,7 @@ def get_user_action_function(func):
                     with progress_utils.setup_api_split_progress_live():
                         data_helper(ele)
                         all_media, posts, like_posts = await post_media_process(ele, c=c)
-                        all_media=filters.filtermediaFinal(all_media, model_id=model_id, username=username)
+                        all_media=filters.filtermediaFinal(all_media, model_id, username)
                         posts=  filters.filterPostFinal(posts)
                         like_posts=filters.post_filter_for_like(like_posts)
 
