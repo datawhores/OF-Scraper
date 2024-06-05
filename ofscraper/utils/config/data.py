@@ -543,6 +543,7 @@ def get_dynamic(config=None):
                 "digital",
                 "digitials",
                 "sneaky",
+                "growik"
             ]
         )
         else "deviint"

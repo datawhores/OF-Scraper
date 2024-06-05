@@ -52,15 +52,22 @@ def get_request_auth(refresh=False,forced=False):
         "dv",
         "dev",
     }:
+    
 
         auth = get_request_auth_deviint()
+
+    elif (settings.get_dynamic_rules()) in {
+        "growik",
+    }:
+        auth = get_request_auth_growik()
     elif (settings.get_dynamic_rules()) in {
         "sneaky",
     }:
+    
 
         auth = get_request_auth_sneaky()
     else:
-        auth = get_request_auth_digitalcriminals()
+        auth = get_request_auth_growik()
     # if not forced:
     #     cache.set(
     #         "api_onlyfans_sign",
@@ -116,6 +123,27 @@ def get_request_auth_sneaky():
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
+def get_request_auth_growik():
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
+        refresh=False,
+    ) as c:
+        with c.requests(
+            constants.getattr("GROWIK"),
+            headers=False,
+            cookies=False,
+            sign=False,
+        forced=False
+        ) as r:
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 def get_request_auth_digitalcriminals():
     with sessionManager.sessionManager(
         backend="httpx",
