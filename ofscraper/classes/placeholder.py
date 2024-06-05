@@ -343,7 +343,7 @@ class Placeholders(basePlaceholder):
     def _addcount(self, ele, out):
         if not constants.getattr("FILE_COUNT_PLACEHOLDER"):
             return
-        elif not self._needs_count():
+        elif not self._needs_count(ele):
             return out
         out = re.sub(" $", "", out)
         # insert count
@@ -359,7 +359,7 @@ class Placeholders(basePlaceholder):
         iter_parse=iter(string.Formatter().parse(data.get_fileformat()))
         for ele in iter_parse:
             try:
-                text, name, spec, conv=next(iter_parse.next)
+                text, name, spec, conv=next(iter_parse)
                 set.add(name)
             except ValueError:
                 continue
