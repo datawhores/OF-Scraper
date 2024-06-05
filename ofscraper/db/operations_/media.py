@@ -13,14 +13,11 @@ r"""
                                                                         
 """
 
-import asyncio
 import contextlib
 import logging
 import sqlite3
-from functools import partial
 
 import arrow
-from filelock import FileLock
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
