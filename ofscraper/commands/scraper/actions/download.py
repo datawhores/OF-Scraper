@@ -10,6 +10,7 @@ r"""_____  _______         _______  _______  _______  _______  _______  _______ 
 
 import logging
 import time
+import pathlib
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.download as download
@@ -18,6 +19,10 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.helpers.strings import  download_activity_str,all_paid_progress_download_str,all_paid_download_str
 from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.config.data as config_data
+import ofscraper.utils.paths.common as common_paths
+
+
 
 
 log = logging.getLogger("shared")
@@ -26,8 +31,8 @@ log = logging.getLogger("shared")
 async def downloader(ele=None, posts=None, media=None, **kwargs):
     model_id = ele.id
     username = ele.name
-    progress_utils.update_activity_task(description=download_activity_str.format(username=username))
-    logging.getLogger("shared_other").warning(download_activity_str.format(username=username))
+    progress_utils.update_activity_task(description=download_activity_str.format(username=username)+f"\nSaving files to [deep_sky_blue2]{pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat())}][/deep_sky_blue2")
+    logging.getLogger("shared_other").warning(download_activity_str.format(username=username))deep_skey_blue2
     return await download.download_process(username, model_id, media, posts=posts)
 
 
