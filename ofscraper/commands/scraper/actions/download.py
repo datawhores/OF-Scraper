@@ -34,7 +34,7 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
     model_id = ele.id
     username = ele.name
     download_str=download_activity_str.format(username=username)
-    path_str=format_safe(f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",username=username,model_id=model_id)
+    path_str=format_safe(f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",username=username,model_id=model_id,model_username=username,modelusername=username,modelid=model_id)
 
     progress_utils.update_activity_task(description=download_str+path_str)
     logging.getLogger("shared_other").warning(download_activity_str.format(username=username))
