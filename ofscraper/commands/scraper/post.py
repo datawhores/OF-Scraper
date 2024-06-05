@@ -348,7 +348,7 @@ async def process_all_paid():
                 username=username,
                 downloaded=False,
             )
-            final_medias=filters.filtermediaFinal(insert_media)
+            final_medias=filters.filtermediaFinal(insert_media,username=username,model_id=model_id)
 
             output[model_id] = dict(
                 model_id=model_id, username=username, posts=new_posts, medias=final_medias
