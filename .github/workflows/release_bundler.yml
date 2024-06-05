@@ -70,7 +70,7 @@ jobs:
         run: pip install dunamai
       - name: replace_version
         run: |
-          sed -i -e s/'[^ ]*hardcoded.*None'/__hardcoded__="\"$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")\""/ ofscraper/__version__.py
+          sed -i -e s/'[^ ]*hardcoded.*None'/__hardcoded__="\"$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))")\""/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py
       - name: upload release file
@@ -615,7 +615,7 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Build
         run: |
-          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")
+          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))")
           poetry build
       - name: Push to pypi
         env:
