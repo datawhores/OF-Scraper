@@ -10,7 +10,7 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media,username,model_id):
     actions = read_args.retriveArgs().action
     if "download" not in actions:
-        log.debug("Skipping because no download action")
+        log.debug("Skipping because download not actions")
         return media
 
     count = 1
@@ -54,7 +54,7 @@ def filtermediaFinal(media,username,model_id):
 def filtermediaAreas(media, **kwargs):
     actions = read_args.retriveArgs().action
     if "download" not in actions:
-        log.debug("Skipping because no download action")
+        log.debug("Skipping because download actions")
         return media
 
     count = 1
@@ -120,7 +120,7 @@ def filtermediaAreas(media, **kwargs):
 def filterPostFinal(post):
     actions = read_args.retriveArgs().action
     if "download" not in actions:
-        log.debug("Skipping because no download action")
+        log.debug("Skipping because download not in actions")
         return post
 
     
@@ -166,7 +166,7 @@ def filterPostFinal(post):
 def post_filter_for_like(post, like=False):
     actions = read_args.retriveArgs().action
     if "like" not in actions and "unlike" not in actions:
-        log.debug("Skipping because no like or unlike not in action")
+        log.debug("Skipping because like and unlike not in actions")
         return post
 
     post = helpers.temp_post_filter(post)
