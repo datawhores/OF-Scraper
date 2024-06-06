@@ -1,4 +1,6 @@
 # ReadMe
+# ALL AUTH ISSUE REPORTS WILL BE CLOSED
+# USE THE PIN POST
 
 ## Releases
 
