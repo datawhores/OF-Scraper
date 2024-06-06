@@ -11,7 +11,6 @@ r"""_____  _______         _______  _______  _______  _______  _______  _______ 
 import logging
 import time
 import pathlib
-from collections import defaultdict
 
 
 import ofscraper.classes.placeholder as placeholder
