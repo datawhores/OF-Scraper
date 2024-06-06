@@ -2,6 +2,7 @@ import contextlib
 
 from ofscraper.utils.live.live import get_live,stop_live
 import ofscraper.utils.console as console
+import time
 
 
 
@@ -11,6 +12,8 @@ def prompt_live():
     stop_live()
     console.get_shared_console().clear()
     console.get_shared_console().clear_live()
+    #give time for screen to clear
+    time.sleep(.3)
     yield
     #stop again for nested calls
     stop_live()

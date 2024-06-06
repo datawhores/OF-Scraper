@@ -53,7 +53,7 @@ log = logging.getLogger("shared")
 
 
 def metadata():
-    with progress_utils.setup_activity_progress_live(revert=True):
+    with progress_utils.setup_activity_progress_live(revert=True,stop=True,setup=True):
         scrape_paid_data=[]
         userfirst_data=[]
         normal_data=[]

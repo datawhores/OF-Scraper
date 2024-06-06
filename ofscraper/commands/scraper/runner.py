@@ -43,7 +43,7 @@ def runner():
         user_first_data=[
         ]
         scrape_paid_data=[]
-        with progress_utils.setup_activity_group_live(setup=True,revert=False):
+        with progress_utils.setup_activity_group_live(setup=True,revert=False,stop=True):
             if read_args.retriveArgs().scrape_paid:
                 scrape_paid_data=download_action.scrape_paid_all()
 
