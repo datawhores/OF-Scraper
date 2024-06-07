@@ -5,8 +5,7 @@ import ssl
 import threading
 import time
 import traceback
-import json
-import textwrap
+
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -17,11 +16,11 @@ import tenacity
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
 import ofscraper.utils.auth.request as auth_requests
+import ofscraper.utils.auth.warning.print as auth_warning_print
+
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.console as console
-import ofscraper.utils.settings as settings
 
 
 
@@ -35,73 +34,13 @@ def async_is_rate_limited(exception,sleeper):
 
 def async_check_400(exception):
     if is_provided_exception_number(exception,400):
-        auth=auth_requests.auth_file.read_auth()
-        auth_filled={
-            "accept": "application/json, text/plain, */*",
-            "app-token": constants.getattr("APP_TOKEN"),
-            "user-id": f'\'{auth["auth_id"]}\'',
-            "x-bc": f'\'{auth["x-bc"]}\'',
-            "referer": "https://onlyfans.com",
-            "user-agent": f'\'{auth["user_agent"]}\'',
-        }
-        console.get_console().print(
-            f"""
-            [red]This info is only printed to console[/red]
-            Double check to make sure this info is correct
-            {auth_filled}
-            ==============
-            Dynamic Rule: {settings.get_dynamic_rules()}
-
-            
-            
-            """
-        )
-        asyncio.sleep(4)  
+        auth_warning_print.print_auth_warning()
+        asyncio.sleep(8)
 
 
 def check_400(exception):
     if is_provided_exception_number(exception,400):
-        auth=auth_requests.auth_file.read_auth()
-        auth.update({"app-token": constants.getattr("APP_TOKEN")})
-
-        # auth_filled={
-        #     "accept": "application/json, text/plain, */*",
-        #     "app-token": constants.getattr("APP_TOKEN"),
-        #     "user-id": f'\'{auth["auth_id"]}\'',
-        #     "x-bc": f'\'{auth["x-bc"]}\'',
-        #     "referer": "https://onlyfans.com",
-        #     "user-agent": f'\'{auth["user_agent"]}\'',
-        # }
-        # cookies_filled={
-        # "sess":f'\'{cookies["sess"]}\'',
-        # "auth_id":f'\'{cookies["auth_id"]}\'',
-        # "auth_uid_":f'\'{cookies["auth_uid_"]}\'',
-
-
-
-
-        # }
-
-
-        console.get_console().print(textwrap.dedent(
-        f"""
-        [bold red]This info is only printed to console[/bold red]
-        """
-        ))
-        console.get_console().print_json(json.dumps(auth))
-        console.get_console().print(f"[bold] Dynamic Rule: {settings.get_dynamic_rules()}")
-        console.get_console().print(
-        textwrap.dedent("""
-        ==============================================================
-        Double check to make sure the [bold blue]\[x-bc,user-agent][/bold blue] info is correct
-
-        Double check to make sure the [bold blue]\[sess, auth_id][/bold blue] info is correct
-                        
-        If 2fa is enabled double check that [bold blue]\[auth_uid_][/bold blue] is set and not the same as auth_id
-
-        Double check to make sure [bold blue]dynamic rule[/bold blue] is as desired
-        ================================================
-        """))
+        auth_warning_print.print_auth_warning() 
         time.sleep(8)  
 
 

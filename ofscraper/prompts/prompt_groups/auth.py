@@ -24,6 +24,8 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 
 console = Console()
+import ofscraper.utils.auth.warning.print as auth_warning_print
+
 
 
 def auth_prompt(auth) -> dict:
@@ -245,6 +247,25 @@ def reset_auth_prompt() -> bool:
                     Choice("reset", "Reset Default"),
                     Choice("manual", "Fix Through Script"),
                     Choice("again", "File was fixed manually"),
+                ],
+            }
+        ]
+    )
+    return questions[name]
+
+def check_auth_prompt() -> bool:
+
+    name = "input"
+    questions = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Is the auth information correct",
+                "call":auth_warning_print.print_auth_warning,
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
                 ],
             }
         ]

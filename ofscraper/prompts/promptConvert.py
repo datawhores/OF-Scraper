@@ -8,16 +8,18 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
+import ofscraper.utils.console as console
 
 
-def wrapper(funct):
+def wrapper(prompt_funct):
     def inner(*args, **kwargs):
         # setup
         with prompt_live():
             long_message = functools.partial(
                 handle_skip_helper,
-                kwargs.pop("long_message", None) or get_default_instructions(funct),
+                kwargs.pop("long_message", None) or get_default_instructions(prompt_funct),
             )
+            funct=kwargs.pop("call",None)
             kwargs["long_instruction"] = "\n".join(
                 list(
                     filter(
@@ -45,13 +47,14 @@ def wrapper(funct):
             altd_action = kwargs.pop("altd", None)
             additional_keys = kwargs.pop("additional_keys", {})
             action = [None]
-            prompt_ = funct(*args, **kwargs)
+            prompt_ = prompt_funct(*args, **kwargs)
 
             register_keys(prompt_, altx_action, altd_action, additional_keys, action)
 
             while True:
+                funct() if funct else None
                 out = prompt_.execute()
-                prompt_._default = get_default(funct, prompt_)
+                prompt_._default = get_default(prompt_funct, prompt_)
                 select = action[0]
                 action[0] = None
                 if select == "altx":
