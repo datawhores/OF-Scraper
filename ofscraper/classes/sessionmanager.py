@@ -386,6 +386,7 @@ class sessionManager:
                         json=json,
                         data=data,
                     )
+
                     if r.status_code == 404:
                         pass
                     elif not r.ok:
