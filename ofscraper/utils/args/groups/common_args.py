@@ -184,7 +184,7 @@ def common_advanced_params(func):
             "--dynamic-rules",
             help="Dynamic signing",
             default=None,
-            type=click.Choice(["dc", "deviint", "sneaky"], case_sensitive=False),
+            type=click.Choice(["dc", "deviint","growik"], case_sensitive=False),
             callback=lambda ctx, param, value: value.lower() if value else None,
         ),
         click.option(

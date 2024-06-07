@@ -542,7 +542,7 @@ def get_dynamic(config=None):
                 "dc",
                 "digital",
                 "digitials",
-                "sneaky",
+                # "sneaky",
                 "growik"
             ]
         )

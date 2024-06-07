@@ -64,10 +64,10 @@ def get_request_auth(refresh=False,forced=False):
         "growik",
     }:
         auth = get_request_auth_growik()
-    elif (dynamic) in {
-        "sneaky",
-    }:
-        auth = get_request_auth_sneaky()
+    # elif (dynamic) in {
+    #     "sneaky",
+    # }:
+    #     auth = get_request_auth_sneaky()
     else:
         auth = get_request_auth_growik()
     # if not forced:
