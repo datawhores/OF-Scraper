@@ -339,10 +339,9 @@ class Placeholders(basePlaceholder):
         log.debug(f"final filename path {out}")
         self._filename = out
         return out
-
     def _addcount(self, ele, out):
         if not constants.getattr("FILE_COUNT_PLACEHOLDER"):
-            return
+            return out
         elif not self._needs_count(ele):
             return out
         out = re.sub(" $", "", out)
