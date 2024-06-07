@@ -23,10 +23,41 @@ import ofscraper.utils.settings as settings
 
 
 
-def is_rate_limited(exception):
-    return is_provided_exception_number(exception,429,504)
+def is_rate_limited(exception,sleeper):
+    if is_provided_exception_number(exception,429,504):
+        sleeper.toomany_req()
 
-def is_400(exception):
+def async_is_rate_limited(exception,sleeper):
+    if is_provided_exception_number(exception,429,504):
+        sleeper.async_toomany_req()
+
+def async_check_400(exception):
+    if is_provided_exception_number(exception,400):
+        auth=auth_requests.auth_file.read_auth()
+        auth_filled={
+            "accept": "application/json, text/plain, */*",
+            "app-token": constants.getattr("APP_TOKEN"),
+            "user-id": f'\'{auth["auth_id"]}\'',
+            "x-bc": f'\'{auth["x-bc"]}\'',
+            "referer": "https://onlyfans.com",
+            "user-agent": f'\'{auth["user_agent"]}\'',
+        }
+        console.get_console().print(
+            f"""
+            [red]This info is only printed to console[/red]
+            Double check to make sure this info is correct
+            {auth_filled}
+            ==============
+            Dynamic Rule: {settings.get_dynamic_rules()}
+
+            
+            
+            """
+        )
+        asyncio.sleep(4)  
+
+
+def check_400(exception):
     if is_provided_exception_number(exception,400):
         auth=auth_requests.auth_file.read_auth()
         auth_filled={
@@ -391,10 +422,8 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if is_rate_limited(E):
-                        sleeper.toomany_req()
-                    check_400()
-
+                    is_rate_limited(E,sleeper)  
+                    check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     raise E
@@ -512,8 +541,9 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if is_rate_limited(E):
-                        await sleeper.async_toomany_req()
+                    async_is_rate_limited(E,sleeper) 
+                    #only call from sync req like "me"
+                    #check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     sem.release()
