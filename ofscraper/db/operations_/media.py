@@ -16,6 +16,7 @@ r"""
 import contextlib
 import logging
 import sqlite3
+from collections import defaultdict
 
 import arrow
 from rich.console import Console
@@ -445,9 +446,23 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "duration",
             "unlocked",
         ]
+        inputData=_media_cleaup_helper(inputData)
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertTransition, insertData)
         conn.commit()
+def _media_cleaup_helper(inputData):
+    output_dict=defaultdict(lambda:None)
+    for ele in inputData:
+        key=(ele["media_id"],ele["post_id"],ele["model_id"])
+        if output_dict[key]:
+            merged={}
+            past_data=output_dict[key]
+            for inner_key in ele.keys():
+                merged[inner_key]=ele[inner_key] or past_data[inner_key]
+            output_dict[key]=merged
+        else:
+            output_dict[key]=ele
+    return output_dict.values()
 
 
 @wrapper.operation_wrapper_async

@@ -195,7 +195,9 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
     )
-    if "media_hash" in missing:
+    if len(missing)==0:
+        return
+    elif "media_hash" in missing:
         await add_column_media_hash(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -282,7 +284,9 @@ async def modify_tables_constraints_and_columns(
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
     )
-    if "profile_username_constraint_modified" in missing:
+    if len(missing)==0:
+        return
+    elif "profile_username_constraint_modified" in missing:
         await rebuild_profiles_table(
             model_id=model_id, username=username, db_path=db_path
         )
