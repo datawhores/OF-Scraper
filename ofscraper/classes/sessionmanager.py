@@ -18,14 +18,47 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.console as console
+import ofscraper.utils.settings as settings
+
 
 
 def is_rate_limited(exception):
+    return is_provided_exception_number(exception,429,504)
+
+def is_400(exception):
+    if is_provided_exception_number(exception,400):
+        auth=auth_requests.auth_file.read_auth()
+        auth_filled={
+            "accept": "application/json, text/plain, */*",
+            "app-token": constants.getattr("APP_TOKEN"),
+            "user-id": f'\'{auth["auth_id"]}\'',
+            "x-bc": f'\'{auth["x-bc"]}\'',
+            "referer": "https://onlyfans.com",
+            "user-agent": f'\'{auth["user_agent"]}\'',
+        }
+        console.get_console().print(
+            f"""
+            [red]This info is only printed to console[/red]
+            Double check to make sure this info is correct
+            {auth_filled}
+            ==============
+            Dynamic Rule: {settings.get_dynamic_rules()}
+
+            
+            
+            """
+        )
+        time.sleep(4)  
+
+
+
+def is_provided_exception_number(exception,*numbers):
     return (
         isinstance(exception, aiohttp.ClientResponseError)
         and (
             getattr(exception, "status_code", None)
-            or getattr(exception, "status", None) in {429, 504}
+            or getattr(exception, "status", None) in numbers
         )
     ) or (
         isinstance(exception, httpx.HTTPStatusError)
@@ -34,10 +67,9 @@ def is_rate_limited(exception):
                 getattr(exception.response, "status_code", None)
                 or getattr(exception.response, "status", None)
             )
-            in {429, 504}
+            in numbers
         )
     )
-
 
 class SessionSleep:
     def __init__(self, sleep=None,difmin=None):
@@ -361,6 +393,7 @@ class sessionManager:
                 except Exception as E:
                     if is_rate_limited(E):
                         sleeper.toomany_req()
+                    check_400()
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())

@@ -12,6 +12,8 @@ import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+from ofscraper.__version__ import __version__
+
 
 
 def printStartValues():
@@ -26,6 +28,7 @@ def printStartValues():
 
     # print info
     log.info(f"Log Level: {settings.get_log_level()}")
+    log.info(__version__)
     log.debug(args)
     log.debug(sys.argv[1:]) if len(sys.argv) > 1 else None
     log.debug(platform.platform())

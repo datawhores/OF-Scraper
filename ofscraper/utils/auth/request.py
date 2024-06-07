@@ -45,25 +45,28 @@ def get_request_auth(refresh=False,forced=False):
     #curr_auth = cache.get("api_onlyfans_sign")
     # if not (refresh or forced) and curr_auth:
     #     return curr_auth
-    logging.getLogger("shared").debug("getting new signature")
-    if (settings.get_dynamic_rules()) in {
+    dynamic=settings.get_dynamic_rules()
+    logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
+
+
+
+
+    if (dynamic) in {
         "deviint",
         "dv",
         "dev",
     }:
-    
+
 
         auth = get_request_auth_deviint()
 
-    elif (settings.get_dynamic_rules()) in {
+    elif (dynamic) in {
         "growik",
     }:
         auth = get_request_auth_growik()
-    elif (settings.get_dynamic_rules()) in {
+    elif (dynamic) in {
         "sneaky",
     }:
-    
-
         auth = get_request_auth_sneaky()
     else:
         auth = get_request_auth_growik()
