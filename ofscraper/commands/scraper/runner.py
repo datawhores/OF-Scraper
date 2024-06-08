@@ -89,7 +89,7 @@ async def execute_user_action( posts=None, like_posts=None,ele=None,media=None):
     model_id = ele.id
     out=[]
     for action in actions:
-        if action == "download":
+        if "download" in action:
             out.append(await download_action.downloader(
                 ele=ele,
                 posts=posts,
@@ -97,7 +97,7 @@ async def execute_user_action( posts=None, like_posts=None,ele=None,media=None):
                 model_id=model_id,
                 username=username,
             ))
-        elif action == "like":
+        elif "unlike" in action:
             out.append(like_action.process_like(
                 ele=ele,
                 posts=like_posts,
@@ -105,7 +105,7 @@ async def execute_user_action( posts=None, like_posts=None,ele=None,media=None):
                 model_id=model_id,
                 username=username,
             ))
-        elif action == "unlike":
+        elif "like" in action:
             out.append(like_action.process_unlike(
                 ele=ele,
                 posts=like_posts,
