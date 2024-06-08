@@ -57,8 +57,9 @@ downloads total \\[{common_globals.video_count} videos, {common_globals.audio_co
 
 
 def final_log(username, log=None):
+    log=(log or common_globals.log)
     log.error("\n")
-    (log or common_globals.log).error(
+    log.error(
             final_log_text(username)
     )
 
