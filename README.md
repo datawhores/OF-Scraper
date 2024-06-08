@@ -1,6 +1,7 @@
 # ReadMe
-# ALL AUTH ISSUE REPORTS WILL BE CLOSED
+# FOR NOW ALL AUTH ISSUE REPORTS WILL BE CLOSED
 # USE THE PIN POST
+# Chances are you will find your solution there anyways
 
 ## Releases
 
