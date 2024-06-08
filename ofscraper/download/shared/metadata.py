@@ -16,6 +16,7 @@ from ofscraper.db.operations_.media import (
 from ofscraper.download.shared.log import get_medialog
 from ofscraper.download.shared.classes.retries import get_download_retries
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 
 
 async def force_download(ele, username, model_id):
@@ -112,7 +113,7 @@ def metadata_dir_helper(placeholderObj, prevData):
 
 
 def metadata_hash_helper(placeholderObj, prevData, ele):
-    if not read_args.retriveArgs().get_hash:
+    if not settings.get_hash(mediatype=ele.mediatype):
         return prevData.get("hash")
     elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
         return hash.get_hash(
