@@ -25,17 +25,19 @@ def get_hash(file_data, mediatype=None):
     if fileHashes.get(str(file_data)):
         hash = fileHashes.get(str(file_data))
     else:
-        hasher = xxhash.xxh128()
-        BUF_SIZE = constants.getattr("BUF_SIZE")
-        with open(file_data, "rb") as f:
-            buffered_f = io.BufferedReader(f, buffer_size=BUF_SIZE)
-            for block in iter(lambda: buffered_f.read(BUF_SIZE), b""):
-                hasher.update(block)
-        fileHashes[str(file_data)] = hasher.hexdigest()
-        hash = hasher.hexdigest()
+        hash=_calc_hash(file_data)
     log.debug(f"{file_data} => hash: {hash}")
     return hash
 
+def _calc_hash(file_data):
+    hasher = xxhash.xxh128()
+    BUF_SIZE = constants.getattr("BUF_SIZE")
+    with open(file_data, "rb") as f:
+        buffered_f = io.BufferedReader(f, buffer_size=BUF_SIZE)
+        for block in iter(lambda: buffered_f.read(BUF_SIZE), b""):
+            hasher.update(block)
+    fileHashes[str(file_data)] = hasher.hexdigest()
+    return hasher.hexdigest()
 
 def remove_dupes_hash(username, model_id, mediatype=None):
     if not config_data.get_hash(mediatype=mediatype):
