@@ -5,7 +5,7 @@ import ofscraper.utils.constants as constants
 def final_log(data):
     log = logging.getLogger("shared") 
     #give space to last long
-    if len(data)<2:
+    if len(data)<3:
         return
     elif constants.getattr("SHOW_RESULTS_LOG"):
         #give time for last long to show
