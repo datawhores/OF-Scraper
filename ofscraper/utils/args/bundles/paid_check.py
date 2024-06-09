@@ -5,7 +5,7 @@ import cloup as click
 import ofscraper.utils.args.arguments.helpers.type as type
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
 from ofscraper.utils.args.bundles.common import common_args
-from ofscraper.utils.args.check import check_mode_changes
+from ofscraper.utils.args.bundles.helpers.check import check_mode_changes
 
 
 def paid_check_args(func):
