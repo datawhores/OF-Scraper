@@ -41,7 +41,7 @@ def async_check_400(exception):
 def check_400(exception):
     if is_provided_exception_number(exception,400):
         auth_warning_print.print_auth_warning() 
-        time.sleep(8)  
+        time.sleep(8)
 
 
 
@@ -337,6 +337,7 @@ class sessionManager:
         read_timeout=None,
         sleeper=None,
         forced=False,
+        skip_checks=False,
     ):
         json = json or None
         params = params or None
@@ -386,7 +387,7 @@ class sessionManager:
                         json=json,
                         data=data,
                     )
-
+                    
                     if r.status_code == 404:
                         pass
                     elif not r.ok:
@@ -396,8 +397,9 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    is_rate_limited(E,sleeper)  
-                    check_400(E)
+                    if not skip_checks:
+                        is_rate_limited(E,sleeper)  
+                        check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     raise E
@@ -427,6 +429,7 @@ class sessionManager:
         read_timeout=None,
         sleeper=None,
         forced=False,
+        skip_checks=False
         *args,
         **kwargs,
     ):
@@ -515,7 +518,8 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    async_is_rate_limited(E,sleeper) 
+                    if not skip_checks:
+                        async_is_rate_limited(E,sleeper) 
                     #only call from sync req like "me"
                     #check_400(E)
                     log.traceback_(E)

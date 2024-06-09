@@ -37,7 +37,7 @@ def check_cdm():
             wait_max=constants.getattr("CDM_MAX_WAIT"),
             refresh=False,
         ) as c:
-            with c.requests(url=url,headers={}) as r:
+            with c.requests(url=url,headers={},skip_checks=True,sign=False,forced=False) as r:
                 if r.ok:
                     console.print("[green] CDM service seems to be working\n[/green]")
                     console.print(
