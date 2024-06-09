@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.args.bundles.metadata import metadata_args
+from ofscraper.utils.args.parse.bundles.metadata import metadata_args
 
 
 @metadata_args

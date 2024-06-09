@@ -2,9 +2,9 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.arguments.helpers.type as type
-from ofscraper.utils.args.bundles.advanced_common import advanced_args
-from ofscraper.utils.args.bundles.common import common_args
+import ofscraper.utils.args.parse.arguments.helpers.type as type
+from ofscraper.utils.args.parse.bundles.advanced_common import advanced_args
+from ofscraper.utils.args.parse.bundles.common import common_args
 
 
 def manual_args(func):

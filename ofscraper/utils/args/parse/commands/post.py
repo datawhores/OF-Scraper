@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.args.bundles.post_check import post_check_args
+from ofscraper.utils.args.parse.bundles.post_check import post_check_args
 
 
 @post_check_args

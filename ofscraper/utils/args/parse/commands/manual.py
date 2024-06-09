@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.args.bundles.manual import manual_args
+from ofscraper.utils.args.parse.bundles.manual import manual_args
 
 
 @manual_args

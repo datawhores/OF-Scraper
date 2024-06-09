@@ -5,17 +5,17 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
-from ofscraper.utils.args.arguments.advanced_processing import (
+from ofscraper.utils.args.parse.arguments.advanced_processing import (
     advanced_processing_options,
 )
-from ofscraper.utils.args.arguments.advanced_user_filter import (
+from ofscraper.utils.args.parse.arguments.advanced_user_filter import (
     advanced_userfilters_options,
 )
-from ofscraper.utils.args.arguments.automatic import automatic_options
-from ofscraper.utils.args.arguments.content import content_options
-from ofscraper.utils.args.arguments.user_list import userlist_options
-from ofscraper.utils.args.arguments.user_select import user_select_options
-from ofscraper.utils.args.arguments.user_sort import user_sorting_options
+from ofscraper.utils.args.parse.arguments.automatic import automatic_options
+from ofscraper.utils.args.parse.arguments.content import content_options
+from ofscraper.utils.args.parse.arguments.user_list import userlist_options
+from ofscraper.utils.args.parse.arguments.user_select import user_select_options
+from ofscraper.utils.args.parse.arguments.user_sort import user_sorting_options
 
 
 def main_program_args(func):

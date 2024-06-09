@@ -2,8 +2,8 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.arguments.helpers.date as date_helper
-import ofscraper.utils.args.arguments.helpers.type as type
+import ofscraper.utils.args.parse.arguments.helpers.date as date_helper
+import ofscraper.utils.args.parse.arguments.helpers.type as type
 
 # Define individual options
 posts_option = click.option(

@@ -6,7 +6,7 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
-import ofscraper.utils.args.arguments.helpers.type as type
+import ofscraper.utils.args.parse.arguments.helpers.type as type
 
 quality_option = click.option(
     "-q",

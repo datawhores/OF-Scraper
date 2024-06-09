@@ -2,10 +2,10 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.arguments.helpers.type as type
-from ofscraper.utils.args.bundles.advanced_common import advanced_args
-from ofscraper.utils.args.bundles.common import common_args
-from ofscraper.utils.args.bundles.helpers.check import check_mode_changes
+import ofscraper.utils.args.parse.arguments.helpers.type as type
+from ofscraper.utils.args.parse.bundles.advanced_common import advanced_args
+from ofscraper.utils.args.parse.bundles.common import common_args
+from ofscraper.utils.args.parse.bundles.helpers.check import check_mode_changes
 
 
 def post_check_args(func):

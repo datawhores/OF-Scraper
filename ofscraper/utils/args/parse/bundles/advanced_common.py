@@ -2,7 +2,7 @@ import functools
 
 import cloup as click
 
-from ofscraper.utils.args.arguments.advanced_program import advanced_options
+from ofscraper.utils.args.parse.arguments.advanced_program import advanced_options
 
 
 def advanced_args(func):
