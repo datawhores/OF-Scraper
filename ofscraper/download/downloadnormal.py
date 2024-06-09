@@ -17,7 +17,7 @@ import traceback
 from functools import partial
 
 import ofscraper.download.shared.globals.globals as common_globals
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils

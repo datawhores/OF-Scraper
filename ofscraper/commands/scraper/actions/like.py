@@ -17,7 +17,7 @@ import time
 import random
 
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit

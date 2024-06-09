@@ -12,7 +12,7 @@ from mpegdash.parser import MPEGDASHParser
 
 import ofscraper.classes.base as base
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.utils.args.quality as quality
+import ofscraper.utils.args.helpers.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates

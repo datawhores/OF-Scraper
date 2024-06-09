@@ -2,7 +2,7 @@ import contextlib
 import os
 import sys
 
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.constants as constants
 
 

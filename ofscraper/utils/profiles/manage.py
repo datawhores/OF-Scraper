@@ -4,8 +4,8 @@ import shutil
 from rich import print
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.args.write as write_args
+import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants

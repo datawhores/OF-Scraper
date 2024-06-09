@@ -21,7 +21,7 @@ from rich.console import Console
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()

@@ -1,5 +1,5 @@
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.args.write as write_args
+import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.mutators.write as write_args
 
 
 def resetUserFilters():

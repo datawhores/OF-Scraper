@@ -22,8 +22,8 @@ import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
 import ofscraper.models.selector as userselector
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.args.write as write_args
+import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools

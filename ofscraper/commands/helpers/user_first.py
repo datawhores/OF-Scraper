@@ -2,7 +2,7 @@ import logging
 import traceback
 
 
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.scraper.post import post_media_process

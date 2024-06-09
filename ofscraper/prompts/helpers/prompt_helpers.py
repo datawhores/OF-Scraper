@@ -11,7 +11,7 @@ import ofscraper.models.selector as userselector
 import ofscraper.prompts.helpers.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings

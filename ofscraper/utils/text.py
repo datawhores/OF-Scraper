@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 

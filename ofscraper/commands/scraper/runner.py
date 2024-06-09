@@ -7,7 +7,7 @@ import ofscraper.commands.scraper.actions.like as like_action
 import ofscraper.db.operations as operations
 import ofscraper.models.selector as userselector
 import ofscraper.utils.actions as actions
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils

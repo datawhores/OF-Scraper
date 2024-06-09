@@ -24,7 +24,7 @@ import ofscraper.prompts.helpers.prompt_helpers as prompt_helpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.constants as constants
 
 console = Console()

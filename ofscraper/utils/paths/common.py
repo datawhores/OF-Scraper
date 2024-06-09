@@ -3,7 +3,7 @@ import pathlib
 import re
 
 import ofscraper.const.constants as constants
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.constants as constants_attr

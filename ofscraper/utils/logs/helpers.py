@@ -1,6 +1,6 @@
 import logging
 
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 
 senstiveDict = {}
 

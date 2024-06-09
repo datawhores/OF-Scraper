@@ -8,7 +8,7 @@ import ofscraper.utils.args.commands.metadata as metadata
 import ofscraper.utils.args.commands.paid as paid
 import ofscraper.utils.args.commands.post as post
 import ofscraper.utils.args.commands.story as story
-import ofscraper.utils.args.write as write_args
+import ofscraper.utils.args.mutators.write as write_args
 
 
 class AutoDotDict(dict):

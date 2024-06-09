@@ -1,7 +1,7 @@
 from rich.console import Console
 from rich.theme import Theme
 
-from ofscraper.utils.args.output import low_output
+from ofscraper.utils.args.helpers.output import low_output
 
 theme = Theme(
     {

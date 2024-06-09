@@ -8,7 +8,7 @@ import traceback
 import aioprocessing
 from rich.logging import RichHandler
 
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.mutators.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes as log_class
