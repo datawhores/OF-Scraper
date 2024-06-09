@@ -21,7 +21,7 @@ def manual_args(func):
             help="A space or comma seperated list of urls to download",
             default=None,
             multiple=True,
-            type=type.check_strhelper,
+            type=type.check_modes_strhelper,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []
             ),
@@ -31,7 +31,7 @@ def manual_args(func):
             "--file",
             help="file with line-separated URL(s) for downloading",
             default=None,
-            type=type.check_filehelper,
+            type=type.check_modes_filehelper,
             multiple=True,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []

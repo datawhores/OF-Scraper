@@ -30,7 +30,7 @@ def story_check_args(func):
             help="Scan stories/highlights via username(s)",
             default=None,
             multiple=True,
-            type=type.check_strhelper,
+            type=type.check_modes_strhelper,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []
             ),
@@ -40,7 +40,7 @@ def story_check_args(func):
             "--file",
             help="Scan stories/highlights via a file with line-separated URL(s)",
             default=None,
-            type=type.check_filehelper,
+            type=type.check_modes_filehelper,
             multiple=True,
             callback=lambda ctx, param, value: (
                 list(set(itertools.chain.from_iterable(value))) if value else []

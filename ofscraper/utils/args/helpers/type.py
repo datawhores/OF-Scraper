@@ -5,7 +5,7 @@ import re
 import arrow
 
 
-def check_strhelper(x):
+def check_modes_strhelper(x):
     temp = None
     if isinstance(x, list):
         temp = x
@@ -14,7 +14,7 @@ def check_strhelper(x):
     return temp
 
 
-def check_filehelper(x):
+def check_modes_filehelper(x):
     if isinstance(x, str) and pathlib.Path(x).exists():
         with open(x, "r") as _:
             return _.readlines()
