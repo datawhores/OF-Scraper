@@ -23,6 +23,12 @@ import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
 
 
+TOO_MANY="too_many"
+AUTH="auth"
+FORCED_NEW="get_new_sign"
+SIGN="get_sign"
+COOKIES="get_cookies"
+HEADERS="create_header"
 
 def is_rate_limited(exception,sleeper):
     if is_provided_exception_number(exception,429,504):
@@ -43,17 +49,6 @@ def check_400(exception):
         auth_warning_print.print_auth_warning() 
         time.sleep(8)
 
-
-
-            
-
-
-            
-
-            
-            
-       
-        
 
 
 
@@ -302,7 +297,7 @@ class sessionManager:
     ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url, forced=forced) if sign is None else headers
+        headers = self._create_sign(headers, url, forced=forced) if sign else headers
         return headers
 
     def _create_sign(self, headers, url,forced=None):
@@ -326,7 +321,6 @@ class sessionManager:
         params=None,
         redirects=True,
         data=None,
-        sign=None,
         retries=None,
         wait_min=None,
         wait_max=None,
@@ -336,8 +330,9 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
-        forced=False,
-        skip_checks=False,
+        exceptions=[TOO_MANY,AUTH],
+        actions=[FORCED_NEW,SIGN,COOKIES,HEADERS],
+        **kwargs
     ):
         json = json or None
         params = params or None
@@ -347,6 +342,8 @@ class sessionManager:
         max = wait_max or self._wait_max
         retries = retries or self._retries
         sleeper = sleeper or self._sleeper
+        exceptions=exceptions or []
+        actions=actions or []
         for _ in Retrying(
             retry=retry_if_not_exception_type(
                 (KeyboardInterrupt, asyncio.TimeoutError)
@@ -366,11 +363,11 @@ class sessionManager:
                     sleeper.do_sleep()
                     # remake each time
                     headers = (
-                    self._create_headers(headers, url, sign,forced)
-                    if (headers is None) or forced or sign
+                    self._create_headers(headers, url, SIGN in actions,FORCED_NEW in actions)
+                    if (SIGN in actions or FORCED_NEW in actions or HEADERS in actions)
                     else None
                     )
-                    cookies = self._create_cookies() if cookies is None else None
+                    cookies = self._create_cookies() if COOKIES in actions else None
                     r = self._httpx_funct(
                         method,
                         timeout=httpx.Timeout(
@@ -397,8 +394,9 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if not skip_checks:
+                    if TOO_MANY  in exceptions:
                         is_rate_limited(E,sleeper)  
+                    if AUTH in exceptions:
                         check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
@@ -420,7 +418,6 @@ class sessionManager:
         params=None,
         redirects=True,
         data=None,
-        sign=None,
         log=None,
         sem=None,
         total_timeout=None,
@@ -428,8 +425,8 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
-        forced=False,
-        skip_checks=False
+        exceptions=[AUTH],
+        actions=[FORCED_NEW,SIGN,COOKIES,HEADERS],
         *args,
         **kwargs,
     ):
@@ -441,6 +438,8 @@ class sessionManager:
         retries = retries or self._retries
         sem = sem or self._sem
         sleeper = sleeper or self._sleeper
+        exceptions=exceptions or []
+        actions=actions or []
         async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
@@ -464,12 +463,12 @@ class sessionManager:
                 try:
                     await sleeper.async_do_sleep()
                     headers = (
-                        self._create_headers(headers, url, sign, forced)
-                        if (headers is None) or forced or sign
+                        self._create_headers(headers, url,SIGN in actions, FORCED_NEW in actions)
+                        if (SIGN in actions or FORCED_NEW in actions or HEADERS in actions)
                         else headers
                     )
 
-                    cookies = self._create_cookies() if cookies is None else None
+                    cookies = self._create_cookies() if COOKIES in actions else None
                     json = json
                     params = params
                     if self._backend == "aio":
@@ -518,7 +517,7 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if not skip_checks:
+                    if not TOO_MANY in exceptions:
                         async_is_rate_limited(E,sleeper) 
                     #only call from sync req like "me"
                     #check_400(E)

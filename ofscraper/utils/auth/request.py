@@ -90,10 +90,8 @@ def get_request_auth_deviint():
         
         with c.requests(
             constants.getattr("DEVIINT"),
-            headers=False,
-            cookies=False,
-            sign=False,
-            skip_checks=True
+            actions=[],
+            exceptions=[]
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
@@ -113,11 +111,10 @@ def get_request_auth_sneaky():
     ) as c:
         with c.requests(
             constants.getattr("SNEAKY"),
-            headers=False,
-            cookies=False,
-            sign=False,
+            actions=[],
+            exceptions=[],
         forced=False,
-        skip_checks=True
+        skip_expection_check=True
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
@@ -137,11 +134,10 @@ def get_request_auth_growik():
     ) as c:
         with c.requests(
             constants.getattr("GROWIK"),
-            headers=False,
-            cookies=False,
-            sign=False,
+            actions=[],
+            exceptions=[],
         forced=False,
-        skip_checks=True
+        skip_expection_check=True
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
@@ -159,10 +155,8 @@ def get_request_auth_digitalcriminals():
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
-            headers=False,
-            cookies=False,
-            sign=False,
-            skip_checks=True
+            actions=[],
+            exceptions=[],
         ) as r:
             content = r.json_()
             static_param = content["static_param"]

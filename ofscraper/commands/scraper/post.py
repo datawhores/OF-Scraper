@@ -42,7 +42,7 @@ from ofscraper.db.operations_.profile import (
     check_profile_table_exists,
     get_profile_info,
 )
-from ofscraper.utils.args.helpers.areas import (
+from ofscraper.utils.args.accessors.areas import (
     get_download_area,
     get_final_posts_area,
     get_like_area,

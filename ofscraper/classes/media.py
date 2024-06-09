@@ -12,7 +12,7 @@ from mpegdash.parser import MPEGDASHParser
 
 import ofscraper.classes.base as base
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.utils.args.helpers.quality as quality
+import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
@@ -340,7 +340,7 @@ class Media(base.base):
             log=self._log,
             refresh=False,
         ) as c:
-            async with c.requests_async(url=self.mpd, params=params,forced=constants.getattr("MPD_FORCE_KEY"),sign=True) as r:
+            async with c.requests_async(url=self.mpd, params=params,forced=constants.getattr("MPD_FORCE_KEY")) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
                 return self._cached_parse_mpd
 

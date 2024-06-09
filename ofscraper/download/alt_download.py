@@ -65,6 +65,7 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
+from ofscraper.classes.sessionmanager import FORCED_NEW,SIGN
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -218,7 +219,6 @@ async def send_req_inner(c, ele, item, placeholderObj):
         )
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
-            sign=True
 
         ) as l:
             item["total"] = item["total"] or int(l.headers.get("content-length"))

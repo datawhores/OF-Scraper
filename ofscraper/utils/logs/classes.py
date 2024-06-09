@@ -153,7 +153,7 @@ class DiscordHandler(logging.Handler):
                         "thread_name": date or dates_manager.getLogDate().get("now"),
                         "content": date or dates_manager.getLogDate().get("now"),
                     },
-                    skip_checks=True
+                    skip_expection_check=True
                 ) as _:
                     pass
             except Exception:
@@ -185,9 +185,8 @@ class DiscordHandler(logging.Handler):
             with sess.requests(
                 self._url,
                 method="post",
-                cookies=False,
-                sign=False,
-                skip_checks=True,
+                actions=[],
+                exceptions=[],
                 headers={"Content-type": "application/json"},
                 json={
                     "content": record,
@@ -209,15 +208,14 @@ class DiscordHandler(logging.Handler):
             async with sess.requests_async(
                 self._url,
                 method="post",
-                cookies=False,
-                sign=False,
+                 actions=[],
+                exceptions=[],
                 headers={"Content-type": "application/json"},
                 json={
                     "content": record,
                     # "thread_name": self._thread,
                 },
-                skip_checks=True
-
+                skip_expection_check=True
             ) as r:
                 if not r.status == 204:
                     raise Exception

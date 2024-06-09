@@ -108,7 +108,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_checks=True
+            skip_expection_check=True
         ) as r:
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -145,7 +145,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_checks=True
+            skip_expection_check=True
 
         ) as r:
             httpcontent = await r.text_()
@@ -191,7 +191,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_checks=True
+            skip_expection_check=True
 
         ) as r:
             data = await r.json_()
