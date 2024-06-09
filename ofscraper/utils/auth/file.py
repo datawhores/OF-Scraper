@@ -33,7 +33,8 @@ def read_auth():
                 auth = write_auth(auth)
             if auth_schema.auth_key_null(auth):
                 auth = make.make_auth(auth)
-            return auth
+        
+        return auth
 
 
 def edit_auth():
@@ -42,7 +43,7 @@ def edit_auth():
             auth = helpers.get_auth_dict()
             auth = make.make_auth(auth)
             console.print("Your `auth.json` file has been edited.")
-            return auth
+        return auth
 
 
 def write_auth(auth):

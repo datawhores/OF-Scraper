@@ -10,7 +10,6 @@ import ofscraper.utils.paths.check as check
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
-import ofscraper.utils.auth.warning.check as auth_warning_check
 
 
 
@@ -22,9 +21,6 @@ def check_auth():
             while True:
                 log.warning("Auth Failed")
                 make.make_auth(auth=auth_file.read_auth())
-                if auth_warning_check.check_auth_warning():
-                    break
-            continue
         break
 
 
