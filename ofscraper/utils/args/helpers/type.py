@@ -114,6 +114,7 @@ def mediatype_helper(x):
 def action_helper(x):
     select = re.split(",| ", x)
     select = list(map(lambda x: x.lower(), select))
+    select= final_output_dupe_helper(select)
     if "like" in select and "unlike" in select:
         raise argparse.ArgumentTypeError(
             "You can not select like and unlike at the same time"
@@ -148,7 +149,8 @@ def username_helper(x):
     elif isinstance(x, str):
         temp = re.split(",| ", x)
     temp = list(filter(lambda x: len(x) > 0, temp))
-    return list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
+    temp=list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
+    return final_output_dupe_helper(temp)
 
 
 def label_helper(x):
@@ -157,7 +159,8 @@ def label_helper(x):
         temp = x
     elif isinstance(x, str):
         temp = re.split(",| ", x)
-    return list(map(lambda x: x.lower(), temp))
+    temp=list(map(lambda x: x.lower(), temp))
+    return final_output_dupe_helper(temp)
 
 
 def arrow_helper(x):
