@@ -11,13 +11,13 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.shared.classes.retries import get_cmd_download_req_retries
+from ofscraper.download.shared.retries import get_cmd_download_req_retries
 from ofscraper.classes.sessionmanager.download import cdm_session
 from ofscraper.download.shared.general import get_medialog
 

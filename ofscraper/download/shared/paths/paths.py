@@ -5,7 +5,7 @@ import platform
 import shutil
 from collections.abc import Iterable
 
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.download.shared.log import get_medialog

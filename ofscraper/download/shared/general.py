@@ -18,7 +18,7 @@ from functools import partial
 
 from humanfriendly import format_size
 
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.cache as cache

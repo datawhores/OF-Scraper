@@ -1,6 +1,6 @@
 import math
 
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 
 
 def convert_num_bytes(num_bytes: int) -> str:

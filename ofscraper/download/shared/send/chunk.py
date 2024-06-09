@@ -4,7 +4,7 @@ from ofscraper.download.shared.general import (
     get_medialog,
 )
 import ofscraper.utils.constants as constants
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 from ofscraper.utils.logs.helpers import getNumber
 
 

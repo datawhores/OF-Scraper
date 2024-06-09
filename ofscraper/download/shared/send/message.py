@@ -1,7 +1,7 @@
 import asyncio
 import platform
 
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 
 
 def set_send_msg():

@@ -1,6 +1,6 @@
 import asyncio
 import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 
 import ofscraper.utils.settings as settings
 

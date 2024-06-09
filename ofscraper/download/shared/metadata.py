@@ -4,7 +4,7 @@ from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.paths.media as media
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
@@ -14,7 +14,7 @@ from ofscraper.db.operations_.media import (
     prev_download_media_data,
 )
 from ofscraper.download.shared.log import get_medialog
-from ofscraper.download.shared.classes.retries import get_download_retries
+from ofscraper.download.shared.retries import get_download_retries
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 

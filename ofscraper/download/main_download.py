@@ -25,11 +25,13 @@ except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.download.shared.classes.retries import download_retry,get_download_retries
+from ofscraper.download.shared.retries import get_download_retries
+from ofscraper.classes.download_retries import download_retry
+
 from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
