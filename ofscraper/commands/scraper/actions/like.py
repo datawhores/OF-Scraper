@@ -16,7 +16,7 @@ import logging
 import time
 import random
 
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -103,12 +103,10 @@ def _like(model_id, username,ids: list, like_action: bool):
 
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
-        with sessionManager.sessionManager(
+        with sessionManager.OFSessionManager(
             sem=1,
             backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             tasks = []
             task = progress_utils.add_like_task(f"checked posts...\n", total=len(ids))

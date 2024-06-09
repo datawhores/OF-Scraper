@@ -16,7 +16,7 @@ import contextvars
 import logging
 import traceback
 
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
@@ -83,11 +83,8 @@ async def get_lists():
     output = []
     tasks = []
     page_count = 0
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         sem=constants.getattr("SUBSCRIPTION_SEMS"),
-        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         tasks.append(asyncio.create_task(scrape_for_list(c)))
         page_task = progress_utils.add_userlist_task(
@@ -184,11 +181,8 @@ async def get_list_users(lists):
     output = []
     tasks = []
     page_count = 0
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         sem=constants.getattr("SUBSCRIPTION_SEMS"),
-        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
         page_task = progress_utils.add_userlist_task(

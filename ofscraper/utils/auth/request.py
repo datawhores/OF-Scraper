@@ -17,7 +17,7 @@ import logging
 import time
 from urllib.parse import urlparse
 
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
@@ -90,8 +90,6 @@ def get_request_auth_deviint():
         
         with c.requests(
             constants.getattr("DEVIINT"),
-            actions=[],
-            exceptions=[]
         ) as r:
             content = r.json_()
             static_param = content["static_param"]
@@ -111,8 +109,6 @@ def get_request_auth_sneaky():
     ) as c:
         with c.requests(
             constants.getattr("SNEAKY"),
-            actions=[],
-            exceptions=[],
         forced=False,
         skip_expection_check=True
         ) as r:
@@ -134,8 +130,6 @@ def get_request_auth_growik():
     ) as c:
         with c.requests(
             constants.getattr("GROWIK"),
-            actions=[],
-            exceptions=[],
         forced=False,
         skip_expection_check=True
         ) as r:
@@ -155,8 +149,6 @@ def get_request_auth_digitalcriminals():
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
-            actions=[],
-            exceptions=[],
         ) as r:
             content = r.json_()
             static_param = content["static_param"]

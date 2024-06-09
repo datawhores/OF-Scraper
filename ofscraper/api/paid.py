@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.api.common.logs as common_logs
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
@@ -155,11 +155,8 @@ async def create_tasks_scrape_paid():
     min_posts = 80
     tasks = []
     page_count = 0
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         sem=constants.getattr("SCRAPE_PAID_SEMS"),
-        retries=constants.getattr("API_PAID_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         allpaid = cache.get("purchased_all", default=[])
         log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")

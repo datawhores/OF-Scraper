@@ -18,7 +18,7 @@ import traceback
 from rich.console import Console
 
 import ofscraper.api.subscriptions.helpers as helpers
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -33,11 +33,8 @@ async def get_subscriptions(subscribe_count, account="active"):
     task1 = progress_utils.add_userlist_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         sem=constants.getattr("SUBSCRIPTION_SEMS"),
-        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         if account == "active":
             out = await activeHelper(subscribe_count, c)

@@ -65,7 +65,7 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
-from ofscraper.classes.sessionmanager import FORCED_NEW,SIGN
+from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW,SIGN
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"

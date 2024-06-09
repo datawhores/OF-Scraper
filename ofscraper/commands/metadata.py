@@ -17,7 +17,7 @@ import traceback
 import arrow
 
 import ofscraper.api.init as init
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
@@ -220,11 +220,8 @@ def prepare():
     profile_tools.print_current_profile()
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)
-    session = sessionManager.sessionManager(
+    session = sessionManager.OFSessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
-        retries=constants.getattr("API_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
     return userdata, session

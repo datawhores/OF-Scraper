@@ -9,7 +9,7 @@ import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.models.selector as selector
@@ -231,12 +231,9 @@ async def paid_failback(post_id, model_id, username):
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         backend="httpx",
         sem=constants.getattr("API_REQ_CHECK_MAX"),
-        retries=constants.getattr("API_CHECK_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         data = await paid.get_paid_posts(username, model_id, c=c) or []
         posts = list(

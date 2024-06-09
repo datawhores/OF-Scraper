@@ -1,7 +1,7 @@
 import logging
 
 import ofscraper.api.init as init
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.commands.scraper.actions.download as download_action
 import ofscraper.commands.scraper.actions.like as like_action
 import ofscraper.db.operations as operations
@@ -58,11 +58,8 @@ def runner():
                 normal_data=process_users_actions_normal(userdata, session)
         final_log(normal_data+scrape_paid_data+user_first_data)
 def prepare():
-    session = sessionManager.sessionManager(
+    session = sessionManager.OFSessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
-        retries=constants.getattr("API_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
 

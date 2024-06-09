@@ -11,7 +11,7 @@ from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
 
 import ofscraper.classes.base as base
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -328,7 +328,7 @@ class Media(base.base):
             "Key-Pair-Id": self.keypair,
             "Signature": self.signature,
         }
-        async with sessionManager.sessionManager(
+        async with sessionManager.OFSessionManager(
             retries=constants.getattr("MPD_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),

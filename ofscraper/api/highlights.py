@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.api.common.logs as common_logs
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -367,12 +367,9 @@ def get_individual_highlights(id):
 
 
 def get_individual_stories(id, c=None):
-    with sessionManager.sessionManager(
+    with sessionManager.OFSessionManager(
         backend="httpx",
-        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id),forced=constants.getattr("API_FORCE_KEY")) as r:
+        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
             log.trace(f"highlight raw highlight individua; {r.json_()}")
             return r.json()

@@ -4,10 +4,9 @@ import traceback
 
 import httpx
 
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 
 
@@ -37,8 +36,7 @@ def check_cdm():
             wait_max=constants.getattr("CDM_MAX_WAIT"),
             refresh=False,
         ) as c:
-            with c.requests(url=url,headers={}, actions=[],
-            exceptions=[]) as r:
+            with c.requests(url=url,headers={}) as r:
                 if r.ok:
                     console.print("[green] CDM service seems to be working\n[/green]")
                     console.print(

@@ -3,7 +3,7 @@ import copy
 import logging
 import re
 
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
@@ -185,8 +185,6 @@ class DiscordHandler(logging.Handler):
             with sess.requests(
                 self._url,
                 method="post",
-                actions=[],
-                exceptions=[],
                 headers={"Content-type": "application/json"},
                 json={
                     "content": record,
@@ -208,8 +206,6 @@ class DiscordHandler(logging.Handler):
             async with sess.requests_async(
                 self._url,
                 method="post",
-                 actions=[],
-                exceptions=[],
                 headers={"Content-type": "application/json"},
                 json={
                     "content": record,

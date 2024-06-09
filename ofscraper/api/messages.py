@@ -18,7 +18,7 @@ import traceback
 import arrow
 
 import ofscraper.api.common.logs as common_logs
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -363,11 +363,8 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
 
 
 def get_individual_post(model_id, postid):
-    with sessionManager.sessionManager(
+    with sessionManager.OFSessionManager(
         backend="httpx",
-        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)

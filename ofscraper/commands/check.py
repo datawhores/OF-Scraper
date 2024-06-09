@@ -18,7 +18,7 @@ import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
@@ -181,12 +181,9 @@ async def post_check_runner():
 async def post_check_retriver():
     user_dict = {}
     links = list(url_helper())
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         backend="httpx",
         sem=constants.getattr("API_REQ_CHECK_MAX"),
-        retries=constants.getattr("API_CHECK_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         for ele in links:
             name_match = re.search(
@@ -347,11 +344,8 @@ async def message_checker_runner():
 
 async def message_check_retriver():
     links = list(url_helper())
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         backend="httpx",
-        retries=constants.getattr("API_CHECK_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         for item in links:
             num_match = re.search(
@@ -438,12 +432,9 @@ async def purchase_checker_runner():
 async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         backend="httpx",
         sem=constants.getattr("API_REQ_CHECK_MAX"),
-        retries=constants.getattr("API_CHECK_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         for name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
@@ -501,12 +492,9 @@ async def stories_checker_runner():
 @run
 async def stories_check_retriver():
     user_dict = {}
-    async with sessionManager.sessionManager(
+    async with sessionManager.OFSessionManager(
         backend="httpx",
         sem=constants.getattr("API_REQ_CHECK_MAX"),
-        retries=constants.getattr("API_CHECK_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         for user_name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
@@ -590,12 +578,9 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        async with sessionManager.sessionManager(
+        async with sessionManager.OFSessionManager(
             backend="httpx",
-            sem=constants.getattr("API_REQ_CHECK_MAX"),
-            retries=constants.getattr("API_CHECK_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            sem=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             cache.set(

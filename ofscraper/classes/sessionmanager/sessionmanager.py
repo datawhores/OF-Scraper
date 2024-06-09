@@ -330,8 +330,8 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
-        exceptions=[TOO_MANY,AUTH],
-        actions=[FORCED_NEW,SIGN,COOKIES,HEADERS],
+        exceptions=[],
+        actions=[],
         **kwargs
     ):
         json = json or None
@@ -425,8 +425,8 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
-        exceptions=[AUTH],
-        actions=[FORCED_NEW,SIGN,COOKIES,HEADERS],
+        exceptions=[],
+        actions=[],
         *args,
         **kwargs,
     ):
@@ -581,3 +581,7 @@ class sessionManager:
         if callable(input):
             return input()
         return input
+
+
+
+   
