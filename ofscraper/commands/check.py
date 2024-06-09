@@ -37,6 +37,8 @@ from ofscraper.commands.helpers.strings import check_str
 from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
 from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.checkers import check_auth
+
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -143,6 +145,7 @@ async def data_refill(media_id, post_id, target_name, model_id):
 
 def checker():
     args = read_args.retriveArgs()
+    check_auth()
     if args.command == "post_check":
         post_checker()
     elif args.command == "msg_check":
