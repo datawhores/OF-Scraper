@@ -31,7 +31,7 @@ download_area_option = click.option(
     help="""
     Perform download in specified areas (comma or space separated).
     Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
-    Has preference over --posts
+    Has preference over --posts for download action
     """,
     default=[],
     required=False,
@@ -48,7 +48,7 @@ like_area_option = click.option(
     help="""
     Perform like/unlike in selected areas (comma or space separated).
     Options: Archived, Timeline, Pinned, Labels, All
-    Has preference over --posts
+    Has preference over --posts for like action
     """,
     default=[],
     required=False,
