@@ -118,10 +118,6 @@ def action_helper(x):
         raise argparse.ArgumentTypeError(
             "You can not select like and unlike at the same time"
         )
-    elif "download" in select and "metadata" in select:
-        raise argparse.ArgumentTypeError(
-            "You can not select metadata and download at the same time"
-        )
 
     elif (
         len(
