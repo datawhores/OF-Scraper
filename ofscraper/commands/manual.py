@@ -22,10 +22,13 @@ import ofscraper.utils.system.network as network
 from ofscraper.commands.helpers.strings import download_manual_str, post_str_manual
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.checkers import check_auth
+
 
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
+    check_auth()
     try:
         network.check_cdm()
         allow_manual_dupes()
