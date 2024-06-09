@@ -41,7 +41,7 @@ def posttype_helper(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
-    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
+    if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
@@ -68,7 +68,7 @@ def download_helper(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z\*\+]", "", str.title(x)), x))
-    if len(list(filter(lambda y: y not in choices and y[1:] not in choices), x)) > 0:
+    if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
@@ -81,7 +81,7 @@ def like_helper(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
-    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
+    if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
@@ -94,7 +94,7 @@ def post_check_area(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
-    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
+    if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
