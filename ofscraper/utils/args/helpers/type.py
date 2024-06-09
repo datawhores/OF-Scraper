@@ -45,7 +45,7 @@ def posttype_helper(x):
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
-    return x
+    return final_output_dupe_helper(x)
 
 
 def download_helper(x):
@@ -72,8 +72,7 @@ def download_helper(x):
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
-    seen = set()
-    return [post for post in x if post not in seen and not seen.add(post)]
+    return final_output_dupe_helper(x)
 
 
 def like_helper(x):
@@ -85,8 +84,7 @@ def like_helper(x):
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
-    seen = set()
-    return [post for post in x if post not in seen and not seen.add(post)]
+    return final_output_dupe_helper(x)
 
 
 def post_check_area(x):
@@ -98,8 +96,7 @@ def post_check_area(x):
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
-    seen = set()
-    return [post for post in x if post not in seen and not seen.add(post)]
+    return final_output_dupe_helper(x)
 
 
 def mediatype_helper(x):
@@ -111,8 +108,7 @@ def mediatype_helper(x):
         raise argparse.ArgumentTypeError(
             "error: argument -o/--mediatype: invalid choice: (choose from 'images','audios','videos','text')"
         )
-    seen = set()
-    return [post for post in x if post not in seen and not seen.add(post)]
+    return final_output_dupe_helper(x)
 
 
 def action_helper(x):
@@ -188,3 +184,7 @@ def arrow_helper(x):
 
 def filter_helper(choices,selections):
     return list(filter((lambda y: y not in choices and y[1:] not in choices and y[:1] not in choices), selections))
+
+def final_output_dupe_helper(x):
+    seen = set()
+    return [post for post in x if post not in seen and not seen.add(post)]
