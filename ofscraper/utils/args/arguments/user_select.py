@@ -3,7 +3,7 @@ import re
 
 import cloup as click
 
-import ofscraper.utils.args.helpers.type as type
+import ofscraper.utils.args.arguments.helpers.type as type
 
 usernames_option = click.option(
     "-u",

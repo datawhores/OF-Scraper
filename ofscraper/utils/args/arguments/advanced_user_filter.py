@@ -1,6 +1,6 @@
 import cloup as click
 
-import ofscraper.utils.args.helpers.type as type
+import ofscraper.utils.args.arguments.helpers.type as type
 
 promo_price_min_option = click.option(
     "-ppn",

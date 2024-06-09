@@ -2,7 +2,7 @@ import itertools
 
 import cloup as click
 
-import ofscraper.utils.args.helpers.type as type
+import ofscraper.utils.args.arguments.helpers.type as type
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
 from ofscraper.utils.args.bundles.common import common_args
 
