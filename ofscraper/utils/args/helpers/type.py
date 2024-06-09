@@ -137,9 +137,7 @@ def action_helper(x):
     return select
 
 
-def changeargs(newargs):
-    global args
-    args = newargs
+
 
 
 def username_helper(x):
