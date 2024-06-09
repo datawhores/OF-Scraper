@@ -31,7 +31,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.download.shared.classes.session import download_session
+from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.shared.general import (
     get_medialog,
     subProcessVariableInit,

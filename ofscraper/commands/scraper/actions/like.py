@@ -17,6 +17,8 @@ import time
 import random
 
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
+from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
+
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -160,7 +162,7 @@ def get_final_like_log(like_action,username,failed,post,liked):
 def _toggle_like_requests(c, id, model_id):
 
 
-    sleeper=sessionManager.SessionSleep(
+    sleeper=SessionSleep(
         sleep=constants.getattr("SESSION_429_SLEEP_STARTER_VAL"),
         difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
     )
@@ -187,7 +189,7 @@ def _toggle_like_requests(c, id, model_id):
 
 
 def _toggle_unlike_requests(c, id, model_id):
-    sleeper=sessionManager.SessionSleep(
+    sleeper=SessionSleep(
         sleep=constants.getattr("SESSION_429_SLEEP_STARTER_VAL"),
         difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF")
     )

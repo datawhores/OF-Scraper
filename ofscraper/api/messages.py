@@ -19,6 +19,7 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
+from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -475,7 +476,7 @@ Setting Message scan range for {username} from {arrow.get(after).format(constant
 def get_sleeper(reset=False):
     global sleeper
     if not sleeper:
-        sleeper = sessionManager.SessionSleep(sleep=None)
+        sleeper = SessionSleep(sleep=None)
     if reset:
         sleeper.reset_sleep()
     return sleeper
