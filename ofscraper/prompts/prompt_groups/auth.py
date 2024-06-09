@@ -12,6 +12,7 @@ r"""
 """
 
 import sys
+from functools import partial
 
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
@@ -253,7 +254,7 @@ def reset_auth_prompt() -> bool:
     )
     return questions[name]
 
-def check_auth_prompt() -> bool:
+def check_auth_prompt(auth) -> bool:
 
     name = "input"
     questions = promptClasses.batchConverter(
@@ -262,7 +263,7 @@ def check_auth_prompt() -> bool:
                 "type": "list",
                 "name": name,
                 "message": "Is the auth information correct",
-                "call":auth_warning_print.print_auth_warning,
+                "call":partial(auth_warning_print.print_auth_warning,auth),
                 "choices": [
                     Choice(True, "Yes"),
                     Choice(False, "No"),

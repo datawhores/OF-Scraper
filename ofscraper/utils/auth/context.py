@@ -50,6 +50,3 @@ def auth_context():
                 break
             except:
                 continue
-
-
-def auth_context_wrapper()

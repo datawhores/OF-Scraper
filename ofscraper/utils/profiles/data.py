@@ -44,4 +44,4 @@ def get_active_profile():
         profile=read_args.retriveArgs().profile
     else:
         profile=get_current_config_profile()
-    return f'{re.sub("_profile$","",profile)}_profile'
+    return profile

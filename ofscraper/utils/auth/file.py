@@ -26,6 +26,7 @@ console = Console()
 
 def read_auth():
     while True:
+        auth=None
         with auth_context.auth_context():
             old_auth = helpers.get_auth_dict()
             auth = auth_schema.auth_schema(old_auth)
@@ -33,8 +34,8 @@ def read_auth():
                 auth = write_auth(auth)
             if auth_schema.auth_key_null(auth):
                 auth = make.make_auth(auth)
-        
-        return auth
+            break
+    return auth 
 
 
 def edit_auth():

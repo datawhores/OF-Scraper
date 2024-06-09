@@ -7,8 +7,8 @@ import ofscraper.utils.constants as constants
 
 
 
-def  print_auth_warning():
-        auth=auth_requests.auth_file.read_auth()
+def  print_auth_warning(auth=None):
+        auth=auth or auth_requests.auth_file.read_auth()
         auth.update({"app-token": constants.getattr("APP_TOKEN")})
     
         console.get_console().print(textwrap.dedent(
