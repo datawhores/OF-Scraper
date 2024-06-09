@@ -49,10 +49,14 @@ from ofscraper.db.operations_.media import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.final_log import final_log
 from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
+from ofscraper.utils.checkers import check_auth
+
 log = logging.getLogger("shared")
 
 
+
 def metadata():
+    check_auth()
     with progress_utils.setup_activity_progress_live(revert=True,stop=True,setup=True):
         scrape_paid_data=[]
         userfirst_data=[]
