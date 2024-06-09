@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import QueueHandler
 
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.logs.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers

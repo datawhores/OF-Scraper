@@ -29,7 +29,7 @@ import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants

@@ -3,7 +3,7 @@ import re
 import arrow
 from InquirerPy.base import Choice
 
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 
 
 def model_selectorHelper(count, x):

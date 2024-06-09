@@ -4,7 +4,7 @@ import traceback
 
 import ofscraper.commands.helpers.picker as picker
 import ofscraper.runner.exit as exit_manager
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit_context
 import ofscraper.utils.context.stdout as stdout

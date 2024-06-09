@@ -4,7 +4,7 @@ import ofscraper.api.subscriptions.lists as lists
 import ofscraper.api.subscriptions.subscriptions as subscriptions
 import ofscraper.classes.models as models
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
 from ofscraper.utils.live.screens import update_activity_task

@@ -2,7 +2,7 @@ from InquirerPy.separator import Separator
 from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 

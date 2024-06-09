@@ -9,8 +9,8 @@ import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.models.retriver as retriver
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.mutators.read as read_args
-import ofscraper.utils.args.user as user_helper
+import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.args.mutators.user as user_helper
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager

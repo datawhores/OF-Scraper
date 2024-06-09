@@ -1,4 +1,4 @@
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as const
 
 

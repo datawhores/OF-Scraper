@@ -5,7 +5,7 @@ import sys
 
 import certifi
 
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.helpers as log_helpers

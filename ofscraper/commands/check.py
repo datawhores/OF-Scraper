@@ -23,7 +23,7 @@ import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache

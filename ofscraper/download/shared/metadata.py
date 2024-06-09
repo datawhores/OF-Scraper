@@ -6,7 +6,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals.globals as common_globals
 import ofscraper.download.shared.paths.media as media
-import ofscraper.utils.args.mutators.read as read_args
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.hash as hash
 from ofscraper.db.operations_.media import (
