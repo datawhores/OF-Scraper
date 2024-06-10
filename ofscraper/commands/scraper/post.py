@@ -264,7 +264,7 @@ async def process_streamed_posts(model_id, username, c):
             f"{model_id}_full_streams_scrape",
             read_args.retriveArgs().after is not None,
         )
-        return (all_output, streams_posts, "streams")
+        return (all_output, streams_posts, "Streams")
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -587,7 +587,7 @@ async def process_tasks(model_id, username, ele, c=None):
                 medias, posts, area = await results
                 if area in like_area:
                     likeObjs.extend(posts or [])
-                if area in download_area:
+                if area.title() in download_area:
                     mediaObjs.extend(medias or [])
                     postObjs.extend(posts or [])
             except Exception as E:
