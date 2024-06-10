@@ -14,10 +14,8 @@ def filtermediaFinal(media,username,model_id):
         return media
 
     count = 1
-
     helpers.trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
-
     media = helpers.sort_by_date(media)
     count += 1
     helpers.trace_log_media(count, media, "sorted by date initial")
@@ -61,14 +59,11 @@ def filtermediaAreas(media, **kwargs):
 
     helpers.trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
-
     media = helpers.sort_by_date(media)
-    count += 1
-    helpers.trace_log_media(count, media, "sorted by date initial")
 
     media = helpers.post_datesorter(media)
     count += 1
-    helpers.trace_log_media(count, media, "media datesort:")
+    helpers.trace_log_media(count, media, "media datesort")
     log.debug(f"filter {count}-> media datesort count: {len(media)}")
 
     media = helpers.mediatype_type_filter(media)
