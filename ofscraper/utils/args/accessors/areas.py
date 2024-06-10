@@ -16,22 +16,7 @@ def get_like_area():
         post = set(read_args.retriveArgs().like_area)
     if "All" in post:
         post.update(set(all_choices))
-    elif ("Labels*" or "Labels+") in post:
-        post.update(set(all_choices))
-        post.update({"Labels"})
-        post.discard("Labels*")
-        post.discard("Labels+")
-    return set(
-        list(
-            filter(
-                lambda x: x != "All"
-                and x[0] != "-"
-                and f"-{x}" not in post
-                and x in all_choices + ["Labels"],
-                post,
-            )
-        )
-    )
+    return finalize_choice(all_choices,post)
 
 
 def get_download_area():
@@ -53,11 +38,14 @@ def get_download_area():
         post = set(read_args.retriveArgs().download_area)
     if "All" in post:
         post.update(set(all_choices))
-    elif ("Labels*" or "Labels+") in post:
+    return finalize_choice(all_choices,post)
+    
+def finalize_choice(all_choices,post):
+    if ("Labels*" or "Labels+") in post:
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")
-        post.discard("Laabels+")
+        post.discard("Labels+")
     return set(
         list(
             filter(
