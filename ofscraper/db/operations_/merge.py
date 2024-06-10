@@ -2,7 +2,7 @@ import logging
 import pathlib
 import traceback
 
-import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.paths.db as paths_db
 from ofscraper.db.operations import create_tables, modify_tables
 from ofscraper.db.operations_.labels import (
     get_all_labels_transition,
@@ -42,74 +42,38 @@ from ofscraper.utils.context.run_async import run
 log = logging.getLogger("shared")
 
 
-@run
-async def batch_database_changes(new_root, old_root, user_dbs=None):
-
-    if not pathlib.Path(old_root).is_dir():
-        raise FileNotFoundError("Path is not dir")
-    old_root = pathlib.Path(old_root)
-    new_root = pathlib.Path(new_root)
-    new_root.mkdir(exist_ok=True, parents=True)
-    new_db_path = new_root / "user_data.db"
-    db_merger = MergeDatabase(new_db_path)
-
-    await create_tables(db_path=new_db_path)
-    failures = []
-    for ele in user_dbs or paths.get_all_db(old_root):
-        if ele == new_db_path:
-            continue
-        log.info(f"Merging {new_root} with {ele}")
-        try:
-            model_id = get_single_model_via_profile(db_path=ele)
-            if not model_id:
-                raise Exception("Not exactly one model_id in profile table")
-            elif not str(model_id).isnumeric():
-                raise Exception("Found model_id was not numeric")
-            await create_tables(db_path=ele)
-            await modify_tables(model_id=model_id, db_path=ele)
-            await db_merger(ele)
-
-        except Exception as E:
-            failures.append({"path": str(ele), "reason": E})
-            log.warning(f"Issue getting required info for {ele}")
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-    log.info(
-        "\n\n\n".join(
-            list(
-                map(lambda x: str([(key, value) for key, value in x.items()]), failures)
-            )
-        )
-    )
-    return failures
-
-
-@run
-async def merge_single_table(db_merger, ele, model_id):
-    await create_tables(db_path=ele)
-    await modify_tables(model_id=model_id, db_path=ele)
-    db_merger(ele)
-
 
 class MergeDatabase:
-    def __init__(self, new_db_path):
+    def __init__(self):
         self._data_init = False
-        self._new_db = new_db_path
         self._media_keys = ["media_id", "model_id"]
         self._label_keys = ["post_id", "label_id", "model_id"]
         self._common_key = ["post_id", "model_id"]
         self._profile_key = ["user_id", "username"]
         self._model_key = "model_id"
 
-    async def __call__(self, old_db_path):
+    async def __call__(self, old_db_folder,new_db_path):
         """
         This method is called when the object is used like a function.
         """
+        self._new_db=self.get_new_db(new_db_path)
+        self._old_db_folder=old_db_folder
         await self._data_initializer()
-        return await self.merge_database(old_db_path)
+        return await self.merge_database()
+    def get_new_db(self,new_db_path):
+          new_db_path=pathlib.Path(new_db_path)
+          if new_db_path.name=="user_data.db":
+            return new_db_path
+          elif new_db_path.suffix=="":
+            return pathlib.Path(new_db_path,"user_data.db")
+          else:
+              return pathlib.Path(pathlib.Path(new_db_path).parent,"user_data.db")
+              
+          
 
     async def _data_initializer(self):
         if not self._data_init:
+            await create_tables(db_path=self._new_db)
             self._curr_labels = set(
                 list(
                     map(
@@ -184,7 +148,41 @@ class MergeDatabase:
             )
         self._data_init = True
 
-    async def merge_database(self, db_path):
+    async def merge_database(self):
+        old_root_folder=pathlib.Path(self._old_db_folder)
+        new_db_path=pathlib.Path(self._new_db)
+        if not pathlib.Path(old_root_folder).is_dir():
+            raise FileNotFoundError("Path is not dir")
+        new_db_path.parent.mkdir(exist_ok=True, parents=True)
+        failures=[]
+        for ele in paths_db.get_all_db(old_root_folder):
+            if ele == new_db_path:
+                continue
+            log.info(f"Merging {new_db_path} with {ele}")
+            try:
+                model_id = get_single_model_via_profile(db_path=ele)
+                if not model_id:
+                    raise Exception("Not exactly one model_id in profile table")
+                elif not str(model_id).isnumeric():
+                    raise Exception("Found model_id was not numeric")
+                await create_tables(db_path=ele)
+                await modify_tables(model_id=model_id, db_path=ele)
+                await self.merge_individual(ele)
+
+            except Exception as E:
+                failures.append({"path": str(ele), "reason": E})
+                log.warning(f"Issue getting required info for {ele}")
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+        log.info(
+            "\n\n\n".join(
+                list(
+                    map(lambda x: str([(key, value) for key, value in x.items()]), failures)
+                )
+            )
+        )    
+          
+    async def merge_individual(self,db_path):
         await self.merge_media_helper(db_path)
         await self.merge_label_helper(db_path)
         await self.merge_posts_helper(db_path)

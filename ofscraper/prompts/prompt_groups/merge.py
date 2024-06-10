@@ -7,7 +7,8 @@ from rich.console import Console
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-from ofscraper.utils.paths.common import get_profile_path
+from ofscraper.utils.paths.db import get_default_merge,get_default_current
+
 
 console = Console()
 models = None
@@ -39,7 +40,7 @@ def folder_prompt_db():
                 "option_instruction": "The database path given will be searched recursively, so pick the closest path possible",
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
                 "validate": PathValidator(is_dir=True),
-                "default": str(get_profile_path()),
+                "default": str(get_default_current()),
             },
         ]
     )
@@ -57,7 +58,7 @@ def new_db_prompt():
                 directory for new merge database
                 It is best if merged database is stored seperately from source database(s)
                 """,
-                "default": str(get_profile_path()),
+                "default": str(get_default_merge()),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
             },
         ]
