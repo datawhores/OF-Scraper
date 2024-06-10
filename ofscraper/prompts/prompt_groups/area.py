@@ -62,13 +62,13 @@ def areas_prompt() -> list:
                     Choice("Stories"),
                     Choice("Messages"),
                     Choice("Purchased"),
-                    Choice("Labels"),
                     Choice("Streams"),
                 ],
             }
         ]
     )
-    return answers[name]
+    answers[name].append(scrape_labels_prompt())
+    return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
 
 
 def like_areas_prompt(like=True) -> list:
@@ -86,14 +86,15 @@ def like_areas_prompt(like=True) -> list:
                     Choice("Timeline"),
                     Choice("Pinned"),
                     Choice("Archived"),
-                    Choice("Labels"),
                     Choice("Streams"),
 
                 ],
             }
         ]
     )
-    return answers[name]
+    answers[name].append(scrape_labels_prompt())
+    return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
+
 
 
 def download_areas_prompt() -> list:
@@ -116,7 +117,6 @@ def download_areas_prompt() -> list:
                     Choice("Stories"),
                     Choice("Messages"),
                     Choice("Purchased"),
-                    Choice("Labels"),
                     Choice("Streams"),
 
 
@@ -124,8 +124,27 @@ def download_areas_prompt() -> list:
             }
         ]
     )
-    return answers[name]
+    answers[name].append(scrape_labels_prompt())
+    return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
+ 
 
+
+def scrape_labels_prompt():
+    name = "value"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Scrape labels\n[This is mainly for data enhancement]",
+                "choices": [Choice(True, "True"), Choice(False, "False", enabled=True)],
+                "default": False,
+            },
+        ]
+    )
+    if answer[name]:
+        return "Labels"
+    return
 
 def scrape_paid_prompt():
     name = "value"

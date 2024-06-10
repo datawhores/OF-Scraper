@@ -37,7 +37,6 @@ def main_menu_action():
                 continue
             else:
                 count > 0 and reset_menu_helper()
-                actions.set_scrape_paid()
                 runner()
                 count = count + 1
         elif result_main_prompt == "auth":

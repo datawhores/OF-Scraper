@@ -43,6 +43,7 @@ def select_areas(action=None, reset=False):
     write_args.setArgs(args)
     set_post_area(action)
     set_download_area(action)
+    set_scrape_paid()
     set_like_area(action)
     remove_post_area()
 
