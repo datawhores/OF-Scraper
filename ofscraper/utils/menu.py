@@ -37,7 +37,7 @@ def main_menu_action():
                 continue
             else:
                 count > 0 and reset_menu_helper()
-                runner()
+                runner(menu=True)
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file

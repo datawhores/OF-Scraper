@@ -34,7 +34,7 @@ log = logging.getLogger("shared")
 
 
 @exit.exit_wrapper
-def runner():
+def runner(menu=False):
     check_auth()
     progress_utils.update_activity_task(description="Running Action Mode")
     with scrape_context_manager(
@@ -51,13 +51,13 @@ def runner():
                 pass
 
             elif read_args.retriveArgs().users_first:
-                userdata, session = prepare()
+                userdata, session = prepare(menu=menu)
                 user_first_data=process_users_actions_user_first(userdata, session)
             else:
                 userdata, session = prepare()
                 normal_data=process_users_actions_normal(userdata, session)
         final_log(normal_data+scrape_paid_data+user_first_data)
-def prepare():
+def prepare(menu=False):
     session = sessionManager.OFSessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
@@ -67,6 +67,9 @@ def prepare():
     profile_tools.print_current_profile()
     init.print_sign_status()
     actions.select_areas()
+    if menu==True:
+        actions.set_scrape_paid()
+
 
     userdata = userselector.getselected_usernames(rescan=False)
     return userdata, session
