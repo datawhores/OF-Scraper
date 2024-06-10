@@ -16,7 +16,7 @@ def merge_runner():
         confirm = prompts.confirm_prompt_db(folder, new_db_folder)
         if confirm is False:
             continue
-        elif confirm is None:
+        elif confirm is True:
             break
     merge_loop(new_db_folder, folder)
 
