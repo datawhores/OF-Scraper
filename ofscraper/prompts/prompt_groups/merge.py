@@ -1,16 +1,17 @@
 import pathlib
+import inspect
+
 
 from InquirerPy.base import Choice
 from InquirerPy.validator import PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
-from rich.console import Console
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 from ofscraper.utils.paths.db import get_default_merge,get_default_current
+import ofscraper.utils.console as console
 
 
-console = Console()
 models = None
 
 
@@ -86,6 +87,30 @@ def confirm_prompt_db(folder, new_db) -> bool:
     )
     return answer[name]
 
+def confirm_db_continue(completed) -> bool:
+    name = "continue"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Do another merge: ",
+                "call":lambda:console.get_console().print(
+                inspect.cleandoc(
+                f""" 
+                Merged: {len(completed)} db files
+                """)
+
+                ),
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                    Choice(None, "Back to Main Menu"),
+                ],
+                "default": False,
+            }
+        ]
+    )
 
 def model_id_prompt():
     answer = promptClasses.batchConverter(

@@ -154,7 +154,8 @@ class MergeDatabase:
         if not pathlib.Path(old_root_folder).is_dir():
             raise FileNotFoundError("Path is not dir")
         new_db_path.parent.mkdir(exist_ok=True, parents=True)
-        failures=[]
+        failures={}
+        success={}
         for ele in paths_db.get_all_db(old_root_folder):
             if ele == new_db_path:
                 continue
@@ -168,9 +169,10 @@ class MergeDatabase:
                 await create_tables(db_path=ele)
                 await modify_tables(model_id=model_id, db_path=ele)
                 await self.merge_individual(ele)
+                success.update({model_id:{"path":str(ele),"model_id":model_id}})
 
             except Exception as E:
-                failures.append({"path": str(ele), "reason": E})
+                failures.update({ele:{"path": str(ele), "reason": E}})
                 log.warning(f"Issue getting required info for {ele}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
@@ -180,7 +182,8 @@ class MergeDatabase:
                     map(lambda x: str([(key, value) for key, value in x.items()]), failures)
                 )
             )
-        )    
+        )  
+        return list(failures.items()),list(success.items())
           
     async def merge_individual(self,db_path):
         await self.merge_media_helper(db_path)
