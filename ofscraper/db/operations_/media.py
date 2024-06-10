@@ -166,6 +166,13 @@ filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
+getStreamsMedia = """
+SELECT
+media_id,post_id,link,directory
+filename,size,api_type,media_type
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
+"""
 getMessagesMedia = """
 SELECT 
 media_id, post_id, link, directory,
@@ -523,6 +530,22 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
             for ele in data
         ]
 
+
+run
+@wrapper.operation_wrapper_async
+def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(getStreamsMedia, [model_id])
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
+            for ele in data
+        ]
 
 @run
 @wrapper.operation_wrapper_async

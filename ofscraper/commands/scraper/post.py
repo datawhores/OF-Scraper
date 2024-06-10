@@ -24,6 +24,8 @@ import ofscraper.api.paid as paid
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
+import ofscraper.api.streams as streams
+
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
@@ -31,7 +33,6 @@ import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.free as free
@@ -236,6 +237,37 @@ async def process_archived_posts(model_id, username, c):
         log.traceback_(traceback.format_exc())
 
 
+
+@free.space_checker
+async def process_streamed_posts(model_id, username, c):
+    try:
+        streams_posts = await streams.get_streams_posts(model_id, username, c=c)
+        streams_posts = list(
+            map(
+                lambda x: posts_.Post(x, model_id, username, "streams"),
+                streams_posts,
+            )
+        )
+
+        await operations.make_post_table_changes(
+            streams_posts,
+            model_id=model_id,
+            username=username,
+        )
+
+        all_output = [item for post in streams_posts for item in post.all_media]
+        unlocked = [item for post in streams_posts for item in post.media]
+        log.debug(f"[bold]streams media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]streams media count without locked[/bold] {len(unlocked)}")
+
+        cache.set(
+            f"{model_id}_full_streams_scrape",
+            read_args.retriveArgs().after is not None,
+        )
+        return (all_output, streams_posts, "streams")
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 @free.space_checker
 async def process_pinned_posts(model_id, username, c):
     try:
@@ -541,7 +573,15 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
             )
-
+        
+        if "Streams" in final_post_areas and ele.active:
+            tasks.append(
+                asyncio.create_task(
+                    process_single_task(partial(process_streamed_posts, model_id, username, c))(
+                        sem=sem
+                    )
+                )
+            )
         for results in asyncio.as_completed(tasks):
             try:
                 medias, posts, area = await results

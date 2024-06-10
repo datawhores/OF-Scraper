@@ -54,9 +54,9 @@ def message_check_args(func):
         "-ca",
         "--check-area",
         help="Select areas to check (multiple allowed, separated by spaces)",
-        default=["Timeline", "Pinned", "Archived"],
+        default=["Timeline", "Pinned", "Archived","Streams"],
         type=click.Choice(
-            ["Timeline", "Pinned", "Archived", "Labels"], case_sensitive=False
+            ["Timeline", "Pinned", "Archived", "Labels","Streams"], case_sensitive=False
         ),
         callback=lambda ctx, param, value: (
             list(set(type.post_check_area(value))) if value else None

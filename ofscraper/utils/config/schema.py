@@ -71,6 +71,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "highlights": data.get_highlights_responsetype(config=config),
             "profile": data.get_profile_responsetype(config=config),
             "pinned": data.get_pinned_responsetype(config=config),
+            "streams": data.get_streams_responsetype(config=config),
+
         },
         "overwrites": {
             "audios": data.get_audios_overwrites(config=config),

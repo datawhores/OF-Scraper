@@ -8,6 +8,7 @@ def get_like_area():
         "Archived",
         "Timeline",
         "Pinned",
+        "Streams"
     ]
     all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
     if len(read_args.retriveArgs().like_area) == 0:
@@ -30,6 +31,7 @@ def get_download_area():
         "Stories",
         "Purchased",
         "Profile",
+        "Streams"
     ]
     all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
     if len(read_args.retriveArgs().download_area) == 0:

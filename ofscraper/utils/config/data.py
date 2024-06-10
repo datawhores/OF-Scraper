@@ -468,6 +468,20 @@ def get_pinned_responsetype(config=None, mediatype=None):
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
+@wrapper.config_reader
+def get_streams_responsetype(config=None, mediatype=None):
+    if config is False:
+        return constants.RESPONSE_TYPE_DEFAULT["streams"]
+    return (
+        config.get("overwrites", {})
+        .get((mediatype or "").lower(), {})
+        .get("responsetype", {})
+        .get("streams")
+        or config.get("streams")
+        or config.get("responsetype", {}).get("streams")
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["streams"]
+    )
+
 
 @wrapper.config_reader
 def get_spacereplacer(config=None, mediatype=None):

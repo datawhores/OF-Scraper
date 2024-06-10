@@ -30,6 +30,7 @@ def posttype_helper(x):
             "Messages",
             "Timeline",
             "Pinned",
+            "Streams",
             "Stories",
             "Purchased",
             "Profile",
@@ -60,6 +61,7 @@ def download_helper(x):
             "Stories",
             "Purchased",
             "Profile",
+            "Streams",
             "Labels",
             "Labels+",
             "Labels*",
@@ -76,7 +78,7 @@ def download_helper(x):
 
 
 def like_helper(x):
-    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
+    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
@@ -88,7 +90,7 @@ def like_helper(x):
 
 
 def post_check_area(x):
-    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
+    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))

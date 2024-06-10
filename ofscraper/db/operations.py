@@ -59,6 +59,7 @@ from ofscraper.db.operations_.posts import (
     create_post_table,
     make_post_table_changes,
     rebuild_posts_table,
+    add_column_stream
 )
 from ofscraper.db.operations_.profile import (
     create_models_table,
@@ -97,7 +98,7 @@ async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
 @run
 async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
     await make_post_table_changes(
-        filter(lambda x: x.responsetype in {"timeline", "pinned", "archived"}, posts),
+        filter(lambda x: x.responsetype in {"timeline", "pinned", "archived","streams"}, posts),
         model_id=model_id,
         username=username,
     )
@@ -153,6 +154,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "media_posted_at",
         "media_unlocked",
         "media_duration",
+        "posts_stream"
     ]
 
     groupB = [
@@ -243,6 +245,12 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         await add_flag_schema(
             "posts_model_id", model_id=model_id, username=username, db_path=db_path
         )
+    if "posts_stream" in missing:
+        await add_column_stream(model_id=model_id, username=username, db_path=db_path)
+        await add_flag_schema(
+            "posts_stream", model_id=model_id, username=username, db_path=db_path
+        )
+
     if "products_model_id" in missing:
         await add_column_products_ID(
             model_id=model_id, username=username, db_path=db_path

@@ -325,6 +325,7 @@ def like_area_validator_posts():
             and "Pinned" not in x + list(args.posts)
             and "Archived" not in x + list(args.posts)
             and "Labels" not in x + list(args.posts)
+            and "Streams" not in x + list(args.posts)
         ):
             return
         return True

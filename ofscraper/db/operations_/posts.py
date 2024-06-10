@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	paid INTEGER, 
 	archived BOOLEAN, 
     pinned BOOLEAN,
+    stream BOOLEAN,
 	created_at TIMESTAMP, 
     model_id INTEGER, 
 	PRIMARY KEY (id), 
@@ -43,10 +44,10 @@ CREATE TABLE IF NOT EXISTS posts (
 )
 """
 postInsert = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,created_at,model_id)
-VALUES (?, ?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,created_at,model_id)
+VALUES (?, ?,?,?,?,?,?,?,?);"""
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
@@ -57,6 +58,15 @@ SELECT post_id, text, price, paid, archived, created_at,
             THEN model_id
             ELSE NULL
        END AS model_id
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'pinned')
+            THEN pinned
+            ELSE NULL
+       END AS pinned
+
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stream') WHERE name = 'stream')
+            THEN stream
+            ELSE NULL
+       END AS stream
 FROM posts;
 """
 postsDrop = """
@@ -69,6 +79,11 @@ SELECT post_id FROM posts
 archivedPostInfo = """
 SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 """
+
+streamsPostInfo = """
+SELECT created_at,post_id FROM posts where stream=(1) and model_id=(?)
+"""
+
 
 
 @wrapper.operation_wrapper_async
@@ -83,6 +98,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
                     data.paid,
                     data.archived,
                     data.pinned,
+                    data.stream,
                     data.date,
                     model_id,
                 ),
@@ -123,6 +139,8 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
                     data.price,
                     data.paid,
                     data.archived,
+                    data.pinned,
+                    data.stream,
                     data.date,
                     model_id,
                     data.id,
@@ -226,6 +244,25 @@ def add_column_post_pinned(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def add_column_stream(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # Check if column exists (separate statement)
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'steam') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN stream BOOLEAN;")
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
+
+@wrapper.operation_wrapper_async
 def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(archivedPostInfo, [model_id])
@@ -237,6 +274,17 @@ def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) ->
         ]
 
 
+
+@wrapper.operation_wrapper_async
+def get_streams_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(streamsPostInfo, [model_id])
+        conn.commit()
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(ele, created_at=arrow.get(ele.get("created_at") or 0).float_timestamp)
+            for ele in data
+        ]
 async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
@@ -276,6 +324,19 @@ async def get_youngest_archived_date(model_id=None, username=None, **kwargs):
     data = await media.get_archived_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"] or 0
+
+async def get_oldest_streams_date(model_id=None, username=None, **kwargs):
+    data = await media.get_streams_media(model_id=model_id, username=username)
+    last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[0]
+    return last_item["posted_at"] or 0
+
+
+async def get_youngest_streams_date(model_id=None, username=None, **kwargs):
+    data = await media.get_streams_media(model_id=model_id, username=username)
+    last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
+    return last_item["posted_at"] or 0
+
+
 
 
 async def get_oldest_timeline_date(model_id=None, username=None, **kwargs):

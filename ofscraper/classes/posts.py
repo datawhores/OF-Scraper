@@ -54,7 +54,11 @@ class Post(base.base):
         if self.post.get("isPinned"):
             return 1
         return 0
-
+    @property
+    def stream(self):
+        if self.post.get("streamID"):
+            return 1
+        return 0
     @property
     def favorited(self):
         (
@@ -102,6 +106,8 @@ class Post(base.base):
             return "pinned"
         elif self.archived:
             return "archived"
+        elif self.stream:
+            return "stream"
         elif self.post.get("responseType") == "post":
             return "timeline"
         return self.post.get("responseType")

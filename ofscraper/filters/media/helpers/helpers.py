@@ -213,7 +213,7 @@ def likable_post_filter(post):
     return list(
         filter(
             lambda x: x.opened
-            and x.responsetype.capitalize() in {"Timeline", "Archived", "Pinned"},
+            and x.responsetype.capitalize() in {"Timeline", "Archived", "Pinned","Streams"},
             post,
         )
     )

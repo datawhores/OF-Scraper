@@ -41,6 +41,8 @@ RESPONSE_TYPE_DEFAULT = {
     "highlights": "Stories",
     "profile": "Profile",
     "pinned": "Posts",
+    "streams": "Streams",
+
 }
 SYSTEM_FREEMIN_DEFAULT = 0
 AVATAR_DEFAULT = True

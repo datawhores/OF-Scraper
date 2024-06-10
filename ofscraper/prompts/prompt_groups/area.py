@@ -63,6 +63,7 @@ def areas_prompt() -> list:
                     Choice("Messages"),
                     Choice("Purchased"),
                     Choice("Labels"),
+                    Choice("Streams"),
                 ],
             }
         ]
@@ -86,6 +87,8 @@ def like_areas_prompt(like=True) -> list:
                     Choice("Pinned"),
                     Choice("Archived"),
                     Choice("Labels"),
+                    Choice("Streams"),
+
                 ],
             }
         ]
@@ -114,6 +117,9 @@ def download_areas_prompt() -> list:
                     Choice("Messages"),
                     Choice("Purchased"),
                     Choice("Labels"),
+                    Choice("Streams"),
+
+
                 ],
             }
         ]

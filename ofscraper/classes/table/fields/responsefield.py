@@ -18,5 +18,7 @@ class ResponseField(SelectField):
                 ("Timeline", "timeline", True),
                 ("Stories", "stories", True),
                 ("Highlights", "highlights", True),
+                ("Streams", "streams", True),
+
             ]
         )
