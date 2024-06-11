@@ -50,20 +50,6 @@ def message_check_args(func):
         is_flag=True,
         default=False,
     )
-    @click.option(
-        "-ca",
-        "--check-area",
-        "--post",
-        "--post",
-        "check_area",
-        help="Select areas to check (multiple allowed, separated by spaces)",
-        default=["Timeline", "Pinned", "Archived","Streams"],
-        type=type.posttype_helper,
-        callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-        ),
-        multiple=True,
-        )
     @advanced_args
     @check_mode_changes
     @click.pass_context
