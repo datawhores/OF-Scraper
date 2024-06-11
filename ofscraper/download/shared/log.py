@@ -62,6 +62,7 @@ def final_log(username, log=None):
     log.error(
             final_log_text(username)
     )
+    log.error("\n")
 
 def final_log_text(username):
     total_count=common_globals.audio_count+common_globals.photo_count+common_globals.video_count

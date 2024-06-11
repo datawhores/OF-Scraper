@@ -14,5 +14,6 @@ def final_log(data):
         log.warning("[bold yellow]Final Results Logs[/bold yellow]")
         for record in data:
                 log.warning(record)
+        log.warning("\n\n\n")
         #give time for last long to process
         time.sleep(3)

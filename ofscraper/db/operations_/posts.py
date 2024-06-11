@@ -61,16 +61,15 @@ SELECT post_id, text, price, paid, archived, created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
-       END AS model_id
+       END AS model_id,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'pinned')
             THEN pinned
             ELSE NULL
-       END AS pinned
-
+       END AS pinned,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stream') WHERE name = 'stream')
             THEN stream
             ELSE NULL
-       END AS stream
+       END AS stream,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('opened') WHERE name = 'opened')
             THEN opened
             ELSE NULL
