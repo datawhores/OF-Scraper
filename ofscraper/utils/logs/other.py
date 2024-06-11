@@ -74,6 +74,11 @@ def logger_other(input_, name=None, stop_count=1, event=None):
                 break
         except queue.Empty as e:
             continue
+        except OSError as e:
+            if str(e)=="handle is closed":
+                print("handle is closed")
+                return
+            raise e
         except Exception as e:
             print(e)
             print(traceback.format_exc())

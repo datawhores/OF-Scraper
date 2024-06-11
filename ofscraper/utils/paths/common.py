@@ -9,6 +9,8 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.constants as constants_attr
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.profiles.tools as tools
+
 
 
 def getcachepath():
@@ -89,7 +91,7 @@ def get_profile_path(name=None):
         profile= get_config_home() / profile_data.get_current_config_profile()
     else:
         profile=get_config_home() / read_args.retriveArgs().profile
-    return pathlib.Path(f'{re.sub("_profile$","",str(profile))}_profile')
+    return pathlib.Path(tools.profile_name_fixer(profile))
     
 
 
