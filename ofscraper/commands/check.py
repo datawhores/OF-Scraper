@@ -17,6 +17,8 @@ import ofscraper.api.paid as paid_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
+import ofscraper.api.streams as streams
+
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
@@ -271,6 +273,29 @@ async def post_check_retriver():
                             labels_data,
                             expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
+
+                if "Streams" in areas:
+                    oldstreams = cache.get(f"streams_check_{model_id}", default=[])
+                    if len(oldstreams) > 0 and not read_args.retriveArgs().force:
+                        streams_data = oldstreams
+                    else:
+                        streamss_resp = await streams.get_streams_posts(model_id, c=c)
+                        await operations.make_post_table_changes(
+                            model_id=model_id,
+                            username=user_name,
+                            posts=False,
+                        )
+                        streams_data = [
+                            post for streams in streamss_resp for post in streams["posts"]
+                        ]
+                        cache.set(
+                            f"streams_check_{model_id}",
+                            streams_data,
+                            expire=constants.getattr("THREE_DAY_SECONDS"),
+                        )
+
+                
+                
                 all_post_data = list(
                     map(
                         lambda x: posts_.Post(x, model_id, user_name),

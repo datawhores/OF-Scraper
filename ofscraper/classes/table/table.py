@@ -276,7 +276,7 @@ SelectField,DateField,TimeField {
                     yield StyledButton(
                         ">> Send Downloads to OF-Scraper", id="send_downloads"
                     )
-                yield Label("Ctrl+S: Toggle Sidebar")
+                yield Label("Ctrl+S: Toggle Sidebar for search")
                 yield Label("Arrows: Navigate Table")
                 yield Label('";" or "\'": Filter Table via Cell')
                 yield Label("Add to Cart: Click cell in 'Download Cart' Column")

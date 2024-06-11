@@ -52,6 +52,9 @@ def post_check_args(func):
     @click.option(
         "-ca",
         "--check-area",
+         "--post",
+        "--post",
+        "check_area",
         help="Select areas to check (multiple allowed, separated by spaces)",
         default=["Timeline", "Pinned", "Archived","Streams"],
         type=click.Choice(

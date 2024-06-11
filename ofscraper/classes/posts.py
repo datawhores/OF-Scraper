@@ -69,7 +69,9 @@ class Post(base.base):
 
     @property
     def opened(self):
-        return self.post.get("isOpened")
+        if self.post.get("isOpened"):
+            return 1
+        return 0
 
     @property
     def regular_timeline(self):
