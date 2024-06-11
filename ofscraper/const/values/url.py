@@ -14,7 +14,7 @@ sortSubscriptions = "https://onlyfans.com/api2/v2/lists/following/sort"
 profileEP = "https://onlyfans.com/api2/v2/users/{}"
 
 timelineEP = "https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&pinned=0&format=infinite"
-timelineNextEP = "https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&afterPublishTime={}&pinned=0&format=infinite"
+gtimelineNextEP = "https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&afterPublishTime={}&pinned=0&format=infinite"
 
 timelinePinnedEP = "https://onlyfans.com/api2/v2/users/{}/posts?skip_users=all&pinned=1&counters={}&format=infinite"
 

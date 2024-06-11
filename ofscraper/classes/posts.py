@@ -56,7 +56,7 @@ class Post(base.base):
         return 0
     @property
     def stream(self):
-        if self.post.get("streamID"):
+        if self.post.get("streamId"):
             return 1
         return 0
     @property
