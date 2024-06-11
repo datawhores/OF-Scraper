@@ -127,7 +127,7 @@ def _mac_truncateHelper(path):
 
 
 def _linux_truncateHelper(path):
-    encode = "utf8"
+    encode = "utf16"
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
