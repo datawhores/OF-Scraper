@@ -85,12 +85,20 @@ def get_current_config_schema(config: dict = None) -> dict:
 
 
 # basic recursion for comparing nested keys
-def config_diff(config, schema=None):
+def config_diff(config):
     if config is None:
         return True
     if config.get("config"):
         config = config["config"]
-    schema = schema or get_current_config_schema()
+    schema = get_current_config_schema()
+    return config_diff_helper(config,schema)
+   
+
+
+def config_diff_helper(config,schema,key=None):
+    if key:
+        config=config[key]
+        schema=schema[key]
     diff = set(schema.keys()) - set(config.keys())
     if len(diff) > 0:
         return True
@@ -99,5 +107,5 @@ def config_diff(config, schema=None):
             continue
         elif not isinstance(config[key], dict):
             return True
-        elif config_diff(config[key], schema[key]):
+        elif config_diff_helper(config, schema,key):
             return True
