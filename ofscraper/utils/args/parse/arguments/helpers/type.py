@@ -21,7 +21,7 @@ def check_modes_filehelper(x):
     return []
 
 
-def posttype_helper(x):
+def post_type_helper(x):
     choices = set(
         [
             "Highlights",
@@ -39,8 +39,7 @@ def posttype_helper(x):
             "Labels*",
         ]
     )
-    if isinstance(x, str):
-        x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    x = string_split_helper(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
@@ -70,9 +69,7 @@ def download_helper(x):
             "Labels*",
         ]
     )
-    if isinstance(x, str):
-        x = re.split(",| ", x)
-        x = list(map(lambda x: re.sub(r"[^a-zA-Z\*\+]", "", str.title(x)), x))
+    x = string_split_helper(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
@@ -82,9 +79,7 @@ def download_helper(x):
 
 def like_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
-    if isinstance(x, str):
-        x = re.split(",| ", x)
-        x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    x = string_split_helper(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
@@ -92,11 +87,9 @@ def like_helper(x):
     return final_output_dupe_helper(x)
 
 
-def post_check_area(x):
+def post_check_area_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
-    if isinstance(x, str):
-        x = re.split(",| ", x)
-        x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    x = string_split_helper(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
@@ -190,3 +183,9 @@ def filter_helper(choices,selections):
 def final_output_dupe_helper(x):
     seen = set()
     return [post for post in x if post not in seen and not seen.add(post)]
+
+def string_split_helper(x):
+    if isinstance(x, str):
+        x = re.split(",| ", x)
+        x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    return x

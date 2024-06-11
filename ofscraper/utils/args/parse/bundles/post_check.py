@@ -57,7 +57,7 @@ def post_check_args(func):
         "check_area",
         help="Select areas to check (multiple allowed, separated by spaces)",
         default=["Timeline", "Pinned", "Archived","Streams"],
-        type=type.postcheck_type_helper,
+        type=type.post_check_area_helper,
         callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
         ),

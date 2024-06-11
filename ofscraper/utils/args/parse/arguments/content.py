@@ -17,7 +17,7 @@ posts_option = click.option(
     """,
     default=[],
     required=False,
-    type=type.posttype_helper,
+    type=type.post_type_helper,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
