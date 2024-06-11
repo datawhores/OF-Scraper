@@ -48,6 +48,32 @@ def posttype_helper(x):
         )
     return final_output_dupe_helper(x)
 
+def postcheck_type_helper(x):
+    choices = set(
+        [
+            "All",
+            "Archived",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Labels",
+            "Labels+",
+            "Labels*",
+        ]
+    )
+    if isinstance(x, str):
+        x = re.split(",| ", x)
+        x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    if len(filter_helper(choices,x)) > 0:
+        raise argparse.ArgumentTypeError(
+            "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
+        )
+    return final_output_dupe_helper(x)
+
+
+
+
+
 
 def download_helper(x):
     choices = set(

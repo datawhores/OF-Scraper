@@ -58,14 +58,12 @@ def message_check_args(func):
         "check_area",
         help="Select areas to check (multiple allowed, separated by spaces)",
         default=["Timeline", "Pinned", "Archived","Streams"],
-        type=click.Choice(
-            ["Timeline", "Pinned", "Archived", "Labels","Streams"], case_sensitive=False
-        ),
+        type=type.posttype_helper,
         callback=lambda ctx, param, value: (
-            list(set(type.post_check_area(value))) if value else None
+        list(set(itertools.chain.from_iterable(value))) if value else []
         ),
         multiple=True,
-    )
+        )
     @advanced_args
     @check_mode_changes
     @click.pass_context

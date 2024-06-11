@@ -15,6 +15,7 @@ import contextlib
 import logging
 import sqlite3
 
+
 import arrow
 from rich.console import Console
 
@@ -23,6 +24,8 @@ import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.profile import get_single_model_via_profile
+import ofscraper.classes.posts as posts_
+
 
 console = Console()
 log = logging.getLogger("shared")
@@ -329,9 +332,16 @@ async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwar
 
 
 async def make_post_table_changes(all_posts, model_id=None, username=None, **kwargs):
+    all_posts_data = list(
+                    map(
+                        lambda x: posts_.Post(x, model_id, username) if isinstance(x,dict) else x,
+                        all_posts
+                    )
+    )
+    
     curr_id = set(await get_all_post_ids(model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts_data))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts_data))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
         await write_post_table(new_posts, model_id=model_id, username=username)

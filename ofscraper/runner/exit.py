@@ -1,3 +1,4 @@
+import time
 from diskcache import Cache
 
 import ofscraper.utils.config.data as data
@@ -7,12 +8,14 @@ import ofscraper.utils.paths.common as common_paths
 
 
 def shutdown():
+    time.sleep(3)
     close_log.gracefulClose()
     manager.shutdown()
     closeCache()
 
 
 def forcedShutDown():
+    time.sleep(3)
     close_log.forcedClose()
     manager.shutdown()
     closeCache()

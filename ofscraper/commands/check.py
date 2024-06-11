@@ -279,14 +279,9 @@ async def post_check_retriver():
                     if len(oldstreams) > 0 and not read_args.retriveArgs().force:
                         streams_data = oldstreams
                     else:
-                        streamss_resp = await streams.get_streams_posts(model_id, c=c)
-                        await operations.make_post_table_changes(
-                            model_id=model_id,
-                            username=user_name,
-                            posts=False,
-                        )
+                        streams_resp = await streams.get_streams_posts(model_id,user_name, c=c,forced_after=0)
                         streams_data = [
-                            post for streams in streamss_resp for post in streams["posts"]
+                            post for streams in streams_resp for post in streams["posts"]
                         ]
                         cache.set(
                             f"streams_check_{model_id}",
@@ -294,12 +289,16 @@ async def post_check_retriver():
                             expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
 
-                
+                await operations.make_post_table_changes(
+                    all_posts=pinned_data + archived_data + labels_data + timeline_data+streams_data,
+                    model_id=model_id,
+                    username=user_name,
+                )
                 
                 all_post_data = list(
                     map(
                         lambda x: posts_.Post(x, model_id, user_name),
-                        pinned_data + archived_data + labels_data + timeline_data,
+                        pinned_data + archived_data + labels_data + timeline_data+streams_data,
                     )
                 )
                 cache.close()
