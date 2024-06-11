@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	archived BOOLEAN, 
     pinned BOOLEAN,
     stream BOOLEAN,
+    opened BOOLEAN,
 	created_at TIMESTAMP, 
     model_id INTEGER, 
 	PRIMARY KEY (id), 
@@ -44,10 +45,10 @@ CREATE TABLE IF NOT EXISTS posts (
 )
 """
 postInsert = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,stream,created_at,model_id)
-VALUES (?, ?,?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id)
+VALUES (?, ?,?,?,?,?,?,?,?,?);"""
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,created_at = ?, model_id=?
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
@@ -67,6 +68,10 @@ SELECT post_id, text, price, paid, archived, created_at,
             THEN stream
             ELSE NULL
        END AS stream
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('opened') WHERE name = 'opened')
+            THEN opened
+            ELSE NULL
+       END AS opened
 FROM posts;
 """
 postsDrop = """
@@ -99,6 +104,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
                     data.archived,
                     data.pinned,
                     data.stream,
+                    data.opened,
                     data.date,
                     model_id,
                 ),
@@ -141,6 +147,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
                     data.archived,
                     data.pinned,
                     data.stream,
+                    data.opened,
                     data.date,
                     model_id,
                     data.id,
@@ -244,12 +251,12 @@ def add_column_post_pinned(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def add_column_stream(conn=None, **kwargs):
+def add_column_post_stream(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
             cur.execute(
-                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'steam') THEN 1 ELSE 0 END AS alter_required;"
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'stream') THEN 1 ELSE 0 END AS alter_required;"
             )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
@@ -262,6 +269,25 @@ def add_column_stream(conn=None, **kwargs):
             conn.rollback()
             raise e  # Rollback in case of errors
 
+
+@wrapper.operation_wrapper_async
+def add_column_post_opened(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # Check if column exists (separate statement)
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'opened') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN opened BOOLEAN;")
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
 @wrapper.operation_wrapper_async
 def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
