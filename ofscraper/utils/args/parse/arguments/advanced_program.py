@@ -30,7 +30,7 @@ key_mode_option = click.option(
 dynamic_rules_option = click.option(
     "-dr",
     "--dynamic-rules",
-    "--dynamic-rule"
+    "--dynamic-rule",
     help="Dynamic signing",
     default=None,
     type=click.Choice(["dc", "deviint", "sneaky","growik","manual"], case_sensitive=False),

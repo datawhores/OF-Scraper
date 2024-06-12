@@ -77,11 +77,11 @@ def get_request_auth(refresh=False,forced=False):
 
 def get_dynamic_rule_manual():
     content = constants.getattr("DYNAMIC_RULE")
-    static_param = content["static_param"]
-    fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-    checksum_indexes = content["checksum_indexes"]
-    checksum_constant = content["checksum_constant"]
-    return (static_param, fmt, checksum_indexes, checksum_constant)
+    return request_auth_generic(content)
+
+def get_dynamic_rule_generic():
+    content = constants.getattr("DYNAMIC_GENERIC_URL")
+    return request_auth_generic(content)
 
 
 def get_request_auth_deviint():
@@ -97,11 +97,8 @@ def get_request_auth_deviint():
             constants.getattr("DEVIINT"),
         ) as r:
             content = r.json_()
-            static_param = content["static_param"]
-            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-            checksum_indexes = content["checksum_indexes"]
-            checksum_constant = content["checksum_constant"]
-            return (static_param, fmt, checksum_indexes, checksum_constant)
+            return request_auth_generic(content)
+
 
 
 def get_request_auth_sneaky():
@@ -118,11 +115,9 @@ def get_request_auth_sneaky():
         skip_expection_check=True
         ) as r:
             content = r.json_()
-            static_param = content["static_param"]
-            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-            checksum_indexes = content["checksum_indexes"]
-            checksum_constant = content["checksum_constant"]
-            return (static_param, fmt, checksum_indexes, checksum_constant)
+            return request_auth_generic(content)
+
+
 
 
 def get_request_auth_growik():
@@ -139,11 +134,16 @@ def get_request_auth_growik():
         skip_expection_check=True
         ) as r:
             content = r.json_()
-            static_param = content["static_param"]
-            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-            checksum_indexes = content["checksum_indexes"]
-            checksum_constant = content["checksum_constant"]
-            return (static_param, fmt, checksum_indexes, checksum_constant)
+            return request_auth_generic(content)
+            
+def request_auth_generic(content):
+    static_param = content["static_param"]
+    fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+    checksum_indexes = content["checksum_indexes"]
+    checksum_constant = content["checksum_constant"]
+    return (static_param, fmt, checksum_indexes, checksum_constant)
+
+
 def get_request_auth_digitalcriminals():
     with sessionManager.sessionManager(
         backend="httpx",
