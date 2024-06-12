@@ -557,7 +557,8 @@ def get_dynamic(config=None):
                 "digital",
                 "digitials",
                 # "sneaky",
-                "growik"
+                "growik",
+                "manual"
             ]
         )
         else "growik"
