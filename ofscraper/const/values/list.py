@@ -1,0 +1,6 @@
+OFSCRAPER_RESERVED_LIST = "ofscraper.main"
+OFSCRAPER_RESERVED_LIST_ALT = "main"
+OFSCRAPER_ACTIVE_LIST = "ofscraper.active"
+OFSCRAPER_ACTIVE_LIST_ALT = "active"
+OFSCRAPER_EXPIRED_LIST = "ofscraper.expired"
+OFSCRAPER_EXPIRED_LIST_ALT = "expired"

@@ -51,6 +51,8 @@ def get_request_auth(refresh=False,forced=False):
     logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth=get_dynamic_rule_manual()
+    elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
+        auth=get_dynamic_rule_generic()
     elif (dynamic) in {
         "deviint",
         "dv",
@@ -58,11 +60,6 @@ def get_request_auth(refresh=False,forced=False):
     }:
 
         auth = get_request_auth_deviint()
-
-    elif (dynamic) in {
-        "growik",
-    }:
-        auth = get_request_auth_growik()
     elif (dynamic) in {
         "dc","digital","digitalcriminal","digitalcriminals"
     }:
@@ -80,9 +77,19 @@ def get_dynamic_rule_manual():
     return request_auth_generic(content)
 
 def get_dynamic_rule_generic():
-    content = constants.getattr("DYNAMIC_GENERIC_URL")
-    return request_auth_generic(content)
-
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
+        refresh=False,
+    ) as c:
+        
+        with c.requests(
+            constants.getattr("DYNAMIC_GENERIC_URL"),
+        ) as r:
+            content = r.json_()
+            return request_auth_generic(content)
 
 def get_request_auth_deviint():
     with sessionManager.sessionManager(

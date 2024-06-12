@@ -33,6 +33,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+import ofscraper.const.constants as constants
 
 console = Console()
 
@@ -466,7 +467,7 @@ def advanced_config() -> dict:
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
-                "choices": ["deviint", "digitalcriminals","growik"],
+                "choices": constants.DYNAMIC_OPTIONS,
             },
             {
                 "type": "list",
