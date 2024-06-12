@@ -8,7 +8,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
-import ofscraper.utils.console as console
+
 
 
 def wrapper(prompt_funct):

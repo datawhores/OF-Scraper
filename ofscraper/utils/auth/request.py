@@ -21,6 +21,8 @@ import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+import ofscraper.utils.cache as cache
+
 
 
 def read_request_auth(refresh=True,forced=False):
@@ -47,16 +49,13 @@ def get_request_auth(refresh=False,forced=False):
     #     return curr_auth
     dynamic=settings.get_dynamic_rules()
     logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
-
-
-
-
-    if (dynamic) in {
+    if constants.getattr("DYNAMIC_RULE"):
+        auth=get_dynamic_rule_manual()
+    elif (dynamic) in {
         "deviint",
         "dv",
         "dev",
     }:
-
 
         auth = get_request_auth_deviint()
 
@@ -64,19 +63,25 @@ def get_request_auth(refresh=False,forced=False):
         "growik",
     }:
         auth = get_request_auth_growik()
-    # elif (dynamic) in {
-    #     "sneaky",
-    # }:
-    #     auth = get_request_auth_sneaky()
+    elif (dynamic) in {
+        "dc","digital","digitalcriminal","digitalcriminals"
+    }:
+        auth = get_request_auth_digitalcriminals()
     else:
         auth = get_request_auth_growik()
-    # if not forced:
-    #     cache.set(
-    #         "api_onlyfans_sign",
-    #         auth,
-    #         expire=constants.getattr("HOURLY_EXPIRY") // 4,
-    #     )
+    cache.set(
+        "api_onlyfans_sign",
+        auth,
+    )
     return auth
+
+def get_dynamic_rule_manual():
+    content = constants.getattr("DYNAMIC_RULE")
+    static_param = content["static_param"]
+    fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+    checksum_indexes = content["checksum_indexes"]
+    checksum_constant = content["checksum_constant"]
+    return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
 def get_request_auth_deviint():
@@ -214,4 +219,5 @@ def create_sign(link, headers, refresh=False,forced=False):
     final_sign = content["format"].format(sha_1_sign, abs(checksum))
 
     headers.update({"sign": final_sign, "time": time2})
+    print(headers)
     return headers

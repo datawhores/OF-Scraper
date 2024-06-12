@@ -9,6 +9,7 @@ import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.scraper.runner import runner
+from ofscraper.utils.live.empty import prompt_live
 
 log = logging.getLogger("shared")
 count = 0
@@ -38,6 +39,9 @@ def main_menu_action():
             else:
                 count > 0 and reset_menu_helper()
                 runner(menu=True)
+                with prompt_live():
+                    #allow for final screen to remain
+                    input("Press Enter to Continue")
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
