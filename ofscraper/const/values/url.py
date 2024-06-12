@@ -41,7 +41,7 @@ DIGITALCRIMINALS = (
     "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json"
 )
 
-DEVIINT = "https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json"
+DEVIINT = "https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/b6b1c1ae3910ed6a8bb282197a1c7dfb732fb82f/dynamicRules.json"
 SNEAKY = "https://raw.githubusercontent.com/SneakyOvis/onlyfans-dynamic-rules/main/rules.json"
 GROWIK="https://web.archive.org/web/20240605235739/https://raw.githubusercontent.com/Growik/onlyfans-dynamic-rules/main/rules.json"
 
