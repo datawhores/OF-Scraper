@@ -32,7 +32,7 @@ dynamic_rules_option = click.option(
     "--dynamic-rules",
     help="Dynamic signing",
     default=None,
-    type=click.Choice(["dc", "deviint", "sneaky","growik"], case_sensitive=False),
+    type=click.Choice(["dc", "deviint", "sneaky","growik","manual"], case_sensitive=False),
     callback=lambda ctx, param, value: value.lower() if value else None,
 )
 
