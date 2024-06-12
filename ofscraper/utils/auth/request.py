@@ -49,7 +49,7 @@ def get_request_auth(refresh=False,forced=False):
     #     return curr_auth
     dynamic=settings.get_dynamic_rules()
     logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
-    if constants.getattr("DYNAMIC_RULE"):
+    if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth=get_dynamic_rule_manual()
     elif (dynamic) in {
         "deviint",
@@ -68,7 +68,7 @@ def get_request_auth(refresh=False,forced=False):
     }:
         auth = get_request_auth_digitalcriminals()
     else:
-        auth = get_request_auth_growik()
+        auth = get_request_auth_deviint()
     cache.set(
         "api_onlyfans_sign",
         auth,

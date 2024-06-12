@@ -86,8 +86,6 @@ def get_api_cache_disabled():
 
 
 def get_dynamic_rules():
-    if constants.getattr("DYNAMIC_RULE"):
-        return "manual"
     return read_args.retriveArgs().dynamic_rules or config_data.get_dynamic()
 
 
