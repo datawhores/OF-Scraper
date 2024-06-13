@@ -1,6 +1,6 @@
 from rich.console import Console
 
-import ofscraper.db.operations_.merge as merge
+import ofscraper.db.merge as merge
 import ofscraper.prompts.prompts as prompts
 from ofscraper.utils.context.run_async import run
 

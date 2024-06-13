@@ -23,6 +23,7 @@ from ofscraper.commands.helpers.strings import download_manual_str, post_str_man
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
+from ofscraper.db.operations import make_changes_to_content_tables
 
 
 
@@ -64,7 +65,7 @@ def manual_download(urls=None):
                     description=download_manual_str.format(username=username)
                 )
                 operations.table_init_create(model_id=model_id, username=username)
-                operations.make_changes_to_content_tables(
+                make_changes_to_content_tables(
                     value.get("post_list", []), model_id=model_id, username=username
                 )
                 download.download_process(

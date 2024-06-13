@@ -3,7 +3,9 @@ import pathlib
 import traceback
 
 import ofscraper.utils.paths.db as paths_db
-from ofscraper.db.operations import create_tables, modify_tables
+from ofscraper.db.operations import create_tables
+from ofscraper.db.transition import modify_tables
+
 from ofscraper.db.operations_.labels import (
     get_all_labels_transition,
     write_labels_table_transition,

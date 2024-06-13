@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import logging
-import queue
 import re
 import threading
 import time
@@ -40,6 +39,7 @@ from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_down
 from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
+from ofscraper.db.operations import make_changes_to_content_tables
 
 
 log = logging.getLogger("shared")
@@ -173,7 +173,7 @@ async def post_check_runner():
                 )
             )
             await process_post_media(user_name, model_id, final_post_array)
-            await operations.make_changes_to_content_tables(
+            await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
             await row_gather(user_name, model_id, paid=True)
@@ -360,7 +360,7 @@ async def message_checker_runner():
                 description=check_str.format(username=user_name, activity="Messages")
             )
             await process_post_media(user_name, model_id, final_post_array)
-            await operations.make_changes_to_content_tables(
+            await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
             await row_gather(user_name, model_id, paid=True)
@@ -446,7 +446,7 @@ async def purchase_checker_runner():
                 )
             )
             await process_post_media(user_name, model_id, final_post_array)
-            await operations.make_changes_to_content_tables(
+            await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
             await row_gather(user_name, model_id, paid=True)
@@ -507,7 +507,7 @@ async def stories_checker_runner():
                 )
             )
             await process_post_media(user_name, model_id, final_post_array)
-            await operations.make_changes_to_content_tables(
+            await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
             await row_gather(user_name, model_id, paid=True)
