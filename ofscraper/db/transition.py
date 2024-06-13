@@ -64,6 +64,7 @@ log = logging.getLogger("shared")
 async def modify_tables(model_id=None, username=None, db_path=None, **kwargs):
     backup = create_backup_transition(model_id, username, db_path=db_path)
     try:
+        await add_column_tables(model_id=model_id, username=username, db_path=db_path)
         await modify_tables_constraints_and_columns(
             model_id=model_id, username=username, db_path=db_path
         )
