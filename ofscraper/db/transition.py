@@ -81,7 +81,6 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
     )
-    missing=["media_hash"]
     if len(missing)==0:
         return
     elif "media_hash" in missing:
