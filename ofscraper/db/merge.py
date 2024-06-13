@@ -39,8 +39,7 @@ from ofscraper.db.operations_.stories import (
     get_all_stories_transition,
     write_stories_table_transition,
 )
-from ofscraper.utils.context.run_async import run
-
+from ofscraper.db.transition  import modify_tables
 log = logging.getLogger("shared")
 
 
@@ -76,6 +75,7 @@ class MergeDatabase:
     async def _data_initializer(self):
         if not self._data_init:
             await create_tables(db_path=self._new_db)
+            await modify_tables(db_path=self._new_db)
             self._curr_labels = set(
                 list(
                     map(
