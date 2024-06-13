@@ -40,6 +40,7 @@ from ofscraper.db.operations_.stories import (
     write_stories_table_transition,
 )
 from ofscraper.db.transition  import modify_tables
+from ofscraper.db.operations_.empty import empty
 log = logging.getLogger("shared")
 
 
@@ -158,20 +159,24 @@ class MergeDatabase:
         new_db_path.parent.mkdir(exist_ok=True, parents=True)
         failures={}
         success={}
+        empty_list=[]
         for ele in paths_db.get_all_db(old_root_folder):
             if ele == new_db_path:
                 continue
             log.info(f"Merging {new_db_path} with {ele}")
             try:
+                await create_tables(db_path=ele)
+                if await empty(db_path=ele):
+                    empty_list.append({"path":str(ele),"message":"skipped because table was empty"})
+                    continue
                 model_id = get_single_model_via_profile(db_path=ele)
                 if not model_id:
                     raise Exception("Not exactly one model_id in profile table")
                 elif not str(model_id).isnumeric():
                     raise Exception("Found model_id was not numeric")
-                await create_tables(db_path=ele)
                 await modify_tables(model_id=model_id, db_path=ele)
                 await self.merge_individual(ele)
-                success.update({model_id:{"path":str(ele),"model_id":model_id}})
+                success.update({model_id:{"path":str(ele),"model_id":model_id,"message":"merge success"}})
 
             except Exception as E:
                 failures.update({ele:{"path": str(ele), "reason": E}})
@@ -185,7 +190,7 @@ class MergeDatabase:
                 )
             )
         )  
-        return list(failures.items()),list(success.items())
+        return list(failures.items()),list(success.items()),empty_list
           
     async def merge_individual(self,db_path):
         await self.merge_media_helper(db_path)

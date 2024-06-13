@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS posts (
 """
 postInsert = """INSERT INTO 'posts'(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id)
-VALUES (?, ?,?,?,?,?,?,?,?,?);"""
+VALUES (?,?,?,?,?,?,?,?,?,?);"""
 postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
@@ -130,6 +130,8 @@ def write_post_table_transition(
             "paid",
             "archived",
             "pinned",
+            "stream",
+            "opened",
             "created_at",
             "model_id",
         )

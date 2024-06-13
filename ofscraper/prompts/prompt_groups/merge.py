@@ -87,7 +87,7 @@ def confirm_prompt_db(folder, new_db) -> bool:
     )
     return answer[name]
 
-def confirm_db_continue(completed) -> bool:
+def confirm_db_continue(completed,skipped) -> bool:
     name = "continue"
     answer = promptClasses.batchConverter(
         *[
@@ -99,6 +99,7 @@ def confirm_db_continue(completed) -> bool:
                 inspect.cleandoc(
                 f""" 
                 Merged: {len(completed)} db files
+                Skipped: {len(skipped)} db files
                 """)
 
                 ),
