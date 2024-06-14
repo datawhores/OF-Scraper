@@ -37,14 +37,6 @@ messagesNextEP = "https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&id={}
 favoriteEP = "https://onlyfans.com/api2/v2/posts/{}/favorites/{}"
 postURL = "https://onlyfans.com/{}/{}"
 
-DIGITALCRIMINALS = (
-    "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json"
-)
-
-DEVIINT = "https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json"
-SNEAKY = "https://raw.githubusercontent.com/SneakyOvis/onlyfans-dynamic-rules/main/rules.json"
-GROWIK="https://raw.githubusercontent.com/Growik/onlyfans-dynamic-rules/main/rules.json"
-DYNAMIC_GENERIC_URL=None
 
 donateEP = "https://www.buymeacoffee.com/excludedBittern"
 

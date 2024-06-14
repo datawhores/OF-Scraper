@@ -50,9 +50,9 @@ def get_request_auth(refresh=False,forced=False):
     dynamic=settings.get_dynamic_rules()
     logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
-        auth=get_dynamic_rule_manual()
+        auth=get_request_auth_dynamic_rule_manual()
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
-        auth=get_dynamic_rule_generic()
+        auth=get_request_auth_generic()
     elif (dynamic) in {
         "deviint",
         "dv",
@@ -60,23 +60,36 @@ def get_request_auth(refresh=False,forced=False):
     }:
 
         auth = get_request_auth_deviint()
+
+    elif (dynamic) in {
+        "riley"
+    }:
+
+        auth = get_request_auth_riley()
+    
+    elif (dynamic) in {
+        "datawhores"
+    }:
+
+        auth = get_request_auth_datawhores()
     elif (dynamic) in {
         "dc","digital","digitalcriminal","digitalcriminals"
     }:
         auth = get_request_auth_digitalcriminals()
     else:
-        auth = get_request_auth_deviint()
+        auth = get_request_auth_riley()
     cache.set(
         "api_onlyfans_sign",
         auth,
     )
+    time.sleep(10)
     return auth
 
-def get_dynamic_rule_manual():
+def get_request_auth_dynamic_rule_manual():
     content = constants.getattr("DYNAMIC_RULE")
-    return request_auth_generic(content)
+    return request_auth_helper(content)
 
-def get_dynamic_rule_generic():
+def get_request_auth_generic():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -89,7 +102,7 @@ def get_dynamic_rule_generic():
             constants.getattr("DYNAMIC_GENERIC_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_generic(content)
+            return request_auth_helper(content)
 
 def get_request_auth_deviint():
     with sessionManager.sessionManager(
@@ -104,11 +117,10 @@ def get_request_auth_deviint():
             constants.getattr("DEVIINT"),
         ) as r:
             content = r.json_()
-            return request_auth_generic(content)
+            return request_auth_helper(content)
 
 
-
-def get_request_auth_sneaky():
+def get_request_auth_datawhores():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -116,18 +128,14 @@ def get_request_auth_sneaky():
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
     ) as c:
+        
         with c.requests(
-            constants.getattr("SNEAKY"),
-        forced=False,
-        skip_expection_check=True
+            constants.getattr("DATAWHORES_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_generic(content)
+            return request_auth_helper(content)
 
-
-
-
-def get_request_auth_growik():
+def get_request_auth_riley():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -135,15 +143,14 @@ def get_request_auth_growik():
         wait_max=constants.getattr("GIT_MAX_WAIT"),
         refresh=False,
     ) as c:
+        
         with c.requests(
-            constants.getattr("GROWIK"),
-        forced=False,
-        skip_expection_check=True
+            constants.getattr("RILEY_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_generic(content)
-            
-def request_auth_generic(content):
+            return request_auth_helper(content)  
+
+def request_auth_helper(content):
     static_param = content["static_param"]
     fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
     checksum_indexes = content["checksum_indexes"]
@@ -226,5 +233,4 @@ def create_sign(link, headers, refresh=False,forced=False):
     final_sign = content["format"].format(sha_1_sign, abs(checksum))
 
     headers.update({"sign": final_sign, "time": time2})
-    print(headers)
     return headers
