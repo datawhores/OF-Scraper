@@ -10,7 +10,7 @@ DYNAMIC_OPTIONS_ALL=  DYNAMIC_OPTIONS + \
                 "digitals",
                 "manual",
                 "generic"]
-DYNAMIC_OPTIONS_DEFAULT="riley"
+DYNAMIC_RULE_DEFAULT="riley"
 
 DIGITALCRIMINALS = (
     "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json"
