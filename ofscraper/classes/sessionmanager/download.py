@@ -1,4 +1,5 @@
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.download.shared.retries import get_download_req_retries
@@ -28,6 +29,14 @@ class download_session(sessionManager.sessionManager):
 
 
 class cdm_session(sessionManager.sessionManager):
+    def __init__(self, backend=None, sem=None) -> None:
+        backend = backend or "httpx"
+        sem = sem or common_globals.sem
+        super().__init__(sem=sem, backend=backend)
+
+
+
+class cdm_session_manual(ofsessionmanager.OFSessionManager):
     def __init__(self, backend=None, sem=None) -> None:
         backend = backend or "httpx"
         sem = sem or common_globals.sem

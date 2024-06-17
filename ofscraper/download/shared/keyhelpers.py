@@ -18,7 +18,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.download.shared.retries import get_cmd_download_req_retries
-from ofscraper.classes.sessionmanager.download import cdm_session
+from ofscraper.classes.sessionmanager.download import cdm_session_manual
 from ofscraper.download.shared.general import get_medialog
 
 log = None
@@ -246,7 +246,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with cdm_session() as c:
+        async with cdm_session_manual() as c:
             async with c.requests_async(
                 url=licence_url,
                 method="post",
