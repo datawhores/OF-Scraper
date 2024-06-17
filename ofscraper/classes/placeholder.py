@@ -353,10 +353,9 @@ class Placeholders(basePlaceholder):
         return out
 
     def _needs_count(self,ele):
-        non_unique=set(["text", "postid", "post_id","ext"])
+        unique=set(["filename","only_file_name","onlyfilename","original_filename","originalfilename","media_id","mediaid"])
         file_format=parse_safe(data.get_fileformat())
-
-        if len(file_format)!=len((non_unique&file_format)):
+        if len((unique&file_format))==0:
             return False
         elif len(ele._post.post_media) > 1 or ele.responsetype in [
             "stories",
