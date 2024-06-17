@@ -279,8 +279,8 @@ async def get_after(model_id, username, forced_after=None):
     )
 
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x["posted_at"])))
-    log.info(f"Number of messages marked as downloaded {curr_downloaded-missing_items}")
-    log.info(f"Number of messages marked as missing/undownloaded {missing_items}")
+    log.info(f"Number of timeline posts marked as downloaded {curr_downloaded-missing_items}")
+    log.info(f"Number of timeline posts  marked as missing/undownloaded {missing_items}")
 
     if len(missing_items) == 0:
         log.debug(
