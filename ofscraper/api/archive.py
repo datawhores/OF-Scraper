@@ -258,6 +258,8 @@ async def get_after(model_id, username, forced_after=None):
             curr,
         )
     )
+    log.info(f"Number of archived items marked as downloaded {curr_downloaded-missing_items}")
+    log.info(f"Number of archived items marked as missing/undownloaded {missing_items}")
     missing_items = list(sorted(missing_items, key=lambda x: x.get("posted_at") or 0))
     if len(missing_items) == 0:
         log.debug(
