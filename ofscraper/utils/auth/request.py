@@ -49,17 +49,11 @@ def get_request_auth(refresh=False,forced=False):
     #     return curr_auth
     dynamic=settings.get_dynamic_rules()
     logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
+    auth=None
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth=get_request_auth_dynamic_rule_manual()
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
         auth=get_request_auth_generic()
-    elif (dynamic) in {
-        "deviint",
-        "dv",
-        "dev",
-    }:
-
-        auth = get_request_auth_deviint()
 
     elif (dynamic) in {
         "riley"
@@ -72,11 +66,20 @@ def get_request_auth(refresh=False,forced=False):
     }:
 
         auth = get_request_auth_datawhores()
+    elif not constants.getattr("ALLOW_OTHER_DYNAMIC_RULES"):
+        pass
+    elif (dynamic) in {
+        "deviint",
+        "dv",
+        "dev",
+    }:
+
+        auth = get_request_auth_deviint()
     elif (dynamic) in {
         "dc","digital","digitalcriminal","digitalcriminals"
     }:
         auth = get_request_auth_digitalcriminals()
-    else:
+    if auth==None:
         auth = get_request_auth_riley()
     cache.set(
         "api_onlyfans_sign",
