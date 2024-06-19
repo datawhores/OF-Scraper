@@ -177,15 +177,15 @@ def get_InfiniteLoop(config=None):
 
 
 @wrapper.config_reader
-def get_disable_after(config=None):
+def get_enable_after(config=None):
     if config is False:
-        return constants.DISABLE_AFTER_DEFAULT
-    val = (
-        config.get("disable_auto_after")
-        if config.get("disable_auto_after") is not None
-        else config.get("advanced_options", {}).get("disable_auto_after")
-    )
-    return val if val is not None else constants_attr.getattr("DISABLE_AFTER_DEFAULT")
+        return constants.ENABLE_AUTO_AFTER_DEFAULT
+    val = not config.get("disable_auto_after")
+    val=not config.get("advanced_options", {}).get("disable_auto_after") if val is None else val
+    val=config.get("enable_auto_after") if val is None else val
+    val=config.get("advanced_options", {}).get("enable_auto_after") if val is None else val
+        
+    return val if val is not None else constants_attr.getattr("ENABLE_AUTO_AFTER_DEFAULT")
 
 
 @wrapper.config_reader

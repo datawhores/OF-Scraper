@@ -58,7 +58,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "remove_hash_match": data.get_hash(config=config),
             "infinite_loop_action_mode": data.get_InfiniteLoop(config=config),
             "post_download_script": data.get_post_download_script(config=config),
-            "disable_auto_after": data.get_disable_after(config=config),
+            "enable_auto_after": data.get_enable_after(config=config),
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
         },

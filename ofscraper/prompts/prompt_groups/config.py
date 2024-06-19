@@ -92,7 +92,7 @@ def funct(prompt_):
     sanitize_text: toggle for cleaning text for db
     temp_dir: directory for storing temp files
     infinite_loop_action_mode: toggle for infinite loop via action mode
-    disable_auto_after: toggle for safe --after usage
+    enable_auto_after: whether to dynamically set --after: default True
     default_user_list: default user list for --action
     default_black_list: default black list for --action
     remove_hash_match: remove files if hash matches
@@ -552,9 +552,9 @@ def advanced_config() -> dict:
             },
             {
                 "type": "list",
-                "name": "disable_auto_after",
-                "message": "Disable After Check",
-                "default": data.get_disable_after(),
+                "name": "enable_auto_after",
+                "message": "Dynamically sets --after based on db and cache",
+                "default": data.get_enable_after(),
                 "choices": [
                     Choice(True, "Yes"),
                     Choice(False, "No"),

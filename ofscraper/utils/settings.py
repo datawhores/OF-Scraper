@@ -173,7 +173,7 @@ def get_ffmpeg():
 
 
 def auto_after_enabled():
-    return not config_data.get_disable_after()
+    return config_data.get_enable_after() and not get_cache_disabled() and not get_api_cache_disabled()
 
 
 def get_post_download_script():
