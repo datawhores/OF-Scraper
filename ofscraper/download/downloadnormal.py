@@ -106,7 +106,7 @@ async def producer(queue, aws,concurrency_limit):
     await queue.put(None)
     for _ in range(concurrency_limit):
         await queue.put(None)
-    queue.join()  # Wait for all tasks to finish
+    await queue.join()  # Wait for all tasks to finish
 
 
 @run
