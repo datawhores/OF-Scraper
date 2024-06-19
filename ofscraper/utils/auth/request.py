@@ -48,8 +48,8 @@ def get_request_auth(refresh=False,forced=False):
     # if not (refresh or forced) and curr_auth:
     #     return curr_auth
     dynamic=settings.get_dynamic_rules()
-    logging.getLogger("shared").debug(f"getting new signature with {dynamic}")
     auth=None
+
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth=get_request_auth_dynamic_rule_manual()
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
