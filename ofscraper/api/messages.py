@@ -377,10 +377,10 @@ def get_individual_post(model_id, postid):
 async def get_after(model_id, username, forced_after=None):
     if forced_after is not None:
         return forced_after
-    elif not settings.auto_after_enabled():
-        return 0
     elif read_args.retriveArgs().after != None:
         return read_args.retriveArgs().after.float_timestamp
+    elif not settings.auto_after_enabled():
+        return 0
     elif cache.get(f"{model_id}_scrape_messages"):
         log.debug(
             "Used --after previously. Scraping all messages required to make sure content is not missing"
