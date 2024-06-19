@@ -33,8 +33,11 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
 log = logging.getLogger("shared")
+API="timeline"
+
 
 
 @run
@@ -106,6 +109,8 @@ async def process_tasks(tasks):
 
 
 async def get_oldtimeline(model_id, username):
+    if read_full_after_scan_check(model_id,API):
+        return []
     if not settings.get_api_cache_disabled():
         oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
@@ -126,7 +131,6 @@ async def get_oldtimeline(model_id, username):
 
 
 async def get_split_array(model_id, username, after):
-
     oldtimeline = await get_oldtimeline(model_id, username)
     if len(oldtimeline) == 0:
         return []
@@ -250,17 +254,9 @@ def get_individual_post(id):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after is not None:
-        return forced_after
-    elif read_args.retriveArgs().after != None:
-        return read_args.retriveArgs().after.float_timestamp
-    elif not settings.auto_after_enabled():
-        return 0
-    elif cache.get(f"{model_id}_full_timeline_scrape"):
-        log.info(
-            "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
-        )
-        return 0
+    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
+    if prechecks!=None:
+        return prechecks
     curr = await get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting oldest date to zero because database is empty")

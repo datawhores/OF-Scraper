@@ -35,7 +35,10 @@ from ofscraper.db.operations_.messages import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
 
+API="messages"
 log = logging.getLogger("shared")
 sleeper = None
 
@@ -43,12 +46,7 @@ sleeper = None
 @run
 async def get_messages(model_id, username, forced_after=None, c=None):
     global after
-    oldmessages = None
-    if not settings.get_api_cache_disabled():
-        oldmessages = await get_messages_post_info(model_id=model_id, username=username)
-    else:
-        oldmessages = []
-    trace_log_old(oldmessages)
+    oldmessages=await get_old_messages(model_id,username)
 
     before = (read_args.retriveArgs().before).float_timestamp
     after = await get_after(model_id, username, forced_after)
@@ -62,7 +60,24 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     data = await process_tasks(tasks, model_id, after)
     return data
 
-
+async def get_old_messages(model_id,username):
+    oldmessages = None
+    if not read_full_after_scan_check(model_id,API):
+        return []
+    if not settings.get_api_cache_disabled():
+        oldmessages = await get_messages_post_info(model_id=model_id, username=username)
+    else:
+        oldmessages = []
+    seen = set()
+    oldmessages = [
+        post
+        for post in oldmessages
+        if post["post_id"] not in seen and not seen.add(post["post_id"])
+    ]
+    log.debug(f"[bold]Timeline Cache[/bold] {len(oldmessages)} found")
+    trace_log_old(oldmessages)
+    return oldmessages
+    
 async def process_tasks(tasks, model_id, after):
     page_count = 0
     responseArray = []
@@ -375,17 +390,9 @@ def get_individual_post(model_id, postid):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after is not None:
-        return forced_after
-    elif read_args.retriveArgs().after != None:
-        return read_args.retriveArgs().after.float_timestamp
-    elif not settings.auto_after_enabled():
-        return 0
-    elif cache.get(f"{model_id}_scrape_messages"):
-        log.debug(
-            "Used --after previously. Scraping all messages required to make sure content is not missing"
-        )
-        return 0
+    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
+    if prechecks!=None:
+        return prechecks
     curr = await get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

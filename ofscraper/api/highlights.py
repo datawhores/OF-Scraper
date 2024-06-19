@@ -22,7 +22,8 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-
+API_S="stories"
+API_H="highlights"
 
 #############################################################################
 #### Stories

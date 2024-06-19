@@ -49,6 +49,7 @@ from ofscraper.utils.args.accessors.areas import (
     get_like_area,
 )
 from ofscraper.utils.context.run_async import run
+from ofscraper.api.common.cache.write import set_after_checks
 
 log = logging.getLogger("shared")
 
@@ -79,15 +80,9 @@ async def process_messages(model_id, username, c):
         unlocked = [item for message in messages_ for item in message.media]
         log.debug(f"[bold]Messages media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Messages media count without locked[/bold] {len(unlocked)}")
+        set_after_checks(model_id,messages.API)
 
-        # Update after database
-        cache.set(
-            f"{model_id}_scrape_messages",
-            read_args.retriveArgs().after is not None
-            and read_args.retriveArgs().after != 0,
-        )
-
-        return all_output, messages_, "Messages"
+        return all_output, messages_, messages.API
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -113,7 +108,7 @@ async def process_paid_post(model_id, username, c):
         log.debug(f"[bold]Paid media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Paid media count without locked[/bold] {len(unlocked)}")
 
-        return (all_output, paid_content, "Purchased")
+        return (all_output, paid_content, paid.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -139,7 +134,7 @@ async def process_stories(model_id, username, c):
         log.debug(f"[bold]Stories media count [/bold] {len(all_output)}")
         log.debug(f"[bold]Stories media count without locked[/bold] {len(unlocked)}")
 
-        return all_output, stories, "Stories"
+        return all_output, stories, highlights.API_S
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -166,7 +161,7 @@ async def process_highlights(model_id, username, c):
         log.debug(f"[bold]Highlights media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Highlights media count without locked[/bold] {len(unlocked)}")
 
-        return (all_output, highlights_, "Highlights")
+        return (all_output, highlights_, highlights.API_H)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -194,12 +189,10 @@ async def process_timeline_posts(model_id, username, c):
         unlocked = [item for post in timeline_only_posts for item in post.media]
         log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Timeline media count without locked[/bold] {len(unlocked)}")
-        cache.set(
-            f"{model_id}_full_timeline_scrape",
-            read_args.retriveArgs().after is not None,
-        )
+        set_after_checks(model_id,timeline.API)
+        
         log.debug("Returning timeline results")
-        return (all_output, timeline_only_posts, "Timeline")
+        return (all_output, timeline_only_posts, timeline.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -226,12 +219,8 @@ async def process_archived_posts(model_id, username, c):
         unlocked = [item for post in archived_posts for item in post.media]
         log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Archived media count without locked[/bold] {len(unlocked)}")
-
-        cache.set(
-            f"{model_id}_full_archived_scrape",
-            read_args.retriveArgs().after is not None,
-        )
-        return (all_output, archived_posts, "archived")
+        set_after_checks(model_id,archive.API)
+        return (all_output, archived_posts, archive.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -259,12 +248,8 @@ async def process_streamed_posts(model_id, username, c):
         unlocked = [item for post in streams_posts for item in post.media]
         log.debug(f"[bold]streams media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]streams media count without locked[/bold] {len(unlocked)}")
-
-        cache.set(
-            f"{model_id}_full_streams_scrape",
-            read_args.retriveArgs().after is not None,
-        )
-        return (all_output, streams_posts, "Streams")
+        set_after_checks(model_id,streams.API)
+        return (all_output, streams_posts, streams.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -286,7 +271,7 @@ async def process_pinned_posts(model_id, username, c):
         log.debug(f"[bold]Pinned media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Pinned media count without locked[/bold] {len(unlocked)}")
 
-        return (all_output, pinned_posts, "Pinned")
+        return (all_output, pinned_posts, pinned.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

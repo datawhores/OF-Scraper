@@ -24,7 +24,7 @@ from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
-
+API="Purchased"
 
 @run
 async def get_paid_posts(username, model_id, c=None):

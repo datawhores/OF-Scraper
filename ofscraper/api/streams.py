@@ -34,6 +34,10 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
+API="streams"
+
 
 log = logging.getLogger("shared")
 
@@ -43,22 +47,35 @@ sem = None
 
 @run
 async def get_streams_posts(model_id, username, forced_after=None, c=None):
-
-    oldstreams = None
-    if not settings.get_api_cache_disabled():
-        oldstreams = await get_streams_post_info(model_id=model_id, username=username)
-    else:
-        oldstreams = []
-    trace_log_old(oldstreams)
-
+    oldstreams=await get_oldstreams(model_id,username)
     log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
-    oldstreams = list(filter(lambda x: x is not None, oldstreams))
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
     splitArrays = get_split_array(oldstreams, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
     return data
+
+async def get_oldstreams(model_id,username):
+    oldstreams = None
+    if not read_full_after_scan_check(model_id,API):
+        return []
+    if not settings.get_api_cache_disabled():
+        oldstreams = await get_streams_post_info(model_id=model_id, username=username)
+    else:
+        oldstreams = []
+    oldstreams = list(filter(lambda x: x is not None, oldstreams))
+    # dedupe oldtimeline
+    seen = set()
+    oldstreams = [
+        post
+        for post in oldstreams
+        if post["post_id"] not in seen and not seen.add(post["post_id"])
+    ]
+    log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
+    trace_log_old(oldstreams)
+    return oldstreams
+
 
 
 async def process_tasks(tasks, model_id, after):
@@ -229,19 +246,11 @@ def set_check(unduped, model_id, after):
         cache.close()
 
 
-async def get_after(model_id, username, forced_after=None):
-    if forced_after is not None:
-        return forced_after
-    elif read_args.retriveArgs().after != None:
-        return read_args.retriveArgs().after.float_timestamp
-    elif not settings.auto_after_enabled():
-        return 0
-    elif cache.get(f"{model_id}_full_streams_scrape"):
-        log.info(
-            "Used --after previously. Scraping all streams posts required to make sure content is not missing"
-        )
-        return 0
 
+async def get_after(model_id, username, forced_after=None):
+    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
+    if prechecks!=None:
+        return prechecks
     curr = await get_streams_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

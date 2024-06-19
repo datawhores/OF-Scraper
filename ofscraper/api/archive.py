@@ -34,8 +34,11 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
 
 log = logging.getLogger("shared")
+API="archived"
 
 
 sem = None
@@ -43,13 +46,9 @@ sem = None
 
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
+    oldarchived=await get_oldarchived(model_id,username)
 
-    oldarchived = None
-    if not settings.get_api_cache_disabled():
-        oldarchived = await get_archived_post_info(model_id=model_id, username=username)
-    else:
-        oldarchived = []
-    trace_log_old(oldarchived)
+
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
@@ -60,6 +59,23 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     data = await process_tasks(tasks, model_id, after)
     return data
 
+async def get_oldarchived(model_id,username):
+    oldarchived = None
+    if not read_full_after_scan_check(model_id,API):
+        return []
+    if not settings.get_api_cache_disabled():
+        oldarchived = await get_archived_post_info(model_id=model_id, username=username)
+    else:
+        oldarchived = []
+    seen = set()
+    oldarchived = [
+        post
+        for post in oldarchived
+        if post["post_id"] not in seen and not seen.add(post["post_id"])
+    ]
+    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+    trace_log_old(oldarchived)
+    return oldarchived
 
 async def process_tasks(tasks, model_id, after):
     responseArray = []
@@ -230,18 +246,9 @@ def set_check(unduped, model_id, after):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after is not None:
-        return forced_after
-    elif read_args.retriveArgs().after != None:
-        return read_args.retriveArgs().after.float_timestamp
-    elif not settings.auto_after_enabled():
-        return 0
-    elif cache.get(f"{model_id}_full_archived_scrape"):
-        log.info(
-            "Used --after previously. Scraping all archived posts required to make sure content is not missing"
-        )
-        return 0
-
+    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
+    if prechecks!=None:
+        return prechecks
     curr = await get_archived_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
