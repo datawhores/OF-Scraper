@@ -172,10 +172,8 @@ def get_ffmpeg():
     )
 
 
-def get_after_enabled():
-    return (
-        read_args.retriveArgs().after is not None or not config_data.get_disable_after()
-    )
+def auto_after_enabled():
+    return not config_data.get_disable_after()
 
 
 def get_post_download_script():

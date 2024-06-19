@@ -136,7 +136,7 @@ async def process_stories(model_id, username, c):
         )
         all_output = [item for post in stories for item in post.all_media]
         unlocked = [item for post in stories for item in post.media]
-        log.debug(f"[bold]Stories media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Stories media count [/bold] {len(all_output)}")
         log.debug(f"[bold]Stories media count without locked[/bold] {len(unlocked)}")
 
         return all_output, stories, "Stories"

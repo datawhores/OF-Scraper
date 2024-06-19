@@ -377,7 +377,7 @@ def get_individual_post(model_id, postid):
 async def get_after(model_id, username, forced_after=None):
     if forced_after is not None:
         return forced_after
-    elif not settings.get_after_enabled():
+    elif not settings.auto_after_enabled():
         return 0
     elif read_args.retriveArgs().after != None:
         return read_args.retriveArgs().after.float_timestamp
