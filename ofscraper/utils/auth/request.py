@@ -93,6 +93,7 @@ def get_request_auth_dynamic_rule_manual():
     return request_auth_helper(content)
 
 def get_request_auth_generic():
+    logging.getLogger("shared").debug(f"getting new signature with generic")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -108,6 +109,8 @@ def get_request_auth_generic():
             return request_auth_helper(content)
 
 def get_request_auth_deviint():
+    logging.getLogger("shared").debug(f"getting new signature with deviint")
+
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -124,6 +127,8 @@ def get_request_auth_deviint():
 
 
 def get_request_auth_datawhores():
+    logging.getLogger("shared").debug(f"getting new signature with datawhores")
+
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -139,6 +144,8 @@ def get_request_auth_datawhores():
             return request_auth_helper(content)
 
 def get_request_auth_riley():
+    logging.getLogger("shared").debug(f"getting new signature with riley")
+
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -152,16 +159,9 @@ def get_request_auth_riley():
         ) as r:
             content = r.json_()
             return request_auth_helper(content)  
-
-def request_auth_helper(content):
-    static_param = content["static_param"]
-    fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-    checksum_indexes = content["checksum_indexes"]
-    checksum_constant = content["checksum_constant"]
-    return (static_param, fmt, checksum_indexes, checksum_constant)
-
-
 def get_request_auth_digitalcriminals():
+    logging.getLogger("shared").debug(f"getting new signature with digitalcriminals")
+
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -178,6 +178,16 @@ def get_request_auth_digitalcriminals():
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
             return (static_param, fmt, checksum_indexes, checksum_constant)
+
+def request_auth_helper(content):
+    static_param = content["static_param"]
+    fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+    checksum_indexes = content["checksum_indexes"]
+    checksum_constant = content["checksum_constant"]
+    return (static_param, fmt, checksum_indexes, checksum_constant)
+
+
+
 
 
 def make_headers():
