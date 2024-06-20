@@ -117,12 +117,6 @@ Ask in the discord or open an issue if you need help with what to change to acco
     </a>
 </div>
 
-
-
-
-
-
-
-
+---
 
 [![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
