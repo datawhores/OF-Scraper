@@ -55,12 +55,7 @@ def get_request_auth(refresh=False,forced=False):
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
         auth=get_request_auth_generic()
 
-    elif (dynamic) in {
-        "riley"
-    }:
 
-        auth = get_request_auth_riley()
-    
     elif (dynamic) in {
         "datawhores"
     }:
@@ -68,6 +63,10 @@ def get_request_auth(refresh=False,forced=False):
         auth = get_request_auth_datawhores()
     elif not constants.getattr("ALLOW_OTHER_DYNAMIC_RULES"):
         pass
+    elif (dynamic) in {
+        "riley"
+    }:
+        auth = get_request_auth_riley()
     elif (dynamic) in {
         "deviint",
         "dv",
@@ -80,7 +79,7 @@ def get_request_auth(refresh=False,forced=False):
     }:
         auth = get_request_auth_digitalcriminals()
     if auth==None:
-        auth = get_request_auth_riley()
+        auth = get_request_auth_datawhores()
     cache.set(
         "api_onlyfans_sign",
         auth,
