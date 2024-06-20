@@ -351,20 +351,22 @@ async def consumer(queue):
     while True:
         data = await queue.get()
         if data==None:
+            queue.task_done()
             break
-        try:
-            pack= await download(*data)
-            common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-            media_type, num_bytes_downloaded = pack
-            await common.send_msg((media_type, num_bytes_downloaded, 0))
-        except Exception as e:
-                common_globals.log.info(f"Download Failed because\n{e}")
-                common_globals.log.traceback_(traceback.format_exc())
-                media_type = "skipped"
-                num_bytes_downloaded = 0
+        else:
+            try:
+                pack= await download(*data)
+                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
+                media_type, num_bytes_downloaded = pack
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
-        queue.task_done()
-        await asyncio.sleep(1)
+            except Exception as e:
+                    common_globals.log.info(f"Download Failed because\n{e}")
+                    common_globals.log.traceback_(traceback.format_exc())
+                    media_type = "skipped"
+                    num_bytes_downloaded = 0
+                    await common.send_msg((media_type, num_bytes_downloaded, 0))
+            queue.task_done()
+            await asyncio.sleep(1)
 
 
 async def producer(queue, aws,concurrency_limit):
