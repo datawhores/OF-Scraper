@@ -182,7 +182,7 @@ def get_request_auth_rafa():
             constants.getattr("RAFA_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper_alt_format(content)
+            return request_auth_helper(content)
 
 def get_request_auth_riley():
     logging.getLogger("shared").debug(f"getting new signature with riley")
