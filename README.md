@@ -109,7 +109,17 @@ Ask in the discord or open an issue if you need help with what to change to acco
 </div>
 </a>
 
-ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
+<div style="display: inline-block">
+<a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/btc">
+<img src="https://github.com/datawhores/OF-Scraper/assets/67020411/c96d0c22-b015-4ffc-b09e-6f246ae10fba" alt="drawing" style="height:100px"/>
+</div>
+</a>
+
+<div style="display: inline-block">
+<a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/eth">
+<img src="https://github.com/datawhores/OF-Scraper/assets/67020411/d9df33e9-a8ac-4574-91dd-1cb5a20f7201" alt="drawing" style="height:100px"/>
+</div>
+</a>
 
 
 
