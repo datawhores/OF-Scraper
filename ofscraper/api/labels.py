@@ -17,7 +17,6 @@ import traceback
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -330,9 +329,6 @@ def get_default_label_dict(labels):
         output[label["id"]]["seen"] = set()
         output[label["id"]]["posts"] = []
     return output
-
-
-
 
 def trace_log_task(responseArray, header=None):
     if not is_trace():

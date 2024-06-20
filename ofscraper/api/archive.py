@@ -20,7 +20,6 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
@@ -36,6 +35,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.check import set_check
 
 log = logging.getLogger("shared")
 API="archived"
@@ -56,7 +56,9 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     time_log(username, after)
     splitArrays = get_split_array(oldarchived, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
-    data = await process_tasks(tasks, model_id, after)
+    data = await process_tasks(tasks)
+    set_check(data, model_id, after,API)
+
     return data
 
 async def get_oldarchived(model_id,username):
@@ -77,7 +79,7 @@ async def get_oldarchived(model_id,username):
     trace_log_old(oldarchived)
     return oldarchived
 
-async def process_tasks(tasks, model_id, after):
+async def process_tasks(tasks):
     responseArray = []
     page_count = 0
 
@@ -132,8 +134,6 @@ async def process_tasks(tasks, model_id, after):
     )
     trace_log_task(responseArray)
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")
-
-    set_check(responseArray, model_id, after)
     return responseArray
 
 
@@ -226,24 +226,6 @@ def get_tasks(splitArrays, c, model_id, after):
             )
         )
     return tasks
-
-
-def set_check(unduped, model_id, after):
-    if not after:
-        seen = set()
-        all_posts = [
-            post
-            for post in cache.get(f"archived_check_{model_id}", default=[]) + unduped
-            if post["id"] not in seen and not seen.add(post["id"])
-        ]
-
-        cache.set(
-            f"archived_check_{model_id}",
-            all_posts,
-            expire=constants.getattr("THREE_DAY_SECONDS"),
-        )
-        cache.close()
-
 
 async def get_after(model_id, username, forced_after=None):
     prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
