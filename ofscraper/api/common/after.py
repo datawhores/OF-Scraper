@@ -17,9 +17,9 @@ def get_after_pre_checks(model_id,api, forced_after=None):
     return _return_val(val,api)
 
 def _return_val(val,api):
-    if not val:
+    if val==None:
         logging.getLogger("shared").info(f"precheck failed for {api} using db")
-        return
+        return val
     else:
         logging.getLogger("shared").info(f"precheck success for {api} skipping db")
         return val

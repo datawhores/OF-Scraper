@@ -417,7 +417,7 @@ async def process_labels(model_id, username, c):
         return (
             [item for sublist in all_output for item in sublist],
             [post for ele in labelled_posts_labels for post in ele.posts],
-            "Labels",
+           labels_api.API,
         )
     except Exception as E:
         log.traceback_(E)

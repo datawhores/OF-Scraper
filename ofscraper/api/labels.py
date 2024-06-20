@@ -24,6 +24,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 
 log = logging.getLogger("shared")
+API="labels"
 
 
 @run
@@ -39,7 +40,10 @@ async def get_labels(model_id, c=None):
             )
         )
     )
-    return await get_posts_for_labels(labels_, model_id, c=c)
+    data=await get_posts_for_labels(labels_, model_id, c=c)
+    set_check(data, model_id,None,API)
+
+    return data
 
 
 @run
@@ -57,7 +61,7 @@ async def get_posts_for_labels(labels, model_id, c=None):
         tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
         for label in labels
     ]
-    labels_final = await process_tasks_get_posts_for_labels(tasks, labels, model_id)
+    labels_final = await process_tasks_get_posts_for_labels(tasks, labels)
     return labels_final
 
 
@@ -176,7 +180,7 @@ async def scrape_labels(c, model_id, offset=0):
         progress_utils.remove_api_job_task(task)
 
 
-async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
+async def process_tasks_get_posts_for_labels(tasks, labels):
     responseDict = get_default_label_dict(labels)
 
     page_count = 0
@@ -219,7 +223,6 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             tasks.extend(new_tasks)
         tasks = new_tasks
     [label.pop("seen", None) for label in responseDict.values()]
-    set_check(responseDict.values(), model_id)
     log.debug(
         f"{common_logs.FINAL_IDS.format('All Labels Content')} {[item['id'] for value in responseDict.values() for item in value.get('posts', [])]}"
     )

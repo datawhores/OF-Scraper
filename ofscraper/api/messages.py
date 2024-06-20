@@ -21,7 +21,6 @@ import ofscraper.api.common.logs as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
@@ -36,9 +35,9 @@ from ofscraper.db.operations_.messages import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.write import set_check_mode_posts
 from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.cache.write import set_check_mode_posts
+from ofscraper.api.common.check import set_check
+
 
 
 API="messages"
@@ -60,7 +59,8 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     # Set charged sleeper
     get_sleeper(reset=True)
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-    data = await process_tasks(tasks, model_id, after)
+    data = await process_tasks(tasks)
+    set_check(data, model_id, after,API)
     return data
 
 async def get_old_messages(model_id,username):
@@ -77,11 +77,11 @@ async def get_old_messages(model_id,username):
         for post in oldmessages
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
-    log.debug(f"[bold]Timeline Cache[/bold] {len(oldmessages)} found")
+    log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
     trace_log_old(oldmessages)
     return oldmessages
     
-async def process_tasks(tasks, model_id, after):
+async def process_tasks(tasks):
     page_count = 0
     responseArray = []
     page_task = progress_utils.add_api_task(
@@ -132,7 +132,6 @@ async def process_tasks(tasks, model_id, after):
     trace_log_task(responseArray)
     log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)}")
 
-    set_check(responseArray, model_id, after)
     return responseArray
 
 
@@ -273,17 +272,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
             )
         )
     return tasks
-
-
-def set_check(unduped, model_id, after):
-    if not after:
-        seen = set()
-        all_posts = [
-            post
-            for post in cache.get(f"message_check_{model_id}", default=[]) + unduped
-            if post["id"] not in seen and not seen.add(post["id"])
-        ]
-        set_check_mode_posts(model_id,API,all_posts)
 
 
 async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
