@@ -102,8 +102,8 @@ Ask in the discord or open an issue if you need help with what to change to acco
 
 ## Support
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/datawhores)
- 
-https://img.shields.io/badge/dynamic/json?url=https://explorer.viawallet.com/res/btc/addresses/bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87&query=$.data.balance&suffix= BTC&logo=bitcoin&label=donated
+
+![image](https://github.com/datawhores/OF-Scraper/assets/67020411/c96d0c22-b015-4ffc-b09e-6f246ae10fba)
 
 ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
 
