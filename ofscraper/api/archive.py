@@ -61,7 +61,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
 
 async def get_oldarchived(model_id,username):
     oldarchived = None
-    if not read_full_after_scan_check(model_id,API):
+    if read_full_after_scan_check(model_id,API):
         return []
     if not settings.get_api_cache_disabled():
         oldarchived = await get_archived_post_info(model_id=model_id, username=username)

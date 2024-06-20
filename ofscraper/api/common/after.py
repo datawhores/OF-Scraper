@@ -12,6 +12,6 @@ def get_after_pre_checks(model_id,api, forced_after=None):
     elif not settings.auto_after_enabled():
         return 0
     elif read_full_after_scan_check(model_id,api):
-        return 
+        return 0
     logging.getLogger("shared").info(f"precheck failed for {api} using db")
     return None
