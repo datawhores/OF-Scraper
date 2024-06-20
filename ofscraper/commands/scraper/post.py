@@ -107,7 +107,6 @@ async def process_paid_post(model_id, username, c):
         unlocked = [item for post in paid_content for item in post.media]
         log.debug(f"[bold]Paid media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Paid media count without locked[/bold] {len(unlocked)}")
-
         return (all_output, paid_content, paid.API)
     except Exception as E:
         log.traceback_(E)
@@ -292,7 +291,7 @@ async def process_profile(username) -> list:
                 media.Media(
                     {
                         "url": data["url"],
-                        "type": data["mediatype"],
+                        "ptype": data["mediatype"],
                         "id": data["mediaid"],
                         "text": data["text"],
                     },
@@ -300,7 +299,7 @@ async def process_profile(username) -> list:
                     post,
                 )
             )
-        return output, posts, "Profile"
+        return output, posts, profile.API
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

@@ -20,10 +20,11 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
+from ofscraper.api.common.check import set_check
+
 
 log = logging.getLogger("shared")
 API="pinned"
@@ -45,11 +46,13 @@ async def get_pinned_posts(model_id, c=None):
             )
         )
     )
-    data = await process_tasks(tasks, model_id)
+    data = await process_tasks(tasks)
+    set_check(data, model_id, None,API)
+
     return data
 
 
-async def process_tasks(tasks, model_id):
+async def process_tasks(tasks):
     responseArray = []
     page_count = 0
 
@@ -112,25 +115,9 @@ async def process_tasks(tasks, model_id):
         pinned_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(f"{common_logs.FINAL_RAW.format('Pinned')}".format(posts=pinned_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)}")
-
-    set_check(responseArray, model_id)
     return responseArray
 
 
-def set_check(unduped, model_id):
-    if not read_args.retriveArgs().after:
-        seen = set()
-        all_posts = [
-            post
-            for post in cache.get(f"pinned_check_{model_id}", default=[]) + unduped
-            if post["id"] not in seen and not seen.add(post["id"])
-        ]
-        cache.set(
-            f"pinned_check_{model_id}",
-            all_posts,
-            expire=constants.getattr("THREE_DAY_SECONDS"),
-        )
-        cache.close()
 
 
 async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:

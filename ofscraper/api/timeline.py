@@ -35,7 +35,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.cache.write import set_check_mode_posts
+from ofscraper.api.common.check import set_check
 
 
 log = logging.getLogger("shared")
@@ -51,6 +51,7 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks)
+    set_check(data, model_id, after,API)
     return data
 
 
@@ -106,7 +107,6 @@ async def process_tasks(tasks):
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")
-
     trace_log_task(responseArray)
     return responseArray
 
@@ -231,15 +231,6 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-def set_check(unduped, model_id, after):
-    if not after:
-        seen = set()
-        all_posts = [
-            post
-            for post in cache.get(f"timeline_check_{model_id}", default=[]) + unduped
-            if post["id"] not in seen and not seen.add(post["id"])
-        ]
-        set_check_mode_posts(model_id,API,all_posts)
 
 
 def get_individual_post(id):

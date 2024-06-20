@@ -21,6 +21,8 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
+from ofscraper.api.common.check import set_check
+
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -31,12 +33,12 @@ async def get_paid_posts(username, model_id, c=None):
     tasks = []
 
     tasks.append(asyncio.create_task(scrape_paid(c, username)))
-    data = await process_tasks(tasks, model_id)
-
+    data = await process_tasks(tasks)
+    set_check(data, model_id, None,API)
     return data
 
 
-async def process_tasks(tasks, model_id):
+async def process_tasks(tasks):
     page_count = 0
     page_task = progress_utils.add_api_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
@@ -91,7 +93,7 @@ async def process_tasks(tasks, model_id):
         paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(f"{common_logs.FINAL_RAW.format('Paid')}".format(posts=paid_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
-    set_check(model_id, responseArray)
+
     return responseArray
 
 
@@ -239,7 +241,8 @@ def create_all_paid_dict(paid_content):
     for ele in paid_content:
         user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
         user_dict.setdefault(str(user_id), []).append(ele)
-    [set_check(key, val) for key, val in user_dict.items()]
+    [ set_check(val, key, None,API)
+ for key, val in user_dict.items()]
     return user_dict
 
 
@@ -304,21 +307,6 @@ async def scrape_all_paid(c, offset=0, required=None):
 
     finally:
         progress_utils.remove_api_job_task(task)
-
-
-def set_check(model_id, unduped):
-    seen = set()
-    all_posts = [
-        post
-        for post in cache.get(f"purchase_check_{model_id}", default=[]) + unduped
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-    cache.set(
-        f"purchased_check_{model_id}",
-        all_posts,
-        expire=constants.getattr("THREE_DAY_SECONDS"),
-    )
-    cache.close()
 
 
 def get_individual_post(username, model_id, postid):

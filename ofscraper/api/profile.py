@@ -28,6 +28,7 @@ from ..utils import encoding
 
 console = Console()
 log = logging.getLogger("shared")
+API="profile"
 
 
 # can get profile from username or id
@@ -37,7 +38,6 @@ def scrape_profile(username: Union[int, str], refresh=True) -> dict:
         refresh=refresh,
     ) as c:
         return scrape_profile_helper(c, username)
-
 
 def scrape_profile_helper(c, username: Union[int, str]):
     data = cache.get(f"username_{username}", default=None)

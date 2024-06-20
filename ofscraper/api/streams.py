@@ -20,7 +20,6 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
@@ -35,8 +34,8 @@ from ofscraper.db.operations_.posts import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check,read_check_mode
-from ofscraper.api.common.cache.write import set_check_mode_posts
+from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.check import set_check
 API="streams"
 
 
@@ -54,7 +53,8 @@ async def get_streams_posts(model_id, username, forced_after=None, c=None):
     time_log(username, after)
     splitArrays = get_split_array(oldstreams, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
-    data = await process_tasks(tasks, model_id, after)
+    data = await process_tasks(tasks)
+    set_check(data, model_id, after,API)
     return data
 
 async def get_oldstreams(model_id,username):
@@ -79,7 +79,7 @@ async def get_oldstreams(model_id,username):
 
 
 
-async def process_tasks(tasks, model_id, after):
+async def process_tasks(tasks):
     responseArray = []
     page_count = 0
 
@@ -134,8 +134,6 @@ async def process_tasks(tasks, model_id, after):
     )
     trace_log_task(responseArray)
     log.debug(f"{common_logs.FINAL_COUNT.format('Streams')} {len(responseArray)}")
-
-    set_check(responseArray, model_id, after)
     return responseArray
 
 
@@ -228,17 +226,6 @@ def get_tasks(splitArrays, c, model_id, after):
             )
         )
     return tasks
-
-
-def set_check(unduped, model_id, after):
-    if not after:
-        seen = set()
-        all_posts = [
-            post
-            for post in read_check_mode(model_id,API) + unduped
-            if post["id"] not in seen and not seen.add(post["id"])
-        ]
-        set_check_mode_posts(model_id,API,all_posts)
 
 
 
