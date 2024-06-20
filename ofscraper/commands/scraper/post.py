@@ -119,7 +119,7 @@ async def process_stories(model_id, username, c):
         stories = await highlights.get_stories_post(model_id, c=c)
         stories = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, responsetype="stories"),
+                lambda x: posts_.Post(x, model_id, username, responsetype=highlights.API_S),
                 stories,
             )
         )
@@ -145,7 +145,7 @@ async def process_highlights(model_id, username, c):
         highlights_ = await highlights.get_highlight_post(model_id, c=c)
         highlights_ = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, responsetype="highlights"),
+                lambda x: posts_.Post(x, model_id, username, responsetype=highlights.API_H),
                 highlights_,
             )
         )
@@ -173,7 +173,7 @@ async def process_timeline_posts(model_id, username, c):
 
         timeline_posts = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, "timeline"),
+                lambda x: posts_.Post(x, model_id, username, timeline.API),
                 timeline_posts,
             )
         )
@@ -203,7 +203,7 @@ async def process_archived_posts(model_id, username, c):
         archived_posts = await archive.get_archived_posts(model_id, username, c=c)
         archived_posts = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, "archived"),
+                lambda x: posts_.Post(x, model_id, username, archive.API),
                 archived_posts,
             )
         )
@@ -232,7 +232,7 @@ async def process_streamed_posts(model_id, username, c):
         streams_posts = await streams.get_streams_posts(model_id, username, c=c)
         streams_posts = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, "streams"),
+                lambda x: posts_.Post(x, model_id, username, streams.API),
                 streams_posts,
             )
         )
@@ -285,7 +285,7 @@ async def process_profile(username) -> list:
         output = []
         posts = []
         for count, data in enumerate(urls):
-            post = posts_.Post(data, info[2], username, responsetype="profile")
+            post = posts_.Post(data, info[2], username, responsetype=profile.API)
             posts.append(post)
             output.append(
                 media.Media(
