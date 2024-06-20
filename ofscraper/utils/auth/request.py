@@ -97,7 +97,7 @@ def get_request_auth(refresh=False,forced=False):
 
 def get_request_auth_dynamic_rule_manual():
     content = constants.getattr("DYNAMIC_RULE")
-    return request_auth_helper(content)
+    return request_auth_helper_picker(content)
 
 def get_request_auth_generic():
     logging.getLogger("shared").debug(f"getting new signature with generic")
@@ -113,7 +113,8 @@ def get_request_auth_generic():
             constants.getattr("DYNAMIC_GENERIC_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper(content)
+            return request_auth_helper_picker(content)
+           
 
 def get_request_auth_deviint():
     logging.getLogger("shared").debug(f"getting new signature with deviint")
@@ -130,7 +131,7 @@ def get_request_auth_deviint():
             constants.getattr("DEVIINT"),
         ) as r:
             content = r.json_()
-            return request_auth_helper(content)
+            return request_auth_helper_picker(content)
 
 
 def get_request_auth_datawhores():
@@ -148,7 +149,7 @@ def get_request_auth_datawhores():
             constants.getattr("DATAWHORES_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper(content)
+            return request_auth_helper_picker(content)
 
 
 def get_request_auth_xagler():
@@ -166,7 +167,7 @@ def get_request_auth_xagler():
             constants.getattr("XAGLER_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper_alt_format(content)
+            return request_auth_helper_picker(content)
 def get_request_auth_rafa():
     logging.getLogger("shared").debug(f"getting new signature with rafa")
 
@@ -182,7 +183,7 @@ def get_request_auth_rafa():
             constants.getattr("RAFA_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper(content)
+            return request_auth_helper_picker(content)
 
 def get_request_auth_riley():
     logging.getLogger("shared").debug(f"getting new signature with riley")
@@ -199,7 +200,7 @@ def get_request_auth_riley():
             constants.getattr("RILEY_URL"),
         ) as r:
             content = r.json_()
-            return request_auth_helper(content)  
+            return request_auth_helper_picker(content)
 def get_request_auth_digitalcriminals():
     logging.getLogger("shared").debug(f"getting new signature with digitalcriminals")
 
@@ -214,7 +215,13 @@ def get_request_auth_digitalcriminals():
             constants.getattr("DIGITALCRIMINALS"),
         ) as r:
             content = r.json_()
-            return request_auth_helper_alt_format(content)
+            return request_auth_helper_picker(content)
+
+def request_auth_helper_picker(content):
+    if content.get("suffix"):
+                return request_auth_helper(content)
+    else:
+        return request_auth_helper_alt_format(content)
 
 
 def request_auth_helper_alt_format(content):

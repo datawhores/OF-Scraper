@@ -12,8 +12,7 @@ DYNAMIC_OPTIONS_ALL=  DYNAMIC_OPTIONS + \
                 "generic"]
 DYNAMIC_RULE_DEFAULT="datawhores"
 XAGLER_URL="https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json"
-RAFA_URL="https://github.com/rafa-9/dynamic-rules/blob/main/rules.json"
-
+RAFA_URL="https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json"
 
 DIGITALCRIMINALS = (
     "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json"
