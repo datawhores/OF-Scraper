@@ -1,5 +1,5 @@
 DYNAMIC_RULE=None
-DYNAMIC_OPTIONS=["deviint", "digitalcriminals","manual","generic","datawhores","riley"]
+DYNAMIC_OPTIONS=["deviint", "digitalcriminals","manual","generic","datawhores","riley","xagler"]
 DYNAMIC_OPTIONS_ALL=  DYNAMIC_OPTIONS + \
 [
                 "digitalcriminals",
@@ -11,6 +11,7 @@ DYNAMIC_OPTIONS_ALL=  DYNAMIC_OPTIONS + \
                 "manual",
                 "generic"]
 DYNAMIC_RULE_DEFAULT="datawhores"
+XAGLER_URL="https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json"
 
 DIGITALCRIMINALS = (
     "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json"

@@ -59,8 +59,11 @@ def get_request_auth(refresh=False,forced=False):
     elif (dynamic) in {
         "datawhores"
     }:
-
         auth = get_request_auth_datawhores()
+    elif (dynamic) in {
+        "xagler"
+    }:
+        auth = get_request_auth_xagler()
     elif not constants.getattr("ALLOW_OTHER_DYNAMIC_RULES"):
         pass
     elif (dynamic) in {
@@ -142,6 +145,23 @@ def get_request_auth_datawhores():
             content = r.json_()
             return request_auth_helper(content)
 
+
+def get_request_auth_xagler():
+    logging.getLogger("shared").debug(f"getting new signature with xagler")
+
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
+        refresh=False,
+    ) as c:
+        
+        with c.requests(
+            constants.getattr("XAGLER_URL"),
+        ) as r:
+            content = r.json_()
+            return request_auth_helper_alt_format(content)
 def get_request_auth_riley():
     logging.getLogger("shared").debug(f"getting new signature with riley")
 
@@ -172,11 +192,15 @@ def get_request_auth_digitalcriminals():
             constants.getattr("DIGITALCRIMINALS"),
         ) as r:
             content = r.json_()
-            static_param = content["static_param"]
-            fmt = content["format"]
-            checksum_indexes = content["checksum_indexes"]
-            checksum_constant = content["checksum_constant"]
-            return (static_param, fmt, checksum_indexes, checksum_constant)
+            return request_auth_helper_alt_format(content)
+
+
+def request_auth_helper_alt_format(content):
+    static_param = content["static_param"]
+    fmt = content["format"]
+    checksum_indexes = content["checksum_indexes"]
+    checksum_constant = content["checksum_constant"]
+    return (static_param, fmt, checksum_indexes, checksum_constant)      
 
 def request_auth_helper(content):
     static_param = content["static_param"]
