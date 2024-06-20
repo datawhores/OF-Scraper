@@ -64,6 +64,11 @@ def get_request_auth(refresh=False,forced=False):
         "xagler"
     }:
         auth = get_request_auth_xagler()
+    elif (dynamic) in {
+        "rafa"
+    }:
+        auth = get_request_auth_rafa()
+    
     elif not constants.getattr("ALLOW_OTHER_DYNAMIC_RULES"):
         pass
     elif (dynamic) in {
@@ -162,6 +167,23 @@ def get_request_auth_xagler():
         ) as r:
             content = r.json_()
             return request_auth_helper_alt_format(content)
+def get_request_auth_rafa():
+    logging.getLogger("shared").debug(f"getting new signature with rafa")
+
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
+        refresh=False,
+    ) as c:
+        
+        with c.requests(
+            constants.getattr("RAFA_URL"),
+        ) as r:
+            content = r.json_()
+            return request_auth_helper_alt_format(content)
+
 def get_request_auth_riley():
     logging.getLogger("shared").debug(f"getting new signature with riley")
 
