@@ -10,3 +10,7 @@ def read_full_after_scan_check(model_id,api):
 def read_one_good_scan_check(model_id,api):
     api=api.lower()
     return cache.get(f"{api}_one_good_scan_{model_id}")
+
+def read_check_mode(model_id,api):
+    api=api.lower()
+    return cache.get(f"{api}_check_{model_id}", default=[])

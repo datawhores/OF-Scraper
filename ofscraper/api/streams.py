@@ -35,7 +35,8 @@ from ofscraper.db.operations_.posts import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.cache.read import read_full_after_scan_check,read_check_mode
+from ofscraper.api.common.cache.write import set_check_mode
 API="streams"
 
 
@@ -234,15 +235,10 @@ def set_check(unduped, model_id, after):
         seen = set()
         all_posts = [
             post
-            for post in cache.get(f"streams_check_{model_id}", default=[]) + unduped
+            for post in read_check_mode(model_id,API) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
-
-        cache.set(
-            f"streams_check_{model_id}",
-            all_posts,
-            expire=constants.getattr("THREE_DAY_SECONDS"),
-        )
+        set_check_mode(model_id,API,all_posts)
         cache.close()
 
 
