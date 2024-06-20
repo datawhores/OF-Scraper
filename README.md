@@ -101,8 +101,8 @@ Ask in the discord or open an issue if you need help with what to change to acco
 [Discord](https://discord.gg/wN7uxEVHRK)
 
 ## Support
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/datawhores)
 
-buymeacoffee.com/datawhores
 
 BTC: bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87
 
