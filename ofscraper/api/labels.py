@@ -22,6 +22,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.check import set_check
+
 
 log = logging.getLogger("shared")
 API="labels"
@@ -330,13 +332,6 @@ def get_default_label_dict(labels):
     return output
 
 
-def set_check(unduped, model_id):
-    cache.set(
-        f"labels_check_{model_id}",
-        list(unduped),
-        expire=constants.getattr("THREE_DAY_SECONDS"),
-    )
-    cache.close()
 
 
 def trace_log_task(responseArray, header=None):
