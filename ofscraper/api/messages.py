@@ -36,7 +36,10 @@ from ofscraper.db.operations_.messages import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.write import set_check_mode_posts
 from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.cache.write import set_check_mode_posts
+
 
 API="messages"
 log = logging.getLogger("shared")
@@ -62,7 +65,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
 async def get_old_messages(model_id,username):
     oldmessages = None
-    if not read_full_after_scan_check(model_id,API):
+    if read_full_after_scan_check(model_id,API):
         return []
     if not settings.get_api_cache_disabled():
         oldmessages = await get_messages_post_info(model_id=model_id, username=username)
@@ -280,12 +283,7 @@ def set_check(unduped, model_id, after):
             for post in cache.get(f"message_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
-        cache.set(
-            f"message_check_{model_id}",
-            list(all_posts),
-            expire=constants.getattr("THREE_DAY_SECONDS"),
-        )
-        cache.close()
+        set_check_mode_posts(model_id,API,all_posts)
 
 
 async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
@@ -414,9 +412,9 @@ async def get_after(model_id, username, forced_after=None):
     missing_items = list(
         sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0))
     )
-    log.info(f"Number of messages marked as downloaded {len(list(curr_downloaded)-list(missing_items))}")
-    log.info(f"Number of messages marked as missing/undownloaded {missing_items}")
-    if len(missing_items) == 0:
+    log.info(f"Number of messages marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}")
+    log.info(f"Number of messages marked as missing/undownloaded {len(list(missing_items))}")
+    if len(list(missing_items)) == 0:
         log.debug(
             "Using newest db date because,all downloads in db are marked as downloaded"
         )

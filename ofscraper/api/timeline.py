@@ -35,6 +35,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.cache.write import set_check_mode_posts
+
+
 log = logging.getLogger("shared")
 API="timeline"
 
@@ -236,12 +239,7 @@ def set_check(unduped, model_id, after):
             for post in cache.get(f"timeline_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
-        cache.set(
-            f"timeline_check_{model_id}",
-            all_posts,
-            expire=constants.getattr("THREE_DAY_SECONDS"),
-        )
-        cache.close()
+        set_check_mode_posts(model_id,API,all_posts)
 
 
 def get_individual_post(id):
