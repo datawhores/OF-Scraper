@@ -20,7 +20,14 @@ from ofscraper.const.values.metadata import *
 from ofscraper.const.values.other_url import *
 from ofscraper.const.values.path import *
 from ofscraper.const.values.prompts import *
-from ofscraper.const.values.req import *
+from ofscraper.const.values.req.req import *
+from ofscraper.const.values.req.api import *
+from ofscraper.const.values.req.cdm import *
+from ofscraper.const.values.req.discord import *
+from ofscraper.const.values.req.like import *
+from ofscraper.const.values.req.mpd import *
+from ofscraper.const.values.req.git import *
+
 from ofscraper.const.values.table import *
 from ofscraper.const.values.test_constants import *
 from ofscraper.const.values.time import *

@@ -48,14 +48,30 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
 
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
-    splitArrays = await get_split_array(model_id, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, after)
-    data = await process_tasks(tasks)
+    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
+        splitArrays = await get_split_array(model_id, username, after)
+        tasks = get_tasks(splitArrays, c, model_id, after)
+        data = await process_tasks_batch(tasks)
+    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
+        data=process_individual()
+   
+      
     update_check(data, model_id, after,API)
     return data
 
+def process_individual():
+    data=[]
+    for ele in read_args.retriveArgs().post_id:
+        try:
+            post=get_individual_post(ele)
+            if not post.get("error"):
+                data.append(post)
+        except  Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+    return data
 
-async def process_tasks(tasks):
+async def process_tasks_batch(tasks):
     responseArray = []
     page_count = 0
 
@@ -233,8 +249,8 @@ def get_tasks(splitArrays, c, model_id, after):
 
 
 
-def get_individual_post(id):
-    with sessionManager.OFSessionManager(
+def get_individual_post(id,session=None):
+    with session or sessionManager.OFSessionManager(
         backend="httpx",
     ) as c:
         with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
