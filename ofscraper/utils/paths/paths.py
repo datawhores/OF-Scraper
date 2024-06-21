@@ -73,9 +73,8 @@ def truncate(path):
 
 
 def _windows_truncateHelper(path):
-    encode = "utf16"
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path).encode(encode)) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
+    if get_string_byte_size(path) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
     path = pathlib.Path(path)
     dir = path.parent
@@ -90,21 +89,21 @@ def _windows_truncateHelper(path):
     file = re.sub(ext, "", path.name)
     max_bytes = (
         constants.getattr("WINDOWS_MAX_PATH_BYTES")
-        - len(ext.encode(encode))
-        - len(str(dir).encode(encode))
+        - get_string_byte_size(ext)
+        - get_string_byte_size(dir)
     )
     if max_bytes <= 0:
         raise (f"dir to larger then max bytes {path}")
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
-        if len(file[:mid].encode(encode)) <= max_bytes:
+        if get_string_byte_size(file[:mid]) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
     final_path = pathlib.Path(dir, newFile)
-    log.debug(f"path: {path} filepath bytesize: {len(str(path).encode(encode))}")
+    log.debug(f"path: {path} filepath bytesize: {get_string_byte_size(final_path)}")
     return final_path
 
 
@@ -127,7 +126,6 @@ def _mac_truncateHelper(path):
 
 
 def _linux_truncateHelper(path):
-    encode = "utf16"
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
@@ -135,18 +133,40 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - len(ext.encode(encode))
+    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size(ext)
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
-        if len(file[:mid].encode(encode)) <= max_bytes:
+        if get_string_byte_size(file[:mid]) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
-    log.debug(f"path: {path} filename bytesize: {len(newFile.encode(encode))}")
+    log.debug(f"path: {path} filename bytesize: {get_string_byte_size(newFile)}")
     return pathlib.Path(dir, newFile)
 
+
+def get_string_byte_size(text):
+  text=str(text)
+  """
+  This function estimates the byte size of a string considering ASCII characters.
+
+  Args:
+      text: The string to analyze.
+
+  Returns:
+      The estimated byte size of the string.
+  """
+  total_size = 0
+  for char in text:
+    try:
+      if ord(char)<128:
+        total_size += 2  # 2 bytes for ASCII characters
+      else:
+          total_size+= 4
+    except ValueError:
+      total_size += 4  # 4 bytes for non-ASCII characters (assumption)
+  return total_size
 
 def cleanDB():
     try:
@@ -159,3 +179,4 @@ def cleanDB():
 
 def speed_file():
     return pathlib.Path(common_paths.get_profile_path() / "speed.zip")
+

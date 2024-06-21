@@ -6,11 +6,7 @@ import arrow
 
 
 def check_modes_strhelper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = re.split(",| ", x)
+    temp = string_split_helper(x)
     return temp
 
 
@@ -39,7 +35,7 @@ def post_type_helper(x):
             "Labels*",
         ]
     )
-    x = string_split_helper(x)
+    x = string_split_helper_filtered(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
@@ -69,7 +65,7 @@ def download_helper(x):
             "Labels*",
         ]
     )
-    x = string_split_helper(x)
+    x = string_split_helper_filtered(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
@@ -79,7 +75,7 @@ def download_helper(x):
 
 def like_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
-    x = string_split_helper(x)
+    x = string_split_helper_filtered(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
@@ -89,7 +85,7 @@ def like_helper(x):
 
 def post_check_area_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
-    x = string_split_helper(x)
+    x = string_split_helper_filtered(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
@@ -99,9 +95,7 @@ def post_check_area_helper(x):
 
 def mediatype_helper(x):
     choices = set(["Videos", "Audios", "Images", "Text"])
-    if isinstance(x, str):
-        x = re.split(",| ", x)
-        x = list(map(lambda x: x.capitalize(), x))
+    x = string_split_helper(x)
     if len(filter_helper(choices,x)) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--mediatype: invalid choice: (choose from 'images','audios','videos','text')"
@@ -110,7 +104,7 @@ def mediatype_helper(x):
 
 
 def action_helper(x):
-    select = re.split(",| ", x)
+    select = string_split_helper(x)
     select = list(map(lambda x: x.lower(), select))
     select= final_output_dupe_helper(select)
     if "like" in select and "unlike" in select:
@@ -139,22 +133,14 @@ def action_helper(x):
 
 
 def username_helper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = re.split(",| ", x)
+    temp =x = string_split_helper_filtered(x)
     temp = list(filter(lambda x: len(x) > 0, temp))
     temp=list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
     return final_output_dupe_helper(temp)
 
 
 def label_helper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = re.split(",| ", x)
+    temp = string_split_helper_filtered(x)
     temp=list(map(lambda x: x.lower(), temp))
     return final_output_dupe_helper(temp)
 
@@ -186,6 +172,10 @@ def final_output_dupe_helper(x):
 
 def string_split_helper(x):
     if isinstance(x, str):
-        x = re.split(",| ", x)
-        x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
+        x = re.split(",| ", x)   
+    return x
+
+def string_split_helper_filtered(x):
+    x=string_split_helper(x)
+    x = list(map(lambda x: re.sub(r"[^a-zA-Z-\*\+]", "", str.title(x)), x))
     return x

@@ -28,6 +28,7 @@ def filtermediaFinal(media,username,model_id):
     log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
 
 
+
     if not read_args.retriveArgs().command == "metadata":
         media = helpers.dupefiltermedia(media)
         count += 1
@@ -89,7 +90,6 @@ def filtermediaAreas(media, **kwargs):
     media = helpers.post_neg_text_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "media excluded text filter:")
-
     log.debug(f"filter {count}->  media excluded text filter count: {len(media)}")
 
     media = helpers.download_type_filter(media)
@@ -106,11 +106,22 @@ def filtermediaAreas(media, **kwargs):
     count += 1
     helpers.trace_log_media(count, media, "media length filter:")
 
+    media = helpers.media_id_filter(media)
+    count += 1
+    helpers.trace_log_media(count, media, "media with media id filter")
+    log.debug(f"filter {count}-> media with media id filter count: {len(media)}")
+
+    media = helpers.post_id_filter(media)
+    count += 1
+    helpers.trace_log_media(count, media, "media with media id filter")
+    log.debug(f"filter {count}-> media with media id filter count: {len(media)}")
+
     media = helpers.final_media_sort(media)
     count += 1
     helpers.trace_log_media(count, media, "final sort filter:")
     log.debug(f"filter {count}->  media final sort filter count: {len(media)}")
-    return media
+
+    return list(media)
 
 def filterPostFinal(post):
     actions = read_args.retriveArgs().action

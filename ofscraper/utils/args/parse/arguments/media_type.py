@@ -59,6 +59,17 @@ normal_only = click.option(
     is_flag=True,
 )
 
+media_id_filter = click.option(
+    "-md",
+    "--media-id",
+    help="Filter media based on media id",
+    required=False,
+    callback=lambda ctx, param, value: (
+        list(set(itertools.chain.from_iterable(value))) if value else []
+    ),
+    type=type.string_split_helper,
+    multiple=True,
+)
 
 # Create the option group
 media_type_options = click.option_group(
@@ -71,5 +82,6 @@ media_type_options = click.option_group(
         protected_only,
         normal_only,
     ),
+    media_id_filter,
     help="Options for controlling which media is downloaded",
 )

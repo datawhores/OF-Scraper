@@ -195,6 +195,17 @@ timed_only_option = click.option(
     [select one --only-timed or --skip-timed]""",
 )
 
+post_id_filter = click.option(
+    "-pd",
+    "--post-id",
+    help="Filter posts based on post id",
+    required=False,
+    callback=lambda ctx, param, value: (
+        list(set(itertools.chain.from_iterable(value))) if value else []
+    ),
+    type=type.string_split_helper,
+    multiple=True,
+)
 # Create the option group
 
 content_options = click.option_group(
@@ -202,6 +213,7 @@ content_options = click.option_group(
     posts_option,
     download_area_option,
     like_area_option,
+    post_id_filter,
     filter_option,
     neg_filter_option,
     scrape_paid_option,
