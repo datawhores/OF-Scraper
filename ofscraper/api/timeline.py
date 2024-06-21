@@ -18,7 +18,6 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings

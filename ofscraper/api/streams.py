@@ -40,23 +40,23 @@ API="streams"
 
 
 log = logging.getLogger("shared")
-
+from ofscraper.api.common.timeline import process_individual
 
 sem = None
 
 
 @run
 async def get_streams_posts(model_id, username, forced_after=None, c=None):
-    oldstreams=await get_oldstreams(model_id,username)
-    log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
-    splitArrays = get_split_array(oldstreams, after)
-    tasks = get_tasks(splitArrays, c, model_id, after)
-    data = await process_tasks(tasks)
+    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+        splitArrays = await get_split_array(model_id, username, after)
+        tasks = get_tasks(splitArrays, c, model_id, after)
+        data = await process_tasks_batch(tasks)
+    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+        data=process_individual()
     update_check(data, model_id, after,API)
     return data
-
 async def get_oldstreams(model_id,username):
     oldstreams = None
     if not read_full_after_scan_check(model_id,API):
@@ -79,7 +79,7 @@ async def get_oldstreams(model_id,username):
 
 
 
-async def process_tasks(tasks):
+async def process_tasks_batch(tasks):
     responseArray = []
     page_count = 0
 
