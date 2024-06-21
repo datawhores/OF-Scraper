@@ -12,6 +12,7 @@ r"""
 """
 
 import hashlib
+import arrow
 import json
 import logging
 import time
@@ -24,6 +25,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.cache as cache
 
 curr_auth=None
+last_check=None
 
 def read_request_auth(refresh=True,forced=False):
     request_auth = {
@@ -45,7 +47,10 @@ def read_request_auth(refresh=True,forced=False):
 
 def get_request_auth(refresh=False,forced=False):
     global curr_auth
-    if curr_auth:
+    global last_check
+    if not last_check:
+        pass
+    elif curr_auth and (arrow.now().float_timestamp-last_check.float_timestamp)<constants.getattr("THIRTY_EXPIRY"):
         return curr_auth
     dynamic=settings.get_dynamic_rules()
     auth=None
@@ -91,6 +96,7 @@ def get_request_auth(refresh=False,forced=False):
         constants.getattr("THIRTY_EXPIRY")
     )
     curr_auth=auth
+    last_check=arrow.now()
     return auth
 
 def get_request_auth_dynamic_rule_manual():
