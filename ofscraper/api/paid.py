@@ -21,7 +21,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.check import set_check
+from ofscraper.api.common.check import update_check
 
 
 paid_content_list_name = "list"
@@ -34,7 +34,7 @@ async def get_paid_posts(username, model_id, c=None):
 
     tasks.append(asyncio.create_task(scrape_paid(c, username)))
     data = await process_tasks(tasks)
-    set_check(data, model_id, None,API)
+    update_check(data, model_id, None,API)
     return data
 
 
@@ -241,7 +241,7 @@ def create_all_paid_dict(paid_content):
     for ele in paid_content:
         user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
         user_dict.setdefault(str(user_id), []).append(ele)
-    [ set_check(val, key, None,API)
+    [ update_check(val, key, None,API)
  for key, val in user_dict.items()]
     return user_dict
 

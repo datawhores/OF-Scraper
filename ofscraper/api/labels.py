@@ -21,7 +21,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.check import set_check
+from ofscraper.api.common.check import update_check
 
 
 log = logging.getLogger("shared")
@@ -42,7 +42,7 @@ async def get_labels(model_id, c=None):
         )
     )
     data=await get_posts_for_labels(labels_, model_id, c=c)
-    set_check(data, model_id,None,API)
+    update_check(data, model_id,None,API)
 
     return data
 

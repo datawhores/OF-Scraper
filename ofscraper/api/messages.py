@@ -36,7 +36,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.check import set_check
+from ofscraper.api.common.check import update_check
 
 
 
@@ -60,7 +60,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     get_sleeper(reset=True)
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
     data = await process_tasks(tasks)
-    set_check(data, model_id, after,API)
+    update_check(data, model_id, after,API)
     return data
 
 async def get_old_messages(model_id,username):

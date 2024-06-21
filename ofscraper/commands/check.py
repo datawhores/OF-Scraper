@@ -40,7 +40,7 @@ from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 from ofscraper.db.operations import make_changes_to_content_tables
-
+from ofscraper.api.common.check import reset_check,read_check,set_check
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -217,44 +217,34 @@ async def post_check_retriver():
                     username=user_name, model_id=model_id
                 )
                 if "Timeline" in areas:
-                    oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+                    oldtimeline =read_check(model_id, timeline.API)
                     if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                        cache.set(
-                            f"timeline_check_{model_id}",
-                            timeline_data,
-                            expire=constants.getattr("THREE_DAY_SECONDS"),
-                        )
+                        set_check(timeline_data,model_id,timeline.API)
                 if "Archived" in areas:
-                    oldarchive = cache.get(f"archived_check_{model_id}", default=[])
+                    oldarchive  =read_check(model_id, archived.API)
                     if len(oldarchive) > 0 and not read_args.retriveArgs().force:
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                        cache.set(
-                            f"archived_check_{model_id}",
-                            archived_data,
-                            expire=constants.getattr("THREE_DAY_SECONDS"),
-                        )
+                        set_check(archived_data,model_id,archived.API)
+
                 if "Pinned" in areas:
-                    oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
+                    oldpinned =read_check(model_id, pinned.API)
                     if len(oldpinned) > 0 and not read_args.retriveArgs().force:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
-                        cache.set(
-                            f"pinned_check_{model_id}",
-                            pinned_data,
-                            expire=constants.getattr("THREE_DAY_SECONDS"),
-                        )
+                        set_check(pinned_data,model_id,pinned.API)
+
                 if "Labels" in areas:
-                    oldlabels = cache.get(f"labels_check_{model_id}", default=[])
+                    oldlabels = read_check(model_id, labels.API)
                     if len(oldlabels) > 0 and not read_args.retriveArgs().force:
                         labels_data = oldlabels
                     else:
@@ -268,14 +258,10 @@ async def post_check_retriver():
                         labels_data = [
                             post for label in labels_resp for post in label["posts"]
                         ]
-                        cache.set(
-                            f"labels_check_{model_id}",
-                            labels_data,
-                            expire=constants.getattr("THREE_DAY_SECONDS"),
-                        )
+                        set_check(labels_data,model_id,labels.API)
 
                 if "Streams" in areas:
-                    oldstreams = cache.get(f"streams_check_{model_id}", default=[])
+                    oldstreams = read_check(model_id, streams.API)
                     if len(oldstreams) > 0 and not read_args.retriveArgs().force:
                         streams_data = oldstreams
                     else:
@@ -283,11 +269,7 @@ async def post_check_retriver():
                         streams_data = [
                             post for streams in streams_resp for post in streams["posts"]
                         ]
-                        cache.set(
-                            f"streams_check_{model_id}",
-                            streams_data,
-                            expire=constants.getattr("THREE_DAY_SECONDS"),
-                        )
+                        set_check(streams_data,model_id,streams.API)
 
                 await operations.make_post_table_changes(
                     all_posts=pinned_data + archived_data + labels_data + timeline_data+streams_data,
@@ -389,7 +371,7 @@ async def message_check_retriver():
                 )
                 # messages
                 messages = None
-                oldmessages = cache.get(f"message_check_{model_id}", default=[])
+                oldmessages = read_check(model_id, messages_.API)
                 log.debug(f"Number of messages in cache {len(oldmessages)}")
 
                 if len(oldmessages) > 0 and not read_args.retriveArgs().force:
@@ -398,12 +380,8 @@ async def message_check_retriver():
                     messages = await messages_.get_messages(
                         model_id, user_name, forced_after=0, c=c
                     )
-                    cache.set(
-                        f"message_check_{model_id}",
-                        messages,
-                        expire=constants.getattr("THREE_DAY_SECONDS"),
-                    )
-                    cache.close()
+                    set_check(messages,model_id,messages_.API)
+
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
@@ -411,19 +389,14 @@ async def message_check_retriver():
                     message_posts_array, model_id=model_id, username=user_name
                 )
 
-                oldpaid = cache.get(f"purchased_check_{model_id}", default=[]) or []
+                oldpaid = read_check(model_id, paid_.API) or []
                 paid = None
                 # paid content
                 if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                    cache.set(
-                        f"purchased_check_{model_id}",
-                        paid,
-                        expire=constants.getattr("THREE_DAY_SECONDS"),
-                    )
-                    cache.close()
+                    set_check(paid,model_id,paid_.API)
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
@@ -467,7 +440,7 @@ async def purchase_check_retriver():
 
             await operations.table_init_create(model_id=model_id, username=user_name)
 
-            oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+            oldpaid = read_check(model_id, paid_.API)
             paid = None
 
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
@@ -482,12 +455,7 @@ async def purchase_check_retriver():
                 ]
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                cache.set(
-                    f"purchased_check_{model_id}",
-                    paid,
-                    expire=constants.getattr("THREE_DAY_SECONDS"),
-                )
-                cache.close()
+                set_check(paid,model_id,paid_.API)
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             yield user_name, model_id, posts_array
 
@@ -583,20 +551,18 @@ async def process_post_media(username, model_id, posts_array):
 @run
 async def get_downloaded(user_name, model_id, paid=False):
     downloaded = {}
-
     await operations.table_init_create(model_id=model_id, username=user_name)
     paid = await get_paid_ids(model_id, user_name) if paid else []
     for ele in list(
         get_media_ids_downloaded(model_id=model_id, username=user_name)
     ) + list(paid):
         downloaded.update({ele: downloaded.get(ele, 0) + 1})
-
     return downloaded
 
 
 @run
 async def get_paid_ids(model_id, user_name):
-    oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+    oldpaid = read_check(model_id, paid_.API)
     paid = None
 
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
@@ -607,11 +573,8 @@ async def get_paid_ids(model_id, user_name):
             sem=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-            cache.set(
-                f"purchase_check_{model_id}",
-                paid,
-                expire=constants.getattr("THREE_DAY_SECONDS"),
-            )
+            set_check(paid,model_id,paid_.API)
+
     media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview is True, media))
     return list(map(lambda x: x.id, media))
@@ -670,6 +633,7 @@ async def row_gather(username, model_id, paid=False):
     # fix tex
     global ROWS
     downloaded = await get_downloaded(username, model_id, paid=paid)
+    
 
     mediadict = {}
     [
@@ -689,9 +653,7 @@ async def row_gather(username, model_id, paid=False):
                 "number": None,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
-                "downloaded": ele.id in downloaded
-                or cache.get(ele.postid) is not None
-                or cache.get(ele.filename) is not None,
+                "downloaded": ele.id in downloaded,
                 "unlocked": unlocked_helper(ele),
                 "times_detected": times_helper(ele, mediadict, downloaded),
                 "post_media_count": len(ele._post.post_media),
@@ -721,19 +683,17 @@ def init_media_type_helper():
 
 
 def reset_time_line_cache(model_id):
-    cache.set(f"timeline_check_{model_id}", [])
-    cache.set(f"archived_check_{model_id}", [])
-    cache.set(f"labels_check_{model_id}", [])
-    cache.set(f"pinned_check_{model_id}", [])
-    cache.close()
+    reset_check(model_id,timeline.API)
+    reset_check(model_id,archived.API)
+    reset_check(model_id,labels.API)
+    reset_check(model_id,pinned.API)
+
 
 
 def reset_message_set(model_id):
-    cache.set(f"message_check_{model_id}", [])
-    cache.set(f"purchased_check_{model_id}", [])
-    cache.close()
+    reset_check(model_id,messages_.API)
+    reset_check(model_id,paid_.API)
 
 
 def reset_paid_set(model_id):
-    cache.set(f"purchased_check_{model_id}", [])
-    cache.close()
+    reset_check(model_id,paid_.API)

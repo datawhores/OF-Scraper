@@ -23,7 +23,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.check import set_check
+from ofscraper.api.common.check import update_check
 
 
 log = logging.getLogger("shared")
@@ -47,7 +47,7 @@ async def get_pinned_posts(model_id, c=None):
         )
     )
     data = await process_tasks(tasks)
-    set_check(data, model_id, None,API)
+    update_check(data, model_id, None,API)
 
     return data
 
