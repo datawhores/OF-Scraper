@@ -166,7 +166,7 @@ async def process_highlights(model_id, username, c):
 
 
 @free.space_checker
-async def process_timeline_posts(model_id, username, c,only=False):
+async def process_timeline_posts(model_id, username, c):
     try:
         timeline_posts = await timeline.get_timeline_posts(model_id, username, c=c)
 
