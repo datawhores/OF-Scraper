@@ -23,7 +23,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 import ofscraper.utils.cache as cache
 
-
+curr_auth=None
 
 def read_request_auth(refresh=True,forced=False):
     request_auth = {
@@ -44,7 +44,6 @@ def read_request_auth(refresh=True,forced=False):
 
 
 def get_request_auth(refresh=False,forced=False):
-    curr_auth = cache.get("api_onlyfans_sign")
     if curr_auth:
         return curr_auth
     dynamic=settings.get_dynamic_rules()
@@ -53,8 +52,6 @@ def get_request_auth(refresh=False,forced=False):
         auth=get_request_auth_dynamic_rule_manual()
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
         auth=get_request_auth_generic()
-
-
     elif (dynamic) in {
         "datawhores"
     }:
@@ -90,7 +87,10 @@ def get_request_auth(refresh=False,forced=False):
     cache.set(
         "api_onlyfans_sign",
         auth,
+        constants.getattr("THIRTY_EXPIRY")
     )
+    global curr_auth
+    curr_auth=auth
     return auth
 
 def get_request_auth_dynamic_rule_manual():
