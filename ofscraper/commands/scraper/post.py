@@ -48,6 +48,7 @@ from ofscraper.utils.args.accessors.areas import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.api.common.cache.write import set_after_checks
+import ofscraper.utils.args.accessors.read as read_args
 
 log = logging.getLogger("shared")
 
@@ -165,7 +166,7 @@ async def process_highlights(model_id, username, c):
 
 
 @free.space_checker
-async def process_timeline_posts(model_id, username, c):
+async def process_timeline_posts(model_id, username, c,only=False):
     try:
         timeline_posts = await timeline.get_timeline_posts(model_id, username, c=c)
 
@@ -175,8 +176,10 @@ async def process_timeline_posts(model_id, username, c):
                 timeline_posts,
             )
         )
-        timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
-
+        if read_args.retriveArgs().timeline_strict:
+            timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
+        else:
+            timeline_only_posts=timeline_posts
         await operations.make_post_table_changes(
             timeline_only_posts,
             model_id=model_id,

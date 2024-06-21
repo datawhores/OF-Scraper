@@ -36,6 +36,8 @@ from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
 from ofscraper.api.common.check import update_check
+from ofscraper.api.common.timeline import process_individual
+
 
 log = logging.getLogger("shared")
 API="archived"
@@ -46,19 +48,18 @@ sem = None
 
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
-    oldarchived=await get_oldarchived(model_id,username)
-
-
-
-    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x is not None, oldarchived))
     after = await get_after(model_id, username, forced_after)
-    time_log(username, after)
-    splitArrays = get_split_array(oldarchived, after)
-    tasks = get_tasks(splitArrays, c, model_id, after)
-    data = await process_tasks(tasks)
+    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
+        oldarchived=await get_oldarchived(model_id,username)
+        log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+        oldarchived = list(filter(lambda x: x is not None, oldarchived))
+        time_log(username, after)
+        splitArrays = get_split_array(oldarchived, after)
+        tasks = get_tasks(splitArrays, c, model_id, after)
+        data = await process_tasks(tasks)
+    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
+        data=process_individual()  
     update_check(data, model_id, after,API)
-
     return data
 
 async def get_oldarchived(model_id,username):

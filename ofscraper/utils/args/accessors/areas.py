@@ -27,6 +27,7 @@ def get_download_area():
         "Archived",
         "Messages",
         "Timeline",
+        "Timeline_only"
         "Pinned",
         "Stories",
         "Purchased",

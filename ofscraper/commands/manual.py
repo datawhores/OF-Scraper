@@ -24,7 +24,7 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 from ofscraper.db.operations import make_changes_to_content_tables
-
+from ofscraper.api.common.timeline import get_individual_timeline_post
 
 
 def manual_download(urls=None):
@@ -110,7 +110,7 @@ def process_urls(urls):
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
 
-                value = timeline.get_individual_post(postid)
+                value = get_individual_timeline_post(postid)
 
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
@@ -195,7 +195,7 @@ def process_urls(urls):
 
 
 def unknown_type_helper(postid):
-    return timeline.get_individual_post(postid)
+    return get_individual_timeline_post(postid)
 
 
 def get_post_item(model_id, value, responsetype=None):

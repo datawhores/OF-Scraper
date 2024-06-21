@@ -24,6 +24,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.api.common.check import update_check
+from ofscraper.api.common.timeline import process_individual
+
 
 
 log = logging.getLogger("shared")
@@ -32,6 +34,15 @@ API="pinned"
 
 @run
 async def get_pinned_posts(model_id, c=None):
+    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
+        tasks = get_tasks(c,model_id)
+        data = await process_tasks(tasks)
+    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
+        data=process_individual()
+    update_check(data, model_id, None,API)
+    return data
+
+def get_tasks(c,model_id):
     tasks = []
     tasks.append(
         asyncio.create_task(
@@ -46,10 +57,6 @@ async def get_pinned_posts(model_id, c=None):
             )
         )
     )
-    data = await process_tasks(tasks)
-    update_check(data, model_id, None,API)
-
-    return data
 
 
 async def process_tasks(tasks):

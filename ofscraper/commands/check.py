@@ -37,12 +37,13 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.helpers.strings import check_str
-from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded,get_media_post_ids_downloaded
+from ofscraper.db.operations_.media import batch_mediainsert,get_media_post_ids_downloaded
 from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.api.common.check import reset_check,read_check,set_check
+from ofscraper.api.common.timeline import get_individual_timeline_post
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -304,7 +305,7 @@ async def post_check_retriver():
                 model_id = profile.get_id(user_name)
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
-                resp = timeline.get_individual_post(post_id)
+                resp = get_individual_timeline_post(post_id)
                 data = list(map(lambda x: posts_.Post(x, model_id, user_name), resp))
                 yield user_name, model_id, data
 

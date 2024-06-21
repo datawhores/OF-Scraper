@@ -206,6 +206,14 @@ post_id_filter = click.option(
     type=type.string_split_helper,
     multiple=True,
 )
+
+timeline_strict = click.option(
+    "-tls",
+    "--timeline-strict",
+    help="When timeline is select removes pinned and archived",
+    default=False,
+    is_flag=True,
+)
 # Create the option group
 
 content_options = click.option_group(
@@ -227,6 +235,7 @@ content_options = click.option_group(
     after_option,
     mass_msg_option,
     timed_only_option,
+    timeline_strict,
     help="""
     \b
     Define what posts to target (areas, filters) and actions to perform (like, unlike, download)

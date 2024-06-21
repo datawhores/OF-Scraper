@@ -17,7 +17,6 @@ import traceback
 import arrow
 
 import ofscraper.api.common.logs as common_logs
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -36,6 +35,7 @@ from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.after import get_after_pre_checks
 from ofscraper.api.common.cache.read import read_full_after_scan_check
 from ofscraper.api.common.check import update_check
+from ofscraper.api.common.timeline import process_individual
 
 
 log = logging.getLogger("shared")
@@ -59,17 +59,6 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     update_check(data, model_id, after,API)
     return data
 
-def process_individual():
-    data=[]
-    for ele in read_args.retriveArgs().post_id:
-        try:
-            post=get_individual_post(ele)
-            if not post.get("error"):
-                data.append(post)
-        except  Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-    return data
 
 async def process_tasks_batch(tasks):
     responseArray = []
@@ -246,16 +235,6 @@ def get_tasks(splitArrays, c, model_id, after):
 
     return tasks
 
-
-
-
-def get_individual_post(id,session=None):
-    with session or sessionManager.OFSessionManager(
-        backend="httpx",
-    ) as c:
-        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
-            log.trace(f"post raw individual {r.json()}")
-            return r.json()
 
 
 async def get_after(model_id, username, forced_after=None):
