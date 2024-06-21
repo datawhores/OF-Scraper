@@ -152,6 +152,10 @@ SELECT media_id FROM medias where downloaded=(1) and model_id=(?)
 allPostIDCheck = """
 SELECT media_id, post_id FROM medias
 """
+
+allPostIDDLCheck = """
+SELECT media_id, post_id FROM medias where downloaded=(1) or unlocked=(1)
+"""
 getTimelineMedia = """
 SELECT
 media_id,post_id,link,directory
@@ -320,6 +324,14 @@ def get_media_post_ids(
         cur.execute(allPostIDCheck)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
 
+
+@wrapper.operation_wrapper
+def get_media_post_ids_downloaded(
+    model_id=None, username=None, conn=None, **kwargs
+) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(allPostIDDLCheck)
+        return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
 @wrapper.operation_wrapper
 def get_dupe_media_hashes(
     model_id=None, username=None, conn=None, mediatype=None, **kwargs

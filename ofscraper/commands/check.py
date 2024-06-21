@@ -1,4 +1,6 @@
 import asyncio
+import copy
+from collections import defaultdict
 import inspect
 import logging
 import re
@@ -35,7 +37,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.helpers.strings import check_str
-from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
+from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded,get_media_post_ids_downloaded
 from ofscraper.download.shared.text import textDownloader
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
@@ -549,18 +551,6 @@ async def process_post_media(username, model_id, posts_array):
 
 
 @run
-async def get_downloaded(user_name, model_id, paid=False):
-    downloaded = {}
-    await operations.table_init_create(model_id=model_id, username=user_name)
-    paid = await get_paid_ids(model_id, user_name) if paid else []
-    for ele in list(
-        get_media_ids_downloaded(model_id=model_id, username=user_name)
-    ) + list(paid):
-        downloaded.update({ele: downloaded.get(ele, 0) + 1})
-    return downloaded
-
-
-@run
 async def get_paid_ids(model_id, user_name):
     oldpaid = read_check(model_id, paid_.API)
     paid = None
@@ -621,41 +611,46 @@ def datehelper(date):
     return date
 
 
-def times_helper(ele, mediadict, downloaded):
-    return max(len(mediadict.get(ele.id, [])), downloaded.get(ele.id, 0))
-
+def times_helper(ele, mediadict):
+    matching=copy.copy(mediadict.get(ele.id, set()))
+    matching.discard(ele.postid)
+    return list(matching)
+    
+   
 
 def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
 
 
-async def row_gather(username, model_id, paid=False):
-    # fix tex
-    global ROWS
-    downloaded = await get_downloaded(username, model_id, paid=paid)
-    
-
-    mediadict = {}
+def get_media_dict(downloaded):
+    mediadict = defaultdict(lambda : set())
     [
-        mediadict.update({ele.id: mediadict.get(ele.id, []) + [ele]})
+        mediadict[ele.id].add(ele.postid)
         for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
     ]
+    [
+        mediadict[ele[0]].add(ele[1])
+        for ele in list(downloaded)
+    ]
+    return mediadict
 
-    media_sorted = sorted(
-        ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
-    )
-
+async def row_gather(username, model_id, paid=False):
+    global ROWS
+    downloaded=set(get_media_post_ids_downloaded(model_id=model_id,username=username))
+    media_dict=get_media_dict(downloaded)    
     out = []
-    for count, ele in enumerate(media_sorted):
+    for count, ele in enumerate(sorted(
+        ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
+    )):
         out.append(
             {
                 "index": count,
                 "number": None,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
-                "downloaded": ele.id in downloaded,
+                "downloaded": (ele.id,ele.postid) in downloaded,
                 "unlocked": unlocked_helper(ele),
-                "times_detected": times_helper(ele, mediadict, downloaded),
+                "other_posts_with_media": times_helper(ele,media_dict),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,
                 "post_date": datehelper(ele.formatted_postdate),

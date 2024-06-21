@@ -11,21 +11,25 @@ class Status:
         self._status.setdefault("responsetype", None)
         self._status.setdefault("unlocked", None)
         self._status.setdefault("downloaded", None)
-        self._status.setdefault("times_detected", None)
+        self._status.setdefault("other_posts_with_media", None)
         self._status.setdefault("post_media_count", None)
         self._status.setdefault("username", None)
         self._status.setdefault("mindate", None)
         self._status.setdefault("maxdate", None)
         self._status.setdefault("min_length", {})
         self._status.setdefault("max_length", {})
+        self._status.setdefault("media_id", None)
+        self._status.setdefault("post_id", None)
+
+
 
     def validate(self, key, test):
         key = key.lower()
         if key in {"unlocked", "downloaded", "mediatype", "responsetype"}:
             return self._bool_helper(key, test)
-        elif key in {"times_detected", "post_media_count"}:
-            return self._times_detected_helper(key, test)
-        elif key in {"username"}:
+        elif key in {"other_posts_with_media", "post_media_count"}:
+            return self._other_posts_with_media_helper(key, test)
+        elif key in {"username","media_id","post_id"}:
             return self._generic_helper(key, test)
         elif key == "post_date":
             return self._date_helper(test)
@@ -36,7 +40,9 @@ class Status:
     def _generic_helper(self, key, test):
         if self._status[key] == None:
             return True
-        return test.lower() == self._status[key]
+        if key=="media_id":
+            pass
+        return str(test).lower() == str(self._status[key]).lower()
 
     def _length_helper(self, test):
         if not bool(self._status["max_length"]) and not bool(
@@ -105,7 +111,7 @@ class Status:
             return True
         return False
 
-    def _times_detected_helper(self, key, test):
+    def _other_posts_with_media_helper(self, key, test):
         if self._status[key] is None:
             return True
         else:
@@ -115,5 +121,9 @@ class Status:
     def status(self):
         return self._status
 
+    def __getitem__(self, key):
+        return self._status[key]
 
+    def __setitem__(self, key, value):
+        self._status[key] = value
 status = Status()

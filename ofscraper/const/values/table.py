@@ -4,7 +4,7 @@ ROW_NAMES = (
     "UserName",
     "Downloaded",
     "Unlocked",
-    "Times_Detected",
+    "other_posts_with_media",
     "Length",
     "Mediatype",
     "Post_Date",

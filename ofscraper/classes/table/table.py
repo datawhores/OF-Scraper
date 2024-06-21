@@ -15,7 +15,7 @@ import ofscraper.utils.logs.logger as logger
 from ofscraper.classes.table.button import StyledButton
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
-from ofscraper.classes.table.fields.numfield import NumField
+from ofscraper.classes.table.fields.numfield import NumField,OtherMediaNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
 from ofscraper.classes.table.fields.responsefield import ResponseField
 from ofscraper.classes.table.fields.selectfield import SelectField
@@ -72,20 +72,25 @@ class TableRow:
 
     def get_compare_val(self, name):
         if name == "length":
-            return self._get_length_val()
+            return self._get_length_val(name)
         if name == "post_date":
-            return self._get_post_date_val()
+            return self._get_post_date_val(name)
+        if name=="other_posts_with_media":
+            return self._get_list_length(name)
         else:
             return self.get_val(name)
 
-    def _get_post_date_val(self):
-        return arrow.get(self._table_row["post_date"]).floor("day")
+    def _get_post_date_val(self,name):
+        return arrow.get(self._table_row[name]).floor("day")
 
-    def _get_length_val(self):
-        timestr = self._table_row["length"]
+    def _get_length_val(self,name):
+        timestr = self._table_row[name]
         if timestr == "N\A" or timestr == "N/A":
             timestr = "0:0:0"
         return arrow.get(timestr, "h:m:s")
+    def _get_list_length(self,name):
+        return len(self._table_row[name])
+        
 
     def set_val(self, key, val):
         self._table_row[key.lower()] = val
@@ -170,7 +175,7 @@ SelectField,DateField,TimeField {
     row-span:4;
     }
    
-    #Times_Detected{
+    #other_posts_with_media{
     column-span:1;
     }
     #Post_Media_Count{
@@ -286,10 +291,13 @@ SelectField,DateField,TimeField {
                             for ele in ["Text"]:
                                 yield TextSearch(ele)
                             yield Rule()
-                            for ele in ["Times_Detected", "Media_IDs"]:
+                            for ele in ["other_posts_with_media"]:
+                                yield OtherMediaNumField(ele)
+
+                            for ele in ["Media_ID"]:
                                 yield NumField(ele)
                             yield Rule()
-                            for ele in ["Post_IDs", "Post_Media_Count"]:
+                            for ele in ["Post_ID", "Post_Media_Count"]:
                                 yield NumField(ele)
                             yield Rule()
                             for ele in ["Price"]:
@@ -456,7 +464,7 @@ SelectField,DateField,TimeField {
                     key=lambda x: 1 if x.get_compare_val(key) is True else 0,
                     reverse=self.reverse,
                 )
-            elif key == "times_detected":
+            elif key == "other_posts_with_media":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: x.get_compare_val(key) or 0,

@@ -189,7 +189,7 @@ def post_id_filter(media):
     if not bool(read_args.retriveArgs().post_id):
         return media
     wanted=set([str(x) for x in read_args.retriveArgs().post_id])
-    return list(filter(lambda x:str(x.post_id) in wanted,media))
+    return list(filter(lambda x:str(x.postid) in wanted,media))
 
 # post filters
 
