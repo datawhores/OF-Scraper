@@ -44,12 +44,11 @@ def read_request_auth(refresh=True,forced=False):
 
 
 def get_request_auth(refresh=False,forced=False):
-    #curr_auth = cache.get("api_onlyfans_sign")
-    # if not (refresh or forced) and curr_auth:
-    #     return curr_auth
+    curr_auth = cache.get("api_onlyfans_sign")
+    if curr_auth:
+        return curr_auth
     dynamic=settings.get_dynamic_rules()
     auth=None
-
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth=get_request_auth_dynamic_rule_manual()
     elif constants.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
@@ -92,7 +91,6 @@ def get_request_auth(refresh=False,forced=False):
         "api_onlyfans_sign",
         auth,
     )
-    time.sleep(10)
     return auth
 
 def get_request_auth_dynamic_rule_manual():
