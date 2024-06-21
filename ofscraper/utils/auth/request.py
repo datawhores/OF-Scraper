@@ -44,6 +44,7 @@ def read_request_auth(refresh=True,forced=False):
 
 
 def get_request_auth(refresh=False,forced=False):
+    global curr_auth
     if curr_auth:
         return curr_auth
     dynamic=settings.get_dynamic_rules()
@@ -89,7 +90,6 @@ def get_request_auth(refresh=False,forced=False):
         auth,
         constants.getattr("THIRTY_EXPIRY")
     )
-    global curr_auth
     curr_auth=auth
     return auth
 
