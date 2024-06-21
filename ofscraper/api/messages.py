@@ -48,18 +48,19 @@ sleeper = None
 @run
 async def get_messages(model_id, username, forced_after=None, c=None):
     global after
-    oldmessages=await get_old_messages(model_id,username)
-
-    before = (read_args.retriveArgs().before).float_timestamp
     after = await get_after(model_id, username, forced_after)
-    log_after_before(after, before, username)
-
-    filteredArray = get_filterArray(after, before, oldmessages)
-    splitArrays = get_split_array(filteredArray)
-    # Set charged sleeper
-    get_sleeper(reset=True)
-    tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-    data = await process_tasks(tasks)
+    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
+        oldmessages=await get_old_messages(model_id,username)
+        before = (read_args.retriveArgs().before).float_timestamp
+        log_after_before(after, before, username)
+        filteredArray = get_filterArray(after, before, oldmessages)
+        splitArrays = get_split_array(filteredArray)
+        # Set charged sleeper
+        get_sleeper(reset=True)
+        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
+        data = await process_tasks(tasks)
+    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
+        data=process_individual(model_id)
     update_check(data, model_id, after,API)
     return data
 
@@ -80,7 +81,18 @@ async def get_old_messages(model_id,username):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
     trace_log_old(oldmessages)
     return oldmessages
-    
+
+def process_individual(model_id):
+    data=[]
+    for ele in read_args.retriveArgs().post_id:
+        try:
+            post=get_individual_messages_post(model_id,ele)
+            if not post.get("error"):
+                data.append(post)
+        except  Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+    return data   
 async def process_tasks(tasks):
     page_count = 0
     responseArray = []
@@ -364,7 +376,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     return messages, new_tasks
 
 
-def get_individual_post(model_id, postid):
+def get_individual_messages_post(model_id, postid):
     with sessionManager.OFSessionManager(
         backend="httpx",
     ) as c:

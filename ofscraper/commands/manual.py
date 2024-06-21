@@ -125,7 +125,7 @@ def process_urls(urls):
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
 
-                value = messages_.get_individual_post(model_id, postid)
+                value = messages_.get_individual_messages_post(model_id, postid)
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
                 )
@@ -139,7 +139,7 @@ def process_urls(urls):
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
 
-                value = messages_.get_individual_post(model_id, postid)
+                value = messages_.get_individual_messages_post(model_id, postid)
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
                 )

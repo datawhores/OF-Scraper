@@ -309,7 +309,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         progress_utils.remove_api_job_task(task)
 
 
-def get_individual_post(username, model_id, postid):
+def get_individual_paid_post(username, model_id, postid):
     data = get_paid_posts(username, model_id)
     postid = int(postid)
     posts = list(filter(lambda x: int(x["id"]) == postid, data))
