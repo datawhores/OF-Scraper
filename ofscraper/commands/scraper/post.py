@@ -289,7 +289,7 @@ async def process_profile(username) -> list:
                 media.Media(
                     {
                         "url": data["url"],
-                        "ptype": data["mediatype"],
+                        "type": data["mediatype"],
                         "id": data["mediaid"],
                         "text": data["text"],
                     },
