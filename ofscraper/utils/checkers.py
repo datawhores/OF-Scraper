@@ -12,7 +12,6 @@ import ofscraper.utils.settings as settings
 log = logging.getLogger("shared")
 
 
-
 def check_auth():
     status = None
     log.info("checking auth status")
@@ -21,6 +20,7 @@ def check_auth():
         if status!="UP":
             log.warning("Auth Failed")
             make.make_auth(auth=auth_file.read_auth())
+            continue
         break
 
 
