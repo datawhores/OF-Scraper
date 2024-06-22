@@ -50,11 +50,8 @@ sem = None
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
     after = await get_after(model_id, username, forced_after)
     if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
-        oldarchived=await get_oldarchived(model_id,username)
-        log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-        oldarchived = list(filter(lambda x: x is not None, oldarchived))
         time_log(username, after)
-        splitArrays = get_split_array(oldarchived, after)
+        splitArrays = await get_split_array(model_id,username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks(tasks)
     elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
@@ -76,6 +73,7 @@ async def get_oldarchived(model_id,username):
         for post in oldarchived
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
+    oldarchived = list(filter(lambda x: x is not None, oldarchived))
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     trace_log_old(oldarchived)
     return oldarchived
@@ -138,7 +136,8 @@ async def process_tasks(tasks):
     return responseArray
 
 
-def get_split_array(oldarchived, after):
+async def get_split_array(model_id,username, after):
+    oldarchived=await get_oldarchived(model_id,username)
     if len(oldarchived) == 0:
         return []
     min_posts = max(
