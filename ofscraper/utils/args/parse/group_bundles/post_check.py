@@ -6,7 +6,8 @@ import ofscraper.utils.args.parse.arguments.helpers.type as type
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.helpers.check import check_mode_changes
-
+from ofscraper.utils.args.parse.groups.check_content import content_options
+from ofscraper.utils.args.parse.arguments.check import url_group,force
 
 def post_check_args(func):
     @click.command(
@@ -17,53 +18,10 @@ def post_check_args(func):
     It presents this data in a table format with filtering options for focused searches 
     Allows unlocked media entries to be directly downloaded through the table""",
     )
+    @url_group
+    @force
     @common_args
-    @click.constraints.require_one(
-        click.option(
-            "-u",
-            "--url",
-            help="Scan posts via space or comma seperated list of urls",
-            default=None,
-            multiple=True,
-            type=type.check_modes_strhelper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-        ),
-        click.option(
-            "-f",
-            "--file",
-            help="Scan posts via a file with line-separated URL(s)",
-            default=None,
-            type=type.check_modes_filehelper,
-            multiple=True,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-        ),
-    )
-    @click.option(
-        "-fo",
-        "--force",
-        help="Force retrieval of new posts info from API",
-        is_flag=True,
-        default=False,
-    )
-    @click.option(
-        "-ca",
-        "--check-area",
-         "--post",
-        "--post",
-        "check_area",
-        help="Select areas to check (multiple allowed, separated by spaces)",
-        default=["Timeline", "Pinned", "Archived","Streams"],
-        type=type.post_check_area_helper,
-        callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-        ),
-        multiple=True,
-        )
-    
+    @content_options
     @advanced_args
     @check_mode_changes
     @click.pass_context

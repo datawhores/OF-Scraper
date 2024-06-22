@@ -6,6 +6,7 @@ import ofscraper.utils.args.parse.arguments.helpers.type as type
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.helpers.check import check_mode_changes
+from ofscraper.utils.args.parse.arguments.check import username_group,force
 
 
 def paid_check_args(func):
@@ -20,39 +21,8 @@ def paid_check_args(func):
     """,
     )
     @common_args
-    @click.constraints.require_one(
-        click.option(
-            "-u",
-            "--usernames",
-            "--username",
-            "check_usernames",
-            help="Scan purchases via username(s)",
-            default=None,
-            multiple=True,
-            type=type.check_modes_strhelper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-        ),
-        click.option(
-            "-f",
-            "--file",
-            help="Scan pu via a file with line-separated URL(s)",
-            default=None,
-            type=type.check_modes_filehelper,
-            multiple=True,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-        ),
-    )
-    @click.option(
-        "-fo",
-        "--force",
-        help="Force retrieval of new purchases info from API",
-        is_flag=True,
-        default=False,
-    )
+    @username_group
+    @force
     @advanced_args
     @check_mode_changes
     @click.pass_context
