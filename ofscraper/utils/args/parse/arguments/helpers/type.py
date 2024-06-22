@@ -140,11 +140,11 @@ def post_id_helper(data):
 
 
 
-def username_helper(x):
-    temp =x = string_split_helper_filtered(x)
+def username_helper(data):
+    temp =string_split_helper(data)
     temp = list(filter(lambda x: len(x) > 0, temp))
-    temp=list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
-    return final_output_dupe_helper(temp)
+    final=list(map(lambda y: y.lower() if not y == "ALL" else y, temp))
+    return final_output_dupe_helper(final)
 
 
 def label_helper(x):
