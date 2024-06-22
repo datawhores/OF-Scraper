@@ -36,7 +36,6 @@ log = logging.getLogger("shared")
 @exit.exit_wrapper
 def runner(menu=False):
     check_auth()
-    progress_utils.update_activity_task(description="Running Action Mode")
     with scrape_context_manager(
     ):
         normal_data=[]
