@@ -71,3 +71,18 @@ media_id_filter = click.option(
     multiple=True,
 )
 
+length_max=click.option(
+        "-lx",
+        "-length-max",
+        help="max duration in seconds does not effect non-media files",
+        required=False,
+        type=parse_size,
+    )
+length_min=click.option(
+        "-lm",
+        "--length-min",
+        help="min duration in seconds does not effect non-media files",
+        required=False,
+        type=parse_size,
+    ),
+
