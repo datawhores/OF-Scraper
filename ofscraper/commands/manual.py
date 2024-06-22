@@ -16,7 +16,6 @@ import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.network as network
 from ofscraper.commands.helpers.strings import download_manual_str, post_str_manual

@@ -3,14 +3,16 @@ import logging
 import ofscraper.filters.media.helpers.helpers as helpers
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
 
 def filtermediaFinal(media,username,model_id):
     actions = read_args.retriveArgs().action
-    if "download" not in actions:
-        log.debug("Skipping because download not actions")
+    scrape_paid=read_args.retriveArgs().scrape_paid
+    if "download" not in actions and not scrape_paid:
+        log.debug("Skipping filtering because download not in actions")
         return media
 
     count = 1
@@ -52,8 +54,9 @@ def filtermediaFinal(media,username,model_id):
 
 def filtermediaAreas(media, **kwargs):
     actions = read_args.retriveArgs().action
-    if "download" not in actions:
-        log.debug("Skipping because download actions")
+    scrape_paid=read_args.retriveArgs().scrape_paid
+    if "download" not in actions and not scrape_paid:
+        log.debug("Skipping filtering because download not in actions")
         return media
 
     count = 1
@@ -125,11 +128,13 @@ def filtermediaAreas(media, **kwargs):
 
 def filterPostFinal(post):
     actions = read_args.retriveArgs().action
-    if "download" not in actions:
-        log.debug("Skipping because download not in actions")
+    scrape_paid=read_args.retriveArgs().scrape_paid
+    if "download" not in actions and not scrape_paid:
+        log.debug("Skipping filtering because download not in actions")
         return post
-
-    
+    if "Text" not in settings.get_mediatypes():
+        log.info("Skipping filtering Text not in mediatypes")
+        return post
     count = 1
     helpers.trace_log_post(count, post, "initial posts no filter:")
     log.debug(f"filter {count}-> initial posts no filter count: {len(post)}")
@@ -172,7 +177,7 @@ def filterPostFinal(post):
 def post_filter_for_like(post, like=False):
     actions = read_args.retriveArgs().action
     if "like" not in actions and "unlike" not in actions:
-        log.debug("Skipping because like and unlike not in actions")
+        log.debug("Skipping filtering because like and unlike not in actions")
         return post
 
     post = helpers.temp_post_filter(post)

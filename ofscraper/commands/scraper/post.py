@@ -364,7 +364,6 @@ async def process_all_paid():
                 downloaded=False,
             )
             final_medias=filters.filtermediaFinal(insert_media,username,model_id)
-
             output[model_id] = dict(
                 model_id=model_id, username=username, posts=new_posts, medias=final_medias
             )

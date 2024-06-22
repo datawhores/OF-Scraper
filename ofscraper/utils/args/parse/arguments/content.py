@@ -198,12 +198,14 @@ timed_only_option = click.option(
 post_id_filter = click.option(
     "-pd",
     "--post-id",
+    "--url",
+    "post_id",
     help="Filter posts based on post id",
     required=False,
     callback=lambda ctx, param, value: (
         list(set(itertools.chain.from_iterable(value))) if value else []
     ),
-    type=type.string_split_helper,
+    type=type.post_id_helper,
     multiple=True,
 )
 

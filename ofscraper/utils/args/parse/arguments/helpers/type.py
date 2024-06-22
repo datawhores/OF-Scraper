@@ -1,7 +1,6 @@
 import argparse
 import pathlib
 import re
-
 import arrow
 
 
@@ -127,6 +126,15 @@ def action_helper(x):
             "You must select [like or unlike] and/or download for action"
         )
     return select
+
+def post_id_helper(data):
+    x = string_split_helper(data)
+    out=[]
+    for ele in x:
+        match = re.findall(r"\d+", ele)
+        out.append(match[-1]) if bool(match) else None
+    return out
+
 
 
 
