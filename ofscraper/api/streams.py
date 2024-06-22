@@ -50,7 +50,8 @@ async def get_streams_posts(model_id, username, forced_after=None, c=None):
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
     if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
-        splitArrays = await get_split_array(model_id, username, after)
+        oldstreams=await get_oldstreams(model_id,username)
+        splitArrays = await get_split_array(oldstreams, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
     elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
