@@ -30,12 +30,4 @@ Profiles are always within the config file parent directory
     ),
 )
 
-# Create the option group
 
-program_options = click.option_group(
-    "Program Options",
-    version_option,
-    config_location_option,
-    profile_option,
-    help="Control the application's behavior with these settings",
-)

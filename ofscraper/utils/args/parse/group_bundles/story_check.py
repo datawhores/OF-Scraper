@@ -3,27 +3,31 @@ import itertools
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.helpers.type as type
-from ofscraper.utils.args.parse.bundles.advanced_common import advanced_args
-from ofscraper.utils.args.parse.bundles.common import common_args
-from ofscraper.utils.args.parse.bundles.helpers.check import check_mode_changes
+from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
+from ofscraper.utils.args.parse.group_bundles.common import common_args
+from ofscraper.utils.args.parse.group_bundles.helpers.check import check_mode_changes
 
 
-def message_check_args(func):
+def story_check_args(func):
 
     @click.command(
-        "post_check",
+        "story_check",
         short_help="""\b
-                Produces a media table from posts with filterable entries and quick downloads""",
-        help="""The post_check subcommand gathers information on media content from posts
+                Produces a media table from stories and highlights with filterable entries and quick downloads""",
+        help="""
+    The story_check subcommand gathers information on media content from stories and highlights
     It presents this data in a table format with filtering options for focused searches 
-    Allows unlocked media entries to be directly downloaded through the table""",
+    Allows unlocked media entries to be directly downloaded through the table
+    """,
     )
     @common_args
     @click.constraints.require_one(
         click.option(
             "-u",
-            "--url",
-            help="Scan posts via space or comma seperated list of urls",
+            "--usernames",
+            "--username",
+            "check_usernames",
+            help="Scan stories/highlights via username(s)",
             default=None,
             multiple=True,
             type=type.check_modes_strhelper,
@@ -34,7 +38,7 @@ def message_check_args(func):
         click.option(
             "-f",
             "--file",
-            help="Scan posts via a file with line-separated URL(s)",
+            help="Scan stories/highlights via a file with line-separated URL(s)",
             default=None,
             type=type.check_modes_filehelper,
             multiple=True,
@@ -46,7 +50,7 @@ def message_check_args(func):
     @click.option(
         "-fo",
         "--force",
-        help="Force retrieval of new posts info from API",
+        help="Force retrieval of new messages info from API",
         is_flag=True,
         default=False,
     )

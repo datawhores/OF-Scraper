@@ -3,19 +3,18 @@ import itertools
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.helpers.type as type
-from ofscraper.utils.args.parse.bundles.advanced_common import advanced_args
-from ofscraper.utils.args.parse.bundles.common import common_args
-from ofscraper.utils.args.parse.bundles.helpers.check import check_mode_changes
+from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
+from ofscraper.utils.args.parse.group_bundles.common import common_args
+from ofscraper.utils.args.parse.group_bundles.helpers.check import check_mode_changes
 
 
-def story_check_args(func):
-
+def paid_check_args(func):
     @click.command(
-        "story_check",
+        "paid_check",
         short_help="""\b
-                Produces a media table from stories and highlights with filterable entries and quick downloads""",
+                Produces a media table from purchases with filterable entries and quick downloads""",
         help="""
-    The story_check subcommand gathers information on media content from stories and highlights
+    The paid_check subcommand gathers information on media content from purchases
     It presents this data in a table format with filtering options for focused searches 
     Allows unlocked media entries to be directly downloaded through the table
     """,
@@ -27,7 +26,7 @@ def story_check_args(func):
             "--usernames",
             "--username",
             "check_usernames",
-            help="Scan stories/highlights via username(s)",
+            help="Scan purchases via username(s)",
             default=None,
             multiple=True,
             type=type.check_modes_strhelper,
@@ -38,7 +37,7 @@ def story_check_args(func):
         click.option(
             "-f",
             "--file",
-            help="Scan stories/highlights via a file with line-separated URL(s)",
+            help="Scan pu via a file with line-separated URL(s)",
             default=None,
             type=type.check_modes_filehelper,
             multiple=True,
@@ -50,7 +49,7 @@ def story_check_args(func):
     @click.option(
         "-fo",
         "--force",
-        help="Force retrieval of new messages info from API",
+        help="Force retrieval of new purchases info from API",
         is_flag=True,
         default=False,
     )

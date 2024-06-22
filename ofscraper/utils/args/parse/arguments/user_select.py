@@ -82,14 +82,3 @@ black_list_option = click.option(
         else []
     ),
 )
-
-# Create the option group
-
-user_select_options = click.option_group(
-    "User Selection Options",
-    usernames_option,
-    excluded_username_option,
-    user_list_option,
-    black_list_option,
-    help="""Specify users for scraping  with usernames, userlists, or blacklists""",
-)

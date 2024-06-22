@@ -71,17 +71,3 @@ media_id_filter = click.option(
     multiple=True,
 )
 
-# Create the option group
-media_type_options = click.option_group(
-    "Media Filters Options",
-    quality_option,
-    media_type_option,
-    max_size_option,
-    min_size_option,
-    click.constraints.mutually_exclusive(
-        protected_only,
-        normal_only,
-    ),
-    media_id_filter,
-    help="Options for controlling which media is downloaded",
-)

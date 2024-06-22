@@ -2,7 +2,7 @@ import cloup as click
 from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.parse.arguments.advanced_processing import (
+from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
 from ofscraper.utils.args.parse.arguments.advanced_program import (
@@ -12,13 +12,12 @@ from ofscraper.utils.args.parse.arguments.advanced_program import (
     no_cache_option,
     update_profile_option,
 )
-from ofscraper.utils.args.parse.arguments.advanced_user_filter import (
+from ofscraper.utils.args.parse.groups.advanced_user_filter import (
     advanced_userfilters_options,
 )
 from ofscraper.utils.args.parse.arguments.content import (
     after_option,
     before_option,
-    content_options,
     filter_option,
     force_all_option,
     force_model_unique_option,
@@ -29,13 +28,15 @@ from ofscraper.utils.args.parse.arguments.content import (
     posts_option,
     timed_only_option,
 )
-from ofscraper.utils.args.parse.arguments.file import file_options
-from ofscraper.utils.args.parse.arguments.logging import logging_options
+from ofscraper.utils.args.parse.groups.content import content_options
+    
+from ofscraper.utils.args.parse.groups.file import file_options
+from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.arguments.media_type import quality_option
-from ofscraper.utils.args.parse.arguments.program import program_options
-from ofscraper.utils.args.parse.arguments.user_list import userlist_options
-from ofscraper.utils.args.parse.arguments.user_select import user_select_options
-from ofscraper.utils.args.parse.arguments.user_sort import user_sorting_options
+from ofscraper.utils.args.parse.groups.program import program_options
+from ofscraper.utils.args.parse.groups.user_list import userlist_options
+from ofscraper.utils.args.parse.groups.user_select import user_select_options
+from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 
 
 def metadata_args(func):
