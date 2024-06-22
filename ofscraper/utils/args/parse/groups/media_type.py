@@ -8,7 +8,7 @@ media_type_options = click.option_group(
     max_size_option,
     min_size_option,
     length_max,
-    length_min
+    length_min,
 
     click.constraints.mutually_exclusive(
         protected_only,
