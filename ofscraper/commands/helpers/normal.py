@@ -49,7 +49,7 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
-            progress_utils.update_activity_task(description="Finished")
+            progress_utils.update_activity_task(description="Finished Action Mode")
             time.sleep(.5)
             return data
     return wrapper
@@ -84,7 +84,7 @@ def get_user_action_function_meta(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
-            progress_utils.update_activity_task(description="Finished")
+            progress_utils.update_activity_task(description="Finished Metadata Mode")
             time.sleep(.5)
             return data
     return wrapper
