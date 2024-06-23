@@ -12,4 +12,5 @@ def main():
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    system.set_mulitproc_start_type()
     main()

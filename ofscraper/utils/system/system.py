@@ -7,6 +7,8 @@ import subprocess
 import sys
 
 import multiprocess
+import multiprocessing
+import aioprocessing
 import psutil
 from setproctitle import setproctitle
 
@@ -63,13 +65,20 @@ def getOpenFiles(unique=True):
 def set_mulitproc_start_type():
     plat = platform.system()
     if plat == "Darwin":
-        multiprocess.set_start_method("spawn")
+        d_method="spawn"
+        multiprocess.set_start_method(d_method)
+        multiprocessing.set_start_method(d_method)
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         os.environ["no_proxy"] = "*"
     elif plat == "Windows":
-        multiprocess.set_start_method("spawn")
+        w_method="spawn"
+        multiprocess.set_start_method(w_method)
+        multiprocessing.set_start_method(w_method)
+
     else:
-        multiprocess.set_start_method("forkserver")
+        o_method="spawn"
+        multiprocess.set_start_method(o_method)
+        multiprocessing.set_start_method(o_method)
 
 
 def set_eventloop():

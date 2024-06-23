@@ -53,7 +53,6 @@ def setLogger():
 
 def systemSet():
     system.setName()
-    system.set_mulitproc_start_type()
     system.set_eventloop()
     if platform.system() == "Windows":
         os.system("color")
