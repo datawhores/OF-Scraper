@@ -77,7 +77,7 @@ def set_mulitproc_start_type():
         multiprocess.set_start_method(w_method)
         multiprocessing.set_start_method(w_method)
     else:
-        o_method="spawn"
+        o_method="forkserver"
         multiprocess.set_start_method(o_method)
         multiprocessing.set_start_method(o_method)
     #additional for mac
