@@ -64,21 +64,26 @@ def getOpenFiles(unique=True):
 
 def set_mulitproc_start_type():
     plat = platform.system()
-    if plat == "Darwin":
+    if is_frozen():
+        f_method="spawn"
+        multiprocess.set_start_method(f_method)
+        multiprocessing.set_start_method(f_method)
+    elif plat == "Darwin":
         d_method="spawn"
         multiprocess.set_start_method(d_method)
         multiprocessing.set_start_method(d_method)
-        os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-        os.environ["no_proxy"] = "*"
     elif plat == "Windows":
         w_method="spawn"
         multiprocess.set_start_method(w_method)
         multiprocessing.set_start_method(w_method)
-
     else:
         o_method="spawn"
         multiprocess.set_start_method(o_method)
         multiprocessing.set_start_method(o_method)
+    #additional for mac
+    if plat=="Darwin":
+        os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+        os.environ["no_proxy"] = "*"
 
 
 def set_eventloop():
