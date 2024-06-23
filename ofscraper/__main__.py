@@ -6,11 +6,11 @@ import ofscraper.utils.system.system as system
 
 
 def main():
+    system.set_mulitproc_start_type()
     if system.get_parent():
         load.main()
 
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    system.set_mulitproc_start_type()
     main()
