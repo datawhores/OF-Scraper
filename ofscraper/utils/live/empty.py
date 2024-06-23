@@ -12,6 +12,7 @@ def prompt_live():
     stop_live()
     # console.get_shared_console().clear()
     console.get_shared_console().clear_live()
+    console.get_shared_console().line(2)
     #give time for screen to clear
     time.sleep(.3)
     yield
