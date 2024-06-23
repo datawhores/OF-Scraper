@@ -84,5 +84,5 @@ length_min=click.option(
         help="min duration in seconds does not effect non-media files",
         required=False,
         type=parse_size,
-    ),
+    )
 
