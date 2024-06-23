@@ -3,12 +3,13 @@ import copy
 import logging
 import re
 
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.helpers as helpers
 from rich.text import Text
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+
 
 
 class PipeHandler(logging.Handler):

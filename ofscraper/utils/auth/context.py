@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from rich.console import Console
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.auth.helpers as helpers
+import ofscraper.utils.auth.helpers.dict as auth_dict
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.paths.common as common_paths
 
@@ -40,13 +40,13 @@ def auth_context():
                 print(f"{e}\n\n")
                 auth_prompt = prompts.reset_auth_prompt()
                 if auth_prompt == "manual":
-                    authStr = helpers.get_auth_string()
+                    authStr = auth_dict.get_auth_string()
                     with open(common_paths.get_auth_file(), "w") as f:
                         f.write(prompts.manual_auth_prompt(authStr))
                 elif auth_prompt == "reset":
                     with open(common_paths.get_auth_file(), "w") as f:
-                        f.write(json.dumps(helpers.get_empty()))
-                helpers.get_auth_dict()
+                        f.write(json.dumps(auth_dict.get_empty()))
+                auth_dict.get_auth_dict()
                 break
             except:
                 continue

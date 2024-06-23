@@ -5,7 +5,6 @@ import queue
 import threading
 import traceback
 
-import aioprocessing
 from rich.logging import RichHandler
 
 import ofscraper.utils.args.accessors.read as read_args

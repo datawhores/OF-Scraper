@@ -11,7 +11,6 @@ r"""
                                                                                       
 """
 
-import json
 import logging
 
 import browser_cookie3
@@ -19,44 +18,9 @@ import requests
 from rich.console import Console
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.paths.common as common_paths
 
 console = Console()
 log = logging.getLogger("shared")
-
-
-def get_auth_dict(authStr=None):
-    auth = json.loads(authStr or get_auth_string())
-    if "auth" in auth:
-        return auth.get("auth")
-    return auth
-
-
-def get_auth_string():
-    authFile = common_paths.get_auth_file()
-    with open(authFile, "r") as f:
-        authText = f.read()
-    return authText
-
-
-def get_empty():
-    return {
-        "sess": "",
-        "auth_id": "",
-        "auth_uid": "",
-        "user_agent": "",
-        "x-bc": "",
-    }
-
-
-def authwarning(authFile):
-    console.print(
-        "[bold yellow]For an example of how your auth file should look see \
-            \n [bold deep_sky_blue2]https://of-scraper.gitbook.io/of-scraper/auth#example[/bold deep_sky_blue2][/bold yellow]"
-    )
-    console.print(
-        f"[bold yellow]If you still can't authenticate after editing from script consider manually edit the file at\n[bold deep_sky_blue2]{authFile}[/bold deep_sky_blue2][/bold yellow]"
-    )
 
 
 def browser_cookie_helper(auth, browserSelect):
