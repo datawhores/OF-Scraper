@@ -166,8 +166,8 @@ def scrape_paid_prompt():
 
 def reset_areas_prompt() -> bool:
     name = "reset areas"
-    print(f"\n\nDownload Area: {areas.get_download_area()}")
-    print(f"Like Area: {areas.get_like_area()}\n\n")
+    print(f"\n\nDownload Area: {areas.get_download_area() if bool(areas.get_download_area()) else None}")
+    print(f"Like Area: {areas.get_like_area() if bool(areas.get_like_area()) else None}\n\n") 
     answer = promptClasses.batchConverter(
         *[
             {

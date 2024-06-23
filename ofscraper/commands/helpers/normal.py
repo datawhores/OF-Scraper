@@ -49,6 +49,7 @@ def get_user_action_function(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
+            progress_utils.update_activity_task(description="Finished")
             return data
     return wrapper
 
