@@ -394,8 +394,7 @@ def performance_config():
         more_instruction="Download sem max value is based on calculated speed",
         default=False,
     ):
-        speed = get_speed(threads)
-        max_allowed = speed
+        max_allowed = get_max_sems(threads)
         cache.set("speed_download", speed)
         cache.close()
     answer = promptClasses.batchConverter(
@@ -723,25 +722,8 @@ def manual_config_prompt(configText) -> str:
 
 
 def get_speed(threads):
-    logging.getLogger("shared").info("running speed test")
-    speed = system.speed_test()
     thread_count = int(threads["threads"])
-    if int(thread_count) == 0:
-        max_allowed = min(
-            max((speed * 0.6) // constants.getattr("maxChunkSize"), 3) * 2, 100
-        )
-    else:
-        max_allowed = min(
-            int(
-                max(
-                    ((speed * 0.6) / thread_count)
-                    // constants.getattr("maxChunkSizeB"),
-                    3,
-                )
-                * 2
-            ),
-            100 // thread_count,
-        )
+    max_allowed=100//thread_count
     return max_allowed
 
 
