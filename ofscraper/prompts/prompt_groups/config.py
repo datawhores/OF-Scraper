@@ -387,16 +387,8 @@ def performance_config():
     )
 
     out.update(threads)
-    max_allowed = cache.get("speed_download")
-    if not cache.get("speed_download") or promptClasses.getChecklistSelection(
-        choices=[Choice(True, "Yes"), Choice(False, "No")],
-        message="Re-run speedtest",
-        more_instruction="Download sem max value is based on calculated speed",
-        default=False,
-    ):
-        max_allowed = get_max_sems(threads)
-        cache.set("speed_download", speed)
-        cache.close()
+    max_allowed = get_max_sems(threads)
+
     answer = promptClasses.batchConverter(
         *[
             {
@@ -721,7 +713,7 @@ def manual_config_prompt(configText) -> str:
     return questions[name]
 
 
-def get_speed(threads):
+def get_max_sems(threads):
     thread_count = int(threads["threads"])
     max_allowed=100//thread_count
     return max_allowed

@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
@@ -29,51 +30,57 @@ def main_menu_action():
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     while True:
-        result_main_prompt = prompts.main_prompt()
-        if result_main_prompt == "action":
-            action_result_prompt = prompts.action_prompt()
-            if action_result_prompt == "quit":
-                return True
-            elif action_result_prompt == "main":
-                continue
-            else:
-                count > 0 and reset_menu_helper()
-                runner(menu=True)
-                # with prompt_live():
-                #     #allow for final screen to remain
-                #     input("Press Enter to Continue")
-                count = count + 1
-                
-        elif result_main_prompt == "auth":
-            # Edit `auth.json` file
-            auth_result_prompt = auth_file.edit_auth()
-            if auth_result_prompt == "quit":
-                return True
-        elif result_main_prompt == "config":
-            # Edit `data.json` file
-            while True:
-                config_result_prompt = prompts.config_prompt()
-                if config_result_prompt == "quit":
+        try:
+            result_main_prompt = prompts.main_prompt()
+            if result_main_prompt == "action":
+                action_result_prompt = prompts.action_prompt()
+                if action_result_prompt == "quit":
                     return True
-                elif config_result_prompt == "main":
-                    break
+                elif action_result_prompt == "main":
+                    continue
                 else:
-                    config_menu_helper(config_result_prompt)
+                    count > 0 and reset_menu_helper()
+                    runner(menu=True)
+                    # with prompt_live():
+                    #     #allow for final screen to remain
+                    #     input("Press Enter to Continue")
+                    count = count + 1
 
-        elif result_main_prompt == "profile":
-            # Display  `Profiles` menu
-            while True:
-                result_profiles_prompt = prompts.profiles_prompt()
-                if result_profiles_prompt == "quit":
+            elif result_main_prompt == "auth":
+                # Edit `auth.json` file
+                auth_result_prompt = auth_file.edit_auth()
+                if auth_result_prompt == "quit":
                     return True
-                elif result_profiles_prompt == "main":
-                    break
-                else:
-                    profile_menu_helper(result_profiles_prompt)
-        elif result_main_prompt == "merge":
-            merge.merge_runner()
-        elif result_main_prompt == "quit":
-            return True
+            elif result_main_prompt == "config":
+                # Edit `data.json` file
+                while True:
+                    config_result_prompt = prompts.config_prompt()
+                    if config_result_prompt == "quit":
+                        return True
+                    elif config_result_prompt == "main":
+                        break
+                    else:
+                        config_menu_helper(config_result_prompt)
+
+            elif result_main_prompt == "profile":
+                # Display  `Profiles` menu
+                while True:
+                    result_profiles_prompt = prompts.profiles_prompt()
+                    if result_profiles_prompt == "quit":
+                        return True
+                    elif result_profiles_prompt == "main":
+                        break
+                    else:
+                        profile_menu_helper(result_profiles_prompt)
+            elif result_main_prompt == "merge":
+                merge.merge_runner()
+            elif result_main_prompt == "quit":
+                return True
+        except Exception as E:
+            log.debug(E)
+            log.debug(traceback.format_exc())
+
+
 
 
 def profile_menu_helper(result_profiles_prompt):
