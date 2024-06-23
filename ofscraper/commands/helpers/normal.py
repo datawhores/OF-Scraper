@@ -13,7 +13,7 @@ from ofscraper.commands.helpers.strings import (
 log = logging.getLogger("shared")
 from ofscraper.commands.helpers.data import data_helper
 import ofscraper.filters.media.main as filters
-
+import time
 
 
 def get_user_action_function(func):
@@ -50,6 +50,7 @@ def get_user_action_function(func):
                 finally:
                     progress_utils.increment_user_activity()
             progress_utils.update_activity_task(description="Finished")
+            time.sleep(.5)
             return data
     return wrapper
 
@@ -83,6 +84,8 @@ def get_user_action_function_meta(func):
                         raise e
                 finally:
                     progress_utils.increment_user_activity()
+            progress_utils.update_activity_task(description="Finished")
+            time.sleep(.5)
             return data
     return wrapper
 
