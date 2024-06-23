@@ -70,20 +70,6 @@ def get_request_auth(refresh=False,forced=False):
         "rafa"
     }:
         auth = get_request_auth_rafa()
-    
-    elif not constants.getattr("ALLOW_OTHER_DYNAMIC_RULES"):
-        pass
-    elif (dynamic) in {
-        "riley"
-    }:
-        auth = get_request_auth_riley()
-    elif (dynamic) in {
-        "deviint",
-        "dv",
-        "dev",
-    }:
-
-        auth = get_request_auth_deviint()
     elif (dynamic) in {
         "dc","digital","digitalcriminal","digitalcriminals"
     }:
