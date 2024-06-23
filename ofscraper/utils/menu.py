@@ -10,7 +10,8 @@ import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.scraper.runner import runner
-from ofscraper.utils.live.empty import prompt_live
+import ofscraper.utils.console as console
+
 
 log = logging.getLogger("shared")
 count = 0
@@ -30,6 +31,7 @@ def main_menu_action():
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     while True:
+        console.get_shared_console().clear_live()
         try:
             result_main_prompt = prompts.main_prompt()
             if result_main_prompt == "action":
