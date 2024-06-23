@@ -27,6 +27,8 @@ from ofscraper.const.values.req.discord import *
 from ofscraper.const.values.req.like import *
 from ofscraper.const.values.req.mpd import *
 from ofscraper.const.values.req.git import *
+from ofscraper.const.values.req.speed import *
+
 
 from ofscraper.const.values.table import *
 from ofscraper.const.values.test_constants import *

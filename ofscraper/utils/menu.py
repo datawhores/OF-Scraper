@@ -43,6 +43,7 @@ def main_menu_action():
                 #     #allow for final screen to remain
                 #     input("Press Enter to Continue")
                 count = count + 1
+                
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
             auth_result_prompt = auth_file.edit_auth()
