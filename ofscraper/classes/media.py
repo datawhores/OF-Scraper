@@ -192,6 +192,15 @@ class Media(base.base):
         return (
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
         )
+    @property
+    def hls(self):
+        if self._mpd:
+            return self._mpd
+        elif self.protected is False:
+            return None
+        return (
+            self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("hls")
+        )
 
     @property
     def policy(self):
@@ -206,6 +215,17 @@ class Media(base.base):
         )
 
     @property
+    def hls_policy(self):
+        if self.url:
+            return None
+        return (
+            self._media.get("files", {})
+            .get("drm", {})
+            .get("signature", {})
+            .get("hls", {})
+            .get("CloudFront-Policy")
+        )
+    @property
     def keypair(self):
         if self.url:
             return None
@@ -214,6 +234,18 @@ class Media(base.base):
             .get("drm", {})
             .get("signature", {})
             .get("dash", {})
+            .get("CloudFront-Key-Pair-Id")
+        )
+    
+    @property
+    def hls_keypair(self):
+        if self.url:
+            return None
+        return (
+            self._media.get("files", {})
+            .get("drm", {})
+            .get("signature", {})
+            .get("hls", {})
             .get("CloudFront-Key-Pair-Id")
         )
 
@@ -226,6 +258,18 @@ class Media(base.base):
             .get("drm", {})
             .get("signature", {})
             .get("dash", {})
+            .get("CloudFront-Signature")
+        )
+    
+    @property
+    def hls_signature(self):
+        if self.url:
+            return None
+        return (
+            self._media.get("files", {})
+            .get("drm", {})
+            .get("signature", {})
+            .get("hls", {})
             .get("CloudFront-Signature")
         )
 

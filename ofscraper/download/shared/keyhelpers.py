@@ -64,10 +64,13 @@ async def un_encrypt(item, c, ele, input_=None):
     )
     r = subprocess.run(
         [
-            settings.get_mp4decrypt(),
-            "--key",
+            settings.get_ffmpeg(),
+            "-decryption_key",
             key,
+            '-i',
             str(item["path"]),
+            "-codec",
+            "copy",
             str(newpath),
         ],
         stdout=subprocess.PIPE,
