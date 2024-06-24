@@ -62,11 +62,12 @@ async def un_encrypt(item, c, ele, input_=None):
     log.debug(
         f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
     )
+    ffmpeg_key=get_ffmpeg_key(key)
     r = subprocess.run(
         [
             settings.get_ffmpeg(),
             "-decryption_key",
-            key,
+            ffmpeg_key,
             '-i',
             str(item["path"]),
             "-codec",
@@ -86,6 +87,8 @@ async def un_encrypt(item, c, ele, input_=None):
     item["path"] = newpath
     return item
 
+def get_ffmpeg_key(key):
+    return key.split(":")[1]
 
 async def key_helper_cdrm(c, pssh, licence_url, id):
     log.debug(f"ID:{id} using cdrm auto key helper")
