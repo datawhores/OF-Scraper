@@ -119,6 +119,9 @@ async def fresh_data_handler(c, tempholderObj, ele):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
     )
+    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
+    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
+
     result = None
     try:
         result = await main_download_sendreq(
