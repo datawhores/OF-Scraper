@@ -39,7 +39,6 @@ LONG_STRING = "The Rich API makes it easy to add color and style to terminal out
 WINDOWS_LONGPATH = f"unittestmockprovidesa/coreMockclassremovingtheneedtocrea/teahostofstubsthr/oughout/{LONG_STRING}"
 LINUX_LONGPATH = f"unittestmockprovidesacoreyourtestsuiteAfterperforminganactionyoucanmakeas/sertionsaboutwhichmethattributeswereusedandarg/umentstheywerecalledwithYoucanal/sospecifyreturnvaluesandsetneededattributesinthenormalway/linux_{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
 
-ALT_MP4DECRYPT = "/root/test/path/mp4decrypt"
 ALT_FFMPEG = "/root/test/path/ffmpeg"
 
 TIMELINE_EXAMPLE = {
@@ -7329,7 +7328,6 @@ CONFIG_KEYS = [
     "metadata",
     "filter",
     "responsetype",
-    "mp4decrypt",
     "discord",
     "ffmpeg",
     "space_replacer",

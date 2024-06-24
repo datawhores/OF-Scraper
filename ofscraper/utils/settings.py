@@ -156,14 +156,6 @@ def get_output_level():
     return read_args.retriveArgs().output
 
 
-def get_mp4decrypt():
-    return (
-        config_data.get_mp4decrypt()
-        or shutil.which(constants.getattr("MP4_DECRYPT"))
-        or ""
-    )
-
-
 def get_ffmpeg():
     return (
         config_data.get_ffmpeg()

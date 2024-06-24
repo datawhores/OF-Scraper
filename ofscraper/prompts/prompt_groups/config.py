@@ -67,7 +67,6 @@ def funct(prompt_):
     system_free_min: stops downloads when bypass
     -----------------------------------
     [Binary Options]
-    mp4decrypt: path to mp4decrypt binary
     ffmeg: path to ffmpeg binary
     -----------------------------------
     [CDM Options]
@@ -285,20 +284,6 @@ def binary_config():
     out = {}
     answer = promptClasses.batchConverter(
         *[
-            {
-                "type": "filepath",
-                "name": "mp4decrypt",
-                "message": "mp4decrypt path: ",
-                "validate": prompt_validators.MultiValidator(
-                    EmptyInputValidator(),
-                    prompt_validators.mp4decryptpathvalidator(),
-                    prompt_validators.mp4decryptexecutevalidator(),
-                ),
-                "default": settings.get_mp4decrypt(),
-                "option_instruction": """
-Certain content requires decryption to process please provide the full path to mp4decrypt
-""",
-            },
             {
                 "type": "filepath",
                 "name": "ffmpeg",

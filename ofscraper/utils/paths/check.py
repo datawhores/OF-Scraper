@@ -12,33 +12,6 @@ homeDir = pathlib.Path.home()
 log = logging.getLogger("shared")
 
 
-def mp4decryptchecker(x):
-    return mp4decryptpathcheck(x) and mp4decryptexecutecheck(x)
-
-
-def mp4decryptpathcheck(x):
-    if not pathlib.Path(x).is_file():
-        log.error("path to mp4decrypt is not valid")
-        return False
-    return True
-
-
-def mp4decryptexecutecheck(x):
-    try:
-        t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if (
-            re.search("mp4decrypt", t.stdout.decode()) is not None
-            or re.search("mp4decrypt", t.stderr.decode()) is not None
-        ):
-            return True
-    except Exception as E:
-        log.error(f"issue executing path as mp4decrypt: {x}")
-        log.error(E)
-        log.error(traceback.format_exc())
-        time.sleep(2)
-        return False
-
-
 def ffmpegchecker(x):
     return ffmpegexecutecheck(x) and ffmpegpathcheck(x)
 

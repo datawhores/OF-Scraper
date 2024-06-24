@@ -267,18 +267,6 @@ def get_threads(config=None):
         threads = int(constants_attr.getattr("THREADS_DEFAULT"))
     return threads
 
-
-@wrapper.config_reader
-def get_mp4decrypt(config=None):
-    if config is False:
-        return constants.MP4DECRYPT_DEFAULT
-    return (
-        config.get("mp4decrypt")
-        or config.get("binary_options", {}).get("mp4decrypt")
-        or constants_attr.getattr("MP4DECRYPT_DEFAULT")
-    )
-
-
 @wrapper.config_reader
 def get_ffmpeg(config=None):
     if config is False:

@@ -253,34 +253,6 @@ def datevalidator():
     )
 
 
-def mp4decryptpathvalidator():
-    def callable(x):
-        return paths_check.mp4decryptpathcheck(x)
-
-    return validatorCallableHelper(
-        callable,
-        inspect.cleandoc(
-            """Path to mp4decrypt is not valid filepath or does not exists"""
-        ).strip(),
-        move_cursor_to_end=True,
-    )
-
-
-def mp4decryptexecutevalidator():
-    def callable(x):
-        return paths_check.mp4decryptexecutecheck(x)
-
-    return validatorCallableHelper(
-        callable,
-        inspect.cleandoc(
-            """
-Path is valid but the given path could not be verified to be mp4decrypt
-"""
-        ).strip(),
-        move_cursor_to_end=True,
-    )
-
-
 def ffmpegpathvalidator():
     def callable(x):
         return paths_check.ffmpegpathcheck(x)

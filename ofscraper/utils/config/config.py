@@ -63,14 +63,7 @@ def update_config_full(config_, updated_config):
     return config
 
 
-def update_mp4decrypt():
-    global config
-    config = {"config": read_config()}
-    if prompts.auto_download_mp4_decrypt() == "Yes":
-        config["config"]["mp4decrypt"] = binaries.mp4decrypt_download()
-    else:
-        config["config"]["mp4decrypt"] = prompts.mp4_prompt()
-    config_file.write_config(config)
+
 
 
 def update_ffmpeg():

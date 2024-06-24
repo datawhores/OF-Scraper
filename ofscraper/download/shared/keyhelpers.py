@@ -77,11 +77,11 @@ async def un_encrypt(item, c, ele, input_=None):
         stderr=subprocess.PIPE,
     )
     if not pathlib.Path(newpath).exists():
-        log.debug(f"{get_medialog(ele)} mp4decrypt failed")
-        log.debug(f"{get_medialog(ele)} mp4decrypt {r.stderr.decode()}")
-        log.debug(f"{get_medialog(ele)} mp4decrypt {r.stdout.decode()}")
+        log.debug(f"{get_medialog(ele)} ffmpeg decryption failed")
+        log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
+        log.debug(f"{get_medialog(ele)} ffmpeg {r.stdout.decode()}")
     else:
-        log.debug(f"{get_medialog(ele)} mp4decrypt success {newpath}")
+        log.debug(f"{get_medialog(ele)} ffmpeg  decrypt success {newpath}")
     pathlib.Path(item["path"]).unlink(missing_ok=True)
     item["path"] = newpath
     return item

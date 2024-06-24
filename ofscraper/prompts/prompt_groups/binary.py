@@ -32,30 +32,6 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.settings as settings
 
 
-def mp4_prompt():
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "filepath",
-                "name": "mp4decrypt",
-                "message": "mp4decrypt path: ",
-                "validate": prompt_validators.MultiValidator(
-                    EmptyInputValidator(),
-                    prompt_validators.mp4decryptpathvalidator(),
-                    prompt_validators.mp4decryptexecutevalidator(),
-                ),
-                "long_instruction": """
-Certain content requires decryption to process please provide the full path to mp4decrypt
-Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo
-
-https://www.bento4.com/documentation/mp4decrypt/
-""",
-                "default": settings.get_mp4decrypt(),
-            },
-        ]
-    )
-
-    return answer["mp4decrypt"]
 
 
 def ffmpeg_prompt():
@@ -84,20 +60,7 @@ https://ffmpeg.org/download.html
     return answer["ffmpeg"]
 
 
-def auto_download_mp4_decrypt() -> bool:
-    name = "manual download"
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": name,
-                "message": "mp4decrypt not found would you like to auto install?",
-                "choices": ["Yes", "No"],
-            }
-        ]
-    )
 
-    return answer[name]
 
 
 def auto_download_ffmpeg() -> bool:

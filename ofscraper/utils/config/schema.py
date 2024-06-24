@@ -32,7 +32,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "max_post_count": data.get_max_post_count(config=config),
         },
         "binary_options": {
-            "mp4decrypt": data.get_mp4decrypt(config=config),
             "ffmpeg": data.get_ffmpeg(config=config),
         },
         "cdm_options": {
