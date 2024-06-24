@@ -3,6 +3,7 @@ import shutil
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
+import ofscraper.utils.ads as ads
 
 
 def not_solo_thread():
@@ -176,3 +177,12 @@ def get_post_download_script():
 
 def get_hash(mediatype=None):
     return config_data.get_hash(mediatype=mediatype)
+
+def get_neg_filter():
+    neg=read_args.retriveArgs().neg_filter or []
+    if read_args.retriveArgs().allow_ads:
+        pass
+    elif read_args.retriveArgs().block_ads or config_data.get_block_ads():
+        neg=neg.append(ads.get_ad_key_words())
+    return neg
+    

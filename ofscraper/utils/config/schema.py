@@ -44,6 +44,9 @@ def get_current_config_schema(config: dict = None) -> dict:
             "download-sem": data.get_download_semaphores(config=config),
             "threads": data.get_threads(config=config),
         },
+        "content_filter_options":{
+            "block_ads":data.get_block_ads(config=config)
+        },
         "advanced_options": {
             "code-execution": data.get_allow_code_execution(config=config),
             "dynamic-mode-default": data.get_dynamic(config=config),

@@ -63,19 +63,38 @@ filter_option = click.option(
     "-ft",
     "--filter",
     help="Filter posts by regex (case-sensitive if uppercase characters included)",
-    default=".*",
+    default=[".*"],
     required=False,
     type=str,
+    multiple=True
 )
 
 neg_filter_option = click.option(
     "-nf",
     "--neg-filter",
     help="Filter posts to exclude those matching regex (case-sensitive if uppercase characters included)",
-    default=None,
+    default=[],
     required=False,
     type=str,
+    multiple=True
 )
+
+block_ads_option = click.option(
+    "-ba",
+    "--block-ads",
+    help="Filter posts with regex to block posts with common words for advertisements",
+    default=False,
+    is_flag=True,
+)
+
+allow_ads_option = click.option(
+    "-aa",
+    "--allow-ads",
+    help="Allows posts with common advertisment words",
+    default=False,
+    is_flag=True,
+)
+
 
 scrape_paid_option = click.option(
     "-sp",

@@ -235,34 +235,40 @@ def post_text_filter(media):
     userfilter = read_args.retriveArgs().filter
     if not userfilter:
         return media
-    elif not userfilter.islower():
-        return list(
-            filter(lambda x: re.search(userfilter, x.text or "") is not None, media)
-        )
-    else:
-        return list(
-            filter(
-                lambda x: re.search(userfilter, x.text or "", re.IGNORECASE)
-                is not None,
-                media,
+    curr=media
+    for ele in userfilter:
+        if not ele.islower():
+            curr= list(
+                filter(lambda x: re.search(ele, x.text or "") is not None, curr)
             )
-        )
+        else:
+            curr= list(
+                filter(
+                    lambda x: re.search(ele, x.text or "", re.IGNORECASE)
+                    is not None,
+                    curr,
+                )
+            )
+    return curr
     
 def post_neg_text_filter(media):
-    userfilter = read_args.retriveArgs().neg_filter
-    if not userfilter:
+    userfilter = settings.get_neg_filter()
+    if not bool(userfilter):
         return media
-    elif not userfilter.islower():
-        return list(
-            filter(lambda x: re.search(userfilter, x.text or "") is None, media)
-        )
-    else:
-        return list(
-            filter(
-                lambda x: re.search(userfilter, x.text or "", re.IGNORECASE) is None,
-                media,
+    curr=media
+    for ele in userfilter:
+        if not ele.islower():
+            curr= list(
+                filter(lambda x: re.search(ele, x.text or "") is None, curr)
             )
-        )
+        else:
+            curr=list(
+                filter(
+                    lambda x: re.search(ele, x.text or "", re.IGNORECASE) is None,
+                    curr,
+                )
+            )
+    return curr
 
 def mass_msg_filter(media):
     if read_args.retriveArgs().mass_msg is None:

@@ -770,4 +770,24 @@ def get_hash(config=None, mediatype=None):
         return config.get("remove_hash_match")
     elif "remove_hash_match" in config.get("advanced_options", {}):
         return config.get("advanced_options", {}).get("remove_hash_match")
-    return constants.HASHED_DEFAULT
+    return constants_attr.getattr("HASHED_DEFAULT")
+
+@wrapper.config_reader
+def get_block_ads(config=None, mediatype=None):
+    if config is False:
+        return constants.BLOCKED_ADS_DEFAULT
+    elif (
+        config.get("overwrites", {})
+        .get((mediatype or "").lower(), {})
+        .get("block_ads")
+    ):
+        return (
+            config.get("overwrites", {})
+            .get((mediatype or "").lower(), {})
+            .get("block_ads")
+        )
+    elif "block_ads" in config:
+        return config.get("block_ads")
+    elif "block_ads" in config.get("advanced_options", {}):
+        return config.get("advanced_options", {}).get("block_ads")
+    return constants_attr.getattr("BLOCKED_ADS_DEFAULT")
