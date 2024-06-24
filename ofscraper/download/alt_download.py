@@ -300,6 +300,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             None
 
         try:
-            progress_utils.remove_downloadjob_task(task1)
+            progress_utils.remove_download_job_task(task1)
         except Exception:
             None
