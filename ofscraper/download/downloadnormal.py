@@ -112,7 +112,6 @@ async def producer(queue, aws,concurrency_limit):
 
 @run
 async def process_dicts(username, model_id, medialist):
-
     metadata_md= read_args.retriveArgs().metadata
 
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8

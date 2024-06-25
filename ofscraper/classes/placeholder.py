@@ -158,7 +158,7 @@ class databasePlaceholder(basePlaceholder):
             cache.get(f"{model_username}_{model_id}_dbcounter", default=0) % 5
         ) + 1
         cache.set(f"{model_username}_{model_id}_dbcounter", counter)
-        cache.close()
+        
         return pathlib.Path(
             re.sub(
                 "user_data.db",
@@ -355,8 +355,9 @@ class Placeholders(basePlaceholder):
     def _needs_count(self,ele):
         unique=set(["filename","only_file_name","onlyfilename","original_filename","originalfilename","media_id","mediaid"])
         file_format=parse_safe(data.get_fileformat())
-        if len((unique&file_format))==0:
-            return True
+        #return early if pass
+        if len((unique&file_format))>0:
+            return False
         elif len(ele._post.post_media) > 1 or ele.responsetype in [
             "stories",
             "highlights",

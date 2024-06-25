@@ -286,7 +286,7 @@ async def post_check_retriver():
                         pinned_data + archived_data + labels_data + timeline_data+streams_data,
                     )
                 )
-                cache.close()
+                
                 yield user_name, model_id, all_post_data
         # individual links
         for ele in list(

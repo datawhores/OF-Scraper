@@ -26,7 +26,7 @@ def get(*args, **kwargs):
         lock.release()
 
 
-def set(*args, **kwargs):
+def set(*args, close=True,**kwargs):
     global lock
     lock.acquire()
     try:
@@ -40,6 +40,7 @@ def set(*args, **kwargs):
         raise E
     finally:
         lock.release()
+    close()
 
 
 def close(*args, **kwargs):

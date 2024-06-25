@@ -54,7 +54,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                 r.json(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY")),
             )
-            cache.close()
+            
             log.trace(f"username date: {r.json()}")
             return r.json()
     except Exception as E:
@@ -80,7 +80,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                 await r.json_(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
             )
-            cache.close()
+            
             log.trace(f"username date: {await r.json_()}")
             return await r.json_()
     except Exception as E:
@@ -168,7 +168,7 @@ def get_id_helper(c, username):
         with c.requests(constants.getattr("profileEP").format(username)) as r:
             id = r.json()["id"]
             cache.set(f"model_id_{username}", id, constants.getattr("DAY_SECONDS"))
-            cache.close()
+            
             return id
 
     except Exception as E:

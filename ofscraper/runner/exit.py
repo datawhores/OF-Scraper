@@ -27,6 +27,6 @@ def closeCache():
             common_paths.getcachepath(),
             disk=data.get_cache_mode(),
         )
-        cache.close()
+        
     except Exception as E:
         raise E

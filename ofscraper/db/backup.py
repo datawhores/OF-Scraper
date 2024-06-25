@@ -98,5 +98,5 @@ def create_backup(model_id, username, backup=None, db_path=None, **kwargs):
         database_copy.parent.mkdir(parents=True, exist_ok=True)
         copy_path(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
-    cache.close()
+    
     return database_copy

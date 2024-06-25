@@ -66,7 +66,6 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
-from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW,SIGN
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -111,11 +110,11 @@ async def alt_download_downloader(item, c, ele):
             try:
                 _attempt = common.alt_attempt_get(item)
                 _attempt.set(_attempt.get(0) + 1)
-                (
-                    pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
-                    if _attempt.get() > 1
-                    else None
-                )
+                # (
+                #     pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
+                #     if _attempt.get() > 1
+                #     else None
+                # )
                 data = await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(cache.get, f"{item['name']}_headers"),
@@ -244,6 +243,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
                     data
                 ),
             )
+            
             temp_file_logger(placeholderObj, ele)
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
@@ -283,6 +283,8 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         async for chunk in l.iter_chunked(chunk_size):
             send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
+            if count%1000==0:
+                break
             await send_bar_msg( partial(
                         progress_utils.update_download_job_task,
                         task1,

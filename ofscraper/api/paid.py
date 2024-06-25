@@ -231,7 +231,6 @@ async def create_tasks_scrape_paid():
         list(map(lambda x: x.get("id"), list(output))),
         expire=constants.getattr("RESPONSE_EXPIRY"),
     )
-    cache.close()
     # filter at user level
     return output
 
