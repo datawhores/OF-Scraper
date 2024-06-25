@@ -110,6 +110,8 @@ async def alt_download_downloader(item, c, ele):
             try:
                 _attempt = common.alt_attempt_get(item)
                 _attempt.set(_attempt.get(0) + 1)
+                if _attempt.get() > 1:
+                    pass
                 # (
                 #     pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
                 #     if _attempt.get() > 1
@@ -143,6 +145,9 @@ async def alt_download_downloader(item, c, ele):
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+    )
     common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
     common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
     total=(
@@ -208,7 +213,9 @@ async def send_req_inner(c, ele, item, placeholderObj):
     try:
 
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
+        headers = None if not resume_size or not item['total'] else {"Range": f"bytes={resume_size}-{item['total']}"}
+        common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
+
         params = {
             "Policy": ele.policy,
             "Key-Pair-Id": ele.keypair,
@@ -283,7 +290,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         async for chunk in l.iter_chunked(chunk_size):
             send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
-            if count%800==0:
+            if count%300==0:
                 break
             await send_bar_msg( partial(
                         progress_utils.update_download_job_task,

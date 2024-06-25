@@ -147,6 +147,9 @@ async def alt_download_downloader(
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+    )
     common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
     common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
     total=(
@@ -216,10 +219,10 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
-    total=None
     try:        
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
+        headers = None if not resume_size or not item['total'] else {"Range": f"bytes={resume_size}-{item['total']}"}
+        common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         params = {
             "Policy": ele.policy,
             "Key-Pair-Id": ele.keypair,

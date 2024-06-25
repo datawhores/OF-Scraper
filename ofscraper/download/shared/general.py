@@ -56,17 +56,9 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
     elif total - pathlib.Path(path).absolute().stat().st_size > 500:
         s = f"{get_medialog(ele)} {name} size mixmatch target: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
-        pathlib.Path(path).unlink(missing_ok=True)
-        await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.set, f"{ele.id}_headers", None)
-        )
         raise Exception(s)
     elif (total - pathlib.Path(path).absolute().stat().st_size) < 0:
         s = f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
-        pathlib.Path(path).unlink(missing_ok=True)
-        await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.set, f"{ele.id}_headers", None)
-        )
         raise Exception(s)
 
 
