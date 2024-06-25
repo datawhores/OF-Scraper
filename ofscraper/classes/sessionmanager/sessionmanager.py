@@ -394,12 +394,14 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    log.debug(f"response headers {dict(r.headers)}")
+                    log.debug(f"requests headers {dict(r.request.headers)}")
                     if TOO_MANY  in exceptions:
                         is_rate_limited(E,sleeper)  
                     if AUTH in exceptions:
                         check_400(E)
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
                     raise E
         yield r
     @contextlib.asynccontextmanager
@@ -517,15 +519,16 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if not TOO_MANY in exceptions:
-                        async_is_rate_limited(E,sleeper) 
                     #only call from sync req like "me"
                     #check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
+                    log.debug(f"response headers {dict(r.headers)}")
+                    log.debug(f"requests headers {dict(r.request.headers)}")
+                    if not TOO_MANY in exceptions:
+                        async_is_rate_limited(E,sleeper) 
                     sem.release()
                     await asyncio.sleep(0)
-
                     raise E
         yield r
         sem.release()
@@ -551,6 +554,7 @@ class sessionManager:
         t.iter_chunked = t.aiter_bytes
         t.iter_chunks = t.aiter_bytes
         t.read_ = t.aread
+        t.request=t.request
         return t
 
     def _httpx_funct(self, method, **kwargs):
@@ -561,7 +565,7 @@ class sessionManager:
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
         t.iter_chunks = t.iter_bytes
-
+        t.request=t.request
         t.read_ = t.read
         return t
 
@@ -572,7 +576,7 @@ class sessionManager:
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
         r.iter_chunks = r.content.iter_chunks
-
+        r.request=r.request_info
         r.status_code = r.status
         r.read_ = r.content.read
         return r

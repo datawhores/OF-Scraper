@@ -283,7 +283,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         async for chunk in l.iter_chunked(chunk_size):
             send_chunk_msg(ele,total,placeholderObj)
             await fileobject.write(chunk)
-            if count%1000==0:
+            if count%800==0:
                 break
             await send_bar_msg( partial(
                         progress_utils.update_download_job_task,
