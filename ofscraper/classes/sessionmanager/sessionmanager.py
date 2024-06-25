@@ -391,13 +391,12 @@ class sessionManager:
                         log.debug(f"[bold]failed: [bold] {r.url}")
                         log.debug(f"[bold]status: [bold] {r.status}")
                         log.debug(f"[bold]response text [/bold]: {r.text_()}")
-                        log.debug(f"[bold]headers[/bold]: {r.headers}")
+                        log.debug(f"response headers {dict(r.headers)}")
+                        log.debug(f"requests headers {dict(r.request.headers)}")
                         r.raise_for_status()
                 except Exception as E:
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    log.debug(f"response headers {dict(r.headers)}")
-                    log.debug(f"requests headers {dict(r.request.headers)}")
                     if TOO_MANY  in exceptions:
                         is_rate_limited(E,sleeper)  
                     if AUTH in exceptions:
@@ -516,15 +515,14 @@ class sessionManager:
                         log.debug(f"[bold]failed: [bold] {r.url}")
                         log.debug(f"[bold]status: [bold] {r.status}")
                         log.debug(f"[bold]response text [/bold]: {await r.text_()}")
-                        log.debug(f"[bold]headers[/bold]: {r.headers}")
+                        log.debug(f"response headers {dict(r.headers)}")
+                        log.debug(f"requests headers {dict(r.request.headers)}")
                         r.raise_for_status()
                 except Exception as E:
                     #only call from sync req like "me"
                     #check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    log.debug(f"response headers {dict(r.headers)}")
-                    log.debug(f"requests headers {dict(r.request.headers)}")
                     if not TOO_MANY in exceptions:
                         async_is_rate_limited(E,sleeper) 
                     sem.release()
