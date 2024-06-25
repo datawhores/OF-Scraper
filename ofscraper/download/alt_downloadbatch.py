@@ -23,6 +23,7 @@ from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.shared.alt_common import (
     media_item_keys_alt,
     media_item_post_process_alt,
+    get_alt_params
 )
 from ofscraper.download.shared.handle_result import (
     handle_result_alt,
@@ -224,11 +225,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = get_resume_header(resume_size,total)
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
-        params = {
-            "Policy": ele.policy,
-            "Key-Pair-Id": ele.keypair,
-            "Signature": ele.signature,
-        }
+        params = get_alt_params(ele)
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
 
