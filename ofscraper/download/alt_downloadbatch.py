@@ -51,6 +51,7 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
+from ofscraper.download.shared.resume import get_resume_header
 
 
 async def alt_download(c, ele, username, model_id):
@@ -221,7 +222,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 async def send_req_inner(c, ele, item, placeholderObj):
     try:        
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = None if not resume_size or not item['total'] else {"Range": f"bytes={resume_size}-{item['total']}"}
+        headers = get_resume_header(resume_size,total)
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         params = {
             "Policy": ele.policy,

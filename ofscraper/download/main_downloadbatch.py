@@ -57,6 +57,7 @@ from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
 
+from ofscraper.download.shared.resume import get_resume_header
 
 async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -146,6 +147,9 @@ async def fresh_data_handler(c, ele, tempholderObj):
 
 
 async def resume_data_handler(data, c, ele, tempholderObj):
+    common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+    )
     common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
     common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
 
@@ -180,19 +184,19 @@ async def resume_data_handler(data, c, ele, tempholderObj):
     else:
         try:
             return await main_download_sendreq(
-                c, ele, tempholderObj ,placeholderObj=placeholderObj
+                c, ele, tempholderObj ,placeholderObj=placeholderObj,total=total
             )
         except Exception as E:
             raise E
 
 
-async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
+async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None,total=None):
     try:
         common_globals.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
-            c, ele, tempholderObj, placeholderObj=placeholderObj
+            c, ele, tempholderObj, placeholderObj=placeholderObj,total=total
         )
     except OSError as E:
         raise E
@@ -200,11 +204,11 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None):
         raise E
 
 
-async def send_req_inner(c, ele, tempholderObj, placeholderObj=None):
-    total=None
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-        headers = None if not resume_size else {"Range": f"bytes={resume_size}-"}
+        headers = get_resume_header(resume_size,total)
+        common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
         )

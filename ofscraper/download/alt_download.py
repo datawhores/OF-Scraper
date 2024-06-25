@@ -96,7 +96,7 @@ async def alt_download(c, ele, username, model_id):
     return await handle_result_alt(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
-
+from ofscraper.download.shared.resume import get_resume_header
 
 async def alt_download_downloader(item, c, ele):
     downloadspace(mediatype=ele.mediatype)
@@ -208,7 +208,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
     try:
 
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = None if not resume_size or not item['total'] else {"Range": f"bytes={resume_size}-{item['total']}"}
+        headers = headers = get_resume_header(resume_size,total)
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
 
         params = {
