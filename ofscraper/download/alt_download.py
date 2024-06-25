@@ -33,11 +33,14 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.download.shared.retries import get_download_retries
 from ofscraper.classes.download_retries import download_retry
-from ofscraper.download.shared.alt_common import (
+from ofscraper.download.shared.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
+)
+from ofscraper.download.shared.alt.params import (
     get_alt_params
 )
+
 
 from ofscraper.download.shared.handle_result import (
     handle_result_alt,
@@ -67,6 +70,8 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
+from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
+
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -118,10 +123,17 @@ async def alt_download_downloader(item, c, ele):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    return await resume_data_handler(data, item, c, ele, placeholderObj)
+                    out=await resume_data_handler(data, item, c, ele, placeholderObj)
 
                 else:
-                    return await fresh_data_handler(item, c, ele, placeholderObj)
+                    out=await fresh_data_handler(item, c, ele, placeholderObj)
+                # if out is null run request
+                if not out:
+                    try:
+                        out=await alt_download_sendreq(item, c, ele, placeholderObj)
+                    except Exception as E:
+                        raise E
+                return out
             except OSError as E:
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
@@ -139,51 +151,6 @@ async def alt_download_downloader(item, c, ele):
                 )
                 raise E
 
-
-async def resume_data_handler(data, item, c, ele, placeholderObj):
-    common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
-    )
-    common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
-    common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
-    total=(
-        int(data.get("content-total")) if data.get("content-total") else None
-    )
-    item["total"]=total
-
-    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }")
-
-    if await check_forced_skip(ele, total) == 0:
-        item["total"] = 0
-        return item
-    elif total == resume_size:
-        common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
-
-        temp_file_logger(placeholderObj, ele)
-        (
-            await common.total_change_helper(None, total)
-            if common.alt_attempt_get(item).get() == 1
-            else None
-        )
-        return item
-    elif total!= resume_size:
-        return await alt_download_sendreq(item, c, ele, placeholderObj)
-
-
-async def fresh_data_handler(item, c, ele, placeholderObj):
-    common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
-    )
-    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
-
-    result = None
-    try:
-        result = await alt_download_sendreq(item, c, ele, placeholderObj)
-    except Exception as E:
-        raise E
-    return result
 
 
 async def alt_download_sendreq(item, c, ele, placeholderObj):
