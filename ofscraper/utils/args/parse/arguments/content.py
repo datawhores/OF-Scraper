@@ -4,6 +4,8 @@ import cloup as click
 
 import ofscraper.utils.args.parse.arguments.helpers.date as date_helper
 import ofscraper.utils.args.parse.arguments.helpers.type as type
+from ofscraper.utils.args.types.choice import MultiChoice
+from ofscraper.utils.args.callbacks.choice import MultiChoiceCallback
 
 # Define individual options
 posts_option = click.option(
@@ -35,10 +37,22 @@ download_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=type.download_helper,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    type=MultiChoice([
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Stories",
+            "Purchased",
+            "Profile",
+            "Streams",
+            "Labels",
+            "Labels+",
+            "Labels*",
+        ],case_sensitive=False),
+    callback=MultiChoiceCallback,
     multiple=True,
 )
 
@@ -47,7 +61,7 @@ like_area_option = click.option(
     "--like-area",
     help="""
     Perform like/unlike in selected areas (comma or space separated).
-    Options: Archived, Timeline, Pinned, Labels, All
+    Options: Archived, Timeline,fo Pinned, Labels, All
     Has preference over --posts for like action
     """,
     default=[],
