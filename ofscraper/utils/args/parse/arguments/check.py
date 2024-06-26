@@ -1,20 +1,20 @@
 # checkmode  args
-import itertools
 import cloup as click
+import re 
+from ofscraper.utils.args.types.choice import MultiChoice
+from ofscraper.utils.args.callbacks.string import StringSplitParseTitle,StringSplitParse
+from ofscraper.utils.args.callbacks.file import FileCallback
 
-import ofscraper.utils.args.parse.arguments.helpers.type as type
 check_areas=click.option(
         "-ca",
         "--check-area",
          "--post",
-        "--post",
+        "--posts",
         "check_area",
         help="Select areas to check (multiple allowed, separated by spaces)",
         default=["Timeline", "Pinned", "Archived","Streams"],
-        type=type.post_check_area_helper,
-        callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-        ),
+        type=MultiChoice(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"],case_sensitive=False),
+        callback=StringSplitParseTitle,
         multiple=True,
 )
 
@@ -25,21 +25,16 @@ url_option=click.option(
             help="Scan posts via space or comma seperated list of urls",
             default=None,
             multiple=True,
-            type=type.check_modes_strhelper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
+            callback=StringSplitParse
         )
 file_option=click.option(
             "-f",
             "--file",
             help="Scan posts via a file with line-separated URL(s)",
             default=None,
-            type=type.check_modes_filehelper,
+            type=click.File(),
             multiple=True,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
+            callback=FileCallback,
         )
 
 
@@ -48,11 +43,10 @@ file_username_option=click.option(
             "--file",
             help="Scan posts via a file with line-separated URL(s)",
             default=None,
-            type=type.check_modes_filehelper,
+            type=lambda x:click.File(),
             multiple=True,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
+            callback=FileCallback
+
         )
 user_option=click.option(
             "-u",
@@ -62,10 +56,7 @@ user_option=click.option(
             help="Scan stories/highlights via username(s)",
             default=None,
             multiple=True,
-            type=type.check_modes_strhelper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
+            callback=StringSplitParse
 )
 force=click.option(
         "-fo",

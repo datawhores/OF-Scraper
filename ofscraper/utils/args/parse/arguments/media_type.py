@@ -1,12 +1,11 @@
-# Define individual options
-import itertools
-
 import cloup as click
 
 # import click
 from humanfriendly import parse_size
 
-import ofscraper.utils.args.parse.arguments.helpers.type as type
+from ofscraper.utils.args.types.choice import MultiChoice
+from ofscraper.utils.args.callbacks.string import StringSplitParseTitle,StringSplitParse
+
 
 quality_option = click.option(
     "-q",
@@ -20,10 +19,8 @@ media_type_option = click.option(
     help="Filter by media type (Videos, Audios, Images)",
     default=[],
     required=False,
-    type=type.mediatype_helper,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    type=MultiChoice(["Videos","Audios","Images"],case_sensitive=False),
+    callback=StringSplitParseTitle,
     multiple=True,
 )
 
@@ -64,11 +61,9 @@ media_id_filter = click.option(
     "--media-id",
     help="Filter media based on media id",
     required=False,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
-    type=type.string_split_helper,
+    callback=StringSplitParse,
     multiple=True,
+    type=click.STRING
 )
 
 length_max=click.option(

@@ -1,8 +1,7 @@
-import itertools
-
 import cloup as click
+from ofscraper.utils.args.types.choice import MutuallyExclusiveMultichoice
+from ofscraper.utils.args.callbacks.string import StringSplitParseTitle,StringSplitParse
 
-import ofscraper.utils.args.parse.arguments.helpers.type as type
 
 daemon_option = click.option(
     "-d",
@@ -19,11 +18,9 @@ action_option = click.option(
     Accepts space or comma-separated list. Like and unlike cannot be combined.
     """,
     multiple=True,
-    type=type.action_helper,  # Assuming helpers.action_helper is defined elsewhere
+    type=MutuallyExclusiveMultichoice(["unlike","like","download"],exclusion=["like","unlike"],case_sensitive=False),
     default=None,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    callback=StringSplitParse
 )
 
 

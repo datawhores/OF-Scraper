@@ -2,8 +2,8 @@ import cloup as click
 import re
 from gettext import ngettext
 class MultiChoice(click.Choice):
-    def __init__(self,args,**kwargs):
-        super().__init__(args,**kwargs)
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
     def convert(
         self, value, param, ctx 
     ):
@@ -40,3 +40,23 @@ class MultiChoice(click.Choice):
                     ctx,
                 )                                                   
         return normed_values
+
+class MutuallyExclusiveMultichoice(MultiChoice):
+     def __init__(self,*args,exclusion=None,**kwargs):
+        self._exclusion=exclusion or []
+        super().__init__(*args,**kwargs)
+     def convert(self, value, param, ctx):
+        out=super().convert(value, param, ctx)
+        if not out:
+            return out
+        for val in self._exclusion_helper():
+            if all([ele in out for ele in val]):
+                self.fail(f"The values {','.join(val)} can not be together")
+        return out
+     
+     def _exclusion_helper(self):
+        if len(self._exclusion)==0:
+            return self._exclusion
+        if not isinstance(self._exclusion[0], list):
+            return [self._exclusion]
+         

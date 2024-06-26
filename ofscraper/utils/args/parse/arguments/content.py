@@ -1,11 +1,9 @@
-import itertools
-
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.helpers.date as date_helper
-import ofscraper.utils.args.parse.arguments.helpers.type as type
 from ofscraper.utils.args.types.choice import MultiChoice
-from ofscraper.utils.args.callbacks.choice import MultiChoiceCallback
+from ofscraper.utils.args.types.arrow import ArrowType
+from ofscraper.utils.args.callbacks.string import StringSplitParse,StringSplitNormalizeParse,StringSplitParseTitle
 
 # Define individual options
 posts_option = click.option(
@@ -19,10 +17,22 @@ posts_option = click.option(
     """,
     default=[],
     required=False,
-    type=type.post_type_helper,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    type=MultiChoice([
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Stories",
+            "Purchased",
+            "Profile",
+            "Labels",
+            "Labels+",
+            "Labels*",
+        ],case_sensitive=False),
+    callback=StringSplitParseTitle,
     multiple=True,
 )
 
@@ -52,7 +62,7 @@ download_area_option = click.option(
             "Labels+",
             "Labels*",
         ],case_sensitive=False),
-    callback=MultiChoiceCallback,
+    callback=StringSplitParseTitle,
     multiple=True,
 )
 
@@ -66,10 +76,8 @@ like_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=type.like_helper,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    type=MultiChoice(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"],case_sensitive=False),
+    callback=StringSplitParseTitle,
     multiple=True,
 )
 
@@ -184,17 +192,14 @@ label_option = click.option(
     help="Filter by label (use helpers.label_helper to process)",
     default=[],
     required=False,
-    type=type.label_helper,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
+    callback=StringSplitNormalizeParse,
     multiple=True,
 )
 before_option = click.option(
     "-be",
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=type.arrow_helper,
+    type=ArrowType(),
     callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
 )
 
@@ -202,7 +207,7 @@ after_option = click.option(
     "-af",
     "--after",
     help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=type.arrow_helper,
+    type=ArrowType(),
 )
 
 mass_msg_option = click.option(
@@ -235,11 +240,9 @@ post_id_filter = click.option(
     "post_id",
     help="Filter posts based on post id",
     required=False,
-    callback=lambda ctx, param, value: (
-        list(set(itertools.chain.from_iterable(value))) if value else []
-    ),
-    type=type.post_id_helper,
+    callback=StringSplitParse,
     multiple=True,
+    type=click.STRING
 )
 
 timeline_strict = click.option(
