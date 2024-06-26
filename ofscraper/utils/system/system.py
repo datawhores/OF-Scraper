@@ -34,21 +34,6 @@ def getcpu_count():
     else:
         return psutil.cpu_count()
 
-
-def speed_test():
-    r = subprocess.Popen(
-        ["speedtest-cli", "--bytes", "--no-upload", "--json", "--secure"],
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    )
-    out = ""
-    for stdout_line in iter(r.stdout.readline, ""):
-        out = out + stdout_line
-    r.wait()
-    speed = json.loads(out.strip())["download"]
-    return speed
-
-
 def getOpenFiles(unique=True):
     match = set()
     out = []
