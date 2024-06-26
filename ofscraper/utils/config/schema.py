@@ -26,6 +26,8 @@ def get_current_config_schema(config: dict = None) -> dict:
         "download_options": {
             "file_size_max": data.get_filesize_max(config=config),
             "file_size_min": data.get_filesize_min(config=config),
+             "length_max": data.get_min_length(config=config),
+            "length_min": data.get_max_length(config=config),
             "filter": data.get_filter(config=config),
             "auto_resume": data.get_part_file_clean(config=config),
             "system_free_min": data.get_system_freesize(config=config),

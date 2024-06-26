@@ -62,7 +62,9 @@ def funct(prompt_):
     [Download Options]
     file_size_max: max size allowed for download
     file_size_min: min size required for download
-    filter: which media to download
+    length_min: min length of media, only applies to videos
+    length_max: max length of media, only applies to videos
+    filter: which media types to download
     auto_resume: toggle for resuming downloads
     system_free_min: stops downloads when bypass
     -----------------------------------
@@ -165,6 +167,31 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_system_freesize()),
+                "filter": int,
+            },
+
+
+            {
+                "type": "input",
+                "name": "length_min",
+                "message": "min length: ",
+                "option_instruction": """
+Min length of media to download in seconds
+This only applies to videos
+""",
+                "default": str(data.get_min_length()),
+                "filter": int,
+            },
+
+                        {
+                "type": "input",
+                "name": "length_max",
+                "message": "max length: ",
+                "option_instruction": """
+Max length of media to download in seconds
+This only applies to videos
+""",
+                "default": str(data.get_max_length()),
                 "filter": int,
             },
             {

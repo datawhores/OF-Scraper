@@ -95,6 +95,52 @@ def get_filesize_min(config=None, mediatype=None):
         return 0
 
 
+
+@wrapper.config_reader
+def get_min_length(config=None, mediatype=None):
+    if config is False:
+        return constants.MIN_LENGTH_DEFAULT
+    if config.get("length_min") is not None:
+        return config.get("length_min")
+    
+    elif (
+        config.get("overwrites", {})
+        .get((mediatype or "").lower(), {})
+        .get("length_min")
+    ):
+        return (
+            config.get("overwrites", {})
+            .get((mediatype or "").lower(), {})
+            .get("length_min")
+        )
+    elif "length_min" in config:
+        return config.get("length_min", {})
+    
+    elif config.get("download_options", {}).get("length_min"):
+        return config.get("download_options", {}).get("length_min")
+wrapper.config_reader
+def get_max_length(config=None, mediatype=None):
+    if config is False:
+        return constants.MIN_LENGTH_DEFAULT
+    if config.get("length_max") is not None:
+        return config.get("length_max")
+    
+    elif (
+        config.get("overwrites", {})
+        .get((mediatype or "").lower(), {})
+        .get("length_max")
+    ):
+        return (
+            config.get("overwrites", {})
+            .get((mediatype or "").lower(), {})
+            .get("length_max")
+        )
+    elif "length_min" in config:
+        return config.get("length_max", {})
+    
+    elif config.get("download_options", {}).get("length_max"):
+        return config.get("download_options", {}).get("length_max")
+
 @wrapper.config_reader
 def get_system_freesize(config=None, mediatype=None):
     if config is False:
