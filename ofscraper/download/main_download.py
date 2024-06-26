@@ -19,10 +19,6 @@ from humanfriendly import format_size
 import aiofiles
 import psutil
 
-try:
-    from win32_setctime import setctime  # pylint: disable=import-error
-except ModuleNotFoundError:
-    pass
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
@@ -55,6 +51,8 @@ from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
 from ofscraper.download.shared.resume import get_resume_header
+from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
+
 
 
 async def main_download(c, ele, username, model_id):
@@ -87,17 +85,31 @@ async def main_download_downloader(c, ele):
     async for _ in download_retry():
         with _:
             try:
-                data = await get_data(ele)
                 common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                (
-                    pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
-                    if common_globals.attempt.get() > 1
-                    else None
-                )
+                if common_globals.attempt.get() > 1:
+                    pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)        
+                data = await get_data(ele)
+                total=None
+                placeholderObj=None
                 if data:
-                    return await resume_data_handler(data, c, tempholderObj, ele)
+                    total,placeholderObj,check=await resume_data_handler(data,ele, tempholderObj)
                 else:
-                    return await fresh_data_handler(c, tempholderObj, ele)
+                    await fresh_data_handler(ele,tempholderObj)
+                # if total is None then we do requests
+                if not check:
+                    try: 
+                        return await main_download_sendreq(
+                             c, ele, tempholderObj ,placeholderObj=placeholderObj,total=total
+                        )
+                    except Exception as E:
+                        raise E
+                else:
+                    return (
+                        total,
+                        tempholderObj.tempfilepath,
+                        placeholderObj,
+                    )
+                              
             except OSError as E:
                 common_globals.log.debug(
                     f"[attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
@@ -116,66 +128,6 @@ async def main_download_downloader(c, ele):
                 raise E
 
 
-async def fresh_data_handler(c, tempholderObj, ele):
-    common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
-    )
-    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
-
-    result = None
-    try:
-        result = await main_download_sendreq(
-            c, ele, tempholderObj, placeholderObj=None
-        )
-    except Exception as E:
-        raise E
-    return result
-
-
-async def resume_data_handler(data, c, tempholderObj, ele):
-    common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
-    )
-    common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
-    common_globals.log.debug(f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
-    content_type = data.get("content-type").split("/")[-1]
-    total = int(data.get("content-total")) if data.get("content-total") else None
-    placeholderObj = await placeholder.Placeholders(ele, content_type).init()
-    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-    common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total}")
-
-    # other
-    if await check_forced_skip(ele, total) == 0:
-        path_to_file_logger(placeholderObj, ele)
-        return [0]
-    elif total == resume_size:
-        common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
-        (
-            await common.total_change_helper(None, total)
-            if common_globals.attempt.get() == 1
-            else None
-        )
-        path_to_file_logger(placeholderObj, ele)
-        return (
-            total,
-            tempholderObj.tempfilepath,
-            placeholderObj,
-        )
-
-    else:
-        try:
-            return await main_download_sendreq(
-                c,
-                ele,
-                tempholderObj,
-                placeholderObj=placeholderObj,
-                total=total
-            )
-        except Exception as E:
-            raise E
-
-
 async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None,total=None):
     try:
         common_globals.log.debug(
@@ -192,7 +144,6 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None,total
         raise E
     except Exception as E:
         raise E
-
 
 async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
     try:

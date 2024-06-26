@@ -73,7 +73,7 @@ media_id_filter = click.option(
 
 length_max=click.option(
         "-lx",
-        "-length-max",
+        "--length-max",
         help="max duration in seconds does not effect non-media files",
         required=False,
         type=parse_size,

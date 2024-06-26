@@ -20,11 +20,6 @@ from humanfriendly import format_size
 
 import aiofiles
 import psutil
-
-try:
-    from win32_setctime import setctime  # pylint: disable=import-error
-except ModuleNotFoundError:
-    pass
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
@@ -123,17 +118,16 @@ async def alt_download_downloader(item, c, ele):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    out=await resume_data_handler(data, item, c, ele, placeholderObj)
+                    item=await resume_data_handler(data, item, c, ele, placeholderObj)
 
                 else:
-                    out=await fresh_data_handler(item, c, ele, placeholderObj)
-                # if out is null run request
-                if not out:
+                    await fresh_data_handler(item, c, ele, placeholderObj)
+                if not item:
                     try:
-                        out=await alt_download_sendreq(item, c, ele, placeholderObj)
+                        item=await alt_download_sendreq(item, c, ele, placeholderObj)
                     except Exception as E:
                         raise E
-                return out
+                return item
             except OSError as E:
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
