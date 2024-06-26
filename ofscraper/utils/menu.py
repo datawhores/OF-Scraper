@@ -125,6 +125,8 @@ def config_menu_helper(result_config_prompt):
         config_menu.advanced_config()
     elif result_config_prompt == "response":
         config_menu.response_type()
+    elif result_config_prompt == "content":
+        config_menu.content_config()
 
 
 def reset_menu_helper():

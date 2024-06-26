@@ -786,8 +786,20 @@ def get_block_ads(config=None, mediatype=None):
             .get((mediatype or "").lower(), {})
             .get("block_ads")
         )
+    elif (
+        config.get("overwrites", {})
+        .get((mediatype or "").lower(), {})
+        .get("content_filter_options",{})
+        .get("block_ads")
+    ):
+        return (
+            config.get("overwrites", {})
+            .get((mediatype or "").lower(), {})
+            .get("content_filter_options",{})
+            .get("block_ads")
+        )
     elif "block_ads" in config:
         return config.get("block_ads")
-    elif "block_ads" in config.get("advanced_options", {}):
-        return config.get("advanced_options", {}).get("block_ads")
+    elif "block_ads" in config.get("content_filter_options", {}):
+        return config.get("content_filter_options", {}).get("block_ads")
     return constants_attr.getattr("BLOCKED_ADS_DEFAULT")

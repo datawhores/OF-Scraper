@@ -79,6 +79,9 @@ def funct(prompt_):
     download-sem: number of downloads per processor/worker
     threads: number of processors/workers
     -----------------------------------
+    [Content Filter Options]
+    block_ads: use common key words to block ads
+    --------------------------------------------------
     [Advanced Options]
     code-execution: allow eval on custom_val
     dynamic-mode-default: source of signed header values
@@ -108,8 +111,8 @@ def funct(prompt_):
 
 def config_prompt() -> int:
     config_prompt_choices = [*constants.getattr("configPromptChoices")]
-    config_prompt_choices.insert(6, Separator())
-    config_prompt_choices.insert(9, Separator())
+    config_prompt_choices.insert(7, Separator())
+    config_prompt_choices.insert(10, Separator())
 
     answer = promptClasses.getChecklistSelection(
         message="Config Menu: Which area would you like to change?",
@@ -424,6 +427,28 @@ def general_config():
             },
         ],
         altx=funct,
+        more_instruction=prompt_strings.CONFIG_MENU,
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def content_config():
+    out = {}
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": "block_ads",
+                "choices": [Choice( True,"Yes"), Choice(False,"No")],
+                "message": "Do you want to auto block post with advertisment words:\n",
+                "default": data.get_block_ads(),
+            },
+            
+        ],
         more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)

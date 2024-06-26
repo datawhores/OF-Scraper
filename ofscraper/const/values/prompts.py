@@ -14,6 +14,7 @@ configPromptChoices = {
     "Binary Options": "binary",
     "CDM Options": "cdm",
     "Performance Options": "performance",
+    "Content Options" :"content",
     "Response Type": "response",
     "Advanced Options": "advanced",
     "Go to main menu": "main",
