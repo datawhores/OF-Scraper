@@ -27,4 +27,3 @@ search_entire_list_option = click.option(
 )
 
 
-

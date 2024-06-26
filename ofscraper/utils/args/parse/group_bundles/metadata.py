@@ -83,6 +83,21 @@ It also uses a new filename if one is available
             flag_value=True,
             is_flag=True,
         ),
+        click.option(
+            "-an",
+            "--anon",
+            "anon",
+            help="""
+        \b
+        Use anonymise creditional
+        ignored if --username not passed 
+        ignored if --username only includes ALL
+        forces --individual flag
+        force --list flag to be removed
+        """,
+            flag_value=True,
+            is_flag=True,
+        ),
     )
     @program_options
     @logging_options
@@ -133,6 +148,13 @@ It also uses a new filename if one is available
     def wrapper(ctx, *args, **kwargs):
         if not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
             raise UsageError("'--scrape-paid' and/or --metadata is required")
+        if not ctx.params["anon"]:
+            pass
+        elif len(list(filter(lambda x:x is not "ALL",ctx.params["usernames"])))==0:
+            pass
+        else:
+            ctx.params["individual"]=True
+            ctx.params["list"]=False
         return func(ctx, *args, **kwargs)
 
     return wrapper
