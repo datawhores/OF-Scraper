@@ -1,5 +1,3 @@
-import itertools
-
 import cloup as click
 
 
