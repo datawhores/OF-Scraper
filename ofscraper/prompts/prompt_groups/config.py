@@ -178,6 +178,7 @@ Enter 0 for no limit
                 "option_instruction": """
 Min length of media to download in seconds
 This only applies to videos
+Enter 0 to disable
 """,
                 "default": str(data.get_min_length()),
                 "filter": int,
@@ -190,6 +191,7 @@ This only applies to videos
                 "option_instruction": """
 Max length of media to download in seconds
 This only applies to videos
+Enter 0 to disable
 """,
                 "default": str(data.get_max_length()),
                 "filter": int,

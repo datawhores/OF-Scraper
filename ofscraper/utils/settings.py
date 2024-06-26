@@ -185,4 +185,14 @@ def get_neg_filter():
     elif read_args.retriveArgs().block_ads or config_data.get_block_ads():
         neg=neg.append(ads.get_ad_key_words())
     return neg
-    
+
+def get_min_length(mediatype=None):
+    if read_args.retriveArgs().length_min!=None:
+        return read_args.retriveArgs().length_min
+    return config_data.get_min_length(mediatype=mediatype)
+
+
+def get_max_length(mediatype=None):
+    if read_args.retriveArgs().length_max!=None:
+        return read_args.retriveArgs().length_max 
+    return config_data.get_max_length(mediatype=mediatype) 

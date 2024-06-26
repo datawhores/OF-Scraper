@@ -109,8 +109,8 @@ def download_type_filter(media):
 
 def media_length_filter(media):
     filteredMedia=media
-    max_length=read_args.retriveArgs().length_max
-    min_length=read_args.retriveArgs().length_min
+    max_length=settings.get_max_length()
+    min_length=settings.get_min_length()
     if max_length:
         filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=max_length,filteredMedia))
     if min_length:

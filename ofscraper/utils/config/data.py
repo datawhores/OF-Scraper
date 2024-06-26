@@ -100,8 +100,6 @@ def get_filesize_min(config=None, mediatype=None):
 def get_min_length(config=None, mediatype=None):
     if config is False:
         return constants.MIN_LENGTH_DEFAULT
-    if config.get("length_min") is not None:
-        return config.get("length_min")
     
     elif (
         config.get("overwrites", {})
@@ -118,13 +116,11 @@ def get_min_length(config=None, mediatype=None):
     
     elif config.get("download_options", {}).get("length_min"):
         return config.get("download_options", {}).get("length_min")
-wrapper.config_reader
+@wrapper.config_reader
 def get_max_length(config=None, mediatype=None):
     if config is False:
-        return constants.MIN_LENGTH_DEFAULT
-    if config.get("length_max") is not None:
-        return config.get("length_max")
-    
+        return constants.MAX_LENGTH_DEFAULT
+  
     elif (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
