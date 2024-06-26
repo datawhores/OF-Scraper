@@ -69,9 +69,6 @@ It also uses a new filename if one is available
             type=click.Choice(METADATA_OPTIONS),
             metavar="METADATA MODE",
         ),
-    )
-    @click.option_group(
-        "filter_stray",
         click.option(
             "-ms",
             "--mark-stray-locked",

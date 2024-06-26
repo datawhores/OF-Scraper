@@ -24,3 +24,6 @@ class ArrowType(click.ParamType):
             except ValueError as E:
                 raise E
         return t
+    @property
+    def name(self):
+        return "Arrow"
