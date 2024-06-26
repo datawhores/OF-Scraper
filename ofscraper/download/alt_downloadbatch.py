@@ -183,7 +183,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 async def send_req_inner(c, ele, item, placeholderObj):
     try:        
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = get_resume_header(resume_size,total)
+        headers = get_resume_header(resume_size,item["total"])
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         params = get_alt_params(ele)
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
