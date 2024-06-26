@@ -45,35 +45,8 @@ def post_type_helper(x):
 
 
 
-
-def download_helper(x):
-    choices = set(
-        [
-            "Highlights",
-            "All",
-            "Archived",
-            "Messages",
-            "Timeline",
-            "Pinned",
-            "Stories",
-            "Purchased",
-            "Profile",
-            "Streams",
-            "Labels",
-            "Labels+",
-            "Labels*",
-        ]
-    )
-    x = string_split_helper_filtered(x)
-    if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
-        raise argparse.ArgumentTypeError(
-            "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
-        )
-    return final_output_dupe_helper(x)
-
-
 def like_helper(x):
-    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"])
+    choices = set()
     x = string_split_helper_filtered(x)
     if len(list(filter((lambda y: y not in choices and y[1:] not in choices), x))) > 0:
         raise argparse.ArgumentTypeError(

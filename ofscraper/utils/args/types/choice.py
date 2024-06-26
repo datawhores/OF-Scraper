@@ -12,6 +12,9 @@ class MultiChoice(click.Choice):
         # preserve original `value` to produce an accurate message in
         # `self.fail`
         normed_values=re.split(",| ", value)  
+        #dedupe
+        seen = set()
+        normed_values=[normed_value for normed_value in normed_values if normed_value not in seen and not seen.add(normed_value)]
         normed_choices = [choice for choice in self.choices]
 
         if ctx is not None and ctx.token_normalize_func is not None:
