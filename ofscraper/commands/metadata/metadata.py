@@ -10,7 +10,6 @@
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import copy
 import logging
 
 import arrow
@@ -23,9 +22,8 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.__version__ import __version__
 from ofscraper.commands.helpers.shared import run_metadata_bool
-from ofscraper.commands.helpers.strings import metadata_activity_str,mark_stray_str,all_paid_metadata_str,all_paid_progress_metadata_str
+from ofscraper.commands.helpers.strings import mark_stray_str
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
@@ -33,12 +31,11 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.final_log import final_log
-from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
 from ofscraper.utils.checkers import check_auth
 from ofscraper.commands.metadata.userfirst  import metadata_user_first
 from ofscraper.commands.metadata.normal import process_users_metadata_normal
+from ofscraper.commands.metadata.paid import metadata_paid_all
 import ofscraper.utils.actions as actions
 log = logging.getLogger("shared")
 
@@ -65,52 +62,6 @@ def metadata():
 
 
 
-@run
-async def metadata_paid_all():
-    old_args = copy.deepcopy(read_args.retriveArgs())
-    force_change_metadata()
-    out=["[bold yellow]Scrape Paid Results[/bold yellow]"]
-
-    async for count,value,length in process_scrape_paid():
-        process_user_info_printer(value,length,count,all_paid_update=all_paid_metadata_str,all_paid_activity=metadata_activity_str,
-        log_progress=all_paid_progress_metadata_str
-
-                                  
-                                  )
-        out.append(await process_user(value,length))
-    write_args.setArgs(old_args)
-    return out
-
-
-
-async def metadata_stray_media(username, model_id, media):
-    if read_args.retriveArgs().mark_stray:
-        return
-    all_media = []
-    curr_media_set = set(map(lambda x: str(x.id), media))
-    args = read_args.retriveArgs()
-    progress_utils.update_activity_task(description=mark_stray_str.format(username=username))
-    if "Timeline" in args.download_area:
-        all_media.extend(await get_timeline_media(model_id=model_id, username=username))
-    if "Messages" in args.download_area:
-        all_media.extend(await get_messages_media(model_id=model_id, username=username))
-    if "Archived" in args.download_area:
-        all_media.extend(await  get_archived_media(model_id=model_id, username=username))
-    if not bool(all_media):
-        return
-    filtered_media = list(
-        filter(
-            lambda x: str(x["media_id"]) not in curr_media_set
-            and arrow.get(x.get("posted_at") or 0).is_between(
-                arrow.get(args.after or 0), args.before
-            )
-            and x.get("downloaded") != 1
-            and x.get("unlocked") != 0,
-            all_media,
-        )
-    )
-    log.info(f"Found {len(filtered_media)} stray items to mark as locked")
-    batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 
 
@@ -135,7 +86,3 @@ def prepare():
     return userdata, session
 
 
-def force_change_metadata():
-    args = read_args.retriveArgs()
-    args.metadata = args.scrape_paid
-    write_args.setArgs(args)
