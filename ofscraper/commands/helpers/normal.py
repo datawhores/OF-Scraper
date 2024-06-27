@@ -59,6 +59,7 @@ def get_user_action_function(func):
 
 def get_user_action_function_meta(func):
     async def wrapper(userdata,session,*args, **kwargs):
+        
         async with session as c:
             data=["[bold yellow]Normal Mode Results[/bold yellow]"]
             for ele in userdata:
