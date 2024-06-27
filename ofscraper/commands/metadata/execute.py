@@ -40,9 +40,10 @@ async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
                     f"""
                 Perform Meta {metadata_action} with
                 Mark Stray: {mark_stray}
+                Anon Mode {read_args.retriveArgs().anon}
+                
                 for [bold]{username}[/bold]\n[bold]
                 Subscription Active:[/bold] {active}
-                Anon Mode {args.anon}
                 """
     )
     await operations.table_init_create(model_id=model_id, username=username)

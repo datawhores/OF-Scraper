@@ -90,10 +90,9 @@ It also uses a new filename if one is available
             help="""
         \b
         Use anonymise creditional
-        ignored if --username not passed 
-        ignored if --username only includes ALL
         forces --individual flag
         force --list flag to be removed
+        most media is ignored
         """,
             flag_value=True,
             is_flag=True,
