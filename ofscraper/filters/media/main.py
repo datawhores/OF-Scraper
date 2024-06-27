@@ -179,11 +179,13 @@ def post_filter_for_like(post, like=False):
     if "like" not in actions and "unlike" not in actions:
         log.debug("Skipping filtering because like and unlike not in actions")
         return post
+    log.debug(f"initial number of posts for {actions}")
 
     post = helpers.temp_post_filter(post)
     post_type = "likable" if like else "unlikable"
+    alt_post_type="unliked" if like else "liked"
     log.debug(
-        f"[bold]Number of {post_type} posts left after filtering for likeable posts[/bold] {len(post)}"
+        f"[bold]Number of {post_type} posts left after filtering for {alt_post_type} posts[/bold] {len(post)}"
     )
     post = helpers.final_post_sort(post)
     post = helpers.ele_count_filter(post)
