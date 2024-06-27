@@ -117,9 +117,9 @@ async def alt_download_downloader(
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    item,status=await resume_data_handler(data, item, c, ele, placeholderObj)
+                    item,status=await resume_data_handler(data, item, ele, placeholderObj,batch=True)
                 else:
-                    item,status=await fresh_data_handler(item, c, ele, placeholderObj)
+                    item,status=await fresh_data_handler(item, ele, placeholderObj)
                 # if out is null run request
                 if not status:
                     try:
