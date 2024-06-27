@@ -96,7 +96,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
-        headers["cookie"] = auth_requests.get_cookies()
+        headers["cookie"] = auth_requests.get_cookies_str()
         auth_requests.create_sign(licence_url, headers)
         json_data = {
             "license": licence_url,
@@ -133,7 +133,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
         log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
-        headers["cookie"] = auth_requests.get_cookies()
+        headers["cookie"] = auth_requests.get_cookies_str()
         auth_requests.create_sign(licence_url, headers)
         json_data = {
             "license": licence_url,
@@ -171,7 +171,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
         log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
-        headers["cookie"] = auth_requests.get_cookies()
+        headers["cookie"] = auth_requests.get_cookies_str()
         auth_requests.create_sign(licence_url, headers)
         json_data = {
             "license_url": licence_url,

@@ -146,15 +146,17 @@ It also uses a new filename if one is available
     )
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
-        if not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
+        if ctx.params["anon"]:
+            if not ctx.params["usernames"]:
+                raise UsageError("'--usernames is required")
+            elif len(list(filter(lambda x:x is not "ALL",ctx.params["usernames"])))==0:
+                    raise UsageError("'--usernames value 'ALL' ignored is required")
+            else:
+                ctx.params["individual"]=True
+                ctx.params["list"]=False
+        elif not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
             raise UsageError("'--scrape-paid' and/or --metadata is required")
-        if not ctx.params["anon"]:
-            pass
-        elif len(list(filter(lambda x:x is not "ALL",ctx.params["usernames"])))==0:
-            pass
-        else:
-            ctx.params["individual"]=True
-            ctx.params["list"]=False
+        ctx.params["action"]=[]
         return func(ctx, *args, **kwargs)
 
     return wrapper

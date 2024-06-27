@@ -20,7 +20,6 @@ import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
-import ofscraper.filters.media.main as filters
 import ofscraper.models.selector as userselector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -50,6 +49,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.final_log import final_log
 from ofscraper.commands.helpers.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
 from ofscraper.utils.checkers import check_auth
+import ofscraper.utils.actions as actions
 
 log = logging.getLogger("shared")
 
@@ -114,17 +114,17 @@ async def metadata_paid_all():
 
 
 
-def metadata_stray_media(username, model_id, media):
+async def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
     progress_utils.update_activity_task(description=mark_stray_str.format(username=username))
     if "Timeline" in args.download_area:
-        all_media.extend(get_timeline_media(model_id=model_id, username=username))
+        all_media.extend(await get_timeline_media(model_id=model_id, username=username))
     if "Messages" in args.download_area:
-        all_media.extend(get_messages_media(model_id=model_id, username=username))
+        all_media.extend(await get_messages_media(model_id=model_id, username=username))
     if "Archived" in args.download_area:
-        all_media.extend(get_archived_media(model_id=model_id, username=username))
+        all_media.extend(await  get_archived_media(model_id=model_id, username=username))
     if not bool(all_media):
         return
     filtered_media = list(
@@ -143,15 +143,16 @@ def metadata_stray_media(username, model_id, media):
 
 
 async def execute_metadata_action_on_user(*args,ele=None, media=None,**kwargs):
+    if read_args.retriveArgs().mark_stray:
+        return
     username = ele.name
-
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
     progress_utils.update_activity_task(
         description=metadata_activity_str.format(username=username)
     )
     data=await download.download_process(username, model_id, media)
-    metadata_stray_media(username, model_id, media)
+    await  metadata_stray_media(username, model_id, media)
     return [data]
 
 
@@ -218,6 +219,7 @@ def process_selected_areas():
 
 def prepare():
     profile_tools.print_current_profile()
+    actions.select_areas()
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)
     session = sessionManager.OFSessionManager(
@@ -229,7 +231,6 @@ def prepare():
 
 def force_change_download():
     args = read_args.retriveArgs()
-    args.action = "download"
     write_args.setArgs(args)
 
 

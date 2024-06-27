@@ -73,7 +73,11 @@ def set_post_area(action=None):
     action = action or args.action or {}
     if "download" not in action:
         return
+    elif args.command=="metadata":
+        return
     elif len(areas.get_download_area()) > 0:
+        return
+    elif len(areas.get_like_area())>0:
         return
     elif len(args.posts) > 0:
         return
@@ -85,13 +89,22 @@ def set_post_area(action=None):
 def set_download_area(action=None):
     args = read_args.retriveArgs()
     action = action or args.action or {}
-    if "download" not in action:
+    selected=None
+    not_anon_safe=["Messages","Purchases","Highlights","Stories"]
+    if args.command=="metadata":
+        selected=areas.get_download_area()
+        if args.anon and all([ele in not_anon_safe for ele in selected]):
+            selected=prompts.metadata_anon_areas_prompt()
+        
+        elif not args.anon and len(selected)==0:
+            selected=prompts.metadata_areas_prompt()
+    elif "download" in action:
+        selected= areas.get_download_area()
+        if len(selected)==0:
+            selected=prompts.download_areas_prompt()
+    else:
         return
-    args.download_area = (
-        areas.get_download_area()
-        if len(areas.get_download_area()) > 0
-        else prompts.download_areas_prompt()
-    )
+    args.download_area=selected
     write_args.setArgs(args)
 
 

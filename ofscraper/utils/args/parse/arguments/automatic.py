@@ -19,7 +19,7 @@ action_option = click.option(
     """,
     multiple=True,
     type=MutuallyExclusiveMultichoice(["unlike","like","download"],exclusion=["like","unlike"],case_sensitive=False),
-    default=None,
+    default=[],
     callback=StringSplitParse
 )
 

@@ -24,6 +24,7 @@ from ofscraper.const.values.req.req import *
 from ofscraper.const.values.req.api import *
 from ofscraper.const.values.req.cdm import *
 from ofscraper.const.values.req.discord import *
+from ofscraper.const.values.req.anon import *
 from ofscraper.const.values.req.like import *
 from ofscraper.const.values.req.mpd import *
 from ofscraper.const.values.req.git import *

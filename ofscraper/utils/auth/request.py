@@ -16,6 +16,8 @@ import arrow
 import json
 import logging
 import time
+import base64
+import random
 from urllib.parse import urlparse
 
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
@@ -23,6 +25,7 @@ import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 import ofscraper.utils.cache as cache
+import ofscraper.utils.args.accessors.read as read_args
 
 curr_auth=None
 last_check=None
@@ -32,7 +35,7 @@ def read_request_auth(refresh=True,forced=False):
         "static_param": "",
         "format": "",
         "checksum_indexes": [],
-        "checksum_constant": 0,
+        "checksum_constant": "0",
     }
 
     # *values, = get_request_auth()
@@ -233,6 +236,24 @@ def request_auth_helper(content):
 
 
 def make_headers():
+    if read_args.retriveArgs().anon:
+        return make_anon_headers()
+    else:
+        return make_login_headers()
+    
+def make_anon_headers():
+    return {
+        "accept": "application/json, text/plain, */*",
+        "app-token": constants.getattr("APP_TOKEN"),
+        "x-bc": generate_xbc(),
+        "referer": "https://onlyfans.com",
+        "user-id":"0",
+        "user-agent": constants.getattr("ANON_USERAGENT"),
+    }
+    
+
+
+def make_login_headers():
     auth = auth_file.read_auth()
     headers = {
         "accept": "application/json, text/plain, */*",
@@ -246,6 +267,8 @@ def make_headers():
 
 
 def add_cookies():
+    if read_args.retriveArgs().anon:
+        return None
     auth = auth_file.read_auth()
     cookies = {}
     cookies.update({"sess": auth["sess"]})
@@ -254,17 +277,23 @@ def add_cookies():
     return cookies
 
 
-def get_cookies():
+def get_cookies_str():
     auth = auth_file.read_auth()
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
-
 
 def create_sign(link, headers, refresh=False,forced=False):
     """
     credit: DC and hippothon
     """
-    content = read_request_auth(refresh=refresh,forced=forced)
-
+    if read_args.retriveArgs().anon:
+        return create_anon_sign(link, headers)
+    else:
+        return create_login_sign(link, headers)
+def create_anon_sign(link, headers):
+    return create_login_sign(link, headers)
+    
+def create_login_sign(link,headers):
+    content = read_request_auth()
     time2 = str(round(time.time() * 1000))
 
     path = urlparse(link).path
@@ -289,3 +318,21 @@ def create_sign(link, headers, refresh=False,forced=False):
 
     headers.update({"sign": final_sign, "time": time2})
     return headers
+
+def generate_xbc():
+  """Generates a token based on current time, random numbers, and user agent.
+
+  Returns:
+    A string containing the generated token.
+  """
+  parts = [
+      int(time.time() * 1000),  # Milliseconds since epoch
+      int(1e12 * random.random()),
+      int(1e12 * random.random()),
+      # Assuming you have a way to get the user agent string
+      # Replace this with your logic to retrieve the user agent
+      constants.getattr("ANON_USERAGENT")
+  ]
+  msg = ".".join([base64.b64encode(str(p).encode("utf-8")).decode("utf-8") for p in parts])
+  token = hashlib.sha1(msg.encode("utf-8")).hexdigest()
+  return token

@@ -27,7 +27,7 @@ TOO_MANY="too_many"
 AUTH="auth"
 FORCED_NEW="get_new_sign"
 SIGN="get_sign"
-COOKIES="get_cookies"
+COOKIES="get_cookies_str"
 HEADERS="create_header"
 
 def is_rate_limited(exception,sleeper):

@@ -32,8 +32,6 @@ def areas_prompt() -> list:
         message = "Which area(s) would you do you want to download and unlike"
     elif "download" in args.action and args.command == "OF-Scraper":
         message = "Which area(s) would you do you want to download"
-    elif "download" in args.action and args.command == "metadata":
-        message = "Which area(s) would you do you want to update metadata for"
     more_instruction = (
         """Hint: Since you have Like or Unlike set
     You must select one or more of Timeline,Pinned,Archived, or Label
@@ -99,7 +97,6 @@ def like_areas_prompt(like=True) -> list:
 
 def download_areas_prompt() -> list:
     name = "areas"
-
     answers = promptClasses.batchConverter(
         *[
             {
@@ -127,6 +124,61 @@ def download_areas_prompt() -> list:
     answers[name].append(scrape_labels_prompt())
     return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
  
+
+def metadata_areas_prompt() -> list:
+    name = "areas"
+
+    answers = promptClasses.batchConverter(
+        *[
+            {
+                "type": "checkbox",
+                "qmark": "[?]",
+                "name": name,
+                "message": "Which area(s) would you to perform metadata actions on",
+                "validate": prompt_validators.emptyListValidator(),
+                "choices": [
+                    Choice("Profile"),
+                    Choice("Timeline"),
+                    Choice("Pinned"),
+                    Choice("Archived"),
+                    Choice("Highlights"),
+                    Choice("Stories"),
+                    Choice("Messages"),
+                    Choice("Purchased"),
+                    Choice("Streams"),
+
+
+                ],
+            }
+        ]
+    )
+    answers[name].append(scrape_labels_prompt())
+    return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
+
+def metadata_anon_areas_prompt() -> list:
+    name = "areas"
+    answers = promptClasses.batchConverter(
+        *[
+            {
+                "type": "checkbox",
+                "qmark": "[?]",
+                "name": name,
+                "message": "Which area(s) would you to perform metadata actions on anonymously",
+                "validate": prompt_validators.emptyListValidator(),
+                "choices": [
+                    Choice("Profile"),
+                    Choice("Timeline"),
+                    Choice("Pinned"),
+                    Choice("Archived"),
+                    Choice("Streams"),
+
+
+                ],
+            }
+        ]
+    )
+    answers[name].append(scrape_labels_prompt())
+    return answers[name] if answers[name][-1]!=None else  answers[name][:-1]
 
 
 def scrape_labels_prompt():

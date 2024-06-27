@@ -14,8 +14,10 @@ async def get_models() -> list:
     """
     Get user's subscriptions in form of a list.
     """
-    count = get_sub_count()
     update_activity_task(description="Getting subscriptions")
+    if read_args.retriveArgs().anon:
+        return await get_via_individual()
+    count = get_sub_count()
     if not bool(read_args.retriveArgs().usernames):
         return await get_via_list(count)
     elif "ALL" in read_args.retriveArgs().usernames:
