@@ -89,11 +89,11 @@ async def main_download_downloader(c, ele):
                 data = await get_data(ele)
                 total=None
                 placeholderObj=None
+                check=False
                 if data:
                     total,placeholderObj,check=await resume_data_handler(data,ele, tempholderObj)
                 else:
                     await fresh_data_handler(ele,tempholderObj)
-                # if total is None then we do requests
                 if not check:
                     try: 
                         return await main_download_sendreq(

@@ -55,6 +55,8 @@ from ofscraper.download.shared.send.chunk import (
 from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
 from ofscraper.download.shared.total import batch_total_change_helper
+from ofscraper.download.shared.send.message import send_msg
+
 
 
 async def main_download(c, ele, username, model_id):
@@ -94,10 +96,12 @@ async def main_download_downloader(c, ele):
                     else None
                 )
                 data = await get_data(ele)
+                data=False
+                check=False
                 total=None
                 placeholderObj=None
                 if data:
-                    total,placeholderObj,check= await resume_data_handler(data,ele, tempholderObj)
+                    total,placeholderObj,check= await resume_data_handler(data,ele, tempholderObj,batch=True)
                 else:
                     await fresh_data_handler(ele, tempholderObj)
                 # if check is None then we do requests
@@ -210,7 +214,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
 async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderObj):
     pathstr = str(placeholderObj.trunicated_filepath)
     try:
-        await common.send_msg(
+        await send_msg(
             partial(
                 progress_utils.add_download_job_multi_task,
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
@@ -222,7 +226,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
-        await common.send_msg(
+        await send_msg(
             partial(progress_utils.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
@@ -249,7 +253,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         raise E
     finally:
         try:
-            await common.send_msg(
+            await send_msg(
                 partial(progress_utils.remove_download_multi_job_task, ele.id)
             )
         except:

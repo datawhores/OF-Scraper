@@ -42,6 +42,8 @@ from ofscraper.download.shared.paths.paths import addGlobalDir, setDirectoriesDa
 from ofscraper.download.shared.progress.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
 from ofscraper.download.shared.workers import get_max_workers
+from ofscraper.download.shared.send.message import send_msg
+
 
 platform_name = platform.system()
 
@@ -358,13 +360,13 @@ async def consumer(queue):
                 pack= await download(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
-                await common.send_msg((media_type, num_bytes_downloaded, 0))
+                await send_msg((media_type, num_bytes_downloaded, 0))
             except Exception as e:
                     common_globals.log.info(f"Download Failed because\n{e}")
                     common_globals.log.traceback_(traceback.format_exc())
                     media_type = "skipped"
                     num_bytes_downloaded = 0
-                    await common.send_msg((media_type, num_bytes_downloaded, 0))
+                    await send_msg((media_type, num_bytes_downloaded, 0))
             queue.task_done()
             await asyncio.sleep(1)
 
@@ -411,8 +413,8 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.handlers[0].queue.put("None")
     common_globals.log.handlers[1].queue.put("None")
     common_globals.log.debug("other thread closed")
-    await common.send_msg({"dir_update": common_globals.localDirSet})
-    await common.send_msg(None)
+    await send_msg({"dir_update": common_globals.localDirSet})
+    await send_msg(None)
 
 
 def pid_log_helper():

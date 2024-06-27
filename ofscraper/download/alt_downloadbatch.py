@@ -53,6 +53,7 @@ from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
 from ofscraper.download.shared.alt.attempt import alt_attempt_get
 from ofscraper.download.shared.total import batch_total_change_helper
+from ofscraper.download.shared.send.message import send_msg
 
 async def alt_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -243,7 +244,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
     try:
         count = 1
-        await common.send_msg(
+        await send_msg(
             partial(
                 progress_utils.add_download_job_multi_task,
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
@@ -253,7 +254,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        await common.send_msg(
+        await send_msg(
             partial(progress_utils.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
@@ -285,7 +286,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             None
 
         try:
-            await common.send_msg(
+            await send_msg(
                 partial(progress_utils.remove_download_multi_job_task, ele.id)
             )
         except Exception:

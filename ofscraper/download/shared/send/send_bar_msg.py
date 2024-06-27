@@ -3,6 +3,8 @@ import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 
 import ofscraper.utils.settings as settings
+from ofscraper.download.shared.send.message import send_msg
+
 
 
 async def send_bar_msg_batch(msg,count,update_count):
@@ -10,7 +12,7 @@ async def send_bar_msg_batch(msg,count,update_count):
         return
     elif not settings.get_download_bars():
         return
-    await common.send_msg(msg)
+    await send_msg(msg)
 
 
 
