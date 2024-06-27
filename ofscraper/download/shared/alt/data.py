@@ -28,7 +28,7 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
 
     if await check_forced_skip(ele, total) == 0:
         item["total"] = 0
-        return item
+        return item,True
     elif total == resume_size:
         common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
 
@@ -38,9 +38,9 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
             if alt_attempt_get(item).get() == 1
             else None
         )
-        return item
+        return item,True
     elif total!= resume_size:
-        return
+        return item,False
         
 
 
@@ -50,3 +50,4 @@ async def fresh_data_handler(item, c, ele, placeholderObj):
     )
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
+    return item,False

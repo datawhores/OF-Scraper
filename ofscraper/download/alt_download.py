@@ -118,11 +118,11 @@ async def alt_download_downloader(item, c, ele):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    item=await resume_data_handler(data, item, c, ele, placeholderObj)
+                    item,status=await resume_data_handler(data, item, c, ele, placeholderObj)
 
                 else:
-                    await fresh_data_handler(item, c, ele, placeholderObj)
-                if not item:
+                    item,status=await fresh_data_handler(item, c, ele, placeholderObj)
+                if not status:
                     try:
                         item=await alt_download_sendreq(item, c, ele, placeholderObj)
                     except Exception as E:

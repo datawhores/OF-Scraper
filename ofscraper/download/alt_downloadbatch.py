@@ -116,16 +116,16 @@ async def alt_download_downloader(
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    out=await resume_data_handler(data, item, c, ele, placeholderObj)
+                    item,status=await resume_data_handler(data, item, c, ele, placeholderObj)
                 else:
-                    out=await fresh_data_handler(item, c, ele, placeholderObj)
+                    item,status=await fresh_data_handler(item, c, ele, placeholderObj)
                 # if out is null run request
-                if not out:
+                if not status:
                     try:
-                        out=await alt_download_sendreq(item, c, ele, placeholderObj)
+                        item=await alt_download_sendreq(item, c, ele, placeholderObj)
                     except Exception as E:
                         raise E
-                return out
+                return item
             except OSError as E:
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
