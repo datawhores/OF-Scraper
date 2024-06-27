@@ -62,7 +62,7 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
         model_id = ele.id
         username = ele.name
         await operations.table_init_create(model_id=model_id, username=username)
-        media, _, _ = await process_areas(ele, model_id, c=session)
+        media, _, _ = await process_areas(ele, model_id, username,c=session)
         return {
             model_id: {
                 "username": username,
