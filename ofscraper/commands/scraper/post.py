@@ -569,7 +569,7 @@ async def process_tasks(model_id, username, ele, c=None):
         for results in asyncio.as_completed(tasks):
             try:
                 medias, posts, area = await results
-                if area in like_area:
+                if area.title() in like_area:
                     likeObjs.extend(posts or [])
                 if area.title() in download_area:
                     mediaObjs.extend(medias or [])
