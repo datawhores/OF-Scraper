@@ -96,7 +96,6 @@ async def main_download_downloader(c, ele):
                     else None
                 )
                 data = await get_data(ele)
-                data=False
                 check=False
                 total=None
                 placeholderObj=None
