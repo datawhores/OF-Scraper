@@ -30,8 +30,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as system
 from ofscraper.download.shared.log import get_medialog
 from ofscraper.download.shared.paths.media import add_path
-from ofscraper.download.shared.send.message import send_msg, set_send_msg
-from ofscraper.download.shared.progress.progress import update_total
+from ofscraper.download.shared.send.message import set_send_msg
 
 
 def add_additional_data(placeholderObj, ele):
@@ -121,25 +120,6 @@ def get_unknown_content_type(ele):
         if ele.mediatype.lower() == "videos"
         else "jpg" if ele.mediatype.lower() == "images" else None
     )
-
-
-async def batch_total_change_helper(past_total, new_total):
-    if not new_total and not past_total:
-        return
-    elif not past_total:
-        await send_msg((None, 0, new_total))
-    elif past_total and new_total - past_total != 0:
-        await send_msg((None, 0, new_total - past_total))
-
-
-async def total_change_helper(past_total, new_total):
-    if not new_total and not past_total:
-        return
-    elif not past_total:
-        await update_total(new_total)
-    elif past_total and new_total - past_total != 0:
-        await update_total(new_total - past_total)
-
 
 def is_bad_url(url):
     match = re.search(r"^https://([^/]+)", url)

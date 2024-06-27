@@ -11,6 +11,8 @@ from ofscraper.download.shared.log import (
 )
 from ofscraper.download.shared.resume import get_resume_size
 from ofscraper.download.shared.alt.attempt import alt_attempt_get
+from ofscraper.download.shared.total import total_change_helper
+
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
     common_globals.log.debug(
@@ -34,7 +36,7 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
 
         temp_file_logger(placeholderObj, ele)
         (
-            await common.total_change_helper(None, total)
+            await total_change_helper(None, total)
             if alt_attempt_get(item).get() == 1
             else None
         )

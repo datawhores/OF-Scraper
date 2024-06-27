@@ -11,6 +11,7 @@ from ofscraper.download.shared.general import (
 )
 from ofscraper.download.shared.log import path_to_file_logger
 from ofscraper.download.shared.resume import get_resume_size
+from ofscraper.download.shared.total import batch_total_change_helper
 
 async def fresh_data_handler(ele, tempholderObj):
     common_globals.log.debug(
@@ -43,7 +44,7 @@ async def resume_data_handler(data,ele, tempholderObj):
         common_globals.log.debug(f"{get_medialog(ele)} total==resume_size skipping download")
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
         (
-            await common.batch_total_change_helper(None, total)
+            await batch_total_change_helper(None, total)
             if common_globals.attempt.get() == 1
             else None
         )

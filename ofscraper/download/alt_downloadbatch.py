@@ -52,6 +52,7 @@ from ofscraper.download.shared.send.chunk import (
 from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
 from ofscraper.download.shared.alt.attempt import alt_attempt_get
+from ofscraper.download.shared.total import batch_total_change_helper
 
 async def alt_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -199,7 +200,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         ) as l:
             item["total"] = item["total"] or int(l.headers.get("content-length"))
             total = item["total"]
-            await common.batch_total_change_helper(None, total)
+            await batch_total_change_helper(None, total)
             data={
                         "content-total": total,
                         "content-type": l.headers.get("content-type"),
@@ -220,7 +221,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
                 total = item["total"]
-                await common.batch_total_change_helper(total, 0) if total else None
+                await batch_total_change_helper(total, 0) if total else None
                 return item
 
             elif total != resume_size:
@@ -234,7 +235,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.batch_total_change_helper(total, 0) if total else None
+        await batch_total_change_helper(total, 0) if total else None
         raise E
 
 

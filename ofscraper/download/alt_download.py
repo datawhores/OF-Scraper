@@ -66,6 +66,8 @@ from ofscraper.download.shared.send.chunk import (
 )
 from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
 from ofscraper.download.shared.alt.attempt import alt_attempt_get
+from ofscraper.download.shared.total import total_change_helper
+
 
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
@@ -193,7 +195,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
 
             common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
             common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
-            await common.total_change_helper(None, total)
+            await total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
@@ -207,7 +209,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
                 total = item["total"]
-                await common.total_change_helper(total, 0)
+                await total_change_helper(total, 0)
                 return item
             elif total != resume_size:
                 common_globals.log.debug(
@@ -221,7 +223,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.total_change_helper(total, 0) if total else None
+        await total_change_helper(total, 0) if total else None
         raise E
 
 

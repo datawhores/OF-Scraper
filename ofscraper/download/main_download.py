@@ -51,8 +51,7 @@ from ofscraper.download.shared.send.chunk import (
 )
 from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
-
-
+from ofscraper.download.shared.total import total_change_helper
 
 async def main_download(c, ele, username, model_id):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
@@ -153,7 +152,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
         )
         async with c.requests_async(url=ele.url, headers=headers,forced=constants.getattr("DOWNLOAD_FORCE_KEY")) as r:
             total = total or int(r.headers["content-length"])
-            await common.total_change_helper(None, total)
+            await total_change_helper(None, total)
             data={
                         "content-total": total,
                         "content-type": r.headers.get("content-type"),
@@ -178,7 +177,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
             path_to_file_logger(placeholderObj, ele)
             if await check_forced_skip(ele, total) == 0:
                 total = 0
-                await common.total_change_helper(total, 0)
+                await total_change_helper(total, 0)
                 return (total, tempholderObj.tempfilepath, placeholderObj)
             elif total != resume_size:
                 common_globals.log.debug(
@@ -194,7 +193,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)
     except Exception as E:
-        await common.total_change_helper(total, 0) if total else None
+        await total_change_helper(total, 0) if total else None
         raise E
 
 
