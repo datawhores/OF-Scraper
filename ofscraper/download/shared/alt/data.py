@@ -15,7 +15,7 @@ from ofscraper.download.shared.total import total_change_helper,batch_total_chan
 
 
 
-async def resume_data_handler(data, item,ele, placeholderObj,batch=False):
+async def resume_data_handler_alt(data, item,ele, placeholderObj,batch=False):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
     )
@@ -47,7 +47,7 @@ async def resume_data_handler(data, item,ele, placeholderObj,batch=False):
         
 
 
-async def fresh_data_handler(item, ele, placeholderObj):
+async def fresh_data_handler_alt(item, ele, placeholderObj):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
     )

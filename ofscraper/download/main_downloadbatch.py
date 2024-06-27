@@ -53,7 +53,7 @@ from ofscraper.download.shared.send.chunk import (
 )
 
 from ofscraper.download.shared.resume import get_resume_header,get_resume_size
-from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
+from ofscraper.download.shared.main.data import resume_data_handler_main,fresh_data_handler_main
 from ofscraper.download.shared.total import batch_total_change_helper
 from ofscraper.download.shared.send.message import send_msg
 
@@ -96,15 +96,15 @@ async def main_download_downloader(c, ele):
                     else None
                 )
                 data = await get_data(ele)
-                check=False
+                status=False
                 total=None
                 placeholderObj=None
                 if data:
-                    total,placeholderObj,check= await resume_data_handler(data,ele, tempholderObj,batch=True)
+                    total,placeholderObj,status= await resume_data_handler_main(data,ele, tempholderObj,batch=True)
                 else:
-                    await fresh_data_handler(ele, tempholderObj)
+                    await fresh_data_handler_main(ele, tempholderObj)
                 # if check is None then we do requests
-                if not check:
+                if not status:
                     return await main_download_sendreq(
                     c, ele, tempholderObj ,placeholderObj=placeholderObj,total=total
                     )

@@ -50,7 +50,7 @@ from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
 from ofscraper.download.shared.resume import get_resume_header,get_resume_size
-from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
+from ofscraper.download.shared.main.data import resume_data_handler_main,fresh_data_handler_main
 from ofscraper.download.shared.total import total_change_helper
 
 async def main_download(c, ele, username, model_id):
@@ -89,12 +89,12 @@ async def main_download_downloader(c, ele):
                 data = await get_data(ele)
                 total=None
                 placeholderObj=None
-                check=False
+                status=False
                 if data:
-                    total,placeholderObj,check=await resume_data_handler(data,ele, tempholderObj)
+                    total,placeholderObj,status=await resume_data_handler_main(data,ele, tempholderObj)
                 else:
-                    await fresh_data_handler(ele,tempholderObj)
-                if not check:
+                    await fresh_data_handler_main(ele,tempholderObj)
+                if not status:
                     try: 
                         return await main_download_sendreq(
                              c, ele, tempholderObj ,placeholderObj=placeholderObj,total=total

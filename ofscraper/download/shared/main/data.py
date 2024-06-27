@@ -13,7 +13,7 @@ from ofscraper.download.shared.log import path_to_file_logger
 from ofscraper.download.shared.resume import get_resume_size
 from ofscraper.download.shared.total import batch_total_change_helper,total_change_helper
 
-async def fresh_data_handler(ele, tempholderObj):
+async def fresh_data_handler_main(ele, tempholderObj):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
     )
@@ -22,7 +22,7 @@ async def fresh_data_handler(ele, tempholderObj):
     
 
 
-async def resume_data_handler(data,ele, tempholderObj,batch=False):
+async def resume_data_handler_main(data,ele, tempholderObj,batch=False):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
     )

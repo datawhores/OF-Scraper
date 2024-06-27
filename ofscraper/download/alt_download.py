@@ -64,7 +64,7 @@ from ofscraper.download.shared.send.send_bar_msg import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
-from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
+from ofscraper.download.shared.alt.data import resume_data_handler_alt,fresh_data_handler_alt
 from ofscraper.download.shared.alt.attempt import alt_attempt_get
 from ofscraper.download.shared.total import total_change_helper
 
@@ -119,11 +119,12 @@ async def alt_download_downloader(item, c, ele):
                     common_globals.thread,
                     partial(cache.get, f"{item['name']}_headers"),
                 )
+                status=False
                 if data:
-                    item,status=await resume_data_handler(data, item, ele, placeholderObj)
+                    item,status=await resume_data_handler_alt(data, item, ele, placeholderObj)
 
                 else:
-                    item,status=await fresh_data_handler(item, ele, placeholderObj)
+                    item,status=await fresh_data_handler_alt(item, ele, placeholderObj)
                 if not status:
                     try:
                         item=await alt_download_sendreq(item, c, ele, placeholderObj)
