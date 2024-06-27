@@ -5,11 +5,13 @@ from ofscraper.download.shared.retries import get_download_retries
 from ofscraper.download.shared.general import (
     check_forced_skip,
     get_medialog,
-    get_resume_size,
 )
 from ofscraper.download.shared.log import (
     temp_file_logger,
 )
+from ofscraper.download.shared.resume import get_resume_size
+from ofscraper.download.shared.alt.attempt import alt_attempt_get
+
 async def resume_data_handler(data, item, c, ele, placeholderObj):
     common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
@@ -33,7 +35,7 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
         temp_file_logger(placeholderObj, ele)
         (
             await common.total_change_helper(None, total)
-            if common.alt_attempt_get(item).get() == 1
+            if alt_attempt_get(item).get() == 1
             else None
         )
         return item

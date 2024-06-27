@@ -95,13 +95,6 @@ def get_item_total(item):
     return item["path"].absolute().stat().st_size
 
 
-def alt_attempt_get(item):
-    if item["type"] == "video":
-        return common_globals.attempt
-    if item["type"] == "audio":
-        return common_globals.attempt2
-
-
 def downloadspace(mediatype=None):
     space_limit = config_data.get_system_freesize(mediatype=mediatype)
     if space_limit > 0 and space_limit > system.get_free():
@@ -111,17 +104,6 @@ def downloadspace(mediatype=None):
 async def get_hash(file_data, mediatype=None):
     return await asyncio.get_event_loop().run_in_executor(
         common_globals.thread, partial(hash.get_hash, file_data, mediatype=mediatype)
-    )
-
-
-def get_resume_size(tempholderObj, mediatype=None):
-    if not settings.get_auto_resume(mediatype=mediatype):
-        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
-        return 0
-    return (
-        0
-        if not pathlib.Path(tempholderObj.tempfilepath).exists()
-        else pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size
     )
 
 

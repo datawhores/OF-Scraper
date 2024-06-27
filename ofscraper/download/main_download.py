@@ -33,7 +33,6 @@ from ofscraper.download.shared.general import (
     downloadspace,
     get_data,
     get_medialog,
-    get_resume_size,
     get_unknown_content_type,
     size_checker,
 )
@@ -50,7 +49,7 @@ from ofscraper.download.shared.progress.chunk import (
 from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
-from ofscraper.download.shared.resume import get_resume_header
+from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 from ofscraper.download.shared.main.data import resume_data_handler,fresh_data_handler
 
 

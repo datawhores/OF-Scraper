@@ -8,9 +8,9 @@ from ofscraper.download.shared.retries import get_download_retries
 from ofscraper.download.shared.general import (
     check_forced_skip,
     get_medialog,
-    get_resume_size,
 )
 from ofscraper.download.shared.log import path_to_file_logger
+from ofscraper.download.shared.resume import get_resume_size
 
 async def fresh_data_handler(ele, tempholderObj):
     common_globals.log.debug(

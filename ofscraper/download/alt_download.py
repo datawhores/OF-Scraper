@@ -44,7 +44,6 @@ from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
     get_medialog,
-    get_resume_size,
     size_checker,
 )
 from ofscraper.download.shared.log import (
@@ -66,6 +65,7 @@ from ofscraper.download.shared.send.chunk import (
     send_chunk_msg
 )
 from ofscraper.download.shared.alt.data import resume_data_handler,fresh_data_handler
+from ofscraper.download.shared.alt.attempt import alt_attempt_get
 
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
@@ -97,7 +97,7 @@ async def alt_download(c, ele, username, model_id):
     return await handle_result_alt(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
-from ofscraper.download.shared.resume import get_resume_header
+from ofscraper.download.shared.resume import get_resume_header,get_resume_size
 
 async def alt_download_downloader(item, c, ele):
     downloadspace(mediatype=ele.mediatype)
@@ -109,7 +109,7 @@ async def alt_download_downloader(item, c, ele):
     async for _ in download_retry():
         with _:
             try:
-                _attempt = common.alt_attempt_get(item)
+                _attempt =alt_attempt_get(item)
                 _attempt.set(_attempt.get(0) + 1)
                 if _attempt.get() > 1:
                     pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
@@ -149,7 +149,7 @@ async def alt_download_downloader(item, c, ele):
 
 async def alt_download_sendreq(item, c, ele, placeholderObj):
     try:
-        _attempt = common.alt_attempt_get(item)
+        _attempt = alt_attempt_get(item)
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
         common_globals.log.debug(
@@ -177,7 +177,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         url = f"{base_url}{item['origname']}"
 
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
+            f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
         )
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
@@ -211,11 +211,11 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 return item
             elif total != resume_size:
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
+                f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
                 )
                 await download_fileobject_writer(total, l, ele, placeholderObj)
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+                f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
                 )
 
         await size_checker(placeholderObj.tempfilepath, ele, total)
