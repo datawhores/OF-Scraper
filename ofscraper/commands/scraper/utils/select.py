@@ -16,7 +16,7 @@ import logging
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as data
 from ofscraper.__version__ import __version__
-from ofscraper.commands.scraper.helpers.runner import runner
+from ofscraper.commands.scraper.setup.runner import runner
 import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.helpers.prompt import process_prompts
 
