@@ -3,9 +3,11 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
+from ofscraper.utils.args.callbacks.string import (
+    StringSplitParse,
+    StringSplitParseTitle,
+)
 from ofscraper.utils.args.types.choice import MultiChoice
-from ofscraper.utils.args.callbacks.string import StringSplitParseTitle,StringSplitParse
-
 
 quality_option = click.option(
     "-q",
@@ -19,7 +21,7 @@ media_type_option = click.option(
     help="Filter by media type (Videos, Audios, Images)",
     default=[],
     required=False,
-    type=MultiChoice(["Videos","Audios","Images"],case_sensitive=False),
+    type=MultiChoice(["Videos", "Audios", "Images"], case_sensitive=False),
     callback=StringSplitParseTitle,
     multiple=True,
 )
@@ -63,21 +65,20 @@ media_id_filter = click.option(
     required=False,
     callback=StringSplitParse,
     multiple=True,
-    type=click.STRING
+    type=click.STRING,
 )
 
-length_max=click.option(
-        "-lx",
-        "--length-max",
-        help="max duration in seconds does not effect non-media files",
-        required=False,
-        type=parse_size,
-    )
-length_min=click.option(
-        "-lm",
-        "--length-min",
-        help="min duration in seconds does not effect non-media files",
-        required=False,
-        type=parse_size,
-    )
-
+length_max = click.option(
+    "-lx",
+    "--length-max",
+    help="max duration in seconds does not effect non-media files",
+    required=False,
+    type=parse_size,
+)
+length_min = click.option(
+    "-lm",
+    "--length-min",
+    help="min duration in seconds does not effect non-media files",
+    required=False,
+    type=parse_size,
+)

@@ -1,6 +1,28 @@
-
 import cloup as click
-from ofscraper.utils.args.parse.arguments.content import post_id_filter,posts_option,like_area_option,like_toggle_force,filter_option,force_all_option,force_model_unique_option,neg_filter_option,download_area_option,scrape_paid_option,max_count_option,item_sort_option,label_option,before_option,after_option,mass_msg_option,timed_only_option,timeline_strict,block_ads_option,allow_ads_option
+
+from ofscraper.utils.args.parse.arguments.content import (
+    after_option,
+    allow_ads_option,
+    before_option,
+    block_ads_option,
+    download_area_option,
+    filter_option,
+    force_all_option,
+    force_model_unique_option,
+    item_sort_option,
+    label_option,
+    like_area_option,
+    like_toggle_force,
+    mass_msg_option,
+    max_count_option,
+    neg_filter_option,
+    post_id_filter,
+    posts_option,
+    scrape_paid_option,
+    timed_only_option,
+    timeline_strict,
+)
+
 content_options = click.option_group(
     "Content Options",
     posts_option,
@@ -10,7 +32,7 @@ content_options = click.option_group(
     filter_option,
     neg_filter_option,
     scrape_paid_option,
-    click.constraints.mutually_exclusive( block_ads_option,allow_ads_option),
+    click.constraints.mutually_exclusive(block_ads_option, allow_ads_option),
     max_count_option,
     item_sort_option,
     force_all_option,

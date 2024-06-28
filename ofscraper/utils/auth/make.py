@@ -4,15 +4,12 @@ import re
 from rich.console import Console
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.auth.helpers.warning as auth_warning
 import ofscraper.utils.auth.helpers.dict as auth_dict
 import ofscraper.utils.auth.helpers.prompt as auth_prompt
-
-
+import ofscraper.utils.auth.helpers.warning as auth_warning
 import ofscraper.utils.auth.schema as auth_schema
-import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.auth.warning.check as auth_warning_check
-
+import ofscraper.utils.paths.common as common_paths
 
 console = Console()
 

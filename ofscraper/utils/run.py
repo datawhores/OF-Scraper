@@ -23,8 +23,8 @@ import schedule
 
 import ofscraper.models.selector as userselector
 import ofscraper.utils.actions as actions
-import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.checkers as checkers
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs

@@ -10,19 +10,19 @@
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import logging
-import ofscraper.utils.live.screens as progress_utils
-from ofscraper.utils.context.run_async import run
 
-from ofscraper.commands.helpers.normal import (
-    get_user_action_function_meta,
-)
+import logging
+
+import ofscraper.utils.live.screens as progress_utils
+from ofscraper.commands.helpers.normal import get_user_action_function_meta
 from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 
+
 @run
-#entrypoint for normal run
+# entrypoint for normal run
 async def process_users_metadata_normal(userdata, session):
     user_action_funct = get_user_action_function_meta(execute_metadata_action_on_user)
     progress_utils.update_user_activity(description="Users with Updated Metadata")

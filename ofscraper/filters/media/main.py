@@ -8,9 +8,9 @@ import ofscraper.utils.settings as settings
 log = logging.getLogger("shared")
 
 
-def filtermediaFinal(media,username,model_id):
+def filtermediaFinal(media, username, model_id):
     actions = read_args.retriveArgs().action
-    scrape_paid=read_args.retriveArgs().scrape_paid
+    scrape_paid = read_args.retriveArgs().scrape_paid
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return media
@@ -23,13 +23,10 @@ def filtermediaFinal(media,username,model_id):
     helpers.trace_log_media(count, media, "sorted by date initial")
     log.debug(f"filter {count}-> sorted media count: {len(media)}")
 
-
     media = helpers.unviewable_media_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "filtered viewable media")
     log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
-
-
 
     if not read_args.retriveArgs().command == "metadata":
         media = helpers.dupefiltermedia(media)
@@ -48,13 +45,9 @@ def filtermediaFinal(media,username,model_id):
     return helpers.previous_download_filter(media, username=username, model_id=model_id)
 
 
-
-
-
-
 def filtermediaAreas(media, **kwargs):
     actions = read_args.retriveArgs().action
-    scrape_paid=read_args.retriveArgs().scrape_paid
+    scrape_paid = read_args.retriveArgs().scrape_paid
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return media
@@ -126,9 +119,10 @@ def filtermediaAreas(media, **kwargs):
 
     return list(media)
 
+
 def filterPostFinal(post):
     actions = read_args.retriveArgs().action
-    scrape_paid=read_args.retriveArgs().scrape_paid
+    scrape_paid = read_args.retriveArgs().scrape_paid
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return post
@@ -183,7 +177,7 @@ def post_filter_for_like(post, like=False):
 
     post = helpers.temp_post_filter(post)
     post_type = "likable" if like else "unlikable"
-    alt_post_type="unliked" if like else "liked"
+    alt_post_type = "unliked" if like else "liked"
     log.debug(
         f"[bold]Number of {post_type} posts left after filtering for {alt_post_type} posts[/bold] {len(post)}"
     )

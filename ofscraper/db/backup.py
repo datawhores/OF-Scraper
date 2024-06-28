@@ -16,11 +16,12 @@ import pathlib
 
 import arrow
 from rich.console import Console
+
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.utils.paths.manage import copy_path
 from ofscraper.db.difference import get_group_difference
+from ofscraper.utils.paths.manage import copy_path
 
 console = Console()
 log = logging.getLogger("shared")
@@ -98,5 +99,5 @@ def create_backup(model_id, username, backup=None, db_path=None, **kwargs):
         database_copy.parent.mkdir(parents=True, exist_ok=True)
         copy_path(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
-    
+
     return database_copy

@@ -10,22 +10,25 @@
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import logging
 import traceback
+
 import ofscraper.db.operations as operations
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.__version__ import __version__
+from ofscraper.commands.helpers.post import process_areas
 from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
-from ofscraper.commands.helpers.post import process_areas
-from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 
-#entrypoint for userfirst
+
+# entrypoint for userfirst
 @run
 async def metadata_user_first(userdata, session):
     data = await get_userfirst_data_function(metadata_data_user_first)(
@@ -35,12 +38,13 @@ async def metadata_user_first(userdata, session):
     progress_utils.update_user_activity(
         description="Users with Metadata Changed", completed=0
     )
-    #pass all data to userfirst
-    return await get_userfirst_action_execution_function( execute_metadata_action_on_user)(
-        data
-    )
+    # pass all data to userfirst
+    return await get_userfirst_action_execution_function(
+        execute_metadata_action_on_user
+    )(data)
 
-#data functions
+
+# data functions
 @run
 async def metadata_data_user_first(session, ele):
     try:
@@ -62,15 +66,15 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
         model_id = ele.id
         username = ele.name
         await operations.table_init_create(model_id=model_id, username=username)
-        media, _, _ = await process_areas(ele, model_id, username,c=session)
+        media, _, _ = await process_areas(ele, model_id, username, c=session)
         return {
             model_id: {
                 "username": username,
                 "media": media,
                 "avatar": avatar,
                 "ele": ele,
-                "posts":[],
-                "like_posts":[]
+                "posts": [],
+                "like_posts": [],
             }
         }
     except Exception as e:
@@ -79,4 +83,3 @@ async def process_ele_user_first_data_retriver(ele=None, session=None):
         log.traceback_(f"failed with exception: {e}")
         log.traceback_(traceback.format_exc())
     return data
-

@@ -40,9 +40,9 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                 # check for shutdown
                 if event and event.is_set():
                     break
-                if hasattr(message, "message") and message.message!="None":
+                if hasattr(message, "message") and message.message != "None":
                     log.handle(message)
-                elif hasattr(message, "message") and message.message=="None":
+                elif hasattr(message, "message") and message.message == "None":
                     count = count + 1
                     continue
                 elif message != "None":
@@ -55,7 +55,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         except queue.Empty:
             continue
         except OSError as e:
-            if str(e)=="handle is closed":
+            if str(e) == "handle is closed":
                 print("handle is closed")
                 return
             raise e

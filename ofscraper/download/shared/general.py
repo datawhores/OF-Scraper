@@ -121,6 +121,7 @@ def get_unknown_content_type(ele):
         else "jpg" if ele.mediatype.lower() == "images" else None
     )
 
+
 def is_bad_url(url):
     match = re.search(r"^https://([^/]+)", url)
     if not match:
@@ -129,6 +130,3 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
-
-
-

@@ -16,56 +16,47 @@ import pathlib
 import re
 import traceback
 from functools import partial
-from humanfriendly import format_size
 
 import aiofiles
 import psutil
+from humanfriendly import format_size
+
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.download.shared.retries import get_download_retries
 from ofscraper.classes.download_retries import download_retry
+from ofscraper.download.shared.alt.attempt import alt_attempt_get
+from ofscraper.download.shared.alt.data import (
+    fresh_data_handler_alt,
+    resume_data_handler_alt,
+)
 from ofscraper.download.shared.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
 )
-from ofscraper.download.shared.alt.params import (
-    get_alt_params
-)
-
-
-from ofscraper.download.shared.handle_result import (
-    handle_result_alt,
-)
+from ofscraper.download.shared.alt.params import get_alt_params
 from ofscraper.download.shared.general import (
     check_forced_skip,
     downloadspace,
     get_medialog,
     size_checker,
 )
+from ofscraper.download.shared.handle_result import handle_result_alt
 from ofscraper.download.shared.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
 )
-
 from ofscraper.download.shared.progress.chunk import (
     get_ideal_chunk_size,
     get_update_count,
 )
-
-from ofscraper.download.shared.send.send_bar_msg import (
-    send_bar_msg
-)
-
-from ofscraper.download.shared.send.chunk import (
-    send_chunk_msg
-)
-from ofscraper.download.shared.alt.data import resume_data_handler_alt,fresh_data_handler_alt
-from ofscraper.download.shared.alt.attempt import alt_attempt_get
+from ofscraper.download.shared.retries import get_download_retries
+from ofscraper.download.shared.send.chunk import send_chunk_msg
+from ofscraper.download.shared.send.send_bar_msg import send_bar_msg
 from ofscraper.download.shared.total import total_change_helper
 
 
@@ -99,7 +90,10 @@ async def alt_download(c, ele, username, model_id):
     return await handle_result_alt(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
-from ofscraper.download.shared.resume import get_resume_header,get_resume_size
+
+
+from ofscraper.download.shared.resume import get_resume_header, get_resume_size
+
 
 async def alt_download_downloader(item, c, ele):
     downloadspace(mediatype=ele.mediatype)
@@ -111,23 +105,27 @@ async def alt_download_downloader(item, c, ele):
     async for _ in download_retry():
         with _:
             try:
-                _attempt =alt_attempt_get(item)
+                _attempt = alt_attempt_get(item)
                 _attempt.set(_attempt.get(0) + 1)
                 if _attempt.get() > 1:
                     pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
-                data=await asyncio.get_event_loop().run_in_executor(
+                data = await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(cache.get, f"{item['name']}_headers"),
                 )
-                status=False
+                status = False
                 if data:
-                    item,status=await resume_data_handler_alt(data, item, ele, placeholderObj)
+                    item, status = await resume_data_handler_alt(
+                        data, item, ele, placeholderObj
+                    )
 
                 else:
-                    item,status=await fresh_data_handler_alt(item, ele, placeholderObj)
+                    item, status = await fresh_data_handler_alt(
+                        item, ele, placeholderObj
+                    )
                 if not status:
                     try:
-                        item=await alt_download_sendreq(item, c, ele, placeholderObj)
+                        item = await alt_download_sendreq(item, c, ele, placeholderObj)
                     except Exception as E:
                         raise E
                 return item
@@ -149,7 +147,6 @@ async def alt_download_downloader(item, c, ele):
                 raise E
 
 
-
 async def alt_download_sendreq(item, c, ele, placeholderObj):
     try:
         _attempt = alt_attempt_get(item)
@@ -169,11 +166,11 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
-    total=None
+    total = None
     try:
 
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-        headers = headers = get_resume_header(resume_size,item["total"])
+        headers = headers = get_resume_header(resume_size, item["total"])
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         params = get_alt_params(ele)
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
@@ -183,29 +180,29 @@ async def send_req_inner(c, ele, item, placeholderObj):
             f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
         )
         async with c.requests_async(
-            url=url, headers=headers, params=params, forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
-
+            url=url,
+            headers=headers,
+            params=params,
+            forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
         ) as l:
             item["total"] = item["total"] or int(l.headers.get("content-length"))
             total = item["total"]
 
-            data={
-                        "content-total": total,
-                        "content-type": l.headers.get("content-type"),
+            data = {
+                "content-total": total,
+                "content-type": l.headers.get("content-type"),
             }
 
             common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
-            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
+            common_globals.log.debug(
+                f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+            )
             await total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(
-                    cache.set,
-                    f"{item['name']}_headers",
-                    data
-                ),
+                partial(cache.set, f"{item['name']}_headers", data),
             )
-            
+
             temp_file_logger(placeholderObj, ele)
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
@@ -214,11 +211,11 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 return item
             elif total != resume_size:
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
+                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
                 )
                 await download_fileobject_writer(total, l, ele, placeholderObj)
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
                 )
 
         await size_checker(placeholderObj.tempfilepath, ele, total)
@@ -243,16 +240,20 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):
-            send_chunk_msg(ele,total,placeholderObj)
+            send_chunk_msg(ele, total, placeholderObj)
             await fileobject.write(chunk)
-            await send_bar_msg( partial(
-                        progress_utils.update_download_job_task,
-                        task1,
-                        completed=pathlib.Path(placeholderObj.tempfilepath)
-                        .absolute()
-                        .stat()
-                        .st_size,
-            ),count,update_count)
+            await send_bar_msg(
+                partial(
+                    progress_utils.update_download_job_task,
+                    task1,
+                    completed=pathlib.Path(placeholderObj.tempfilepath)
+                    .absolute()
+                    .stat()
+                    .st_size,
+                ),
+                count,
+                update_count,
+            )
             count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:

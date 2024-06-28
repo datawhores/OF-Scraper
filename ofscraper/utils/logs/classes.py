@@ -3,13 +3,13 @@ import copy
 import logging
 import re
 
+from rich.text import Text
+
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.helpers as helpers
-from rich.text import Text
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
-
 
 
 class PipeHandler(logging.Handler):
@@ -154,7 +154,7 @@ class DiscordHandler(logging.Handler):
                         "thread_name": date or dates_manager.getLogDate().get("now"),
                         "content": date or dates_manager.getLogDate().get("now"),
                     },
-                    skip_expection_check=True
+                    skip_expection_check=True,
                 ) as _:
                     pass
             except Exception:
@@ -212,7 +212,7 @@ class DiscordHandler(logging.Handler):
                     "content": record,
                     # "thread_name": self._thread,
                 },
-                skip_expection_check=True
+                skip_expection_check=True,
             ) as r:
                 if not r.status == 204:
                     raise Exception
@@ -265,13 +265,13 @@ class DiscordFormatter(SensitiveFormatter):
     @staticmethod
     def _filter(s):
         t = SensitiveFormatter._filter(s)
-        t=re.sub("\\\\+","\\\\",t)
-        t=re.sub("\[bold[^\]]*]","**",t)
-        t=re.sub("\[\/bold[^\]]*]","**",t)
-        t=Text.from_markup(Text(t).plain).plain
-        t=re.sub("  +"," ",t)
-        t=re.sub("\*\*+","**",t)
-        t=re.sub("\\\\+","",t)
+        t = re.sub("\\\\+", "\\\\", t)
+        t = re.sub("\[bold[^\]]*]", "**", t)
+        t = re.sub("\[\/bold[^\]]*]", "**", t)
+        t = Text.from_markup(Text(t).plain).plain
+        t = re.sub("  +", " ", t)
+        t = re.sub("\*\*+", "**", t)
+        t = re.sub("\\\\+", "", t)
         return t
 
 
@@ -280,5 +280,5 @@ class LogFileFormatter(SensitiveFormatter):
 
     @staticmethod
     def _filter(s):
-        t= SensitiveFormatter._filter(s)
+        t = SensitiveFormatter._filter(s)
         return Text.from_markup(Text(t).plain).plain

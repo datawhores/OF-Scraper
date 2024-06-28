@@ -169,8 +169,6 @@ Enter 0 for no limit
                 "default": str(data.get_system_freesize()),
                 "filter": int,
             },
-
-
             {
                 "type": "input",
                 "name": "length_min",
@@ -183,8 +181,7 @@ Enter 0 to disable
                 "default": str(data.get_min_length()),
                 "filter": int,
             },
-
-                        {
+            {
                 "type": "input",
                 "name": "length_max",
                 "message": "max length: ",
@@ -472,11 +469,10 @@ def content_config():
             {
                 "type": "list",
                 "name": "block_ads",
-                "choices": [Choice( True,"Yes"), Choice(False,"No")],
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
                 "message": "Do you want to auto block post with advertisment words:\n",
                 "default": data.get_block_ads(),
             },
-            
         ],
         more_instruction=prompt_strings.CONFIG_MENU,
     )
@@ -754,7 +750,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["threads"])
-    max_allowed=100//thread_count
+    max_allowed = 100 // thread_count
     return max_allowed
 
 

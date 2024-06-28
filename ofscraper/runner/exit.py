@@ -1,4 +1,5 @@
 import time
+
 from diskcache import Cache
 
 import ofscraper.utils.config.data as data
@@ -27,6 +28,6 @@ def closeCache():
             common_paths.getcachepath(),
             disk=data.get_cache_mode(),
         )
-        
+
     except Exception as E:
         raise E

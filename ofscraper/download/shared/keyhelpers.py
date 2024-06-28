@@ -17,9 +17,9 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.shared.retries import get_cmd_download_req_retries
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
 from ofscraper.download.shared.general import get_medialog
+from ofscraper.download.shared.retries import get_cmd_download_req_retries
 
 log = None
 
@@ -62,13 +62,13 @@ async def un_encrypt(item, c, ele, input_=None):
     log.debug(
         f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
     )
-    ffmpeg_key=get_ffmpeg_key(key)
+    ffmpeg_key = get_ffmpeg_key(key)
     r = subprocess.run(
         [
             settings.get_ffmpeg(),
             "-decryption_key",
             ffmpeg_key,
-            '-i',
+            "-i",
             str(item["path"]),
             "-codec",
             "copy",
@@ -87,8 +87,10 @@ async def un_encrypt(item, c, ele, input_=None):
     item["path"] = newpath
     return item
 
+
 def get_ffmpeg_key(key):
     return key.split(":")[1]
+
 
 async def key_helper_cdrm(c, pssh, licence_url, id):
     log.debug(f"ID:{id} using cdrm auto key helper")
@@ -114,7 +116,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_expection_check=True
+            skip_expection_check=True,
         ) as r:
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -151,8 +153,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_expection_check=True
-
+            skip_expection_check=True,
         ) as r:
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -197,8 +198,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-            skip_expection_check=True
-
+            skip_expection_check=True,
         ) as r:
             data = await r.json_()
             log.debug(f"keydb json {data}")
@@ -261,7 +261,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 total_timeout=constants.getattr("CDM_TIMEOUT"),
-                forced=constants.getattr("CDM_FORCE_KEY")
+                forced=constants.getattr("CDM_FORCE_KEY"),
             ) as r:
                 cdm.parse_license(session_id, (await r.read_()))
                 keys = cdm.get_keys(session_id)

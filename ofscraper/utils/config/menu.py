@@ -71,6 +71,7 @@ def response_type():
         updated_config = prompts.response_type()
     update_config_helper(updated_config)
 
+
 def content_config():
     with config_context.config_context():
         config_file.open_config()

@@ -1,4 +1,3 @@
-
 import logging
 
 import ofscraper.models.selector as selector
@@ -6,14 +5,16 @@ import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.helpers.post import post_media_process
-
 from ofscraper.commands.helpers.strings import (
     area_str,
     avatar_str,
     data_str,
     progress_str,
 )
+
 log = logging.getLogger("shared")
+
+
 def data_helper(user):
     avatar = user.avatar
     username = user.name
@@ -21,7 +22,6 @@ def data_helper(user):
     final_post_areas = areas.get_final_posts_area()
     length = selector.get_num_selected()
     count = progress_utils.get_user_task_obj().completed
-
 
     logging.getLogger("shared_other").warning(
         progress_str.format(count=count + 1, length=length)

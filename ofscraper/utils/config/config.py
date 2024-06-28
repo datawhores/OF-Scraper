@@ -63,9 +63,6 @@ def update_config_full(config_, updated_config):
     return config
 
 
-
-
-
 def update_ffmpeg():
     global config
     config = {"config": read_config()}

@@ -1,20 +1,19 @@
 import logging
+
+import ofscraper.db.operations as operations
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.scraper.execute import execute_user_action
-import ofscraper.db.operations as operations
-
-
+from ofscraper.commands.helpers.post import post_media_process
 from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
-
-
-from ofscraper.commands.helpers.post import post_media_process
+from ofscraper.commands.scraper.execute import execute_user_action
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
+
+
 @exit.exit_wrapper
 @run
 async def process_users_actions_user_first(userdata, session):
@@ -26,13 +25,12 @@ async def process_users_actions_user_first(userdata, session):
         description="Users with Actions completed", completed=0
     )
 
-    return await get_userfirst_action_execution_function(execute_user_action)(
-        data
-    )
+    return await get_userfirst_action_execution_function(execute_user_action)(data)
 
 
 async def get_users_data_user_first(session, ele):
     return await process_ele_user_first_data_retriver(ele, session)
+
 
 async def process_ele_user_first_data_retriver(ele, session):
     model_id = ele.id

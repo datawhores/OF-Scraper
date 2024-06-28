@@ -1,6 +1,8 @@
 from rich.console import Console
 
 console = Console()
+
+
 def authwarning(authFile):
     console.print(
         "[bold yellow]For an example of how your auth file should look see \

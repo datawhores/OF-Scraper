@@ -28,7 +28,7 @@ from ..utils import encoding
 
 console = Console()
 log = logging.getLogger("shared")
-API="profile"
+API = "profile"
 
 
 # can get profile from username or id
@@ -38,6 +38,7 @@ def scrape_profile(username: Union[int, str], refresh=True) -> dict:
         refresh=refresh,
     ) as c:
         return scrape_profile_helper(c, username)
+
 
 def scrape_profile_helper(c, username: Union[int, str]):
     data = cache.get(f"username_{username}", default=None)
@@ -54,7 +55,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                 r.json(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY")),
             )
-            
+
             log.trace(f"username date: {r.json()}")
             return r.json()
     except Exception as E:
@@ -72,7 +73,9 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
     try:
 
         log.info(f"getting {username} with {url}")
-        async with c.requests_async(url,forced=constants.getattr("PROFILE_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("PROFILE_FORCE_KEY")
+        ) as r:
             if r.status == 404:
                 return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
             cache.set(
@@ -80,11 +83,11 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                 await r.json_(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
             )
-            
+
             log.trace(f"username date: {await r.json_()}")
             return await r.json_()
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -168,7 +171,7 @@ def get_id_helper(c, username):
         with c.requests(constants.getattr("profileEP").format(username)) as r:
             id = r.json()["id"]
             cache.set(f"model_id_{username}", id, constants.getattr("DAY_SECONDS"))
-            
+
             return id
 
     except Exception as E:

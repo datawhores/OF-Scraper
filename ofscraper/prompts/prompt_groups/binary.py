@@ -32,8 +32,6 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.settings as settings
 
 
-
-
 def ffmpeg_prompt():
     answer = promptClasses.batchConverter(
         *[
@@ -58,9 +56,6 @@ https://ffmpeg.org/download.html
     )
 
     return answer["ffmpeg"]
-
-
-
 
 
 def auto_download_ffmpeg() -> bool:

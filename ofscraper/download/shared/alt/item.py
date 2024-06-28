@@ -3,7 +3,6 @@ import ofscraper.download.shared.keyhelpers as keyhelpers
 from ofscraper.download.shared.metadata import force_download
 
 
-
 async def media_item_post_process_alt(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:
         if ele.mediatype != "forced_skipped":
