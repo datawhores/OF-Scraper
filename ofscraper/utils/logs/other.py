@@ -9,6 +9,7 @@ import aioprocessing
 
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
+import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
@@ -16,7 +17,6 @@ import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-import ofscraper.utils.constants as constants
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -75,7 +75,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         except queue.Empty as e:
             continue
         except OSError as e:
-            if str(e)=="handle is closed":
+            if str(e) == "handle is closed":
                 print("handle is closed")
                 return
             raise e

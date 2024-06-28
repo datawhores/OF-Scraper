@@ -15,15 +15,16 @@ import asyncio
 import logging
 import traceback
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-API_S="stories"
-API_H="highlights"
+API_S = "stories"
+API_H = "highlights"
+
 
 #############################################################################
 #### Stories
@@ -52,14 +53,15 @@ async def scrape_stories(c, user_id) -> list:
     new_tasks = []
     task = None
 
-    
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         task = progress_utils.add_api_job_task(
             f"[Stories] user id -> {user_id}",
             visible=True,
         )
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             stories = await r.json_()
             log.debug(
@@ -78,7 +80,7 @@ async def scrape_stories(c, user_id) -> list:
     except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -282,7 +284,7 @@ async def process_task_highlights(tasks):
 
 async def scrape_highlight_list(c, user_id, offset=0) -> list:
     new_tasks = []
-    
+
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     task = None
 
@@ -291,7 +293,9 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
             f"[Highlights] scraping highlight list  offset-> {offset}",
             visible=True,
         )
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             resp_data = await r.json_()
             log.trace(f"highlights list: -> found highlights list data {resp_data}")
@@ -301,7 +305,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -314,7 +318,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
 async def scrape_highlights(c, id) -> list:
     new_tasks = []
-    
+
     url = constants.getattr("storyEP").format(id)
     task = None
 
@@ -323,7 +327,9 @@ async def scrape_highlights(c, id) -> list:
             f"[Highlights]  highlights id -> {id}",
             visible=True,
         )
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             resp_data = await r.json_()
             log.trace(f"highlights: -> found highlights data {resp_data}")
@@ -334,7 +340,7 @@ async def scrape_highlights(c, id) -> list:
         raise Exception(f"Task timed out {url}")
 
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E

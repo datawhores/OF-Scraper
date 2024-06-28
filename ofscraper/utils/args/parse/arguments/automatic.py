@@ -1,7 +1,10 @@
 import cloup as click
-from ofscraper.utils.args.types.choice import MutuallyExclusiveMultichoice
-from ofscraper.utils.args.callbacks.string import StringSplitParseTitle,StringSplitParse
 
+from ofscraper.utils.args.callbacks.string import (
+    StringSplitParse,
+    StringSplitParseTitle,
+)
+from ofscraper.utils.args.types.choice import MutuallyExclusiveMultichoice
 
 daemon_option = click.option(
     "-d",
@@ -18,9 +21,11 @@ action_option = click.option(
     Accepts space or comma-separated list. Like and unlike cannot be combined.
     """,
     multiple=True,
-    type=MutuallyExclusiveMultichoice(["unlike","like","download"],exclusion=["like","unlike"],case_sensitive=False),
+    type=MutuallyExclusiveMultichoice(
+        ["unlike", "like", "download"],
+        exclusion=["like", "unlike"],
+        case_sensitive=False,
+    ),
     default=[],
-    callback=StringSplitParse
+    callback=StringSplitParse,
 )
-
-

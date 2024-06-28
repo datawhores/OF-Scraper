@@ -36,20 +36,20 @@ def get_filesize_max(config=None, mediatype=None):
     try:
         if config.get("file_size_max") is not None:
             size = config.get("file_size_max")
-       
+
         elif (
             config.get("overwrites", {})
             .get((mediatype or "").lower(), {})
             .get("file_size_max")
         ):
-            size= (
+            size = (
                 config.get("overwrites", {})
                 .get((mediatype or "").lower(), {})
                 .get("file_size_max")
             )
         elif config.get("download_options", {}).get("file_size_max"):
             size = config.get("download_options", {}).get("file_size_max")
-        
+
         elif config.get("download_options", {}).get("file_size_limit"):
             size = config.get("download_options", {}).get("file_size_limit")
         return parse_size(
@@ -95,12 +95,11 @@ def get_filesize_min(config=None, mediatype=None):
         return 0
 
 
-
 @wrapper.config_reader
 def get_min_length(config=None, mediatype=None):
     if config is False:
         return constants.MIN_LENGTH_DEFAULT
-    
+
     elif (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -113,14 +112,16 @@ def get_min_length(config=None, mediatype=None):
         )
     elif "length_min" in config:
         return config.get("length_min", {})
-    
+
     elif config.get("download_options", {}).get("length_min"):
         return config.get("download_options", {}).get("length_min")
+
+
 @wrapper.config_reader
 def get_max_length(config=None, mediatype=None):
     if config is False:
         return constants.MAX_LENGTH_DEFAULT
-  
+
     elif (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -133,9 +134,10 @@ def get_max_length(config=None, mediatype=None):
         )
     elif "length_min" in config:
         return config.get("length_max", {})
-    
+
     elif config.get("download_options", {}).get("length_max"):
         return config.get("download_options", {}).get("length_max")
+
 
 @wrapper.config_reader
 def get_system_freesize(config=None, mediatype=None):
@@ -223,11 +225,21 @@ def get_enable_after(config=None):
     if config is False:
         return constants.ENABLE_AUTO_AFTER_DEFAULT
     val = not config.get("disable_auto_after")
-    val=not config.get("advanced_options", {}).get("disable_auto_after") if val is None else val
-    val=config.get("enable_auto_after") if val is None else val
-    val=config.get("advanced_options", {}).get("enable_auto_after") if val is None else val
-        
-    return val if val is not None else constants_attr.getattr("ENABLE_AUTO_AFTER_DEFAULT")
+    val = (
+        not config.get("advanced_options", {}).get("disable_auto_after")
+        if val is None
+        else val
+    )
+    val = config.get("enable_auto_after") if val is None else val
+    val = (
+        config.get("advanced_options", {}).get("enable_auto_after")
+        if val is None
+        else val
+    )
+
+    return (
+        val if val is not None else constants_attr.getattr("ENABLE_AUTO_AFTER_DEFAULT")
+    )
 
 
 @wrapper.config_reader
@@ -308,6 +320,7 @@ def get_threads(config=None):
     except ValueError:
         threads = int(constants_attr.getattr("THREADS_DEFAULT"))
     return threads
+
 
 @wrapper.config_reader
 def get_ffmpeg(config=None):
@@ -498,6 +511,7 @@ def get_pinned_responsetype(config=None, mediatype=None):
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
+
 @wrapper.config_reader
 def get_streams_responsetype(config=None, mediatype=None):
     if config is False:
@@ -575,13 +589,8 @@ def get_dynamic(config=None):
     ).get("dynamic-mode-default")
     return (
         value.lower()
-        if value
-        and value.lower()
-        in set(
-            constants_attr.getattr("DYNAMIC_OPTIONS_ALL")
-        )
-        else
-        constants_attr.getattr("DYNAMIC_RULE_DEFAULT")
+        if value and value.lower() in set(constants_attr.getattr("DYNAMIC_OPTIONS_ALL"))
+        else constants_attr.getattr("DYNAMIC_RULE_DEFAULT")
     )
 
 
@@ -814,14 +823,13 @@ def get_hash(config=None, mediatype=None):
         return config.get("advanced_options", {}).get("remove_hash_match")
     return constants_attr.getattr("HASHED_DEFAULT")
 
+
 @wrapper.config_reader
 def get_block_ads(config=None, mediatype=None):
     if config is False:
         return constants.BLOCKED_ADS_DEFAULT
     elif (
-        config.get("overwrites", {})
-        .get((mediatype or "").lower(), {})
-        .get("block_ads")
+        config.get("overwrites", {}).get((mediatype or "").lower(), {}).get("block_ads")
     ):
         return (
             config.get("overwrites", {})
@@ -831,13 +839,13 @@ def get_block_ads(config=None, mediatype=None):
     elif (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
-        .get("content_filter_options",{})
+        .get("content_filter_options", {})
         .get("block_ads")
     ):
         return (
             config.get("overwrites", {})
             .get((mediatype or "").lower(), {})
-            .get("content_filter_options",{})
+            .get("content_filter_options", {})
             .get("block_ads")
         )
     elif "block_ads" in config:

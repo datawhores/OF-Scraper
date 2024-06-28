@@ -1,12 +1,12 @@
 import asyncio
 import copy
-from collections import defaultdict
 import inspect
 import logging
 import re
 import threading
 import time
 import traceback
+from collections import defaultdict
 
 import arrow
 
@@ -17,9 +17,8 @@ import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
-import ofscraper.api.timeline as timeline
 import ofscraper.api.streams as streams
-
+import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
@@ -34,15 +33,18 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
+from ofscraper.api.utils.check import read_check, reset_check, set_check
+from ofscraper.api.utils.timeline import get_individual_timeline_post
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.utils.strings import check_str
-from ofscraper.db.operations_.media import batch_mediainsert,get_media_post_ids_downloaded
-from ofscraper.download.utils.text import textDownloader
-from ofscraper.utils.context.run_async import run
-from ofscraper.utils.checkers import check_auth
 from ofscraper.db.operations import make_changes_to_content_tables
-from ofscraper.api.utils.check import reset_check,read_check,set_check
-from ofscraper.api.utils.timeline import get_individual_timeline_post
+from ofscraper.db.operations_.media import (
+    batch_mediainsert,
+    get_media_post_ids_downloaded,
+)
+from ofscraper.download.utils.text import textDownloader
+from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -219,31 +221,31 @@ async def post_check_retriver():
                     username=user_name, model_id=model_id
                 )
                 if "Timeline" in areas:
-                    oldtimeline =read_check(model_id, timeline.API)
+                    oldtimeline = read_check(model_id, timeline.API)
                     if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                        set_check(timeline_data,model_id,timeline.API)
+                        set_check(timeline_data, model_id, timeline.API)
                 if "Archived" in areas:
-                    oldarchive  =read_check(model_id, archived.API)
+                    oldarchive = read_check(model_id, archived.API)
                     if len(oldarchive) > 0 and not read_args.retriveArgs().force:
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                        set_check(archived_data,model_id,archived.API)
+                        set_check(archived_data, model_id, archived.API)
 
                 if "Pinned" in areas:
-                    oldpinned =read_check(model_id, pinned.API)
+                    oldpinned = read_check(model_id, pinned.API)
                     if len(oldpinned) > 0 and not read_args.retriveArgs().force:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
-                        set_check(pinned_data,model_id,pinned.API)
+                        set_check(pinned_data, model_id, pinned.API)
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
@@ -260,32 +262,44 @@ async def post_check_retriver():
                         labels_data = [
                             post for label in labels_resp for post in label["posts"]
                         ]
-                        set_check(labels_data,model_id,labels.API)
+                        set_check(labels_data, model_id, labels.API)
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
                     if len(oldstreams) > 0 and not read_args.retriveArgs().force:
                         streams_data = oldstreams
                     else:
-                        streams_resp = await streams.get_streams_posts(model_id,user_name, c=c,forced_after=0)
+                        streams_resp = await streams.get_streams_posts(
+                            model_id, user_name, c=c, forced_after=0
+                        )
                         streams_data = [
-                            post for streams in streams_resp for post in streams["posts"]
+                            post
+                            for streams in streams_resp
+                            for post in streams["posts"]
                         ]
-                        set_check(streams_data,model_id,streams.API)
+                        set_check(streams_data, model_id, streams.API)
 
                 await operations.make_post_table_changes(
-                    all_posts=pinned_data + archived_data + labels_data + timeline_data+streams_data,
+                    all_posts=pinned_data
+                    + archived_data
+                    + labels_data
+                    + timeline_data
+                    + streams_data,
                     model_id=model_id,
                     username=user_name,
                 )
-                
+
                 all_post_data = list(
                     map(
                         lambda x: posts_.Post(x, model_id, user_name),
-                        pinned_data + archived_data + labels_data + timeline_data+streams_data,
+                        pinned_data
+                        + archived_data
+                        + labels_data
+                        + timeline_data
+                        + streams_data,
                     )
                 )
-                
+
                 yield user_name, model_id, all_post_data
         # individual links
         for ele in list(
@@ -382,7 +396,7 @@ async def message_check_retriver():
                     messages = await messages_.get_messages(
                         model_id, user_name, forced_after=0, c=c
                     )
-                    set_check(messages,model_id,messages_.API)
+                    set_check(messages, model_id, messages_.API)
 
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
@@ -398,7 +412,7 @@ async def message_check_retriver():
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                    set_check(paid,model_id,paid_.API)
+                    set_check(paid, model_id, paid_.API)
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
@@ -457,7 +471,7 @@ async def purchase_check_retriver():
                 ]
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                set_check(paid,model_id,paid_.API)
+                set_check(paid, model_id, paid_.API)
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             yield user_name, model_id, posts_array
 
@@ -559,11 +573,10 @@ async def get_paid_ids(model_id, user_name):
         paid = oldpaid
     else:
         async with sessionManager.OFSessionManager(
-            backend="httpx",
-            sem=constants.getattr("API_REQ_CHECK_MAX")
+            backend="httpx", sem=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-            set_check(paid,model_id,paid_.API)
+            set_check(paid, model_id, paid_.API)
 
     media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview is True, media))
@@ -612,45 +625,44 @@ def datehelper(date):
 
 
 def times_helper(ele, mediadict):
-    matching=copy.copy(mediadict.get(ele.id, set()))
+    matching = copy.copy(mediadict.get(ele.id, set()))
     matching.discard(ele.postid)
     return list(matching)
-    
-   
+
 
 def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
 
 
 def get_media_dict(downloaded):
-    mediadict = defaultdict(lambda : set())
+    mediadict = defaultdict(lambda: set())
     [
         mediadict[ele.id].add(ele.postid)
         for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
     ]
-    [
-        mediadict[ele[0]].add(ele[1])
-        for ele in list(downloaded)
-    ]
+    [mediadict[ele[0]].add(ele[1]) for ele in list(downloaded)]
     return mediadict
+
 
 async def row_gather(username, model_id, paid=False):
     global ROWS
-    downloaded=set(get_media_post_ids_downloaded(model_id=model_id,username=username))
-    media_dict=get_media_dict(downloaded)    
+    downloaded = set(
+        get_media_post_ids_downloaded(model_id=model_id, username=username)
+    )
+    media_dict = get_media_dict(downloaded)
     out = []
-    for count, ele in enumerate(sorted(
-        ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
-    )):
+    for count, ele in enumerate(
+        sorted(ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True)
+    ):
         out.append(
             {
                 "index": count,
                 "number": None,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
-                "downloaded": (ele.id,ele.postid) in downloaded,
+                "downloaded": (ele.id, ele.postid) in downloaded,
                 "unlocked": unlocked_helper(ele),
-                "other_posts_with_media": times_helper(ele,media_dict),
+                "other_posts_with_media": times_helper(ele, media_dict),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,
                 "post_date": datehelper(ele.formatted_postdate),
@@ -678,17 +690,16 @@ def init_media_type_helper():
 
 
 def reset_time_line_cache(model_id):
-    reset_check(model_id,timeline.API)
-    reset_check(model_id,archived.API)
-    reset_check(model_id,labels.API)
-    reset_check(model_id,pinned.API)
-
+    reset_check(model_id, timeline.API)
+    reset_check(model_id, archived.API)
+    reset_check(model_id, labels.API)
+    reset_check(model_id, pinned.API)
 
 
 def reset_message_set(model_id):
-    reset_check(model_id,messages_.API)
-    reset_check(model_id,paid_.API)
+    reset_check(model_id, messages_.API)
+    reset_check(model_id, paid_.API)
 
 
 def reset_paid_set(model_id):
-    reset_check(model_id,paid_.API)
+    reset_check(model_id, paid_.API)

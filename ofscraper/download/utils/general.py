@@ -18,7 +18,7 @@ from functools import partial
 
 from humanfriendly import format_size
 
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.cache as cache
@@ -28,9 +28,9 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as system
-from ofscraper.download.shared.log import get_medialog
-from ofscraper.download.shared.paths.media import add_path
-from ofscraper.download.shared.send.message import set_send_msg
+from ofscraper.download.utils.log import get_medialog
+from ofscraper.download.utils.paths.media import add_path
+from ofscraper.download.utils.send.message import set_send_msg
 
 
 def add_additional_data(placeholderObj, ele):
@@ -62,7 +62,7 @@ async def size_checker(path, ele, total, name=None):
 
 
 async def check_forced_skip(ele, total):
-    if total == None:
+    if total is None:
         return
     total = int(total)
     if total == 0:
@@ -121,6 +121,7 @@ def get_unknown_content_type(ele):
         else "jpg" if ele.mediatype.lower() == "images" else None
     )
 
+
 def is_bad_url(url):
     match = re.search(r"^https://([^/]+)", url)
     if not match:
@@ -129,6 +130,3 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
-
-
-

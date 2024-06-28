@@ -3,20 +3,20 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals as common_globals
-import ofscraper.download.shared.paths.media as media
+import ofscraper.download.utils.general as common
+import ofscraper.download.utils.globals as common_globals
+import ofscraper.download.utils.paths.media as media
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
+import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
     download_media_update,
     prev_download_media_data,
 )
-from ofscraper.download.shared.log import get_medialog
-from ofscraper.download.shared.retries import get_download_retries
-import ofscraper.utils.constants as constants
-import ofscraper.utils.settings as settings
+from ofscraper.download.utils.log import get_medialog
+from ofscraper.download.utils.retries import get_download_retries
 
 
 async def force_download(ele, username, model_id):
@@ -168,8 +168,12 @@ async def metadata_helper(c, ele):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}]  Getting data for metadata insert"
         )
-        async with c.requests_async(url=url, headers=None, params=params,                forced=constants.getattr("META_FORCE_KEY")
-) as r:
+        async with c.requests_async(
+            url=url,
+            headers=None,
+            params=params,
+            forced=constants.getattr("META_FORCE_KEY"),
+        ) as r:
             headers = r.headers
             content_type = headers.get("content-type").split("/")[
                 -1

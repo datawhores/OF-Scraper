@@ -18,14 +18,17 @@ import traceback
 
 import arrow
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
+from ofscraper.api.utils.after import get_after_pre_checks
+from ofscraper.api.utils.cache.read import read_full_after_scan_check
+from ofscraper.api.utils.check import update_check
 from ofscraper.db.operations_.media import (
-    get_streams_media,
     get_media_ids_downloaded_model,
+    get_streams_media,
 )
 from ofscraper.db.operations_.posts import (
     get_streams_post_info,
@@ -33,14 +36,12 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.check import update_check
-API="streams"
+
+API = "streams"
 
 
 log = logging.getLogger("shared")
-from ofscraper.api.common.timeline import process_individual
+from ofscraper.api.utils.timeline import process_individual
 
 sem = None
 
@@ -49,17 +50,23 @@ sem = None
 async def get_streams_posts(model_id, username, forced_after=None, c=None):
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
-    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
-        splitArrays = await get_split_array(model_id,username, after)
+    if len(read_args.retriveArgs().post_id or []) == 0 or len(
+        read_args.retriveArgs().post_id or []
+    ) > constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+        splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
-        data=process_individual()
-    update_check(data, model_id, after,API)
+    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+        "MAX_STREAMS_INDIVIDUAL_SEARCH"
+    ):
+        data = process_individual()
+    update_check(data, model_id, after, API)
     return data
-async def get_oldstreams(model_id,username):
+
+
+async def get_oldstreams(model_id, username):
     oldstreams = None
-    if not read_full_after_scan_check(model_id,API):
+    if not read_full_after_scan_check(model_id, API):
         return []
     if not settings.get_api_cache_disabled():
         oldstreams = await get_streams_post_info(model_id=model_id, username=username)
@@ -76,7 +83,6 @@ async def get_oldstreams(model_id,username):
     log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
     trace_log_old(oldstreams)
     return oldstreams
-
 
 
 async def process_tasks_batch(tasks):
@@ -137,8 +143,8 @@ async def process_tasks_batch(tasks):
     return responseArray
 
 
-async def get_split_array(model_id,username, after):
-    oldstreams=await get_oldstreams(model_id,username)
+async def get_split_array(model_id, username, after):
+    oldstreams = await get_oldstreams(model_id, username)
     if len(oldstreams) == 0:
         return []
     min_posts = max(
@@ -229,10 +235,9 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-
 async def get_after(model_id, username, forced_after=None):
-    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
-    if prechecks!=None:
+    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+    if prechecks != None:
         return prechecks
     curr = await get_streams_media(model_id=model_id, username=username)
     if len(curr) == 0:
@@ -288,7 +293,9 @@ async def scrape_stream_posts(
             f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             posts = (await r.json_())["list"]
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"

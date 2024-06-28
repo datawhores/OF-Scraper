@@ -28,5 +28,3 @@ sort_descending_option = click.option(
     is_flag=True,
     default=False,
 )
-
-

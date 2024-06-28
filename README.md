@@ -1,6 +1,9 @@
 # FOR NOW ALL AUTH ISSUE REPORTS WILL BE CLOSED
+
 # USE THE PIN POST
+
 https://github.com/datawhores/OF-Scraper/issues/402
+
 # Chances are you will find your solution there anyways
 
 # ReadMe
@@ -23,9 +26,8 @@ Docker and binary releases also availible
 </a>
 
 ## Dev
+
 None
-
-
 
 ## Table-of-contents
 
@@ -101,6 +103,7 @@ Ask in the discord or open an issue if you need help with what to change to acco
 [Discord](https://discord.gg/wN7uxEVHRK)
 
 ## Support
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/datawhores)
 
 <div>
@@ -117,5 +120,6 @@ Ask in the discord or open an issue if you need help with what to change to acco
     </a>
 </div>
 
-# 
+#
+
 [![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)

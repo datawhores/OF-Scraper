@@ -16,13 +16,12 @@ import logging
 from rich.console import Console
 
 import ofscraper.classes.labels as labels
+from ofscraper.db.backup import create_backup
 from ofscraper.db.operations_.labels import (
     create_labels_table,
     make_label_table_changes,
 )
-from ofscraper.db.operations_.media import (
-    create_media_table,
-)
+from ofscraper.db.operations_.media import create_media_table
 from ofscraper.db.operations_.messages import (
     create_message_table,
     make_messages_table_changes,
@@ -32,10 +31,7 @@ from ofscraper.db.operations_.others import (
     create_products_table,
     create_schema_table,
 )
-from ofscraper.db.operations_.posts import (
-    create_post_table,
-    make_post_table_changes,
-)
+from ofscraper.db.operations_.posts import create_post_table, make_post_table_changes
 from ofscraper.db.operations_.profile import (
     create_models_table,
     create_profile_table,
@@ -46,19 +42,20 @@ from ofscraper.db.operations_.stories import (
     create_stories_table,
     make_stories_table_changes,
 )
-from ofscraper.utils.context.run_async import run
-from ofscraper.db.backup import create_backup
 from ofscraper.db.transition import modify_tables
+from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
 
 
-
 @run
 async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
     await make_post_table_changes(
-        filter(lambda x: x.responsetype in {"timeline", "pinned", "archived","streams"}, posts),
+        filter(
+            lambda x: x.responsetype in {"timeline", "pinned", "archived", "streams"},
+            posts,
+        ),
         model_id=model_id,
         username=username,
     )
@@ -75,6 +72,8 @@ async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
     await make_label_table_changes(
         filter(lambda x: isinstance(x, labels.Label), posts), model_id, username
     )
+
+
 @run
 async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
     await create_models_table(model_id=model_id, username=username, db_path=db_path)
@@ -87,11 +86,6 @@ async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
     await create_stories_table(model_id=model_id, username=username, db_path=db_path)
     await create_labels_table(model_id=model_id, username=username, db_path=db_path)
     await create_schema_table(model_id=model_id, username=username, db_path=db_path)
-
-
-
-
-
 
 
 @run

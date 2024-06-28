@@ -22,10 +22,7 @@ log = logging.getLogger("shared")
 
 
 def scrape_user(refresh=True):
-    with sessionManager.OFSessionManager(
-        backend="httpx",
-        refresh=refresh
-    ) as c:
+    with sessionManager.OFSessionManager(backend="httpx", refresh=refresh) as c:
         return _scraper_user_helper(c)
 
 

@@ -15,13 +15,12 @@ import logging
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as data
-from ofscraper.commands.scraper.setup.runner import runner
 import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.setup.prompt import process_prompts
-
-
+from ofscraper.commands.scraper.setup.runner import runner
 
 log = logging.getLogger("shared")
+
 
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")

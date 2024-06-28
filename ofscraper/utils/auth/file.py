@@ -1,4 +1,3 @@
-
 r"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
@@ -11,23 +10,23 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import json
 
 from rich.console import Console
 
-import ofscraper.utils.auth.utils.context as auth_context
+import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.schema as auth_schema
+import ofscraper.utils.auth.utils.context as auth_context
 import ofscraper.utils.paths.common as common_paths
-import ofscraper.utils.auth.helpers.dict as auth_dict
-
 
 console = Console()
 
 
 def read_auth():
     while True:
-        auth=None
+        auth = None
         with auth_context.auth_context():
             old_auth = auth_dict.get_auth_dict()
             auth = auth_schema.auth_schema(old_auth)
@@ -36,7 +35,7 @@ def read_auth():
             if auth_schema.auth_key_null(auth):
                 auth = make.make_auth(auth)
             break
-    return auth 
+    return auth
 
 
 def edit_auth():

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import string
 
 # supress warnings
 import warnings
@@ -35,7 +34,7 @@ class Media(base.base):
         self._final_url = None
         self._cached_parse_mpd = None
         self._mpd = None
-        self._log=None
+        self._log = None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -192,6 +191,7 @@ class Media(base.base):
         return (
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
         )
+
     @property
     def hls(self):
         if self._mpd:
@@ -225,6 +225,7 @@ class Media(base.base):
             .get("hls", {})
             .get("CloudFront-Policy")
         )
+
     @property
     def keypair(self):
         if self.url:
@@ -236,7 +237,7 @@ class Media(base.base):
             .get("dash", {})
             .get("CloudFront-Key-Pair-Id")
         )
-    
+
     @property
     def hls_keypair(self):
         if self.url:
@@ -260,7 +261,7 @@ class Media(base.base):
             .get("dash", {})
             .get("CloudFront-Signature")
         )
-    
+
     @property
     def hls_signature(self):
         if self.url:
@@ -384,7 +385,9 @@ class Media(base.base):
             log=self._log,
             refresh=False,
         ) as c:
-            async with c.requests_async(url=self.mpd, params=params,forced=constants.getattr("MPD_FORCE_KEY")) as r:
+            async with c.requests_async(
+                url=self.mpd, params=params, forced=constants.getattr("MPD_FORCE_KEY")
+            ) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
                 return self._cached_parse_mpd
 
@@ -402,7 +405,7 @@ class Media(base.base):
         if not self.mpd:
             return None
         responsetype = self.post.post["responseType"]
-        if responsetype in ["timeline", "archived", "pinned", "posts","streams"]:
+        if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
         return constants.getattr("LICENCE_URL").format(
             self.id, responsetype, self.postid
@@ -457,14 +460,14 @@ class Media(base.base):
     @property
     def duration_string(self):
         return dates.format_seconds(self.duration) if self.duration else None
-    
+
     @property
     def log(self):
         return self._log
 
     @log.setter
     def log(self, val):
-        self._log=val
+        self._log = val
 
     def get_text(self):
         if self.responsetype != "Profile":

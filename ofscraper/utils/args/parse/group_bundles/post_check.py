@@ -1,11 +1,11 @@
 import cloup as click
 
-
+from ofscraper.utils.args.parse.arguments.check import force, url_group
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
-from ofscraper.utils.args.parse.group_bundles.helpers.check import check_mode_changes
+from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
 from ofscraper.utils.args.parse.groups.check_content import content_options
-from ofscraper.utils.args.parse.arguments.check import url_group,force
+
 
 def post_check_args(func):
     @click.command(

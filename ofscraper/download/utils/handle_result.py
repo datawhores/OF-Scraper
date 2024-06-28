@@ -3,18 +3,14 @@ import subprocess
 
 import arrow
 
-import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals as common_globals
-import ofscraper.download.shared.log as common_logs
-import ofscraper.download.shared.paths.paths as common_paths
-import ofscraper.utils.dates as dates
-import ofscraper.utils.system.system as system
 import ofscraper.classes.placeholder as placeholder
-
-
-
-
+import ofscraper.download.utils.general as common
+import ofscraper.download.utils.globals as common_globals
+import ofscraper.download.utils.log as common_logs
+import ofscraper.download.utils.paths.paths as common_paths
+import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
 
 

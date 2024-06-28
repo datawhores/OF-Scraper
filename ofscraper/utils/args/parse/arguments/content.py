@@ -1,9 +1,13 @@
 import cloup as click
 
-import ofscraper.utils.args.parse.arguments.helpers.date as date_helper
-from ofscraper.utils.args.types.choice import MultiChoice
+import ofscraper.utils.args.parse.arguments.utils.date as date_helper
+from ofscraper.utils.args.callbacks.string import (
+    StringSplitNormalizeParse,
+    StringSplitParse,
+    StringSplitParseTitle,
+)
 from ofscraper.utils.args.types.arrow import ArrowType
-from ofscraper.utils.args.callbacks.string import StringSplitParse,StringSplitNormalizeParse,StringSplitParseTitle
+from ofscraper.utils.args.types.choice import MultiChoice
 
 # Define individual options
 posts_option = click.option(
@@ -17,7 +21,8 @@ posts_option = click.option(
     """,
     default=[],
     required=False,
-    type=MultiChoice([
+    type=MultiChoice(
+        [
             "Highlights",
             "All",
             "Archived",
@@ -31,7 +36,9 @@ posts_option = click.option(
             "Labels",
             "Labels+",
             "Labels*",
-        ],case_sensitive=False),
+        ],
+        case_sensitive=False,
+    ),
     callback=StringSplitParseTitle,
     multiple=True,
 )
@@ -47,7 +54,8 @@ download_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=MultiChoice([
+    type=MultiChoice(
+        [
             "Highlights",
             "All",
             "Archived",
@@ -61,7 +69,9 @@ download_area_option = click.option(
             "Labels",
             "Labels+",
             "Labels*",
-        ],case_sensitive=False),
+        ],
+        case_sensitive=False,
+    ),
     callback=StringSplitParseTitle,
     multiple=True,
 )
@@ -76,7 +86,10 @@ like_area_option = click.option(
     """,
     default=[],
     required=False,
-    type=MultiChoice(["All", "Archived", "Timeline", "Pinned", "Labels","Streams"],case_sensitive=False),
+    type=MultiChoice(
+        ["All", "Archived", "Timeline", "Pinned", "Labels", "Streams"],
+        case_sensitive=False,
+    ),
     callback=StringSplitParseTitle,
     multiple=True,
 )
@@ -88,7 +101,7 @@ filter_option = click.option(
     default=[".*"],
     required=False,
     type=str,
-    multiple=True
+    multiple=True,
 )
 
 neg_filter_option = click.option(
@@ -98,7 +111,7 @@ neg_filter_option = click.option(
     default=[],
     required=False,
     type=str,
-    multiple=True
+    multiple=True,
 )
 
 block_ads_option = click.option(
@@ -242,7 +255,7 @@ post_id_filter = click.option(
     required=False,
     callback=StringSplitParse,
     multiple=True,
-    type=click.STRING
+    type=click.STRING,
 )
 
 timeline_strict = click.option(
@@ -252,7 +265,3 @@ timeline_strict = click.option(
     default=False,
     is_flag=True,
 )
-
-
-
-

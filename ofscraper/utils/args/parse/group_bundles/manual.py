@@ -1,10 +1,9 @@
-
 import cloup as click
+
+from ofscraper.utils.args.callbacks.file import FileCallback
+from ofscraper.utils.args.callbacks.string import StringSplitParse
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
-from ofscraper.utils.args.callbacks.string import StringSplitParse
-from ofscraper.utils.args.callbacks.file import FileCallback
-
 
 
 def manual_args(func):
@@ -21,8 +20,7 @@ def manual_args(func):
             help="A space or comma seperated list of urls to download",
             default=None,
             multiple=True,
-            callback=StringSplitParse
-
+            callback=StringSplitParse,
         ),
         click.option(
             "-f",
@@ -31,7 +29,7 @@ def manual_args(func):
             default=None,
             type=click.File(),
             multiple=True,
-            callback=FileCallback
+            callback=FileCallback,
         ),
     )
     @click.option(

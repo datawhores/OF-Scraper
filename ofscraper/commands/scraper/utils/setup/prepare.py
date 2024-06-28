@@ -10,6 +10,7 @@ import ofscraper.utils.profiles.tools as profile_tools
 
 log = logging.getLogger("shared")
 
+
 def prepare(menu=False):
     session = sessionManager.OFSessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
@@ -20,9 +21,8 @@ def prepare(menu=False):
     profile_tools.print_current_profile()
     init.print_sign_status()
     actions.select_areas()
-    if menu==True:
+    if menu is True:
         actions.set_scrape_paid()
-
 
     userdata = userselector.getselected_usernames(rescan=False)
     return userdata, session

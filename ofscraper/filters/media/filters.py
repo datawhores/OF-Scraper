@@ -1,7 +1,7 @@
 import logging
-from collections import defaultdict
 import random
 import re
+from collections import defaultdict
 
 import arrow
 
@@ -14,7 +14,7 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
 )
 from ofscraper.filters.media.helpers.sorter import post_datesorter
-from ofscraper.filters.media.helpers.trace import trace_log_media,trace_log_post
+from ofscraper.filters.media.helpers.trace import trace_log_media, trace_log_post
 
 log = logging.getLogger("shared")
 
@@ -22,37 +22,41 @@ log = logging.getLogger("shared")
 def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 
-#protect db from dupe inserts
+
+# protect db from dupe inserts
 def dupefilter(media):
-    ids=set()
-    output=[]
+    ids = set()
+    output = []
     for item in media:
-        id_pair = (item.id, item.postid) if hasattr(item, 'postid') else (item.id, None)
+        id_pair = (item.id, item.postid) if hasattr(item, "postid") else (item.id, None)
         if not id_pair or id_pair not in ids:
             ids.add(id_pair)
             output.append(item)
     return output
 
-#dupe filters that prioritize viewable
+
+# dupe filters that prioritize viewable
 def dupefiltermedia(media):
-    output =defaultdict(lambda:None)
+    output = defaultdict(lambda: None)
     for item in media:
         if not output[item.id]:
-            output[item.id]=item
+            output[item.id] = item
         elif item.canview and not output[item.id].canview:
-             output[item.id]=item
+            output[item.id] = item
     return output.values()
+
 
 def dupefilterPost(post):
-    output =defaultdict(lambda:None)
+    output = defaultdict(lambda: None)
     for item in post:
         if not output[item.id]:
-            output[item.id]=item
+            output[item.id] = item
         elif item.opened and not output[item.id].opened:
-             output[item.id]=item
+            output[item.id] = item
     return output.values()
 
-#media filters
+
+# media filters
 def ele_count_filter(media):
     count = settings.get_max_post_count() or None
     if count:
@@ -97,7 +101,6 @@ def posts_date_filter_media(media):
     return media
 
 
-
 def download_type_filter(media):
     if read_args.retriveArgs().protected_only:
         return list(filter(lambda x: x.protected, media))
@@ -108,13 +111,23 @@ def download_type_filter(media):
 
 
 def media_length_filter(media):
-    filteredMedia=media
-    max_length=settings.get_max_length()
-    min_length=settings.get_min_length()
+    filteredMedia = media
+    max_length = settings.get_max_length()
+    min_length = settings.get_min_length()
     if max_length:
-        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=max_length,filteredMedia))
+        filteredMedia = list(
+            filter(
+                lambda x: x.mediatype != "videos" or x.duration <= max_length,
+                filteredMedia,
+            )
+        )
     if min_length:
-        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration>=min_length,filteredMedia))
+        filteredMedia = list(
+            filter(
+                lambda x: x.mediatype != "videos" or x.duration >= min_length,
+                filteredMedia,
+            )
+        )
     return filteredMedia
 
 
@@ -179,19 +192,23 @@ def previous_download_filter(medialist, username=None, model_id=None):
     logging.getLogger().info(f"Final media count for download {len(medialist)}")
     return medialist
 
+
 def media_id_filter(media):
     if not bool(read_args.retriveArgs().media_id):
         return media
-    wanted=set([str(x) for x in read_args.retriveArgs().media_id])
-    return list(filter(lambda x:str(x.id) in wanted,media))
+    wanted = set([str(x) for x in read_args.retriveArgs().media_id])
+    return list(filter(lambda x: str(x.id) in wanted, media))
+
 
 def post_id_filter(media):
     if not bool(read_args.retriveArgs().post_id):
         return media
-    wanted=set([str(x) for x in read_args.retriveArgs().post_id])
-    return list(filter(lambda x:str(x.postid) in wanted,media))
+    wanted = set([str(x) for x in read_args.retriveArgs().post_id])
+    return list(filter(lambda x: str(x.postid) in wanted, media))
+
 
 # post filters
+
 
 def posts_date_filter(media):
     if read_args.retriveArgs().before:
@@ -225,7 +242,8 @@ def likable_post_filter(post):
     return list(
         filter(
             lambda x: x.opened
-            and x.responsetype.capitalize() in {"Timeline", "Archived", "Pinned","Streams"},
+            and x.responsetype.capitalize()
+            in {"Timeline", "Archived", "Pinned", "Streams"},
             post,
         )
     )
@@ -235,40 +253,39 @@ def post_text_filter(media):
     userfilter = read_args.retriveArgs().filter
     if not userfilter:
         return media
-    curr=media
+    curr = media
     for ele in userfilter:
         if not ele.islower():
-            curr= list(
+            curr = list(
                 filter(lambda x: re.search(ele, x.text or "") is not None, curr)
             )
         else:
-            curr= list(
+            curr = list(
                 filter(
-                    lambda x: re.search(ele, x.text or "", re.IGNORECASE)
-                    is not None,
+                    lambda x: re.search(ele, x.text or "", re.IGNORECASE) is not None,
                     curr,
                 )
             )
     return curr
-    
+
+
 def post_neg_text_filter(media):
     userfilter = settings.get_neg_filter()
     if not bool(userfilter):
         return media
-    curr=media
+    curr = media
     for ele in userfilter:
         if not ele.islower():
-            curr= list(
-                filter(lambda x: re.search(ele, x.text or "") is None, curr)
-            )
+            curr = list(filter(lambda x: re.search(ele, x.text or "") is None, curr))
         else:
-            curr=list(
+            curr = list(
                 filter(
                     lambda x: re.search(ele, x.text or "", re.IGNORECASE) is None,
                     curr,
                 )
             )
     return curr
+
 
 def mass_msg_filter(media):
     if read_args.retriveArgs().mass_msg is None:
@@ -278,6 +295,7 @@ def mass_msg_filter(media):
     elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))
 
+
 def final_post_sort(post):
     item_sort = read_args.retriveArgs().item_sort
     log.debug(f"Using post sort {item_sort}")
@@ -286,8 +304,7 @@ def final_post_sort(post):
     elif item_sort == "date-asc":
         pass
     elif item_sort == "date-desc":
-        post=list(reversed(post))
+        post = list(reversed(post))
     elif item_sort == "random":
         random.shuffle(post)
     return post
-    

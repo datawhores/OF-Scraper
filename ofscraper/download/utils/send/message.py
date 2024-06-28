@@ -1,7 +1,7 @@
 import asyncio
 import platform
 
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.utils.globals as common_globals
 
 
 def set_send_msg():
@@ -26,6 +26,7 @@ async def send_msg_win(msg):
         await common_globals.pipe.coro_send(msg)
     finally:
         common_globals.pipe_lock.release()
+
 
 async def send_msg_unix(msg):
     await common_globals.pipe.coro_send(msg)

@@ -13,11 +13,9 @@ r"""
 
 import pathlib
 
-
 import psutil
 
 import ofscraper.utils.constants as constants
-
 
 
 def get_ideal_chunk_size(total_size, curr_file):

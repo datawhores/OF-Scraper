@@ -3,8 +3,8 @@ import logging
 import pathlib
 import re
 
-import ofscraper.utils.config.utils.context as config_context
 import ofscraper.utils.config.schema as schema
+import ofscraper.utils.config.utils.context as config_context
 import ofscraper.utils.console as console_
 import ofscraper.utils.paths.common as common_paths
 

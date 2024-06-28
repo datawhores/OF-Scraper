@@ -4,7 +4,7 @@ refreshScreen = 50
 NUMBER_REGEX = "[0-9]"
 USERNAME_REGEX = "[^/]"
 SHOW_AVATAR = True
-SHOW_RESULTS_LOG=True
+SHOW_RESULTS_LOG = True
 MODEL_PRICE_PLACEHOLDER = "Unknown_Price"
 disclaimers = [
     "This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.",
@@ -12,7 +12,7 @@ disclaimers = [
 ]
 APP_TOKEN = "33d57ade8c02dbc5a333db99ff9ae26a"
 CONTINUE_BOOL = True
-BUF_SIZE = 1024*1024
+BUF_SIZE = 1024 * 1024
 FILE_COUNT_PLACEHOLDER = True
 DELETED_MODEL_PLACEHOLDER = "modeldeleted"
 LARGE_TRACE_CHUNK_SIZE = 100

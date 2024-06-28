@@ -1,8 +1,15 @@
 import pathlib
+
 import ofscraper.utils.settings as settings
 
-def get_resume_header(resume_size,total):
-    return None if not resume_size or not total else {"Range": f"bytes={resume_size}-{total}"}
+
+def get_resume_header(resume_size, total):
+    return (
+        None
+        if not resume_size or not total
+        else {"Range": f"bytes={resume_size}-{total}"}
+    )
+
 
 def get_resume_size(tempholderObj, mediatype=None):
     if not settings.get_auto_resume(mediatype=mediatype):

@@ -1,7 +1,6 @@
-import ofscraper.download.shared.general as common
-import ofscraper.download.shared.keyhelpers as keyhelpers
-from ofscraper.download.shared.metadata import force_download
-
+import ofscraper.download.utils.general as common
+import ofscraper.download.utils.keyhelpers as keyhelpers
+from ofscraper.download.utils.metadata import force_download
 
 
 async def media_item_post_process_alt(audio, video, ele, username, model_id):

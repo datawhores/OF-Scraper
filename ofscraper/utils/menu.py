@@ -6,12 +6,11 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.config.menu as config_menu
+import ofscraper.utils.console as console
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.scraper.setup.runner import runner
-import ofscraper.utils.console as console
-
 
 log = logging.getLogger("shared")
 count = 0
@@ -81,8 +80,6 @@ def main_menu_action():
         except Exception as E:
             log.debug(E)
             log.debug(traceback.format_exc())
-
-
 
 
 def profile_menu_helper(result_profiles_prompt):

@@ -16,11 +16,15 @@ import traceback
 
 import arrow
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
+from ofscraper.api.utils.after import get_after_pre_checks
+from ofscraper.api.utils.cache.read import read_full_after_scan_check
+from ofscraper.api.utils.check import update_check
+from ofscraper.api.utils.timeline import process_individual
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
     get_timeline_media,
@@ -31,15 +35,9 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.check import update_check
-from ofscraper.api.common.timeline import process_individual
-
 
 log = logging.getLogger("shared")
-API="timeline"
-
+API = "timeline"
 
 
 @run
@@ -47,15 +45,18 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
 
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
-    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
+    if len(read_args.retriveArgs().post_id or []) == 0 or len(
+        read_args.retriveArgs().post_id or []
+    ) > constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
-        data=process_individual()
-   
-      
-    update_check(data, model_id, after,API)
+    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+        "MAX_TIMELINE_INDIVIDUAL_SEARCH"
+    ):
+        data = process_individual()
+
+    update_check(data, model_id, after, API)
     return data
 
 
@@ -116,7 +117,7 @@ async def process_tasks_batch(tasks):
 
 
 async def get_oldtimeline(model_id, username):
-    if read_full_after_scan_check(model_id,API):
+    if read_full_after_scan_check(model_id, API):
         return []
     if not settings.get_api_cache_disabled():
         oldtimeline = await get_timeline_posts_info(
@@ -235,10 +236,9 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-
 async def get_after(model_id, username, forced_after=None):
-    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
-    if prechecks!=None:
+    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+    if prechecks != None:
         return prechecks
     curr = await get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
@@ -258,8 +258,12 @@ async def get_after(model_id, username, forced_after=None):
     )
 
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x["posted_at"])))
-    log.info(f"Number of timeline posts marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}")
-    log.info(f"Number of timeline posts  marked as missing/undownloaded le{len(list(missing_items))}")
+    log.info(
+        f"Number of timeline posts marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}"
+    )
+    log.info(
+        f"Number of timeline posts  marked as missing/undownloaded le{len(list(missing_items))}"
+    )
 
     if len(missing_items) == 0:
         log.debug(
@@ -296,7 +300,9 @@ async def scrape_timeline_posts(
             visible=True,
         )
 
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
             posts = (await r.json_())["list"]
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):

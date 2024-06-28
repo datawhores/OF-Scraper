@@ -17,12 +17,12 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.network as network
-from ofscraper.commands.helpers.strings import download_manual_str, post_str_manual
-from ofscraper.db.operations_.media import batch_mediainsert
-from ofscraper.utils.context.run_async import run
-from ofscraper.utils.checkers import check_auth
+from ofscraper.api.utils.timeline import get_individual_timeline_post
+from ofscraper.commands.utils.strings import download_manual_str, post_str_manual
 from ofscraper.db.operations import make_changes_to_content_tables
-from ofscraper.api.common.timeline import get_individual_timeline_post
+from ofscraper.db.operations_.media import batch_mediainsert
+from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.context.run_async import run
 
 
 def manual_download(urls=None):

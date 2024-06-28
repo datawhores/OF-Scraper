@@ -18,31 +18,34 @@ import traceback
 
 import arrow
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.api.utils.check import update_check
+from ofscraper.api.utils.timeline import process_individual
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.check import update_check
-from ofscraper.api.common.timeline import process_individual
-
-
 
 log = logging.getLogger("shared")
-API="pinned"
+API = "pinned"
 
 
 @run
 async def get_pinned_posts(model_id, c=None):
-    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
-        tasks = get_tasks(c,model_id)
+    if len(read_args.retriveArgs().post_id or []) == 0 or len(
+        read_args.retriveArgs().post_id or []
+    ) > constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
+        tasks = get_tasks(c, model_id)
         data = await process_tasks(tasks)
-    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
-        data=process_individual()
-    update_check(data, model_id, None,API)
+    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+        "MAX_PINNED_INDIVIDUAL_SEARCH"
+    ):
+        data = process_individual()
+    update_check(data, model_id, None, API)
     return data
 
-def get_tasks(c,model_id):
+
+def get_tasks(c, model_id):
     tasks = []
     tasks.append(
         asyncio.create_task(
@@ -125,8 +128,6 @@ async def process_tasks(tasks):
     return responseArray
 
 
-
-
 async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
     posts = None
 
@@ -145,7 +146,9 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
             f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
             posts = (await r.json_())["list"]
             posts = list(sorted(posts, key=lambda x: float(x["postedAtPrecise"])))
             posts = list(

@@ -70,6 +70,7 @@ def get_selected_model(parsed_subscriptions: list) -> tuple:
     """
     return prompts.model_selector(parsed_subscriptions)
 
+
 def get_sub_count():
     name, username = me_util.parse_user()
     subscribe_count = me.parse_subscriber_count()

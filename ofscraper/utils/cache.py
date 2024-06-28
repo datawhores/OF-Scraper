@@ -26,7 +26,7 @@ def get(*args, **kwargs):
         lock.release()
 
 
-def set(*args, auto_close=True,**kwargs):
+def set(*args, auto_close=True, **kwargs):
     global lock
     lock.acquire()
     try:

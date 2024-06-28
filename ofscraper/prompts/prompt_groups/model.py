@@ -19,8 +19,8 @@ from InquirerPy.separator import Separator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-import ofscraper.prompts.helpers.model_helpers as modelHelpers
-import ofscraper.prompts.helpers.prompt_helpers as prompt_helpers
+import ofscraper.prompts.utils.model_helpers as modelHelpers
+import ofscraper.prompts.utils.prompt_helpers as prompt_helpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses

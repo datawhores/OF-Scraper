@@ -15,21 +15,19 @@ import asyncio
 import pathlib
 import traceback
 from functools import partial
-from humanfriendly import format_size
 
 import aiofiles
+from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.utils.general as common
+import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.system as system
-from ofscraper.download.shared.retries import get_download_retries
 from ofscraper.classes.download_retries import download_retry
-
-from ofscraper.download.shared.general import (
+from ofscraper.download.utils.general import (
     check_forced_skip,
     downloadspace,
     get_data,
@@ -37,26 +35,23 @@ from ofscraper.download.shared.general import (
     get_unknown_content_type,
     size_checker,
 )
-from ofscraper.download.shared.progress.chunk import (
+from ofscraper.download.utils.handle_result import handle_result_main
+from ofscraper.download.utils.log import get_url_log, path_to_file_logger
+from ofscraper.download.utils.main.data import (
+    fresh_data_handler_main,
+    resume_data_handler_main,
+)
+from ofscraper.download.utils.metadata import force_download
+from ofscraper.download.utils.progress.chunk import (
     get_ideal_chunk_size,
     get_update_count,
 )
-from ofscraper.download.shared.handle_result import handle_result_main
-from ofscraper.download.shared.log import get_url_log, path_to_file_logger
-from ofscraper.download.shared.metadata import force_download
-
-from ofscraper.download.shared.send.send_bar_msg import (
-    send_bar_msg_batch
-)
-from ofscraper.download.shared.send.chunk import (
-    send_chunk_msg
-)
-
-from ofscraper.download.shared.resume import get_resume_header,get_resume_size
-from ofscraper.download.shared.main.data import resume_data_handler_main,fresh_data_handler_main
-from ofscraper.download.shared.total import batch_total_change_helper
-from ofscraper.download.shared.send.message import send_msg
-
+from ofscraper.download.utils.resume import get_resume_header, get_resume_size
+from ofscraper.download.utils.retries import get_download_retries
+from ofscraper.download.utils.send.chunk import send_chunk_msg
+from ofscraper.download.utils.send.message import send_msg
+from ofscraper.download.utils.send.send_bar_msg import send_bar_msg_batch
+from ofscraper.download.utils.total import batch_total_change_helper
 
 
 async def main_download(c, ele, username, model_id):
@@ -96,17 +91,23 @@ async def main_download_downloader(c, ele):
                     else None
                 )
                 data = await get_data(ele)
-                status=False
-                total=None
-                placeholderObj=None
+                status = False
+                total = None
+                placeholderObj = None
                 if data:
-                    total,placeholderObj,status= await resume_data_handler_main(data,ele, tempholderObj,batch=True)
+                    total, placeholderObj, status = await resume_data_handler_main(
+                        data, ele, tempholderObj, batch=True
+                    )
                 else:
                     await fresh_data_handler_main(ele, tempholderObj)
                 # if check is None then we do requests
                 if not status:
                     return await main_download_sendreq(
-                    c, ele, tempholderObj ,placeholderObj=placeholderObj,total=total
+                        c,
+                        ele,
+                        tempholderObj,
+                        placeholderObj=placeholderObj,
+                        total=total,
                     )
                 else:
                     return (
@@ -134,20 +135,21 @@ async def main_download_downloader(c, ele):
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                 )
                 common_globals.log.handlers[1].queue.put(
-                list(common_globals.innerlog.get().handlers[1].queue.queue)
+                    list(common_globals.innerlog.get().handlers[1].queue.queue)
                 )
                 common_globals.log.handlers[0].queue.put(
-                list(common_globals.innerlog.get().handlers[0].queue.queue)
+                    list(common_globals.innerlog.get().handlers[0].queue.queue)
                 )
                 raise E
 
-async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None,total=None):
+
+async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
         common_globals.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
-            c, ele, tempholderObj, placeholderObj=placeholderObj,total=total
+            c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
         )
     except OSError as E:
         raise E
@@ -155,31 +157,31 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None,total
         raise E
 
 
-async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
         resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-        headers = get_resume_header(resume_size,total)
+        headers = get_resume_header(resume_size, total)
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
         )
-        async with c.requests_async(url=ele.url, headers=headers,forced=constants.getattr("DOWNLOAD_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=ele.url, headers=headers, forced=constants.getattr("DOWNLOAD_FORCE_KEY")
+        ) as r:
             total = total or int(r.headers["content-length"])
             await batch_total_change_helper(None, total)
-            data={
-                        "content-total": total,
-                        "content-type": r.headers.get("content-type"),
+            data = {
+                "content-total": total,
+                "content-type": r.headers.get("content-type"),
             }
 
             common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
-            common_globals.log.debug(f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}")
+            common_globals.log.debug(
+                f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+            )
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(
-                    cache.set,
-                    f"{ele.id}_headers",
-                    data
-                ),
+                partial(cache.set, f"{ele.id}_headers", data),
             )
             content_type = r.headers.get("content-type").split("/")[
                 -1
@@ -195,14 +197,14 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None,total=None):
                 return (total, tempholderObj.tempfilepath, placeholderObj)
             elif total != resume_size:
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
-                )       
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
+                )
                 await download_fileobject_writer(
                     r, ele, total, tempholderObj, placeholderObj
                 )
                 common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
-                ) 
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
+                )
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)
     except Exception as E:
@@ -233,17 +235,19 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
 
         count = 1
         async for chunk in r.iter_chunked(chunk_size):
-            send_chunk_msg(ele,total,tempholderObj)
+            send_chunk_msg(ele, total, tempholderObj)
             await fileobject.write(chunk)
             await send_bar_msg_batch(
-                    partial(
-                        progress_utils.update_download_multi_job_task,
-                        ele.id,
-                        completed=pathlib.Path(tempholderObj.tempfilepath)
-                        .absolute()
-                        .stat()
-                        .st_size,
-                    ),count,update_count
+                partial(
+                    progress_utils.update_download_multi_job_task,
+                    ele.id,
+                    completed=pathlib.Path(tempholderObj.tempfilepath)
+                    .absolute()
+                    .stat()
+                    .st_size,
+                ),
+                count,
+                update_count,
             )
             count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None

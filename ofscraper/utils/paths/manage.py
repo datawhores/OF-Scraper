@@ -15,6 +15,7 @@ def create_profile_path(name=None):
     out.mkdir(exist_ok=True, parents=True)
     return out
 
+
 def copy_path(source, dst):
     try:
         shutil.copy2(source, dst)

@@ -22,6 +22,7 @@ def ffmpeg_download():
     elif platform.system() == "Darwin":
         return ffmpeg_mac()
 
+
 def ffmpeg_windows():
     with tempfile.TemporaryDirectory() as t:
         zip_path = pathlib.Path(t, "ffmpeg.zip")

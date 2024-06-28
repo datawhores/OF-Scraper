@@ -80,7 +80,7 @@ last_seen_before_option = click.option(
     help="Filter accounts by last seen being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
 
 last_seen_after_option = click.option(
@@ -89,7 +89,7 @@ last_seen_after_option = click.option(
     help="Filter accounts by last seen being at or after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
 
 expired_after_option = click.option(
@@ -98,7 +98,7 @@ expired_after_option = click.option(
     help="Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
 
 expired_before_option = click.option(
@@ -107,7 +107,7 @@ expired_before_option = click.option(
     help="Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
 
 subscribed_after_option = click.option(
@@ -116,7 +116,7 @@ subscribed_after_option = click.option(
     help="Filter accounts by subscription date being after the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
 
 subscribed_before_option = click.option(
@@ -125,6 +125,5 @@ subscribed_before_option = click.option(
     help="Filter accounts by sub date being at or before the given date (YYYY-MM-DD format)",
     default=None,
     required=False,
-    type=ArrowType()
+    type=ArrowType(),
 )
-

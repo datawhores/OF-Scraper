@@ -117,5 +117,3 @@ renewal_option = click.option(
     required=False,
     is_flag=True,
 )
-
-

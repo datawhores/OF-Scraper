@@ -51,10 +51,10 @@ def temp_cleanup():
             ]
         )
         for ele in roots:
-            if ele == None:
+            if ele is None:
                 continue
             for file in filter(
-                lambda x: re.search("\.part$|^temp_", str(x)) != None,
+                lambda x: re.search("\.part$|^temp_", str(x)) is not None,
                 pathlib.Path(ele).glob("**/*"),
             ):
                 file.unlink(missing_ok=True)
@@ -133,7 +133,9 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size(ext)
+    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size(
+        ext
+    )
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
@@ -147,8 +149,8 @@ def _linux_truncateHelper(path):
 
 
 def get_string_byte_size(text):
-  text=str(text)
-  """
+    text = str(text)
+    """
   This function estimates the byte size of a string considering ASCII characters.
 
   Args:
@@ -157,16 +159,17 @@ def get_string_byte_size(text):
   Returns:
       The estimated byte size of the string.
   """
-  total_size = 0
-  for char in text:
-    try:
-      if ord(char)<128:
-        total_size += 2  # 2 bytes for ASCII characters
-      else:
-          total_size+= 4
-    except ValueError:
-      total_size += 4  # 4 bytes for non-ASCII characters (assumption)
-  return total_size
+    total_size = 0
+    for char in text:
+        try:
+            if ord(char) < 128:
+                total_size += 2  # 2 bytes for ASCII characters
+            else:
+                total_size += 4
+        except ValueError:
+            total_size += 4  # 4 bytes for non-ASCII characters (assumption)
+    return total_size
+
 
 def cleanDB():
     try:
@@ -179,4 +182,3 @@ def cleanDB():
 
 def speed_file():
     return pathlib.Path(common_paths.get_profile_path() / "speed.zip")
-

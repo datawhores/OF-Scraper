@@ -14,8 +14,8 @@ import more_itertools
 import psutil
 from aioprocessing import AioPipe
 
-import ofscraper.download.shared.general as common
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.utils.general as common
+import ofscraper.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
@@ -29,21 +29,22 @@ import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.download.shared.general import (
-    get_medialog,
-    subProcessVariableInit,
+from ofscraper.download.utils.general import get_medialog, subProcessVariableInit
+from ofscraper.download.utils.log import (
+    final_log,
+    final_log_text,
+    log_download_progress,
+    set_media_log,
 )
-from ofscraper.download.shared.log import final_log, final_log_text   ,log_download_progress,set_media_log
-from ofscraper.download.shared.metadata import metadata
-from ofscraper.download.shared.paths.paths import addGlobalDir, setDirectoriesDate
-from ofscraper.download.shared.progress.progress import convert_num_bytes
+from ofscraper.download.utils.metadata import metadata
+from ofscraper.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
+from ofscraper.download.utils.progress.progress import convert_num_bytes
+from ofscraper.download.utils.send.message import send_msg
+from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.download.shared.workers import get_max_workers
-from ofscraper.download.shared.send.message import send_msg
-
 
 platform_name = platform.system()
 
@@ -311,7 +312,7 @@ def process_dict_starter(
         import uvloop
 
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-   
+
     try:
         process_dicts_split(username, model_id, ele)
     except KeyboardInterrupt as E:
@@ -352,26 +353,26 @@ def setpriority():
 async def consumer(queue):
     while True:
         data = await queue.get()
-        if data==None:
+        if data == None:
             queue.task_done()
             break
         else:
             try:
-                pack= await download(*data)
+                pack = await download(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
                 await send_msg((media_type, num_bytes_downloaded, 0))
             except Exception as e:
-                    common_globals.log.info(f"Download Failed because\n{e}")
-                    common_globals.log.traceback_(traceback.format_exc())
-                    media_type = "skipped"
-                    num_bytes_downloaded = 0
-                    await send_msg((media_type, num_bytes_downloaded, 0))
+                common_globals.log.info(f"Download Failed because\n{e}")
+                common_globals.log.traceback_(traceback.format_exc())
+                media_type = "skipped"
+                num_bytes_downloaded = 0
+                await send_msg((media_type, num_bytes_downloaded, 0))
             queue.task_done()
             await asyncio.sleep(1)
 
 
-async def producer(queue, aws,concurrency_limit):
+async def producer(queue, aws, concurrency_limit):
     for data in aws:
         await queue.put(data)
     for _ in range(concurrency_limit):
@@ -387,7 +388,7 @@ async def process_dicts_split(username, model_id, medialist):
     other_logs.start_other_thread(
         input_=common_globals.log.handlers[1].queue, name=str(os.getpid()), count=1
     )
-    
+
     medialist = list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
 
@@ -399,16 +400,16 @@ async def process_dicts_split(username, model_id, medialist):
     async with download_session() as c:
         for ele in medialist:
             aws.append((c, ele, model_id, username))
-        concurrency_limit= get_max_workers()
+        concurrency_limit = get_max_workers()
         queue = asyncio.Queue(maxsize=concurrency_limit)
-        consumers = [asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)]
-        await producer(queue, aws,concurrency_limit)
+        consumers = [
+            asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)
+        ]
+        await producer(queue, aws, concurrency_limit)
         await asyncio.gather(*consumers)
     common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
-    await asyncio.get_event_loop().run_in_executor(
-        common_globals.thread, cache.close
-    )
+    await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
     common_globals.log.handlers[0].queue.put("None")
     common_globals.log.handlers[1].queue.put("None")
@@ -421,13 +422,9 @@ def pid_log_helper():
     return f"PID: {os.getpid()}"
 
 
-
-
-
-
 async def download(c, ele, model_id, username):
-    #set logs for mpd
-    set_media_log(common_globals.log,ele)
+    # set logs for mpd
+    set_media_log(common_globals.log, ele)
     templog_ = logger.get_shared_logger(
         name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
     )
@@ -440,9 +437,7 @@ async def download(c, ele, model_id, username):
         elif ele.mpd:
             return await alt_download(c, ele, username, model_id)
     except Exception as e:
-        common_globals.log.traceback_(
-            f"{get_medialog(ele)} Download Failed\n{e}"
-        )
+        common_globals.log.traceback_(f"{get_medialog(ele)} Download Failed\n{e}")
         common_globals.log.traceback_(
             f"{get_medialog(ele)} exception {traceback.format_exc()}"
         )

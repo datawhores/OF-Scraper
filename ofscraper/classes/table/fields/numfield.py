@@ -24,12 +24,13 @@ class NumField(Horizontal):
     def reset(self):
         self.query_one(IntegerInput).value = ""
 
+
 class OtherMediaNumField(NumField):
     def empty(self):
         return self.query_one(IntegerInput).value == ""
 
     def update_table_val(self, val):
-        val=str(len(eval(val)))
+        val = str(len(eval(val)))
         self.query_one(IntegerInput).value = val
 
     def reset(self):

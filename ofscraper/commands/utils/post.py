@@ -23,19 +23,20 @@ import ofscraper.api.messages as messages
 import ofscraper.api.paid as paid
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
-import ofscraper.api.timeline as timeline
 import ofscraper.api.streams as streams
-
+import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
+import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
-from ofscraper.commands.helpers.strings import all_paid_model_id_str, all_paid_str
+from ofscraper.api.utils.cache.write import set_after_checks
+from ofscraper.commands.utils.strings import all_paid_model_id_str, all_paid_str
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.db.operations_.profile import (
     check_profile_table_exists,
@@ -47,8 +48,6 @@ from ofscraper.utils.args.accessors.areas import (
     get_like_area,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.cache.write import set_after_checks
-import ofscraper.utils.args.accessors.read as read_args
 
 log = logging.getLogger("shared")
 
@@ -61,8 +60,6 @@ async def post_media_process(ele, c=None):
     await operations.table_init_create(model_id=model_id, username=username)
     data = await process_areas(ele, model_id, username, c=c)
     return data
-
-
 
 
 @free.space_checker
@@ -79,7 +76,7 @@ async def process_messages(model_id, username, c):
         unlocked = [item for message in messages_ for item in message.media]
         log.debug(f"[bold]Messages media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Messages media count without locked[/bold] {len(unlocked)}")
-        set_after_checks(model_id,messages.API)
+        set_after_checks(model_id, messages.API)
 
         return all_output, messages_, messages.API
     except Exception as E:
@@ -118,7 +115,9 @@ async def process_stories(model_id, username, c):
         stories = await highlights.get_stories_post(model_id, c=c)
         stories = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, responsetype=highlights.API_S),
+                lambda x: posts_.Post(
+                    x, model_id, username, responsetype=highlights.API_S
+                ),
                 stories,
             )
         )
@@ -144,7 +143,9 @@ async def process_highlights(model_id, username, c):
         highlights_ = await highlights.get_highlight_post(model_id, c=c)
         highlights_ = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, responsetype=highlights.API_H),
+                lambda x: posts_.Post(
+                    x, model_id, username, responsetype=highlights.API_H
+                ),
                 highlights_,
             )
         )
@@ -177,9 +178,11 @@ async def process_timeline_posts(model_id, username, c):
             )
         )
         if read_args.retriveArgs().timeline_strict:
-            timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
+            timeline_only_posts = list(
+                filter(lambda x: x.regular_timeline, timeline_posts)
+            )
         else:
-            timeline_only_posts=timeline_posts
+            timeline_only_posts = timeline_posts
         await operations.make_post_table_changes(
             timeline_only_posts,
             model_id=model_id,
@@ -189,8 +192,8 @@ async def process_timeline_posts(model_id, username, c):
         unlocked = [item for post in timeline_only_posts for item in post.media]
         log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Timeline media count without locked[/bold] {len(unlocked)}")
-        set_after_checks(model_id,timeline.API)
-        
+        set_after_checks(model_id, timeline.API)
+
         log.debug("Returning timeline results")
         return (all_output, timeline_only_posts, timeline.API)
     except Exception as E:
@@ -219,12 +222,11 @@ async def process_archived_posts(model_id, username, c):
         unlocked = [item for post in archived_posts for item in post.media]
         log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]Archived media count without locked[/bold] {len(unlocked)}")
-        set_after_checks(model_id,archive.API)
+        set_after_checks(model_id, archive.API)
         return (all_output, archived_posts, archive.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
-
 
 
 @free.space_checker
@@ -248,11 +250,13 @@ async def process_streamed_posts(model_id, username, c):
         unlocked = [item for post in streams_posts for item in post.media]
         log.debug(f"[bold]streams media count with locked[/bold] {len(all_output)}")
         log.debug(f"[bold]streams media count without locked[/bold] {len(unlocked)}")
-        set_after_checks(model_id,streams.API)
+        set_after_checks(model_id, streams.API)
         return (all_output, streams_posts, streams.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
+
+
 @free.space_checker
 async def process_pinned_posts(model_id, username, c):
     try:
@@ -363,9 +367,12 @@ async def process_all_paid():
                 username=username,
                 downloaded=False,
             )
-            final_medias=filters.filtermediaFinal(insert_media,username,model_id)
+            final_medias = filters.filtermediaFinal(insert_media, username, model_id)
             output[model_id] = dict(
-                model_id=model_id, username=username, posts=new_posts, medias=final_medias
+                model_id=model_id,
+                username=username,
+                posts=new_posts,
+                medias=final_medias,
             )
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
@@ -417,14 +424,11 @@ async def process_labels(model_id, username, c):
         return (
             [item for sublist in all_output for item in sublist],
             [post for ele in labelled_posts_labels for post in ele.posts],
-           labels_api.API,
+            labels_api.API,
         )
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
-
-
-
 
 
 @run
@@ -432,7 +436,7 @@ async def process_areas(ele, model_id, username, c=None):
     try:
         username = ele.name
         medias, posts, like_post = await process_tasks(model_id, username, ele, c=c)
-        insert_medias=filters.filtermediaAreas(medias)
+        insert_medias = filters.filtermediaAreas(medias)
         await batch_mediainsert(
             insert_medias,
             model_id=model_id,
@@ -557,13 +561,13 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
             )
-        
+
         if "Streams" in final_post_areas and ele.active:
             tasks.append(
                 asyncio.create_task(
-                    process_single_task(partial(process_streamed_posts, model_id, username, c))(
-                        sem=sem
-                    )
+                    process_single_task(
+                        partial(process_streamed_posts, model_id, username, c)
+                    )(sem=sem)
                 )
             )
         for results in asyncio.as_completed(tasks):

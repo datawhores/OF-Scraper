@@ -10,16 +10,16 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
 
 
-
 def wrapper(prompt_funct):
     def inner(*args, **kwargs):
         # setup
         with prompt_live():
             long_message = functools.partial(
                 handle_skip_helper,
-                kwargs.pop("long_message", None) or get_default_instructions(prompt_funct),
+                kwargs.pop("long_message", None)
+                or get_default_instructions(prompt_funct),
             )
-            funct=kwargs.pop("call",None)
+            funct = kwargs.pop("call", None)
             kwargs["long_instruction"] = "\n".join(
                 list(
                     filter(

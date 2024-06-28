@@ -1,9 +1,9 @@
 import shutil
 
+import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.ads as ads
 
 
 def not_solo_thread():
@@ -166,7 +166,11 @@ def get_ffmpeg():
 
 
 def auto_after_enabled():
-    return config_data.get_enable_after() and not get_cache_disabled() and not get_api_cache_disabled()
+    return (
+        config_data.get_enable_after()
+        and not get_cache_disabled()
+        and not get_api_cache_disabled()
+    )
 
 
 def get_post_download_script():
@@ -175,24 +179,27 @@ def get_post_download_script():
         or config_data.get_post_download_script()
     )
 
+
 def get_hash(mediatype=None):
     return config_data.get_hash(mediatype=mediatype)
 
+
 def get_neg_filter():
-    neg=read_args.retriveArgs().neg_filter or []
+    neg = read_args.retriveArgs().neg_filter or []
     if read_args.retriveArgs().allow_ads:
         pass
     elif read_args.retriveArgs().block_ads or config_data.get_block_ads():
-        neg=neg.append(ads.get_ad_key_words())
+        neg = neg.append(ads.get_ad_key_words())
     return neg
 
+
 def get_min_length(mediatype=None):
-    if read_args.retriveArgs().length_min!=None:
+    if read_args.retriveArgs().length_min != None:
         return read_args.retriveArgs().length_min
     return config_data.get_min_length(mediatype=mediatype)
 
 
 def get_max_length(mediatype=None):
-    if read_args.retriveArgs().length_max!=None:
-        return read_args.retriveArgs().length_max 
-    return config_data.get_max_length(mediatype=mediatype) 
+    if read_args.retriveArgs().length_max != None:
+        return read_args.retriveArgs().length_max
+    return config_data.get_max_length(mediatype=mediatype)

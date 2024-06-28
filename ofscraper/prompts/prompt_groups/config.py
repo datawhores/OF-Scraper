@@ -12,7 +12,6 @@ r"""
 """
 
 import json
-import logging
 import os
 
 from InquirerPy.base import Choice
@@ -24,7 +23,6 @@ from rich.console import Console
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
@@ -32,7 +30,6 @@ import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
-import ofscraper.utils.system.system as system
 
 console = Console()
 
@@ -169,8 +166,6 @@ Enter 0 for no limit
                 "default": str(data.get_system_freesize()),
                 "filter": int,
             },
-
-
             {
                 "type": "input",
                 "name": "length_min",
@@ -183,8 +178,7 @@ Enter 0 to disable
                 "default": str(data.get_min_length()),
                 "filter": int,
             },
-
-                        {
+            {
                 "type": "input",
                 "name": "length_max",
                 "message": "max length: ",
@@ -472,11 +466,10 @@ def content_config():
             {
                 "type": "list",
                 "name": "block_ads",
-                "choices": [Choice( True,"Yes"), Choice(False,"No")],
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
                 "message": "Do you want to auto block post with advertisment words:\n",
                 "default": data.get_block_ads(),
             },
-            
         ],
         more_instruction=prompt_strings.CONFIG_MENU,
     )
@@ -754,7 +747,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["threads"])
-    max_allowed=100//thread_count
+    max_allowed = 100 // thread_count
     return max_allowed
 
 

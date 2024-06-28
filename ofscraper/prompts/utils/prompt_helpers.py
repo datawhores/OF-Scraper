@@ -8,7 +8,7 @@ from rich.console import Console
 
 import ofscraper.filters.models.sort as sort
 import ofscraper.models.selector as userselector
-import ofscraper.prompts.helpers.model_helpers as modelHelpers
+import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.utils.args.accessors.read as read_args

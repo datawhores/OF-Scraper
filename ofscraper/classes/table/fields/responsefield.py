@@ -1,4 +1,3 @@
-from textual.containers import Horizontal
 from textual.widgets import SelectionList
 
 from ofscraper.classes.table.fields.selectfield import SelectField
@@ -19,6 +18,5 @@ class ResponseField(SelectField):
                 ("Stories", "stories", True),
                 ("Highlights", "highlights", True),
                 ("Streams", "streams", True),
-
             ]
         )

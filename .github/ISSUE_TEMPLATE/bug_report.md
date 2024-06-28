@@ -2,9 +2,8 @@
 name: Bug report
 about: Report an issue with running the script
 title: "# Clear Description of issue"
-labels: ''
-assignees: ''
-
+labels: ""
+assignees: ""
 ---
 
 <!---

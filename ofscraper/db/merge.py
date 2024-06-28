@@ -4,8 +4,7 @@ import traceback
 
 import ofscraper.utils.paths.db as paths_db
 from ofscraper.db.operations import create_tables
-from ofscraper.db.transition import modify_tables
-
+from ofscraper.db.operations_.empty import empty
 from ofscraper.db.operations_.labels import (
     get_all_labels_transition,
     write_labels_table_transition,
@@ -39,10 +38,9 @@ from ofscraper.db.operations_.stories import (
     get_all_stories_transition,
     write_stories_table_transition,
 )
-from ofscraper.db.transition  import modify_tables
-from ofscraper.db.operations_.empty import empty
-log = logging.getLogger("shared")
+from ofscraper.db.transition import modify_tables
 
+log = logging.getLogger("shared")
 
 
 class MergeDatabase:
@@ -54,24 +52,23 @@ class MergeDatabase:
         self._profile_key = ["user_id", "username"]
         self._model_key = "model_id"
 
-    async def __call__(self, old_db_folder,new_db_path):
+    async def __call__(self, old_db_folder, new_db_path):
         """
         This method is called when the object is used like a function.
         """
-        self._new_db=self.get_new_db(new_db_path)
-        self._old_db_folder=old_db_folder
+        self._new_db = self.get_new_db(new_db_path)
+        self._old_db_folder = old_db_folder
         await self._data_initializer()
         return await self.merge_database()
-    def get_new_db(self,new_db_path):
-          new_db_path=pathlib.Path(new_db_path)
-          if new_db_path.name=="user_data.db":
+
+    def get_new_db(self, new_db_path):
+        new_db_path = pathlib.Path(new_db_path)
+        if new_db_path.name == "user_data.db":
             return new_db_path
-          elif new_db_path.suffix=="":
-            return pathlib.Path(new_db_path,"user_data.db")
-          else:
-              return pathlib.Path(pathlib.Path(new_db_path).parent,"user_data.db")
-              
-          
+        elif new_db_path.suffix == "":
+            return pathlib.Path(new_db_path, "user_data.db")
+        else:
+            return pathlib.Path(pathlib.Path(new_db_path).parent, "user_data.db")
 
     async def _data_initializer(self):
         if not self._data_init:
@@ -152,14 +149,14 @@ class MergeDatabase:
         self._data_init = True
 
     async def merge_database(self):
-        old_root_folder=pathlib.Path(self._old_db_folder)
-        new_db_path=pathlib.Path(self._new_db)
+        old_root_folder = pathlib.Path(self._old_db_folder)
+        new_db_path = pathlib.Path(self._new_db)
         if not pathlib.Path(old_root_folder).is_dir():
             raise FileNotFoundError("Path is not dir")
         new_db_path.parent.mkdir(exist_ok=True, parents=True)
-        failures={}
-        success={}
-        empty_list=[]
+        failures = {}
+        success = {}
+        empty_list = []
         for ele in paths_db.get_all_db(old_root_folder):
             if ele == new_db_path:
                 continue
@@ -167,7 +164,9 @@ class MergeDatabase:
             try:
                 await create_tables(db_path=ele)
                 if await empty(db_path=ele):
-                    empty_list.append({"path":str(ele),"message":"skipped because table was empty"})
+                    empty_list.append(
+                        {"path": str(ele), "message": "skipped because table was empty"}
+                    )
                     continue
                 model_id = get_single_model_via_profile(db_path=ele)
                 if not model_id:
@@ -176,23 +175,34 @@ class MergeDatabase:
                     raise Exception("Found model_id was not numeric")
                 await modify_tables(model_id=model_id, db_path=ele)
                 await self.merge_individual(ele)
-                success.update({model_id:{"path":str(ele),"model_id":model_id,"message":"merge success"}})
+                success.update(
+                    {
+                        model_id: {
+                            "path": str(ele),
+                            "model_id": model_id,
+                            "message": "merge success",
+                        }
+                    }
+                )
 
             except Exception as E:
-                failures.update({ele:{"path": str(ele), "reason": E}})
+                failures.update({ele: {"path": str(ele), "reason": E}})
                 log.warning(f"Issue getting required info for {ele}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
         log.info(
             "\n\n\n".join(
                 list(
-                    map(lambda x: str([(key, value) for key, value in x.items()]), failures)
+                    map(
+                        lambda x: str([(key, value) for key, value in x.items()]),
+                        failures,
+                    )
                 )
             )
-        )  
-        return list(failures.items()),list(success.items()),empty_list
-          
-    async def merge_individual(self,db_path):
+        )
+        return list(failures.items()), list(success.items()), empty_list
+
+    async def merge_individual(self, db_path):
         await self.merge_media_helper(db_path)
         await self.merge_label_helper(db_path)
         await self.merge_posts_helper(db_path)

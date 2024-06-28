@@ -1,14 +1,14 @@
 import asyncio
 import json
 import logging
+import multiprocessing
 import os
 import platform
 import subprocess
 import sys
 
-import multiprocess
-import multiprocessing
 import aioprocessing
+import multiprocess
 import psutil
 from setproctitle import setproctitle
 
@@ -34,6 +34,7 @@ def getcpu_count():
     else:
         return psutil.cpu_count()
 
+
 def getOpenFiles(unique=True):
     match = set()
     out = []
@@ -50,23 +51,23 @@ def getOpenFiles(unique=True):
 def set_mulitproc_start_type():
     plat = platform.system()
     if is_frozen():
-        f_method="spawn"
+        f_method = "spawn"
         multiprocess.set_start_method(f_method)
         multiprocessing.set_start_method(f_method)
     elif plat == "Darwin":
-        d_method="spawn"
+        d_method = "spawn"
         multiprocess.set_start_method(d_method)
         multiprocessing.set_start_method(d_method)
     elif plat == "Windows":
-        w_method="spawn"
+        w_method = "spawn"
         multiprocess.set_start_method(w_method)
         multiprocessing.set_start_method(w_method)
     else:
-        o_method="forkserver"
+        o_method = "forkserver"
         multiprocess.set_start_method(o_method)
         multiprocessing.set_start_method(o_method)
-    #additional for mac
-    if plat=="Darwin":
+    # additional for mac
+    if plat == "Darwin":
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         os.environ["no_proxy"] = "*"
 

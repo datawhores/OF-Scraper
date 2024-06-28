@@ -23,10 +23,9 @@ from rich.console import Console
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 
 console = Console()
-import ofscraper.utils.auth.warning.print as auth_warning_print
-
 
 
 def auth_prompt(auth) -> dict:
@@ -254,6 +253,7 @@ def reset_auth_prompt() -> bool:
     )
     return questions[name]
 
+
 def check_auth_prompt(auth) -> bool:
 
     name = "input"
@@ -263,7 +263,7 @@ def check_auth_prompt(auth) -> bool:
                 "type": "list",
                 "name": name,
                 "message": "Is the auth information correct",
-                "call":partial(auth_warning_print.print_auth_warning,auth),
+                "call": partial(print_auth_warning, auth),
                 "choices": [
                     Choice(True, "Yes"),
                     Choice(False, "No"),

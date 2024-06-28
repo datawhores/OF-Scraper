@@ -1,8 +1,9 @@
 import ofscraper.utils.constants as constants
 from ofscraper.utils.logs.helpers import is_trace
 
-
 log = logging.getLogger("shared")
+
+
 def trace_log_media(count, media, filter_str):
     if not is_trace():
         return

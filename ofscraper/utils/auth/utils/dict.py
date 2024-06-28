@@ -13,6 +13,7 @@ r"""
 
 import json
 import logging
+
 import ofscraper.utils.paths.common as common_paths
 
 log = logging.getLogger("shared")
@@ -40,9 +41,3 @@ def get_empty():
         "user_agent": "",
         "x-bc": "",
     }
-
-
-
-
-
-

@@ -2,8 +2,8 @@ import logging
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.config as config_
-import ofscraper.utils.config.utils.context as config_context
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.config.utils.context as config_context
 import ofscraper.utils.console as console_
 
 console = console_.get_shared_console()
@@ -70,6 +70,7 @@ def response_type():
         config_file.open_config()
         updated_config = prompts.response_type()
     update_config_helper(updated_config)
+
 
 def content_config():
     with config_context.config_context():

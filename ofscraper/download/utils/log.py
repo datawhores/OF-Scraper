@@ -2,7 +2,7 @@ import re
 
 from humanfriendly import format_size
 
-import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 
@@ -57,40 +57,72 @@ downloads total \\[{common_globals.video_count} videos, {common_globals.audio_co
 
 
 def final_log(username, log=None):
-    log=(log or common_globals.log)
+    log = log or common_globals.log
     log.error("\n")
-    log.error(
-            final_log_text(username)
-    )
+    log.error(final_log_text(username))
     log.error("\n")
+
 
 def final_log_text(username):
-    total_count=common_globals.audio_count+common_globals.photo_count+common_globals.video_count
-    size_log=f"[bold green]{format_size(common_globals.total_bytes )}[/bold green]"
+    total_count = (
+        common_globals.audio_count
+        + common_globals.photo_count
+        + common_globals.video_count
+    )
+    size_log = f"[bold green]{format_size(common_globals.total_bytes )}[/bold green]"
 
-    
-    photo_log=f"[bold green]{common_globals.photo_count} photos[/bold green]"if common_globals.photo_count>0 else f"{common_globals.photo_count} photos"
+    photo_log = (
+        f"[bold green]{common_globals.photo_count} photos[/bold green]"
+        if common_globals.photo_count > 0
+        else f"{common_globals.photo_count} photos"
+    )
 
-    audio_log=f"[bold green]{common_globals.audio_count} audios[/bold green]"if common_globals.audio_count>0 else f"{common_globals.audio_count} audios"
+    audio_log = (
+        f"[bold green]{common_globals.audio_count} audios[/bold green]"
+        if common_globals.audio_count > 0
+        else f"{common_globals.audio_count} audios"
+    )
 
+    video_log = (
+        f"[bold green]{common_globals.video_count} videos[/bold green]"
+        if common_globals.video_count > 0
+        else f"{common_globals.video_count} videos"
+    )
 
-    video_log=f"[bold green]{common_globals.video_count} videos[/bold green]"if common_globals.video_count>0 else f"{common_globals.video_count} videos"
+    failed_log = (
+        f"[bold red]{common_globals.skipped} failed[/bold red]"
+        if common_globals.skipped > 0
+        else f"{common_globals.skipped} failed"
+    )
 
-
-    failed_log=f"[bold red]{common_globals.skipped} failed[/bold red]"if common_globals.skipped>0 else f"{common_globals.skipped} failed"
-
-    log_format=None
-    skipped_log=""
+    log_format = None
+    skipped_log = ""
     if read_args.retriveArgs().metadata:
-        log_format="[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
-        skipped_log=f"[bold yellow]{common_globals.forced_skipped} metadata unchanged[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} items unchanged"
+        log_format = "[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
+        skipped_log = (
+            f"[bold yellow]{common_globals.forced_skipped} metadata unchanged[/bold yellow]"
+            if common_globals.forced_skipped > 0
+            else f"{common_globals.forced_skipped} items unchanged"
+        )
     else:
-        log_format="[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
-        skipped_log=f"[bold yellow]{common_globals.forced_skipped} skipped[/bold yellow]"if common_globals.forced_skipped>0 else f"{common_globals.forced_skipped} skipped"
+        log_format = "[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
+        skipped_log = (
+            f"[bold yellow]{common_globals.forced_skipped} skipped[/bold yellow]"
+            if common_globals.forced_skipped > 0
+            else f"{common_globals.forced_skipped} skipped"
+        )
 
-    return log_format.format(username=username,total_count=total_count,video_log=video_log,audio_log=audio_log,skipped_log=skipped_log,failed_log=failed_log,photo_log=photo_log,size_log=size_log)
+    return log_format.format(
+        username=username,
+        total_count=total_count,
+        video_log=video_log,
+        audio_log=audio_log,
+        skipped_log=skipped_log,
+        failed_log=failed_log,
+        photo_log=photo_log,
+        size_log=size_log,
+    )
 
-        
 
 def empty_log(username):
 
@@ -100,15 +132,11 @@ def empty_log(username):
         return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
-
-
-
-
-
 def text_log(username, value=0, fails=0, exists=0, log=None):
     (log or common_globals.log).warning(
         f"[bold]{username}[/bold] {value} text, {exists} skipped, {fails} failed"
     )
 
-def set_media_log(log,ele):
-    ele.log=log
+
+def set_media_log(log, ele):
+    ele.log = log

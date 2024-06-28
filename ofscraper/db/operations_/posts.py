@@ -15,17 +15,15 @@ import contextlib
 import logging
 import sqlite3
 
-
 import arrow
 from rich.console import Console
 
+import ofscraper.classes.posts as posts_
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.profile import get_single_model_via_profile
-import ofscraper.classes.posts as posts_
-
 
 console = Console()
 log = logging.getLogger("shared")
@@ -91,7 +89,6 @@ SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 streamsPostInfo = """
 SELECT created_at,post_id FROM posts where stream=(1) and model_id=(?)
 """
-
 
 
 @wrapper.operation_wrapper_async
@@ -293,6 +290,8 @@ def add_column_post_opened(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
+
+
 @wrapper.operation_wrapper_async
 def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -305,7 +304,6 @@ def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) ->
         ]
 
 
-
 @wrapper.operation_wrapper_async
 def get_streams_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -316,6 +314,8 @@ def get_streams_post_info(model_id=None, username=None, conn=None, **kwargs) -> 
             dict(ele, created_at=arrow.get(ele.get("created_at") or 0).float_timestamp)
             for ele in data
         ]
+
+
 async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
@@ -335,12 +335,12 @@ async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwar
 
 async def make_post_table_changes(all_posts, model_id=None, username=None, **kwargs):
     all_posts_data = list(
-                    map(
-                        lambda x: posts_.Post(x, model_id, username) if isinstance(x,dict) else x,
-                        all_posts
-                    )
+        map(
+            lambda x: posts_.Post(x, model_id, username) if isinstance(x, dict) else x,
+            all_posts,
+        )
     )
-    
+
     curr_id = set(await get_all_post_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_posts_data))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_posts_data))
@@ -363,6 +363,7 @@ async def get_youngest_archived_date(model_id=None, username=None, **kwargs):
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"] or 0
 
+
 async def get_oldest_streams_date(model_id=None, username=None, **kwargs):
     data = await media.get_streams_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[0]
@@ -373,8 +374,6 @@ async def get_youngest_streams_date(model_id=None, username=None, **kwargs):
     data = await media.get_streams_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"] or 0
-
-
 
 
 async def get_oldest_timeline_date(model_id=None, username=None, **kwargs):

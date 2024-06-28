@@ -2,7 +2,7 @@ import functools
 
 import cloup as click
 
-import ofscraper.utils.args.parse.arguments.helpers.date as date_helper
+import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 
 
 def check_mode_changes(func):

@@ -13,7 +13,7 @@ theme = Theme(
     }
 )
 
-quiet = low_output() == True
+quiet = low_output() is True
 shared_console = None
 
 other_console = None
@@ -28,7 +28,7 @@ def get_console():
 def get_shared_console():
     global shared_console
     if not shared_console:
-        shared_console = Console(theme=theme, quiet=quiet,markup=True)
+        shared_console = Console(theme=theme, quiet=quiet, markup=True)
 
     return shared_console
 
@@ -36,7 +36,7 @@ def get_shared_console():
 def get_other_console():
     global other_console
     if not other_console:
-        other_console = Console(theme=theme,markup=True)
+        other_console = Console(theme=theme, markup=True)
     return other_console
 
 

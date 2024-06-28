@@ -38,5 +38,5 @@ def print_current_profile():
 
 
 def profile_name_fixer(input):
-    input=str(input)
+    input = str(input)
     return f"{re.sub('_profile','', input)}_profile" if input else None

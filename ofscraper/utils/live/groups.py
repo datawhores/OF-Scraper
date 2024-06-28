@@ -1,6 +1,5 @@
 from rich.console import Group
 
-import ofscraper.utils.console as console
 import ofscraper.utils.settings as settings
 from ofscraper.utils.live.panel import Blue_Panel
 from ofscraper.utils.live.progress import (

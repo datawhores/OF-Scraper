@@ -15,17 +15,16 @@ import asyncio
 import logging
 import traceback
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.check import update_check
-
 
 log = logging.getLogger("shared")
-API="labels"
+API = "labels"
 
 
 @run
@@ -41,8 +40,8 @@ async def get_labels(model_id, c=None):
             )
         )
     )
-    data=await get_posts_for_labels(labels_, model_id, c=c)
-    update_check(data, model_id,None,API)
+    data = await get_posts_for_labels(labels_, model_id, c=c)
+    update_check(data, model_id, None, API)
 
     return data
 
@@ -64,10 +63,6 @@ async def get_posts_for_labels(labels, model_id, c=None):
     ]
     labels_final = await process_tasks_get_posts_for_labels(tasks, labels)
     return labels_final
-
-
-
-
 
 
 async def process_tasks_labels(tasks):
@@ -128,7 +123,7 @@ async def process_tasks_labels(tasks):
 async def scrape_labels(c, model_id, offset=0):
     labels = None
     new_tasks = []
-    
+
     url = constants.getattr("labelsEP").format(model_id, offset)
     task = None
 
@@ -138,7 +133,9 @@ async def scrape_labels(c, model_id, offset=0):
             f"labels offset -> {offset}",
             visible=True,
         )
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             data = await r.json_()
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -171,7 +168,6 @@ async def scrape_labels(c, model_id, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
 
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -259,14 +255,15 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     tasks = None
 
-    
     try:
 
         task = progress_utils.add_api_job_task(
             f": getting posts from label -> {label['name']}",
             visible=True,
         )
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             data = await r.json_()
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -302,7 +299,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -329,6 +326,7 @@ def get_default_label_dict(labels):
         output[label["id"]]["seen"] = set()
         output[label["id"]]["posts"] = []
     return output
+
 
 def trace_log_task(responseArray, header=None):
     if not is_trace():

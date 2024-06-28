@@ -1,8 +1,6 @@
-from textual.containers import Horizontal
-from textual.widgets import Checkbox, SelectionList
+from textual.widgets import SelectionList
 
 from ofscraper.classes.table.fields.selectfield import SelectField
-from ofscraper.classes.table.status import status
 
 
 class MediaField(SelectField):

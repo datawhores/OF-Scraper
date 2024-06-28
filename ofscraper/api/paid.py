@@ -15,18 +15,18 @@ import asyncio
 import logging
 import traceback
 
-import ofscraper.api.common.logs as common_logs
+import ofscraper.api.utils.logs as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.check import update_check
-
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
-API="Purchased"
+API = "Purchased"
+
 
 @run
 async def get_paid_posts(username, model_id, c=None):
@@ -34,7 +34,7 @@ async def get_paid_posts(username, model_id, c=None):
 
     tasks.append(asyncio.create_task(scrape_paid(c, username)))
     data = await process_tasks(tasks)
-    update_check(data, model_id, None,API)
+    update_check(data, model_id, None, API)
     return data
 
 
@@ -104,8 +104,6 @@ async def scrape_paid(c, username, offset=0):
     """
     media = None
 
-    
-
     new_tasks = []
     url = constants.getattr("purchased_contentEP").format(offset, username)
     try:
@@ -115,7 +113,9 @@ async def scrape_paid(c, username, offset=0):
             visible=True,
         )
 
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             data = await r.json_()
             log.trace("paid raw {posts}".format(posts=data))
@@ -136,7 +136,7 @@ async def scrape_paid(c, username, offset=0):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -212,9 +212,9 @@ async def create_tasks_scrape_paid():
                         )
                     )
                     new_tasks.extend(new_tasks_batch)
-                    
+
                 except Exception as E:
-                    
+
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
             tasks = new_tasks
@@ -240,8 +240,7 @@ def create_all_paid_dict(paid_content):
     for ele in paid_content:
         user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
         user_dict.setdefault(str(user_id), []).append(ele)
-    [ update_check(val, key, None,API)
- for key, val in user_dict.items()]
+    [update_check(val, key, None, API) for key, val in user_dict.items()]
     return user_dict
 
 
@@ -251,7 +250,6 @@ async def scrape_all_paid(c, offset=0, required=None):
     """
     media = None
 
-    
     new_tasks = []
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
@@ -261,7 +259,9 @@ async def scrape_all_paid(c, offset=0, required=None):
             visible=True,
         )
 
-        async with c.requests_async(url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
 
             log_id = f"offset {offset or 0}:"
             data = await r.json_()
@@ -299,7 +299,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
