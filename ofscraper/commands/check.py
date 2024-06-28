@@ -29,21 +29,20 @@ import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.classes.table.row_names import row_names_all
-from ofscraper.commands.helpers.strings import check_str
+from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations_.media import batch_mediainsert,get_media_post_ids_downloaded
-from ofscraper.download.shared.text import textDownloader
+from ofscraper.download.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 from ofscraper.db.operations import make_changes_to_content_tables
-from ofscraper.api.common.check import reset_check,read_check,set_check
-from ofscraper.api.common.timeline import get_individual_timeline_post
+from ofscraper.api.utils.check import reset_check,read_check,set_check
+from ofscraper.api.utils.timeline import get_individual_timeline_post
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
