@@ -16,55 +16,23 @@ import traceback
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.config.data as data
-import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
 from ofscraper.__version__ import __version__
-from ofscraper.commands.scraper.runner import runner
+from ofscraper.commands.scraper.helpers.print import print_start
+from ofscraper.commands.scraper.helpers.prompt import process_prompts
+from ofscraper.commands.scraper.helpers.select import process_selected_areas
+
 
 log = logging.getLogger("shared")
-
-
-def process_selected_areas():
-    log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
-    runner()
-    while True:
-        if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
-            break
-        action = prompts.action_prompt()
-        if action == "main":
-            process_prompts()
-            break
-        elif action == "quit":
-            break
-        else:
-            menu.get_count() > 0 and menu.reset_menu_helper()
-            runner()
-            menu.update_count()
 
 
 def daemon_process():
     run.daemon_run_helper()
     pass
 
-
-@exit.exit_wrapper
-def process_prompts():
-    while True:
-        if menu.main_menu_action():
-            break
-        elif prompts.continue_prompt() == "No":
-            break
-
-
-def print_start():
-    console.get_shared_console().print(
-        f"[bold green]Version {__version__}[/bold green]"
-    )
 
 
 def main():
@@ -110,3 +78,6 @@ def scrapper():
         process_selected_areas()
     elif len(args.action) == 0:
         process_prompts()
+
+
+
