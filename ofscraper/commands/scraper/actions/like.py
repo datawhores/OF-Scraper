@@ -124,15 +124,17 @@ def _like(model_id, username,ids: list, like_action: bool):
             for _, func in enumerate(tasks):
                 out = func()
                 post+=1
-                #sleep
+                #no sleep if cache
                 if out == 0:
                     sleep_duration = 0
+                #random sleep else
                 else:
                     sleep_duration=random.uniform(min_duration, max_duration)
-                #values
+                #if toggled once
                 if out == 1:
                     liked=+1
                     progress_utils.increment_like_task(task2)
+                #if failed
                 elif out==3:
                     failed+=1
                 progress_utils.increment_like_task(task)
@@ -152,10 +154,10 @@ def get_final_like_log(like_action,username,failed,post,liked):
 
     text_out=""
     if post==0:
-        text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post} post checked), ({liked_log}, {alt_liked_log}), {failed} post failed]"
+        text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post} post checked and kept at {title}), ({liked_log}, {alt_liked_log}), {failed} post failed]"
         log.warning(text_out)
     else:
-        text_out=f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/deep_sky_blue2]"
+        text_out=f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked and kept at {title}[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/deep_sky_blue2]"
         log.warning(text_out)
     return text_out
 
@@ -198,7 +200,6 @@ def _toggle_unlike_requests(c, id, model_id):
         and cache.get(f"liked_status_{id}", None) == False
     ):
         log.debug(f"ID: {id} marked as unliked in cache")
-
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id,sleeper)
