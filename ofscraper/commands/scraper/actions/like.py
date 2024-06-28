@@ -148,16 +148,17 @@ def get_final_like_log(like_action,username,failed,post,liked):
     action=title.lower()
     unchanged=post-failed-liked
 
-    liked_log=f"{liked} post changes to {action}" if liked==0  else f"[green]{liked} post changes to {action}[/green]"
-    alt_liked_log=f"{unchanged} posts not changed" if unchanged==0  else f"[yellow]{unchanged} post not changed[/yellow]"
-    failed_log=f"{failed} post failed" if failed==0  else f"[red]{failed} post failed[/red]"
+    liked_changed_log=f"{liked} post changed to {action}" if liked==0  else f"[green]{liked} post changed to {action}[/green]"
+    like_unchanged_log=f"{unchanged} posts not changed" if unchanged==0  else f"[yellow]{unchanged} post not changed[/yellow]"
+    failed_log=f"0 post failed" if failed==0  else f"[red]{failed} post failed[/red]"
+    post_check_log=f"{post} posts checked and kept at {action}"
 
     text_out=""
     if post==0:
-        text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post} post checked and kept at {title}), ({liked_log}, {alt_liked_log}), {failed} post failed]"
+        text_out=f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post_check_log}, ({liked_changed_log}, {like_unchanged_log}), {failed_log}]"
         log.warning(text_out)
     else:
-        text_out=f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post} post checked and kept at {title}[/yellow], ({liked_log}, {alt_liked_log}), {failed_log}][/deep_sky_blue2]"
+        text_out=f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post_check_log}[/yellow], ({liked_changed_log}, {like_unchanged_log}), {failed_log}][/deep_sky_blue2]"
         log.warning(text_out)
     return text_out
 

@@ -19,7 +19,7 @@ from ofscraper.commands.helpers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
-from ofscraper.commands.scraper.post import process_areas
+from ofscraper.commands.helpers.post import process_areas
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
 

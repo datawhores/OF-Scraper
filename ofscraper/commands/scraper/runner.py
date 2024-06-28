@@ -25,7 +25,7 @@ from ofscraper.commands.helpers.user_first import (
 from ofscraper.commands.helpers.shared import run_action_bool
 
 from ofscraper.commands.helpers.final_log import final_log
-from ofscraper.commands.scraper.post import post_media_process
+from ofscraper.commands.helpers.post import post_media_process
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
