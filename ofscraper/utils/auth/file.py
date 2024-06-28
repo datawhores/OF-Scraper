@@ -15,7 +15,7 @@ import json
 
 from rich.console import Console
 
-import ofscraper.utils.auth.context as auth_context
+import ofscraper.utils.auth.utils.context as auth_context
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.paths.common as common_paths

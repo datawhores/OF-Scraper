@@ -16,7 +16,7 @@ from humanfriendly import parse_size
 
 import ofscraper.const.constants as constants
 import ofscraper.utils.config.file as config_file
-import ofscraper.utils.config.wrapper as wrapper
+import ofscraper.utils.config.utils.wrapper as wrapper
 import ofscraper.utils.constants as constants_attr
 
 

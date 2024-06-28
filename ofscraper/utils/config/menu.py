@@ -2,7 +2,7 @@ import logging
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.config as config_
-import ofscraper.utils.config.context as config_context
+import ofscraper.utils.config.utils.context as config_context
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console_
 

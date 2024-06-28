@@ -6,7 +6,6 @@ import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid
 import ofscraper.api.profile as profile
-import ofscraper.api.timeline as timeline
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
