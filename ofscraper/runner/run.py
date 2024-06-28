@@ -7,7 +7,6 @@ import ofscraper.runner.exit as exit_manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit_context
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
 
@@ -20,7 +19,7 @@ def main():
         try:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
-        except KeyboardInterrupt as E:
+        except KeyboardInterrupt:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
     except Exception as E:

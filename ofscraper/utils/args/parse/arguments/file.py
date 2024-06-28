@@ -24,5 +24,3 @@ space_replacer_option = click.option(
 text_length_option = click.option(
     "-tl", "--textlength", help="max length of text", type=click.INT
 )
-
-

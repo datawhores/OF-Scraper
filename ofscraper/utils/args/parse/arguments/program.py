@@ -1,7 +1,6 @@
 import re
 
 import cloup as click
-from humanfriendly import parse_size
 
 from ofscraper.__version__ import __version__
 
@@ -29,5 +28,3 @@ Profiles are always within the config file parent directory
         f"{re.sub('_profile','', value)}_profile" if value else None
     ),
 )
-
-

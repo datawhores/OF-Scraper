@@ -45,5 +45,3 @@ console_rich_toggle = click.option(
     help="Turn off rich live display features",
     is_flag=True,
 )
-
-

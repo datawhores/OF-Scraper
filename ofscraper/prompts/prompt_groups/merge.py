@@ -1,6 +1,5 @@
-import pathlib
 import inspect
-
+import pathlib
 
 from InquirerPy.base import Choice
 from InquirerPy.validator import PathValidator
@@ -8,9 +7,8 @@ from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-from ofscraper.utils.paths.db import get_default_merge,get_default_current
 import ofscraper.utils.console as console
-
+from ofscraper.utils.paths.db import get_default_current, get_default_merge
 
 models = None
 
@@ -87,21 +85,22 @@ def confirm_prompt_db(folder, new_db) -> bool:
     )
     return answer[name]
 
-def confirm_db_continue(completed,skipped) -> bool:
+
+def confirm_db_continue(completed, skipped) -> bool:
     name = "continue"
-    answer = promptClasses.batchConverter(
+    promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
                 "message": "Do another merge: ",
-                "call":lambda:console.get_console().print(
-                inspect.cleandoc(
-                f""" 
+                "call": lambda: console.get_console().print(
+                    inspect.cleandoc(
+                        f""" 
                 Merged: {len(completed)} db files
                 Skipped: {len(skipped)} db files
-                """)
-
+                """
+                    )
                 ),
                 "choices": [
                     Choice(True, "Yes"),
@@ -112,6 +111,7 @@ def confirm_db_continue(completed,skipped) -> bool:
             }
         ]
     )
+
 
 def model_id_prompt():
     answer = promptClasses.batchConverter(

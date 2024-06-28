@@ -41,7 +41,7 @@ class MultiChoice(click.Choice):
             )
 
         for normed_value in normed_values:
-            if not normed_value in normed_choices:
+            if normed_value not in normed_choices:
                 choices_str = ", ".join(map(repr, self.choices))
                 self.fail(
                     ngettext(

@@ -1,6 +1,5 @@
 import asyncio
 
-import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.settings as settings
 from ofscraper.download.shared.send.message import send_msg

@@ -66,7 +66,7 @@ def areas_prompt() -> list:
         ]
     )
     answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] != None else answers[name][:-1]
+    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def like_areas_prompt(like=True) -> list:
@@ -90,7 +90,7 @@ def like_areas_prompt(like=True) -> list:
         ]
     )
     answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] != None else answers[name][:-1]
+    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def download_areas_prompt() -> list:
@@ -118,7 +118,7 @@ def download_areas_prompt() -> list:
         ]
     )
     answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] != None else answers[name][:-1]
+    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def metadata_areas_prompt() -> list:
@@ -147,7 +147,7 @@ def metadata_areas_prompt() -> list:
         ]
     )
     answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] != None else answers[name][:-1]
+    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def metadata_anon_areas_prompt() -> list:
@@ -171,7 +171,7 @@ def metadata_anon_areas_prompt() -> list:
         ]
     )
     answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] != None else answers[name][:-1]
+    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def scrape_labels_prompt():

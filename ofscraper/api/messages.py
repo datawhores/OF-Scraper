@@ -19,11 +19,14 @@ import arrow
 
 import ofscraper.api.common.logs as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
-from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.settings as settings
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.check import update_check
+from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
     get_messages_media,
@@ -34,13 +37,8 @@ from ofscraper.db.operations_.messages import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.check import update_check
 
-
-
-API="messages"
+API = "messages"
 log = logging.getLogger("shared")
 sleeper = None
 
@@ -49,8 +47,10 @@ sleeper = None
 async def get_messages(model_id, username, forced_after=None, c=None):
     global after
     after = await get_after(model_id, username, forced_after)
-    if len(read_args.retriveArgs().post_id or [])==0 or len(read_args.retriveArgs().post_id or [])>constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
-        oldmessages=await get_old_messages(model_id,username)
+    if len(read_args.retriveArgs().post_id or []) == 0 or len(
+        read_args.retriveArgs().post_id or []
+    ) > constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
+        oldmessages = await get_old_messages(model_id, username)
         before = (read_args.retriveArgs().before).float_timestamp
         log_after_before(after, before, username)
         filteredArray = get_filterArray(after, before, oldmessages)
@@ -59,14 +59,17 @@ async def get_messages(model_id, username, forced_after=None, c=None):
         get_sleeper(reset=True)
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
         data = await process_tasks(tasks)
-    elif len(read_args.retriveArgs().post_id or [])<=constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
-        data=process_individual(model_id)
-    update_check(data, model_id, after,API)
+    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+        "MAX_MESSAGES_INDIVIDUAL_SEARCH"
+    ):
+        data = process_individual(model_id)
+    update_check(data, model_id, after, API)
     return data
 
-async def get_old_messages(model_id,username):
+
+async def get_old_messages(model_id, username):
     oldmessages = None
-    if read_full_after_scan_check(model_id,API):
+    if read_full_after_scan_check(model_id, API):
         return []
     if not settings.get_api_cache_disabled():
         oldmessages = await get_messages_post_info(model_id=model_id, username=username)
@@ -82,17 +85,20 @@ async def get_old_messages(model_id,username):
     trace_log_old(oldmessages)
     return oldmessages
 
+
 def process_individual(model_id):
-    data=[]
+    data = []
     for ele in read_args.retriveArgs().post_id:
         try:
-            post=get_individual_messages_post(model_id,ele)
+            post = get_individual_messages_post(model_id, ele)
             if not post.get("error"):
                 data.append(post)
-        except  Exception as E:
+        except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-    return data   
+    return data
+
+
 async def process_tasks(tasks):
     page_count = 0
     responseArray = []
@@ -298,7 +304,6 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     new_tasks = []
     task = None
 
-    
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = progress_utils.add_api_job_task(
@@ -367,7 +372,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
-        
+
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
@@ -388,8 +393,8 @@ def get_individual_messages_post(model_id, postid):
 
 
 async def get_after(model_id, username, forced_after=None):
-    prechecks=get_after_pre_checks(model_id,API, forced_after=forced_after)
-    if prechecks!=None:
+    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+    if prechecks is not None:
         return prechecks
     curr = await get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
@@ -412,8 +417,12 @@ async def get_after(model_id, username, forced_after=None):
     missing_items = list(
         sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0))
     )
-    log.info(f"Number of messages marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}")
-    log.info(f"Number of messages marked as missing/undownloaded {len(list(missing_items))}")
+    log.info(
+        f"Number of messages marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}"
+    )
+    log.info(
+        f"Number of messages marked as missing/undownloaded {len(list(missing_items))}"
+    )
     if len(list(missing_items)) == 0:
         log.debug(
             "Using newest db date because,all downloads in db are marked as downloaded"

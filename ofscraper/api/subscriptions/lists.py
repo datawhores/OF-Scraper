@@ -144,7 +144,9 @@ async def scrape_for_list(c, offset=0):
             f" : getting lists offset -> {offset}",
             visible=True,
         )
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
             data = await r.json_()
             out_list = data["list"] or []
             log.debug(
@@ -247,7 +249,9 @@ async def scrape_list_members(c, item, offset=0):
             visible=True,
         )
 
-        async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+        async with c.requests_async(
+            url=url, forced=constants.getattr("API_FORCE_KEY")
+        ) as r:
             log_id = f"offset:{offset} list:{item.get('name')} =>"
             data = await r.json_()
             users = data.get("list") or []

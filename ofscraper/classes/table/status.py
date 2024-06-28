@@ -21,15 +21,13 @@ class Status:
         self._status.setdefault("media_id", None)
         self._status.setdefault("post_id", None)
 
-
-
     def validate(self, key, test):
         key = key.lower()
         if key in {"unlocked", "downloaded", "mediatype", "responsetype"}:
             return self._bool_helper(key, test)
         elif key in {"other_posts_with_media", "post_media_count"}:
             return self._other_posts_with_media_helper(key, test)
-        elif key in {"username","media_id","post_id"}:
+        elif key in {"username", "media_id", "post_id"}:
             return self._generic_helper(key, test)
         elif key == "post_date":
             return self._date_helper(test)
@@ -38,9 +36,9 @@ class Status:
         return True
 
     def _generic_helper(self, key, test):
-        if self._status[key] == None:
+        if self._status[key] is None:
             return True
-        if key=="media_id":
+        if key == "media_id":
             pass
         return str(test).lower() == str(self._status[key]).lower()
 
@@ -105,7 +103,7 @@ class Status:
         return True
 
     def _bool_helper(self, key, test):
-        if self._status[key] == None:
+        if self._status[key] is None:
             return True
         elif test in self._status[key]:
             return True
@@ -126,4 +124,6 @@ class Status:
 
     def __setitem__(self, key, value):
         self._status[key] = value
+
+
 status = Status()

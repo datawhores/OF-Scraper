@@ -30,19 +30,14 @@ import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
-from ofscraper.__version__ import __version__
 from ofscraper.commands.helpers.final_log import final_log
 from ofscraper.commands.helpers.shared import run_action_bool
-from ofscraper.commands.scraper.helpers.prepare import prepare
 from ofscraper.commands.scraper.helpers.print import print_start
 from ofscraper.commands.scraper.helpers.prompt import process_prompts
 from ofscraper.commands.scraper.helpers.scrape_context import scrape_context_manager
 from ofscraper.commands.scraper.normal import process_users_actions_normal
 from ofscraper.commands.scraper.userfirst import process_users_actions_user_first
 from ofscraper.utils.checkers import check_auth
-
-log = logging.getLogger("shared")
-
 
 log = logging.getLogger("shared")
 
@@ -150,7 +145,7 @@ def prepare(menu=False):
     profile_tools.print_current_profile()
     init.print_sign_status()
     actions.select_areas()
-    if menu == True:
+    if menu is True:
         actions.set_scrape_paid()
 
     userdata = userselector.getselected_usernames(rescan=False)

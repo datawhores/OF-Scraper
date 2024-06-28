@@ -62,7 +62,7 @@ async def size_checker(path, ele, total, name=None):
 
 
 async def check_forced_skip(ele, total):
-    if total == None:
+    if total is None:
         return
     total = int(total)
     if total == 0:

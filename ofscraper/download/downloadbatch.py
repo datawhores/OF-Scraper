@@ -14,7 +14,6 @@ import more_itertools
 import psutil
 from aioprocessing import AioPipe
 
-import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
@@ -353,7 +352,7 @@ def setpriority():
 async def consumer(queue):
     while True:
         data = await queue.get()
-        if data == None:
+        if data is None:
             queue.task_done()
             break
         else:

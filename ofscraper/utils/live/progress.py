@@ -1,4 +1,3 @@
-from rich.live import Live
 from rich.progress import (
     BarColumn,
     DownloadColumn,

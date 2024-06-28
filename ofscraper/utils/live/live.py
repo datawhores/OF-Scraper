@@ -19,6 +19,8 @@ def get_live(recreate=False):
 def set_live(new_live):
     global live
     live = new_live
+
+
 def stop_live():
     global live
     if live:

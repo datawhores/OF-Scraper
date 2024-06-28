@@ -1,7 +1,6 @@
 from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 from ofscraper.download.shared.general import check_forced_skip, get_medialog
 from ofscraper.download.shared.log import path_to_file_logger

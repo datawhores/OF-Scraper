@@ -59,14 +59,14 @@ def getLevel(input_):
     DEBUG 10
     TRACE 5
     """
-    if input_ in {"WARNING","ERROR","INFO","DEBUG","TRACE","CRITICAL"}:
+    if input_ in {"WARNING", "ERROR", "INFO", "DEBUG", "TRACE", "CRITICAL"}:
         return input_
-    #for levels with different names
+    # for levels with different names
     return {
         "OFF": 100,
         "PROMPT": "ERROR",
         "LOW": "WARNING",
-        "WARN":"WARNING",
+        "WARN": "WARNING",
         "NORMAL": "INFO",
     }.get(input_, 100)
 

@@ -27,5 +27,6 @@ async def send_msg_win(msg):
     finally:
         common_globals.pipe_lock.release()
 
+
 async def send_msg_unix(msg):
     await common_globals.pipe.coro_send(msg)

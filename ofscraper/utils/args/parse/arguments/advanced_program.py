@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.const.constants import KEY_OPTIONS,DYNAMIC_OPTIONS
+from ofscraper.const.constants import DYNAMIC_OPTIONS, KEY_OPTIONS
 
 no_cache_option = click.option(
     "-nc",
@@ -55,4 +55,3 @@ download_script_option = click.option(
     addional args sent to script username, model_id, media json ,and post json
     """,
 )
-

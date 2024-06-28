@@ -316,10 +316,9 @@ def get_media_ids_downloaded_model(model_id=None, conn=None, **kwargs) -> list:
         cur.execute(allDLModelIDCheck, [model_id])
         return set([dict(row)["media_id"] for row in cur.fetchall()])
 
+
 @wrapper.operation_wrapper
-def get_media_post_ids(
-    model_id=None, username=None, conn=None, **kwargs
-) -> list:
+def get_media_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allPostIDCheck)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
@@ -332,6 +331,8 @@ def get_media_post_ids_downloaded(
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allPostIDDLCheck)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
+
+
 @wrapper.operation_wrapper
 def get_dupe_media_hashes(
     model_id=None, username=None, conn=None, mediatype=None, **kwargs
@@ -368,8 +369,8 @@ def download_media_update(
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        filename = filename or (filepath.name if filepath != None else None)
-        directory = directory or (filepath.parent if filepath != None else None)
+        filename = filename or (filepath.name if filepath is not None else None)
+        directory = directory or (filepath.parent if filepath is not None else None)
         update_media_table_via_api_helper(
             media, curr=curr, model_id=model_id, conn=conn
         )
@@ -465,22 +466,24 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "duration",
             "unlocked",
         ]
-        inputData=_media_cleaup_helper(inputData)
+        inputData = _media_cleaup_helper(inputData)
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertTransition, insertData)
         conn.commit()
+
+
 def _media_cleaup_helper(inputData):
-    output_dict=defaultdict(lambda:None)
+    output_dict = defaultdict(lambda: None)
     for ele in inputData:
-        key=(ele["media_id"],ele["post_id"],ele["model_id"])
+        key = (ele["media_id"], ele["post_id"], ele["model_id"])
         if output_dict[key]:
-            merged={}
-            past_data=output_dict[key]
+            merged = {}
+            past_data = output_dict[key]
             for inner_key in ele.keys():
-                merged[inner_key]=ele[inner_key] or past_data[inner_key]
-            output_dict[key]=merged
+                merged[inner_key] = ele[inner_key] or past_data[inner_key]
+            output_dict[key] = merged
         else:
-            output_dict[key]=ele
+            output_dict[key] = ele
     return output_dict.values()
 
 
@@ -544,6 +547,8 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
 
 
 run
+
+
 @wrapper.operation_wrapper_async
 def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -558,6 +563,7 @@ def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
             )
             for ele in data
         ]
+
 
 @run
 @wrapper.operation_wrapper_async
@@ -653,12 +659,14 @@ async def batch_mediainsert(media, **kwargs):
     for ele in media:
         mediaDict[(ele.id, ele.postid)] = ele
     write_media_table_via_api_batch(
-        list(filter(lambda x: (x.id, x.postid) not in curr, mediaDict.values())), **kwargs
+        list(filter(lambda x: (x.id, x.postid) not in curr, mediaDict.values())),
+        **kwargs,
     )
 
     update_media_table_via_api_batch(
         list(filter(lambda x: (x.id, x.postid) in curr, mediaDict.values())), **kwargs
     )
+
 
 async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(

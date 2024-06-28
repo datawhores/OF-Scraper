@@ -1,6 +1,5 @@
 import os
 import pathlib
-import re
 
 import ofscraper.const.constants as constants
 import ofscraper.utils.args.accessors.read as read_args
@@ -10,7 +9,6 @@ import ofscraper.utils.constants as constants_attr
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.tools as tools
-
 
 
 def getcachepath():
@@ -86,13 +84,12 @@ def getlogpath():
 
 def get_profile_path(name=None):
     if name:
-        profile=get_config_home() / name
+        profile = get_config_home() / name
     elif not read_args.retriveArgs().profile:
-        profile= get_config_home() / profile_data.get_current_config_profile()
+        profile = get_config_home() / profile_data.get_current_config_profile()
     else:
-        profile=get_config_home() / read_args.retriveArgs().profile
+        profile = get_config_home() / read_args.retriveArgs().profile
     return pathlib.Path(tools.profile_name_fixer(profile))
-    
 
 
 def get_save_location(config=None, mediatype=None):

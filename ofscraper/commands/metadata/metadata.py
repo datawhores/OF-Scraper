@@ -1,4 +1,4 @@
-"""
+r"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
@@ -13,30 +13,20 @@
 
 import logging
 
-import arrow
-
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.helpers.final_log import final_log
 from ofscraper.commands.helpers.shared import run_metadata_bool
-from ofscraper.commands.helpers.strings import mark_stray_str
 from ofscraper.commands.metadata.normal import process_users_metadata_normal
 from ofscraper.commands.metadata.paid import metadata_paid_all
 from ofscraper.commands.metadata.userfirst import metadata_user_first
 from ofscraper.commands.scraper.helpers.scrape_context import scrape_context_manager
-from ofscraper.db.operations_.media import (
-    batch_set_media_downloaded,
-    get_archived_media,
-    get_messages_media,
-    get_timeline_media,
-)
 from ofscraper.utils.checkers import check_auth
 
 log = logging.getLogger("shared")

@@ -25,7 +25,7 @@ log = logging.getLogger("shared")
 
 def get_num_selected():
     global PARSED_SUBS
-    return len(PARSED_SUBS) if PARSED_SUBS != None is None else None
+    return len(PARSED_SUBS) if PARSED_SUBS is not None is None else None
 
 
 def get_model_fromParsed(name):

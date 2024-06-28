@@ -4,7 +4,6 @@ import logging
 import pathlib
 import textwrap
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
 import aiofiles
 

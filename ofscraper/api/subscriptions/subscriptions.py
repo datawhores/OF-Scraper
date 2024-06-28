@@ -153,7 +153,9 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
         url = constants.getattr("subscriptionsActiveEP").format(offset)
         try:
             log.debug(f"usernames active offset {offset}")
-            async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+            async with c.requests_async(
+                url=url, forced=constants.getattr("API_FORCE_KEY")
+            ) as r:
                 subscriptions = (await r.json_())["list"]
                 log.debug(
                     f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
@@ -188,7 +190,9 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
         url = constants.getattr("subscriptionsExpiredEP").format(offset)
         try:
             log.debug(f"usernames offset expired {offset}")
-            async with c.requests_async(url=url,forced=constants.getattr("API_FORCE_KEY")) as r:
+            async with c.requests_async(
+                url=url, forced=constants.getattr("API_FORCE_KEY")
+            ) as r:
                 subscriptions = (await r.json_())["list"]
                 log.debug(
                     f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"

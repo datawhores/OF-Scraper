@@ -194,12 +194,12 @@ def get_neg_filter():
 
 
 def get_min_length(mediatype=None):
-    if read_args.retriveArgs().length_min != None:
+    if read_args.retriveArgs().length_min is not None:
         return read_args.retriveArgs().length_min
     return config_data.get_min_length(mediatype=mediatype)
 
 
 def get_max_length(mediatype=None):
-    if read_args.retriveArgs().length_max != None:
+    if read_args.retriveArgs().length_max is not None:
         return read_args.retriveArgs().length_max
     return config_data.get_max_length(mediatype=mediatype)

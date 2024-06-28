@@ -15,7 +15,6 @@ import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
 
 
-
 def printStartValues():
     args = read_args.retriveArgs()
     log = logging.getLogger("shared")

@@ -1,6 +1,4 @@
-from ofscraper.db.operations_.others import (
-    get_schema_changes
-)
+from ofscraper.db.operations_.others import get_schema_changes
 
 
 def get_group_difference(model_id=None, username=None, db_path=None):
@@ -20,7 +18,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "media_unlocked",
         "media_duration",
         "posts_stream",
-        "posts_opened"
+        "posts_opened",
     ]
 
     groupB = [
@@ -35,4 +33,3 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "media_bool_changes",
     ]
     return set((groupA + groupB)).difference(set(changes))
-

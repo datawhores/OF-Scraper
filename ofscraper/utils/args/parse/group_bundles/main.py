@@ -2,9 +2,6 @@ import functools
 
 import cloup as click
 
-# import click
-from humanfriendly import parse_size
-
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
@@ -16,6 +13,8 @@ from ofscraper.utils.args.parse.groups.content import content_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
+
+# import click
 
 
 def main_program_args(func):

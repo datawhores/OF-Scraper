@@ -73,7 +73,7 @@ def get_request_auth(refresh=False, forced=False):
         auth = get_request_auth_rafa()
     elif (dynamic) in {"dc", "digital", "digitalcriminal", "digitalcriminals"}:
         auth = get_request_auth_digitalcriminals()
-    if auth == None:
+    if auth is None:
         auth = get_request_auth_datawhores()
     cache.set("api_onlyfans_sign", auth, constants.getattr("THIRTY_EXPIRY"))
     curr_auth = auth
@@ -87,7 +87,7 @@ def get_request_auth_dynamic_rule_manual():
 
 
 def get_request_auth_generic():
-    logging.getLogger("shared").debug(f"getting new signature with generic")
+    logging.getLogger("shared").debug("getting new signature with generic")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -104,7 +104,7 @@ def get_request_auth_generic():
 
 
 def get_request_auth_deviint():
-    logging.getLogger("shared").debug(f"getting new signature with deviint")
+    logging.getLogger("shared").debug("getting new signature with deviint")
 
     with sessionManager.sessionManager(
         backend="httpx",
@@ -122,7 +122,7 @@ def get_request_auth_deviint():
 
 
 def get_request_auth_datawhores():
-    logging.getLogger("shared").debug(f"getting new signature with datawhores")
+    logging.getLogger("shared").debug("getting new signature with datawhores")
 
     with sessionManager.sessionManager(
         backend="httpx",
@@ -140,7 +140,7 @@ def get_request_auth_datawhores():
 
 
 def get_request_auth_xagler():
-    logging.getLogger("shared").debug(f"getting new signature with xagler")
+    logging.getLogger("shared").debug("getting new signature with xagler")
 
     with sessionManager.sessionManager(
         backend="httpx",
@@ -158,7 +158,7 @@ def get_request_auth_xagler():
 
 
 def get_request_auth_rafa():
-    logging.getLogger("shared").debug(f"getting new signature with rafa")
+    logging.getLogger("shared").debug("getting new signature with rafa")
 
     with sessionManager.sessionManager(
         backend="httpx",
@@ -176,7 +176,7 @@ def get_request_auth_rafa():
 
 
 def get_request_auth_riley():
-    logging.getLogger("shared").debug(f"getting new signature with riley")
+    logging.getLogger("shared").debug("getting new signature with riley")
 
     with sessionManager.sessionManager(
         backend="httpx",
@@ -194,7 +194,7 @@ def get_request_auth_riley():
 
 
 def get_request_auth_digitalcriminals():
-    logging.getLogger("shared").debug(f"getting new signature with digitalcriminals")
+    logging.getLogger("shared").debug("getting new signature with digitalcriminals")
 
     with sessionManager.sessionManager(
         backend="httpx",

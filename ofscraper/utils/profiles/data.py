@@ -5,7 +5,6 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.profiles.tools as tools
 
-
 currentProfile = None
 currentData = None
 
@@ -43,7 +42,7 @@ def get_current_config_profile():
 
 def get_active_profile():
     if read_args.retriveArgs().profile:
-        profile=read_args.retriveArgs().profile
+        profile = read_args.retriveArgs().profile
     else:
-        profile=get_current_config_profile()
+        profile = get_current_config_profile()
     return tools.profile_name_fixer(profile)

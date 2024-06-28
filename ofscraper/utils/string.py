@@ -7,8 +7,9 @@ import string
 # This alternative implementation allows for bad values to be ignored by using regex instead
 ###
 
+
 def format_safe(template: str, **kwargs: str | os.PathLike[str]) -> str:
-    """
+    r"""
     Works similarly to `template.format(**kwargs)`, except that unmatched
     fields in `template` are passed through untouched.
 
@@ -46,12 +47,13 @@ def format_safe(template: str, **kwargs: str | os.PathLike[str]) -> str:
 
     return result
 
+
 def parse_safe(value):
-    file_format=set()
-    iter_parse=iter(string.Formatter().parse(value))
+    file_format = set()
+    iter_parse = iter(string.Formatter().parse(value))
     while True:
         try:
-            text, name, spec, conv=next(iter_parse)
+            text, name, spec, conv = next(iter_parse)
             file_format.add(name)
         except ValueError:
             continue

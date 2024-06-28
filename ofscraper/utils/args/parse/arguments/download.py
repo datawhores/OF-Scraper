@@ -20,8 +20,8 @@ download_sem_option = click.option(
     "-sd",
     "--downloadsem",
     "--downloadsems",
-     "--sems",
-      "--sem",
+    "--sems",
+    "--sem",
     "downloadsem",
     help="Number of concurrent downloads per thread",
     default=None,
@@ -33,10 +33,8 @@ download_threads_option = click.option(
     "--downloadthreads",
     "--threads",
     "--thread",
-    "--downloadthread"
-    "downloadthreads",
+    "--downloadthread" "downloadthreads",
     help="Number of threads to use (minimum 1)",
     default=None,
     type=int,
 )
-

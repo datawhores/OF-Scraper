@@ -25,7 +25,7 @@ def update_activity_task(**kwargs):
 
 
 def increment_activity_count(total=None, visible=True, advance=1, **kwargs):
-    total = total if total != None else selector.get_num_selected()
+    total = total if total is not None else selector.get_num_selected()
     activity_counter.update(
         get_activity_counter_task(),
         advance=advance,
@@ -36,21 +36,21 @@ def increment_activity_count(total=None, visible=True, advance=1, **kwargs):
 
 
 def update_activity_count(visible=True, total=False, **kwargs):
-    total = total if total != False else selector.get_num_selected()
+    total = total if total is not False else selector.get_num_selected()
     activity_counter.update(
         get_activity_counter_task(), visible=visible, total=total, **kwargs
     )
 
 
 def increment_user_activity(total=None, visible=True, advance=1, **kwargs):
-    total = total if total != None else selector.get_num_selected()
+    total = total if total is not None else selector.get_num_selected()
     activity_counter.update(
         get_user_first_task(), total=total, visible=visible, advance=advance, **kwargs
     )
 
 
 def update_user_activity(visible=True, total=None, **kwargs):
-    total = total if total != None else selector.get_num_selected()
+    total = total if total is not None else selector.get_num_selected()
     activity_counter.update(
         get_user_first_task(), visible=visible, total=total, **kwargs
     )
@@ -65,7 +65,7 @@ def add_api_task(*args, **kwargs):
 
 
 def remove_api_job_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         api_job_progress.remove_task(task)
@@ -78,7 +78,7 @@ def update_api_task(*args, **kwargs):
 
 
 def remove_api_job_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         api_job_progress.remove_task(task)
@@ -87,7 +87,7 @@ def remove_api_job_task(task):
 
 
 def remove_api_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         api_overall_progress.remove_task(task)
@@ -103,17 +103,17 @@ def add_userlist_job_task(*args, **kwargs):
     return userlist_job_progress.add_task(*args, **kwargs)
 
 
-
-def update_userlist_task(task,*args, **kwargs):
-    if task == None:
+def update_userlist_task(task, *args, **kwargs):
+    if task is None:
         return
     try:
-        userlist_overall_progress.update(task,*args,**kwargs)
+        userlist_overall_progress.update(task, *args, **kwargs)
     except KeyError:
         pass
 
+
 def remove_userlist_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         userlist_overall_progress.remove_task(task)
@@ -122,7 +122,7 @@ def remove_userlist_task(task):
 
 
 def remove_userlist_job_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         userlist_overall_progress.remove_task(task)
@@ -134,7 +134,7 @@ downloads_pending = set()
 
 
 def add_download_job_task(*args, **kwargs):
-    max_visible=constants.getattr("MAX_PROGRESS_BARS")
+    max_visible = constants.getattr("MAX_PROGRESS_BARS")
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
@@ -147,7 +147,7 @@ def add_download_job_task(*args, **kwargs):
 
 
 def add_download_job_multi_task(*args, **kwargs):
-    max_visible=constants.getattr("MAX_PROGRESS_BARS")
+    max_visible = constants.getattr("MAX_PROGRESS_BARS")
 
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
@@ -195,7 +195,7 @@ def update_download_multi_job_task(*args, **kwargs):
 def remove_download_job_task(task):
     min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
 
-    if task == None:
+    if task is None:
         return
     try:
         download_job_progress.remove_task(task)
@@ -213,7 +213,7 @@ def remove_download_job_task(task):
 def remove_download_multi_job_task(task):
     min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
 
-    if task == None:
+    if task is None:
         return
     try:
         multi_download_job_progress.remove_task(task)
@@ -228,7 +228,7 @@ def remove_download_multi_job_task(task):
 
 
 def remove_download_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         download_overall_progress.remove_task(task)
@@ -239,8 +239,12 @@ def remove_download_task(task):
 # like
 def add_like_task(*args, **kwargs):
     return like_overall_progress.add_task(*args, **kwargs)
+
+
 def get_like_task(task):
     return like_overall_progress.tasks[task]
+
+
 def increment_like_task(*args, advance=1, **kwargs):
     like_overall_progress.update(*args, advance=advance, **kwargs)
 
@@ -250,7 +254,7 @@ def update_like_task(*args, **kwargs):
 
 
 def remove_like_task(task):
-    if task == None:
+    if task is None:
         return
     try:
         like_overall_progress.remove_task(task)

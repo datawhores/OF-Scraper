@@ -24,7 +24,7 @@ def forcedShutDown():
 
 def closeCache():
     try:
-        cache = Cache(
+        Cache(
             common_paths.getcachepath(),
             disk=data.get_cache_mode(),
         )

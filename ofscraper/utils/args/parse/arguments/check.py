@@ -1,5 +1,4 @@
 # checkmode  args
-import re
 
 import cloup as click
 

@@ -8,7 +8,6 @@ import aiofiles
 from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.shared.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

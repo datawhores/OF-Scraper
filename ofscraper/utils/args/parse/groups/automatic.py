@@ -1,5 +1,7 @@
 import cloup as click
-from ofscraper.utils.args.parse.arguments.automatic import daemon_option,action_option
+
+from ofscraper.utils.args.parse.arguments.automatic import action_option, daemon_option
+
 # Create the option group
 automatic_options = click.option_group(
     "Automation Options",

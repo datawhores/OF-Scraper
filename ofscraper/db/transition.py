@@ -12,11 +12,12 @@ r"""
 """
 
 import logging
+
 from rich.console import Console
-from ofscraper.db.operations_.labels import (
-    add_column_labels_ID,
-    rebuild_labels_table,
-)
+
+from ofscraper.db.backup import create_backup_transition, restore_backup_transition
+from ofscraper.db.difference import get_group_difference
+from ofscraper.db.operations_.labels import add_column_labels_ID, rebuild_labels_table
 from ofscraper.db.operations_.media import (
     add_column_media_duration,
     add_column_media_hash,
@@ -38,26 +39,20 @@ from ofscraper.db.operations_.others import (
 )
 from ofscraper.db.operations_.posts import (
     add_column_post_ID,
+    add_column_post_opened,
     add_column_post_pinned,
-    rebuild_posts_table,
     add_column_post_stream,
-    add_column_post_opened
+    rebuild_posts_table,
 )
-from ofscraper.db.operations_.profile import (
-    rebuild_profiles_table,
-)
+from ofscraper.db.operations_.profile import rebuild_profiles_table
 from ofscraper.db.operations_.stories import (
     add_column_stories_ID,
     rebuild_stories_table,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.db.difference import get_group_difference
-from ofscraper.db.backup import create_backup_transition,restore_backup_transition
 
 console = Console()
 log = logging.getLogger("shared")
-
-
 
 
 @run
@@ -71,17 +66,13 @@ async def modify_tables(model_id=None, username=None, db_path=None, **kwargs):
     except Exception as E:
         restore_backup_transition(backup, model_id, username, db_path=db_path)
         raise E
-    
-
-
-
 
 
 async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs):
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
     )
-    if len(missing)==0:
+    if len(missing) == 0:
         return
     elif "media_hash" in missing:
         await add_column_media_hash(
@@ -130,17 +121,21 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
             "posts_model_id", model_id=model_id, username=username, db_path=db_path
         )
     if "posts_stream" in missing:
-        await add_column_post_stream(model_id=model_id, username=username, db_path=db_path)
+        await add_column_post_stream(
+            model_id=model_id, username=username, db_path=db_path
+        )
         await add_flag_schema(
             "posts_stream", model_id=model_id, username=username, db_path=db_path
         )
 
     if "posts_opened" in missing:
-        await add_column_post_opened(model_id=model_id, username=username, db_path=db_path)
+        await add_column_post_opened(
+            model_id=model_id, username=username, db_path=db_path
+        )
         await add_flag_schema(
             "posts_opened", model_id=model_id, username=username, db_path=db_path
         )
-    
+
     if "products_model_id" in missing:
         await add_column_products_ID(
             model_id=model_id, username=username, db_path=db_path
@@ -182,7 +177,7 @@ async def modify_tables_constraints_and_columns(
     missing = get_group_difference(
         model_id=model_id, username=username, db_path=db_path
     )
-    if len(missing)==0:
+    if len(missing) == 0:
         return
     elif "profile_username_constraint_modified" in missing:
         await rebuild_profiles_table(
@@ -267,4 +262,3 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-
