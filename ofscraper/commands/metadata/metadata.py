@@ -11,9 +11,6 @@
                                                                                       
 """
 import logging
-
-import arrow
-
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.models.selector as userselector
