@@ -6,11 +6,11 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.helpers.shared import run_action_bool
 
 from ofscraper.commands.helpers.final_log import final_log
-from ofscraper.commands.scraper.helpers.scrape_context import scrape_context_manager
+from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth
 from ofscraper.commands.scraper.userfirst import process_users_actions_user_first
 from ofscraper.commands.scraper.normal import process_users_actions_normal
-from ofscraper.commands.scraper.helpers.prepare import prepare
+from ofscraper.commands.scraper.setup.prepare import prepare
 
 log = logging.getLogger("shared")
 
