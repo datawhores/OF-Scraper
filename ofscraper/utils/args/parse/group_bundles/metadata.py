@@ -148,7 +148,7 @@ It also uses a new filename if one is available
         if ctx.params["anon"]:
             if not ctx.params["usernames"]:
                 raise UsageError("'--usernames is required")
-            elif len(list(filter(lambda x:x is not "ALL",ctx.params["usernames"])))==0:
+            elif len(list(filter(lambda x:x !="ALL",ctx.params["usernames"])))==0:
                     raise UsageError("'--usernames value 'ALL' ignored is required")
             else:
                 ctx.params["individual"]=True
