@@ -9,7 +9,7 @@ import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.scraper.runner import runner
+from ofscraper.commands.scraper.helpers.runner import runner
 import ofscraper.utils.console as console
 
 

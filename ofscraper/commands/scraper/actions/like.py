@@ -24,7 +24,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-from rich.markup import escape
 
 
 log = logging.getLogger("shared")
