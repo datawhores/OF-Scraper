@@ -5,6 +5,7 @@ from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
     StringSplitParseTitle,
+    StringTupleList
 )
 from ofscraper.utils.args.types.arrow import ArrowType
 from ofscraper.utils.args.types.choice import MultiChoice
@@ -100,7 +101,7 @@ filter_option = click.option(
     help="Filter posts by regex (case-sensitive if uppercase characters included)",
     default=[".*"],
     required=False,
-    type=str,
+    type=StringTupleList,
     multiple=True,
 )
 
@@ -112,7 +113,7 @@ neg_filter_option = click.option(
     required=False,
     type=str,
     multiple=True,
-    callback=StringSplitParse
+    callback=StringTupleList
 )
 
 block_ads_option = click.option(

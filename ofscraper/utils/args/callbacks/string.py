@@ -27,3 +27,12 @@ def StringSplitParseTitle(ctx, param, value):
     out = StringSplitParse(ctx, param, value)
     out = list(map(lambda x: str(x).title(), out))
     return out
+
+
+def StringTupleList(ctx, param, value):
+    out=value
+    if isinstance(value,tuple):
+        out= list(value)
+    if isinstance(value,str):
+        out=[value]
+    return out
