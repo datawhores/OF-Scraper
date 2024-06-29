@@ -107,11 +107,12 @@ filter_option = click.option(
 neg_filter_option = click.option(
     "-nf",
     "--neg-filter",
-    help="Filter posts to exclude those matching regex (case-sensitive if uppercase characters included)",
+    help="Filter posts to exclude those matching regex (case-styensitive if uppercase characters included)",
     default=[],
     required=False,
-    type=StringSplitParse,
+    type=str,
     multiple=True,
+    callback=StringSplitParse
 )
 
 block_ads_option = click.option(
