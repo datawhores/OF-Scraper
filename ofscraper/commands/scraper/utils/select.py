@@ -16,8 +16,8 @@ import logging
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
-from ofscraper.commands.scraper.setup.prompt import process_prompts
-from ofscraper.commands.scraper.setup.runner import runner
+from ofscraper.commands.scraper.utils.setup.prompt import process_prompts
+from ofscraper.commands.scraper.utils.setup.runner import runner
 
 log = logging.getLogger("shared")
 

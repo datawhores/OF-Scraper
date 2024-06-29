@@ -6,16 +6,12 @@ from collections import defaultdict
 import arrow
 
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.constants as constants
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
-from ofscraper.filters.media.helpers.sorter import post_datesorter
-from ofscraper.filters.media.helpers.trace import trace_log_media, trace_log_post
-
 log = logging.getLogger("shared")
 
 

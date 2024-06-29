@@ -4,7 +4,7 @@ import ofscraper.db.operations as operations
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.post import post_media_process
-from ofscraper.commands.utils.user_first import (
+from ofscraper.commands.utils.wrappers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )

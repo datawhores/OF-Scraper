@@ -1,3 +1,4 @@
+import logging
 import ofscraper.utils.constants as constants
 from ofscraper.utils.logs.helpers import is_trace
 

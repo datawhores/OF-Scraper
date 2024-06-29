@@ -18,7 +18,7 @@ import ofscraper.db.operations as operations
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.__version__ import __version__
 from ofscraper.commands.utils.post import process_areas
-from ofscraper.commands.utils.user_first import (
+from ofscraper.commands.utils.wrappers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
