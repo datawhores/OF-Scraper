@@ -1,8 +1,9 @@
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.utils.wrappers.normal import get_user_action_function
 from ofscraper.commands.scraper.execute import execute_user_action
+from ofscraper.commands.utils.wrappers.normal import get_user_action_function
 from ofscraper.utils.context.run_async import run
+
 
 @exit.exit_wrapper
 @run

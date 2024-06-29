@@ -17,7 +17,6 @@ from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 # import click
 
 
-
 def main_program_args(func):
     @content_options
     @automatic_options

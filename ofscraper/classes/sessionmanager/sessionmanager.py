@@ -15,9 +15,9 @@ import tenacity
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 
 TOO_MANY = "too_many"
 AUTH = "auth"

@@ -1,7 +1,6 @@
 import arrow
 
 
-
 def before_callback(ctx, param, value):
     params = ctx.params
     params["before_original"] = value

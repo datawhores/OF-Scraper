@@ -21,12 +21,12 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.utils.final_log import final_log
-from ofscraper.commands.utils.shared import run_metadata_bool
 from ofscraper.commands.metadata.normal import process_users_metadata_normal
 from ofscraper.commands.metadata.paid import metadata_paid_all
 from ofscraper.commands.metadata.userfirst import metadata_user_first
 from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
+from ofscraper.commands.utils.final_log import final_log
+from ofscraper.commands.utils.shared import run_metadata_bool
 from ofscraper.utils.checkers import check_auth
 
 log = logging.getLogger("shared")

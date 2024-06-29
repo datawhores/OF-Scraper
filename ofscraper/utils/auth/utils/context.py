@@ -18,8 +18,8 @@ from contextlib import contextmanager
 from rich.console import Console
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.auth.make as make
+import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.paths.common as common_paths
 
 console = Console()

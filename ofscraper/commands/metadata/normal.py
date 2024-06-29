@@ -14,8 +14,8 @@
 import logging
 
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.utils.wrappers.normal import get_user_action_function_meta
 from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
+from ofscraper.commands.utils.wrappers.normal import get_user_action_function_meta
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")

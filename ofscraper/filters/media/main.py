@@ -1,11 +1,10 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
-from ofscraper.filters.media.utils.trace import trace_log_media,trace_log_post
-
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+from ofscraper.filters.media.utils.trace import trace_log_media, trace_log_post
 
 log = logging.getLogger("shared")
 

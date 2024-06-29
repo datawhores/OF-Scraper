@@ -12,6 +12,7 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
+
 log = logging.getLogger("shared")
 
 

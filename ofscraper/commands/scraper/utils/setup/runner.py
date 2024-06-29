@@ -4,12 +4,12 @@ import ofscraper.commands.scraper.actions.download as download_action
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.utils.final_log import final_log
-from ofscraper.commands.utils.shared import run_action_bool
 from ofscraper.commands.scraper.normal import process_users_actions_normal
-from ofscraper.commands.scraper.utils.setup.prepare import prepare
 from ofscraper.commands.scraper.userfirst import process_users_actions_user_first
 from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
+from ofscraper.commands.scraper.utils.setup.prepare import prepare
+from ofscraper.commands.utils.final_log import final_log
+from ofscraper.commands.utils.shared import run_action_bool
 from ofscraper.utils.checkers import check_auth
 
 log = logging.getLogger("shared")

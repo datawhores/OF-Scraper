@@ -15,10 +15,10 @@ import json
 
 from rich.console import Console
 
-import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.auth.utils.context as auth_context
+import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.paths.common as common_paths
 
 console = Console()

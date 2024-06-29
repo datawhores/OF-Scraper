@@ -3,12 +3,12 @@ import logging
 import ofscraper.db.operations as operations
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.commands.scraper.execute import execute_user_action
 from ofscraper.commands.utils.post import post_media_process
 from ofscraper.commands.utils.wrappers.user_first import (
     get_userfirst_action_execution_function,
     get_userfirst_data_function,
 )
-from ofscraper.commands.scraper.execute import execute_user_action
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
