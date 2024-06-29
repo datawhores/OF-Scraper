@@ -66,7 +66,9 @@ filter_option = click.option(
     default=[".*"],
     required=False,
     type=str,
-    multiple=True
+    multiple=True,
+    callback=lambda ctx, param, value:list(value)
+
 )
 
 neg_filter_option = click.option(
@@ -76,7 +78,8 @@ neg_filter_option = click.option(
     default=[],
     required=False,
     type=str,
-    multiple=True
+    multiple=True,
+    callback=lambda ctx, param, value:list(value)
 )
 
 block_ads_option = click.option(

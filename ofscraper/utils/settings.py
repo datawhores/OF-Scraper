@@ -179,7 +179,7 @@ def get_hash(mediatype=None):
     return config_data.get_hash(mediatype=mediatype)
 
 def get_neg_filter():
-    neg=list(read_args.retriveArgs().neg_filter or [])
+    neg=read_args.retriveArgs().neg_filter or []
     if read_args.retriveArgs().allow_ads:
         pass
     elif read_args.retriveArgs().block_ads or config_data.get_block_ads():
