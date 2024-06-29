@@ -110,7 +110,7 @@ neg_filter_option = click.option(
     help="Filter posts to exclude those matching regex (case-sensitive if uppercase characters included)",
     default=[],
     required=False,
-    type=str,
+    type=StringSplitParse,
     multiple=True,
 )
 
