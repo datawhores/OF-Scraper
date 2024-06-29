@@ -77,8 +77,6 @@ def update_api_task(*args, **kwargs):
     return api_overall_progress.update(*args, **kwargs)
 
 
-
-
 def remove_api_task(task):
     if task is None:
         return

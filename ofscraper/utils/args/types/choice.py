@@ -13,18 +13,18 @@ class MultiChoice(click.Choice):
         # first do token_normalize_func, then lowercase
         # preserve original `value` to produce an accurate message in
         # `self.fail`
-        normed_values = re.split(",| ", value)
+        values = re.split(",| ", value)
         # dedupe
         seen = set()
         normed_values = [
             normed_value
-            for normed_value in normed_values
+            for normed_value in values
             if normed_value not in seen and not seen.add(normed_value)
         ]
         normed_choices = [choice for choice in self.choices]
 
         if ctx is not None and ctx.token_normalize_func is not None:
-            for i in range(len(normed_value)):
+            for i in range(len(normed_values)):
                 normed_values[i] = ctx.token_normalize_func(normed_values[i])
             normed_choices = set(
                 [
@@ -41,7 +41,7 @@ class MultiChoice(click.Choice):
             )
 
         for normed_value in normed_values:
-            if not normed_value in normed_choices:
+            if normed_value not in normed_choices:
                 choices_str = ", ".join(map(repr, self.choices))
                 self.fail(
                     ngettext(

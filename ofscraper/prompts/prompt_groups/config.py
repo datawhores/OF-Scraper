@@ -24,12 +24,12 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.config.custom as custom
-import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
+import ofscraper.utils.config.data as data
 
 console = Console()
 

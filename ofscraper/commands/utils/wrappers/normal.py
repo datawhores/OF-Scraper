@@ -1,17 +1,17 @@
 import logging
 import traceback
+import time
+
 
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.post import post_media_process
 from ofscraper.commands.utils.strings import avatar_str
-
-log = logging.getLogger("shared")
-import time
-
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.utils.data import data_helper
+
+log = logging.getLogger("shared")
 
 
 def get_user_action_function(func):

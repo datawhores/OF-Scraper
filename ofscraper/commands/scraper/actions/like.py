@@ -156,7 +156,7 @@ def get_final_like_log(like_action, username, failed, post, liked):
         if unchanged == 0
         else f"[yellow]{unchanged} post not changed[/yellow]"
     )
-    failed_log = f"0 post failed" if failed == 0 else f"[red]{failed} post failed[/red]"
+    failed_log = "0 post failed" if failed == 0 else f"[red]{failed} post failed[/red]"
     post_check_log = f"{post} posts checked and kept at {action}"
 
     text_out = ""

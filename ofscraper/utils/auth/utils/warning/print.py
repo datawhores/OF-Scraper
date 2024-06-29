@@ -13,7 +13,7 @@ def print_auth_warning(auth=None):
 
     console.get_console().print(
         textwrap.dedent(
-            f"""
+            """
         [bold red]This info is only printed to console[/bold red]
         """
         )

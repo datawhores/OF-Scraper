@@ -22,7 +22,6 @@ import psutil
 from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.utils.general as common
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -58,6 +57,8 @@ from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.send_bar_msg import send_bar_msg
 from ofscraper.download.utils.total import total_change_helper
+from ofscraper.download.utils.resume import get_resume_header, get_resume_size
+
 
 
 async def alt_download(c, ele, username, model_id):
@@ -92,7 +93,6 @@ async def alt_download(c, ele, username, model_id):
     )
 
 
-from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 
 
 async def alt_download_downloader(item, c, ele):

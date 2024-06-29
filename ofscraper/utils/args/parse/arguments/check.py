@@ -1,6 +1,4 @@
 # checkmode  args
-import re
-
 import cloup as click
 
 from ofscraper.utils.args.callbacks.file import FileCallback

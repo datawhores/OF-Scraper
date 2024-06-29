@@ -1,6 +1,5 @@
 from humanfriendly import format_size
 
-import ofscraper.download.utils.general as common
 import ofscraper.download.utils.globals as common_globals
 from ofscraper.download.utils.alt.attempt import alt_attempt_get
 from ofscraper.download.utils.general import check_forced_skip, get_medialog

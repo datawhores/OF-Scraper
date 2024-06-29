@@ -14,7 +14,6 @@ import more_itertools
 import psutil
 from aioprocessing import AioPipe
 
-import ofscraper.download.utils.general as common
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args

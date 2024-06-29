@@ -9,7 +9,7 @@ def get_after_pre_checks(model_id, api, forced_after=None):
     val = None
     if forced_after is not None:
         val = forced_after
-    elif read_args.retriveArgs().after != None:
+    elif read_args.retriveArgs().after is not None:
         val = read_args.retriveArgs().after.float_timestamp
     elif not settings.auto_after_enabled():
         val = 0
@@ -19,7 +19,7 @@ def get_after_pre_checks(model_id, api, forced_after=None):
 
 
 def _return_val(val, api):
-    if val == None:
+    if val is None:
         logging.getLogger("shared").info(f"precheck failed for {api} using db")
         return val
     else:
