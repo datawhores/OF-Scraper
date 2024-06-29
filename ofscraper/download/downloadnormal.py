@@ -44,7 +44,7 @@ from ofscraper.utils.context.run_async import run
 async def consumer(queue, task1, medialist):
     while True:
         data = await queue.get()
-        if data == None:
+        if data is None:
             queue.task_done()
             break
         else:

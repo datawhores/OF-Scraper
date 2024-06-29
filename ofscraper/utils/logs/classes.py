@@ -194,7 +194,7 @@ class DiscordHandler(logging.Handler):
             ) as r:
                 if not r.status == 204:
                     raise Exception
-        except Exception as e:
+        except Exception:
             pass
 
     async def _async_emit(self, record):
@@ -216,7 +216,7 @@ class DiscordHandler(logging.Handler):
             ) as r:
                 if not r.status == 204:
                     raise Exception
-        except Exception as e:
+        except Exception:
             pass
 
 

@@ -60,7 +60,6 @@ from ofscraper.download.utils.total import total_change_helper
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 
 
-
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -91,8 +90,6 @@ async def alt_download(c, ele, username, model_id):
     return await handle_result_alt(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
-
-
 
 
 async def alt_download_downloader(item, c, ele):

@@ -352,7 +352,7 @@ def setpriority():
 async def consumer(queue):
     while True:
         data = await queue.get()
-        if data == None:
+        if data is None:
             queue.task_done()
             break
         else:

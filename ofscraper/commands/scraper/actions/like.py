@@ -108,7 +108,7 @@ def _like(model_id, username, ids: list, like_action: bool):
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []
-            task = progress_utils.add_like_task(f"checked posts...\n", total=len(ids))
+            task = progress_utils.add_like_task("checked posts...\n", total=len(ids))
             task2 = progress_utils.add_like_task(like_str, total=None)
 
             [tasks.append(functools.partial(like_func, c, id, model_id)) for id in ids]
@@ -183,7 +183,7 @@ def _toggle_like_requests(c, id, model_id):
 
     sleep_duration = random.uniform(min_duration, max_duration)
     favorited, id = _like_request(c, id, model_id, sleeper)
-    if favorited == None:
+    if favorited is None:
         return 3
     elif favorited:
         log.debug(f"ID: {id} changed to liked")
@@ -204,15 +204,15 @@ def _toggle_unlike_requests(c, id, model_id):
     )
     if (
         not read_args.retriveArgs().force_like
-        and cache.get(f"liked_status_{id}", None) == False
+        and cache.get(f"liked_status_{id}", None) is False
     ):
         log.debug(f"ID: {id} marked as unliked in cache")
         return 0
     sleep_duration = constants.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id, sleeper)
-    if favorited == None:
+    if favorited is None:
         return 3
-    elif favorited == False:
+    elif favorited is False:
         log.debug(f"ID: {id} changed to unliked")
         out = 1
     else:

@@ -6,7 +6,6 @@ import ofscraper.utils.manager as manager
 import ofscraper.utils.cache as cache
 
 
-
 def shutdown():
     time.sleep(3)
     close_log.gracefulClose()

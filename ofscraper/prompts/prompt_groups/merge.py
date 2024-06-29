@@ -88,7 +88,7 @@ def confirm_prompt_db(folder, new_db) -> bool:
 
 def confirm_db_continue(completed, skipped) -> bool:
     name = "continue"
-    answer = promptClasses.batchConverter(
+    promptClasses.batchConverter(
         *[
             {
                 "type": "list",

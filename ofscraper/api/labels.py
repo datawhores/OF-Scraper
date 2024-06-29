@@ -253,7 +253,6 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     posts = None
     new_tasks = []
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
-    tasks = None
 
     try:
 

@@ -75,7 +75,7 @@ class SessionSleep:
         self._last_date = arrow.now()
         self._difmin = (
             difmin
-            if difmin != None
+            if difmin is not None
             else constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
         )
         self._alock = asyncio.Lock()
@@ -542,7 +542,7 @@ class sessionManager:
                     # check_400(E)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    if not TOO_MANY in exceptions:
+                    if TOO_MANY not in exceptions:
                         async_is_rate_limited(E, sleeper)
                     sem.release()
                     await asyncio.sleep(0)

@@ -7,8 +7,8 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.strings import avatar_str
 
 from ofscraper.commands.utils.data import data_helper
-log = logging.getLogger("shared")
 
+log = logging.getLogger("shared")
 
 
 def get_userfirst_data_function(funct):

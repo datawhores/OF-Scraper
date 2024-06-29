@@ -72,7 +72,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
                     log.handle(message)
             if count == stop_count:
                 break
-        except queue.Empty as e:
+        except queue.Empty:
             continue
         except OSError as e:
             if str(e) == "handle is closed":

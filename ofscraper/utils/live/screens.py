@@ -16,53 +16,13 @@ from ofscraper.utils.live.groups import (
     single_panel,
     userlist_group,
 )
-from ofscraper.utils.live.live import get_live, set_live, stop_live
+from ofscraper.utils.live.live import get_live, stop_live
 from ofscraper.utils.live.progress import (
     activity_counter,
     activity_progress,
-    api_job_progress,
-    api_overall_progress,
-    download_job_progress,
-    download_overall_progress,
-    multi_download_job_progress,
-    userlist_overall_progress,
 )
 from ofscraper.utils.live.tasks import (
-    activity_counter_task,
-    activity_task,
-    get_user_task_obj,
     reset_activity_tasks,
-    user_first_task,
-)
-from ofscraper.utils.live.updater import (
-    add_api_job_task,
-    add_api_task,
-    add_download_job_multi_task,
-    add_download_job_task,
-    add_download_task,
-    add_like_task,
-    add_userlist_job_task,
-    add_userlist_task,
-    get_like_task,
-    increment_activity_count,
-    increment_like_task,
-    increment_user_activity,
-    remove_api_job_task,
-    remove_api_task,
-    remove_download_job_task,
-    remove_download_multi_job_task,
-    remove_download_task,
-    remove_like_task,
-    remove_userlist_job_task,
-    remove_userlist_task,
-    update_activity_count,
-    update_activity_task,
-    update_api_task,
-    update_download_job_task,
-    update_download_multi_job_task,
-    update_download_task,
-    update_user_activity,
-    update_userlist_task,
 )
 
 
@@ -200,6 +160,6 @@ def setup_activity_counter_live(setup=False, revert=True, stop=False):
 def get_quiet_toggle_helper(key):
     return (
         constants.getattr(key)
-        if constants.getattr(key) != None
+        if constants.getattr(key) is not None
         else console_.get_shared_console().quiet
     )

@@ -38,17 +38,17 @@ class OFSessionManager(sessionManager):
         sync_semaphore=None,
         refresh=True,
     ):
-        limit = limit if limit != None else constants.getattr("API_MAX_CONNECTION")
+        limit = limit if limit is not None else constants.getattr("API_MAX_CONNECTION")
         retries = (
             retries
-            if retries != None
+            if retries is not None
             else constants.getattr("API_INDVIDIUAL_NUM_TRIES")
         )
         wait_min = (
-            wait_min if wait_min != None else constants.getattr("OF_MIN_WAIT_API")
+            wait_min if wait_min is not None else constants.getattr("OF_MIN_WAIT_API")
         )
         wait_max = (
-            wait_max if wait_max != None else constants.getattr("OF_MAX_WAIT_API")
+            wait_max if wait_max is not None else constants.getattr("OF_MAX_WAIT_API")
         )
         super().__init__(
             backend,
