@@ -31,6 +31,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.api.utils.check import read_check, reset_check, set_check
@@ -171,7 +172,7 @@ def post_checker():
 async def post_check_runner():
     async for user_name, model_id, final_post_array in post_check_retriver():
         with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Timeline posts"
                 )
@@ -354,7 +355,7 @@ def message_checker():
 async def message_checker_runner():
     async for user_name, model_id, final_post_array in message_check_retriver():
         with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description=check_str.format(username=user_name, activity="Messages")
             )
             await process_post_media(user_name, model_id, final_post_array)
@@ -429,7 +430,7 @@ def purchase_checker():
 async def purchase_checker_runner():
     async for user_name, model_id, final_post_array in purchase_check_retriver():
         with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Purchased posts"
                 )
@@ -485,7 +486,7 @@ def stories_checker():
 async def stories_checker_runner():
     async for user_name, model_id, final_post_array in stories_check_retriver():
         with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description=check_str.format(
                     username=user_name, activity="Stories posts"
                 )

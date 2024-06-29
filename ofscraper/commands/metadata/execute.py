@@ -18,7 +18,7 @@ import arrow
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import mark_stray_str, metadata_activity_str
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
@@ -48,7 +48,7 @@ async def execute_metadata_action_on_user(*args, ele=None, media=None, **kwargs)
                 """
     )
     await operations.table_init_create(model_id=model_id, username=username)
-    progress_utils.update_activity_task(
+    progress_updater.update_activity_task(
         description=metadata_activity_str.format(username=username)
     )
     data = await download.download_process(username, model_id, media)
@@ -62,7 +62,7 @@ async def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
-    progress_utils.update_activity_task(
+    progress_updater.update_activity_task(
         description=mark_stray_str.format(username=username)
     )
     if "Timeline" in args.download_area:

@@ -16,6 +16,8 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
+
 import ofscraper.utils.system.network as network
 from ofscraper.api.utils.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import download_manual_str, post_str_manual
@@ -33,7 +35,7 @@ def manual_download(urls=None):
         allow_manual_dupes()
         url_dicts = process_urls(urls)
         with progress_utils.setup_activity_progress_live():
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description="Getting data from retrived posts"
             )
             all_media = [
@@ -59,7 +61,7 @@ def manual_download(urls=None):
                 model_id = value.get("model_id")
                 username = value.get("username")
                 log.info(download_manual_str.format(username=username))
-                progress_utils.update_activity_task(
+                progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
                 )
                 operations.table_init_create(model_id=model_id, username=username)
@@ -94,7 +96,7 @@ def process_urls(urls):
     out_dict = {}
     with progress_utils.setup_api_split_progress_live(revert=False):
         for url in url_helper(urls):
-            progress_utils.update_activity_task(
+            progress_updater.update_activity_task(
                 description=post_str_manual.format(url=url)
             )
             response = get_info(url)

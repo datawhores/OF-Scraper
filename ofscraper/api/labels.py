@@ -18,7 +18,7 @@ import traceback
 import ofscraper.api.utils.logs as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
