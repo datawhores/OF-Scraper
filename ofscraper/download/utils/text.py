@@ -28,7 +28,7 @@ async def textDownloader(objectdicts, username=None):
             }
         ).values()
         count, fails, exists = await text.get_text(data)
-        username or "Unknown"
+        username=username or "Unknown"
         logs.text_log(username, count, fails, exists, log=log)
     except Exception as E:
         log.debug(f"Issue with text {E}")
