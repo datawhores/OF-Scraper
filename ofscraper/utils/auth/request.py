@@ -339,5 +339,5 @@ def generate_xbc():
     msg = ".".join(
         [base64.b64encode(str(p).encode("utf-8")).decode("utf-8") for p in parts]
     )
-    token = hashlib.sha1(msg.encode("utf-8")).hexdigest()
+    token = hashlib.sha1(msg.encode("utf-8"),usedforsecurity=False).hexdigest()
     return token

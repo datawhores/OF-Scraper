@@ -48,5 +48,5 @@ def auth_context():
                         f.write(json.dumps(auth_dict.get_empty()))
                 auth_dict.get_auth_dict()
                 break
-            except:
+            except Exception:
                 continue
