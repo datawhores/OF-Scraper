@@ -40,6 +40,7 @@ def read_auth():
 
 def edit_auth():
     while True:
+        auth=None
         with auth_context.auth_context():
             auth = auth_dict.get_auth_dict()
             auth = make.make_auth(auth)

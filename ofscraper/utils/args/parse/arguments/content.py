@@ -101,7 +101,7 @@ filter_option = click.option(
     help="Filter posts by regex (case-sensitive if uppercase characters included)",
     default=[".*"],
     required=False,
-    type=StringTupleList,
+    callback=StringTupleList,
     multiple=True,
 )
 
