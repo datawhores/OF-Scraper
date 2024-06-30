@@ -25,7 +25,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.alt.attempt import alt_attempt_get
 from ofscraper.download.utils.alt.data import (
@@ -225,7 +225,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
 async def download_fileobject_writer(total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
 
-    task1 = progress_utils.add_download_job_task(
+    task1 = progress_updater.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
     )
@@ -241,7 +241,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             await fileobject.write(chunk)
             await send_bar_msg(
                 partial(
-                    progress_utils.update_download_job_task,
+                    progress_updater.update_download_job_task,
                     task1,
                     completed=pathlib.Path(placeholderObj.tempfilepath)
                     .absolute()
@@ -263,6 +263,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             None
 
         try:
-            progress_utils.remove_download_job_task(task1)
+            progress_updater.remove_download_job_task(task1)
         except Exception:
             None

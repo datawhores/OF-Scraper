@@ -22,6 +22,8 @@ import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.dates as dates
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
+
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
@@ -104,7 +106,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 for i in range(num_proc)
             ]
             [process.start() for process in processes]
-            task1 = progress_utils.add_download_task(
+            task1 = progress_updater.add_download_task(
                 common_globals.desc.format(
                     p_count=0,
                     v_count=0,
@@ -177,7 +179,7 @@ def process_dicts(username, model_id, filtered_medialist):
                     if process.is_alive():
                         process.terminate()
                 time.sleep(0.5)
-            progress_utils.remove_download_task(task1)
+            progress_updater.remove_download_task(task1)
             setDirectoriesDate()
     except KeyboardInterrupt as E:
         try:
@@ -239,7 +241,7 @@ def queue_process(pipe_, task1, total):
                         elif media_type == "forced_skipped":
                             common_globals.forced_skipped += 1
                         log_download_progress(media_type)
-                        progress_utils.update_download_task(
+                        progress_updater.update_download_task(
                             task1,
                             description=common_globals.desc.format(
                                 p_count=common_globals.photo_count,

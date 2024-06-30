@@ -6,6 +6,7 @@ import time
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.post import post_media_process
 from ofscraper.commands.utils.strings import avatar_str
 import ofscraper.filters.media.main as filters
@@ -59,8 +60,8 @@ def get_user_action_function(func):
                     if isinstance(e, KeyboardInterrupt):
                         raise e
                 finally:
-                    progress_utils.increment_user_activity()
-            progress_utils.update_activity_task(description="Finished Action Mode")
+                    progress_updater.increment_user_activity()
+            progress_updater.update_activity_task(description="Finished Action Mode")
             time.sleep(1)
             return data
 
@@ -105,8 +106,8 @@ def get_user_action_function_meta(func):
                     if isinstance(e, KeyboardInterrupt):
                         raise e
                 finally:
-                    progress_utils.increment_user_activity()
-            progress_utils.update_activity_task(description="Finished Metadata Mode")
+                    progress_updater.increment_user_activity()
+            progress_updater.update_activity_task(description="Finished Metadata Mode")
             time.sleep(1)
             return data
 

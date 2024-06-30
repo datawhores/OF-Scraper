@@ -16,7 +16,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.download as download
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.commands.utils.scrape_paid import (
     process_scrape_paid,
@@ -47,11 +47,11 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
         modelid=model_id,
     )
 
-    progress_utils.update_activity_task(description=download_str + path_str)
+    progress_updater.update_activity_task(description=download_str + path_str)
     logging.getLogger("shared_other").warning(
         download_activity_str.format(username=username)
     )
-    progress_utils.update_activity_task(description="")
+    progress_updater.update_activity_task(description="")
     return await download.download_process(username, model_id, media, posts=posts)
 
 
@@ -80,6 +80,3 @@ async def scrape_paid_all():
         )
         out.append(await process_user(value, length))
     return out
-
-    # progress_utils.update_activity_task(description="Downloading Paid Content")
-    # return process_scrape_paid(download_progress_message=download_activity_str,log_progress_message=all_paid_progress_download_str)

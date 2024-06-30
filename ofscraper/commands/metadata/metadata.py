@@ -20,6 +20,7 @@ import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.metadata.normal import process_users_metadata_normal
 from ofscraper.commands.metadata.paid import metadata_paid_all
@@ -56,7 +57,7 @@ def metadata():
 
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Metadata Mode [/bold deep_sky_blue2]")
-    progress_utils.update_activity_task(description="Running Metadata Mode")
+    progress_updater.update_activity_task(description="Running Metadata Mode")
     with scrape_context_manager():
         with progress_utils.setup_activity_group_live(revert=True):
             metadata()

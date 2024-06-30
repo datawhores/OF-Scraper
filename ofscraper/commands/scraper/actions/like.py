@@ -22,6 +22,8 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
+
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 
 log = logging.getLogger("shared")
@@ -33,7 +35,7 @@ unlike_str = "Performing Unlike Action on {name}" + warning_str
 @exit.exit_wrapper
 def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.update_activity_task(description=like_str.format(name=username))
+    progress_updater.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared_other").warning(like_str.format(name=username))
     unfavorited_posts = get_posts_for_like(posts)
     posts = pre_filter(posts)
@@ -44,7 +46,7 @@ def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
 @exit.exit_wrapper
 def process_unlike(posts=None, model_id=None, task=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.update_activity_task(description=unlike_str.format(name=username))
+    progress_updater.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared_other").warning(unlike_str.format(name=username))
     favorited_posts = get_posts_for_unlike(posts)
     posts = pre_filter(posts)
@@ -108,8 +110,8 @@ def _like(model_id, username, ids: list, like_action: bool):
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []
-            task = progress_utils.add_like_task("checked posts...\n", total=len(ids))
-            task2 = progress_utils.add_like_task(like_str, total=None)
+            task = progress_updater.add_like_task("checked posts...\n", total=len(ids))
+            task2 = progress_updater.add_like_task(like_str, total=None)
 
             [tasks.append(functools.partial(like_func, c, id, model_id)) for id in ids]
             max_duration = constants.getattr("MAX_SLEEP_DURATION_LIKE")
@@ -130,14 +132,14 @@ def _like(model_id, username, ids: list, like_action: bool):
                 # if toggled once
                 if out == 1:
                     liked = +1
-                    progress_utils.increment_like_task(task2)
+                    progress_updater.increment_like_task(task2)
                 # if failed
                 elif out == 3:
                     failed += 1
-                progress_utils.increment_like_task(task)
+                progress_updater.increment_like_task(task)
                 time.sleep(sleep_duration)
-            progress_utils.remove_like_task(task)
-            progress_utils.remove_like_task(task2)
+            progress_updater.remove_like_task(task)
+            progress_updater.remove_like_task(task2)
         return get_final_like_log(like_action, username, failed, post, liked)
 
 

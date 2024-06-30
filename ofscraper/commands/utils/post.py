@@ -33,6 +33,7 @@ import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
 from ofscraper.api.utils.cache.write import set_after_checks
@@ -317,9 +318,9 @@ async def process_all_paid():
         paid_content = await paid.get_all_paid_posts()
     output = {}
     with progress_utils.setup_all_paid_database_live():
-        progress_utils.update_activity_task(description="Processsing Paid content data")
+        progress_updater.update_activity_task(description="Processsing Paid content data")
         for model_id, value in paid_content.items():
-            progress_utils.update_activity_count(
+            progress_updater.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
             )
 
@@ -333,7 +334,7 @@ async def process_all_paid():
                     await get_profile_info(model_id=model_id, username=username)
                     or username
                 )
-            progress_utils.update_activity_count(
+            progress_updater.update_activity_count(
                 total=None, description=all_paid_str.format(username=username)
             )
             log.info(f"Processing {username}_{model_id}")
@@ -377,7 +378,7 @@ async def process_all_paid():
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
             )
-            progress_utils.increment_activity_count(total=None)
+            progress_updater.increment_activity_count(total=None)
 
         log.debug(
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"

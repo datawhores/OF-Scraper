@@ -16,6 +16,7 @@ import traceback
 
 import ofscraper.db.operations as operations
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.screens as progress_updater
 from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
 from ofscraper.commands.utils.post import process_areas
 from ofscraper.commands.utils.wrappers.user_first import (
@@ -33,8 +34,8 @@ async def metadata_user_first(userdata, session):
     data = await get_userfirst_data_function(metadata_data_user_first)(
         userdata, session
     )
-    progress_utils.update_activity_task(description="Changing Metadata for Users")
-    progress_utils.update_user_activity(
+    progress_updater.update_activity_task(description="Changing Metadata for Users")
+    progress_updater.update_user_activity(
         description="Users with Metadata Changed", completed=0
     )
     # pass all data to userfirst

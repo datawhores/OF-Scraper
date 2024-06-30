@@ -11,7 +11,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.system as system
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.alt.attempt import alt_attempt_get
@@ -244,7 +244,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         count = 1
         await send_msg(
             partial(
-                progress_utils.add_download_job_multi_task,
+                progress_updater.add_download_job_multi_task,
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 ele.id,
                 total=total,
@@ -253,7 +253,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         await send_msg(
-            partial(progress_utils.update_download_multi_job_task, ele.id, visible=True)
+            partial(progress_updater.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
 
@@ -264,7 +264,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             await fileobject.write(chunk)
             await send_bar_msg_batch(
                 partial(
-                    progress_utils.update_download_multi_job_task,
+                    progress_updater.update_download_multi_job_task,
                     ele.id,
                     completed=pathlib.Path(placeholderObj.tempfilepath)
                     .absolute()
@@ -287,7 +287,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
 
         try:
             await send_msg(
-                partial(progress_utils.remove_download_multi_job_task, ele.id)
+                partial(progress_updater.remove_download_multi_job_task, ele.id)
             )
         except Exception:
             None

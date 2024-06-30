@@ -6,6 +6,7 @@ import ofscraper.commands.utils.post as OF
 import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import (
     all_paid_download_str,
     all_paid_progress_metadata_str,
@@ -18,7 +19,7 @@ log = logging.getLogger("shared")
 
 @run
 async def process_scrape_paid():
-    progress_utils.update_activity_task(description="Scraping Entire Paid page")
+    progress_updater.update_activity_task(description="Scraping Entire Paid page")
     with progress_utils.setup_all_paid_database_live():
         async for ele in process_paid_dict():
             yield ele
@@ -27,7 +28,7 @@ async def process_scrape_paid():
 async def process_paid_dict():
     user_dict = await OF.process_all_paid()
     length = len(list(user_dict.keys()))
-    progress_utils.update_activity_count(totat=length, completed=0)
+    progress_updater.update_activity_count(totat=length, completed=0)
 
     for count, value in enumerate(user_dict.values()):
         yield count, value, length
@@ -48,11 +49,11 @@ def process_user_info_printer(
     all_paid_activity = all_paid_activity or metadata_activity_str
     log_progress = log_progress or all_paid_progress_metadata_str
 
-    progress_utils.update_activity_count(
+    progress_updater.update_activity_count(
         totat=length,
         description=all_paid_update.format(username=username),
     )
-    progress_utils.update_activity_task(
+    progress_updater.update_activity_task(
         description=(
             all_paid_activity.format(
                 username=username, model_id=model_id, count=count + 1, length=length
@@ -75,5 +76,5 @@ async def process_user(value, length):
     userselector.set_ALL_SUBS_DICTVManger(
         {username: models.Model(profile.scrape_profile(model_id, refresh=False))}
     )
-    progress_utils.increment_activity_count(total=length)
+    progress_updater.increment_activity_count(total=length)
     return await download.download_process(username, model_id, medias, posts=posts)
