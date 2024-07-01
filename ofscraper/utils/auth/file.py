@@ -44,8 +44,9 @@ def edit_auth():
         with auth_context.auth_context():
             auth = auth_dict.get_auth_dict()
             auth = make.make_auth(auth)
-            console.print("Your `auth.json` file has been edited.")
-        return auth
+            console.print("Your `auth.json` file has been edited")
+            break
+    return auth
 
 
 def write_auth(auth):
