@@ -354,6 +354,7 @@ def get_filter(config=None):
     filter = (
         config.get("filter")
         or config.get("download_options", {}).get("filter")
+        or config.get("content_filter_options", {}).get("filter")
         or constants_attr.getattr("FILTER_DEFAULT")
     )
     if isinstance(filter, str):
