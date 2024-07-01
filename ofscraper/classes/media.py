@@ -71,6 +71,9 @@ class Media(base.base):
         return self._media.get("duration") or self.media_source.get("duration")
 
     @property
+    def final_duration(self):
+        return self._media.get("duration") or self.media_source.get("duration") or 0
+    @property
     def numeric_duration(self):
         if not self.duration:
             return "N/A"
