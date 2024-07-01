@@ -1,6 +1,7 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
+import ofscraper.filters.media.sorter as sorter
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
@@ -59,7 +60,7 @@ def filtermediaAreas(media, **kwargs):
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
     media = helpers.sort_by_date(media)
 
-    media = helpers.post_datesorter(media)
+    media = sorter.post_datesorter(media)
     count += 1
     trace_log_media(count, media, "media datesort")
     log.debug(f"filter {count}-> media datesort count: {len(media)}")

@@ -21,7 +21,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
-import ofscraper.utils.live.updater as progrss_updater
+import ofscraper.utils.live.updater as progress_updater
 
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
@@ -85,7 +85,7 @@ async def consumer(queue, task1, medialist):
                     + common_globals.forced_skipped
                 )
                 log_download_progress(media_type)
-                download_overall_progress.update(
+                progress_updater.update_download_task(
                     task1,
                     description=common_globals.desc.format(
                         p_count=common_globals.photo_count,
@@ -153,7 +153,7 @@ async def process_dicts(username, model_id, medialist):
             async with download_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
-                task1 = add_download_task(
+                task1 = progress_updater.add_download_task(
                     common_globals.desc.format(
                         p_count=0,
                         v_count=0,
@@ -176,8 +176,7 @@ async def process_dicts(username, model_id, medialist):
                 ]
                 await producer(queue, aws, concurrency_limit)
                 await asyncio.gather(*consumers)
-
-            remove_download_task(task1)
+            progress_updater.remove_download_task(task1)
             setDirectoriesDate()
             # close thread
             otherqueue.put("None")
