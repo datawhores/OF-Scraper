@@ -128,32 +128,6 @@ def download_config():
         *[
             {
                 "type": "input",
-                "name": "file_size_max",
-                "message": "file_size_max: ",
-                "option_instruction": """
-File size limit
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no limit
-""",
-                "default": str(data.get_filesize_max()),
-            },
-            {
-                "type": "input",
-                "name": "file_size_min",
-                "message": "file_size_min: ",
-                "option_instruction": """
-File size min
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no minimum
-""",
-                "default": str(data.get_filesize_min()),
-            },
-            {
-                "type": "input",
                 "name": "system_free_min",
                 "message": "minimum free space: ",
                 "option_instruction": """
@@ -189,22 +163,6 @@ Enter 0 to disable
 """,
                 "default": str(data.get_max_length()),
                 "filter": int,
-            },
-            {
-                "type": "checkbox",
-                "name": "filter",
-                "message": "filter: ",
-                "choices": list(
-                    map(
-                        lambda x: Choice(
-                            name=x,
-                            value=x,
-                            enabled=x.capitalize() in set(data.get_filter()),
-                        ),
-                        constants.getattr("FILTER_DEFAULT"),
-                    )
-                ),
-                "validate": prompt_validators.emptyListValidator(),
             },
             {
                 "type": "list",
@@ -470,6 +428,50 @@ def content_config():
                 "message": "Do you want to auto block post with advertisment words:\n",
                 "default": data.get_block_ads(),
             },
+
+                        {
+                "type": "input",
+                "name": "file_size_max",
+                "message": "file_size_max: ",
+                "option_instruction": """
+File size limit
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no limit
+""",
+                "default": str(data.get_filesize_max()),
+            },
+            {
+                "type": "input",
+                "name": "file_size_min",
+                "message": "file_size_min: ",
+                "option_instruction": """
+File size min
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no minimum
+""",
+                "default": str(data.get_filesize_min()),
+            },
+                        {
+                "type": "checkbox",
+                "name": "filter",
+                "message": "filter: ",
+                "choices": list(
+                    map(
+                        lambda x: Choice(
+                            name=x,
+                            value=x,
+                            enabled=x.capitalize() in set(data.get_filter()),
+                        ),
+                        constants.getattr("FILTER_DEFAULT"),
+                    )
+                ),
+                "validate": prompt_validators.emptyListValidator(),
+            },
+
         ],
         more_instruction=prompt_strings.CONFIG_MENU,
     )
