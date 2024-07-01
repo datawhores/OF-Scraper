@@ -37,7 +37,7 @@ def addGlobalDir(path):
         map(
             lambda x: (
                 path.resolve(x).parent
-                if not pathlib.Path(x).is_dir
+                if not pathlib.Path(x).is_dir()
                 else path.resolve(x)
             ),
             paths,
@@ -52,7 +52,7 @@ def addLocalDir(path):
         map(
             lambda x: (
                 path.resolve(x).parent
-                if not pathlib.Path(x).is_dir
+                if not pathlib.Path(x).is_dir()
                 else path.resolve(x)
             ),
             paths,
