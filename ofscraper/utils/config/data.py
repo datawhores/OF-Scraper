@@ -52,6 +52,8 @@ def get_filesize_max(config=None, mediatype=None):
 
         elif config.get("download_options", {}).get("file_size_limit"):
             size = config.get("download_options", {}).get("file_size_limit")
+        elif config.get("content_filter_options", {}).get("file_size_max"):
+            size = config.get("content_filter_options", {}).get("file_size_max")
         return parse_size(
             str(
                 size
@@ -84,6 +86,8 @@ def get_filesize_min(config=None, mediatype=None):
 
         elif config.get("download_options", {}).get("file_size_min"):
             size = config.get("download_options", {}).get("file_size_min")
+        elif config.get("content_filter_options", {}).get("file_size_min"):
+            size = config.get("content_filter_options", {}).get("file_size_min")
         return parse_size(
             str(
                 size
@@ -115,6 +119,8 @@ def get_min_length(config=None, mediatype=None):
 
     elif config.get("download_options", {}).get("length_min"):
         return config.get("download_options", {}).get("length_min")
+    elif config.get("content_filter_options", {}).get("length_min"):
+        return config.get("content_filter_options", {}).get("length_min")
 
 
 @wrapper.config_reader
@@ -137,7 +143,8 @@ def get_max_length(config=None, mediatype=None):
 
     elif config.get("download_options", {}).get("length_max"):
         return config.get("download_options", {}).get("length_max")
-
+    elif config.get("content_filter_options", {}).get("length_max"):
+        return config.get("content_filter_options", {}).get("length_max")
 
 @wrapper.config_reader
 def get_system_freesize(config=None, mediatype=None):
