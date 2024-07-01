@@ -114,7 +114,7 @@ def media_length_filter(media):
     if max_length:
         filteredMedia = list(
             filter(
-                lambda x: x.mediatype != "videos" or x.duratio is None or x.duration <= max_length,
+                lambda x: x.mediatype != "videos" or x.duration is None or x.duration <= max_length,
                 filteredMedia,
             )
         )
