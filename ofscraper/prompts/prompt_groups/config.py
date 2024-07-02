@@ -428,8 +428,7 @@ def content_config():
                 "message": "Do you want to auto block post with advertisment words:\n",
                 "default": data.get_block_ads(),
             },
-
-                        {
+            {
                 "type": "input",
                 "name": "file_size_max",
                 "message": "file_size_max: ",
@@ -455,7 +454,7 @@ Enter 0 for no minimum
 """,
                 "default": str(data.get_filesize_min()),
             },
-                        {
+            {
                 "type": "checkbox",
                 "name": "filter",
                 "message": "filter: ",
@@ -471,7 +470,6 @@ Enter 0 for no minimum
                 ),
                 "validate": prompt_validators.emptyListValidator(),
             },
-
         ],
         more_instruction=prompt_strings.CONFIG_MENU,
     )

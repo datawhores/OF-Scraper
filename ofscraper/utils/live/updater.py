@@ -137,14 +137,14 @@ def add_download_job_task(*args, **kwargs):
     return task
 
 
-def add_download_job_multi_task(*args, file=None,**kwargs):
+def add_download_job_multi_task(*args, file=None, **kwargs):
     max_visible = constants.getattr("MAX_PROGRESS_BARS")
 
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
     task = multi_download_job_progress.add_task(
-        *args, visible=visible, start=visible,file=file, **kwargs
+        *args, visible=visible, start=visible, file=file, **kwargs
     )
     if not visible:
         downloads_pending.add(task)

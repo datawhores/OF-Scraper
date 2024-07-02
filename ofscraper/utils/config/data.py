@@ -146,6 +146,7 @@ def get_max_length(config=None, mediatype=None):
     elif config.get("content_filter_options", {}).get("length_max"):
         return config.get("content_filter_options", {}).get("length_max")
 
+
 @wrapper.config_reader
 def get_system_freesize(config=None, mediatype=None):
     if config is False:

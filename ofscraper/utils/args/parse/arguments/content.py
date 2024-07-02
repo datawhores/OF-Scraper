@@ -5,7 +5,7 @@ from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
     StringSplitParseTitle,
-    StringTupleList
+    StringTupleList,
 )
 from ofscraper.utils.args.types.arrow import ArrowType
 from ofscraper.utils.args.types.choice import MultiChoice
@@ -113,7 +113,7 @@ neg_filter_option = click.option(
     required=False,
     type=str,
     multiple=True,
-    callback=StringTupleList
+    callback=StringTupleList,
 )
 
 block_ads_option = click.option(

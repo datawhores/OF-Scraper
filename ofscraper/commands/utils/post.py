@@ -318,7 +318,9 @@ async def process_all_paid():
         paid_content = await paid.get_all_paid_posts()
     output = {}
     with progress_utils.setup_all_paid_database_live():
-        progress_updater.update_activity_task(description="Processsing Paid content data")
+        progress_updater.update_activity_task(
+            description="Processsing Paid content data"
+        )
         for model_id, value in paid_content.items():
             progress_updater.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)

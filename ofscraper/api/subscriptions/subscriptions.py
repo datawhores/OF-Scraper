@@ -22,7 +22,7 @@ import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.live.updater import add_userlist_task,remove_userlist_task
+from ofscraper.utils.live.updater import add_userlist_task, remove_userlist_task
 
 
 log = logging.getLogger("shared")

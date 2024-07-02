@@ -30,9 +30,9 @@ def StringSplitParseTitle(ctx, param, value):
 
 
 def StringTupleList(ctx, param, value):
-    out=value
-    if isinstance(value,tuple):
-        out= list(value)
-    if isinstance(value,str):
-        out=[value]
+    out = value
+    if isinstance(value, tuple):
+        out = list(value)
+    if isinstance(value, str):
+        out = [value]
     return out
