@@ -7,7 +7,6 @@ import random
 import threading
 import time
 import traceback
-import pathlib
 from functools import partial
 
 import aioprocessing
@@ -139,9 +138,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 )
                 for i in range(num_proc)
             ]
-            progress_watcher_thread = threading.Thread(target=progress_watcher)
             [thread.start() for thread in queue_threads]
-            progress_watcher_thread.start()
 
             log.debug(f"Initial Queue Threads: {queue_threads}")
             log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
@@ -158,8 +155,6 @@ def process_dicts(username, model_id, filtered_medialist):
                 for thread in queue_threads:
                     thread.join(timeout=0.1)
                 time.sleep(0.5)
-            # kill progress watcher once all queues are done
-            progress_watcher_thread.join(timeout=1)
             log.debug(f"Intial Log Threads: {log_threads}")
             log.debug(f"Number of intial Log Threads: {len(log_threads)}")
             while True:
@@ -216,19 +211,6 @@ def process_dicts(username, model_id, filtered_medialist):
     return final_log_text(username)
 
 
-def progress_watcher():
-    sleep = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
-    while True:
-        time.sleep(sleep)
-        for task in multi_download_job_progress.tasks:
-            task_id = task.id
-            file = multi_download_job_progress.get_file(task_id)
-            if not pathlib.Path(file).is_file():
-                continue
-            progress_updater.update_download_multi_job_task(
-                task_id,
-                complete=pathlib.Path(file).absolute().stat().st_size,
-            )
 
 
 def queue_process(pipe_, task1, total):
@@ -242,7 +224,6 @@ def queue_process(pipe_, task1, total):
         results = pipe_.recv()
         if not isinstance(results, list):
             results = [results]
-
         for result in results:
             try:
                 if isinstance(result, list) or isinstance(result, tuple):
@@ -354,8 +335,7 @@ def process_dict_starter(
 
 def job_progress_helper(funct):
     try:
-        with common_globals.chunk_lock:
-            funct()
+        funct()
     except Exception as E:
         logging.getLogger("shared").debug(E)
 

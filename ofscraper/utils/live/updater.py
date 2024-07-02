@@ -183,6 +183,7 @@ def update_download_multi_job_task(*args, **kwargs):
     multi_download_job_progress.update(*args, **kwargs)
 
 
+
 def remove_download_job_task(task):
     min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
 

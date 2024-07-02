@@ -222,7 +222,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 ele.id,
                 total=total,
-                file=placeholderObj.trunicated_filepath,
+                file=tempholderObj.tempfilepath
             )
         )
 
@@ -230,14 +230,28 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
         await send_msg(
-            partial(
-                progress_updater.update_download_multi_job_task, ele.id, visible=True
-            )
+            partial(progress_updater.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
+        update_count = get_update_count(total, tempholderObj.tempfilepath, chunk_size)
+        count = 1
+
         async for chunk in r.iter_chunked(chunk_size):
             send_chunk_msg(ele, total, tempholderObj)
             await fileobject.write(chunk)
+            await send_bar_msg_batch(
+                partial(
+                    progress_updater.update_download_multi_job_task,
+                    ele.id,
+                    completed=pathlib.Path(tempholderObj.tempfilepath)
+                    .absolute()
+                    .stat()
+                    .st_size,
+                ),
+                count,
+                update_count,
+            )
+            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         # reset download data
