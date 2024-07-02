@@ -7,6 +7,7 @@ import random
 import threading
 import time
 import traceback
+import pathlib
 from functools import partial
 
 import aioprocessing
@@ -46,8 +47,12 @@ from ofscraper.download.utils.progress.progress import convert_num_bytes
 from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.live.progress import multi_download_job_progress
+import ofscraper.utils.constants as constants
+
 
 platform_name = platform.system()
+
 
 
 def process_dicts(username, model_id, filtered_medialist):
@@ -135,7 +140,10 @@ def process_dicts(username, model_id, filtered_medialist):
                 )
                 for i in range(num_proc)
             ]
+            progress_watcher_thread=threading.Thread(target=progress_watcher)
             [thread.start() for thread in queue_threads]
+            progress_watcher_thread.start()
+            
             log.debug(f"Initial Queue Threads: {queue_threads}")
             log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
             while True:
@@ -151,6 +159,8 @@ def process_dicts(username, model_id, filtered_medialist):
                 for thread in queue_threads:
                     thread.join(timeout=0.1)
                 time.sleep(0.5)
+            #kill progress watcher once all queues are done
+            progress_watcher_thread.join(timeout=1)
             log.debug(f"Intial Log Threads: {log_threads}")
             log.debug(f"Number of intial Log Threads: {len(log_threads)}")
             while True:
@@ -207,11 +217,28 @@ def process_dicts(username, model_id, filtered_medialist):
     return final_log_text(username)
 
 
+def progress_watcher():
+    sleep=constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
+    while True:
+        time.sleep(sleep)
+        for task in multi_download_job_progress.tasks:
+            task_id=task.id
+            file=multi_download_job_progress.get_file(task_id)
+            if not pathlib.Path(file).is_file():
+                continue
+            progress_updater.update_download_multi_job_task(task_id,complete=pathlib.Path(file)
+                    .absolute()
+                    .stat()
+                    .st_size,
+                )
+
+
 def queue_process(pipe_, task1, total):
     count = 0
     # shared globals
-
+    sleep=constants.getattr("OVERALL_MULTI_PROGRESS_THREAD_SLEEP")
     while True:
+        time.sleep(sleep)
         if count == 1:
             break
         results = pipe_.recv()
@@ -275,7 +302,7 @@ def queue_process(pipe_, task1, total):
                 elif isinstance(result, dict) and "dir_update" in result:
                     addGlobalDir(result["dir_update"])
                 elif callable(result):
-                    job_progress_helper(result)
+                    job_progress_helper(result) 
             except Exception as E:
                 console.get_console().print(E)
                 console.get_console().print(traceback.format_exc())

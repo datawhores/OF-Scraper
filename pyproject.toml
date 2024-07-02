@@ -49,6 +49,7 @@ cloup = "^3.0.5"
 pynumparser = "^1.4.1"
 idna = "3.7"
 aiofiles = "^23.2.1"
+tqdm = "^4.66.4"
 
 
 [tool.poetry.group.dev.dependencies]

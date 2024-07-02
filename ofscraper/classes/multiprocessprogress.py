@@ -7,7 +7,10 @@ TaskID = NewType("TaskID", int)
 
 class MultiprocessProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
+        self._files={}
         super().__init__(*args, **kwargs)
+    def get_file(self,taskID):
+        return self._files.get(TaskID)
 
     def add_task(
         self,
@@ -17,6 +20,7 @@ class MultiprocessProgress(rich.progress.Progress):
         total: Optional[float] = 100.0,
         completed: int = 0,
         visible: bool = True,
+        file=None,
         **fields: Any,
     ) -> TaskID:
         """Add a new 'task' to the Progress display.
@@ -48,5 +52,7 @@ class MultiprocessProgress(rich.progress.Progress):
             self._tasks[task_id] = task
             if start:
                 self.start_task(task_id)
+            self._files[task_id]=file if file else None
+
         self.refresh()
         return task_id
