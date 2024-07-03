@@ -38,13 +38,11 @@ from ofscraper.download.utils.log import (
 )
 from ofscraper.download.utils.progress.chunk import (
     get_ideal_chunk_size,
-    get_update_count
 )
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg
-from ofscraper.download.utils.send.send_bar_msg import send_bar_msg_batch
 from ofscraper.download.utils.total import batch_total_change_helper
 
 
@@ -259,21 +257,10 @@ async def download_fileobject_writer(total, req, ele, placeholderObj):
             )
         )
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
-        update_count = get_update_count(total, placeholderObj.tempfilepath,chunk_size)
 
         async for chunk in req.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             send_chunk_msg(ele, total, placeholderObj)
-            await send_bar_msg_batch(
-                        partial(
-                            progress_updater.update_download_multi_job_task,
-                            ele.id,
-                            completed=pathlib.Path(placeholderObj.tempfilepath)
-                            .absolute()
-                            .stat()
-                            .st_size,
-                        ),count,update_count
-            )
             count += 1
 
             (await asyncio.sleep(download_sleep)) if download_sleep else None
