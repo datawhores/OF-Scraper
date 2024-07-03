@@ -139,19 +139,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 )
                 for i in range(num_proc)
             ]
-            download_queue_threads = [
-                threading.Thread(
-                    target=asyncio.run,
-                    args=(download_progress(
-                        alt_connect_tuples[i][0],
-                    ),),
-                    daemon=True,
-                )
-                for i in range(num_proc)
-            ]
             [thread.start() for thread in queue_threads]
-            [thread.start() for thread in download_queue_threads]
-
             log.debug(f"Initial Queue Threads: {queue_threads}")
             log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
             while True:
@@ -237,21 +225,21 @@ def process_dicts(username, model_id, filtered_medialist):
 
 
 
-async def download_progress(pipe_):
-    # shared globals
-    sleep_time = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
-    while True:
-        time.sleep(sleep_time)
-        try:
-            results = pipe_.recv()
-            if not isinstance(results, list):
-                results = [results]
-            for result in results:
-                if result is None:
-                    return
-                await ajob_progress_helper(result)
-        except Exception as e:
-            print(e)
+# async def download_progress(pipe_):
+#     # shared globals
+#     sleep_time = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
+#     while True:
+#         time.sleep(sleep_time)
+#         try:
+#             results = pipe_.recv()
+#             if not isinstance(results, list):
+#                 results = [results]
+#             for result in results:
+#                 if result is None:
+#                     return
+#                 await ajob_progress_helper(result)
+#         except Exception as e:
+#             print(e)
 
 
 def queue_process(pipe_, task1, total):
