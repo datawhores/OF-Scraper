@@ -43,10 +43,9 @@ from ofscraper.download.utils.log import (
 from ofscraper.download.utils.metadata import metadata
 from ofscraper.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.utils.progress.progress import convert_num_bytes
-from ofscraper.download.utils.send.message import send_msg
+from ofscraper.download.utils.send.message import send_msg,send_msg_alt
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.live.progress import multi_download_job_progress
 import ofscraper.utils.constants as constants
 
 
@@ -73,6 +72,7 @@ def process_dicts(username, model_id, filtered_medialist):
             split_val = min(4, num_proc)
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
+            alt_connect_tuples = [AioPipe() for _ in range(num_proc)]
             shared = list(
                 more_itertools.chunked([i for i in range(num_proc)], split_val)
             )
@@ -101,6 +101,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         logqueues_[i // split_val],
                         otherqueues_[i // split_val],
                         connect_tuples[i][1],
+                        alt_connect_tuples[i][1],
                         dates.getLogDate(),
                         selector.get_ALL_SUBS_DICT(),
                         read_args.retriveArgs(),
@@ -138,7 +139,18 @@ def process_dicts(username, model_id, filtered_medialist):
                 )
                 for i in range(num_proc)
             ]
+            download_queue_threads = [
+                threading.Thread(
+                    target=asyncio.run,
+                    args=(download_progress(
+                        alt_connect_tuples[i][0],
+                    ),),
+                    daemon=True,
+                )
+                for i in range(num_proc)
+            ]
             [thread.start() for thread in queue_threads]
+            [thread.start() for thread in download_queue_threads]
 
             log.debug(f"Initial Queue Threads: {queue_threads}")
             log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
@@ -153,6 +165,19 @@ def process_dicts(username, model_id, filtered_medialist):
                     break
                 queue_threads = newqueue_threads
                 for thread in queue_threads:
+                    thread.join(timeout=0.1)
+                time.sleep(0.5)
+            while True:
+                newqueue_threads = list(
+                    filter(lambda x: x and x.is_alive(), download_queue_threads)
+                )
+                if len(newqueue_threads) != len(queue_threads):
+                    log.debug(f"Remaining Download Queue Threads: {download_queue_threads}")
+                    log.debug(f"Number of Download Queue Threads: {len(download_queue_threads)}")
+                if len(download_queue_threads) == 0:
+                    break
+                download_queue_threads = newqueue_threads
+                for thread in download_queue_threads:
                     thread.join(timeout=0.1)
                 time.sleep(0.5)
             log.debug(f"Intial Log Threads: {log_threads}")
@@ -211,6 +236,20 @@ def process_dicts(username, model_id, filtered_medialist):
     return final_log_text(username)
 
 
+
+async def download_progress(pipe_):
+    count = 0
+    # shared globals
+    sleep = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
+    while True:
+        time.sleep(sleep)
+        if count == 1:
+            break
+        results = pipe_.recv()
+        if not isinstance(results, list):
+            results = [results]
+        for result in results:
+            await ajob_progress_helper(result)
 
 
 def queue_process(pipe_, task1, total):
@@ -300,6 +339,7 @@ def process_dict_starter(
     p_logqueue_,
     p_otherqueue_,
     pipe_,
+    pipe2_,
     dateDict,
     userNameList,
     argsCopy,
@@ -308,6 +348,7 @@ def process_dict_starter(
         dateDict,
         userNameList,
         pipe_,
+        pipe2_,
         logger.get_shared_logger(
             main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"
         ),
@@ -336,9 +377,24 @@ def process_dict_starter(
 def job_progress_helper(funct):
     try:
         funct()
+    #probably handle by other thread
+    except KeyError:
+        pass
     except Exception as E:
         logging.getLogger("shared").debug(E)
 
+
+async def ajob_progress_helper(funct):
+    try:
+        await asyncio.get_event_loop().run_in_executor(
+                None,
+                funct,
+        )
+    #probably handle by other thread
+    except KeyError:
+        pass
+    except Exception as E:
+        logging.getLogger("shared").debug(E)
 
 def setpriority():
     os_used = platform.system()
@@ -422,6 +478,7 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug("other thread closed")
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
+    await send_msg_alt(None)
 
 
 def pid_log_helper():

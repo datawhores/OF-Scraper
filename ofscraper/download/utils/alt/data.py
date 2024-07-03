@@ -41,7 +41,7 @@ async def resume_data_handler_alt(data, item, ele, placeholderObj, batch=False):
         elif not batch:
             total_change_helper(None, total)
         elif batch:
-            batch_total_change_helper(None, total)
+            await batch_total_change_helper(None, total)
         return item, True
     elif total != resume_size:
         return item, False

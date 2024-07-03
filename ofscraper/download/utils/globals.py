@@ -73,12 +73,16 @@ def set_up_contexvars():
     innerlog = contextvars.ContextVar("innerlog")
 
 
-def process_split_globals(pipeCopy, logCopy):
+def process_split_globals(pipeCopy, pipeAltCopy,logCopy):
     global pipe
     global log
     global pipe_lock
+    global pipe_alt_lock
     global lock_pool
+    global pipe_alt
     pipe = pipeCopy
+    pipe_alt=pipeAltCopy
     log = logCopy
     pipe_lock = threading.Lock()
+    pipe_alt_lock = threading.Lock()
     lock_pool = ThreadPoolExecutor(max_workers=1)

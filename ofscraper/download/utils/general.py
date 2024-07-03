@@ -37,12 +37,12 @@ def add_additional_data(placeholderObj, ele):
     add_path(placeholderObj, ele)
 
 
-def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
+def subProcessVariableInit(dateDict, userList, pipeCopy, pipeAltCopy, logCopy, argsCopy):
     common_globals.reset_globals()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     selector.set_ALL_SUBS_DICT(userList)
-    common_globals.process_split_globals(pipeCopy, logCopy)
+    common_globals.process_split_globals(pipeCopy, pipeAltCopy,logCopy)
     set_send_msg()
 
 

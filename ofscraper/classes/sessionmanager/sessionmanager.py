@@ -593,6 +593,7 @@ class sessionManager:
         r.request = r.request_info
         r.status_code = r.status
         r.read_ = r.content.read
+        r.eof=r.content.at_eof
         return r
 
     async def factoryasync(self, input):

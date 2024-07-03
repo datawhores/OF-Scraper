@@ -38,7 +38,7 @@ from ofscraper.download.utils.log import (
 )
 from ofscraper.download.utils.progress.chunk import (
     get_ideal_chunk_size,
-    get_update_count,
+    get_update_count
 )
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.retries import get_download_retries
@@ -259,7 +259,7 @@ async def download_fileobject_writer(total, req, ele, placeholderObj):
             )
         )
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
-        update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
+        update_count = get_update_count(total, placeholderObj.tempfilepath,chunk_size)
 
         async for chunk in req.iter_chunked(chunk_size):
             await fileobject.write(chunk)

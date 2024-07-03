@@ -144,7 +144,7 @@ def add_download_job_multi_task(*args, file=None, **kwargs):
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
     task = multi_download_job_progress.add_task(
-        *args, visible=visible, start=visible, file=file, **kwargs
+        *args, visible=visible, start=True, file=file, **kwargs
     )
     if not visible:
         downloads_pending.add(task)
@@ -152,18 +152,14 @@ def add_download_job_multi_task(*args, file=None, **kwargs):
 
 
 def add_download_task(*args, **kwargs):
-    return download_overall_progress.add_task(*args, **kwargs)
+    return download_overall_progress.add_task(*args, start=True,**kwargs)
 
 
 def start_download_job_task(*args, **kwargs):
-    if not settings.get_download_bars():
-        return
     download_job_progress.start(*args, **kwargs)
 
 
 def start_download_multi_job_task(*args, **kwargs):
-    if not settings.get_download_bars():
-        return
     multi_download_job_progress.start(*args, **kwargs)
 
 
@@ -178,8 +174,6 @@ def update_download_job_task(*args, **kwargs):
 
 
 def update_download_multi_job_task(*args, **kwargs):
-    if not settings.get_download_bars():
-        return
     multi_download_job_progress.update(*args, **kwargs)
 
 

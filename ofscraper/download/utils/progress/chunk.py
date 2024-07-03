@@ -17,6 +17,12 @@ import psutil
 
 import ofscraper.utils.constants as constants
 
+def change_get_ideal_chunk_size(total_size, curr_file,count=None,chunk_size=None,update_count=None):
+    if  not chunk_size:
+        chunk_size = get_ideal_chunk_size(total_size, curr_file)
+    elif count%(update_count*5)==0:
+        chunk_size = get_ideal_chunk_size(total_size, curr_file)
+    return chunk_size
 
 def get_ideal_chunk_size(total_size, curr_file):
     """
@@ -42,10 +48,10 @@ def get_ideal_chunk_size(total_size, curr_file):
 
     # Target a chunk size that utilizes a reasonable portion of available memory
     max_chunk_size = min(
-        available_memory // 512, constants.getattr("MAX_CHUNK_SIZE")
+        available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"), constants.getattr("MAX_CHUNK_SIZE")
     )  # Max 10MB
     # Adjust chunk size based on file size (consider smaller sizes for larger files, with minimum)
-    ideal_chunk_size = min(max_chunk_size, file_size // 512)
+    ideal_chunk_size = min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT"))
     ideal_chunk_size = max(
         ideal_chunk_size - (ideal_chunk_size % 4096),
         constants.getattr("MIN_CHUNK_SIZE"),

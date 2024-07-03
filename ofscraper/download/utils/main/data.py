@@ -52,6 +52,6 @@ async def resume_data_handler_main(data, ele, tempholderObj, batch=False):
         elif not batch:
             total_change_helper(None, total)
         elif batch:
-            batch_total_change_helper(None, total)
+            await batch_total_change_helper(None, total)
         check = True
     return total, placeholderObj, check

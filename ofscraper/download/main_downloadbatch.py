@@ -44,8 +44,9 @@ from ofscraper.download.utils.main.data import (
 )
 from ofscraper.download.utils.metadata import force_download
 from ofscraper.download.utils.progress.chunk import (
-    get_ideal_chunk_size,
+    change_get_ideal_chunk_size,
     get_update_count,
+    get_ideal_chunk_size,
 )
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.retries import get_download_retries
@@ -233,26 +234,28 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
             partial(progress_updater.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
-        update_count = get_update_count(total, tempholderObj.tempfilepath, chunk_size)
+        update_count = get_update_count(total, tempholderObj.tempfilepath,chunk_size)
         count = 1
-
         async for chunk in r.iter_chunked(chunk_size):
-            send_chunk_msg(ele, total, tempholderObj)
-            await fileobject.write(chunk)
-            await send_bar_msg_batch(
-                partial(
-                    progress_updater.update_download_multi_job_task,
-                    ele.id,
-                    completed=pathlib.Path(tempholderObj.tempfilepath)
-                    .absolute()
-                    .stat()
-                    .st_size,
-                ),
-                count,
-                update_count,
-            )
-            count += 1
-            (await asyncio.sleep(download_sleep)) if download_sleep else None
+            try:
+                await fileobject.write(chunk)
+                send_chunk_msg(ele, total, tempholderObj)
+                await send_bar_msg_batch(
+                    partial(
+                        progress_updater.update_download_multi_job_task,
+                        ele.id,
+                        completed=pathlib.Path(tempholderObj.tempfilepath)
+                        .absolute()
+                        .stat()
+                        .st_size,
+                    ),
+                    count,
+                    update_count,
+                )
+                count += 1
+                (await asyncio.sleep(download_sleep)) if download_sleep else None
+            except EOFError:
+                break
     except Exception as E:
         # reset download data
         raise E

@@ -50,8 +50,8 @@ from ofscraper.download.utils.log import (
     temp_file_logger,
 )
 from ofscraper.download.utils.progress.chunk import (
-    get_ideal_chunk_size,
     get_update_count,
+    get_ideal_chunk_size
 )
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
@@ -233,12 +233,12 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
     chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
-    update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
+    update_count = get_update_count(total, placeholderObj.tempfilepath,chunk_size)
     count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):
-            send_chunk_msg(ele, total, placeholderObj)
             await fileobject.write(chunk)
+            send_chunk_msg(ele, total, placeholderObj)
             await send_bar_msg(
                 partial(
                     progress_updater.update_download_job_task,
