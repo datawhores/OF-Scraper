@@ -44,14 +44,12 @@ from ofscraper.download.utils.main.data import (
 )
 from ofscraper.download.utils.metadata import force_download
 from ofscraper.download.utils.progress.chunk import (
-    get_update_count,
     get_ideal_chunk_size,
 )
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg
-from ofscraper.download.utils.send.send_bar_msg import send_bar_msg_batch
 from ofscraper.download.utils.total import batch_total_change_helper
 
 
@@ -233,24 +231,11 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
             partial(progress_updater.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
-        update_count = get_update_count(total, tempholderObj.tempfilepath,chunk_size)
         count = 1
         async for chunk in r.iter_chunked(chunk_size):
             try:
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)
-                await send_bar_msg_batch(
-                    partial(
-                        progress_updater.update_download_multi_job_task,
-                        ele.id,
-                        completed=pathlib.Path(tempholderObj.tempfilepath)
-                        .absolute()
-                        .stat()
-                        .st_size,
-                    ),
-                    count,
-                    update_count,
-                )
                 count += 1
                 (await asyncio.sleep(download_sleep)) if download_sleep else None
             except EOFError:
