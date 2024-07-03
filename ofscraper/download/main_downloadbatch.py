@@ -44,7 +44,6 @@ from ofscraper.download.utils.main.data import (
 )
 from ofscraper.download.utils.metadata import force_download
 from ofscraper.download.utils.progress.chunk import (
-    change_get_ideal_chunk_size,
     get_update_count,
     get_ideal_chunk_size,
 )

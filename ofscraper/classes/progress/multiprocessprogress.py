@@ -2,6 +2,7 @@ from typing import Any, NewType, Optional
 import arrow
 import rich.progress
 import ofscraper.utils.constants as constants
+from ofscraper.classes.progress.task import Task
 
 
 TaskID = NewType("TaskID", int)
@@ -43,7 +44,7 @@ class MultiprocessProgress(rich.progress.Progress):
             TaskID: An ID you can use when calling `update`.
         """
         with self._lock:
-            task = rich.progress.Task(
+            task = Task(
                 task_id,
                 description,
                 total,
@@ -52,6 +53,7 @@ class MultiprocessProgress(rich.progress.Progress):
                 fields=fields,
                 _get_time=self.get_time,
                 _lock=self._lock,
+                file=file
             )
             self._tasks[task_id] = task
             self._files[task_id] = file if file else None
@@ -60,6 +62,7 @@ class MultiprocessProgress(rich.progress.Progress):
 
         self.refresh()
         return task_id
+
 
     def update(self,*args,**kwargs):
         task_id=args[0]

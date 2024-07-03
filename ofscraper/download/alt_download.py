@@ -51,7 +51,7 @@ from ofscraper.download.utils.log import (
 )
 from ofscraper.download.utils.progress.chunk import (
     get_update_count,
-    get_ideal_chunk_size
+    get_ideal_chunk_size,
 )
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
@@ -223,17 +223,51 @@ async def send_req_inner(c, ele, item, placeholderObj):
 
 
 async def download_fileobject_writer(total, l, ele, placeholderObj):
+    if total > constants.getattr("MAX_READ_SIZE"):
+        await download_fileobject_writer_streamer(total, l, ele, placeholderObj)
+    else:
+        download_fileobject_writer_reader(total, l, ele, placeholderObj)
+
+
+async def download_fileobject_writer_reader(total, res, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
 
     task1 = progress_updater.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
     )
+    fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
+    try:
+        fileobject.write(await res.read())
+        await send_bar_msg(
+            partial(progress_updater.update_download_job_task, task1, completed=total),
+        )
+    except Exception as E:
+        raise E
+    finally:
+        # Close file if needed
+        try:
+            await fileobject.close()
+        except Exception:
+            None
+        try:
+            progress_updater.remove_download_job_task(task1)
+        except Exception:
+            None
 
+
+async def download_fileobject_writer_streamer(total, l, ele, placeholderObj):
+
+    pathstr = str(placeholderObj.tempfilepath)
+
+    task1 = progress_updater.add_download_job_task(
+        f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+        total=total,
+    )
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
     chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
-    update_count = get_update_count(total, placeholderObj.tempfilepath,chunk_size)
+    update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
     count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):

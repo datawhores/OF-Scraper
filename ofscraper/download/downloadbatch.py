@@ -238,18 +238,20 @@ def process_dicts(username, model_id, filtered_medialist):
 
 
 async def download_progress(pipe_):
-    count = 0
     # shared globals
-    sleep = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
+    sleep_time = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
     while True:
-        time.sleep(sleep)
-        if count == 1:
-            break
-        results = pipe_.recv()
-        if not isinstance(results, list):
-            results = [results]
-        for result in results:
-            await ajob_progress_helper(result)
+        time.sleep(sleep_time)
+        try:
+            results = pipe_.recv()
+            if not isinstance(results, list):
+                results = [results]
+            for result in results:
+                if result is None:
+                    return
+                await ajob_progress_helper(result)
+        except Exception as e:
+            print(e)
 
 
 def queue_process(pipe_, task1, total):
@@ -355,6 +357,7 @@ def process_dict_starter(
         argsCopy,
     )
     setpriority()
+    system.setNameAlt()
     plat = platform.system()
     if plat == "Linux":
         import uvloop
