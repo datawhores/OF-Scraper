@@ -231,12 +231,10 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
             partial(progress_updater.update_download_multi_job_task, ele.id, visible=True)
         )
         chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
-        count = 1
         async for chunk in r.iter_chunked(chunk_size):
             try:
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)
-                count += 1
                 (await asyncio.sleep(download_sleep)) if download_sleep else None
             except EOFError:
                 break

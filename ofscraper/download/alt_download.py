@@ -226,7 +226,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     if total > constants.getattr("MAX_READ_SIZE"):
         await download_fileobject_writer_streamer(total, l, ele, placeholderObj)
     else:
-        download_fileobject_writer_reader(total, l, ele, placeholderObj)
+        await download_fileobject_writer_reader(total, l, ele, placeholderObj)
 
 
 async def download_fileobject_writer_reader(total, res, ele, placeholderObj):
@@ -238,7 +238,7 @@ async def download_fileobject_writer_reader(total, res, ele, placeholderObj):
     )
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     try:
-        fileobject.write(await res.read())
+        await fileobject.write(await res.read())
         await send_bar_msg(
             partial(progress_updater.update_download_job_task, task1, completed=total),
         )

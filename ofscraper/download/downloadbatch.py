@@ -155,19 +155,6 @@ def process_dicts(username, model_id, filtered_medialist):
                 for thread in queue_threads:
                     thread.join(timeout=0.1)
                 time.sleep(0.5)
-            while True:
-                newqueue_threads = list(
-                    filter(lambda x: x and x.is_alive(), download_queue_threads)
-                )
-                if len(newqueue_threads) != len(queue_threads):
-                    log.debug(f"Remaining Download Queue Threads: {download_queue_threads}")
-                    log.debug(f"Number of Download Queue Threads: {len(download_queue_threads)}")
-                if len(download_queue_threads) == 0:
-                    break
-                download_queue_threads = newqueue_threads
-                for thread in download_queue_threads:
-                    thread.join(timeout=0.1)
-                time.sleep(0.5)
             log.debug(f"Intial Log Threads: {log_threads}")
             log.debug(f"Number of intial Log Threads: {len(log_threads)}")
             while True:

@@ -11,9 +11,8 @@ from rich.style import Style
 from rich.table import Column
 
 import ofscraper.utils.console as console_
-from ofscraper.classes.progress.multiprocessprogress import MultiprocessProgress as MultiProgress
+from ofscraper.classes.progress.progress import MultiprocessFileProgress as MultiProgress,FileProgress,OverallFileProgress
 from ofscraper.classes.progress.transfercol import OverallTransferSpeedColumn,TransferFileSpeedColumn
-
 # activity
 activity_progress = Progress(
     TextColumn("[white]{task.description}[/white]"),
@@ -25,10 +24,11 @@ activity_counter = Progress(
 )
 
 # download progress
-download_job_progress = Progress(
+download_job_progress = FileProgress(
     TextColumn("[white]{task.description}[/white]"),
     BarColumn(),
     TaskProgressColumn(),
+    TransferFileSpeedColumn(),
     console=console_.get_shared_console(),
 )
 
@@ -41,7 +41,7 @@ multi_download_job_progress = MultiProgress(
     DownloadColumn(),
 )
 
-download_overall_progress = Progress(
+download_overall_progress = OverallFileProgress(
     TextColumn("[white]{task.description}[/white]"),
     BarColumn(),
     TaskProgressColumn(),
