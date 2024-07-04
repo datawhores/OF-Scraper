@@ -50,12 +50,10 @@ from ofscraper.download.utils.log import (
     temp_file_logger,
 )
 from ofscraper.download.utils.progress.chunk import (
-    get_update_count,
     get_ideal_chunk_size,
 )
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
-from ofscraper.download.utils.send.send_bar_msg import send_bar_msg
 from ofscraper.download.utils.total import total_change_helper
 from ofscraper.download.utils.resume import get_resume_header, get_resume_size
 
@@ -226,10 +224,10 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     if total > constants.getattr("MAX_READ_SIZE"):
         await download_fileobject_writer_streamer(total, l, ele, placeholderObj)
     else:
-        await download_fileobject_writer_reader(total, l, ele, placeholderObj)
+        await download_fileobject_writer_reader(total, l, placeholderObj)
 
 
-async def download_fileobject_writer_reader(total, res, ele, placeholderObj):
+async def download_fileobject_writer_reader(total, res, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
 
     task1 = progress_updater.add_download_job_task(
@@ -239,9 +237,6 @@ async def download_fileobject_writer_reader(total, res, ele, placeholderObj):
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     try:
         await fileobject.write(await res.read())
-        await send_bar_msg(
-            partial(progress_updater.update_download_job_task, task1, completed=total),
-        )
     except Exception as E:
         raise E
     finally:
@@ -267,25 +262,10 @@ async def download_fileobject_writer_streamer(total, l, ele, placeholderObj):
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
     chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
-    update_count = get_update_count(total, placeholderObj.tempfilepath, chunk_size)
-    count = 1
     try:
         async for chunk in l.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             send_chunk_msg(ele, total, placeholderObj)
-            await send_bar_msg(
-                partial(
-                    progress_updater.update_download_job_task,
-                    task1,
-                    completed=pathlib.Path(placeholderObj.tempfilepath)
-                    .absolute()
-                    .stat()
-                    .st_size,
-                ),
-                count,
-                update_count,
-            )
-            count += 1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E

@@ -1,7 +1,6 @@
 from typing import Any, NewType, Optional
 import rich.progress
 from ofscraper.classes.progress.task import Task
-import  ofscraper.utils.settings as settings
 import ofscraper.utils.live.progress as progress_utils
 TaskID = NewType("TaskID", int)
 
@@ -9,7 +8,7 @@ TaskID = NewType("TaskID", int)
 class MultiprocessFileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
         self._last_updated={}
-        super().__init__(*args,refresh_per_second =2, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_file(self, taskID):
         return self._files.get(taskID)
@@ -85,7 +84,7 @@ class FileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
         self._files = {}
         self._last_updated={}
-        super().__init__(*args,refresh_per_second =.5, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_file(self, taskID):
         return self._files.get(taskID)
@@ -159,7 +158,7 @@ class FileProgress(rich.progress.Progress):
 
 class OverallFileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args,refresh_per_second =2, **kwargs)
+        super().__init__(*args,**kwargs)
 
     def get_file(self, taskID):
         return self._files.get(taskID)

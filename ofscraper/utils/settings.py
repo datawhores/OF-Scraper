@@ -107,6 +107,11 @@ def get_download_bars():
         read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
     )
 
+def get_download_sems():
+    return (
+        read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
+    )
+
 
 def get_threads():
     return read_args.retriveArgs().downloadthreads or config_data.get_threads()

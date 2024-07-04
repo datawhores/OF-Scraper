@@ -4,9 +4,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import aioprocessing
-
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
+import ofscraper.utils.settings as settings
 
 attempt = None
 attempt2 = None
@@ -45,9 +44,9 @@ def main_globals():
 
     # global
     global thread
-    thread = ThreadPoolExecutor(max_workers=config_data.get_download_semaphores() * 2)
+    thread = ThreadPoolExecutor(max_workers=settings.get_download_sems() * 2)
     global sem
-    sem = config_data.get_download_semaphores()
+    sem = settings.get_download_sems()
     global dirSet
     dirSet = set()
     global lock

@@ -62,10 +62,14 @@ def setup_download_progress_live(multi=False, setup=False, revert=True, stop=Fal
             "SUPRESS_DOWNLOAD_DISPLAY"
         )
         if multi:
-            get_live().update(get_multi_download_progress_group(), refresh=True)
+            live=get_live()
+            live.update(get_multi_download_progress_group(), refresh=True)
         else:
-            get_live().update(get_download_group(), refresh=True)
+            live=get_live()
+            live.update(get_download_group(), refresh=True)
         yield
+
+    
 
 
 @contextlib.contextmanager
