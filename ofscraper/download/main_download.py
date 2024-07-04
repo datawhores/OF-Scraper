@@ -212,7 +212,8 @@ async def download_fileobject_writer_reader(r, tempholderObj,placeholderObj, tot
     task1 = progress_updater.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
-        file=tempholderObj.tempfilepath
+        file=tempholderObj.tempfilepath,
+
     )
     fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
     try:
@@ -235,7 +236,7 @@ async def download_fileobject_writer_streamer(r, ele, tempholderObj, placeholder
     task1 = progress_updater.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
-        file=tempholderObj.tempfilepath
+        file=tempholderObj.tempfilepath,
     )
     try:
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()

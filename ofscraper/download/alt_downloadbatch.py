@@ -236,10 +236,47 @@ async def send_req_inner(c, ele, item, placeholderObj):
         raise E
 
 
-async def download_fileobject_writer(total, req, ele, placeholderObj):
+
+async def download_fileobject_writer(total, l, ele, placeholderObj):
+    if total > constants.getattr("MAX_READ_SIZE"):
+        await download_fileobject_writer_streamer(total, l, ele, placeholderObj)
+    else:
+        await download_fileobject_writer_reader(ele,total, l, placeholderObj)
+
+
+
+async def download_fileobject_writer_reader(ele,total, res, placeholderObj):
+    pathstr = str(placeholderObj.tempfilepath)
+    await send_msg(
+            partial(
+                progress_updater.add_download_job_multi_task,
+                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                ele.id,
+                total=total,
+                file=placeholderObj.tempfilepath,
+            )
+    )
+    fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
+    try:
+        await fileobject.write(await res.read())
+    except Exception as E:
+        raise E
+    finally:
+        # Close file if needed
+        try:
+            await fileobject.close()
+        except Exception:
+            None
+        try:
+            await send_msg(
+                partial(progress_updater.remove_download_multi_job_task, ele.id)
+            )
+        except Exception:
+            None
+
+async def download_fileobject_writer_streamer(total, req, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
     try:
-        count = 1
         await send_msg(
             partial(
                 progress_updater.add_download_job_multi_task,
@@ -251,18 +288,11 @@ async def download_fileobject_writer(total, req, ele, placeholderObj):
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        await send_msg(
-            partial(
-                progress_updater.update_download_multi_job_task, ele.id, visible=True
-            )
-        )
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
 
         async for chunk in req.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             send_chunk_msg(ele, total, placeholderObj)
-            count += 1
-
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E
