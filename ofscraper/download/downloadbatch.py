@@ -11,7 +11,6 @@ from functools import partial
 
 import aioprocessing
 import more_itertools
-import psutil
 from aioprocessing import AioPipe
 
 import ofscraper.download.utils.globals as common_globals
@@ -30,6 +29,8 @@ import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+import ofscraper.utils.system.priority as priority
+
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
@@ -331,7 +332,7 @@ def process_dict_starter(
         ),
         argsCopy,
     )
-    setpriority()
+    priority.setpriority()
     system.setNameAlt()
     plat = platform.system()
     if plat == "Linux":
@@ -373,22 +374,6 @@ async def ajob_progress_helper(funct):
         pass
     except Exception as E:
         logging.getLogger("shared").debug(E)
-
-def setpriority():
-    os_used = platform.system()
-    process = psutil.Process(
-        os.getpid()
-    )  # Set highest priority for the python script for the CPU
-    if os_used == "Windows":  # Windows (either 32-bit or 64-bit)
-        process.ionice(psutil.IOPRIO_NORMAL)
-        process.nice(psutil.NORMAL_PRIORITY_CLASS)
-
-    elif os_used == "Linux":  # linux
-        process.ionice(psutil.IOPRIO_CLASS_BE)
-        process.nice(5)
-    else:  # MAC OS X or other
-        process.nice(10)
-
 
 async def consumer(queue):
     while True:
