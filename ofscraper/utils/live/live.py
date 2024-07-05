@@ -11,7 +11,7 @@ def get_live(recreate=False):
     if not live or recreate:
         live = Live(
             transient=False, refresh_per_second=.1, console=console_.get_shared_console(),
-            auto_refresh=False,
+            auto_refresh=True,
         )
     return live
 
