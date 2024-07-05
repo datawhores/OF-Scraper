@@ -206,11 +206,13 @@ def remove_download_multi_job_task(task):
     try:
         multi_download_job_progress.remove_task(task)
         if len(download_job_progress.tasks) < min_add_visible:
-            new_task = downloads_pending.pop() if downloads_pending else None
-            if not new_task:
-                return
-            update_download_multi_job_task(new_task, visible=True)
-            start_download_multi_job_task(task)
+
+            new_task=None
+            while new_task not in download_job_progress.tasks and downloads_pending:
+                new_task = downloads_pending.pop()
+            if new_task:
+                update_download_multi_job_task(new_task, visible=True)
+                start_download_multi_job_task(task)
     except KeyError:
         pass
 
