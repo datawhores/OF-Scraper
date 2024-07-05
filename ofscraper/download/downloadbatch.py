@@ -378,6 +378,8 @@ async def ajob_progress_helper(funct):
 async def consumer(lock,aws):
     while True:
         async with lock:
+            if not(bool(aws)):
+                break
             data = aws.pop()
         if data is None:
             break
