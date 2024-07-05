@@ -149,7 +149,6 @@ def _linux_truncateHelper(path):
 
 
 def get_string_byte_size(text):
-    text = str(text)
     """
   This function estimates the byte size of a string considering ASCII characters.
 
