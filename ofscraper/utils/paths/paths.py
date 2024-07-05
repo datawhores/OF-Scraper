@@ -161,6 +161,9 @@ def get_string_byte_size(text):
     total_size = 0
     normal_char_size=constants.getattr("NORMAL_CHAR_SIZE")
     special_char_size=constants.getattr("SPECIAL_CHAR_SIZE")
+    utf=constants.getattr("UTF")
+    if utf:
+        return len(text.encode(utf))
     for char in text:
         try:
             if ord(char) < 128:
