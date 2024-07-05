@@ -4,7 +4,7 @@ import ofscraper.download.utils.globals as common_globals
 from ofscraper.download.utils.alt.attempt import alt_attempt_get
 from ofscraper.download.utils.general import check_forced_skip, get_medialog
 from ofscraper.download.utils.log import temp_file_logger
-from ofscraper.download.utils.resume import get_resume_size
+from ofscraper.download.utils.resume import get_resume_size,resume_cleaner
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.total import (
     batch_total_change_helper,
@@ -22,8 +22,9 @@ async def resume_data_handler_alt(data, item, ele, placeholderObj, batch=False):
     )
     total = int(data.get("content-total")) if data.get("content-total") else None
     item["total"] = total
-
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
+    resume_size=resume_cleaner(resume_size,total,placeholderObj.tempfilepath)
+
     common_globals.log.debug(
         f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }"
     )

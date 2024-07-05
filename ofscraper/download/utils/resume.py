@@ -22,5 +22,9 @@ def get_resume_size(tempholderObj, mediatype=None):
     )
 
 def resume_cleaner(resume_size,total,path):
-    if resume_size > total:
+    if not resume_size:
+        return 0
+    elif resume_size > total:
         pathlib.Path(path).unlink(missing_ok=True)
+        return 0
+    return resume_size
