@@ -3,7 +3,7 @@ from rich.live import Live
 import ofscraper.utils.console as console_
 
 live = Live(
-    transient=False, refresh_per_second=.25, console=console_.get_shared_console(),auto_refresh=False
+    transient=False, refresh_per_second=.25, console=console_.get_shared_console(),auto_refresh=True
 )
 
 def get_live(recreate=False):

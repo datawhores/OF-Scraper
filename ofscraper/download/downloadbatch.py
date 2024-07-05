@@ -65,8 +65,6 @@ def process_dicts(username, model_id, filtered_medialist):
     try:
         common_globals.reset_globals()
         with live():
-            import time
-            time.sleep(1000)
             if not read_args.retriveArgs().item_sort:
                 random.shuffle(filtered_medialist)
             manager = manager_.get_manager()
