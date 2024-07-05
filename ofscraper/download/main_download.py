@@ -43,13 +43,11 @@ from ofscraper.download.utils.main.data import (
 )
 from ofscraper.download.utils.metadata import force_download
 from ofscraper.download.utils.progress.chunk import (
-    get_update_count,
     get_ideal_chunk_size
 )
-from ofscraper.download.utils.resume import get_resume_header, get_resume_size
+from ofscraper.download.utils.resume import get_resume_header, get_resume_size,resume_cleaner
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
-from ofscraper.download.utils.send.send_bar_msg import send_bar_msg
 from ofscraper.download.utils.total import total_change_helper
 
 
@@ -186,6 +184,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
                 )
+                resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
                 await download_fileobject_writer(
                     r, ele, tempholderObj, placeholderObj, total
                 )

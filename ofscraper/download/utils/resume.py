@@ -20,3 +20,7 @@ def get_resume_size(tempholderObj, mediatype=None):
         if not pathlib.Path(tempholderObj.tempfilepath).exists()
         else pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size
     )
+
+def resume_cleaner(resume_size,total,path):
+    if resume_size > total:
+        pathlib.Path(path).unlink(missing_ok=True)
