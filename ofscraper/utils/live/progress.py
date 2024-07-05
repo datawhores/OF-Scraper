@@ -6,6 +6,7 @@ from rich.progress import (
     SpinnerColumn,
     TaskProgressColumn,
     TextColumn,
+    TimeElapsedColumn
 )
 from rich.style import Style
 from rich.table import Column
@@ -57,6 +58,7 @@ download_overall_progress = OverallFileProgress(
     BarColumn(),
     TaskProgressColumn(),
     OverallTransferSpeedColumn(),
+     TimeElapsedColumn(),
         refresh_per_second =3,
         auto_refresh=True
 
