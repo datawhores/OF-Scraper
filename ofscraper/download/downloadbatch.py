@@ -233,9 +233,7 @@ def process_dicts(username, model_id, filtered_medialist):
 def queue_process(pipe_, task1, total):
     count = 0
     # shared globals
-    sleep = constants.getattr("OVERALL_MULTI_PROGRESS_THREAD_SLEEP")
     while True:
-        time.sleep(sleep)
         if count == 1:
             break
         results = pipe_.recv()
