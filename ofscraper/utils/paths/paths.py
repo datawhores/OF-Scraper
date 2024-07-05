@@ -160,14 +160,16 @@ def get_string_byte_size(text):
       The estimated byte size of the string.
   """
     total_size = 0
+    normal_char_size=constants.getattr("NORMAL_CHAR_SIZE")
+    special_char_size=constants.getattr("SPECIAL_CHAR_SIZE")
     for char in text:
         try:
             if ord(char) < 128:
-                total_size += 2  # 2 bytes for ASCII characters
+                total_size += normal_char_size  # 2 bytes for ASCII characters
             else:
-                total_size += 4
+                total_size += special_char_size
         except ValueError:
-            total_size += 4  # 4 bytes for non-ASCII characters (assumption)
+            total_size += special_char_size  # 4 bytes for non-ASCII characters (assumption)
     return total_size
 
 
