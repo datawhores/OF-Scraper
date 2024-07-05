@@ -106,7 +106,7 @@ async def alt_download_downloader(item, c, ele):
                     pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
                 data = await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
-                    partial(cache.get, f"{item['name']}_headers"),
+                    partial(cache.get, f"{item['name']}_{ele.username}_headers"),
                 )
                 status = False
                 if data:
@@ -195,7 +195,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             await total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(cache.set, f"{item['name']}_headers", data),
+                partial(cache.set, f"{item['name']}_{ele.username}_headers", data),
             )
 
             temp_file_logger(placeholderObj, ele)

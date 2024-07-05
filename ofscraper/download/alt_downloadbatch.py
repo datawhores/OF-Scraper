@@ -106,7 +106,7 @@ async def alt_download_downloader(
                 )
                 data = await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
-                    partial(cache.get, f"{item['name']}_headers"),
+                    partial(cache.get, f"{item['name']}_{ele.username}_headers"),
                 )
                 status = False
                 if data:
@@ -212,7 +212,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
 
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(cache.set, f"{item['name']}_headers", data),
+                partial(cache.set, f"{item['name']}_{ele.username}_headers", data),
             )
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
             if await check_forced_skip(ele, total) == 0:

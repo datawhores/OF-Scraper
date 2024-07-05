@@ -167,7 +167,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
             )
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(cache.set, f"{ele.id}_headers", data),
+                partial(cache.set, f"{ele.id}_{ele.username}_headers", data),
             )
             content_type = r.headers.get("content-type").split("/")[-1]
             content_type = content_type or get_unknown_content_type(ele)
