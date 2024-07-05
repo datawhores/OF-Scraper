@@ -197,7 +197,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             params=params,
             forced=constants.getattr("DOWNLOAD_FORCE_KEY"),
         ) as l:
-            item["total"] = item["total"] or int(l.headers.get("content-length"))
+            item["total"] = int(l.headers.get("content-length"))
             total = item["total"]
             await batch_total_change_helper(None, total)
             data = {

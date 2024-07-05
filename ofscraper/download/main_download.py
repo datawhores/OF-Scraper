@@ -154,7 +154,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         async with c.requests_async(
             url=ele.url, headers=headers, forced=constants.getattr("DOWNLOAD_FORCE_KEY")
         ) as r:
-            total = total or int(r.headers["content-length"])
+            total = int(r.headers["content-length"])
             await total_change_helper(None, total)
             data = {
                 "content-total": total,

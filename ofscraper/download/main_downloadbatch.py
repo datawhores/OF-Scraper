@@ -84,11 +84,9 @@ async def main_download_downloader(c, ele):
         with _:
             try:
                 common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                (
+                if common_globals.attempt.get() > 1:
                     pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
-                    if common_globals.attempt.get() > 1
-                    else None
-                )
+            
                 data = await get_data(ele)
                 status = False
                 total = None
@@ -167,7 +165,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         async with c.requests_async(
             url=ele.url, headers=headers, forced=constants.getattr("DOWNLOAD_FORCE_KEY")
         ) as r:
-            total = total or int(r.headers["content-length"])
+            total =int(r.headers["content-length"])
             await batch_total_change_helper(None, total)
             data = {
                 "content-total": total,
