@@ -74,7 +74,7 @@ def truncate(path):
 
 def _windows_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if get_string_byte_size(path) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
+    if get_string_byte_size_windows(path) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
     path = pathlib.Path(path)
     dir = path.parent
@@ -89,21 +89,21 @@ def _windows_truncateHelper(path):
     file = re.sub(ext, "", path.name)
     max_bytes = (
         constants.getattr("WINDOWS_MAX_PATH_BYTES")
-        - get_string_byte_size(ext)
-        - get_string_byte_size(dir)
+        - get_string_byte_size_windows(ext)
+        - get_string_byte_size_windows(dir)
     )
     if max_bytes <= 0:
         raise (f"dir to larger then max bytes {path}")
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
-        if get_string_byte_size(file[:mid]) <= max_bytes:
+        if get_string_byte_size_windows(file[:mid]) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
     final_path = pathlib.Path(dir, newFile)
-    log.debug(f"path: {path} filepath bytesize: {get_string_byte_size(final_path)}")
+    log.debug(f"path: {path} filepath bytesize: {get_string_byte_size_windows(final_path)}")
     return final_path
 
 
@@ -133,22 +133,22 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size(
+    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size_unix(
         ext
     )
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
-        if get_string_byte_size(file[:mid]) <= max_bytes:
+        if get_string_byte_size_unix(file[:mid]) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
-    log.debug(f"path: {path} filename bytesize: {get_string_byte_size(newFile)}")
+    log.debug(f"path: {path} filename bytesize: {get_string_byte_size_unix(newFile)}")
     return pathlib.Path(dir, newFile)
 
 
-def get_string_byte_size(text):
+def get_string_byte_size_unix(text):
     """
   This function estimates the byte size of a string considering ASCII characters.
 
@@ -159,8 +159,8 @@ def get_string_byte_size(text):
       The estimated byte size of the string.
   """
     total_size = 0
-    normal_char_size=constants.getattr("NORMAL_CHAR_SIZE")
-    special_char_size=constants.getattr("SPECIAL_CHAR_SIZE")
+    normal_char_size=constants.getattr("NORMAL_CHAR_SIZE_UNIX")
+    special_char_size=constants.getattr("SPECIAL_CHAR_SIZE_UNIX")
     utf=constants.getattr("UTF")
     if utf:
         return len(text.encode(utf))
@@ -174,6 +174,34 @@ def get_string_byte_size(text):
             total_size += special_char_size  # 4 bytes for non-ASCII characters (assumption)
     return total_size
 
+
+
+
+def get_string_byte_size_windows(text):
+    """
+  This function estimates the byte size of a string considering ASCII characters.
+
+  Args:
+      text: The string to analyze.
+
+  Returns:
+      The estimated byte size of the string.
+  """
+    total_size = 0
+    normal_char_size=constants.getattr("NORMAL_CHAR_SIZE_WINDOWS")
+    special_char_size=constants.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
+    utf=constants.getattr("UTF")
+    if utf:
+        return len(text.encode(utf))
+    for char in text:
+        try:
+            if ord(char) < 128:
+                total_size += normal_char_size  # 2 bytes for ASCII characters
+            else:
+                total_size += special_char_size
+        except ValueError:
+            total_size += special_char_size  # 4 bytes for non-ASCII characters (assumption)
+    return total_size
 
 def cleanDB():
     try:
