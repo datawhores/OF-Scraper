@@ -15,13 +15,13 @@ from ofscraper.const.values.action.download import *
 from ofscraper.const.values.dynamic import *
 from ofscraper.const.values.path.files import *
 from ofscraper.const.values.path.bytes import *
+from ofscraper.const.values.path.path import *
 from ofscraper.const.values.general import *
 from ofscraper.const.values.action.like import *
 from ofscraper.const.values.list import *
 from ofscraper.const.values.live import *
 from ofscraper.const.values.logger import *
 from ofscraper.const.values.action.metadata import *
-from ofscraper.const.values.path import *
 from ofscraper.const.values.prompts import *
 from ofscraper.const.values.req.anon import *
 from ofscraper.const.values.req.api import *
