@@ -32,12 +32,13 @@ download_job_progress = FileProgress(
     BarColumn(),
     TaskProgressColumn(),
     TransferFileSpeedColumn(),
+    DownloadColumn(),
     console=console_.get_shared_console(),
             refresh_per_second =1.5,
             auto_refresh=True
 
-)
 
+)
 
 multi_download_job_progress = MultiFileProgress(
     TextColumn("[white]{task.description}[/white]", table_column=Column(ratio=2)),
