@@ -6,7 +6,6 @@ import traceback
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings

@@ -187,7 +187,7 @@ def remove_download_job_task(task):
     try:
         download_job_progress.remove_task(task)
         downloads_pending.discard(task)
-        if len(download_job_progress.tasks) < min_add_visible:
+        if len(list(filter(lambda x:x.visible,download_job_progress.tasks))) < min_add_visible:
             new_task=None
             while new_task not in download_job_progress.tasks and downloads_pending:
                 new_task = downloads_pending.pop()
@@ -205,7 +205,7 @@ def remove_download_multi_job_task(task):
         return
     try:
         multi_download_job_progress.remove_task(task)
-        if len(download_job_progress.tasks) < min_add_visible:
+        if len(list(filter(lambda x:x.visible,download_job_progress.tasks)))  < min_add_visible:
 
             new_task=None
             while new_task not in download_job_progress.tasks and downloads_pending:
