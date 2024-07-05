@@ -375,11 +375,11 @@ async def ajob_progress_helper(funct):
     except Exception as E:
         logging.getLogger("shared").debug(E)
 
-async def consumer(queue):
+async def consumer(lock,aws):
     while True:
-        data = await queue.get()
+        async with lock:
+            data = aws.pop()
         if data is None:
-            queue.task_done()
             break
         else:
             try:
@@ -393,16 +393,7 @@ async def consumer(queue):
                 media_type = "skipped"
                 num_bytes_downloaded = 0
                 await send_msg((media_type, num_bytes_downloaded, 0))
-            queue.task_done()
             await asyncio.sleep(1)
-
-
-async def producer(queue, aws, concurrency_limit):
-    for data in aws:
-        await queue.put(data)
-    for _ in range(concurrency_limit):
-        await queue.put(None)
-    await queue.join()  # Wait for all tasks to finish
 
 
 @run
@@ -426,11 +417,11 @@ async def process_dicts_split(username, model_id, medialist):
         for ele in medialist:
             aws.append((c, ele, model_id, username))
         concurrency_limit = get_max_workers()
-        queue = asyncio.Queue(maxsize=concurrency_limit)
+        lock = asyncio.Lock()
         consumers = [
-            asyncio.create_task(consumer(queue)) for _ in range(concurrency_limit)
+            asyncio.create_task(consumer(lock,aws)) for _ in range(concurrency_limit)
         ]
-        await producer(queue, aws, concurrency_limit)
+
         await asyncio.gather(*consumers)
     common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly

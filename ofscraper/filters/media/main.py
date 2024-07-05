@@ -16,6 +16,8 @@ def filtermediaFinal(media, username, model_id):
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return media
+    log.info(f"finalizing media filtering {username} {model_id} for downlaod")
+
 
     count = 1
     trace_log_media(count, media, "initial media no filter:")
@@ -48,12 +50,13 @@ def filtermediaFinal(media, username, model_id):
 
 
 def filtermediaAreas(media, **kwargs):
+
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return media
-
+    log.info("Initial media filtering for download")
     count = 1
 
     trace_log_media(count, media, "initial media no filter:")
@@ -128,9 +131,12 @@ def filterPostFinal(post):
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return post
+
     if "Text" not in settings.get_mediatypes():
         log.info("Skipping filtering Text not in mediatypes")
         return post
+    log.info("Filtering posts fot text")
+
     count = 1
     trace_log_post(count, post, "initial posts no filter:")
     log.debug(f"filter {count}-> initial posts no filter count: {len(post)}")
@@ -171,10 +177,12 @@ def filterPostFinal(post):
 
 
 def post_filter_for_like(post, like=False):
+
     actions = read_args.retriveArgs().action
     if "like" not in actions and "unlike" not in actions:
         log.debug("Skipping filtering because like and unlike not in actions")
         return post
+    log.info("Filtering posts for like action")
     log.debug(f"initial number of posts for {actions}")
 
     post = helpers.temp_post_filter(post)
