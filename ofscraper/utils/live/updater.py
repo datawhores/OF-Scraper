@@ -129,40 +129,27 @@ def remove_userlist_job_task(task):
     except KeyError:
         pass
 
-
-downloads_pending = set()
-
-
-def add_download_job_task(*args, **kwargs):
-    max_visible=constants.getattr("MAX_PROGRESS_BARS")
-    visible = (
-        settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
-    )
-    task = download_job_progress.add_task(
-        *args, visible=visible, start=visible, **kwargs
-    )
+downloads_pending=set()
+max_visible=15
+min_add_visible=20
+def add_download_job_task(*args,**kwargs):
+    visible=len(download_job_progress.tasks)<max_visible
+    task=download_job_progress.add_task(*args,visible=visible,start=visible,**kwargs)
     if not visible:
         downloads_pending.add(task)
     return task
 
 
-def add_download_job_multi_task(*args, **kwargs):
-    max_visible=constants.getattr("MAX_PROGRESS_BARS")
 
-    visible = (
-        settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
-    )
-    task = multi_download_job_progress.add_task(
-        *args, visible=visible, start=visible, **kwargs
-    )
+def add_download_job_multi_task(*args,**kwargs):
+    visible=len(download_job_progress.tasks)<max_visible
+    task=multi_download_job_progress.add_task(*args,visible=visible,start=visible,**kwargs)
     if not visible:
         downloads_pending.add(task)
     return task
 
-
-def add_download_task(*args, **kwargs):
-    return download_overall_progress.add_task(*args, **kwargs)
-
+def add_download_task(*args,**kwargs):
+   return download_overall_progress.add_task(*args,**kwargs)
 
 def start_download_job_task(*args, **kwargs):
     if not settings.get_download_bars():
@@ -189,8 +176,17 @@ def update_download_job_task(*args, **kwargs):
 def update_download_multi_job_task(*args, **kwargs):
     if not settings.get_download_bars():
         return
-    multi_download_job_progress.update(*args, **kwargs)
+    multi_download_job_progress.update(*args,**kwargs)
 
+
+def start_download_job_task(*args,**kwargs):
+    if not settings.get_download_bars():
+        return
+    download_job_progress.start(*args,**kwargs)
+def start_download_multi_job_task(*args,**kwargs):
+    if not settings.get_download_bars():
+        return
+    multi_download_job_progress.start(*args,**kwargs)
 
 def remove_download_job_task(task):
     min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
@@ -200,11 +196,11 @@ def remove_download_job_task(task):
     try:
         download_job_progress.remove_task(task)
         downloads_pending.discard(task)
-        if len(download_job_progress.tasks) < min_add_visible:
-            new_task = downloads_pending.pop() if downloads_pending else None
+        if len(download_job_progress.tasks)<min_add_visible:
+            new_task=downloads_pending.pop() if downloads_pending else None
             if not new_task:
                 return
-            update_download_job_task(new_task, visible=True)
+            update_download_job_task(new_task,visible=True)
             start_download_job_task(task)
     except KeyError:
         pass
@@ -217,12 +213,14 @@ def remove_download_multi_job_task(task):
         return
     try:
         multi_download_job_progress.remove_task(task)
-        if len(download_job_progress.tasks) < min_add_visible:
-            new_task = downloads_pending.pop() if downloads_pending else None
+        downloads_pending.discard(task)
+        if len(download_job_progress.tasks)<min_add_visible:
+            new_task=downloads_pending.pop() if downloads_pending else None
             if not new_task:
                 return
-            update_download_multi_job_task(new_task, visible=True)
+            update_download_multi_job_task(new_task,visible=True)
             start_download_multi_job_task(task)
+
     except KeyError:
         pass
 

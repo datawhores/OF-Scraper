@@ -48,11 +48,11 @@ download_overall_progress = Progress(
     TaskProgressColumn(),
 )
 
+live=Live( transient=False,refresh_per_second=10,console=console_.get_shared_console())
 
-# user progress
-userlist_overall_progress = Progress(
-    SpinnerColumn(style=Style(color="blue")),
-    TextColumn("[white]{task.description}[/white]"),
+#user progress
+userlist_overall_progress=Progress(
+                    SpinnerColumn(style=Style(color="blue")), TextColumn("[white]{task.description}[/white]")
 )
 userlist_job_progress = Progress("[white]{task.description}[/white]")
 

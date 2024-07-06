@@ -242,7 +242,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None):
 
 async def download_fileobject_writer(r, ele, tempholderObj, placeholderObj, total):
     pathstr = str(placeholderObj.trunicated_filepath)
-    task1 = progress_utils.add_download_job_task(
+    task1 =  progress_utils.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
     )
