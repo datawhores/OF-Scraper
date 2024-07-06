@@ -62,6 +62,7 @@ def temp_cleanup():
 
 def truncate(path):
     path = pathlib.Path(os.path.normpath(path))
+    return _windows_truncateHelper(path)
     if platform.system() == "Windows":
         return _windows_truncateHelper(path)
     elif platform.system() == "Linux":
@@ -159,9 +160,11 @@ def get_string_byte_size_unix(text):
       The estimated byte size of the string.
   """
     total_size = 0
+    text=str(text)
     normal_char_size=constants.getattr("NORMAL_CHAR_SIZE_UNIX")
     special_char_size=constants.getattr("SPECIAL_CHAR_SIZE_UNIX")
     utf=constants.getattr("UTF")
+    
     if utf:
         return len(text.encode(utf))
     for char in text:
@@ -188,6 +191,7 @@ def get_string_byte_size_windows(text):
       The estimated byte size of the string.
   """
     total_size = 0
+    text=str(text)
     normal_char_size=constants.getattr("NORMAL_CHAR_SIZE_WINDOWS")
     special_char_size=constants.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
     utf=constants.getattr("UTF")
