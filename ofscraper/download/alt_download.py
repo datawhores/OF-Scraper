@@ -236,7 +236,7 @@ async def download_fileobject_writer_reader(total, res, placeholderObj):
     )
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     try:
-        await fileobject.write(await res.read())
+        await fileobject.write(await res.read_())
     except Exception as E:
         raise E
     finally:

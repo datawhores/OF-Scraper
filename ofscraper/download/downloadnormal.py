@@ -43,11 +43,13 @@ from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 
 
-async def consumer(queue, task1, medialist):
+async def consumer(aws, task1, medialist,lock):
     while True:
-        data = await queue.get()
+        async with lock:
+            if not(bool(aws)):
+                break
+            data = aws.pop()
         if data is None:
-            queue.task_done()
             break
         else:
             ele = data[1]
@@ -103,7 +105,6 @@ async def consumer(queue, task1, medialist):
                     refresh=True,
                     advance=1,
                 )
-                queue.task_done()
                 await asyncio.sleep(1)
             except Exception as e:
                 common_globals.log.info(
@@ -169,12 +170,11 @@ async def process_dicts(username, model_id, medialist):
                     visible=True,
                 )
                 concurrency_limit = get_max_workers()
-                queue = asyncio.Queue(maxsize=concurrency_limit)
+                lock=asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(queue, task1, medialist))
+                    asyncio.create_task(consumer(aws, task1, medialist,lock))
                     for _ in range(concurrency_limit)
                 ]
-                await producer(queue, aws, concurrency_limit)
                 await asyncio.gather(*consumers)
             progress_updater.remove_download_task(task1)
             setDirectoriesDate()
