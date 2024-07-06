@@ -300,6 +300,8 @@ def queue_process(pipe_, task1, total):
             except Exception as E:
                 console.get_console().print(E)
                 console.get_console().print(traceback.format_exc())
+                #increase skipped
+                common_globals.skipped += 1
 
 
 def get_mediasplits(medialist):
