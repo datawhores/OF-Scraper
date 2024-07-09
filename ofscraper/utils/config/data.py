@@ -317,8 +317,8 @@ def get_metadata(config=None):
 def get_threads(config=None):
     if config is False:
         return constants.THREADS_DEFAULT
-    threads = config.get("threads") or config.get("performance_options", {}).get(
-        "threads"
+    threads = config.get("thread_count") or config.get("performance_options", {}).get(
+        "thread_count",
     )
     threads = (
         threads if threads is not None else constants_attr.getattr("THREADS_DEFAULT")
@@ -642,8 +642,8 @@ def get_download_semaphores(config=None):
     if config is False:
         return constants.DOWNLOAD_SEM_DEFAULT
     sem = (
-        config.get("download-sem")
-        or config.get("performance_options", {}).get("download-sem")
+        config.get("download_sems")
+        or config.get("performance_options", {}).get("download_sems")
         or constants_attr.getattr("DOWNLOAD_SEM_DEFAULT")
     )
     try:

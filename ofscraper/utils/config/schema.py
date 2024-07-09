@@ -39,8 +39,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "keydb_api": data.get_keydb_api(config=config),
         },
         "performance_options": {
-            "download-sem": data.get_download_semaphores(config=config),
-            "threads": data.get_threads(config=config),
+            "download_sems": data.get_download_semaphores(config=config),
+            "thread_count": data.get_threads(config=config),
         },
         "content_filter_options": {
             "block_ads": data.get_block_ads(config=config),

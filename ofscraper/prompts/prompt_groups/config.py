@@ -75,8 +75,8 @@ def funct(prompt_):
     keydb_api: for keydb cdm
     -----------------------------------
     [Performance Options]
-    download-sem: number of downloads per processor/worker
-    threads: number of processors/workers
+    download_sems: number of downloads per processor/worker
+    thread_count: number of processors/workers
     -----------------------------------
     [Content Filter Options]
     block_ads: use common key words to block ads
@@ -342,10 +342,10 @@ def performance_config():
         *[
             {
                 "type": "number",
-                "name": "threads",
+                "name": "thread_count",
                 "message": "Number of Download processes/threads: ",
                 "min_allowed": 0,
-                "max_allowed": os.cpu_count() - 1,
+                "max_allowed": 3,
                 "validate": EmptyInputValidator(),
                 "option_instruction": f"Value can be 1-{os.cpu_count()-1}",
                 "default": data.get_threads(),
@@ -362,7 +362,7 @@ def performance_config():
         *[
             {
                 "type": "number",
-                "name": "download-sem",
+                "name": "download_sems",
                 "message": "Number of semaphores per thread: ",
                 "min_allowed": 1,
                 "max_allowed": max_allowed,
@@ -747,7 +747,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["threads"])
-    max_allowed = 100 // thread_count
+    max_allowed = 25 // thread_count
     return max_allowed
 
 
