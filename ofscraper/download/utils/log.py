@@ -8,6 +8,8 @@ import ofscraper.utils.constants as constants
 
 
 def get_medialog(ele):
+    if not ele:
+        return ""
     return f"Media:{ele.id} Post:{ele.postid}"
 
 
