@@ -236,9 +236,14 @@ def queue_process(pipe_, task1, total):
     while True:
         if count == 1:
             break
-        results = pipe_.recv()
-        if not isinstance(results, list):
-            results = [results]
+        try:
+            results = pipe_.recv()
+            if not isinstance(results, list):
+                results = [results]
+        except Exception as e:
+            console.get_console().print(E)
+            console.get_console().print(traceback.format_exc())
+            continue
         for result in results:
             try:
                 if isinstance(result, list) or isinstance(result, tuple):
