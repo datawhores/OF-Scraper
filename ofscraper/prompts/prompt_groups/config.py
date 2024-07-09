@@ -747,7 +747,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["threads"])
-    max_allowed = 25 // thread_count
+    max_allowed = 10 // thread_count
     return max_allowed
 
 
