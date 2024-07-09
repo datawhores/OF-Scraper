@@ -45,6 +45,7 @@ from ofscraper.utils.context.run_async import run
 
 async def consumer(aws, task1, medialist,lock):
     while True:
+        ele=None
         async with lock:
             if not(bool(aws)):
                 break
@@ -52,8 +53,8 @@ async def consumer(aws, task1, medialist,lock):
         if data is None:
             break
         else:
-            ele = data[1]
             try:
+                ele = data[1]
                 pack = await download(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
