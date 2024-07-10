@@ -8,7 +8,7 @@ from ofscraper.utils.args.callbacks.string import (
     StringTupleList,
 )
 from ofscraper.utils.args.types.arrow import ArrowType
-from ofscraper.utils.args.types.choice import MultiChoice
+from ofscraper.utils.args.types.choice import MultiChoice,MultiChoicePost
 
 # Define individual options
 posts_option = click.option(
@@ -22,7 +22,7 @@ posts_option = click.option(
     """,
     default=[],
     required=False,
-    type=MultiChoice(
+    type=MultiChoicePost(
         [
             "Highlights",
             "All",
