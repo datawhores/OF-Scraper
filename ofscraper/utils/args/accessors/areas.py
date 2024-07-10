@@ -45,17 +45,18 @@ def finalize_choice(all_choices, post):
         post.update({"Labels"})
         post.discard("Labels*")
         post.discard("Labels+")
-        out = set(
-            list(
-                filter(
-                    lambda x: x != "All"
-                    and x[0] != "-"
-                    and f"-{x}" not in post
-                    and x in all_choices + ["Labels"],
-                    post,
-                )
+        all_choices.append("Labels")
+    out = set(
+        list(
+            filter(
+                lambda x: x != "All"
+                and x[0] != "-"
+                and f"-{x}" not in post
+                and x in all_choices + ["Labels"],
+                post,
             )
         )
+    )
     return out
 
 
