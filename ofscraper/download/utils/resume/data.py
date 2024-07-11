@@ -20,11 +20,5 @@ async def set_data(ele,data):
         partial(cache.set, f"{ele.id}_{ele.username}_headers",data),
     )
     return data
-def get_resume_header(resume_size, total):
-    return (
-        None
-        if not resume_size or not total
-        else {"Range": f"bytes={resume_size}-{total}"}
-    )
 
 
