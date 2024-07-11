@@ -3,7 +3,7 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.globals as common_globals
 from ofscraper.download.utils.general import get_medialog
-from ofscraper.download.utils.validate.forced import (
+from ofscraper.download.utils.check.forced import (
     check_forced_skip
 
 )

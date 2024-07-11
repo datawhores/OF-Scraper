@@ -25,14 +25,17 @@ from ofscraper.download.utils.alt.item import (
 )
 from ofscraper.download.utils.alt.params import get_alt_params
 from ofscraper.download.utils.general import (
-    downloadspace,
     get_medialog,
 )
-from ofscraper.download.utils.validate.forced import (
+from ofscraper.download.utils.check.space import (
+    downloadspace
+
+)
+from ofscraper.download.utils.check.forced import (
     check_forced_skip
 
 )
-from ofscraper.download.utils.validate.size import (
+from ofscraper.download.utils.check.size import (
     size_checker
 
 )

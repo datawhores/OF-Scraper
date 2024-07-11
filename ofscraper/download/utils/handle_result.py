@@ -12,7 +12,7 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
-from ofscraper.download.utils.validate.size import (
+from ofscraper.download.utils.check.size import (
     size_checker
 
 )

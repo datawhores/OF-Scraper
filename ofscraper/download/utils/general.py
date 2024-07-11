@@ -15,18 +15,14 @@ import asyncio
 import re
 from functools import partial
 
-from humanfriendly import format_size
 
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
-import ofscraper.utils.settings as settings
-import ofscraper.utils.system.free as system
 from ofscraper.download.utils.log import get_medialog
 from ofscraper.download.utils.paths.media import add_path
 from ofscraper.download.utils.send.message import set_send_msg
@@ -53,15 +49,6 @@ async def set_profile_cache_helper(ele):
             common_globals.thread, partial(cache.set, ele.postid, True)
         )
 
-
-def get_item_total(item):
-    return item["path"].absolute().stat().st_size
-
-
-def downloadspace(mediatype=None):
-    space_limit = config_data.get_system_freesize(mediatype=mediatype)
-    if space_limit > 0 and space_limit > system.get_free():
-        raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
 
 async def get_hash(file_data, mediatype=None):

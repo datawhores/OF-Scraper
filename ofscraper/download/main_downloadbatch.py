@@ -29,16 +29,19 @@ import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.system as system
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.general import (
-    downloadspace,
     get_data,
     get_medialog,
     get_unknown_content_type,
 )
-from ofscraper.download.utils.validate.forced import (
+from ofscraper.download.utils.check.space import (
+    downloadspace
+
+)
+from ofscraper.download.utils.check.forced import (
     check_forced_skip
 
 )
-from ofscraper.download.utils.validate.size import (
+from ofscraper.download.utils.check.size import (
     size_checker
 
 )
