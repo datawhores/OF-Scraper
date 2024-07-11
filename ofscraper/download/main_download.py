@@ -33,7 +33,10 @@ from ofscraper.download.utils.general import (
     get_data,
     get_medialog,
     get_unknown_content_type,
-    size_checker,
+)
+from ofscraper.download.utils.size import (
+    size_checker
+
 )
 from ofscraper.download.utils.handle_result import handle_result_main
 from ofscraper.download.utils.log import get_url_log, path_to_file_logger

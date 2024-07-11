@@ -1,6 +1,10 @@
 import ofscraper.download.utils.general as common
 import ofscraper.download.utils.keyhelpers as keyhelpers
 from ofscraper.download.utils.metadata import force_download
+from ofscraper.download.utils.size import (
+    size_checker
+
+)
 
 
 async def media_item_post_process_alt(audio, video, ele, username, model_id):
@@ -14,7 +18,7 @@ async def media_item_post_process_alt(audio, video, ele, username, model_id):
     for m in [audio, video]:
         if not isinstance(m, dict):
             return m
-        await common.size_checker(m["path"], ele, m["total"])
+        await size_checker(m["path"], ele, m["total"])
 
 
 async def media_item_keys_alt(c, audio, video, ele):

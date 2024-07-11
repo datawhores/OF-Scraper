@@ -12,12 +12,15 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
+from ofscraper.download.utils.size import (
+    size_checker
 
+)
 
 async def handle_result_main(result, ele, username, model_id):
     total, temp, placeholderObj = result
     path_to_file = placeholderObj.trunicated_filepath
-    await common.size_checker(temp, ele, total)
+    await size_checker(temp, ele, total)
     common_globals.log.debug(
         f"{common_logs.get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
     )

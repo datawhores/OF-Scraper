@@ -28,7 +28,10 @@ from ofscraper.download.utils.general import (
     check_forced_skip,
     downloadspace,
     get_medialog,
-    size_checker,
+)
+from ofscraper.download.utils.size import (
+    size_checker
+
 )
 from ofscraper.download.utils.handle_result import handle_result_alt
 from ofscraper.download.utils.log import (
