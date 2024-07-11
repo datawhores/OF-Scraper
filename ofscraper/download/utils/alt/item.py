@@ -1,7 +1,7 @@
 import ofscraper.download.utils.general as common
 import ofscraper.download.utils.keyhelpers as keyhelpers
 from ofscraper.download.utils.metadata import force_download
-from ofscraper.download.utils.size import (
+from ofscraper.download.utils.validate.size import (
     size_checker
 
 )

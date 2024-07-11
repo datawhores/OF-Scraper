@@ -47,29 +47,6 @@ def subProcessVariableInit(dateDict, userList, pipeCopy, pipeAltCopy, logCopy, a
 
 
 
-
-async def check_forced_skip(ele, total):
-    if total is None:
-        return
-    total = int(total)
-    if total == 0:
-        return 0
-    file_size_max = settings.get_size_max(mediatype=ele.mediatype)
-    file_size_min = settings.get_size_min(mediatype=ele.mediatype)
-    if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
-        ele.mediatype = "forced_skipped"
-        common_globals.log.debug(
-            f"{get_medialog(ele)} {format_size(total)} over size limit"
-        )
-        return 0
-    elif int(file_size_min) > 0 and (int(total) < int(file_size_min)):
-        ele.mediatype = "forced_skipped"
-        common_globals.log.debug(
-            f"{get_medialog(ele)} {format_size(total)} under size min"
-        )
-        return 0
-
-
 async def set_profile_cache_helper(ele):
     if ele.postid and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(

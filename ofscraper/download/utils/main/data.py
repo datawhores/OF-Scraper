@@ -2,7 +2,11 @@ from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.globals as common_globals
-from ofscraper.download.utils.general import check_forced_skip, get_medialog
+from ofscraper.download.utils.general import get_medialog
+from ofscraper.download.utils.validate.forced import (
+    check_forced_skip
+
+)
 from ofscraper.download.utils.log import path_to_file_logger
 from ofscraper.download.utils.resume import get_resume_size,resume_cleaner
 from ofscraper.download.utils.retries import get_download_retries

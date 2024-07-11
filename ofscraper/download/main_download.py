@@ -28,13 +28,17 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.general import (
-    check_forced_skip,
     downloadspace,
     get_data,
     get_medialog,
     get_unknown_content_type,
 )
-from ofscraper.download.utils.size import (
+
+from ofscraper.download.utils.validate.forced import (
+    check_forced_skip
+
+)
+from ofscraper.download.utils.validate.size import (
     size_checker
 
 )
