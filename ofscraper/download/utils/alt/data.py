@@ -8,7 +8,7 @@ from ofscraper.download.utils.check.forced import (
 
 )
 from ofscraper.download.utils.log import temp_file_logger
-from ofscraper.download.utils.alt.resume.resume import get_resume_size,resume_cleaner
+from ofscraper.download.utils.resume.resume import get_resume_size,resume_cleaner
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.total import (
     batch_total_change_helper,

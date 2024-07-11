@@ -24,9 +24,7 @@ from ofscraper.download.utils.alt.item import (
     media_item_post_process_alt,
 )
 from ofscraper.download.utils.alt.params import get_alt_params
-from ofscraper.download.utils.general import (
-    get_medialog,
-)
+
 from ofscraper.download.utils.check.space import (
     downloadspace
 
@@ -53,6 +51,9 @@ from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.total import batch_total_change_helper
+from ofscraper.download.utils.resume.data import set_data,get_data
+from ofscraper.download.utils.log import get_medialog
+
 
 
 async def alt_download(c, ele, username, model_id):
@@ -113,10 +114,7 @@ async def alt_download_downloader(
                     if _attempt.get() > 1
                     else None
                 )
-                data = await asyncio.get_event_loop().run_in_executor(
-                    common_globals.thread,
-                    partial(cache.get, f"{item['name']}_{ele.username}_headers"),
-                )
+                data= await get_data(ele)
                 status = False
                 if data:
                     item, status = await resume_data_handler_alt(
@@ -219,10 +217,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
             )
 
-            await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
-                partial(cache.set, f"{item['name']}_{ele.username}_headers", data),
-            )
+            set_data(ele,data)
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
