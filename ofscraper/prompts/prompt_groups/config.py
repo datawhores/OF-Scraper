@@ -347,7 +347,7 @@ def performance_config():
                 "min_allowed": 0,
                 "max_allowed": 3,
                 "validate": EmptyInputValidator(),
-                "option_instruction": f"Value can be 1-{os.cpu_count()-1}",
+                "option_instruction": f"Value can be 1-3",
                 "default": data.get_threads(),
             },
         ],
@@ -746,7 +746,7 @@ def manual_config_prompt(configText) -> str:
 
 
 def get_max_sems(threads):
-    thread_count = int(threads["threads"])
+    thread_count = int(threads["thread_count"])
     max_allowed = 10 // thread_count
     return max_allowed
 
