@@ -12,7 +12,7 @@ r"""
 """
 
 import json
-import os
+import math
 
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
@@ -747,7 +747,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["thread_count"])
-    max_allowed = 15 // thread_count
+    max_allowed = math.ceil(15 /thread_count)
     return max_allowed
 
 
