@@ -67,7 +67,7 @@ from ofscraper.download.utils.progress.chunk import (
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.total import total_change_helper
-from ofscraper.download.utils.resume import get_resume_header, get_resume_size
+from ofscraper.download.utils.alt.resume.resume import get_resume_header, get_resume_size
 
 
 async def alt_download(c, ele, username, model_id):

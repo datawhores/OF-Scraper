@@ -55,7 +55,7 @@ from ofscraper.download.utils.metadata import force_download
 from ofscraper.download.utils.progress.chunk import (
     get_ideal_chunk_size,
 )
-from ofscraper.download.utils.resume import get_resume_header, get_resume_size
+from ofscraper.download.utils.alt.resume.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg

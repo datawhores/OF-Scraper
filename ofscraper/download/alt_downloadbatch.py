@@ -48,7 +48,7 @@ from ofscraper.download.utils.log import (
 from ofscraper.download.utils.progress.chunk import (
     get_ideal_chunk_size,
 )
-from ofscraper.download.utils.resume import get_resume_header, get_resume_size,resume_cleaner
+from ofscraper.download.utils.alt.resume.resume import get_resume_header, get_resume_size,resume_cleaner
 from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg
