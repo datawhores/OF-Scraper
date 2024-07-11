@@ -23,7 +23,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
-from ofscraper.download.utils.log import get_medialog
 from ofscraper.download.utils.paths.media import add_path
 from ofscraper.download.utils.send.message import set_send_msg
 
