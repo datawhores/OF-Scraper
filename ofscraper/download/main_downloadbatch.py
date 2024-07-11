@@ -29,10 +29,15 @@ import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.system as system
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.general import (
-    get_data,
-    get_medialog,
     get_unknown_content_type,
 )
+from ofscraper.download.utils.resume.data import (
+    get_data
+
+
+)
+from ofscraper.download.utils.log import get_medialog
+
 from ofscraper.download.utils.check.space import (
     downloadspace
 
