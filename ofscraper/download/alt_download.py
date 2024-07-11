@@ -37,10 +37,8 @@ from ofscraper.download.utils.alt.item import (
     media_item_post_process_alt,
 )
 from ofscraper.download.utils.alt.params import get_alt_params
-from ofscraper.download.utils.general import (
-    get_medialog,
+from ofscraper.download.utils.log import get_medialog
 
-)
 from ofscraper.download.utils.check.forced import (
     check_forced_skip
 
