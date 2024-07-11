@@ -30,12 +30,13 @@ import ofscraper.utils.manager as manager_
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.main_download import main_download
-from ofscraper.download.utils.general import get_medialog
 from ofscraper.download.utils.log import (
     final_log,
     final_log_text,
     log_download_progress,
 )
+from ofscraper.download.utils.log import get_medialog
+
 from ofscraper.download.utils.metadata import metadata
 from ofscraper.download.utils.paths.paths import setDirectoriesDate
 from ofscraper.download.utils.progress.progress import convert_num_bytes

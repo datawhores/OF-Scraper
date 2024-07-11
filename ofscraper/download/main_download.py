@@ -14,7 +14,6 @@ r"""
 import asyncio
 import pathlib
 import traceback
-from functools import partial
 
 import aiofiles
 import psutil
@@ -23,7 +22,6 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.general as common
 import ofscraper.download.utils.globals as common_globals
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
@@ -36,7 +34,7 @@ from ofscraper.download.utils.check.space import (
 
 )
 
-from ofscraper.download.utils.resume.data import (
+from ofscraper.download.utils.main.cache.resume import (
     get_data,set_data
 
 
@@ -55,7 +53,7 @@ from ofscraper.download.utils.check.size import (
 )
 from ofscraper.download.utils.handle_result import handle_result_main
 from ofscraper.download.utils.log import get_url_log, path_to_file_logger
-from ofscraper.download.utils.main.data import (
+from ofscraper.download.utils.main.handlers import (
     fresh_data_handler_main,
     resume_data_handler_main,
 )
@@ -183,10 +181,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
             common_globals.log.debug(
                 f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
             )
-            await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
-                partial(cache.set, f"{ele.id}_{ele.username}_headers", data),
-            )
+            await set_data(ele,data)
             content_type = r.headers.get("content-type").split("/")[-1]
             content_type = content_type or get_unknown_content_type(ele)
             if not placeholderObj:

@@ -34,13 +34,15 @@ import ofscraper.utils.system.priority as priority
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.download.utils.general import get_medialog, subProcessVariableInit
+from ofscraper.download.utils.general import subProcessVariableInit
 from ofscraper.download.utils.log import (
     final_log,
     final_log_text,
     log_download_progress,
     set_media_log,
 )
+from ofscraper.download.utils.log import get_medialog
+
 from ofscraper.download.utils.metadata import metadata
 from ofscraper.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.utils.progress.progress import convert_num_bytes
@@ -240,7 +242,7 @@ def queue_process(pipe_, task1, total):
             results = pipe_.recv()
             if not isinstance(results, list):
                 results = [results]
-        except Exception as e:
+        except Exception as E:
             console.get_console().print(E)
             console.get_console().print(traceback.format_exc())
             continue

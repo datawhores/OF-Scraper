@@ -2,8 +2,9 @@ import pathlib
 
 import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.download.utils.general import get_medialog
 from ofscraper.utils.logs.helpers import getNumber
+from ofscraper.download.utils.log import get_medialog
+
 
 
 def send_chunk_msg(ele, total, placeholderObj):

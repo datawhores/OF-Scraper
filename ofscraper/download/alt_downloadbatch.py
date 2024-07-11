@@ -9,13 +9,12 @@ from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.utils.globals as common_globals
-import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.system as system
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.download.utils.alt.attempt import alt_attempt_get
-from ofscraper.download.utils.alt.data import (
+from ofscraper.download.utils.alt.handlers import (
     fresh_data_handler_alt,
     resume_data_handler_alt,
 )
@@ -51,7 +50,7 @@ from ofscraper.download.utils.retries import get_download_retries
 from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.total import batch_total_change_helper
-from ofscraper.download.utils.resume.data import set_data,get_data
+from ofscraper.download.utils.alt.cache.resume import set_data,get_data
 from ofscraper.download.utils.log import get_medialog
 
 
@@ -114,7 +113,7 @@ async def alt_download_downloader(
                     if _attempt.get() > 1
                     else None
                 )
-                data= await get_data(ele)
+                data= await get_data(ele,item)
                 status = False
                 if data:
                     item, status = await resume_data_handler_alt(
@@ -217,7 +216,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
             )
 
-            set_data(ele,data)
+            await set_data(ele,item,data)
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0

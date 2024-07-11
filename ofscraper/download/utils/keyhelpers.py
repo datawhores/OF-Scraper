@@ -18,8 +18,9 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
-from ofscraper.download.utils.general import get_medialog
 from ofscraper.download.utils.retries import get_cmd_download_req_retries
+from ofscraper.download.utils.log import get_medialog
+
 
 log = None
 
