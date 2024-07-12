@@ -7,7 +7,6 @@ import traceback
 from functools import partial
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
-import zmq
 
 
 
@@ -17,6 +16,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
 from ofscraper.utils.logs.classes.handlers.zmq import ZMQHandler
 from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti
+from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
+
 
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
@@ -28,32 +29,32 @@ def logger_process(input_, name=None, stop_count=1, event=None):
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
-        end_funct = input_.get_nowait
-    elif hasattr(input_, "send_pyobj"):
-        funct = partial(input_.recv_pyobj, zmq.NOBLOCK)
     elif hasattr(input_, "send"):
-        funct = input_.recv
+        funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
     messages=[]
     while True:
         try:
-            # consume a log message, block until one arrives
-            if len(log.handlers) == 0:
-                None
-            if event and event.is_set():
-                return
             message = funct()
-            if not isinstance(message, list):
+            if message=="None" or (hasattr(message, "message") and message.message=="None") or (hasattr(message, "message") and message.message==None):
+                count=count+1
+                raise queue.Empty
+            elif message==False:
+                raise queue.Empty
+            elif not isinstance(message, list):
                 messages.append(message)
             else:
                 messages.extend(messages)
             if len(messages)>40:
                 raise queue.Empty
-        except (queue.Empty, zmq.ZMQError) as e:
+        except (queue.Empty) as e:
             try:
-                if len(messages)==0:
-                    continue
-                count = count + len([element for element in messages if (element is None or (hasattr(element, "message") and element.message == "None") or element == "None")])
+                if len(messages)>0:
+                   pass
                 log_messages = [element for element in messages if hasattr(element, "message") and element.message != "None"]
+                if count>0:
+                    print("dd")
+                if len([element for element in messages if (element is None or (hasattr(element, "message") and element.message == "None") or element == "None")])>0:
+                    print("ddsa")
                 for  handler in log.handlers:
                     if isinstance(handler,RichHandlerMulti):    
                         handler.emit(*list(filter(lambda x:x.levelno >= handler.level,log_messages)))
@@ -61,8 +62,6 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                         for message in log_messages:
                             if message.levelno >= handler.level:
                                 handler.emit(message)
-                if count == stop_count:
-                    break
             except:
                 continue
             finally:
@@ -75,11 +74,13 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         except Exception as E:
             print(E)
             print(traceback.format_exc())
-    while True:
-        try:
-            end_funct()
-        except:
-            break
+        finally:
+            if count == stop_count:
+                break
+            if len(log.handlers) == 0:
+                break
+            if event and event.is_set():
+                return
     for handler in log.handlers:
         handler.close()
     log.handlers.clear()
@@ -182,10 +183,9 @@ def add_stdout_handler_multi(log,clear=True,main_=None):
     main_ = main_ or log_globals.queue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         mainhandle = QueueHandler(main_)
-        mainhandle.name = "stdout"
-    elif hasattr(main_, "send"):
-        mainhandle =  QueueHandler(main_)
-        mainhandle.name = "stdout"
+    elif hasattr(main_, "send"):        
+        mainhandle =  PipeHandler(main_)
+    mainhandle.name = "stdout"
     mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     # add a handler that uses the shared queue
     log.addHandler(mainhandle)

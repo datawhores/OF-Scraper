@@ -47,7 +47,6 @@ from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.logs.stdout as stdout_logs
-from ofscraper.utils.zmq import get_zmq_sender,get_zmq_receiver
 
 
 platform_name = platform.system()
@@ -73,18 +72,17 @@ def process_dicts(username, model_id, filtered_medialist):
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
 
-            logqueues_ = [aioprocessing.AioQueue() for i in range(num_proc)]
+            logqueues_ = [aioprocessing.AioPipe() for i in range(num_proc)]
 
              # start stdout/main queues consumers
             log_threads=[]
             for i in range(num_proc):
-                for _ in range(1):
-                    thread=stdout_logs.start_stdout_logthread(
-                    input_=logqueues_[i],
-                    name=f"ofscraper_{model_id}_{i+1}",
-                    count=1,
-                    )
-                    log_threads.append(thread)
+                thread=stdout_logs.start_stdout_logthread(
+                input_=logqueues_[i][0],
+                name=f"ofscraper_{model_id}_{i+1}",
+                count=1,
+                )
+                log_threads.append(thread)
 
             processes = [
                 aioprocessing.AioProcess(
@@ -93,7 +91,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         username,
                         model_id,
                         mediasplits[i],
-                        logqueues_[i],
+                        logqueues_[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
                         selector.get_ALL_SUBS_DICT(),
@@ -326,7 +324,7 @@ def process_dict_starter(
         with exit.DelayedKeyboardInterrupt():
             try:
                 pipe_.send(None)
-                logqueue.queue.put("None")
+                logqueue.pipe.send("None")
                 raise E
             except Exception as E:
                 raise E
@@ -403,7 +401,7 @@ async def process_dicts_split(username, model_id, medialist):
     # send message directly
     await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
-    common_globals.log.handlers[0].queue.put("None")
+    common_globals.log.handlers[0].pipe.send("None")
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
 
