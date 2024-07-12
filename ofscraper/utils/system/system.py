@@ -120,7 +120,7 @@ def setName():
 def setNameAlt():
     log = logging.getLogger("shared")
     try:
-        setproctitle(f"OF-Scraper_{random.randint(100000, 999999)}")
+        setproctitle("OF-Scraper_")
     except Exception as E:
         log.debug(E)
 
