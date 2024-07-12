@@ -19,9 +19,9 @@ class StreamHandlerMulti(logging.StreamHandler):
         except Exception as e:
             print(e)
     def close(self):
-        with self.lock:
-            self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
-            self.loop.close()
+        # with self.lock:
+        self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
+        self.loop.close()
 
         
 

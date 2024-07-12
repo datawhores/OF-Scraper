@@ -47,9 +47,11 @@ from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.logs.stdout as stdout_logs
+from ofscraper.utils.zmq import get_zmq_sender,get_zmq_receiver
 
 
 platform_name = platform.system()
+
 
 
 def process_dicts(username, model_id, filtered_medialist):
@@ -71,17 +73,18 @@ def process_dicts(username, model_id, filtered_medialist):
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
 
-            logqueues_ = [manager.Queue() for _ in range(num_proc)]
+            logqueues_ = [aioprocessing.AioQueue() for i in range(num_proc)]
 
              # start stdout/main queues consumers
-            log_threads = [
-            stdout_logs.start_stdout_logthread(
+            log_threads=[]
+            for i in range(num_proc):
+                for _ in range(1):
+                    thread=stdout_logs.start_stdout_logthread(
                     input_=logqueues_[i],
                     name=f"ofscraper_{model_id}_{i+1}",
                     count=1,
-                )
-                for i in range(num_proc)
-            ]
+                    )
+                    log_threads.append(thread)
 
             processes = [
                 aioprocessing.AioProcess(
@@ -96,7 +99,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         selector.get_ALL_SUBS_DICT(),
                         read_args.retriveArgs(),
                     ),
-                    
+
                 )
                 for i in range(num_proc)
             ]
@@ -301,6 +304,7 @@ def process_dict_starter(
     userNameList,
     argsCopy,
 ):
+
     subProcessVariableInit(
         dateDict,
         userNameList,
@@ -322,7 +326,7 @@ def process_dict_starter(
         with exit.DelayedKeyboardInterrupt():
             try:
                 pipe_.send(None)
-                logqueue.put("None")
+                logqueue.queue.put("None")
                 raise E
             except Exception as E:
                 raise E

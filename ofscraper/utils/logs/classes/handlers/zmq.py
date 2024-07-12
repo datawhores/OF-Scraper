@@ -1,8 +1,10 @@
 import copy
 import logging
+from collections.abc import Iterable
 
 
-class PipeHandler(logging.Handler):
+
+class ZMQHandler(logging.Handler):
     """
     This handler sends events to a queue. Typically, it would be used together
     with a multiprocessing Queue to centralise logging to file in one process
@@ -13,12 +15,13 @@ class PipeHandler(logging.Handler):
     user code for use with earlier Python versions.
     """
 
-    def __init__(self, pipe):
+    def __init__(self, *pipes):
         """
         Initialise an instance, using the passed queue.
         """
         logging.Handler.__init__(self)
-        self.pipe = pipe
+        self.pipes = pipes
+        self.index=-1
 
     def prepare(self, record):
         """
@@ -61,9 +64,10 @@ class PipeHandler(logging.Handler):
         """
         try:
             msg = self.prepare(record)
-            if isinstance(self.pipe,list):
-                self.pipe[0].send(msg)
+            if isinstance(self.pipes,Iterable):
+                self.index=(self.index+1)%len(self.pipes)
+                self.pipes[self.index].send_pyobj(msg)
             else:
-                self.pipe.send(msg)
-        except Exception:
+                self.pipes.send_pyobj(msg)
+        except Exception as E:
             self.handleError(record)
