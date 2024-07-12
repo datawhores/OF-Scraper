@@ -4,17 +4,15 @@ import logging
 import queue
 import threading
 import traceback
-
+from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.logs.classes as log_class
+import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
-
-
 def logger_process(input_, name=None, stop_count=1, event=None):
     # create a logger
     log = init_stdout_logger(name=name)
@@ -75,12 +73,18 @@ def logger_process(input_, name=None, stop_count=1, event=None):
 # logger for print to console
 def init_stdout_logger(name=None):
     log = logging.getLogger(name or "ofscraper_stdout")
-    log.handlers.clear()
+    log=add_stdout_handler(log)
+    return log
+
+
+def add_stdout_handler(log,clear=True):
+    if clear:
+        log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    sh = RichHandler(
+    sh =RichHandler(
         rich_tracebacks=False,
         markup=True,
         tracebacks_show_locals=True,
@@ -98,7 +102,7 @@ def init_stdout_logger(name=None):
     log.addHandler(tx)
 
     if read_args.retriveArgs().output in {"TRACE", "DEBUG"}:
-        sh2 = RichHandler(
+        sh2 =  RichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
             markup=True,
@@ -112,6 +116,24 @@ def init_stdout_logger(name=None):
 
     return log
 
+
+def add_stdout_handler_multi(log,clear=True,main_=None):
+    if clear:
+        log.handlers.clear()
+    log.setLevel(1)
+    log_helpers.addtraceback()
+    log_helpers.addtrace()
+    main_ = main_ or log_globals.queue_
+    if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
+        mainhandle = QueueHandler(main_)
+        mainhandle.name = "stdout"
+    elif hasattr(main_, "send"):
+        mainhandle = log_class.PipeHandler(main_)
+        mainhandle.name = "stdout"
+    mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
+    # add a handler that uses the shared queue
+    log.addHandler(mainhandle)
+    return log
 
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1, event=None):

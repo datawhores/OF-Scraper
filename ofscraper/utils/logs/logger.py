@@ -1,13 +1,11 @@
 import logging
-from logging.handlers import QueueHandler
 
-import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.logs.classes as log_class
-import ofscraper.utils.logs.globals as log_globals
+import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.helpers as log_helpers
-import ofscraper.utils.logs.other as log_others
-import ofscraper.utils.logs.stdout as log_stdout
 import ofscraper.utils.settings as settings
+from ofscraper.utils.logs.stdout import add_stdout_handler
+from ofscraper.utils.logs.other import add_other_handler
+
 
 
 def add_widget(widget):
@@ -23,43 +21,21 @@ def add_widget(widget):
 
 
 # logger for putting logs into queues
-def get_shared_logger(main_=None, other_=None, name=None):
+def get_shared_logger(name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")
     logger_other = logging.getLogger(f"{name}_other" if name else "shared_other")
     logger.handlers.clear()
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    main_ = main_ or log_globals.queue_
-    if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
-        mainhandle = QueueHandler(main_)
-        mainhandle.name = "stdout"
-    elif hasattr(main_, "send"):
-        mainhandle = log_class.PipeHandler(main_)
-        mainhandle.name = "stdout"
-    mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
-    # add a handler that uses the shared queue
-    logger.addHandler(mainhandle)
-    discord_level = log_helpers.getNumber(settings.get_discord_level())
-    file_level = log_helpers.getNumber(settings.get_log_level())
-    other_ = other_ or log_globals.otherqueue_
-    if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
-        otherhandle = QueueHandler(other_)
-        otherhandle.name = "other"
-    elif hasattr(main_, "send"):
-        otherhandle = log_class.PipeHandler(main_)
-        otherhandle.name = "other"
-    otherhandle.setLevel(min(file_level, discord_level))
-    logger.addHandler(otherhandle)
-    logger_other.addHandler(otherhandle)
+    add_stdout_handler(logger,clear=False)
+    add_other_handler(logger,clear=False)
+    add_other_handler(logger_other,clear=False)
     if settings.get_output_level() == "LOW":
-        logger_other.addHandler(mainhandle)
+        add_stdout_handler(logger_other,clear=False)
     # log all messages, debug and up
     logger.setLevel(1)
     logger_other.setLevel(1)
     return logger
 
 
-def start_threads():
-    log_others.start_other_helper()
-    log_stdout.start_stdout_logthread()

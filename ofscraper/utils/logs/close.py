@@ -11,8 +11,8 @@ def gracefulClose():
     stdout.debug(
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
-    closeOther()
-    closeMain()
+    # closeOther()
+    # closeMain()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -25,25 +25,25 @@ def gracefulClose():
 def forcedClose():
     log_globals.main_event.set()
     log_globals.other_event.set()
-    closeOther()
-    closeMain()
+    # closeOther()
+    # closeMain()
     closeQueue()
 
 
 def daemonClose():
     sendCloseMessage()
-    closeOther()
-    closeMain()
+    # closeOther()
+    # closeMain()
     clearHandlers()
 
 
 def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
-    num_loggers = len(logging.getLogger("shared").handlers)
-    if num_loggers > 0:
-        logging.getLogger("shared").handlers[0].queue.put("None")
-    if num_loggers > 1:
-        logging.getLogger("shared").handlers[-1].queue.put("None")
+    # num_loggers = len(logging.getLogger("shared").handlers)
+    # if num_loggers > 0:
+    #     logging.getLogger("shared").handlers[0].queue.put("None")
+    # if num_loggers > 1:
+    #     logging.getLogger("shared").handlers[-1].queue.put("None")
 
 
 def closeMain():

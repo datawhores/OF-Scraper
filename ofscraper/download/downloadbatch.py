@@ -23,10 +23,6 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
-import ofscraper.utils.logs.logger as logger
-import ofscraper.utils.logs.other as other_logs
-import ofscraper.utils.logs.stdout as stdout_logs
-import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 import ofscraper.utils.system.priority as priority
@@ -46,10 +42,11 @@ from ofscraper.download.utils.log import get_medialog
 from ofscraper.download.utils.metadata import metadata
 from ofscraper.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.utils.progress.progress import convert_num_bytes
-from ofscraper.download.utils.send.message import send_msg,send_msg_alt
+from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.constants as constants
+import ofscraper.utils.manager as manager_
+import ofscraper.utils.logs.stdout as stdout_logs
 
 
 platform_name = platform.system()
@@ -58,7 +55,6 @@ platform_name = platform.system()
 def process_dicts(username, model_id, filtered_medialist):
     metadata_md = read_args.retriveArgs().metadata
     log = logging.getLogger("shared")
-    common_globals.log = log
     live = (
         partial(progress_utils.setup_download_progress_live, multi=True)
         if not metadata_md
@@ -67,33 +63,26 @@ def process_dicts(username, model_id, filtered_medialist):
     try:
         common_globals.reset_globals()
         with live():
+            manager = manager_.get_manager()
             if not read_args.retriveArgs().item_sort:
                 random.shuffle(filtered_medialist)
-            manager = manager_.get_manager()
             mediasplits = get_mediasplits(filtered_medialist)
             num_proc = len(mediasplits)
-            split_val = min(4, num_proc)
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
-            alt_connect_tuples = [AioPipe() for _ in range(num_proc)]
-            shared = list(
-                more_itertools.chunked([i for i in range(num_proc)], split_val)
-            )
-            # shared with other process + main
-            logqueues_ = [manager.Queue() for _ in range(len(shared))]
-            # other logger queuesprocesses
-            otherqueues_ = [manager.Queue() for _ in range(len(shared))]
-            # shared cache
 
-            # start stdout/main queues consumers
+            logqueues_ = [manager.Queue() for _ in range(num_proc)]
+
+             # start stdout/main queues consumers
             log_threads = [
-                stdout_logs.start_stdout_logthread(
+            stdout_logs.start_stdout_logthread(
                     input_=logqueues_[i],
                     name=f"ofscraper_{model_id}_{i+1}",
-                    count=len(shared[i]),
+                    count=1,
                 )
-                for i in range(len(shared))
+                for i in range(num_proc)
             ]
+
             processes = [
                 aioprocessing.AioProcess(
                     target=process_dict_starter,
@@ -101,14 +90,13 @@ def process_dicts(username, model_id, filtered_medialist):
                         username,
                         model_id,
                         mediasplits[i],
-                        logqueues_[i // split_val],
-                        otherqueues_[i // split_val],
+                        logqueues_[i],
                         connect_tuples[i][1],
-                        alt_connect_tuples[i][1],
                         dates.getLogDate(),
                         selector.get_ALL_SUBS_DICT(),
                         read_args.retriveArgs(),
                     ),
+                    
                 )
                 for i in range(num_proc)
             ]
@@ -215,25 +203,11 @@ def process_dicts(username, model_id, filtered_medialist):
 
 
 
-# async def download_progress(pipe_):
-#     # shared globals
-#     sleep_time = constants.getattr("JOB_MULTI_PROGRESS_THREAD_SLEEP")
-#     while True:
-#         time.sleep(sleep_time)
-#         try:
-#             results = pipe_.recv()
-#             if not isinstance(results, list):
-#                 results = [results]
-#             for result in results:
-#                 if result is None:
-#                     return
-#                 await ajob_progress_helper(result)
-#         except Exception as e:
-#             print(e)
-
-
 def queue_process(pipe_, task1, total):
     count = 0
+    global log
+    log=logging.getLogger("shared")
+    common_globals.log=log
     # shared globals
     while True:
         if count == 1:
@@ -321,10 +295,8 @@ def process_dict_starter(
     username,
     model_id,
     ele,
-    p_logqueue_,
-    p_otherqueue_,
+    logqueue,
     pipe_,
-    pipe2_,
     dateDict,
     userNameList,
     argsCopy,
@@ -333,11 +305,8 @@ def process_dict_starter(
         dateDict,
         userNameList,
         pipe_,
-        pipe2_,
-        logger.get_shared_logger(
-            main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"
-        ),
         argsCopy,
+        logqueue
     )
     priority.setpriority()
     system.setNameAlt()
@@ -352,9 +321,8 @@ def process_dict_starter(
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
-                p_otherqueue_.put("None")
-                p_logqueue_.put("None")
                 pipe_.send(None)
+                logqueue.put("None")
                 raise E
             except Exception as E:
                 raise E
@@ -408,11 +376,6 @@ async def consumer(lock,aws):
 @run
 async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
-    # set variables based on parent process
-    # start consumer for other
-    other_logs.start_other_thread(
-        input_=common_globals.log.handlers[1].queue, name=str(os.getpid()), count=1
-    )
 
     medialist = list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
@@ -437,11 +400,8 @@ async def process_dicts_split(username, model_id, medialist):
     await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
     common_globals.log.handlers[0].queue.put("None")
-    common_globals.log.handlers[1].queue.put("None")
-    common_globals.log.debug("other thread closed")
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
-    await send_msg_alt(None)
 
 
 def pid_log_helper():
@@ -451,10 +411,6 @@ def pid_log_helper():
 async def download(c, ele, model_id, username):
     # set logs for mpd
     set_media_log(common_globals.log, ele)
-    templog_ = logger.get_shared_logger(
-        name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
-    )
-    common_globals.innerlog.set(templog_)
     try:
         if read_args.retriveArgs().metadata:
             return await metadata(c, ele, username, model_id)
@@ -469,10 +425,3 @@ async def download(c, ele, model_id, username):
         )
         # we can put into seperate otherqueue_
         return "skipped", 0
-    finally:
-        common_globals.log.handlers[1].queue.put(
-            list(common_globals.innerlog.get().handlers[1].queue.queue)
-        )
-        common_globals.log.handlers[0].queue.put(
-            list(common_globals.innerlog.get().handlers[0].queue.queue)
-        )

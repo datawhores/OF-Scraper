@@ -48,7 +48,6 @@ def setLogger():
     log_globals.init_values()
     logger.get_shared_logger()
     logs.discord_warning()
-    logger.start_threads()
 
 
 def systemSet():

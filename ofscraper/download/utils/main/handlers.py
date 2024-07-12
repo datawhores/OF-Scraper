@@ -46,13 +46,13 @@ async def resume_data_handler_main(data, ele, tempholderObj, batch=False):
     # other
     check = None
     if await check_forced_skip(ele, total) == 0:
-        path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+        path_to_file_logger(placeholderObj, ele, common_globals.log)
         check = True
     elif total == resume_size:
         common_globals.log.debug(
             f"{get_medialog(ele)} total==resume_size skipping download"
         )
-        path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+        path_to_file_logger(placeholderObj, ele, common_globals.log)
         if common_globals.attempt.get() == 0:
             pass
         elif not batch:

@@ -67,10 +67,10 @@ from ofscraper.download.utils.total import batch_total_change_helper
 
 
 async def main_download(c, ele, username, model_id):
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with normal batch downloader"
     )
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} download url: {get_url_log(ele)}"
     )
     if common.is_bad_url(ele.url):
@@ -127,13 +127,13 @@ async def main_download_downloader(c, ele):
                     )
 
             except OSError as E:
-                common_globals.innerlog.get().debug(
+                common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
-                common_globals.innerlog.get().debug(
+                common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
                 )
-                common_globals.innerlog.get().debug(
+                common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
                 )
                 raise E
@@ -144,18 +144,12 @@ async def main_download_downloader(c, ele):
                 common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                 )
-                common_globals.log.handlers[1].queue.put(
-                    list(common_globals.innerlog.get().handlers[1].queue.queue)
-                )
-                common_globals.log.handlers[0].queue.put(
-                    list(common_globals.innerlog.get().handlers[0].queue.queue)
-                )
                 raise E
 
 
 async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, total=None):
     try:
-        common_globals.innerlog.get().debug(
+        common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
         )
         return await send_req_inner(
@@ -197,7 +191,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 placeholderObj = await placeholder.Placeholders(
                     ele, content_type
                 ).init()
-            path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+            path_to_file_logger(placeholderObj, ele, common_globals.log)
             if await check_forced_skip(ele, total) == 0:
                 total = 0
                 await batch_total_change_helper(total, 0)

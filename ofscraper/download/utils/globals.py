@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import contextvars
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -6,6 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 import aioprocessing
 import ofscraper.utils.console as console_
 import ofscraper.utils.settings as settings
+from ofscraper.utils.logs.stdout import add_stdout_handler_multi
+from ofscraper.utils.logs.other import add_other_handler_multi
+
 
 attempt = None
 attempt2 = None
@@ -64,24 +68,22 @@ def set_up_contexvars():
     global attempt2
     global total_count
     global total_count2
-    global innerlog
     attempt = contextvars.ContextVar("attempt", default=0)
     attempt2 = contextvars.ContextVar("attempt2", default=0)
     total_count = contextvars.ContextVar("total", default=0)
     total_count2 = contextvars.ContextVar("total2", default=0)
-    innerlog = contextvars.ContextVar("innerlog")
 
 
-def process_split_globals(pipeCopy, pipeAltCopy,logCopy):
+def process_split_globals(pipeCopy,logqueue):
     global pipe
-    global log
     global pipe_lock
     global pipe_alt_lock
     global lock_pool
-    global pipe_alt
+    global log
+    log=logging.getLogger("shared_process")
+    log=add_stdout_handler_multi(log,clear=False,main_=logqueue)
+    log=add_other_handler_multi(log,clear=False)
     pipe = pipeCopy
-    pipe_alt=pipeAltCopy
-    log = logCopy
     pipe_lock = threading.Lock()
     pipe_alt_lock = threading.Lock()
     lock_pool = ThreadPoolExecutor(max_workers=1)

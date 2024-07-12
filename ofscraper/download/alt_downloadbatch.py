@@ -56,10 +56,10 @@ from ofscraper.download.utils.log import get_medialog
 
 
 async def alt_download(c, ele, username, model_id):
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with batch protected media downloader"
     )
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
     async for _ in download_retry():
@@ -70,14 +70,8 @@ async def alt_download(c, ele, username, model_id):
             except Exception as e:
                 common_globals.log.traceback_(e)
                 common_globals.log.traceback_(traceback.format_exc())
-                common_globals.log.handlers[1].queue.put(
-                    list(common_globals.innerlog.get().handlers[1].queue.queue)
-                )
-                common_globals.log.handlers[0].queue.put(
-                    list(common_globals.innerlog.get().handlers[0].queue.queue)
-                )
                 raise e
-    path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
+    path_to_file_logger(sharedPlaceholderObj, ele, common_globals.log)
     audio = await alt_download_downloader(audio, c, ele)
     video = await alt_download_downloader(video, c, ele)
 
@@ -149,10 +143,10 @@ async def alt_download_downloader(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
                 )
                 common_globals.log.handlers[1].queue.put(
-                    list(common_globals.innerlog.get().handlers[1].queue.queue)
+                    list(common_globals.log.handlers[1].queue.queue)
                 )
                 common_globals.log.handlers[0].queue.put(
-                    list(common_globals.innerlog.get().handlers[0].queue.queue)
+                    list(common_globals.log.handlers[0].queue.queue)
                 )
                 raise E
 
@@ -161,10 +155,10 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
     _attempt = alt_attempt_get(item)
     base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
     url = f"{base_url}{item['origname']}"
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
     )
-    common_globals.innerlog.get().debug(
+    common_globals.log.debug(
         f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
     )
     try:
@@ -217,7 +211,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             )
 
             await set_data(ele,item,data)
-            temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+            temp_file_logger(placeholderObj, ele, common_globals.log)
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
                 total = item["total"]

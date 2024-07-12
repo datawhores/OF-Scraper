@@ -1,4 +1,6 @@
 import asyncio
+import random
+import re
 import logging
 import multiprocessing
 import os
@@ -99,7 +101,7 @@ def get_all_ofscrapers_processes():
         try:
             if (
                 proc
-                and (proc.name() == "OF-Scraper" or proc.name()=="OF-Scraper_")
+                and (re.search("^OF-Scraper", proc.name()))
             ):
                 found.append(proc)
         except psutil.NoSuchProcess:
@@ -118,6 +120,9 @@ def setName():
 def setNameAlt():
     log = logging.getLogger("shared")
     try:
-        setproctitle("OF-Scraper_")
+        setproctitle(f"OF-Scraper_{random.randint(100000, 999999)}")
     except Exception as E:
         log.debug(E)
+
+def getName():
+    return psutil.Process().name()

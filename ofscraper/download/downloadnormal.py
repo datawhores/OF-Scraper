@@ -138,19 +138,10 @@ async def process_dicts(username, model_id, medialist):
         common_globals.reset_globals()
         try:
             manager = manager_.get_manager()
-            logqueue = manager.Queue()
-            otherqueue = manager.Queue()
             download_log = logger.get_shared_logger(
-                name="ofscraper_download", main_=logqueue, other_=otherqueue
+                name="ofscraper_download"
             )
             common_globals.log = download_log
-            # start stdout/main queues consumers
-            log_thread = stdout_logs.start_stdout_logthread(
-                input_=logqueue, name="ofscraper_normal_stdout"
-            )
-            other_thread = other_logs.start_other_thread(
-                input_=otherqueue, name="ofscraper_normal_other"
-            )
             aws = []
 
             async with download_session() as c:

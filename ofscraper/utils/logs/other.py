@@ -11,12 +11,15 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logs.classes as log_class
+import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+from ofscraper.utils.logs.classes.handlers.discord import DiscordHandler,DiscordHandlerMulti
+
+from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -161,21 +164,60 @@ def updateOtherLoggerStream():
         )
         log_globals.otherqueue_.put_nowait(stream)
     if read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF":
-        temp = log_class.DiscordHandler()
+        temp = DiscordHandler()
         log_globals.otherqueue_.put_nowait(temp._url)
 
 
 def init_other_logger(name):
     name = name or "ofscraper_other"
     log = logging.getLogger(name)
-    log.handlers.clear()
+    log=add_other_handler(log)
+    return log
+
+def add_other_handler(log,clear=True):
+    if clear:    
+        log.handlers.clear()
     format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
     # # #log file
     # #discord
-    cord = log_class.DiscordHandler()
+    cord = DiscordHandler()
+    cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
+    cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
+    # console
+    log.addHandler(cord)
+    if settings.get_log_level() != "OFF":
+        stream = open(
+            common_paths.getlogpath(),
+            encoding="utf-8",
+            mode="a",
+        )
+        fh = logging.StreamHandler(stream)
+        fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
+        fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
+        fh.addFilter(log_class.NoTraceBack())
+        log.addHandler(fh)
+    if settings.get_log_level() in {"TRACE", "DEBUG"}:
+        fh2 = logging.StreamHandler(stream)
+        fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
+        fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
+        fh2.addFilter(log_class.TraceBackOnly())
+        log.addHandler(fh2)
+    return log
+
+
+def add_other_handler_multi(log,clear=True):
+    if clear:    
+        log.handlers.clear()
+    format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
+    log.setLevel(1)
+    log_helpers.addtraceback()
+    log_helpers.addtrace()
+    # # #log file
+    # #discord
+    cord = DiscordHandlerMulti()
     cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
     cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
     # console
