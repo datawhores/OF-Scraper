@@ -157,11 +157,11 @@ def add_download_task(*args, **kwargs):
 
 
 def start_download_job_task(*args, **kwargs):
-    download_job_progress.start(*args, **kwargs)
+    download_job_progress.start_task(*args, **kwargs)
 
 
 def start_download_multi_job_task(*args, **kwargs):
-    multi_download_job_progress.start(*args, **kwargs)
+    multi_download_job_progress.start_task(*args, **kwargs)
 
 
 def update_download_task(*args, **kwargs):

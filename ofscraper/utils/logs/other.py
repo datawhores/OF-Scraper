@@ -228,13 +228,13 @@ def add_other_handler_multi(log,clear=True):
             encoding="utf-8",
             mode="a",
         )
-        fh = logging.StreamHandler(stream)
+        fh = StreamHandlerMulti(stream)
         fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
         fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh.addFilter(log_class.NoTraceBack())
         log.addHandler(fh)
     if settings.get_log_level() in {"TRACE", "DEBUG"}:
-        fh2 = logging.StreamHandler(stream)
+        fh2 = StreamHandlerMulti(stream)
         fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
         fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(log_class.TraceBackOnly())
