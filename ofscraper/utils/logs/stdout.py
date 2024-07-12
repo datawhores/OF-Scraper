@@ -22,7 +22,7 @@ import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
 def logger_process(input_, name=None, stop_count=1, event=None):
     # create a logger
-    log = init_rich_logger(name=name)
+    log = init_stdout_logger(name=name)
     input_ = input_ or log_globals.queue_
     count = 0
     funct = None
@@ -46,7 +46,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                 messages.append(message)
             else:
                 messages.extend(messages)
-            if len(messages)>15:
+            if len(messages)>40:
                 raise queue.Empty
         except (queue.Empty, zmq.ZMQError) as e:
             try:
@@ -57,6 +57,10 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                 for  handler in log.handlers:
                     if isinstance(handler,RichHandlerMulti):    
                         handler.emit(*list(filter(lambda x:x.levelno >= handler.level,log_messages)))
+                    else:
+                        for message in log_messages:
+                            if message.levelno >= handler.level:
+                                handler.emit(message)
                 if count == stop_count:
                     break
             except:
