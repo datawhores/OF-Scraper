@@ -177,9 +177,7 @@ def add_stdout_handler_multi(log,clear=True,main_=None):
 
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1, event=None,rich_thresholds=None):
-    input = input_ or log_globals.queue_
-    if input == log_globals.queue_:
-        global main_log_thread
+    input = input_ or log_globals.queue_d
     main_log_thread = threading.Thread(
         target=logger_process,
         args=(input,),
@@ -187,16 +185,17 @@ def start_stdout_logthread(input_=None, name=None, count=1, event=None,rich_thre
         daemon=True,
     )
     main_log_thread.start()
+    log_globals.main_log_thread=main_log_thread
     return main_log_thread
 
 
 
 def start_flush_thread(input_=None, name=None, count=1, event=None):
-    global flush_thread
     flush_thread = threading.Thread(
         target=flush_buffer,
         kwargs={"event": event},
         daemon=True,
     )
     flush_thread.start()
+    log_globals.flush_thread=flush_thread
     return flush_thread
