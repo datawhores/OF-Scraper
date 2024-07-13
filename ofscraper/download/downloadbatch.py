@@ -47,6 +47,7 @@ from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.logs.stdout as stdout_logs
+from ofscraper.utils.system.speed import add_pids_to_download_obj
 
 
 platform_name = platform.system()
@@ -104,6 +105,8 @@ def process_dicts(username, model_id, filtered_medialist):
                 for i in range(num_proc)
             ]
             [process.start() for process in processes]
+            add_pids_to_download_obj(map(lambda x: x.pid, processes))
+
             task1 = progress_updater.add_download_task(
                 common_globals.desc.format(
                     p_count=0,
