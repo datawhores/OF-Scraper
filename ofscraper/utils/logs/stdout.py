@@ -1,4 +1,4 @@
-# logs stdout logs via a shared queue
+#logs stdout logs via a shared queue
 
 import logging
 import queue
@@ -15,15 +15,15 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
 from ofscraper.utils.logs.classes.handlers.zmq import ZMQHandler
-from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti
+from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti,flush_buffer
 from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 
 
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
-def logger_process(input_, name=None, stop_count=1, event=None):
+def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=None):
     # create a logger
-    log = init_stdout_logger(name=name)
+    log = init_stdout_logger(name=name,rich_thresholds=rich_thresholds)
     input_ = input_ or log_globals.queue_
     count = 0
     funct = None
@@ -31,41 +31,17 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
     elif hasattr(input_, "send"):
         funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
-    messages=[]
     while True:
         try:
             message = funct()
             if message=="None" or (hasattr(message, "message") and message.message=="None") or (hasattr(message, "message") and message.message==None):
                 count=count+1
-                raise queue.Empty
             elif message==False:
-                raise queue.Empty
-            elif not isinstance(message, list):
-                messages.append(message)
+                pass
             else:
-                messages.extend(messages)
-            if len(messages)>40:
-                raise queue.Empty
+                log.handle(message)
         except (queue.Empty) as e:
-            try:
-                if len(messages)>0:
-                   pass
-                log_messages = [element for element in messages if hasattr(element, "message") and element.message != "None"]
-                if count>0:
-                    print("dd")
-                if len([element for element in messages if (element is None or (hasattr(element, "message") and element.message == "None") or element == "None")])>0:
-                    print("ddsa")
-                for  handler in log.handlers:
-                    if isinstance(handler,RichHandlerMulti):    
-                        handler.emit(*list(filter(lambda x:x.levelno >= handler.level,log_messages)))
-                    else:
-                        for message in log_messages:
-                            if message.levelno >= handler.level:
-                                handler.emit(message)
-            except:
-                continue
-            finally:
-                messages=[]
+           pass
         except OSError as e:
             if str(e) == "handle is closed":
                 print("handle is closed")
@@ -76,6 +52,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
             print(traceback.format_exc())
         finally:
             if count == stop_count:
+                # close_stdout_handlers()
                 break
             if len(log.handlers) == 0:
                 break
@@ -87,11 +64,10 @@ def logger_process(input_, name=None, stop_count=1, event=None):
 
 
 
-
 # logger for print to console
-def init_stdout_logger(name=None):
+def init_stdout_logger(name=None,rich_thresholds=None):
     log = logging.getLogger(name or "ofscraper_stdout")
-    log=add_stdout_handler(log)
+    log=add_stdout_handler(log,rich_thresholds=rich_thresholds)
     return log
 
 
@@ -101,13 +77,14 @@ def init_rich_logger(name=None):
     return log
 
 
-def add_rich_handler(log,clear=True):
+def add_rich_handler(log,clear=True,rich_thresholds=None):
     if clear:
         log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
+    rich_thresholds=rich_thresholds or {}
     sh =RichHandlerMulti(
         rich_tracebacks=False,
         markup=True,
@@ -116,6 +93,7 @@ def add_rich_handler(log,clear=True):
         show_level=False,
         console=console.get_console(),
     )
+    sh.buffer_size=rich_thresholds
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
@@ -128,19 +106,22 @@ def add_rich_handler(log,clear=True):
             tracebacks_show_locals=True,
             show_time=False,
         )
+        sh2.buffer_size=rich_thresholds
+
         sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(sh2)
     return log
 
-def add_stdout_handler(log,clear=True):
+def add_stdout_handler(log,clear=True,rich_thresholds=None):
     if clear:
         log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
+    rich_thresholds=None or {}
     sh =RichHandlerMulti(
         rich_tracebacks=False,
         markup=True,
@@ -152,6 +133,7 @@ def add_stdout_handler(log,clear=True):
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
+    sh.buffer_size=rich_thresholds
     tx = log_class.TextHandler()
     tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     tx.setFormatter(log_class.SensitiveFormatter(format))
@@ -169,6 +151,8 @@ def add_stdout_handler(log,clear=True):
         sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(log_class.TraceBackOnly())
+        sh2.buffer_size=rich_thresholds
+
         log.addHandler(sh2)
 
     return log
@@ -192,15 +176,27 @@ def add_stdout_handler_multi(log,clear=True,main_=None):
     return log
 
 # process main queue logs to console must be ran by main process, sharable via queues
-def start_stdout_logthread(input_=None, name=None, count=1, event=None):
+def start_stdout_logthread(input_=None, name=None, count=1, event=None,rich_thresholds=None):
     input = input_ or log_globals.queue_
     if input == log_globals.queue_:
         global main_log_thread
     main_log_thread = threading.Thread(
         target=logger_process,
         args=(input,),
-        kwargs={"stop_count": count, "name": name, "event": event},
+        kwargs={"stop_count": count, "name": name, "event": event,"rich_thresholds":rich_thresholds},
         daemon=True,
     )
     main_log_thread.start()
     return main_log_thread
+
+
+
+def start_flush_thread(input_=None, name=None, count=1, event=None):
+    global flush_thread
+    flush_thread = threading.Thread(
+        target=flush_buffer,
+        kwargs={"event": event},
+        daemon=True,
+    )
+    flush_thread.start()
+    return flush_thread

@@ -13,6 +13,7 @@ def gracefulClose():
     )
     # closeOther()
     # closeMain()
+    closeFlush()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -25,8 +26,10 @@ def gracefulClose():
 def forcedClose():
     log_globals.main_event.set()
     log_globals.other_event.set()
+    log_globals.flush_event.set()
     # closeOther()
     # closeMain()
+    closeFlush()
     closeQueue()
 
 
@@ -34,6 +37,7 @@ def daemonClose():
     sendCloseMessage()
     # closeOther()
     # closeMain()
+    closeFlush()
     clearHandlers()
 
 
@@ -55,6 +59,15 @@ def closeMain():
         log_globals.main_log_thread.join()
     log_globals.main_log_thread = None
 
+
+def closeFlush():
+    if not log_globals.flush_thread:
+        return
+    elif log_globals.flush_event.is_set():
+        log_globals.flush_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
+    elif not log_globals.flush_event.is_set():
+        log_globals.flush_thread.join()
+    log_globals.flush_thread = None
 
 def closeOther():
     if not log_globals.other_log_thread:

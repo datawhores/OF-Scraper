@@ -81,6 +81,8 @@ def process_dicts(username, model_id, filtered_medialist):
                 input_=logqueues_[i][0],
                 name=f"ofscraper_{model_id}_{i+1}",
                 count=1,
+                rich_thresholds={logging.getLevelName("TRACE"):60,
+    logging.DEBUG: 50}
                 )
                 log_threads.append(thread)
 
