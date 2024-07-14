@@ -23,10 +23,12 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.utils.live.updater import add_userlist_task
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
+
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
+API="USER_LIST"
 
 
 @run
@@ -110,30 +112,10 @@ async def get_lists():
                     continue
             tasks = new_tasks
     progress_updater.remove_userlist_task(page_task)
-    trace_log_list(output)
+    trace_log_raw("list raw unduped",output)
 
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
-
-
-def trace_log_list(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "list unduped {posts}".format(
-                posts="\n\n".join(map(lambda x: f" list data raw:{x}", chunk))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
 async def scrape_for_list(c, offset=0):
@@ -158,12 +140,8 @@ async def scrape_for_list(c, offset=0):
             log.debug(
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
-            log.trace(
-                "offset:{offset} -> list names raw: {posts}".format(
-                    offset=offset, posts=data
-                )
-            )
 
+            trace_log_raw("list names raw",data)
             if data.get("hasMore") and len(out_list) > 0:
                 offset = offset + len(out_list)
                 new_tasks.append(asyncio.create_task(scrape_for_list(c, offset=offset)))
@@ -214,29 +192,10 @@ async def get_list_users(lists):
     outdict = {}
     for ele in output:
         outdict[ele["id"]] = ele
-    trace_log_usernames(outdict.values())
+    trace_log_raw("raw user data",outdict.values())
+
     log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")
     return outdict.values()
-
-
-def trace_log_usernames(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "users found {users}".format(
-                users="\n\n".join(map(lambda x: f"user data: {str(x)}", chunk))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
 async def scrape_list_members(c, item, offset=0):
@@ -264,15 +223,9 @@ async def scrape_list_members(c, item, offset=0):
             log.debug(
                 f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
             )
-            log.trace(
-                "offset: {offset} list: {item} -> {posts}".format(
-                    item=item.get("name"),
-                    offset=offset,
-                    posts="\n\n".join(
-                        map(lambda x: f"scrapeinfo list {str(x)}", users)
-                    ),
-                )
-            )
+            name=f"API {item.get(name)}"
+            trace_progress_log(name,data,offset=offset)
+
             if (
                 data.get("hasMore")
                 and len(users) > 0

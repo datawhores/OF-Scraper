@@ -35,7 +35,7 @@ from ofscraper.db.operations_.posts import (
     get_youngest_streams_date,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
 
 API = "streams"
 
@@ -81,7 +81,8 @@ async def get_oldstreams(model_id, username):
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
-    trace_log_old(oldstreams)
+    trace_log_raw("oldtimestreams",oldstreams)
+
     return oldstreams
 
 
@@ -114,16 +115,8 @@ async def process_tasks_batch(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Streams')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Streams')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
+                trace_progress_log(f"{API} tasks",new_posts,offset=None)
+
 
                 responseArray.extend(new_posts)
 
@@ -138,7 +131,7 @@ async def process_tasks_batch(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_task(responseArray)
+    trace_log_raw(responseArray,API,final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Streams')} {len(responseArray)}")
     return responseArray
 
@@ -313,17 +306,8 @@ async def scrape_stream_posts(
             log.debug(
                 f"{log_id} -> found streams post IDs {list(map(lambda x:x.get('id'),posts))}"
             )
-            log.trace(
-                "{log_id} -> archive raw {posts}".format(
-                    log_id=log_id,
-                    posts="\n\n".join(
-                        map(
-                            lambda x: f"scrapeinfo archive: {str(x)}",
-                            posts,
-                        )
-                    ),
-                )
-            )
+            
+            trace_progress_log(f"{API} requests",posts,offset=None)
 
             if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
@@ -358,45 +342,6 @@ async def scrape_stream_posts(
         progress_utils.remove_api_job_task(task)
 
     return posts, new_tasks
-
-
-def trace_log_task(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(
-            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
-        )
-        log.trace(f"{common_logs.FINAL_RAW.format('Streams')}".format(posts=api_str))
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
-
-
-def trace_log_old(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "oldstreams {posts}".format(
-                posts="\n\n".join(list(map(lambda x: f"oldstreams: {str(x)}", chunk)))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
 def time_log(username, after):

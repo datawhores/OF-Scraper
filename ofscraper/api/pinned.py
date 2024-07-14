@@ -25,6 +25,8 @@ import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
 from ofscraper.api.utils.timeline import process_individual
 from ofscraper.utils.context.run_async import run
+from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
+
 
 log = logging.getLogger("shared")
 API = "pinned"
@@ -90,17 +92,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
-
+                trace_progress_log(f"{API} tasks",new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -108,22 +100,10 @@ async def process_tasks(tasks):
                 continue
         tasks = new_tasks
     progress_utils.remove_api_task(page_task)
-    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "pinned raw duped {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray)
-            )
-        )
-    )
     log.debug(
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
     )
-
-    pinned_str = ""
-    for post in responseArray:
-        pinned_str += f"{common_logs.RAW_INNER} {post}\n\n"
-    log.trace(f"{common_logs.FINAL_RAW.format('Pinned')}".format(posts=pinned_str))
+    trace_log_raw(f"{API} final",responseArray,final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)}")
     return responseArray
 
@@ -173,17 +153,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
                 log.debug(
                     f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}"
                 )
-                log.trace(
-                    "{log_id} -> pinned raw {posts}".format(
-                        log_id=log_id,
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"scrapeinfo pinned: {str(x)}",
-                                posts,
-                            )
-                        ),
-                    )
-                )
+                trace_progress_log(f"{API} requests",posts)
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_pinned_posts(

@@ -54,7 +54,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                 r.json(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY")),
             )
-
+            
             log.trace(f"username date: {r.json()}")
             return r.json()
     except Exception as E:

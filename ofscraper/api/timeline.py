@@ -34,7 +34,8 @@ from ofscraper.db.operations_.posts import (
     get_youngest_timeline_date,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs import trace_log_raw, trace_progress_log
+
 
 log = logging.getLogger("shared")
 API = "timeline"
@@ -87,19 +88,7 @@ async def process_tasks_batch(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Timeline')}".format(
-                        posts="\n\n".join(
-                            list(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
-                            )
-                        )
-                    )
-                )
-
+                trace_progress_log(f"{API} tasks",new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -112,7 +101,7 @@ async def process_tasks_batch(tasks):
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")
-    trace_log_task(responseArray)
+    trace_log_raw(f"{API} final",responseArray,final_count=True)
     return responseArray
 
 
@@ -134,7 +123,7 @@ async def get_oldtimeline(model_id, username):
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    trace_log_old(oldtimeline)
+    trace_log_raw("oldtimeline",oldtimeline)
     return oldtimeline
 
 
@@ -319,20 +308,7 @@ async def scrape_timeline_posts(
             log.debug(
                 f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
             )
-            log.trace(
-                "{log_id} -> post raw {posts}".format(
-                    log_id=log_id,
-                    posts="\n\n".join(
-                        list(
-                            map(
-                                lambda x: f"scrapeinfo timeline: {str(x)}",
-                                posts,
-                            )
-                        )
-                    ),
-                )
-            )
-
+            trace_progress_log(f"{API} requests",posts,offset=offset)
             if min(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
             ):
@@ -364,46 +340,6 @@ async def scrape_timeline_posts(
         raise E
     finally:
         progress_utils.remove_api_job_task(task)
-
-
-def trace_log_task(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(
-            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
-        )
-        log.trace(f"{common_logs.FINAL_RAW.format('Timeline')}".format(posts=api_str))
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
-
-
-def trace_log_old(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "oldtimelines {posts}".format(
-                posts="\n\n".join(list(map(lambda x: f"oldtimeline: {str(x)}", chunk)))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
-
 
 def time_log(username, after):
     log.info(

@@ -22,6 +22,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
+from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -65,17 +66,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Paid')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
-
+                trace_progress_log(f"{API} tasks",result)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -87,11 +78,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
-
-    paid_str = ""
-    for post in responseArray:
-        paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
-    log.trace(f"{common_logs.FINAL_RAW.format('Paid')}".format(posts=paid_str))
+    trace_log_raw(f"{API} final",responseArray,final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
 
     return responseArray
@@ -118,7 +105,7 @@ async def scrape_paid(c, username, offset=0):
         ) as r:
 
             data = await r.json_()
-            log.trace("paid raw {posts}".format(posts=data))
+            trace_progress_log(f"{API} all users requests",data)
 
             media = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> media found {len(media)}")
@@ -202,16 +189,9 @@ async def create_tasks_scrape_paid():
                     log.debug(
                         f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
                     )
-                    paid_str = ""
-                    for post in output:
-                        paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
+                    trace_progress_log(f"{API} all users tasks",result)
 
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('All Paid')}".format(
-                            posts=paid_str
-                        )
-                    )
-                    new_tasks.extend(new_tasks_batch)
+                    tasks.extend(new_tasks_batch)
 
                 except Exception as E:
 
@@ -221,11 +201,8 @@ async def create_tasks_scrape_paid():
         progress_utils.remove_api_task(page_task)
 
     log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-    log.trace(
-        "paid raw duped {posts}".format(
-            posts="\n\n".join(map(lambda x: f"dupedinfo all paid: {str(x)}", output))
-        )
-    )
+    trace_log_raw(f"{API} all users final",output,final_count=True)
+
     cache.set(
         "purchased_all",
         list(map(lambda x: x.get("id"), list(output))),
