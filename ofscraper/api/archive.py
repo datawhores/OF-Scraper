@@ -36,7 +36,7 @@ from ofscraper.db.operations_.posts import (
     get_youngest_archived_date,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 log = logging.getLogger("shared")
 API = "archived"
@@ -79,7 +79,8 @@ async def get_oldarchived(model_id, username):
     ]
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    trace_log_old(oldarchived)
+    trace_log_raw(f"oldarchived",oldarchived)
+
     return oldarchived
 
 
@@ -112,17 +113,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Archived')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Archived')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
-
+                trace_progress_log(f"{API} task",new_posts)
                 responseArray.extend(new_posts)
 
             except Exception as E:
@@ -136,7 +127,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_task(responseArray)
+    trace_log_raw(f"{API} final",responseArray,final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")
     return responseArray
 
@@ -317,17 +308,7 @@ async def scrape_archived_posts(
             log.debug(
                 f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
             )
-            log.trace(
-                "{log_id} -> archive raw {posts}".format(
-                    log_id=log_id,
-                    posts="\n\n".join(
-                        map(
-                            lambda x: f"scrapeinfo archive: {str(x)}",
-                            posts,
-                        )
-                    ),
-                )
-            )
+            trace_progress_log(f"{API} request",posts)
 
             if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
@@ -362,46 +343,6 @@ async def scrape_archived_posts(
         progress_utils.remove_api_job_task(task)
 
     return posts, new_tasks
-
-
-def trace_log_task(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(
-            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
-        )
-        log.trace(f"{common_logs.FINAL_RAW.format('Archived')}".format(posts=api_str))
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
-
-
-def trace_log_old(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "oldarchived {posts}".format(
-                posts="\n\n".join(list(map(lambda x: f"oldarchived: {str(x)}", chunk)))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
-
 
 def time_log(username, after):
     log.info(
