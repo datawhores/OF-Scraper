@@ -1,5 +1,5 @@
-from ofscraper.api.utils.cache.read import read_check_mode
-from ofscraper.api.utils.cache.write import set_check_mode_posts
+from ofscraper.api.common.cache.read import read_check_mode
+from ofscraper.api.common.cache.write import set_check_mode_posts
 
 
 def update_check(unduped, model_id, after, API):

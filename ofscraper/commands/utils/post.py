@@ -36,7 +36,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
-from ofscraper.api.utils.cache.write import set_after_checks
+from ofscraper.api.common.cache.write import set_after_checks
 from ofscraper.commands.utils.strings import all_paid_model_id_str, all_paid_str
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.db.operations_.profile import (

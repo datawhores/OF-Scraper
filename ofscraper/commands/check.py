@@ -34,7 +34,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
-from ofscraper.api.utils.check import read_check, reset_check, set_check
+from ofscraper.api.common.check import read_check, reset_check, set_check
 from ofscraper.api.common.timeline import get_individual_timeline_post
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.utils.strings import check_str
