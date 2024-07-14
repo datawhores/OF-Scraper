@@ -17,7 +17,7 @@ import traceback
 
 import arrow
 
-import ofscraper.api.utils.logs as common_logs
+import ofscraper.api.common.logs.strings as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
@@ -37,7 +37,7 @@ from ofscraper.db.operations_.messages import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.api.common.logs import trace_log_raw, trace_progress_log
+from ofscraper.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 API = "messages"
 log = logging.getLogger("shared")

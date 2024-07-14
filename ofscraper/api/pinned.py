@@ -18,14 +18,14 @@ import traceback
 
 import arrow
 
-import ofscraper.api.utils.logs as common_logs
+import ofscraper.api.common.logs.strings as common_logs
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
-from ofscraper.api.utils.timeline import process_individual
+from ofscraper.api.common.timeline import process_individual
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
+from ofscraper.api.common.logs.logs import trace_log_raw,trace_progress_log
 
 
 log = logging.getLogger("shared")

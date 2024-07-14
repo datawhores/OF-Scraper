@@ -19,7 +19,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 import ofscraper.utils.system.network as network
-from ofscraper.api.utils.timeline import get_individual_timeline_post
+from ofscraper.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import download_manual_str, post_str_manual
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert

@@ -15,14 +15,14 @@ import asyncio
 import logging
 import traceback
 
-import ofscraper.api.utils.logs as common_logs
+import ofscraper.api.common.logs.strings as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.logs import trace_log_raw,trace_progress_log
+from ofscraper.api.common.logs.logs import trace_log_raw,trace_progress_log
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
