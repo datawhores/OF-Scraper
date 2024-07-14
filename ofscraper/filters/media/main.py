@@ -16,7 +16,7 @@ def filtermediaFinal(media, username, model_id):
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
         return media
-    log.info(f"finalizing media filtering {username} {model_id} for downlaod")
+    log.info(f"finalizing media filtering {username} {model_id} for download")
 
 
     count = 1
