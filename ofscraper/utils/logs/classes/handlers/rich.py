@@ -12,7 +12,6 @@ logs=deque()
 
 def flush_buffer(event=None):
     """Flushes the buffer to the console."""
-    i=0
     sleep=.5
     close=False
     while True:

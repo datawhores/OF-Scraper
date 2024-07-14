@@ -66,7 +66,9 @@ class DiscordHandler(logging.Handler):
             return
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
-        if constants.getattr("DISCORD_ASYNC"):
+        if log_entry is None or log_entry=="None" or log_entry=="":
+            return
+        elif constants.getattr("DISCORD_ASYNC"):
             self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
         self._emit(log_entry)
         pass
