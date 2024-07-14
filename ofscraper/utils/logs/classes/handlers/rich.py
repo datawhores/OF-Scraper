@@ -14,14 +14,18 @@ def flush_buffer(event=None):
     """Flushes the buffer to the console."""
     i=0
     sleep=.5
+    close=False
     while True:
         log_rends=[]
         records=[]
         try:
-            num=min(len(logs),45)
+            num=min(len(logs),100)
             if num>0:
                 for _ in range(num):
                     log_renderable,record=logs.pop()
+                    if record.message=="None":
+                        close=True
+                        continue
                     log_rends.append(log_renderable)
                     records.append(record)
                     
@@ -37,6 +41,8 @@ def flush_buffer(event=None):
                     get_console().print(Group(*log_rends))
                 except Exception as E:
                     print(E)
+            if close:
+                break
 
         except:
             continue

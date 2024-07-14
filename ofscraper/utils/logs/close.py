@@ -3,6 +3,7 @@ import threading
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.globals as log_globals
+from ofscraper.utils.logs.classes.handlers.rich import logs
 
 
 def gracefulClose():
@@ -66,6 +67,7 @@ def closeFlush():
     elif log_globals.flush_event.is_set():
         log_globals.flush_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
     elif not log_globals.flush_event.is_set():
+        logging.getLogger("shared").log(100,"None")
         log_globals.flush_thread.join()
     log_globals.flush_thread = None
 
