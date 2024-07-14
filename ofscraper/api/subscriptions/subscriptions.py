@@ -17,7 +17,7 @@ import traceback
 
 from rich.console import Console
 
-import ofscraper.api.subscriptions.helpers as helpers
+import ofscraper.api.subscriptions.common as common
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
@@ -49,13 +49,13 @@ async def get_subscriptions(subscribe_count, account="active"):
 
 async def activeHelper(subscribe_count, c):
     if any(
-        x in helpers.get_black_list_helper()
+        x in common.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
-        x in helpers.get_black_list_helper()
+        x in common.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_ACTIVE_LIST"),
             constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
@@ -63,13 +63,13 @@ async def activeHelper(subscribe_count, c):
     ):
         return []
     if all(
-        x not in helpers.get_user_list_helper()
+        x not in common.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
-        x not in helpers.get_user_list_helper()
+        x not in common.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_ACTIVE_LIST"),
             constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
@@ -88,13 +88,13 @@ async def activeHelper(subscribe_count, c):
 
 async def expiredHelper(subscribe_count, c):
     if any(
-        x in helpers.get_black_list_helper()
+        x in common.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
-        x in helpers.get_black_list_helper()
+        x in common.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_EXPIRED_LIST"),
             constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
@@ -102,13 +102,13 @@ async def expiredHelper(subscribe_count, c):
     ):
         return []
     if all(
-        x not in helpers.get_user_list_helper()
+        x not in common.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
-        x not in helpers.get_user_list_helper()
+        x not in common.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_EXPIRED_LIST"),
             constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),

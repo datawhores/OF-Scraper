@@ -8,7 +8,7 @@ import certifi
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console
-import ofscraper.utils.logs.helpers as log_helpers
+import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system

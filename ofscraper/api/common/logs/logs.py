@@ -15,7 +15,7 @@ r"""
 import logging
 
 import ofscraper.api.common.logs.strings as common_logs
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.utils.logs.utils.trace import is_trace
 
 
 log = logging.getLogger("shared")
@@ -27,6 +27,8 @@ sem = None
 
 
 def trace_progress_log(area,data,offset=None):
+    if not is_trace():
+        return
     log.trace(f"{common_logs.PROGRESS_RAW_TITLE.format(area)}")
     for count,ele in enumerate(data):
         if offset!=None and offset!=False:

@@ -1,7 +1,7 @@
 import logging
 
 import ofscraper.utils.args.accessors.read as read_args
-from ofscraper.filters.models.helpers import trace_log_user
+from ofscraper.filters.models.utils.logs import trace_log_user
 
 
 def promoFilterHelper(filterusername):

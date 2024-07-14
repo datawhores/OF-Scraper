@@ -36,7 +36,6 @@ from ofscraper.db.operations_.messages import (
     get_youngest_message_date,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
 from ofscraper.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 API = "messages"
@@ -83,7 +82,8 @@ async def get_old_messages(model_id, username):
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-    trace_log_old(oldmessages)
+    trace_log_raw("oldmessages",oldmessages)
+
     return oldmessages
 
 
@@ -422,24 +422,6 @@ async def get_after(model_id, username, forced_after=None):
 
 
 
-def trace_log_old(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        log.trace(
-            "oldmessages {posts}".format(
-                posts="\n\n".join(list(map(lambda x: f"oldmessage: {str(x)}", chunk)))
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
 def log_after_before(after, before, username):

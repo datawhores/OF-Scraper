@@ -17,7 +17,7 @@ import sqlite3
 
 from rich.console import Console
 
-import ofscraper.db.operations_.helpers as helpers
+import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.profile import get_single_model_via_profile
@@ -78,7 +78,7 @@ def write_stories_table(
     stories: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        stories = helpers.converthelper(stories)
+        stories = convert.converthelper(stories)
         insertData = list(
             map(
                 lambda data: (
@@ -121,7 +121,7 @@ def update_stories_table(
     stories: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        stories = helpers.converthelper(stories)
+        stories = convert.converthelper(stories)
         updateData = list(
             map(
                 lambda data: (
@@ -215,8 +215,8 @@ async def make_stories_table_changes(
     new_posts = list(filter(lambda x: x.id not in curr_id, all_stories_filtered))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_stories_filtered))
     if len(new_posts) > 0:
-        new_posts = helpers.converthelper(new_posts)
+        new_posts = convert.converthelper(new_posts)
         await write_stories_table(new_posts, model_id=model_id, username=username)
     if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-        curr_posts = helpers.converthelper(curr_posts)
+        curr_posts = convert.converthelper(curr_posts)
         await update_stories_table(curr_posts, model_id=model_id, username=username)

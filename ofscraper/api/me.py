@@ -16,7 +16,7 @@ import traceback
 
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
-import ofscraper.utils.logs.helpers as log_helpers
+import ofscraper.utils.logs.utils.level as log_helpers
 
 log = logging.getLogger("shared")
 

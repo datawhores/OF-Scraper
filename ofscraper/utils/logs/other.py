@@ -13,7 +13,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
-import ofscraper.utils.logs.helpers as log_helpers
+import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system

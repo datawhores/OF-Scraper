@@ -193,7 +193,6 @@ async def get_list_users(lists):
     for ele in output:
         outdict[ele["id"]] = ele
     trace_log_raw("raw user data",outdict.values())
-
     log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")
     return outdict.values()
 

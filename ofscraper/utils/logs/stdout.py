@@ -18,7 +18,7 @@ from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 
 
 import ofscraper.utils.logs.globals as log_globals
-import ofscraper.utils.logs.helpers as log_helpers
+import ofscraper.utils.logs.utils.level as log_helpers
 def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=None):
     # create a logger
     log = init_stdout_logger(name=name,rich_thresholds=rich_thresholds)

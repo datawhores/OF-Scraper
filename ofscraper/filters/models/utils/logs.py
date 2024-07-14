@@ -1,7 +1,6 @@
 import logging
 
-import ofscraper.utils.constants as constants
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.utils.logs.utils.trace import is_trace
 
 log = logging.getLogger("shared")
 
@@ -11,4 +10,4 @@ def trace_log_user(responseArray, title_str):
         return
     log.trace({title_str.strip().capitalize()})
     for count,ele in enumerate(responseArray):
-        log.trace(f"[userdata raw] count: {count} data:{ele})
+        log.trace(f"[userdata raw] count: {count} data:{ele}")

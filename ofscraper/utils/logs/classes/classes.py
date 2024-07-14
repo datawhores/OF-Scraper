@@ -4,7 +4,7 @@ import re
 
 from rich.text import Text
 
-import ofscraper.utils.logs.helpers as helpers
+import ofscraper.utils.logs.utils.level as level
 
 
 class DebugOnly(logging.Filter):
@@ -74,7 +74,7 @@ class SensitiveFormatter(logging.Formatter):
         t = re.sub("&Policy=[^&\"']+", "&Policy={hidden}", s)
         t = re.sub("&Signature=[^&\"']+", "&Signature={hidden}", t)
         t = re.sub("&Key-Pair-Id=[^&\"']+", "&Key-Pair-Id={hidden}", t)
-        for ele in helpers.getSenstiveDict().items():
+        for ele in level.getSenstiveDict().items():
             t = re.sub(re.escape(str(ele[0])), str(ele[1]), t)
         return t
 

@@ -18,7 +18,7 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.classes.labels as labels_class
-import ofscraper.db.operations_.helpers as helpers
+import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.posts as post_
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.accessors.read as read_args
@@ -236,12 +236,12 @@ async def make_label_table_changes(
         new_posts = list(filter(lambda x: x.id not in curr, label.posts))
         curr_posts = list(filter(lambda x: x.id in curr, label.posts))
         if len(new_posts) > 0:
-            new_posts = helpers.converthelper(new_posts)
+            new_posts = convert.converthelper(new_posts)
             await write_labels_table(
                 label, new_posts, model_id=model_id, username=username
             )
         if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-            curr_posts = helpers.converthelper(curr_posts)
+            curr_posts = convert.converthelper(curr_posts)
             await update_labels_table(
                 label, curr_posts, model_id=model_id, username=username
             )

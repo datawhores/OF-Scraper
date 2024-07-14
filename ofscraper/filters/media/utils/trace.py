@@ -1,7 +1,5 @@
 import logging
-
-import ofscraper.utils.constants as constants
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.utils.logs.utils.trace import is_trace
 
 log = logging.getLogger("shared")
 
