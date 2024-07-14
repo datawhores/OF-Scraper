@@ -262,7 +262,7 @@ async def get_after(model_id, username, forced_after=None):
         f"Number of timeline posts marked as downloaded {len(list(curr_downloaded))-len(list(missing_items))}"
     )
     log.info(
-        f"Number of timeline posts  marked as missing/undownloaded le{len(list(missing_items))}"
+        f"Number of timeline posts  marked as missing/undownloaded {len(list(missing_items))}"
     )
 
     if len(missing_items) == 0:
