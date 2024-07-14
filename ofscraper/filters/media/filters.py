@@ -40,7 +40,7 @@ def dupefiltermedia(media):
             output[item.id] = item
         elif item.canview and not output[item.id].canview:
             output[item.id] = item
-    return output.values()
+    return list(output.values())
 
 
 def dupefilterPost(post):
@@ -50,7 +50,7 @@ def dupefilterPost(post):
             output[item.id] = item
         elif item.opened and not output[item.id].opened:
             output[item.id] = item
-    return output.values()
+    return list(output.values())
 
 
 # media filters
