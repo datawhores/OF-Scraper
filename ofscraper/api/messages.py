@@ -23,9 +23,9 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.api.utils.after import get_after_pre_checks
-from ofscraper.api.utils.cache.read import read_full_after_scan_check
-from ofscraper.api.utils.check import update_check
+from ofscraper.api.common.after import get_after_pre_checks
+from ofscraper.api.common.cache.read import read_full_after_scan_check
+from ofscraper.api.common.check import update_check
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,

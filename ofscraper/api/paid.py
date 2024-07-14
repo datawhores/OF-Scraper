@@ -20,7 +20,7 @@ import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
-from ofscraper.api.utils.check import update_check
+from ofscraper.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
 from ofscraper.api.common.logs.logs import trace_log_raw,trace_progress_log
 
