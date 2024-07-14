@@ -6,7 +6,6 @@ import threading
 import traceback
 from functools import partial
 from logging.handlers import QueueHandler
-from rich.logging import RichHandler
 
 
 
@@ -14,7 +13,6 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
-from ofscraper.utils.logs.classes.handlers.zmq import ZMQHandler
 from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti,flush_buffer
 from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 
@@ -27,20 +25,23 @@ def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=N
     input_ = input_ or log_globals.queue_
     count = 0
     funct = None
+    close=False
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
     elif hasattr(input_, "send"):
         funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
     while True:
         try:
+            if close is True:
+                break
             message = funct()
             if message=="None" or (hasattr(message, "message") and message.message=="None") or (hasattr(message, "message") and message.message==None):
                 count=count+1
-            elif message==False:
+            elif message is False:
                 pass
             else:
                 log.handle(message)
-        except (queue.Empty) as e:
+        except (queue.Empty):
            pass
         except OSError as e:
             if str(e) == "handle is closed":
@@ -52,12 +53,11 @@ def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=N
             print(traceback.format_exc())
         finally:
             if count == stop_count:
-                # close_stdout_handlers()
-                break
+                close=True
             if len(log.handlers) == 0:
-                break
+                close=True
             if event and event.is_set():
-                return
+                close=True
     for handler in log.handlers:
         handler.close()
     log.handlers.clear()
