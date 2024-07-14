@@ -37,6 +37,7 @@ from ofscraper.db.operations_.messages import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs import trace_log_raw, trace_progress_log
 
 API = "messages"
 log = logging.getLogger("shared")
@@ -125,16 +126,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Messages')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Messages')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
+                trace_progress_log(f"{API} tasks",new_posts)
 
                 responseArray.extend(new_posts)
             except Exception as E:
@@ -147,7 +139,8 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_task(responseArray)
+    trace_log_raw(f"{API} final",responseArray,final_count=True)
+
     log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)}")
 
     return responseArray
@@ -326,17 +319,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
             log.debug(
                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
             )
-            log.trace(
-                "{log_id} -> messages raw {posts}".format(
-                    log_id=log_id,
-                    posts="\n\n".join(
-                        map(
-                            lambda x: f"messages scrapeinfo: {str(x)}",
-                            messages,
-                        )
-                    ),
-                )
-            )
+            trace_progress_log(f"{API} requests",messages)
 
             # check if first value(newest) is less then then the required time
             if max(
@@ -437,23 +420,6 @@ async def get_after(model_id, username, forced_after=None):
         return arrow.get(missing_items[0]["posted_at"]).float_timestamp
 
 
-def trace_log_task(responseArray):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(
-            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
-        )
-        log.trace(f"{common_logs.FINAL_RAW.format('Messages')}".format(posts=api_str))
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
 def trace_log_old(responseArray):

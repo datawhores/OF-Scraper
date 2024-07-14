@@ -66,7 +66,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} tasks",result)
+                trace_progress_log(f"{API} tasks",new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)

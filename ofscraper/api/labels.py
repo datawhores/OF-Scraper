@@ -21,7 +21,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.api.utils.check import update_check
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.api.common.logs import trace_log_raw, trace_progress_log
 
 log = logging.getLogger("shared")
 API = "labels"
@@ -94,16 +94,7 @@ async def process_tasks_labels(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                new_posts,
-                            )
-                        )
-                    )
-                )
+                trace_progress_log(f"{API} names tasks",new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -114,7 +105,7 @@ async def process_tasks_labels(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_task(responseArray)
+    trace_log_raw(f"{API} names final",responseArray,final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)}")
 
     return responseArray
@@ -143,11 +134,7 @@ async def scrape_labels(c, model_id, offset=0):
             log.debug(
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
-            log.trace(
-                "offset:{offset} -> label names raw: {posts}".format(
-                    offset=offset, posts=data
-                )
-            )
+            trace_progress_log(f"{API} names requests",data)
 
             if (
                 data.get("hasMore")
@@ -190,29 +177,19 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
         new_tasks = []
         for task in asyncio.as_completed(tasks):
             try:
-                label, new_posts, new_tasks = await task
+                label, posts, new_tasks = await task
                 page_count = page_count + 1
                 progress_utils.update_api_task(
                     page_task, description=f"Labels Progress: {page_count}"
                 )
-                unduped_posts = label_dedupe(
-                    responseDict[label["id"]]["seen"], new_posts
+                new_posts = label_dedupe(
+                    responseDict[label["id"]]["seen"], posts
                 )
                 log.debug(
-                    f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],unduped_posts))}"
+                    f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                log.trace(
-                    f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"{common_logs.RAW_INNER} {x}",
-                                unduped_posts,
-                            )
-                        )
-                    )
-                )
-
-                responseDict[label["id"]]["posts"].extend(unduped_posts)
+                trace_progress_log(f"{API} content tasks",new_posts)
+                responseDict[label["id"]]["posts"].extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
@@ -244,7 +221,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
             ]
         )
     )
-    trace_log_task(list(responseDict.values()), header="All Labels Content")
+    trace_log_raw(f"{API} content final",list(responseDict.values()),final_count=True)
     progress_utils.remove_api_task(page_task)
     return list(responseDict.values())
 
@@ -270,17 +247,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             log.debug(
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
-            log.trace(
-                "{offset} -> {posts}".format(
-                    offset=offset,
-                    posts="\n\n".join(
-                        map(
-                            lambda x: f"scrapeinfo label {str(x)}",
-                            posts,
-                        )
-                    ),
-                )
-            )
+            trace_progress_log(f"{API} content requests",data)
 
             if data.get("hasMore") and len(posts) > 0:
                 offset += len(posts)
@@ -327,24 +294,3 @@ def get_default_label_dict(labels):
     return output
 
 
-def trace_log_task(responseArray, header=None):
-    if not is_trace():
-        return
-    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(
-            i + chunk_size - 1, len(responseArray)
-        )  # Adjust end_index calculation
-        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(
-            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
-        )
-        log.trace(
-            f"{common_logs.FINAL_RAW.format(header or 'Labels Names')}".format(
-                posts=api_str
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
