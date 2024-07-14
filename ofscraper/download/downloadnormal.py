@@ -137,7 +137,6 @@ async def process_dicts(username, model_id, medialist):
     with live():
         common_globals.reset_globals()
         try:
-            manager = manager_.get_manager()
             download_log = logger.get_shared_logger(
                 name="ofscraper_download"
             )
@@ -171,11 +170,6 @@ async def process_dicts(username, model_id, medialist):
                 await asyncio.gather(*consumers)
             progress_updater.remove_download_task(task1)
             setDirectoriesDate()
-            # close thread
-            otherqueue.put("None")
-            logqueue.put("None")
-            log_thread.join()
-            other_thread.join() if other_thread else None
             final_log(username, log=logging.getLogger("shared"))
             return final_log_text(username)
 
