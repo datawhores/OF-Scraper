@@ -24,9 +24,6 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 import ofscraper.utils.logs.logger as logger
-import ofscraper.utils.logs.other as other_logs
-import ofscraper.utils.logs.stdout as stdout_logs
-import ofscraper.utils.manager as manager_
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.main_download import main_download

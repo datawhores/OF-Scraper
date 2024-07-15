@@ -45,7 +45,6 @@ from ofscraper.download.utils.progress.progress import convert_num_bytes
 from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.manager as manager_
 import ofscraper.utils.logs.stdout as stdout_logs
 from ofscraper.utils.system.speed import add_pids_to_download_obj
 
@@ -65,7 +64,6 @@ def process_dicts(username, model_id, filtered_medialist):
     try:
         common_globals.reset_globals()
         with live():
-            manager = manager_.get_manager()
             if not read_args.retriveArgs().item_sort:
                 random.shuffle(filtered_medialist)
             mediasplits = get_mediasplits(filtered_medialist)
