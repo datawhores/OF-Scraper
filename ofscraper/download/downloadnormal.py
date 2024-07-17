@@ -179,20 +179,24 @@ async def download(c, ele, model_id, username):
     try:
         if read_args.retriveArgs().metadata:
             return await metadata(c, ele, username, model_id)
-        elif ele.url:
-            return await main_download(
+        #conditions for download
+        if ele.url:
+            data=await main_download(
                 c,
                 ele,
                 username,
                 model_id,
             )
         elif ele.mpd:
-            return await alt_download(
+            data=await alt_download(
                 c,
                 ele,
                 username,
                 model_id,
             )
+        common_globals.log.debug(f"{get_medialog(ele)} Download finished")
+        return data
+
 
     except Exception as E:
         common_globals.log.debug(f"{get_medialog(ele)} exception {E}")

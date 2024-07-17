@@ -207,13 +207,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 await total_change_helper(total, 0)
                 return item
             elif total != resume_size:
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
-                )
-                await download_fileobject_writer(total, l, ele, placeholderObj)
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
-                )
+                await download_fileobject_writer(total, l, ele, placeholderObj,item)
+                
 
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
@@ -222,11 +217,17 @@ async def send_req_inner(c, ele, item, placeholderObj):
         raise E
 
 
-async def download_fileobject_writer(total, l, ele, placeholderObj):
+async def download_fileobject_writer(total, l, ele, placeholderObj,item):
+    common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
+                )
     if total > constants.getattr("MAX_READ_SIZE"):
         await download_fileobject_writer_streamer(total, l, ele, placeholderObj)
     else:
         await download_fileobject_writer_reader(total, l, placeholderObj)
+    common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+    )
 
 
 async def download_fileobject_writer_reader(total, res, placeholderObj):
