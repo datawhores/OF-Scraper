@@ -125,7 +125,7 @@ async def process_dicts(username, model_id, medialist):
     download_log_clear_helper()
     task1=None
     with live():
-        common_globals.main_globals()
+        common_globals.mainProcessVariableInit()
         try:
            
             aws = []

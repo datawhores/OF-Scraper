@@ -64,7 +64,7 @@ def process_dicts(username, model_id, filtered_medialist):
         else partial(progress_utils.setup_metadata_progress_live)
     )
     try:
-        common_globals.mainProcessVariableInit()
+        common_globals.main_globals()
         download_log_clear_helper()
         with live():
             if not read_args.retriveArgs().item_sort:
