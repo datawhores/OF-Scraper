@@ -38,6 +38,8 @@ def set_directory(path: Path):
 
 
 def temp_cleanup():
+    if not constants.getattr("BATCH_TEMPFILE_CLEANUP"):
+        return
     if not settings.get_auto_resume():
         log.info("Cleaning up temp files\n\n")
         roots = set(

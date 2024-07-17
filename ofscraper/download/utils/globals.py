@@ -10,6 +10,11 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.stdout import add_stdout_handler_multi
 from ofscraper.utils.logs.other import add_other_handler_multi
 import ofscraper.utils.logs.logger as logger
+import ofscraper.models.selector as selector
+import ofscraper.utils.args.mutators.write as write_args
+import ofscraper.utils.dates as dates
+from ofscraper.download.utils.send.message import set_send_msg
+
 
 
 
@@ -66,6 +71,18 @@ def main_globals():
     )
 
 
+
+def subProcessVariableInit(dateDict, userList, pipeCopy, argsCopy,stdout_logqueue,file_logqueue):
+    set_up_contexvars()
+    write_args.setArgs(argsCopy)
+    dates.setLogDate(dateDict)
+    selector.set_ALL_SUBS_DICT(userList)
+    process_split_globals(pipeCopy,stdout_logqueue,file_logqueue)
+    set_send_msg()
+
+def mainProcessVariableInit():
+    set_up_contexvars()
+    main_globals()
 def set_up_contexvars():
     global attempt
     global attempt2

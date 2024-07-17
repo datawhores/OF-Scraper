@@ -29,7 +29,7 @@ import ofscraper.utils.system.priority as priority
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.download.utils.general import subProcessVariableInit
+from ofscraper.download.utils.globals import subProcessVariableInit
 from ofscraper.download.utils.log import (
     final_log,
     final_log_text,
@@ -64,7 +64,7 @@ def process_dicts(username, model_id, filtered_medialist):
         else partial(progress_utils.setup_metadata_progress_live)
     )
     try:
-        common_globals.main_globals()
+        common_globals.mainProcessVariableInit()
         download_log_clear_helper()
         with live():
             if not read_args.retriveArgs().item_sort:

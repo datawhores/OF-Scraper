@@ -31,13 +31,7 @@ def add_additional_data(placeholderObj, ele):
     add_path(placeholderObj, ele)
 
 
-def subProcessVariableInit(dateDict, userList, pipeCopy, argsCopy,stdout_logqueue,file_logqueue):
-    common_globals.set_up_contexvars()
-    write_args.setArgs(argsCopy)
-    dates.setLogDate(dateDict)
-    selector.set_ALL_SUBS_DICT(userList)
-    common_globals.process_split_globals(pipeCopy,stdout_logqueue,file_logqueue)
-    set_send_msg()
+
 
 
 

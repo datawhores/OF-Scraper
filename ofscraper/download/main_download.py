@@ -138,7 +138,7 @@ async def main_download_downloader(c, ele):
                 raise E
             except Exception as E:
                 common_globals.log.traceback_(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt)}/{get_download_retries()}] {traceback.format_exc()}"
                 )
                 common_globals.log.traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
