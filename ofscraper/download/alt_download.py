@@ -246,12 +246,12 @@ async def download_fileobject_writer_reader(total, res, placeholderObj):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception:
-            None
+        except Exception as E:
+            raise E
         try:
             progress_updater.remove_download_job_task(task1)
-        except Exception:
-            None
+        except Exception as E:
+            raise E
 
 
 async def download_fileobject_writer_streamer(total, res, ele, placeholderObj):
@@ -276,10 +276,10 @@ async def download_fileobject_writer_streamer(total, res, ele, placeholderObj):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception:
-            None
+        except Exception as E:
+            raise E
 
         try:
             progress_updater.remove_download_job_task(task1)
-        except Exception:
-            None
+        except Exception as E:
+            raise E

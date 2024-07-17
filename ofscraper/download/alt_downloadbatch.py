@@ -263,14 +263,14 @@ async def download_fileobject_writer_reader(ele,total, res, placeholderObj):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception:
-            None
+        except Exception as E:
+            raise E
         try:
             await send_msg(
                 partial(progress_updater.remove_download_multi_job_task, ele.id)
             )
-        except Exception:
-            None
+        except Exception as E:
+            raise E
 
 async def download_fileobject_writer_streamer(total, req, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
@@ -298,12 +298,12 @@ async def download_fileobject_writer_streamer(total, req, ele, placeholderObj):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception:
-            None
+        except Exception as E:
+            raise E
 
         try:
             await send_msg(
                 partial(progress_updater.remove_download_multi_job_task, ele.id)
             )
-        except Exception:
-            None
+        except Exception as E:
+            raise  E
