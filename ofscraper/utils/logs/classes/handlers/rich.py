@@ -1,29 +1,55 @@
 
 
 import logging
+import  threading
 from collections import deque 
 import time
 from rich.logging import RichHandler
 from rich.traceback import Traceback
 from rich.console import Group
 from ofscraper.utils.console import get_console
+import ofscraper.utils.logs.globals as log_globals
+
+import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.constants as constants
+
+
 
 logs=deque()
+close_event=None
+sleep=None
+
+
+def set_flush_close_event():
+    global close_event
+    close_event=threading.Event()
 
 def flush_buffer(event=None):
     """Flushes the buffer to the console."""
-    sleep=.5
-    close=False
+    global sleep
+    global logs
+    global close_event
+    sleep= .2 if read_args.retriveArgs().output=="TRACE" else .5
+    normal_max_entries=constants.getattr("DEFAULT_FLUSH_MAX")
+    alt_max_entries=constants.getattr("CLOSING_FLUSH_MAX")
+   
+    max_entries=normal_max_entries
     while True:
         log_rends=[]
         records=[]
         try:
-            num=min(len(logs),100)
-            if num>0:
+            num=min(len(logs),max_entries)
+            if event and event.is_set():
+                return
+            elif num>0:
                 for _ in range(num):
-                    log_renderable,record=logs.pop()
-                    if record.message=="None":
-                        close=True
+                    log_renderable,record=logs.popleft()
+                    if record.message=="None" or record.message=="stop_flush":
+                        close_event.set()
+                        sleep=.05
+                        max_entries=alt_max_entries
+                        continue
+                    elif record.message in log_globals.stop_codes:
                         continue
                     log_rends.append(log_renderable)
                     records.append(record)
@@ -40,14 +66,11 @@ def flush_buffer(event=None):
                     get_console().print(Group(*log_rends))
                 except Exception as E:
                     print(E)
-            if close:
+            elif close_event.is_set():
                 break
-
         except:
             continue
         finally:
-            if event and event.is_set():
-                return
             time.sleep(sleep)
 
 
@@ -75,6 +98,7 @@ class RichHandlerMulti(RichHandler):
 
 
     def emit(self, record,*args, **kwargs):
+        global logs
         message=self.format(record)
         traceback = None
         if (

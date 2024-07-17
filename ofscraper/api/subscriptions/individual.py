@@ -34,7 +34,7 @@ async def get_subscription(accounts=None):
         f"Getting the following accounts => {accounts} (this may take awhile)..."
     )
     async with sessionManager.OFSessionManager(
-        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         out = await get_subscription_helper(c, accounts)
     progress_utils.remove_userlist_task(task1)

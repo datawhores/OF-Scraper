@@ -234,7 +234,7 @@ async def paid_failback(post_id, model_id, username):
     post_id = str(post_id)
     async with sessionManager.OFSessionManager(
         backend="httpx",
-        sem=constants.getattr("API_REQ_CHECK_MAX"),
+        sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         data = await paid.get_paid_posts(username, model_id, c=c) or []
         posts = list(

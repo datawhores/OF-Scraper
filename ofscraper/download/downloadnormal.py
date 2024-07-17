@@ -23,7 +23,6 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
-import ofscraper.utils.logs.logger as logger
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.main_download import main_download
@@ -36,6 +35,8 @@ from ofscraper.download.utils.log import get_medialog
 
 from ofscraper.download.utils.metadata import metadata
 from ofscraper.download.utils.paths.paths import setDirectoriesDate
+from ofscraper.download.utils.buffer import download_log_clear_helper
+
 from ofscraper.download.utils.progress.progress import convert_num_bytes
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
@@ -121,14 +122,12 @@ async def process_dicts(username, model_id, medialist):
         if not metadata_md
         else partial(progress_utils.setup_metadata_progress_live)
     )
-
+    download_log_clear_helper()
+    task1=None
     with live():
-        common_globals.reset_globals()
+        common_globals.main_globals()
         try:
-            download_log = logger.get_shared_logger(
-                name="ofscraper_download"
-            )
-            common_globals.log = download_log
+           
             aws = []
 
             async with download_session() as c:
@@ -156,11 +155,6 @@ async def process_dicts(username, model_id, medialist):
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
-            progress_updater.remove_download_task(task1)
-            setDirectoriesDate()
-            final_log(username, log=logging.getLogger("shared"))
-            return final_log_text(username)
-
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():
                 raise E
@@ -169,6 +163,16 @@ async def process_dicts(username, model_id, medialist):
                 common_globals.thread, cache.close
             )
             common_globals.thread.shutdown()
+   
+        setDirectoriesDate()
+        download_log_clear_helper()
+        final_log(username, log=logging.getLogger("shared"))
+        progress_updater.remove_download_task(task1)
+        return final_log_text(username)
+    
+
+
+
 
 
 async def download(c, ele, model_id, username):

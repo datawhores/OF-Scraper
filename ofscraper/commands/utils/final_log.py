@@ -2,10 +2,13 @@ import logging
 import time
 
 import ofscraper.utils.constants as constants
+import ofscraper.utils.logs.stdout as stdout_logs
+
 
 
 def final_log(data):
     log = logging.getLogger("shared")
+    stdout_logs.restart_flush_main_thread(threads=1)
     if constants.getattr("SHOW_RESULTS_LOG"):
         # give time for last long to show
         time.sleep(2)

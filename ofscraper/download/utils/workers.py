@@ -4,5 +4,5 @@ import ofscraper.utils.constants as constants
 
 def get_max_workers():
     return constants.getattr("MAXFILE_SEMAPHORE") or (
-        config_data.get_download_semaphores() * 10
+        config_data.get_download_semaphores()
     )

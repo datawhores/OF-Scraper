@@ -67,12 +67,13 @@ def set_time(path, timestamp):
     pathlib.os.utime(path, (timestamp, timestamp))
 
 
-def setDirectoriesDate():
-    common_globals.log.info("Setting Date for modified directories")
+def setDirectoriesDate(log=None):
+    log=log or common_globals.log
+    log.info("Setting Date for modified directories")
     output = set()
     rootDir = pathlib.Path(common_paths.get_save_location())
-    common_globals.log.debug(f"Original DirSet {list(common_globals.dirSet)}")
-    common_globals.log.debug(f"rooDir {rootDir}")
+    log.debug(f"Original DirSet {list(common_globals.dirSet)}")
+    log.debug(f"rooDir {rootDir}")
 
     for ele in common_globals.dirSet:
         output.add(ele)
@@ -82,6 +83,6 @@ def setDirectoriesDate():
             common_globals.log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele = ele.parent
-    common_globals.log.debug(f"Directories list {output}")
+    log.debug(f"Directories list {output}")
     for ele in output:
         set_time(ele, dates.get_current_time())

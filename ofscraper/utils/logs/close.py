@@ -3,8 +3,7 @@ import threading
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.globals as log_globals
-from ofscraper.utils.logs.classes.handlers.rich import logs
-
+from ofscraper.utils.logs.stdout import stop_flush_main_thread,stop_stdout_main_logthread
 
 def gracefulClose():
     sendCloseMessage()
@@ -52,24 +51,17 @@ def sendCloseMessage():
 
 
 def closeMain():
-    if not log_globals.main_log_thread:
-        return
-    elif log_globals.main_event.is_set():
-        log_globals.main_log_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
+    if log_globals.main_event.is_set():
+        stop_stdout_main_logthread(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
     elif not log_globals.main_event.is_set():
-        log_globals.main_log_thread.join()
-    log_globals.main_log_thread = None
+        stop_stdout_main_logthread()
 
 
 def closeFlush():
-    if not log_globals.flush_thread:
-        return
-    elif log_globals.flush_event.is_set():
-        log_globals.flush_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
+    if log_globals.flush_event.is_set():
+        stop_flush_main_thread(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
     elif not log_globals.flush_event.is_set():
-        logging.getLogger("shared").log(100,"None")
-        log_globals.flush_thread.join()
-    log_globals.flush_thread = None
+        stop_flush_main_thread()
 
 def closeOther():
     if not log_globals.other_log_thread:

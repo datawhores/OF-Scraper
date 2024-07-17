@@ -69,7 +69,7 @@ def prepare():
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)
     session = sessionManager.OFSessionManager(
-        sem=constants.getattr("API_REQ_SEM_MAX"),
+        sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
     return userdata, session

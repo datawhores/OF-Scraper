@@ -3,7 +3,7 @@ import logging
 import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.settings as settings
-from ofscraper.utils.logs.stdout import add_stdout_handler,start_flush_thread
+from ofscraper.utils.logs.stdout import add_stdout_handler,start_flush_main_thread
 from ofscraper.utils.logs.other import add_other_handler
 
 
@@ -28,7 +28,7 @@ def get_shared_logger(name=None):
     logger.handlers.clear()
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    add_stdout_handler(logger,clear=False)
+    add_stdout_handler  (logger,clear=False)
     add_other_handler(logger,clear=False)
     add_other_handler(logger_other,clear=False)
     if settings.get_output_level() == "LOW":
@@ -41,4 +41,4 @@ def get_shared_logger(name=None):
 
 
 def start_threads():
-    start_flush_thread()
+    start_flush_main_thread()

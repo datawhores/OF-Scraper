@@ -9,6 +9,8 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.stdout import add_stdout_handler_multi
 from ofscraper.utils.logs.other import add_other_handler_multi
+import ofscraper.utils.logs.logger as logger
+
 
 
 attempt = None
@@ -17,13 +19,10 @@ total_count = None
 total_count2 = None
 innerlog = None
 localDirSet = None
+log=None
 desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
 
-def reset_globals():
-    # reset globals_z
-    main_globals()
-    set_up_contexvars()
 
 
 def main_globals():
@@ -50,7 +49,7 @@ def main_globals():
     global thread
     thread = ThreadPoolExecutor(max_workers=settings.get_download_sems() * 2)
     global sem
-    sem = settings.get_download_sems()
+    sem = None
     global dirSet
     dirSet = set()
     global lock
@@ -61,6 +60,10 @@ def main_globals():
     localDirSet = set()
     global fileHashes
     fileHashes = {}
+    global log
+    log = logger.get_shared_logger(
+                name="ofscraper_download"
+    )
 
 
 def set_up_contexvars():
@@ -74,15 +77,16 @@ def set_up_contexvars():
     total_count2 = contextvars.ContextVar("total2", default=0)
 
 
-def process_split_globals(pipeCopy,logqueue):
+def process_split_globals(pipeCopy,stdout_logqueue,file_logqueue):
     global pipe
     global pipe_lock
     global pipe_alt_lock
     global lock_pool
     global log
+    main_globals()
     log=logging.getLogger("shared_process")
-    log=add_stdout_handler_multi(log,clear=False,main_=logqueue)
-    log=add_other_handler_multi(log,clear=False)
+    log=add_stdout_handler_multi(log,clear=False,main_=stdout_logqueue)
+    log=add_other_handler_multi(log,clear=False,other_=file_logqueue)
     pipe = pipeCopy
     pipe_lock = threading.Lock()
     pipe_alt_lock = threading.Lock()

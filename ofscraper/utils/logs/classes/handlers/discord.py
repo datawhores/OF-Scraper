@@ -9,6 +9,8 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.logs.globals as log_globals
+
 
 class DiscordHandler(logging.Handler):
     def __init__(self):
@@ -177,6 +179,10 @@ class DiscordHandlerMulti(logging.Handler):
     def emit(self, record):
         if isinstance(record, str):
             self._url = record
+            return
+        elif hasattr(record,"message") and (record.message in log_globals.stop_codes):
+            return
+        elif record in log_globals.stop_codes:
             return
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"

@@ -36,5 +36,5 @@ from ofscraper.const.values.test.test_constants import *
 from ofscraper.const.values.time import *
 from ofscraper.const.values.url.other_url import *
 from ofscraper.const.values.url.url import *
-from ofscraper.const.values.progress import *
+from ofscraper.const.values.rich import *
 

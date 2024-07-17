@@ -15,6 +15,8 @@ from ofscraper.utils.live.groups import (
     multi_panel,
     single_panel,
     userlist_group,
+    download_overall_progress_group
+
 )
 from ofscraper.utils.live.live import get_live, stop_live
 from ofscraper.utils.live.progress import (
@@ -69,7 +71,18 @@ def setup_download_progress_live(multi=False, setup=False, revert=True, stop=Fal
             live.update(get_download_group(), refresh=True)
         yield
 
-    
+@contextlib.contextmanager
+def setup_download_overall_progress(setup=False, revert=True, stop=False):
+    with live_progress_context(setup=setup, revert=revert, stop=stop):
+        height = max(15, console_.get_shared_console().size[-1] - 2)
+        multi_panel.height = height
+        single_panel.height = height
+        console_.get_shared_console().quiet = get_quiet_toggle_helper(
+            "SUPRESS_DOWNLOAD_DISPLAY"
+        )
+        live=get_live()
+        live.update(download_overall_progress_group, refresh=True)
+        yield
 
 
 @contextlib.contextmanager

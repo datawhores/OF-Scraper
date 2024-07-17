@@ -105,7 +105,7 @@ def _like(model_id, username, ids: list, like_action: bool):
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
         with sessionManager.OFSessionManager(
-            sem=1,
+            sem_count=1,
             backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
         ) as c:

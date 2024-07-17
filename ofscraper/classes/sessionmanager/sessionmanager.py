@@ -192,16 +192,16 @@ class sessionManager:
         proxy=None,
         proxy_auth=None,
         delay=None,
-        sem=None,
+        sem_count=None,
         retries=None,
         wait_min=None,
         wait_max=None,
         wait_min_exponential=None,
         wait_max_exponential=None,
         log=None,
-        semaphore=None,
+        sem=None,
+        sync_sem_count=None,
         sync_sem=None,
-        sync_semaphore=None,
         refresh=True,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
@@ -223,9 +223,9 @@ class sessionManager:
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
         self._delay = delay or 0
-        self._sem = semaphore or asyncio.BoundedSemaphore(sem or 100000)
-        self._sync_sem = sync_semaphore or threading.Semaphore(
-            sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
+        self._sem = sem or asyncio.BoundedSemaphore(sem_count or 100000)
+        self._sync_sem = sync_sem or threading.Semaphore(
+            sync_sem_count or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
         )
         self._retries = retries or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
@@ -473,7 +473,6 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
-                await asyncio.sleep(0)
                 try:
                     await sleeper.async_do_sleep()
                     headers = (

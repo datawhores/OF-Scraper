@@ -1,4 +1,5 @@
 import re
+import os
 
 from humanfriendly import format_size
 
@@ -10,7 +11,7 @@ import ofscraper.utils.constants as constants
 def get_medialog(ele):
     if not ele:
         return ""
-    return f"Media:{ele.id} Post:{ele.postid}"
+    return f"PID: {os.getpid()} Media:{ele.id} Post:{ele.postid}"
 
 
 def path_to_file_logger(placeholderObj, ele, innerlog=None):

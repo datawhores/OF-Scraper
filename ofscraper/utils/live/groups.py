@@ -79,3 +79,5 @@ def get_multi_download_progress_group():
 
 # metadata
 metadata_group = Group(activity_group, overall_panel, fit=True)
+#alias for metadata_group
+download_overall_progress_group=metadata_group

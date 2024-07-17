@@ -2,6 +2,7 @@
 
 import logging
 import queue
+import  time
 import threading
 import traceback
 from functools import partial
@@ -13,36 +14,44 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
-from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti,flush_buffer
+from ofscraper.utils.logs.classes.handlers.rich import RichHandlerMulti,flush_buffer,logs as richmultilog,set_flush_close_event
 from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 
 
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.utils.level as log_helpers
-def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=None):
+def logger_process(input_, name=None, stop_count=1, event=None,s=None):
     # create a logger
-    log = init_stdout_logger(name=name,rich_thresholds=rich_thresholds)
+    # the thread must stay alive while processing pipe
+    log = init_stdout_logger(name=name)
     input_ = input_ or log_globals.queue_
     count = 0
     funct = None
-    close=False
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
     elif hasattr(input_, "send"):
         funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
     while True:
         try:
-            if close is True:
-                break
             message = funct()
-            if message=="None" or (hasattr(message, "message") and message.message=="None") or (hasattr(message, "message") and message.message==None):
+            if event and event.is_set():
+                break
+            elif (message=="None" or message == None or message=="stop_stdout"):
                 count=count+1
+                continue
+            elif hasattr(message, "message") and (message.message=="None" or message.message==None or message.message=="stop_stdout"):
+                count=count+1
+                continue
             elif message is False:
-                pass
-            else:
-                log.handle(message)
+                raise queue.Empty
+            log.handle(message)
         except (queue.Empty):
-           pass
+            if count == stop_count:
+                break
+            if len(log.handlers) == 0:
+                break
+            if event and event.is_set():
+                break
         except OSError as e:
             if str(e) == "handle is closed":
                 print("handle is closed")
@@ -51,13 +60,6 @@ def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=N
         except Exception as E:
             print(E)
             print(traceback.format_exc())
-        finally:
-            if count == stop_count:
-                close=True
-            if len(log.handlers) == 0:
-                close=True
-            if event and event.is_set():
-                close=True
     for handler in log.handlers:
         handler.close()
     log.handlers.clear()
@@ -65,9 +67,9 @@ def logger_process(input_, name=None, stop_count=1, event=None,rich_thresholds=N
 
 
 # logger for print to console
-def init_stdout_logger(name=None,rich_thresholds=None):
+def init_stdout_logger(name=None):
     log = logging.getLogger(name or "ofscraper_stdout")
-    log=add_stdout_handler(log,rich_thresholds=rich_thresholds)
+    log=add_stdout_handler(log)
     return log
 
 
@@ -77,23 +79,20 @@ def init_rich_logger(name=None):
     return log
 
 
-def add_rich_handler(log,clear=True,rich_thresholds=None):
+def add_rich_handler(log,clear=True):
     if clear:
         log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    rich_thresholds=rich_thresholds or {}
     sh =RichHandlerMulti(
-        rich_tracebacks=False,
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
         show_level=False,
         console=console.get_console(),
     )
-    sh.buffer_size=rich_thresholds
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
@@ -106,7 +105,6 @@ def add_rich_handler(log,clear=True,rich_thresholds=None):
             tracebacks_show_locals=True,
             show_time=False,
         )
-        sh2.buffer_size=rich_thresholds
 
         sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
@@ -114,16 +112,14 @@ def add_rich_handler(log,clear=True,rich_thresholds=None):
         log.addHandler(sh2)
     return log
 
-def add_stdout_handler(log,clear=True,rich_thresholds=None):
+def add_stdout_handler(log,clear=True,rich_array=None):
     if clear:
         log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    rich_thresholds=None or {}
     sh =RichHandlerMulti(
-        rich_tracebacks=False,
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
@@ -133,7 +129,6 @@ def add_stdout_handler(log,clear=True,rich_thresholds=None):
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
-    sh.buffer_size=rich_thresholds
     tx = log_class.TextHandler()
     tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     tx.setFormatter(log_class.SensitiveFormatter(format))
@@ -151,7 +146,6 @@ def add_stdout_handler(log,clear=True,rich_thresholds=None):
         sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(log_class.TraceBackOnly())
-        sh2.buffer_size=rich_thresholds
 
         log.addHandler(sh2)
 
@@ -176,26 +170,87 @@ def add_stdout_handler_multi(log,clear=True,main_=None):
     return log
 
 # process main queue logs to console must be ran by main process, sharable via queues
-def start_stdout_logthread(input_=None, name=None, count=1, event=None,rich_thresholds=None):
-    input = input_ or log_globals.queue_d
+def start_stdout_main_logthread(input_=None, name=None, count=1, event=None):
+    if log_globals.main_log_thread:
+        return
+    thread=start_stdout_logthread_helper(input_, name, count, event)
+    log_globals.main_log_thread=thread
+
+
+
+def start_stdout_logthread(input_=None, name=None, count=1, event=None):
+    start_stdout_logthread_helper(input_, name, count, event)
+
+def start_stdout_logthread_helper(input_=None, name=None, count=1, event=None):
+    input = input_ or log_globals.queue_
     main_log_thread = threading.Thread(
         target=logger_process,
         args=(input,),
-        kwargs={"stop_count": count, "name": name, "event": event,"rich_thresholds":rich_thresholds},
+        kwargs={"stop_count": count, "name": name, "event": event},
         daemon=True,
     )
     main_log_thread.start()
-    log_globals.main_log_thread=main_log_thread
     return main_log_thread
 
+def stop_stdout_main_logthread(name=None,timeout=None):
+    name=name or "shared"
+    if not log_globals.main_log_thread:
+        return
+    stop_stdout_logthread_helper(name, timeout)
+    log_globals.main_log_thread=None
+
+def stop_stdout_logthread_helper(name=None,timeout=None):
+    log=logging.getLogger(name)
+    log.log(100,"stop_stdout")
+    log_globals.main_log_thread.join(timeout=timeout)
 
 
-def start_flush_thread(input_=None, name=None, count=1, event=None):
-    flush_thread = threading.Thread(
-        target=flush_buffer,
-        kwargs={"event": event},
-        daemon=True,
-    )
-    flush_thread.start()
-    log_globals.flush_thread=flush_thread
-    return flush_thread
+def start_flush_main_thread(input_=None, name=None, count=1, event=None,threads=None):
+    if log_globals.flush_thread:
+        return
+    threads=start_flush_main_thread_helper(input_,name,count,event,threads=threads)
+    log_globals.flush_thread=threads
+
+def  start_flush_main_thread_helper(input_=None, name=None, count=1, event=None,threads=None):
+    set_flush_close_event()
+    out=[]
+    threads=threads or 4
+    for _ in range(0,threads):
+        flush_thread = threading.Thread(
+            target=flush_buffer,
+            kwargs={"event": event},
+            daemon=True,
+        )
+        flush_thread.start()
+        out.append(flush_thread)
+    return out
+
+
+def stop_flush_main_thread(name=None,timeout=None):
+    name=name or "shared"
+    if not log_globals.flush_thread:
+        return
+    elif isinstance(log_globals.flush_thread,list):
+        log=logging.getLogger(name)
+        log.log(100,"stop_flush")
+        while True:
+            new_flush_threads = list(filter(lambda x: x and x.is_alive(), log_globals.flush_thread))
+            if len( new_flush_threads) == 0:
+                    break
+            log_globals.flush_thread = new_flush_threads
+            for thread in log_globals.flush_thread:
+                    thread.join(timeout=0.1)
+            time.sleep(0.5)
+    else:
+        log=logging.getLogger(name)
+        log.log(100,"stop_flush")
+        log_globals.flush_thread.join(timeout=timeout)
+    log_globals.flush_thread=None
+
+
+def restart_flush_main_thread(input_=None, name=None,count=1,threads=None):
+    if not log_globals.flush_thread:
+        start_flush_main_thread(input_=input_,name=name,count=count)
+    else:
+        stop_flush_main_thread()
+        start_flush_main_thread(threads=threads)

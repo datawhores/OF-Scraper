@@ -11,6 +11,7 @@ other_event = None
 main_log_thread = None
 flush_thread=None
 other_log_thread = None
+stop_codes=["None","stop_stdout","stop_flush",None]
 
 
 def init_values():

@@ -36,7 +36,7 @@ async def get_subscriptions(subscribe_count, account="active"):
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
     async with sessionManager.OFSessionManager(
-        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         if account == "active":
             out = await activeHelper(subscribe_count, c)

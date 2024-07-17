@@ -7,27 +7,27 @@ from ofscraper.download.utils.retries import get_download_req_retries
 
 class download_session(sessionManager.sessionManager):
     def __init__(
-        self, sem=None, retries=None, wait_min=None, wait_max=None, log=None
+        self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
     ) -> None:
-        sem = sem or common_globals.sem
+        sem_count = sem_count or common_globals.sem
         retries = retries or get_download_req_retries()
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
         super().__init__(
-            sem=sem, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
+            sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )
 
 
 class cdm_session(sessionManager.sessionManager):
-    def __init__(self, backend=None, sem=None) -> None:
+    def __init__(self, backend=None, sem_count=None) -> None:
         backend = backend or "httpx"
-        sem = sem or common_globals.sem
-        super().__init__(sem=sem, backend=backend)
+        sem_count = sem_count or common_globals.sem
+        super().__init__(sem_count=sem_count, backend=backend)
 
 
 class cdm_session_manual(ofsessionmanager.OFSessionManager):
-    def __init__(self, backend=None, sem=None) -> None:
+    def __init__(self, backend=None, sem_count=None) -> None:
         backend = backend or "httpx"
-        sem = sem or common_globals.sem
-        super().__init__(sem=sem, backend=backend)
+        sem_count = sem_count or common_globals.sem
+        super().__init__(sem_count=sem_count, backend=backend)

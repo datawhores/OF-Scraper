@@ -1,9 +1,9 @@
-import io
 import logging
 import queue
 import threading
 import traceback
 from collections import abc
+from functools import partial
 
 import aioprocessing
 
@@ -20,6 +20,10 @@ import ofscraper.utils.system.system as system
 from ofscraper.utils.logs.classes.handlers.discord import DiscordHandler,DiscordHandlerMulti
 
 from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
+from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
+from logging.handlers import QueueHandler
+
+
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -31,66 +35,39 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     log = init_other_logger(name)
 
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
-        funct = input_.get
-        end_funct = input_.get_nowait
+        funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
     elif hasattr(input_, "send"):
-        funct = input_.recv
+        funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
+
     while True:
         try:
-            # consume a log message, block until one arrives
+            message = funct()
             if event and event.is_set():
-                return True
-
-            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
-            if not isinstance(messages, list):
-                messages = [messages]
-            for message in messages:
-                # set close value
-                if event and event.is_set():
-                    break
-                elif message == "None":
-                    count = count + 1
-                    continue
-                elif isinstance(message, str):
-                    list(
-                        filter(
-                            lambda x: isinstance(x, log_class.DiscordHandler),
-                            log.handlers,
-                        )
-                    )[0].handle(message)
-                elif isinstance(message, io.TextIOBase):
-                    [
-                        ele.setStream(message)
-                        for ele in filter(
-                            lambda x: isinstance(x, logging.StreamHandler),
-                            log.handlers,
-                        )
-                    ]
-                    continue
-                elif message.message == "None":
-                    count = count + 1
-                    continue
-                elif message.message != "None":
-                    # log the message
-                    log.handle(message)
+                break
+            elif (message=="None" or message == None):
+                count=count+1
+                continue
+            elif hasattr(message, "message") and (message.message=="None" or message.message==None):
+                count=count+1
+                continue
+            elif message is False:
+                raise queue.Empty
+            log.handle(message)
+        except (queue.Empty):
             if count == stop_count:
                 break
-        except queue.Empty:
-            continue
+            if len(log.handlers) == 0:
+                break
+            if event and event.is_set():
+                break
         except OSError as e:
             if str(e) == "handle is closed":
                 print("handle is closed")
                 return
             raise e
-        except Exception as e:
-            print(e)
+        except Exception as E:
+            print(E)
             print(traceback.format_exc())
-            continue
-    while True:
-        try:
-            end_funct()
-        except:
-            break
     for handler in log.handlers:
         handler.close()
     log.handlers.clear()
@@ -208,7 +185,7 @@ def add_other_handler(log,clear=True):
     return log
 
 
-def add_other_handler_multi(log,clear=True):
+def add_other_handler_multi(log,clear=True,other_=None):
     if clear:    
         log.handlers.clear()
     format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
@@ -217,26 +194,39 @@ def add_other_handler_multi(log,clear=True):
     log_helpers.addtrace()
     # # #log file
     # #discord
-    cord = DiscordHandlerMulti()
-    cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
-    cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
-    # console
-    log.addHandler(cord)
-    if settings.get_log_level() != "OFF":
-        stream = open(
-            common_paths.getlogpath(),
-            encoding="utf-8",
-            mode="a",
-        )
-        fh = StreamHandlerMulti(stream)
-        fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
-        fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-        fh.addFilter(log_class.NoTraceBack())
-        log.addHandler(fh)
-    if settings.get_log_level() in {"TRACE", "DEBUG"}:
-        fh2 = StreamHandlerMulti(stream)
-        fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
-        fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-        fh2.addFilter(log_class.TraceBackOnly())
-        log.addHandler(fh2)
+    if  not other_:
+        cord = DiscordHandlerMulti()
+        cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
+        cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
+        # console
+        log.addHandler(cord)
+        if settings.get_log_level() != "OFF":
+            stream = open(
+                common_paths.getlogpath(),
+                encoding="utf-8",
+                mode="a",
+            )
+            fh = StreamHandlerMulti(stream)
+            fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
+            fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
+            fh.addFilter(log_class.NoTraceBack())
+            log.addHandler(fh)
+        if settings.get_log_level() in {"TRACE", "DEBUG"}:
+            fh2 = StreamHandlerMulti(stream)
+            fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
+            fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
+            fh2.addFilter(log_class.TraceBackOnly())
+            log.addHandler(fh2)
+    else:
+        # add a handler that uses the shared queue
+        discord_level = log_helpers.getNumber(settings.get_discord_level())
+        file_level = log_helpers.getNumber(settings.get_log_level())
+        if hasattr(other_, "get") and hasattr(other_, "put_nowait"):
+            otherhandle = QueueHandler(other_)
+            otherhandle.name = "other"
+        elif hasattr(other_, "send"):
+            otherhandle = PipeHandler(other_)
+            otherhandle.name = "other"
+        otherhandle.setLevel(min(file_level, discord_level))
+        log.addHandler(otherhandle)
     return log

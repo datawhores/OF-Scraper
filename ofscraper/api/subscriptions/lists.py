@@ -88,7 +88,7 @@ async def get_lists():
     tasks = []
     page_count = 0
     async with sessionManager.OFSessionManager(
-        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks.append(asyncio.create_task(scrape_for_list(c)))
         page_task = add_userlist_task(
@@ -164,7 +164,7 @@ async def get_list_users(lists):
     tasks = []
     page_count = 0
     async with sessionManager.OFSessionManager(
-        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
         page_task = add_userlist_task(

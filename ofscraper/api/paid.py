@@ -145,7 +145,7 @@ async def create_tasks_scrape_paid():
     tasks = []
     page_count = 0
     async with sessionManager.OFSessionManager(
-        sem=constants.getattr("SCRAPE_PAID_SEMS"),
+        sem_count=constants.getattr("SCRAPE_PAID_SEMS"),
     ) as c:
         allpaid = cache.get("purchased_all", default=[])
         log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")

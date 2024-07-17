@@ -17,7 +17,6 @@ import ofscraper.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.dates as dates
 import ofscraper.utils.live.screens as progress_utils
@@ -46,7 +45,10 @@ from ofscraper.download.utils.send.message import send_msg
 from ofscraper.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.logs.stdout as stdout_logs
+import ofscraper.utils.logs.other as other_logs
+
 from ofscraper.utils.system.speed import add_pids_to_download_obj
+from ofscraper.download.utils.buffer import download_log_clear_helper
 
 
 platform_name = platform.system()
@@ -62,28 +64,28 @@ def process_dicts(username, model_id, filtered_medialist):
         else partial(progress_utils.setup_metadata_progress_live)
     )
     try:
-        common_globals.reset_globals()
+        common_globals.main_globals()
+        download_log_clear_helper()
         with live():
             if not read_args.retriveArgs().item_sort:
                 random.shuffle(filtered_medialist)
+
             mediasplits = get_mediasplits(filtered_medialist)
             num_proc = len(mediasplits)
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
-
-            logqueues_ = [aioprocessing.AioPipe() for i in range(num_proc)]
-
-             # start stdout/main queues consumers
+            stdout_logqueues = [AioPipe() for _ in range(num_proc)]
+    
+            #start stdout/main queues consumers
             log_threads=[]
             for i in range(num_proc):
                 thread=stdout_logs.start_stdout_logthread(
-                input_=logqueues_[i][0],
+                input_=stdout_logqueues[i][0],
                 name=f"ofscraper_{model_id}_{i+1}",
                 count=1,
-                rich_thresholds={logging.getLevelName("TRACE"):60,
-    logging.DEBUG: 50}
                 )
                 log_threads.append(thread)
+
 
             processes = [
                 aioprocessing.AioProcess(
@@ -92,7 +94,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         username,
                         model_id,
                         mediasplits[i],
-                        logqueues_[i][1],
+                        stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
                         selector.get_ALL_SUBS_DICT(),
@@ -178,8 +180,11 @@ def process_dicts(username, model_id, filtered_medialist):
                     if process.is_alive():
                         process.terminate()
                 time.sleep(0.5)
+            download_log_clear_helper()
             progress_updater.remove_download_task(task1)
-            setDirectoriesDate()
+            setDirectoriesDate(log)
+            final_log(username)
+            return final_log_text(username)
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():
@@ -202,27 +207,25 @@ def process_dicts(username, model_id, filtered_medialist):
         except Exception:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-    final_log(username)
-    return final_log_text(username)
+
 
 
 
 def queue_process(pipe_, task1, total):
     count = 0
-    global log
-    log=logging.getLogger("shared")
-    common_globals.log=log
     # shared globals
     while True:
         if count == 1:
             break
         try:
+            if not pipe_.poll(timeout=1) :
+                continue
             results = pipe_.recv()
             if not isinstance(results, list):
                 results = [results]
         except Exception as E:
-            console.get_console().print(E)
-            console.get_console().print(traceback.format_exc())
+            common_globals.log.traceback_(E)
+            common_globals.log.traceback_(traceback.format_exc())
             continue
         for result in results:
             try:
@@ -276,22 +279,22 @@ def queue_process(pipe_, task1, total):
                             + common_globals.forced_skipped,
                         )
 
-                elif result is None:
+                elif result is None or result == "None":
                     count = count + 1
                 elif isinstance(result, dict) and "dir_update" in result:
                     addGlobalDir(result["dir_update"])
                 elif callable(result):
                     job_progress_helper(result)
             except Exception as E:
-                console.get_console().print(E)
-                console.get_console().print(traceback.format_exc())
+                common_globals.log.traceback_t(E)
+                common_globals.log.traceback_(traceback.format_exc())
                 #increase skipped
                 common_globals.skipped += 1
 
 
 def get_mediasplits(medialist):
     user_count = settings.get_threads()
-    final_count = max(min(user_count, system.getcpu_count(), len(medialist) // 5), 1)
+    final_count = max(min(user_count, system.getcpu_count(), len(medialist) // 20), 1)
     return more_itertools.divide(final_count, medialist)
 
 
@@ -299,35 +302,39 @@ def process_dict_starter(
     username,
     model_id,
     ele,
-    logqueue,
+    stdout_logqueue,
     pipe_,
     dateDict,
     userNameList,
     argsCopy,
 ):
-
+    #queue for file and discord
+    file_logqueue=AioPipe()
     subProcessVariableInit(
         dateDict,
         userNameList,
         pipe_,
         argsCopy,
-        logqueue
+        stdout_logqueue,
+        file_logqueue[0]
     )
+    common_globals.log.debug(f"{pid_log_helper()} preparing thread")
     priority.setpriority()
     system.setNameAlt()
     plat = platform.system()
     if plat == "Linux":
         import uvloop
-
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
+    other_logs.start_other_thread(
+        input_=file_logqueue[1], name=str(os.getpid()), count=1
+    )
     try:
         process_dicts_split(username, model_id, ele)
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
                 pipe_.send(None)
-                logqueue.pipe.send("None")
+                common_globals.log.log(100,None)
                 raise E
             except Exception as E:
                 raise E
@@ -356,6 +363,7 @@ async def ajob_progress_helper(funct):
         logging.getLogger("shared").debug(E)
 
 async def consumer(lock,aws):
+    i=0
     while True:
         async with lock:
             if not(bool(aws)):
@@ -375,16 +383,11 @@ async def consumer(lock,aws):
                 media_type = "skipped"
                 num_bytes_downloaded = 0
                 await send_msg((media_type, num_bytes_downloaded, 0))
-            await asyncio.sleep(1)
 
 
 @run
 async def process_dicts_split(username, model_id, medialist):
-    common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
-
     medialist = list(medialist)
-    # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-
     common_globals.log.debug(f"{pid_log_helper()} starting process")
     common_globals.log.debug(
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
@@ -404,7 +407,7 @@ async def process_dicts_split(username, model_id, medialist):
     # send message directly
     await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
-    common_globals.log.handlers[0].pipe.send("None")
+    common_globals.log.log(100,None)
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
 
@@ -416,13 +419,17 @@ def pid_log_helper():
 async def download(c, ele, model_id, username):
     # set logs for mpd
     set_media_log(common_globals.log, ele)
+    common_globals.attempt.set(0)
     try:
         if read_args.retriveArgs().metadata:
             return await metadata(c, ele, username, model_id)
-        elif ele.url:
-            return await main_download(c, ele, username, model_id)
+        #conditions for download
+        if ele.url:
+            data=await main_download(c, ele, username, model_id)
         elif ele.mpd:
-            return await alt_download(c, ele, username, model_id)
+            data=await alt_download(c, ele, username, model_id)
+        common_globals.log.debug(f"{get_medialog(ele)} Download finished")
+        return data
     except Exception as e:
         common_globals.log.traceback_(f"{get_medialog(ele)} Download Failed\n{e}")
         common_globals.log.traceback_(

@@ -1,3 +1,5 @@
+import traceback
+import logging
 import psutil
 import arrow
 from ofscraper.utils.system.system import get_all_ofscrapers_processes
@@ -60,6 +62,8 @@ class MultiProcessDownloadSpeed:
       total_bytes_second = 0
       for pid in self._pids:
             try:
+                if pid==None:
+                   continue
                 if not psutil.pid_exists(pid): 
                     continue # Check if process is still running
                 process=psutil.Process(pid)
@@ -84,7 +88,9 @@ class MultiProcessDownloadSpeed:
 
 
             except Exception as E:
-               print(E)
+               logging.getLogger("shared").traceback_(E)
+               logging.getLogger("shared").traceback_(traceback.format_exc())
+
       return total_bytes_second
     except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
       print(f"Error getting download speed: {e}")

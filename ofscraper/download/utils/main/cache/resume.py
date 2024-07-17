@@ -11,7 +11,8 @@ async def get_data(ele):
     data = await asyncio.get_event_loop().run_in_executor(
         common_globals.thread,
         partial(cache.get, f"{ele.id}_{ele.username}_headers"),
-    ) 
+    )
+    # data=cache.get(f"{ele.id}_{ele.username}_headers")
     return data
 async def set_data(ele,data):
     data = await asyncio.get_event_loop().run_in_executor(

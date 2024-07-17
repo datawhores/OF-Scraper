@@ -1,5 +1,7 @@
 import copy
 import logging
+import ofscraper.utils.logs.globals as log_globals
+
 
 
 class PipeHandler(logging.Handler):
@@ -59,6 +61,8 @@ class PipeHandler(logging.Handler):
 
         Writes the LogRecord to the queue, preparing it for pickling first.
         """
+        if hasattr(record,"message") and (record.message in log_globals.stop_codes):
+            return
         try:
             msg = self.prepare(record)
             if isinstance(self.pipe,list):
