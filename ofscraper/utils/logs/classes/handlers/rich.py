@@ -24,14 +24,15 @@ def set_flush_close_event():
     global close_event
     close_event=threading.Event()
 
-def flush_buffer(event=None):
+def flush_buffer(event=None,split=None):
     """Flushes the buffer to the console."""
     global sleep
     global logs
     global close_event
+    split=split or 1
     sleep= .2 if read_args.retriveArgs().output=="TRACE" else .5
-    normal_max_entries=constants.getattr("DEFAULT_FLUSH_MAX")
-    alt_max_entries=constants.getattr("CLOSING_FLUSH_MAX")
+    normal_max_entries=constants.getattr("DEFAULT_FLUSH_MAX")/split
+    alt_max_entries=constants.getattr("CLOSING_FLUSH_MAX")/split
    
     max_entries=normal_max_entries
     while True:
