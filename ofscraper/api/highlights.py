@@ -60,11 +60,15 @@ async def scrape_stories(c, user_id) -> list:
             f"[Stories] user id -> {user_id}",
             visible=True,
         )
+        log.debug(f"trying to access {API_S.lower()} with url:{url}  user_id:{user_id}")
+
         async with c.requests_async(
             url=url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             stories = await r.json_()
+            log.debug(f"successfully accessed {API_S.lower()} with url:{url}  user_id:{user_id}")
+
             log.debug(
                 f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
             )
@@ -249,17 +253,22 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     task = None
+    log.debug(f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}")
+
 
     try:
         task = progress_utils.add_api_job_task(
             f"[Highlights] scraping highlight list  offset-> {offset}",
             visible=True,
         )
+        log.debug(f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}")
         async with c.requests_async(
             url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             resp_data = await r.json_()
+            log.debug(f"successfully accessed {API_H.lower()} lists with url:{url}  user_id:{user_id}")
+
             trace_progress_log(f"{API_H} list requests",resp_data)
             data = get_highlightList(resp_data)
             log.debug(f"highlights list: -> found list ids {data}")
@@ -289,11 +298,14 @@ async def scrape_highlights_from_list(c, id) -> list:
             f"[Highlights]  highlights id -> {id}",
             visible=True,
         )
+        log.debug(f"trying to access {API_H.lower()} post with url:{url}  id:{id}")
         async with c.requests_async(
             url=url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             resp_data = await r.json_()
+            log.debug(f"successfully accessed {API_H.lower()} posts with url:{url}  id:{id}")
+
             trace_progress_log(f"{API_H} list post requests",resp_data)
             log.debug(
                 f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
@@ -340,5 +352,5 @@ def get_individual_stories(id, c=None):
         backend="httpx",
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
-            log.trace(f"highlight raw highlight individua; {r.json_()}")
+            log.trace(f"highlight raw highlight individual; {r.json_()}")
             return r.json()

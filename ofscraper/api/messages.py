@@ -307,7 +307,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
             task = progress_utils.add_api_job_task(
                 f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
-            log.debug(f"succesfully accessed {API.lower()} posts with url:{url} message_id:{message_id}")
+            log.debug(f"successfully accessed {API.lower()} posts with url:{url} message_id:{message_id}")
             messages = (await r.json_())["list"]
            
             if not bool(messages):

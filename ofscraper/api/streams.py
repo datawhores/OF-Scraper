@@ -294,7 +294,7 @@ async def scrape_stream_posts(
 
             posts = (await r.json_())["list"]
     
-            log.debug(f"successfuly accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
+            log.debug(f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
 
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
