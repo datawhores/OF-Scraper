@@ -214,7 +214,7 @@ def start_flush_main_thread(input_=None, name=None, count=1, event=None,threads=
 def  start_flush_main_thread_helper(input_=None, name=None, count=1, event=None,threads=None):
     set_flush_close_event()
     out=[]
-    threads=threads or 3
+    threads=threads or 2
     for _ in range(0,threads):
         flush_thread = threading.Thread(
             target=flush_buffer,
