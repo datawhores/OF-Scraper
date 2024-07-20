@@ -29,10 +29,11 @@ def flush_buffer(event=None,split=None):
     global sleep
     global logs
     global close_event
+    force_close_event=event
     split=split or 1
     sleep= .2 if read_args.retriveArgs().output=="TRACE" else .5
-    normal_max_entries=constants.getattr("DEFAULT_FLUSH_MAX")/split
-    alt_max_entries=constants.getattr("CLOSING_FLUSH_MAX")/split
+    normal_max_entries=constants.getattr("DEFAULT_FLUSH_MAX")//split
+    alt_max_entries=constants.getattr("CLOSING_FLUSH_MAX")//split
    
     max_entries=normal_max_entries
     while True:
@@ -40,7 +41,7 @@ def flush_buffer(event=None,split=None):
         records=[]
         try:
             num=min(len(logs),max_entries)
-            if event and event.is_set():
+            if force_close_event and force_close_event.is_set():
                 return
             elif num>0:
                 for _ in range(num):
