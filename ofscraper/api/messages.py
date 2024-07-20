@@ -294,18 +294,22 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     )
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
+    log_id = (
+                f"offset messageid:{message_id if message_id else 'init messageid'}"
+            )
     new_tasks = []
     task = None
+    log.debug(f"trying access {API.lower()} posts with url:{url} message_id:{message_id}")
+
 
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = progress_utils.add_api_job_task(
                 f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
+            log.debug(f"succesfully accessed {API.lower()} posts with url:{url} message_id:{message_id}")
             messages = (await r.json_())["list"]
-            log_id = (
-                f"offset messageid:{message_id if message_id else 'init messageid'}"
-            )
+           
             if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
                 return [], []

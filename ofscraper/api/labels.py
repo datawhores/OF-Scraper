@@ -117,6 +117,8 @@ async def scrape_labels(c, model_id, offset=0):
 
     url = constants.getattr("labelsEP").format(model_id, offset)
     task = None
+    log.debug(f"trying access label names with url:{url}  offset:{offset}")
+
 
     try:
 
@@ -124,11 +126,14 @@ async def scrape_labels(c, model_id, offset=0):
             f"labels offset -> {offset}",
             visible=True,
         )
+
         async with c.requests_async(
             url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             data = await r.json_()
+            log.debug(f"successfully access label names with url:{url}  offset:{offset}")
+
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labels names found {len(labels)}")
             log.debug(
@@ -237,11 +242,15 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             f": getting posts from label -> {label['name']}",
             visible=True,
         )
+        log.debug(f"trying to access label names with url:{url}  offset:{offset}")
+
         async with c.requests_async(
             url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             data = await r.json_()
+            log.debug(f"trying to access label names with url:{url}  offset:{offset}")
+
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
             log.debug(

@@ -65,5 +65,7 @@ def is_bad_url(url):
         return False
     elif len(match.groups()) < 1:
         return False
-    elif match.group(1) in constants.getattr("BAD_URL_HOST"):
-        return True
+    for ele in constants.getattr("BAD_URL_HOST"):
+        if re.search(ele,match.group(1)):
+            return True
+    return False

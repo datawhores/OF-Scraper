@@ -99,12 +99,15 @@ async def scrape_paid(c, username, offset=0):
             f"scrape paid offset -> {offset} username -> {username}",
             visible=True,
         )
+        log.debug(f"trying access {API.lower()} posts with url:{url} offset:{offset}")
+
 
         async with c.requests_async(
             url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             data = await r.json_()
+            log.debug(f"successfully access {API.lower()} posts with url:{url} offset:{offset}")
             trace_progress_log(f"{API} all users requests",data)
 
             media = list(filter(lambda x: isinstance(x, list), data.values()))[0]

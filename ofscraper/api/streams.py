@@ -277,6 +277,7 @@ async def scrape_stream_posts(
         if timestamp
         else constants.getattr("streamsEP").format(model_id)
     )
+    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
     log.debug(url)
 
     new_tasks = []
@@ -286,12 +287,15 @@ async def scrape_stream_posts(
             f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
+        log.debug(f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
         async with c.requests_async(
             url, forced=constants.getattr("API_FORCE_KEY")
         ) as r:
 
             posts = (await r.json_())["list"]
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+    
+            log.debug(f"successfuly accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
+
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
