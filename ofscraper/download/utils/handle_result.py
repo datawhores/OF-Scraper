@@ -1,5 +1,4 @@
 import pathlib
-import subprocess
 
 import arrow
 
@@ -16,6 +15,8 @@ from ofscraper.download.utils.check.size import (
     size_checker
 
 )
+from ofscraper.utils.system.subprocess  import run
+
 
 async def handle_result_main(result, ele, username, model_id):
     total, temp, placeholderObj = result
@@ -67,7 +68,7 @@ async def handle_result_alt(
     ).init()
     temp_path = tempPlaceholder.tempfilepath
     temp_path.unlink(missing_ok=True)
-    t = subprocess.run(
+    t = run(
         [
             settings.get_ffmpeg(),
             "-i",
@@ -79,10 +80,9 @@ async def handle_result_alt(
             "-movflags",
             "use_metadata_tags",
             str(temp_path),
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        ]
     )
+
     if t.stderr.decode().find("Output") == -1:
         common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
         common_globals.log.debug(

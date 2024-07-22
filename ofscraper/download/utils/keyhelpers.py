@@ -2,7 +2,6 @@ import asyncio
 import json
 import pathlib
 import re
-import subprocess
 import traceback
 from functools import partial
 
@@ -20,6 +19,8 @@ import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
 from ofscraper.download.utils.retries import get_cmd_download_req_retries
 from ofscraper.download.utils.log import get_medialog
+from ofscraper.utils.system.subprocess  import run
+
 
 
 log = None
@@ -67,7 +68,7 @@ async def un_encrypt(item, c, ele, input_=None):
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
         )
         ffmpeg_key = get_ffmpeg_key(key)
-        r = subprocess.run(
+        r = run(
             [
                 settings.get_ffmpeg(),
                 "-decryption_key",
@@ -78,9 +79,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 "copy",
                 str(newpath),
                 "-y"
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            ]
         )
         if not pathlib.Path(newpath).exists():
             log.debug(f"{get_medialog(ele)} ffmpeg decryption failed")

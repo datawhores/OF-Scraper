@@ -1,6 +1,5 @@
 import json
 import logging
-import subprocess
 import traceback
 
 import ofscraper.download.downloadbatch as batchdownloader
@@ -12,10 +11,12 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.utils.log import empty_log
 from ofscraper.download.utils.text import textDownloader
-from ofscraper.utils.context.run_async import run
+from ofscraper.utils.context.run_async import run as run_async
+from ofscraper.utils.system.subprocess  import run
 
 
-@run
+
+@run_async
 async def download_process(username, model_id, medialist, posts=None):
     if not read_args.retriveArgs().command == "metadata":
         await textDownloader(posts, username=username)
@@ -56,7 +57,7 @@ def download_post_process(username, model_id, medialist, postlist):
         mediadump = json.dumps(list(map(lambda x: x.media, medialist)))
         postdump = json.dumps(list(map(lambda x: x.post, postlist)))
         model_id = str(model_id)
-        subprocess.run(
+        run(
             [
                 settings.get_post_download_script(),
                 username,
