@@ -65,6 +65,10 @@ from ofscraper.download.utils.send.chunk import send_chunk_msg
 from ofscraper.download.utils.total import total_change_helper
 from ofscraper.download.utils.resume.resume import get_resume_header, get_resume_size
 from ofscraper.download.utils.alt.cache.resume import set_data,get_data
+from ofscraper.classes.sessionmanager.sessionmanager import (
+    FORCED_NEW,
+    SIGN,
+)
 
 async def alt_download(c, ele, username, model_id):
     common_globals.log.debug(
@@ -183,6 +187,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
             url=url,
             headers=headers,
             params=params,
+            action=[FORCED_NEW,SIGN] if constants.getattr("ALT_FORCE_KEY") else None
+
         ) as l:
             item["total"] = int(l.headers.get("content-length"))
             total = item["total"]

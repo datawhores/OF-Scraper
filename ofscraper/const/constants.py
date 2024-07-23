@@ -34,6 +34,9 @@ from ofscraper.const.values.req.like import *
 from ofscraper.const.values.req.mpd import *
 from ofscraper.const.values.req.req import *
 from ofscraper.const.values.table import *
+from ofscraper.const.values.download import *
+
+
 from ofscraper.const.values.test.test_constants import *
 from ofscraper.const.values.time import *
 from ofscraper.const.values.url.other_url import *
