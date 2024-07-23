@@ -295,7 +295,7 @@ async def scrape_archived_posts(
         ) as r:
 
             posts = (await r.json_())["list"]
-            log.debug(f"successfully accesseded {API.lower()} posts with url:{url}  offset:{offset}")
+            log.debug(f"successfully accessed {API.lower()} posts with url:{url}  offset:{offset}")
 
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
