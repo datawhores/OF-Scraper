@@ -141,7 +141,7 @@ class CustomTenacity(AsyncRetrying):
     """
 
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
-        super().__init__(*args, after=self._after_func, **kwargs)
+        super().__init__(*args, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
             max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
@@ -157,25 +157,6 @@ class CustomTenacity(AsyncRetrying):
         logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
         return sleep
 
-    def _after_func(self, retry_state) -> None:
-        exception = retry_state.outcome.exception()
-        if isinstance(
-            exception, (aiohttp.ClientResponseError, aiohttp.ClientError)
-        ) and (
-            (
-                getattr(exception, "status_code", None)
-                or getattr(exception, "status", None) in {403}
-            )
-        ):
-            auth_requests.read_request_auth()
-        elif isinstance(exception, httpx.HTTPStatusError) and (
-            (
-                getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)
-            )
-            in {403}
-        ):
-            auth_requests.read_request_auth()
 
 
 class sessionManager:
