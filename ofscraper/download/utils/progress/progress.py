@@ -6,7 +6,7 @@ import ofscraper.download.utils.globals as common_globals
 
 def convert_num_bytes(num_bytes: int) -> str:
     try:
-        format_size(num_bytes)
+        return format_size(num_bytes)
     except Exception:
         if num_bytes <=0:
             return "0 B"
