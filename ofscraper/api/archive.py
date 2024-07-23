@@ -291,7 +291,7 @@ async def scrape_archived_posts(
         log.debug(f"trying to access {API.lower()} posts with url:{url}  offset:{offset}")
 
         async with c.requests_async(
-            url, forced=constants.getattr("API_FORCE_KEY")
+            url
         ) as r:
 
             posts = (await r.json_())["list"]

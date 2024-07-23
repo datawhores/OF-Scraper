@@ -294,7 +294,7 @@ async def scrape_timeline_posts(
 
 
         async with c.requests_async(
-            url=url, forced=constants.getattr("API_FORCE_KEY")
+            url=url
         ) as r:
             posts = (await r.json_())["list"]
             log.debug(f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")

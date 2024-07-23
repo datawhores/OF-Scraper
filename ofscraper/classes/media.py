@@ -390,7 +390,7 @@ class Media(base.base):
             refresh=False,
         ) as c:
             async with c.requests_async(
-                url=self.mpd, params=params, forced=constants.getattr("MPD_FORCE_KEY")
+                url=self.mpd, params=params
             ) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
                 return self._cached_parse_mpd

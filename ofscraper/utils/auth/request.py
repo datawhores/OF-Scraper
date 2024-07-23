@@ -32,7 +32,7 @@ curr_auth = None
 last_check = None
 
 
-def read_request_auth(refresh=True, forced=False):
+def read_request_auth():
     request_auth = {
         "static_param": "",
         "format": "",
@@ -41,7 +41,7 @@ def read_request_auth(refresh=True, forced=False):
     }
 
     # *values, = get_request_auth()
-    result = get_request_auth(refresh=refresh, forced=forced)
+    result = get_request_auth()
     if not result:
         raise json.JSONDecodeError("No content")
     (*values,) = result
@@ -50,7 +50,7 @@ def read_request_auth(refresh=True, forced=False):
     return request_auth
 
 
-def get_request_auth(refresh=False, forced=False):
+def get_request_auth():
     global curr_auth
     global last_check
     if not last_check:
@@ -280,7 +280,7 @@ def get_cookies_str():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers, refresh=False, forced=False):
+def create_sign(link, headers):
     """
     credit: DC and hippothon
     """

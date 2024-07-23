@@ -238,7 +238,7 @@ class sessionManager:
         )
         self._log = log or logging.getLogger("shared")
         if refresh:
-            auth_requests.read_request_auth(forced=False, refresh=refresh)
+            auth_requests.read_request_auth()
         self._sleeper = SessionSleep()
         self._session = None
 
@@ -303,11 +303,11 @@ class sessionManager:
     ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url, forced=forced) if sign else headers
+        headers = self._create_sign(headers, url) if sign else headers
         return headers
 
-    def _create_sign(self, headers, url, forced=None):
-        auth_requests.create_sign(url, headers, forced=forced)
+    def _create_sign(self, headers, url):
+        auth_requests.create_sign(url, headers)
         return headers
 
     def _create_cookies(self):

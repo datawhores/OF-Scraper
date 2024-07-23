@@ -172,7 +172,6 @@ async def metadata_helper(c, ele):
             url=url,
             headers=None,
             params=params,
-            forced=constants.getattr("META_FORCE_KEY"),
         ) as r:
             headers = r.headers
             content_type = headers.get("content-type").split("/")[

@@ -63,7 +63,7 @@ async def scrape_stories(c, user_id) -> list:
         log.debug(f"trying to access {API_S.lower()} with url:{url}  user_id:{user_id}")
 
         async with c.requests_async(
-            url=url, forced=constants.getattr("API_FORCE_KEY")
+            url=url
         ) as r:
 
             stories = await r.json_()
@@ -263,7 +263,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
         )
         log.debug(f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}")
         async with c.requests_async(
-            url, forced=constants.getattr("API_FORCE_KEY")
+            url
         ) as r:
 
             resp_data = await r.json_()
@@ -300,7 +300,7 @@ async def scrape_highlights_from_list(c, id) -> list:
         )
         log.debug(f"trying to access {API_H.lower()} post with url:{url}  id:{id}")
         async with c.requests_async(
-            url=url, forced=constants.getattr("API_FORCE_KEY")
+            url=url
         ) as r:
 
             resp_data = await r.json_()

@@ -128,7 +128,7 @@ async def scrape_labels(c, model_id, offset=0):
         )
 
         async with c.requests_async(
-            url, forced=constants.getattr("API_FORCE_KEY")
+            url
         ) as r:
 
             data = await r.json_()
@@ -245,7 +245,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
         log.debug(f"trying to access label names with url:{url}  offset:{offset}")
 
         async with c.requests_async(
-            url, forced=constants.getattr("API_FORCE_KEY")
+            url
         ) as r:
 
             data = await r.json_()

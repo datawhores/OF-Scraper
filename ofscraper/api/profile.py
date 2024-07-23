@@ -73,7 +73,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
 
         log.info(f"getting {username} with {url}")
         async with c.requests_async(
-            url, forced=constants.getattr("PROFILE_FORCE_KEY")
+            url
         ) as r:
             if r.status == 404:
                 return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}

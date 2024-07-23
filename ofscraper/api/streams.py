@@ -289,7 +289,7 @@ async def scrape_stream_posts(
         )
         log.debug(f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
         async with c.requests_async(
-            url, forced=constants.getattr("API_FORCE_KEY")
+            url
         ) as r:
 
             posts = (await r.json_())["list"]
