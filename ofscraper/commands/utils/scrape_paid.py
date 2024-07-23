@@ -74,7 +74,7 @@ async def process_user(value, length):
     medias = value["medias"]
 
     userselector.set_ALL_SUBS_DICTVManger(
-        {username: models.Model(profile.scrape_profile(model_id, refresh=False))}
+        {username: models.Model(profile.scrape_profile(model_id))}
     )
     progress_updater.increment_activity_count(total=length)
     return await download.download_process(username, model_id, medias, posts=posts)

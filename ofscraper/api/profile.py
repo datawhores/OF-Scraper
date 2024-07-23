@@ -31,10 +31,9 @@ API = "profile"
 
 
 # can get profile from username or id
-def scrape_profile(username: Union[int, str], refresh=True) -> dict:
+def scrape_profile(username: Union[int, str]) -> dict:
     with sessionManager.OFSessionManager(
         backend="httpx",
-        refresh=refresh,
     ) as c:
         return scrape_profile_helper(c, username)
 

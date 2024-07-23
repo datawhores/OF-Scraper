@@ -36,7 +36,6 @@ class OFSessionManager(sessionManager):
         semaphore=None,
         sync_sem_count=None,
         sync_semaphore=None,
-        refresh=True,
     ):
         limit = limit if limit is not None else constants.getattr("API_MAX_CONNECTION")
         retries = (
@@ -72,7 +71,6 @@ class OFSessionManager(sessionManager):
             semaphore,
             sync_sem_count,
             sync_semaphore,
-            refresh,
         )
 
     @contextlib.asynccontextmanager

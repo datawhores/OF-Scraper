@@ -14,8 +14,8 @@ def parse_user():
     return (name, username)
 
 
-def get_id(refresh=True):
-    profile = me.scrape_user(refresh=refresh)
+def get_id():
+    profile = me.scrape_user()
     return profile["id"]
 
 

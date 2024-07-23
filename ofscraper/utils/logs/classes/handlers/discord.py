@@ -22,7 +22,6 @@ class DiscordHandler(logging.Handler):
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
-            refresh=False,
         )
         self.sess = sessionManager.sessionManager(
             backend="httpx",
@@ -41,7 +40,7 @@ class DiscordHandler(logging.Handler):
         self._tasks = []
         try:
             self.loop = asyncio.get_running_loop()
-        except:
+        except Exception:
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
 
@@ -136,7 +135,6 @@ class DiscordHandlerMulti(logging.Handler):
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
-            refresh=False,
         )
         self.sess = sessionManager.sessionManager(
             backend="httpx",

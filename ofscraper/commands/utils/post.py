@@ -326,7 +326,7 @@ async def process_all_paid():
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
             )
 
-            username = profile.scrape_profile(model_id, refresh=False).get("username")
+            username = profile.scrape_profile(model_id).get("username")
             if username == constants.getattr(
                 "DELETED_MODEL_PLACEHOLDER"
             ) and await check_profile_table_exists(

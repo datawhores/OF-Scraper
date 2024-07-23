@@ -159,7 +159,7 @@ def parsed_subscriptions_helper(reset=False):
     return PARSED_SUBS
 
 
-def setfilter(forced=False):
+def setfilter():
     global args
     while True:
         choice = prompts.decide_filters_menu()
@@ -234,7 +234,7 @@ Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
 """
         )
 
-        setfilter(forced=True)
+        setfilter()
 
 
 def filterOnly(usernames=None):

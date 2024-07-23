@@ -21,8 +21,8 @@ import ofscraper.utils.logs.utils.level as log_helpers
 log = logging.getLogger("shared")
 
 
-def scrape_user(refresh=True):
-    with sessionManager.OFSessionManager(backend="httpx", refresh=refresh) as c:
+def scrape_user():
+    with sessionManager.OFSessionManager(backend="httpx") as c:
         return _scraper_user_helper(c)
 
 

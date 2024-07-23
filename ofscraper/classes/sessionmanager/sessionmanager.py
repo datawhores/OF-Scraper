@@ -167,7 +167,7 @@ class CustomTenacity(AsyncRetrying):
                 or getattr(exception, "status", None) in {403}
             )
         ):
-            auth_requests.read_request_auth(refresh=True)
+            auth_requests.read_request_auth()
         elif isinstance(exception, httpx.HTTPStatusError) and (
             (
                 getattr(exception.response, "status_code", None)
@@ -175,7 +175,7 @@ class CustomTenacity(AsyncRetrying):
             )
             in {403}
         ):
-            auth_requests.read_request_auth(refresh=True)
+            auth_requests.read_request_auth()
 
 
 class sessionManager:
@@ -202,7 +202,6 @@ class sessionManager:
         sem=None,
         sync_sem_count=None,
         sync_sem=None,
-        refresh=True,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -237,8 +236,6 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        if refresh:
-            auth_requests.read_request_auth()
         self._sleeper = SessionSleep()
         self._session = None
 
