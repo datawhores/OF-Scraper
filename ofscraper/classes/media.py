@@ -35,6 +35,7 @@ class Media(base.base):
         self._cached_parse_mpd = None
         self._mpd = None
         self._log = None
+        self._hls=None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -198,8 +199,8 @@ class Media(base.base):
 
     @property
     def hls(self):
-        if self._mpd:
-            return self._mpd
+        if self._hls:
+            return self._hls
         elif self.protected is False:
             return None
         return (
@@ -277,6 +278,13 @@ class Media(base.base):
             .get("hls", {})
             .get("CloudFront-Signature")
         )
+    @property
+    def hls_header(self):
+        return f"CloudFront-Policy={self.hls_policy}; CloudFront-Signature={self.hls_signature}; CloudFront-Key-Pair-Id={self.hls_keypair}"
+
+    @property
+    def hls_base(self):
+        return re.sub(r"[a-z0-9]+.m3u8$","",self.hls)
 
     @property
     def mpdout(self):
