@@ -89,7 +89,7 @@ async def alt_download(c, ele, username, model_id):
     path_to_file_logger(sharedPlaceholderObj, ele)
 
     audio = await alt_download_downloader(audio, c, ele)
-    # video = await alt_download_downloader(video, c, ele)
+    video = await alt_download_downloader(video, c, ele)
 
     post_result = await media_item_post_process_alt(
         audio, video, ele, username, model_id
@@ -177,16 +177,13 @@ async def send_req_inner(c, ele, item, placeholderObj):
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = get_resume_header(resume_size, item["total"])
         common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
-        # params = get_alt_params(ele)
-        params=get_alt_params_hls(ele)
+        params = get_alt_params(ele)
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
-        url=ele.hls
         headers={"Cookie":f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
         )
-        import m3u8
         async with c.requests_async(
             url=url,
             headers=headers,
@@ -194,41 +191,29 @@ async def send_req_inner(c, ele, item, placeholderObj):
             # action=[FORCED_NEW,SIGN] if constants.getattr("ALT_FORCE_KEY") else None
 
         ) as l:
-            # item["total"] = int(l.headers.get("content-length"))
-            # total = item["total"]
-            data=m3u8.loads(await l.text_())
+            item["total"] = int(l.headers.get("content-length"))
+            total = item["total"]
 
-            # data = {
-            #     "content-total": total,
-            #     "content-type": l.headers.get("content-type"),
-            # }
+            data = {
+                "content-total": total,
+                "content-type": l.headers.get("content-type"),
+            }
 
-            # common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
-            # common_globals.log.debug(
-            #     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
-            # )
-            # await total_change_helper(None, total)
-            # await set_data(ele,item,data)
+            common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
+            common_globals.log.debug(
+                f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+            )
+            await total_change_helper(None, total)
+            await set_data(ele,item,data)
 
-            # temp_file_logger(placeholderObj, ele)
-            # if await check_forced_skip(ele, total) == 0:
-            #     item["total"] = 0
-            #     total = item["total"]
-            #     await total_change_helper(total, 0)
-            #     return item
-            # elif total != resume_size:
-            #     await download_fileobject_writer(total, l, ele, placeholderObj,item)
-        from urllib.parse import urljoin
-        async with c.requests_async(
-            url=urljoin(ele.hls_base,data.playlists[1].uri),
-            headers=headers,
-            params=params,
-            # action=[FORCED_NEW,SIGN] if constants.getattr("ALT_FORCE_KEY") else None
-        ) as k:
-            r=await k.text_()
-            b=await k.json_()
-            print("ddd")
-            
+            temp_file_logger(placeholderObj, ele)
+            if await check_forced_skip(ele, total) == 0:
+                item["total"] = 0
+                total = item["total"]
+                await total_change_helper(total, 0)
+                return item
+            elif total != resume_size:
+                await download_fileobject_writer(total, l, ele, placeholderObj,item) 
 
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
