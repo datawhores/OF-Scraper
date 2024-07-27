@@ -1,5 +1,5 @@
-import ofscraper.commands.scraper.actions.download as download_action
-import ofscraper.commands.scraper.actions.like as like_action
+import ofscraper.commands.commands.scraper.actions.download as download_action
+import ofscraper.commands.commands.scraper.actions.like as like_action
 import ofscraper.utils.args.accessors.read as read_args
 
 

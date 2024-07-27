@@ -14,7 +14,7 @@ r"""
 import logging
 
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.commands.metadata.execute import execute_metadata_action_on_user
+from ofscraper.commands.commands.metadata.execute import execute_metadata_action_on_user
 from ofscraper.commands.utils.wrappers.normal import get_user_action_function_meta
 from ofscraper.utils.context.run_async import run
 

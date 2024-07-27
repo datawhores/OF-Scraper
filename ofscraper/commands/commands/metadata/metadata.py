@@ -22,11 +22,11 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.metadata.normal import process_users_metadata_normal
-from ofscraper.commands.metadata.paid import metadata_paid_all
-from ofscraper.commands.metadata.userfirst import metadata_user_first
-from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
-from ofscraper.commands.scraper.manager.final.final_log import final_log
+from ofscraper.commands.commands.metadata.normal import process_users_metadata_normal
+from ofscraper.commands.commands.metadata.paid import metadata_paid_all
+from ofscraper.commands.commands.metadata.userfirst import metadata_user_first
+from ofscraper.commands.utils.scrape_context import scrape_context_manager 
+from ofscraper.commands.final.final import final
 from ofscraper.utils.checkers import check_auth
 
 log = logging.getLogger("shared")
@@ -54,7 +54,7 @@ def metadata():
         else:
             userdata, session = prepare()
             userfirst_data = metadata_user_first(userdata, session)
-    final_log(normal_data + scrape_paid_data + userfirst_data)
+    final(normal_data + scrape_paid_data + userfirst_data)
 
 
 def process_selected_areas():

@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 
-import ofscraper.picker.picker as picker
+import ofscraper.commands.picker.picker as picker
 import ofscraper.runner.exit as exit_manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console

@@ -2,7 +2,7 @@ import logging
 
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
-import ofscraper.commands.scraper.actions.download as download_action
+import ofscraper.commands.commands.scraper.actions.download as download_action
 import ofscraper.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
