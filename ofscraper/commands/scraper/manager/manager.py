@@ -1,40 +1,77 @@
-import logging
+r"""
+                                                             
+ _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+(  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
+| (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
+| |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
+| |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
+(_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
+                                                                                      f
+"""
 
-import ofscraper.commands.scraper.actions.download as download_action
+import logging
+import traceback
+
+import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.scraper.runners.normal import process_users_actions_normal
-from ofscraper.commands.scraper.runners.userfirst import process_users_actions_user_first
-from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
-from ofscraper.commands.scraper.utils.setup.prepare import prepare
-from ofscraper.commands.utils.final_log import final_log
-from ofscraper.commands.utils.shared import run_action_bool
-from ofscraper.utils.checkers import check_auth
+import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.run as run
+import ofscraper.utils.system.network as network
+from ofscraper.commands.scraper.utils.print import print_start
+from ofscraper.commands.scraper.utils.select import process_selected_areas
+from ofscraper.commands.scraper.utils.setup.prompt import process_prompts
 
 log = logging.getLogger("shared")
 
 
-@exit.exit_wrapper
-def runner(menu=False):
-    check_auth()
-    with scrape_context_manager():
-        normal_data = []
-        user_first_data = []
-        scrape_paid_data = []
-        with progress_utils.setup_activity_group_live(
-            setup=True, revert=False, stop=True
-        ):
-            if read_args.retriveArgs().scrape_paid:
-                scrape_paid_data = download_action.scrape_paid_all()
+def daemon_process():
+    run.daemon_run_helper()
+    pass
 
-            if not run_action_bool():
-                pass
 
-            elif read_args.retriveArgs().users_first:
-                userdata, session = prepare(menu=menu)
-                user_first_data = process_users_actions_user_first(userdata, session)
-            else:
-                userdata, session = prepare()
-                normal_data = process_users_actions_normal(userdata, session)
-        final_log(normal_data + scrape_paid_data + user_first_data)
+def main():
+    try:
+        print_start()
+        paths.temp_cleanup()
+        paths.cleanDB()
+        network.check_cdm()
+
+        scrapper()
+        paths.temp_cleanup()
+        paths.cleanDB()
+    except KeyboardInterrupt:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                paths.temp_cleanup()
+                paths.cleanDB()
+                raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+    except Exception as E:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                paths.temp_cleanup()
+                paths.cleanDB()
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+        except KeyboardInterrupt:
+            with exit.DelayedKeyboardInterrupt():
+                raise E
+
+
+def scrapper():
+    global selectedusers
+    selectedusers = None
+    args = read_args.retriveArgs()
+    if args.daemon:
+        if len(args.action) == 0 and not args.scrape_paid:
+            prompts.action_prompt()
+        daemon_process()
+    elif len(args.action) > 0 or args.scrape_paid:
+        process_selected_areas()
+    elif len(args.action) == 0:
+        process_prompts()
