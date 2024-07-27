@@ -7,7 +7,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.commands.utils.post import post_media_process
+from ofscraper.commands.content.post import post_media_process
 from ofscraper.commands.utils.strings import avatar_str
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.utils.data import data_helper

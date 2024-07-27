@@ -2,7 +2,7 @@ import logging
 
 import ofscraper.api.profile as profile
 import ofscraper.classes.models as models
-import ofscraper.commands.utils.post as OF
+import ofscraper.commands.content.post as OF
 import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.utils.live.screens as progress_utils

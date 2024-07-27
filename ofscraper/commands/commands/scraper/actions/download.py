@@ -18,7 +18,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.paths.common as common_paths
-from ofscraper.commands.utils.scrape_paid import (
+from ofscraper.commands.content.scrape_paid import (
     process_scrape_paid,
     process_user,
     process_user_info_printer,

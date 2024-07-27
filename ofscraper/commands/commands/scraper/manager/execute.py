@@ -8,9 +8,9 @@ from ofscraper.commands.scraper.runner.normal.normal import process_users_action
 from ofscraper.commands.scraper.runner.userfirst.userfirst import process_users_actions_user_first
 from ofscraper.commands.scraper.utils.scrape_context import scrape_context_manager
 from ofscraper.commands.scraper.utils.setup.prepare import prepare
-from ofscraper.commands.utils.final_log import final_log
-from ofscraper.commands.utils.shared import run_action_bool
+from ofscraper.commands.utils.run_action import run_action_bool
 from ofscraper.utils.checkers import check_auth
+from ofscraper.commands.scraper.manager.final.final import final
 
 log = logging.getLogger("shared")
 
@@ -37,4 +37,4 @@ def runner(menu=False):
             else:
                 userdata, session = prepare()
                 normal_data = process_users_actions_normal(userdata, session)
-        final_log(normal_data + scrape_paid_data + user_first_data)
+        final(normal_data + scrape_paid_data + user_first_data)

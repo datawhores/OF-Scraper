@@ -16,7 +16,7 @@ import logging
 
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
-from ofscraper.commands.utils.scrape_paid import (
+from ofscraper.commands.content.scrape_paid import (
     process_scrape_paid,
     process_user,
     process_user_info_printer,
