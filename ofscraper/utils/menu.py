@@ -10,7 +10,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.scraper.manager import runner
+from ofscraper.commands.scraper.manager.execute import runner
 
 log = logging.getLogger("shared")
 count = 0

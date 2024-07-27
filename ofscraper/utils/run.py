@@ -29,7 +29,7 @@ import ofscraper.utils.checkers as checkers
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
-from ofscraper.commands.scraper.manager import runner
+from ofscraper.commands.scraper.manager.execute import runner
 
 log = logging.getLogger("shared")
 
