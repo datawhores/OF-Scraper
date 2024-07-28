@@ -7,6 +7,12 @@ import ofscraper.download.utils.globals as common_globals
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 
+def empty_log(username):
+    if read_args.retriveArgs().metadata:
+        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
+    else:
+        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
+
 
 def get_medialog(ele):
     if not ele:
@@ -127,12 +133,7 @@ def final_log_text(username):
     )
 
 
-def empty_log(username):
 
-    if read_args.retriveArgs().metadata:
-        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
-    else:
-        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
 def text_log(username, value=0, fails=0, exists=0, log=None):

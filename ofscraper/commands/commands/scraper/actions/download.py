@@ -9,15 +9,10 @@ r"""_____  _______         _______  _______  _______  _______  _______  _______ 
 """
 
 import logging
-import pathlib
 import time
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.download as download
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.updater as progress_updater
-import ofscraper.utils.paths.common as common_paths
 from ofscraper.content.scrape_paid import (
     process_scrape_paid,
     process_user,
@@ -29,30 +24,11 @@ from ofscraper.commands.utils.strings import (
     download_activity_str,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.string import format_safe
 
 log = logging.getLogger("shared")
 
 
-async def downloader(ele=None, posts=None, media=None, **kwargs):
-    model_id = ele.id
-    username = ele.name
-    download_str = download_activity_str.format(username=username)
-    path_str = format_safe(
-        f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",
-        username=username,
-        model_id=model_id,
-        model_username=username,
-        modelusername=username,
-        modelid=model_id,
-    )
 
-    progress_updater.update_activity_task(description=download_str + path_str)
-    logging.getLogger("shared_other").warning(
-        download_activity_str.format(username=username)
-    )
-    progress_updater.update_activity_task(description="")
-    return await download.download_process(username, model_id, media, posts=posts)
 
 
 def unique_name_warning():

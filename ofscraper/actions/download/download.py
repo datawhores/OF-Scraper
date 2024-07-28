@@ -1,17 +1,45 @@
 import logging
+import pathlib
 
-import ofscraper.download.downloadbatch as batchdownloader
-import ofscraper.download.downloadnormal as normaldownloader
+import ofscraper.actions.download.downloadbatch as batchdownloader
+import ofscraper.actions.download.downloadnormal as normaldownloader
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.download.utils.log import empty_log
-from ofscraper.download.utils.text import textDownloader
+from ofscraper.actions.download.utils.log import empty_log
+from ofscraper.actions.download.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.final.final_user import post_user_process
+from ofscraper.commands.utils.strings import (
+    download_activity_str,
+)
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.config.data as config_data
+import ofscraper.utils.paths.common as common_paths
+from ofscraper.utils.string import format_safe
 
+
+async def downloader(ele=None, posts=None, media=None, **kwargs):
+    model_id = ele.id
+    username = ele.name
+    download_str = download_activity_str.format(username=username)
+    path_str = format_safe(
+        f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",
+        username=username,
+        model_id=model_id,
+        model_username=username,
+        modelusername=username,
+        modelid=model_id,
+    )
+
+    progress_updater.update_activity_task(description=download_str + path_str)
+    logging.getLogger("shared_other").warning(
+        download_activity_str.format(username=username)
+    )
+    progress_updater.update_activity_task(description="")
+    return await download_process(username, model_id, media, posts=posts)
 
 @run_async
 async def download_process(username, model_id, medialist, posts=None):
