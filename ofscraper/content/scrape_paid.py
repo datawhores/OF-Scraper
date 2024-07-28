@@ -11,10 +11,31 @@ from ofscraper.commands.utils.strings import (
     all_paid_download_str,
     all_paid_progress_metadata_str,
     metadata_activity_str,
+    download_activity_str,all_paid_progress_download_str
+
 )
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
+
+
+
+@run
+async def scrape_paid_all():
+    out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
+
+    async for count, value, length in process_scrape_paid():
+        process_user_info_printer(
+            value,
+            length,
+            count,
+            all_paid_update=all_paid_download_str,
+            all_paid_activity=download_activity_str,
+            log_progress=all_paid_progress_download_str,
+        )
+        out.append(await process_user(value, length))
+    return out
+
 
 
 @run

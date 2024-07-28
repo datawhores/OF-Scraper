@@ -1,12 +1,14 @@
 import logging
+import time
 
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
-import ofscraper.commands.commands.scraper.actions.download as download_action
 import ofscraper.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
+import ofscraper.classes.placeholder as placeholder
+
 
 log = logging.getLogger("shared")
 
@@ -17,7 +19,7 @@ def prepare(menu=False):
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
 
-    download_action.unique_name_warning()
+    unique_name_warning()
     profile_tools.print_current_profile()
     init.print_sign_status()
     actions.select_areas()
@@ -26,3 +28,13 @@ def prepare(menu=False):
 
     userdata = userselector.getselected_usernames(rescan=False)
     return userdata, session
+
+
+def unique_name_warning():
+    if not placeholder.check_uniquename():
+        log.warning(
+            "[red]Warning: Your generated filenames may not be unique\n \
+            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
+            "
+        )
+        time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)

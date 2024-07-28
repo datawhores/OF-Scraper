@@ -1,6 +1,5 @@
 import logging
 
-import ofscraper.commands.commands.scraper.actions.download as download_action
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
@@ -11,6 +10,7 @@ from ofscraper.commands.commands.scraper.utils.setup.prepare import prepare
 from ofscraper.commands.utils.run_action import run_action_bool
 from ofscraper.utils.checkers import check_auth
 from ofscraper.final.final import final
+from ofscraper.content.scrape_paid import scrape_paid_all
 
 log = logging.getLogger("shared")
 
@@ -26,7 +26,7 @@ def runner(menu=False):
             setup=True, revert=False, stop=True
         ):
             if read_args.retriveArgs().scrape_paid:
-                scrape_paid_data = download_action.scrape_paid_all()
+                scrape_paid_data = scrape_paid_all()
 
             if not run_action_bool():
                 pass
