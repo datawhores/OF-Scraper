@@ -16,15 +16,15 @@ import re
 from functools import partial
 
 
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
-from ofscraper.download.utils.paths.media import add_path
-from ofscraper.download.utils.send.message import set_send_msg
+from ofscraper.actions.download.utils.paths.media import add_path
+from ofscraper.actions.download.utils.send.message import set_send_msg
 
 
 def add_additional_data(placeholderObj, ele):

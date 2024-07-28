@@ -1,7 +1,7 @@
 import math
 from humanfriendly import format_size
 
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 
 
 def convert_num_bytes(num_bytes: int) -> str:

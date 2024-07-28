@@ -21,50 +21,50 @@ import psutil
 from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
-from ofscraper.download.utils.alt.attempt import alt_attempt_get
-from ofscraper.download.utils.alt.handlers import (
+from ofscraper.actions.download.utils.alt.attempt import alt_attempt_get
+from ofscraper.actions.download.utils.alt.handlers import (
     fresh_data_handler_alt,
     resume_data_handler_alt,
 )
-from ofscraper.download.utils.alt.item import (
+from ofscraper.actions.download.utils.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
 )
-from ofscraper.download.utils.alt.params import get_alt_params,get_alt_params_hls
-from ofscraper.download.utils.log import get_medialog
+from ofscraper.actions.download.utils.alt.params import get_alt_params,get_alt_params_hls
+from ofscraper.actions.download.utils.log import get_medialog
 
-from ofscraper.download.utils.check.forced import (
+from ofscraper.actions.download.utils.check.forced import (
     check_forced_skip
 
 )
 
-from ofscraper.download.utils.check.space import (
+from ofscraper.actions.download.utils.check.space import (
     downloadspace
 
 )
 
-from ofscraper.download.utils.check.size import (
+from ofscraper.actions.download.utils.check.size import (
     size_checker
 
 )
-from ofscraper.download.utils.handle_result import handle_result_alt
-from ofscraper.download.utils.log import (
+from ofscraper.actions.download.utils.handle_result import handle_result_alt
+from ofscraper.actions.download.utils.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
 )
-from ofscraper.download.utils.progress.chunk import (
+from ofscraper.actions.download.utils.progress.chunk import (
     get_ideal_chunk_size,
 )
-from ofscraper.download.utils.retries import get_download_retries
-from ofscraper.download.utils.send.chunk import send_chunk_msg
-from ofscraper.download.utils.total import total_change_helper
-from ofscraper.download.utils.resume.resume import get_resume_header, get_resume_size
-from ofscraper.download.utils.alt.cache.resume import set_data,get_data
+from ofscraper.actions.download.utils.retries import get_download_retries
+from ofscraper.actions.download.utils.send.chunk import send_chunk_msg
+from ofscraper.actions.download.utils.total import total_change_helper
+from ofscraper.actions.download.utils.resume.resume import get_resume_header, get_resume_size
+from ofscraper.actions.download.utils.alt.cache.resume import set_data,get_data
 from ofscraper.classes.sessionmanager.sessionmanager import (
     FORCED_NEW,
     SIGN,

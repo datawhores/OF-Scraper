@@ -10,7 +10,7 @@ import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.db.operations as operations
-import ofscraper.download.download as download
+import ofscraper.actions.download.download as download
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args

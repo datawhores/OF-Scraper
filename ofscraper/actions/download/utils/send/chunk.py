@@ -1,9 +1,9 @@
 import pathlib
 
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.utils.logs.utils.level import getNumber
-from ofscraper.download.utils.log import get_medialog
+from ofscraper.actions.download.utils.log import get_medialog
 
 
 

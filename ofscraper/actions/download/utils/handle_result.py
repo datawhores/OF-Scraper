@@ -3,15 +3,15 @@ import pathlib
 import arrow
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.utils.general as common
-import ofscraper.download.utils.globals as common_globals
-import ofscraper.download.utils.log as common_logs
-import ofscraper.download.utils.paths.paths as common_paths
+import ofscraper.actions.download.utils.general as common
+import ofscraper.actions.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.log as common_logs
+import ofscraper.actions.download.utils.paths.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
-from ofscraper.download.utils.check.size import (
+from ofscraper.actions.download.utils.check.size import (
     size_checker
 
 )

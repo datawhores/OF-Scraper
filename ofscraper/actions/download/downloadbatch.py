@@ -13,7 +13,7 @@ import aioprocessing
 import more_itertools
 from aioprocessing import AioPipe
 
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
@@ -27,28 +27,28 @@ import ofscraper.utils.system.system as system
 import ofscraper.utils.system.priority as priority
 
 from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.download.alt_downloadbatch import alt_download
-from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.download.utils.globals import subProcessVariableInit
-from ofscraper.download.utils.log import (
+from ofscraper.actions.download.alt_downloadbatch import alt_download
+from ofscraper.actions.download.main_downloadbatch import main_download
+from ofscraper.actions.download.utils.globals import subProcessVariableInit
+from ofscraper.actions.download.utils.log import (
     final_log,
     final_log_text,
     log_download_progress,
     set_media_log,
 )
-from ofscraper.download.utils.log import get_medialog
+from ofscraper.actions.download.utils.log import get_medialog
 
-from ofscraper.download.utils.metadata import metadata
-from ofscraper.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
-from ofscraper.download.utils.progress.progress import convert_num_bytes
-from ofscraper.download.utils.send.message import send_msg
-from ofscraper.download.utils.workers import get_max_workers
+from ofscraper.actions.download.utils.metadata import metadata
+from ofscraper.actions.download.utils.paths.paths import addGlobalDir, setDirectoriesDate
+from ofscraper.actions.download.utils.progress.progress import convert_num_bytes
+from ofscraper.actions.download.utils.send.message import send_msg
+from ofscraper.actions.download.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.logs.other as other_logs
 
 from ofscraper.utils.system.speed import add_pids_to_download_obj
-from ofscraper.download.utils.buffer import download_log_clear_helper
+from ofscraper.actions.download.utils.buffer import download_log_clear_helper
 
 
 platform_name = platform.system()

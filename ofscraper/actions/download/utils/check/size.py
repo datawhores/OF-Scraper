@@ -12,7 +12,7 @@ r"""
 """
 
 import pathlib
-from ofscraper.download.utils.log import get_medialog
+from ofscraper.actions.download.utils.log import get_medialog
 
 
 async def size_checker(path, ele, total, name=None):

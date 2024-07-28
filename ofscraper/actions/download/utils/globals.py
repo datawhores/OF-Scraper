@@ -13,7 +13,7 @@ import ofscraper.utils.logs.logger as logger
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.dates as dates
-from ofscraper.download.utils.send.message import set_send_msg
+from ofscraper.actions.download.utils.send.message import set_send_msg
 
 
 

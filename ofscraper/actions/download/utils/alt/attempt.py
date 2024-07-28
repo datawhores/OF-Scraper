@@ -1,4 +1,4 @@
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 
 
 def alt_attempt_get(item):

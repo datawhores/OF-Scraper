@@ -2,7 +2,7 @@ import logging
 import traceback
 
 import ofscraper.classes.media as media_class
-import ofscraper.download.utils.log as logs
+import ofscraper.actions.download.utils.log as logs
 import ofscraper.utils.settings as settings
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run

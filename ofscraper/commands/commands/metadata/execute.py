@@ -16,7 +16,7 @@ import logging
 import arrow
 
 import ofscraper.db.operations as operations
-import ofscraper.download.download as download
+import ofscraper.actions.download.download as download
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import mark_stray_str, metadata_activity_str

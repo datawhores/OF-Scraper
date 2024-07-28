@@ -1,5 +1,5 @@
-from ofscraper.download.utils.progress.progress import update_total
-from ofscraper.download.utils.send.message import send_msg
+from ofscraper.actions.download.utils.progress.progress import update_total
+from ofscraper.actions.download.utils.send.message import send_msg
 
 
 async def batch_total_change_helper(past_total, new_total):

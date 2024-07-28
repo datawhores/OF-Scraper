@@ -1,8 +1,8 @@
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
-import ofscraper.download.utils.globals as common_globals
+import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.download.utils.retries import get_download_req_retries
+from ofscraper.actions.download.utils.retries import get_download_req_retries
 
 
 class download_session(sessionManager.sessionManager):
