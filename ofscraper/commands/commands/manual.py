@@ -25,7 +25,8 @@ from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.commands.final.final_script import final_script
+from ofscraper.final.final_script import final_script
+
 
 
 def manual_download(urls=None):

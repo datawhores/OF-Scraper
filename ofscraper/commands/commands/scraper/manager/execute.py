@@ -10,7 +10,7 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.commands.commands.scraper.utils.setup.prepare import prepare
 from ofscraper.commands.utils.run_action import run_action_bool
 from ofscraper.utils.checkers import check_auth
-from ofscraper.commands.final.final import final
+from ofscraper.final.final import final
 
 log = logging.getLogger("shared")
 

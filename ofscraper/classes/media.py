@@ -8,6 +8,7 @@ import warnings
 import arrow
 from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
+from async_property import async_cached_property
 
 import ofscraper.classes.base as base
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
@@ -327,22 +328,13 @@ class Media(base.base):
             )
             return f"{filename}_{arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))}"
 
-    @property
+    @async_cached_property
     async def final_filename(self):
-        filename = self.filename or str(self.id)
-        if self.mediatype == "videos":
-            filename = re.sub("_[a-z0-9]+$", "", filename)
-            filename = f"{filename}_{await self.selected_quality_placeholder}"
-        # cleanup
-        try:
-            filename = self.file_cleanup(filename)
-            filename = re.sub(
-                " ", data.get_spacereplacer(mediatype=self.mediatype), filename
-            )
-
-        except Exception as E:
-            print(E)
-        return filename
+        # Assuming usage within the same class or instance
+        final_filename = await self._get_final_filename_async()
+        # Block and wait for the asynchronous operation to complete
+        return final_filename
+        
 
     @property
     def no_quality_final_filename(self):
@@ -374,10 +366,8 @@ class Media(base.base):
     def media(self):
         return self._media
 
-    @property
+    @async_cached_property
     async def parse_mpd(self):
-        if self._cached_parse_mpd:
-            return self._cached_parse_mpd
         if not self.mpd:
             return
         params = {
@@ -399,10 +389,9 @@ class Media(base.base):
             async with c.requests_async(
                 url=self.mpd, params=params
             ) as r:
-                self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
-                return self._cached_parse_mpd
+                return MPEGDASHParser.parse(await r.text_())
 
-    @property
+    @async_cached_property
     async def mpd_dict(self):
         if not self.mpd:
             return
@@ -438,13 +427,13 @@ class Media(base.base):
     def mpd(self, val):
         self._mpd = val
 
-    @property
+    @async_cached_property
     async def selected_quality(self):
         if self.protected is False:
             return self.normal_quality_helper()
         return await self.alt_quality_helper()
 
-    @property
+    @async_cached_property
     async def selected_quality_placeholder(self):
         return await self.selected_quality or constants.getattr(
             "QUALITY_UNKNOWN_DEFAULT"
@@ -585,3 +574,22 @@ class Media(base.base):
                         None,
                     )
                 return str(selected.height) if selected else "source"
+            
+    async def _get_final_filename_async(self):
+        filename = self.filename or str(self.id)
+        if self.mediatype == "videos":
+            filename = re.sub("_[a-z0-9]+$", "", filename)
+            quality_placeholder = await self.selected_quality_placeholder
+            filename = f"{filename}_{quality_placeholder}"
+        # cleanup (unchanged)
+        try:
+            filename = self.file_cleanup(filename)
+            filename = re.sub(
+                " ", data.get_spacereplacer(mediatype=self.mediatype), filename
+            )
+
+        except Exception as E:
+            print(E)
+            # Handle exception for robustness (optional)
+
+        return filename

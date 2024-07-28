@@ -46,6 +46,10 @@ from ofscraper.db.operations_.media import (
 from ofscraper.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
+from ofscraper.final.final_user import  post_user_process
+from ofscraper.final.final_script import final_script
+
+
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -56,19 +60,24 @@ MEDIA_KEY = ["id", "postid", "username"]
 
 
 def process_download_cart():
+    global usernames
     while True:
-        if table.row_queue.empty():
-            time.sleep(10)
-            continue
-        try:
-            process_item()
-        except Exception:
-            # handle getting new downloads
-            None
+        usernames=set()
+        while not table.row_queue.empty():
+            try:
+                process_item()
+            except Exception:
+                # handle getting new downloads
+                None
+        if len(usernames) > 0:
+            final_script(list(usernames))
+        time.sleep(10)
+
 
 
 def process_item():
     global app
+    global usernames
     if process_download_cart.counter == 0:
         if not network.check_cdm():
             log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
@@ -106,6 +115,7 @@ def process_item():
                 operations.table_init_create(model_id=model_id, username=username)
                 textDownloader(post, username=username)
                 values = downloadnormal.process_dicts(username, model_id, [media])
+                post_user_process(username,model_id,media,post)
                 if values is None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
             else:
@@ -113,6 +123,7 @@ def process_item():
 
             log.info("Download Finished")
             table.app.update_cell(key, "download_cart", "[downloaded]")
+            usernames.add(username)
             break
         except Exception as E:
             if count == 1:

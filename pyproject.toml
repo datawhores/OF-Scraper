@@ -50,6 +50,7 @@ pynumparser = "^1.4.1"
 idna = "3.7"
 aiofiles = "^23.2.1"
 tqdm = "^4.66.4"
+async-property = "^0.2.2"
 
 
 [tool.poetry.group.dev.dependencies]

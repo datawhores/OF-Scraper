@@ -26,7 +26,7 @@ from ofscraper.commands.commands.metadata.normal import process_users_metadata_n
 from ofscraper.commands.commands.metadata.paid import metadata_paid_all
 from ofscraper.commands.commands.metadata.userfirst import metadata_user_first
 from ofscraper.commands.utils.scrape_context import scrape_context_manager 
-from ofscraper.commands.final.final import final
+from ofscraper.final.final import final
 from ofscraper.utils.checkers import check_auth
 
 log = logging.getLogger("shared")
