@@ -363,7 +363,6 @@ async def ajob_progress_helper(funct):
         logging.getLogger("shared").debug(E)
 
 async def consumer(lock,aws):
-    i=0
     while True:
         async with lock:
             if not(bool(aws)):
