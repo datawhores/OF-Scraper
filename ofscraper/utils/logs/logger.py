@@ -1,10 +1,10 @@
 import logging
 
-import ofscraper.utils.logs.classes.classes as log_class
 import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.stdout import add_stdout_handler,start_flush_main_thread
 from ofscraper.utils.logs.other import add_other_handler
+from ofscraper.utils.logs.classes.handlers.text import TextHandler
 
 
 
@@ -13,8 +13,8 @@ def add_widget(widget):
         setattr(ele, "widget", widget)
         for ele in list(
             filter(
-                lambda x: isinstance(x, log_class.TextHandler),
-                logging.getLogger("ofscraper_stdout").handlers,
+                lambda x: isinstance(x, TextHandler),
+                logging.getLogger("shared").handlers,
             )
         )
     ]
