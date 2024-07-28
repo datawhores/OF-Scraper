@@ -19,19 +19,6 @@ def lowstdout():
         None
 
 
-# @contextlib.contextmanager
-# def lowstdout():
-#     if logging.getLogger("ofscraper_stdout").handlers[1].level>constants.getattr("SUPPRESS_LOG_LEVEL"):
-#         save_stdout = sys.stdout
-#         sys.stdout = open(os.devnull, 'w')
-#         yield
-#         sys.stdout = save_stdout
-#     else:
-#         None
-#         yield
-#         None
-
-
 @contextlib.contextmanager
 def nostdout():
     try:
