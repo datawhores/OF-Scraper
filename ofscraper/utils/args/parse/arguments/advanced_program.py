@@ -51,7 +51,19 @@ download_script_option = click.option(
     "download_script",
     help="""
     \b
-    runs a script post model download
+    runs a script post model download script
     addional args sent to script username, model_id, media json ,and post json
+    """,
+)
+
+
+post_script_option = click.option(
+    "-ps",
+    "--post-script",
+    "post_script",
+    help="""
+    \b
+    runs a script after processing all users
+    addional args sent to script userdata array,
     """,
 )

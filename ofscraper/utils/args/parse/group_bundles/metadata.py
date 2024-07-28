@@ -4,6 +4,7 @@ from click.exceptions import UsageError
 from ofscraper.const.constants import METADATA_OPTIONS
 from ofscraper.utils.args.parse.arguments.advanced_program import (
     download_script_option,
+    post_script_option,
     dynamic_rules_option,
     no_api_cache_option,
     no_cache_option,
@@ -140,6 +141,7 @@ It also uses a new filename if one is available
         dynamic_rules_option,
         update_profile_option,
         download_script_option,
+        post_script_option,
         help="Advanced control of program behavior",
     )
     @click.pass_context

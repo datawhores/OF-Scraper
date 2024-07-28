@@ -269,12 +269,28 @@ def get_default_userlist(config=None):
 @wrapper.config_reader
 def get_post_download_script(config=None):
     if config is False:
+        return constants.POST_DOWNLOAD_SCRIPT_DEFAULT
+    val=None
+    if  config.get("post_download_script") is not None:
+        val= config.get("post_download_script")
+    elif config.get("advanced_options", {}).get("post_download_script") is not None:
+        val=config.get("advanced_options", {}).get("post_download_script")
+    elif config.get("script_options", {}).get("post_download_script") is not None:
+        val=config.get("script_options", {}).get("post_download_script")
+    return val if val is not None else constants_attr.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+
+
+@wrapper.config_reader
+def get_post_script(config=None):
+    if config is False:
         return constants.POST_SCRIPT_DEFAULT
-    val = (
-        config.get("post_download_script")
-        if config.get("post_download_script") is not None
-        else config.get("advanced_options", {}).get("post_download_script")
-    )
+    val=None
+    if  config.get("post_script") is not None:
+        val= config.get("post_script")
+    elif config.get("advanced_options", {}).get("post_script") is not None:
+        val=config.get("advanced_options", {}).get("post_script")
+    elif config.get("script_options", {}).get("post_script") is not None:
+        val=config.get("script_options", {}).get("post_script")
     return val if val is not None else constants_attr.getattr("POST_SCRIPT_DEFAULT")
 
 

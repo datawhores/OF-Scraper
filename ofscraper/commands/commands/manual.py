@@ -25,6 +25,7 @@ from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
+from ofscraper.commands.final.final_script import final_script
 
 
 def manual_download(urls=None):
@@ -74,11 +75,16 @@ def manual_download(urls=None):
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
+        final(url_dicts)
+        
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         raise e
 
+def final(url_dicts):
+    user_data=list(map(lambda x:x["user_data"],url_dicts.values()))
+    final_script(user_data)
 
 def allow_manual_dupes():
     args = read_args.retriveArgs()
@@ -103,15 +109,15 @@ def process_urls(urls):
             model = response[0]
             postid = response[1]
             type = response[2]
+            user_data = profile.scrape_profile(model)
+            model_id = user_data.get("id")
+            username = user_data.get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
+            out_dict.setdefault(model_id, {})["user_data"] = user_data
+
             if type == "post":
-                user_data = profile.scrape_profile(model)
-                model_id = user_data.get("id")
-                username = user_data.get("username")
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-
                 value = get_individual_timeline_post(postid)
-
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
                 )
@@ -119,12 +125,6 @@ def process_urls(urls):
                     get_post_item(model_id, value)
                 )
             elif type == "msg":
-                user_data = profile.scrape_profile(model)
-                model_id = user_data.get("id")
-                username = user_data.get("username")
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-
                 value = messages_.get_individual_messages_post(model_id, postid)
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
@@ -133,12 +133,6 @@ def process_urls(urls):
                     get_post_item(model_id, value)
                 )
             elif type == "msg2":
-                user_data = profile.scrape_profile(model)
-                username = user_data.get("username")
-                model_id = user_data.get("id")
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-
                 value = messages_.get_individual_messages_post(model_id, postid)
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
                     get_all_media(postid, model_id, value)
@@ -151,7 +145,6 @@ def process_urls(urls):
                 model_id = value.get("author", {}).get("id")
                 if not model_id:
                     continue
-                username = profile.scrape_profile(model_id).get("username")
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
 
@@ -166,7 +159,6 @@ def process_urls(urls):
                 model_id = value.get("userId")
                 if not model_id:
                     continue
-                username = profile.scrape_profile(model_id).get("username")
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
 
@@ -182,7 +174,6 @@ def process_urls(urls):
                 model_id = value.get("userId")
                 if not model_id:
                     continue
-                username = profile.scrape_profile(model_id).get("username")
                 out_dict.setdefault(model_id, {})["model_id"] = model_id
                 out_dict.setdefault(model_id, {})["username"] = username
                 out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(

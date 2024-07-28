@@ -54,7 +54,7 @@ def metadata():
         else:
             userdata, session = prepare()
             userfirst_data = metadata_user_first(userdata, session)
-    final(normal_data + scrape_paid_data + userfirst_data)
+    final(normal_data ,scrape_paid_data ,userfirst_data,userdata)
 
 
 def process_selected_areas():

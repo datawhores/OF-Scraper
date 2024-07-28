@@ -68,6 +68,10 @@ def funct(prompt_):
     [Binary Options]
     ffmeg: path to ffmpeg binary
     -----------------------------------
+    [Script Options]
+    post_download_script: script to run after each model
+    post_script: script to run after all models are processed
+    -----------------------------------
     [CDM Options]
     private-key: for manual cdm
     client-id: for manual cdm
@@ -110,8 +114,8 @@ def funct(prompt_):
 
 def config_prompt() -> int:
     config_prompt_choices = [*constants.getattr("configPromptChoices")]
-    config_prompt_choices.insert(7, Separator())
-    config_prompt_choices.insert(10, Separator())
+    config_prompt_choices.insert(8, Separator())
+    config_prompt_choices.insert(11, Separator())
 
     answer = promptClasses.getChecklistSelection(
         message="Config Menu: Which area would you like to change?",
@@ -285,6 +289,34 @@ Certain content requires decryption to process please provide the full path to f
         ],
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+
+def script_config():
+    out = {}
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": "post_download_script",
+                "message": "Script to run after each model download",
+                "default": data.get_post_download_script() or "",
+                "option_instruction": "Leave empty to skip post download script",
+            },
+            {
+                "type": "input",
+                "name": "post_script",
+                "message": "Script to run after all models have processed",
+                "default": data.get_post_script() or "",
+                "option_instruction": "Leave empty to skip post download script",
+            },
+        ],
     )
     out.update(answer)
     config = config_file.open_config()
@@ -532,13 +564,6 @@ def advanced_config() -> dict:
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
                 "default": data.get_allow_code_execution(),
                 "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
-            },
-            {
-                "type": "input",
-                "name": "post_download_script",
-                "message": "Script to run after model download",
-                "default": data.get_post_download_script() or "",
-                "option_instruction": "Leave empty to skip post download script",
             },
             {
                 "type": "filepath",

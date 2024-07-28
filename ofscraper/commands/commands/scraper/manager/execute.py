@@ -37,4 +37,4 @@ def runner(menu=False):
             else:
                 userdata, session = prepare()
                 normal_data = process_users_actions_normal(userdata, session)
-        final(normal_data + scrape_paid_data + user_first_data)
+        final(normal_data , scrape_paid_data ,user_first_data,userdata)

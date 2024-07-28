@@ -10,5 +10,15 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       f
 """
-def final_script():
-    return
+import json
+from ofscraper.classes.models import Model
+def final_script(users):
+    if not isinstance(users, list):
+        users=[users]
+    data=[]
+    for ele  in users:
+        if isinstance(ele,Model):
+            data.append(vars(ele)["_model"])
+        elif isinstance(ele,dict):
+            data.append(ele)
+    dat_str=json.dumps(data)

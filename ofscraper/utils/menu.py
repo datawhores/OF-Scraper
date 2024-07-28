@@ -124,6 +124,8 @@ def config_menu_helper(result_config_prompt):
         config_menu.response_type()
     elif result_config_prompt == "content":
         config_menu.content_config()
+    elif  result_config_prompt=="script":
+        config_menu.script_config()
 
 
 def reset_menu_helper():

@@ -12,6 +12,7 @@ configPromptChoices = {
     "File Options": "file",
     "Download Options": "download",
     "Binary Options": "binary",
+    "Script Options": "script",
     "CDM Options": "cdm",
     "Performance Options": "performance",
     "Content Options": "content",

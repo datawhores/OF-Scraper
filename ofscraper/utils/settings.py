@@ -185,6 +185,11 @@ def get_post_download_script():
     )
 
 
+def post_script():
+    return (
+        read_args.retriveArgs().post_script
+        or config_data.get_post_script()
+    )
 def get_hash(mediatype=None):
     return config_data.get_hash(mediatype=mediatype)
 

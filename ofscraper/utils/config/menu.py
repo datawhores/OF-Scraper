@@ -77,3 +77,10 @@ def content_config():
         config_file.open_config()
         updated_config = prompts.content_config()
     update_config_helper(updated_config)
+
+
+def script_config():
+    with config_context.config_context():
+        config_file.open_config()
+        updated_config = prompts.script_config()
+    update_config_helper(updated_config)
