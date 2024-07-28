@@ -9,17 +9,13 @@ def post_user_process(username, model_id, medialist, postlist):
     log = logging.getLogger("shared")
     if not settings.get_post_download_script():
         return
+    log.debug(f"Running post script for {username}")
     try:
-        mediadump = json.dumps(list(map(lambda x: x.media, medialist)))
-        postdump = json.dumps(list(map(lambda x: x.post, postlist)))
-        model_id = str(model_id)
+        master_dump={"username":username,"model_id":model_id,"media":list(map(lambda x: x.media, medialist)),"posts":list(map(lambda x: x.post, postlist))}
         run(
             [
                 settings.get_post_download_script(),
-                username,
-                model_id,
-                mediadump,
-                postdump,
+                json.dumps(master_dump),
             ]
         )
     except Exception as e:
