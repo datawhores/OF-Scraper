@@ -1,4 +1,4 @@
-import ofscraper.commands.commands.scraper.actions.download as download_action
+from ofscraper.actions.download.download import downloader
 import ofscraper.actions.like.like as like_action
 import ofscraper.utils.args.accessors.read as read_args
 
@@ -11,7 +11,7 @@ async def execute_user_action(posts=None, like_posts=None, ele=None, media=None)
     for action in actions:
         if action == "download":
             out.append(
-                await download_action.downloader(
+                await downloader(
                     ele=ele,
                     posts=posts,
                     media=media,
