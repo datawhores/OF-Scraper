@@ -1,8 +1,8 @@
 import logging
 import pathlib
 
-import ofscraper.actions.download.downloadbatch as batchdownloader
-import ofscraper.actions.download.downloadnormal as normaldownloader
+import ofscraper.actions.download.batch.downloadbatch as batch
+import ofscraper.actions.download.normal.downloadnormal as normal
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
@@ -63,9 +63,9 @@ async def download_picker(username, model_id, medialist):
         )
         and settings.not_solo_thread()
     ):
-        return batchdownloader.process_dicts(username, model_id, medialist)
+        return batch.process_dicts(username, model_id, medialist)
     else:
-        return await normaldownloader.process_dicts(username, model_id, medialist)
+        return await normal.process_dicts(username, model_id, medialist)
 
 
 def remove_downloads_with_hashes(username, model_id):

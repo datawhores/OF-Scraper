@@ -34,7 +34,7 @@ from ofscraper.actions.download.utils.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
 )
-from ofscraper.actions.download.utils.alt.params import get_alt_params,get_alt_params_hls
+from ofscraper.actions.download.utils.alt.params import get_alt_params
 from ofscraper.actions.download.utils.log import get_medialog
 
 from ofscraper.actions.download.utils.check.forced import (

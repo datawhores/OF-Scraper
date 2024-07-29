@@ -2,7 +2,7 @@ import platform
 import traceback
 
 from ofscraper.actions.download.utils.send.message import send_msg
-from ofscraper.actions.download.batch.download import download
+from ofscraper.actions.download.batch.worker.download import download
 import ofscraper.actions.download.utils.globals as common_globals
 
 

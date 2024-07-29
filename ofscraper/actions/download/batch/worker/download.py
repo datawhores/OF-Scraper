@@ -11,7 +11,6 @@ from ofscraper.actions.download.utils.log import (
 )
 from ofscraper.actions.download.utils.log import get_medialog
 
-from ofscraper.actions.download.utils.metadata import metadata
 
 
 
@@ -21,9 +20,7 @@ async def download(c, ele, model_id, username):
     set_media_log(common_globals.log, ele)
     common_globals.attempt.set(0)
     try:
-        if read_args.retriveArgs().metadata:
-            return await metadata(c, ele, username, model_id)
-        #conditions for download
+
         if ele.url:
             data=await main_download(c, ele, username, model_id)
         elif ele.mpd:

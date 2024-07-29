@@ -1,5 +1,5 @@
 import ofscraper.actions.download.utils.keyhelpers as keyhelpers
-from ofscraper.actions.download.utils.metadata import force_download
+from ofscraper.actions.metadata.utils.change import force_download
 from ofscraper.actions.download.utils.check.size import (
     size_checker
 

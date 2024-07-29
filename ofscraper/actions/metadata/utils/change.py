@@ -8,7 +8,6 @@ import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.actions.download.utils.paths.media as media
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
@@ -29,7 +28,7 @@ async def force_download(ele, username, model_id):
     )
 
 
-async def metadata(c, ele, username, model_id, placeholderObj=None):
+async def change_metadata(c, ele, username, model_id, placeholderObj=None):
     common_globals.log.info(
         f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
     )

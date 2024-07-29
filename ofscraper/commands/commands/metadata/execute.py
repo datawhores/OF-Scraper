@@ -16,7 +16,6 @@ import logging
 import arrow
 
 import ofscraper.db.operations as operations
-import ofscraper.actions.download.download as download
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import mark_stray_str, metadata_activity_str
@@ -26,6 +25,7 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
+from ofscraper.actions.metadata.metadata import  metadata_process
 
 log = logging.getLogger("shared")
 
@@ -51,7 +51,7 @@ async def execute_metadata_action_on_user(*args, ele=None, media=None, **kwargs)
     progress_updater.update_activity_task(
         description=metadata_activity_str.format(username=username)
     )
-    data = await download.download_process(username, model_id, media)
+    data = await metadata_process(username, model_id, media)
     await metadata_stray_media(username, model_id, media)
     return [data]
 

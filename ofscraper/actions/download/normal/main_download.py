@@ -57,7 +57,7 @@ from ofscraper.actions.download.utils.main.handlers import (
     fresh_data_handler_main,
     resume_data_handler_main,
 )
-from ofscraper.actions.download.utils.metadata import force_download
+from ofscraper.actions.metadata.utils.change import force_download
 from ofscraper.actions.download.utils.progress.chunk import (
     get_ideal_chunk_size
 )

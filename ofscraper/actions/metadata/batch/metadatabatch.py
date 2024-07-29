@@ -38,20 +38,19 @@ import ofscraper.utils.logs.other as other_logs
 from ofscraper.utils.system.speed import add_pids_to_download_obj
 from ofscraper.actions.download.utils.buffer import download_log_clear_helper
 from ofscraper.actions.download.batch.utils.mediasplit import get_mediasplits
-from ofscraper.actions.download.batch.worker.consumer  import consumer
+from ofscraper.actions.metadata.batch.worker.consumer import consumer
 from ofscraper.actions.download.batch.utils.threads import handle_threads,start_threads
 from ofscraper.actions.download.batch.utils.progress import queue_process
 
 platform_name = platform.system()
 
-
-
 def process_dicts(username, model_id, filtered_medialist):
     log = logging.getLogger("shared")
+
     try:
         common_globals.main_globals()
         download_log_clear_helper()
-        with progress_utils.setup_download_progress_live(multi=True):
+        with progress_utils.setup_metadata_progress_live():
             if not read_args.retriveArgs().item_sort:
                 random.shuffle(filtered_medialist)
 
@@ -191,6 +190,9 @@ def process_dict_starter(
                 raise E
             except Exception as E:
                 raise E
+
+
+
 
 
 
