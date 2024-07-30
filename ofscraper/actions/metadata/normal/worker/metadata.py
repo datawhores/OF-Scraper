@@ -19,7 +19,10 @@ from ofscraper.actions.metadata.utils.change import change_metadata
 
 async def metadata(c, ele, model_id, username):
     try:
-        return await change_metadata(c, ele, username, model_id)
+        if ele.mpd:
+            return await change_metadata(c, ele, username, model_id)
+        elif ele.url:
+            return await change_metadata(c, ele, username, model_id)
     except Exception as E:
         common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
         common_globals.log.debug(

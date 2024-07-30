@@ -23,7 +23,7 @@ from ofscraper.utils.args.parse.arguments.content import (
     posts_option,
     timed_only_option,
 )
-from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only
+from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only,media_id_filter
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
@@ -105,7 +105,7 @@ It also uses a new filename if one is available
     @program_options
     @logging_options
     @click.option_group(
-        "Media Filter Options", quality_option,normal_only,protected_only, help="Options for controlling "
+        "Media Filter Options", quality_option,normal_only,protected_only, media_id_filter,help="Options for controlling which media is processes"
     )
     @file_options
     @click.option_group(

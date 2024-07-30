@@ -53,12 +53,27 @@ def filtermediaAreas(media, **kwargs):
 
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" not in actions and not scrape_paid:
+    if "download" in actions or scrape_paid:
+        return filterMediaAreasDownload(media)
+    elif read_args.retriveArgs().command=="metadata":
+        return filterMediaAreasMetadata(media)
+    else:
         log.debug("Skipping filtering because download not in actions")
         return media
-    log.info("Initial media filtering for download")
-    count = 1
 
+def filterMediaAreasMetadata(media):
+    log.info("Initial media filtering for metadata")
+    return filterMediaAreasHelper(media)
+
+
+
+
+def filterMediaAreasDownload(media):
+    log.info("Initial media filtering for download")
+    return filterMediaAreasHelper(media)
+
+def filterMediaAreasHelper(media):
+    count=1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
     media = helpers.sort_by_date(media)
