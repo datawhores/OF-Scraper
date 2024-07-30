@@ -132,7 +132,6 @@ It also uses a new filename if one is available
      Define what posts to target
     """,
     )
-    @content_options
     @click.option_group(
     "Download Options",
     download_sem_option,
