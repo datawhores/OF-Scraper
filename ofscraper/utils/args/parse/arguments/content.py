@@ -63,7 +63,7 @@ download_area_option = click.option(
             "Messages",
             "Timeline",
             "Pinned",
-            "Stories",
+            "Stread_args.retriveArgs().download_areaories",
             "Purchased",
             "Profile",
             "Streams",
