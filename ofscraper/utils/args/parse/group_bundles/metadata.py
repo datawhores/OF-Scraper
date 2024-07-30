@@ -126,8 +126,6 @@ It also uses a new filename if one is available
         post_id_filter,
         item_sort_option,
         timed_only_option,
-        force_all_option,
-        force_model_unique_option,
         help="""
     \b
      Define what posts to target
