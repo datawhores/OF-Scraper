@@ -74,11 +74,16 @@ def get_user_action_function_meta(func):
         async with session as c:
             data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
             for ele in userdata:
+                username=ele.name
+                model_id = ele.id
                 try:
                     with progress_utils.setup_api_split_progress_live():
                         data_helper(ele)
                         all_media, posts, like_posts = await post_media_process(
                             ele, c=c
+                        )
+                        all_media = filters.filtermediaFinal(
+                            all_media, username, model_id
                         )
                     with progress_utils.setup_activity_group_live(revert=False):
                         avatar = ele.avatar

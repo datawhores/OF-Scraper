@@ -13,12 +13,37 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media, username, model_id):
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" not in actions and not scrape_paid:
-        log.debug("Skipping filtering because download not in actions")
+    if "download" in actions or scrape_paid:
+        return filterMediaFinalDownload(media, username, model_id)
+    elif read_args.retriveArgs().command=="metadata":
+        return filterMediaFinalMetadata(media, username, model_id)
+    else:
+        log.debug("Skipping filtering because download/metadata not in actions")
         return media
+
+
+
+def filterMediaFinalMetadata(media, username, model_id):
+    log.info(f"finalizing media filtering {username} {model_id} for metadata")
+    count = 1
+    trace_log_media(count, media, "initial media no filter:")
+    log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
+    media = helpers.sort_by_date(media)
+    count += 1
+    trace_log_media(count, media, "sorted by date initial")
+    log.debug(f"filter {count}-> sorted media count: {len(media)}")
+
+    media = helpers.unviewable_media_filter(media)
+    count += 1
+    trace_log_media(count, media, "filtered viewable media")
+    log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
+    if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
+            count += 1
+            trace_log_media(count, media, "unviewable media filter:")
+            log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
+    return helpers.previous_download_filter(media, username=username, model_id=model_id)
+def filterMediaFinalDownload(media, username, model_id):
     log.info(f"finalizing media filtering {username} {model_id} for download")
-
-
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -32,20 +57,14 @@ def filtermediaFinal(media, username, model_id):
     trace_log_media(count, media, "filtered viewable media")
     log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
 
-    if not read_args.retriveArgs().command == "metadata":
-        media = helpers.dupefiltermedia(media)
-        count += 1
-        trace_log_media(count, media, "media dupe media_id filter:")
-        log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
-        media = helpers.unviewable_media_filter(media)
-        count += 1
-        trace_log_media(count, media, "unviewable media filter:")
-        log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
-    elif read_args.retriveArgs().command == "metadata":
-        if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
-            count += 1
-            trace_log_media(count, media, "unviewable media filter:")
-            log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
+    media = helpers.dupefiltermedia(media)
+    count += 1
+    trace_log_media(count, media, "media dupe media_id filter:")
+    log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
+    media = helpers.unviewable_media_filter(media)
+    count += 1
+    trace_log_media(count, media, "unviewable media filter:")
+    log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
     return helpers.previous_download_filter(media, username=username, model_id=model_id)
 
 
@@ -58,7 +77,7 @@ def filtermediaAreas(media, **kwargs):
     elif read_args.retriveArgs().command=="metadata":
         return filterMediaAreasMetadata(media)
     else:
-        log.debug("Skipping filtering because download not in actions")
+        log.debug("Skipping filtering because download/metadata not in actions")
         return media
 
 def filterMediaAreasMetadata(media):
