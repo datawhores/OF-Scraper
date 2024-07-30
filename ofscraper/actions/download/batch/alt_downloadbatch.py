@@ -68,7 +68,8 @@ async def alt_download(c, ele, username, model_id):
         with _:
             try:
                 sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-                audio, video = await ele.mpd_dict
+                audio=await ele.mpd_audio
+                video=await ele.mpd_video
             except Exception as e:
                 common_globals.log.traceback_(e)
                 common_globals.log.traceback_(traceback.format_exc())

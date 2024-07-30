@@ -85,7 +85,8 @@ async def alt_download(c, ele, username, model_id):
             except Exception as e:
                 raise e
 
-    audio, video = await ele.mpd_dict
+    audio=await ele.mpd_audio
+    video=await ele.mpd_video
     path_to_file_logger(sharedPlaceholderObj, ele)
 
     audio = await alt_download_downloader(audio, c, ele)

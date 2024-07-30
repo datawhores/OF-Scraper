@@ -33,10 +33,11 @@ class Media(base.base):
         self._count = count
         self._post = post
         self._final_url = None
-        self._cached_parse_mpd = None
         self._mpd = None
         self._log = None
         self._hls=None
+        self._lock=asyncio.Lock()
+        self._cached_mpd=None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -370,36 +371,43 @@ class Media(base.base):
     async def parse_mpd(self):
         if not self.mpd:
             return
+        elif self._cached_mpd:
+            return self._cached_mpd
         params = {
             "Policy": self.policy,
             "Key-Pair-Id": self.keypair,
             "Signature": self.signature,
         }
-        async with sessionManager.OFSessionManager(
-            retries=constants.getattr("MPD_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            connect_timeout=constants.getattr("MPD_CONNECT_TIMEOUT"),
-            total_timeout=constants.getattr("MPD_TOTAL_TIMEOUT"),
-            read_timeout=constants.getattr("MPD_READ_TIMEOUT"),
-            pool_timeout=constants.getattr("MPD_POOL_CONNECT_TIMEOUT"),
-            semaphore=semaphore,
-            log=self._log,
-        ) as c:
-            async with c.requests_async(
-                url=self.mpd, params=params
-            ) as r:
-                return MPEGDASHParser.parse(await r.text_())
+        async with self._lock:
+            async with sessionManager.OFSessionManager(
+                retries=constants.getattr("MPD_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
+                connect_timeout=constants.getattr("MPD_CONNECT_TIMEOUT"),
+                total_timeout=constants.getattr("MPD_TOTAL_TIMEOUT"),
+                read_timeout=constants.getattr("MPD_READ_TIMEOUT"),
+                pool_timeout=constants.getattr("MPD_POOL_CONNECT_TIMEOUT"),
+                semaphore=semaphore,
+                log=self._log,
+            ) as c:
+                async with c.requests_async(
+                    url=self.mpd, params=params
+                ) as r:
+                   self._cached_mpd= MPEGDASHParser.parse(await r.text_())
+                   return self._cached_mpd
 
     @async_cached_property
-    async def mpd_dict(self):
+    async def mpd_video(self):
         if not self.mpd:
             return
-        mpd = await self.parse_mpd
-        video = await self.mpd_video_helper(mpd=mpd)
-        audio = await self.mpd_audio_helper(mpd=mpd)
-        return audio, video
-
+        video = await self.mpd_video_helper()
+        return video
+    @async_cached_property
+    async def mpd_audio(self):
+        if not self.mpd:
+            return
+        audio = await self.mpd_audio_helper()
+        return audio
     @property
     def license(self):
         if not self.mpd:
