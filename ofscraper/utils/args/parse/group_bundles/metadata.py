@@ -23,14 +23,13 @@ from ofscraper.utils.args.parse.arguments.content import (
     posts_option,
     timed_only_option,
 )
-from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only,media_id_filter
+from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only,media_id_filter,length_max,length_min,media_type_option
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
 from ofscraper.utils.args.parse.groups.advanced_user_filter import (
     advanced_userfilters_options,
 )
-from ofscraper.utils.args.parse.groups.content import content_options
 from ofscraper.utils.args.parse.groups.file import file_options
 from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.groups.program import program_options
@@ -105,11 +104,11 @@ It also uses a new filename if one is available
     @program_options
     @logging_options
     @click.option_group(
-        "Media Filter Options", quality_option,normal_only,protected_only, media_id_filter,help="Options for controlling which media is processes"
+        "Media Filter Options", quality_option,normal_only,protected_only, media_id_filter,length_max,length_min,media_type_option,help="Options for controlling which media is processes"
     )
     @file_options
     @click.option_group(
-        "Content Options",
+        "Content Options22",
         posts_option,
         filter_option,
         neg_filter_option,
