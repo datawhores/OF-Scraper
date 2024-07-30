@@ -330,7 +330,7 @@ class sessionManager:
         actions = actions or []
         for _ in Retrying(
             retry=retry_if_not_exception_type(
-                (KeyboardInterrupt, asyncio.TimeoutError)
+                (KeyboardInterrupt)
             ),
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=min, max=max),
@@ -437,7 +437,7 @@ class sessionManager:
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
             retry=retry_if_not_exception_type(
-                (KeyboardInterrupt, asyncio.TimeoutError)
+                (KeyboardInterrupt)
             ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
@@ -522,11 +522,9 @@ class sessionManager:
                     if TOO_MANY in exceptions:
                         async_is_rate_limited(E, sleeper)
                     sem.release()
-                    await asyncio.sleep(0)
                     raise E
         yield r
         sem.release()
-        await asyncio.sleep(0)
 
     @property
     def sleep(self):

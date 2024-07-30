@@ -37,6 +37,10 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
+from ofscraper.utils.args.parse.arguments.download import (
+    download_sem_option,
+    download_threads_option
+)
 
 
 def metadata_args(func):
@@ -129,6 +133,12 @@ It also uses a new filename if one is available
     """,
     )
     @content_options
+    @click.option_group(
+    "Download Options",
+    download_sem_option,
+    download_threads_option,
+    help="Options for downloads and download performance",
+)
     @user_select_options
     @userlist_options
     @advanced_userfilters_options

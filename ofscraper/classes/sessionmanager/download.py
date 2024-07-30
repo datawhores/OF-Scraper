@@ -1,8 +1,18 @@
+import contextlib
+
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.actions.download.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.actions.download.utils.retries import get_download_req_retries
+from ofscraper.classes.sessionmanager.sessionmanager import (
+    AUTH,
+    COOKIES,
+    FORCED_NEW,
+    HEADERS,
+    SIGN,
+    TOO_MANY,
+)
 
 
 class download_session(sessionManager.sessionManager):
@@ -17,6 +27,15 @@ class download_session(sessionManager.sessionManager):
         super().__init__(
             sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )
+    @contextlib.asynccontextmanager
+    async def requests_async(self, *args, **kwargs):
+        actions = [SIGN, COOKIES, HEADERS]
+        exceptions = [TOO_MANY, AUTH]
+        actions.append([FORCED_NEW]) if constants.getattr("API_FORCE_KEY") else None
+        async with super().requests_async(
+            *args, actions=actions, exceptions=exceptions, **kwargs
+        ) as r:
+            yield r
 
 
 class cdm_session(sessionManager.sessionManager):
