@@ -105,7 +105,7 @@ It also uses a new filename if one is available
     @program_options
     @logging_options
     @click.option_group(
-        "Media Filter Options", quality_option,normal_only,protected_only help="Options for controlling "
+        "Media Filter Options", quality_option,normal_only,protected_only, help="Options for controlling "
     )
     @file_options
     @click.option_group(
