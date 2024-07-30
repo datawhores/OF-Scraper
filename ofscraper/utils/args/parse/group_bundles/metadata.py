@@ -14,6 +14,8 @@ from ofscraper.utils.args.parse.arguments.content import (
     after_option,
     before_option,
     filter_option,
+    force_all_option,
+    force_model_unique_option,
     label_option,
     mass_msg_option,
     max_count_option,
@@ -126,6 +128,8 @@ It also uses a new filename if one is available
         post_id_filter,
         item_sort_option,
         timed_only_option,
+        force_all_option,
+        force_model_unique_option,
         help="""
     \b
      Define what posts to target
