@@ -33,14 +33,11 @@ def filterMediaFinalMetadata(media, username, model_id):
     trace_log_media(count, media, "sorted by date initial")
     log.debug(f"filter {count}-> sorted media count: {len(media)}")
 
-    media = helpers.unviewable_media_filter(media)
-    count += 1
-    trace_log_media(count, media, "filtered viewable media")
-    log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
     if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
+            media = helpers.unviewable_media_filter(media)
             count += 1
-            trace_log_media(count, media, "unviewable media filter:")
-            log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
+            trace_log_media(count, media, "filtered viewable media")
+            log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
     return helpers.previous_download_filter(media, username=username, model_id=model_id)
 def filterMediaFinalDownload(media, username, model_id):
     log.info(f"finalizing media filtering {username} {model_id} for download")
