@@ -15,13 +15,11 @@ import traceback
 import ofscraper.actions.download.utils.globals as common_globals
 from ofscraper.actions.download.utils.log import get_medialog
 from ofscraper.actions.metadata.utils.change import change_metadata
-from ofscraper.classes.download_retries import download_retry
 
 
 async def metadata(c, ele, model_id, username):
     try:
-        async for _ in download_retry():
-            return await change_metadata(c, ele, username, model_id)
+        return await change_metadata(c, ele, username, model_id)
     except Exception as E:
         common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
         common_globals.log.debug(
