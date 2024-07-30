@@ -22,6 +22,8 @@ from ofscraper.utils.args.parse.arguments.content import (
     neg_filter_option,
     posts_option,
     timed_only_option,
+    post_id_filter,
+    item_sort_option
 )
 from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only,media_id_filter,length_max,length_min,media_type_option
 from ofscraper.utils.args.parse.groups.advanced_processing import (
@@ -108,7 +110,7 @@ It also uses a new filename if one is available
     )
     @file_options
     @click.option_group(
-        "Content Options22",
+        "Content Options",
         posts_option,
         filter_option,
         neg_filter_option,
@@ -123,6 +125,8 @@ It also uses a new filename if one is available
         before_option,
         after_option,
         mass_msg_option,
+        post_id_filter,
+        item_sort_option,
         timed_only_option,
         force_all_option,
         force_model_unique_option,
