@@ -54,7 +54,7 @@ async def process_dicts(username, model_id, medialist):
             async with download_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
-                task1 = progress_updater.add_download_task(
+                task1 = progress_updater.add_metadata_task(
                     common_globals.desc.format(
                         p_count=0,
                         v_count=0,
@@ -87,7 +87,7 @@ async def process_dicts(username, model_id, medialist):
    
         setDirectoriesDate()
         download_log_clear_helper()
-        progress_updater.remove_download_task(task1)
+        progress_updater.remove_metadata_task(task1)
         final_log(username)
         return final_log_text(username)
     

@@ -8,6 +8,7 @@ from ofscraper.utils.live.progress import (
     api_overall_progress,
     download_job_progress,
     download_overall_progress,
+    metadata_overall_progress,
     like_overall_progress,
     multi_download_job_progress,
     userlist_job_progress,
@@ -224,8 +225,21 @@ def remove_download_task(task):
         download_overall_progress.remove_task(task)
     except KeyError:
         pass
+#metadata
+def add_metadata_task(*args, **kwargs):
+    return metadata_overall_progress.add_task(*args, start=True,**kwargs)
+
+def update_metadata_task(*args, **kwargs):
+    metadata_overall_progress.update(*args, **kwargs)
 
 
+def remove_metadata_task(task):
+    if task is None:
+        return
+    try:
+        metadata_overall_progress.remove_task(task)
+    except KeyError:
+        pass
 # like
 def add_like_task(*args, **kwargs):
     return like_overall_progress.add_task(*args, **kwargs)

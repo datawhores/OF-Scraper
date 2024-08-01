@@ -40,7 +40,7 @@ from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.mediasplit import get_mediasplits
 from ofscraper.actions.actions.metadata.batch.worker.consumer import consumer
 from ofscraper.actions.utils.threads import handle_threads,start_threads # type: ignore
-from ofscraper.actions.utils.progress.progress import queue_process
+from ofscraper.actions.actions.metadata.batch.utils.progress.progress import queue_process
 
 platform_name = platform.system()
 
@@ -90,7 +90,7 @@ def process_dicts(username, model_id, filtered_medialist):
             ]
             add_pids_to_download_obj(map(lambda x: x.pid, processes))
 
-            task1 = progress_updater.add_download_task(
+            task1 = progress_updater.add_metadata_task(
                 common_globals.desc.format(
                     p_count=0,
                     v_count=0,
@@ -121,7 +121,7 @@ def process_dicts(username, model_id, filtered_medialist):
             handle_threads(queue_threads,processes,log_threads)
             # for reading completed downloads
         download_log_clear_helper()
-        progress_updater.remove_download_task(task1)
+        progress_updater.remove_metadata_task(task1)
         setDirectoriesDate(log)
         final_log(username)
         return final_log_text(username)

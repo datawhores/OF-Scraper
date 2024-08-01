@@ -65,6 +65,16 @@ download_overall_progress = OverallFileProgress(
 )
 
 
+metadata_overall_progress = OverallFileProgress(
+    TextColumn("[white]{task.description}[/white]"),
+    BarColumn(),
+    TaskProgressColumn(),
+    TimeElapsedColumn(),
+        refresh_per_second =3,
+        auto_refresh=True
+
+)
+
 
 # user progress
 userlist_overall_progress = Progress(

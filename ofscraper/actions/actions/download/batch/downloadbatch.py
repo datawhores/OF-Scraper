@@ -40,7 +40,7 @@ from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.mediasplit import get_mediasplits
 from ofscraper.actions.actions.download.batch.worker.consumer  import consumer
 from ofscraper.actions.utils.threads import handle_threads,start_threads
-from ofscraper.actions.utils.progress.progress import queue_process
+from ofscraper.actions.actions.download.batch.utils.progress.progress import queue_process
 
 platform_name = platform.system()
 
