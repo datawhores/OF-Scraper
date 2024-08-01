@@ -15,10 +15,7 @@ async def metadata(c, ele, model_id, username):
     try:
         set_media_log(common_globals.log, ele)
         common_globals.attempt.set(0)
-        if ele.mpd:
-            return await change_metadata(c, ele, username, model_id)
-        elif ele.url:
-            return await change_metadata(c, ele, username, model_id)
+        return await change_metadata(c, ele, username, model_id)
     except Exception as e:
         common_globals.log.traceback_(f"{get_medialog(ele)} Metadata Failed\n")
         common_globals.log.traceback_(

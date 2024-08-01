@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+import random
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
@@ -168,7 +169,9 @@ async def metadata_helper(c, ele):
             content_type = headers.get("content-type").split("/")[
                 -1
             ] or media.content_type_missing(ele)
-            
+            #request fail if not read
+            async for _ in r.iter_chunked(20000):
+                pass
             placeholderObj = placeholder.Placeholders(
             ele, ext=content_type
             )

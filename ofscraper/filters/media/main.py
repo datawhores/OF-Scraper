@@ -13,7 +13,7 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media, username, model_id):
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" in actions or scrape_paid:
+    if "download" in actions or scrape_paid :
         return filterMediaFinalDownload(media, username, model_id)
     elif read_args.retriveArgs().command=="metadata":
         return filterMediaFinalMetadata(media, username, model_id)
