@@ -1,5 +1,5 @@
-from ofscraper.actions.download.download import downloader
-import ofscraper.actions.like.like as like_action
+from ofscraper.actions.actions.download.download import downloader
+import ofscraper.actions.actions.like.like as like_action
 import ofscraper.utils.args.accessors.read as read_args
 
 

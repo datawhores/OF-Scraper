@@ -23,7 +23,7 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
-import ofscraper.actions.download.normal.downloadnormal as downloadnormal
+import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -43,7 +43,7 @@ from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_ids_downloaded,
 )
-from ofscraper.actions.download.utils.text import textDownloader
+from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.final.final_user import  post_user_process

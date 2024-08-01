@@ -25,7 +25,7 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.actions.metadata.metadata import  metadata_process
+from ofscraper.actions.actions.metadata.metadata import  metadata_process
 
 log = logging.getLogger("shared")
 

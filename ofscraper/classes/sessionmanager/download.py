@@ -2,9 +2,9 @@ import contextlib
 
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
-import ofscraper.actions.download.utils.globals as common_globals
+import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.actions.download.utils.retries import get_download_req_retries
+from ofscraper.actions.utils.retries import get_download_req_retries
 from ofscraper.classes.sessionmanager.sessionmanager import (
     AUTH,
     COOKIES,
@@ -29,11 +29,13 @@ class download_session(sessionManager.sessionManager):
         )
     @contextlib.asynccontextmanager
     async def requests_async(self, *args, **kwargs):
-        actions = [SIGN, COOKIES, HEADERS]
-        exceptions = [TOO_MANY, AUTH]
-        actions.append([FORCED_NEW]) if constants.getattr("API_FORCE_KEY") else None
+        if not kwargs.get("actions"):
+            actions = [SIGN, COOKIES, HEADERS]
+            actions.append([FORCED_NEW]) if constants.getattr("API_FORCE_KEY") else None
+            kwargs["actions"]= actions
+        kwargs["exceptions"]= [TOO_MANY, AUTH]
         async with super().requests_async(
-            *args, actions=actions, exceptions=exceptions, **kwargs
+            *args,**kwargs
         ) as r:
             yield r
 
