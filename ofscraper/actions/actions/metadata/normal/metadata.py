@@ -73,7 +73,7 @@ async def process_dicts(username, model_id, medialist):
                 lock=asyncio.Lock()
                 consumers = [
                     asyncio.create_task(consumer(aws, task1, medialist,lock))
-                    for _ in range(1)
+                    for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
         except Exception as E:
