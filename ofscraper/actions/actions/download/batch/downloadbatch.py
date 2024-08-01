@@ -52,9 +52,6 @@ def process_dicts(username, model_id, filtered_medialist):
         common_globals.main_globals()
         download_log_clear_helper()
         with progress_utils.setup_download_progress_live(multi=True):
-            if not read_args.retriveArgs().item_sort:
-                random.shuffle(filtered_medialist)
-
             mediasplits = get_mediasplits(filtered_medialist)
             num_proc = len(mediasplits)
             log.debug(f"Number of download threads: {num_proc}")
