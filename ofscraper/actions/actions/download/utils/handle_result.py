@@ -64,7 +64,7 @@ async def handle_result_alt(
     sharedPlaceholderObj, ele, audio, video, username, model_id
 ):
     tempPlaceholder = await placeholder.tempFilePlaceholder(
-        ele, f"temp_{ele.id or await ele.final_filename}.mp4"
+        ele, f"temp_{ele.filename}_{ele.id}_{ele.postid}.mp4"
     ).init()
     temp_path = tempPlaceholder.tempfilepath
     temp_path.unlink(missing_ok=True)

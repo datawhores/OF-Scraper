@@ -91,7 +91,7 @@ async def main_download(c, ele, username, model_id):
 async def main_download_downloader(c, ele):
     downloadspace(mediatype=ele.mediatype)
     tempholderObj = await placeholder.tempFilePlaceholder(
-        ele, f"{await ele.final_filename}_{ele.id}.part"
+        ele, f"{ele.filename}_{ele.id}_{ele.postid}_{ele.postid}.part"
     ).init()
     async for _ in download_retry():
         with _:

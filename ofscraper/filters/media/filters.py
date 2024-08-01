@@ -12,8 +12,11 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
+import ofscraper.utils.constants as constants
+
 
 log = logging.getLogger("shared")
+
 
 
 def sort_by_date(media):
@@ -35,11 +38,16 @@ def dupefilter(media):
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
-    for item in media:
-        if not output[item.id]:
-            output[item.id] = item
-        elif item.canview and not output[item.id].canview:
-            output[item.id] = item
+    if constants.getattr("ALLOW_DUPE_MEDIA"):
+        for item in media:
+            if not output[(item.id, item.postid)]:
+                output[(item.id, item.postid)] = item
+    else:
+        for item in media:
+            if not output[item.id]:
+                output[item.id] = item
+            elif item.canview and not output[item.id].canview:
+                output[item.id] = item
     return list(output.values())
 
 

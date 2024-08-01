@@ -1,4 +1,6 @@
 import logging
+import random
+import string
 import os
 import pathlib
 import re
@@ -89,9 +91,13 @@ class tempFilePlaceholder(basePlaceholder):
         self._placeholder = Placeholders(self._ele, "mp4")
         self._tempname = tempname
 
+
     async def init(self):
         dir = await self.gettempDir(self._ele)
         file = self._tempname
+        #remove for now
+        # if constants.getattr("ALLOW_DUPE_MEDIA"):
+        #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
         self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
         return self
 
