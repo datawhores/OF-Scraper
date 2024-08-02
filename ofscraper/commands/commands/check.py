@@ -219,6 +219,7 @@ async def post_check_retriver():
             labels_data = []
             pinned_data = []
             archived_data = []
+            streams_data = []
 
             if name_match:
                 user_name = name_match.group(1)
