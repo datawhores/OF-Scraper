@@ -62,8 +62,9 @@ class DiscordHandler(logging.Handler):
                 pass
 
     def emit(self, record):
-        if isinstance(record, str):
-            self._url = record
+        if hasattr(record,"message") and (record.message in log_globals.stop_codes) or record.message=="":
+            return
+        elif record in log_globals.stop_codes or record=="":
             return
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
@@ -175,15 +176,11 @@ class DiscordHandlerMulti(logging.Handler):
                 pass
 
     def emit(self, record):
-        if isinstance(record, str):
-            self._url = record
+        if hasattr(record,"message") and (record.message in log_globals.stop_codes) or record.message=="":
             return
-        elif hasattr(record,"message") and (record.message in log_globals.stop_codes):
+        elif record in log_globals.stop_codes or record=="":
             return
-        elif record in log_globals.stop_codes:
-            return
-        elif record.message=="":
-            return
+            
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
         if constants.getattr("DISCORD_ASYNC"):
