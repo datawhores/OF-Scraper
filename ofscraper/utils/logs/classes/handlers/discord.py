@@ -182,6 +182,8 @@ class DiscordHandlerMulti(logging.Handler):
             return
         elif record in log_globals.stop_codes:
             return
+        elif record.message=="":
+            return
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
         if constants.getattr("DISCORD_ASYNC"):
