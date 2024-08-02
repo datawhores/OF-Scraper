@@ -62,7 +62,7 @@ async def un_encrypt(item, c, ele, input_=None):
         )
         log.debug(f"{get_medialog(ele)} got key")
         newpath = pathlib.Path(
-            re.sub("\.part$", "", str(item["path"]), flags=re.IGNORECASE)
+            re.sub("\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
         )
         log.debug(
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"

@@ -236,6 +236,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj,item):
     )
 
 
+
 async def download_fileobject_writer_reader(total, res, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
 
