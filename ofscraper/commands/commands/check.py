@@ -176,6 +176,7 @@ def checker():
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
+        raise E
 
 
 def post_checker():
