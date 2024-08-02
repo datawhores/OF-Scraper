@@ -107,7 +107,7 @@ async def alt_download(c, ele, username, model_id):
 async def alt_download_downloader(item, c, ele):
     downloadspace(mediatype=ele.mediatype)
     placeholderObj = await placeholder.tempFilePlaceholder(
-        ele, f"{item['name']}_{ele.postid}_{ele.id}.part"
+        ele, f"{item['name']}.part"
     ).init()
     item["path"] = placeholderObj.tempfilepath
     item["total"] = None

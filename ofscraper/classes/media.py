@@ -523,7 +523,7 @@ class Media(base.base):
                             "origname": origname,
                             "pssh": kId,
                             "type": "video",
-                            "name": f"tempvid_{origname}",
+                            "name": f"tempvid_{self.id}_{self.postid}",
                         }
 
     async def mpd_audio_helper(self, mpd=None):
@@ -546,7 +546,7 @@ class Media(base.base):
                         "origname": origname,
                         "pssh": kId,
                         "type": "audio",
-                        "name": f"tempaudio_{origname}",
+                        "name": f"tempaudio_{self.id}_{self.postid}",
                     }
 
     def normal_quality_helper(self):
