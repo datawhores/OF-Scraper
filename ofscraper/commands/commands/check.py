@@ -164,14 +164,18 @@ async def data_refill(media_id, post_id, target_name, model_id):
 def checker():
     args = read_args.retriveArgs()
     check_auth()
-    if args.command == "post_check":
-        post_checker()
-    elif args.command == "msg_check":
-        message_checker()
-    elif args.command == "paid_check":
-        purchase_checker()
-    elif args.command == "story_check":
-        stories_checker()
+    try:
+        if args.command == "post_check":
+            post_checker()
+        elif args.command == "msg_check":
+            message_checker()
+        elif args.command == "paid_check":
+            purchase_checker()
+        elif args.command == "story_check":
+            stories_checker()
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 def post_checker():

@@ -341,9 +341,12 @@ async def make_post_table_changes(all_posts, model_id=None, username=None, **kwa
         )
     )
 
+
     curr_id = set(await get_all_post_ids(model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts_data))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts_data))
+    unique_post_data = list({ele.id: ele for ele in all_posts_data}.values())
+
+    new_posts = list(filter(lambda x: x.id not in curr_id, unique_post_data))
+    curr_posts = list(filter(lambda x: x.id in curr_id, unique_post_data))
     if len(new_posts) > 0:
         new_posts = convert.converthelper(new_posts)
         await write_post_table(new_posts, model_id=model_id, username=username)
