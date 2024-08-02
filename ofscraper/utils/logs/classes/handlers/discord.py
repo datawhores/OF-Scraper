@@ -62,7 +62,7 @@ class DiscordHandler(logging.Handler):
                 pass
 
     def emit(self, record):
-        if hasattr(record,"message") and (record.message in log_globals.stop_codes) or record.message=="":
+        if hasattr(record,"message") and (record.message in log_globals.stop_codes or record.message==""):
             return
         elif record in log_globals.stop_codes or record=="":
             return
@@ -176,7 +176,7 @@ class DiscordHandlerMulti(logging.Handler):
                 pass
 
     def emit(self, record):
-        if hasattr(record,"message") and (record.message in log_globals.stop_codes) or record.message=="":
+        if hasattr(record,"message") and (record.message in log_globals.stop_codes or record.message==""):
             return
         elif record in log_globals.stop_codes or record=="":
             return
