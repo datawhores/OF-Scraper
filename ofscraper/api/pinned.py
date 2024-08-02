@@ -62,6 +62,7 @@ def get_tasks(c, model_id):
             )
         )
     )
+    return tasks
 
 
 async def process_tasks(tasks):
