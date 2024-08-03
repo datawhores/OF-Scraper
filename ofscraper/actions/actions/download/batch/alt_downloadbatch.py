@@ -36,7 +36,7 @@ from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
 )
-from ofscraper.actions.actions.download.utils.handle_result import handle_result_alt
+# from ofscraper.actions.actions.download.utils.handle_result import handle_result_alt
 from ofscraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,

@@ -2,20 +2,17 @@ import pathlib
 
 import arrow
 
-import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.general as common
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.actions.utils.log as common_logs
 import ofscraper.actions.utils.paths.paths as common_paths
 import ofscraper.utils.dates as dates
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
 from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
 )
-from ofscraper.utils.system.subprocess  import run
 
 
 async def handle_result_main(result, ele, username, model_id):
