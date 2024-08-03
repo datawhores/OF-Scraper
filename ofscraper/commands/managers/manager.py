@@ -11,12 +11,9 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.content.post import post_media_process
-from ofscraper.commands.utils.strings import avatar_str
 import ofscraper.filters.media.main as filters
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.accessors.areas as areas
-import ofscraper.utils.constants as constants
-import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.live.tasks as progress_tasks
 from ofscraper.commands.utils.strings import (
     area_str,
@@ -29,10 +26,7 @@ from ofscraper.commands.utils.strings import (
 log = logging.getLogger("shared")
 
 class commmandManager():
-    def __init__(self,user_action=None,user_first_data=None,user_first_execution=None):
-        self.user_action = user_action
-        self.user_first_data = user_first_data
-        self.user_first_execution = user_first_execution
+    def __init__(self):
         pass
     def _get_user_action_function(self,funct=None):
         funct=self.user_first_execution or funct
