@@ -30,10 +30,9 @@ from ofscraper.content.post import process_areas
 log = logging.getLogger("shared")
 
 
-
 class metadataManager(commmandManager):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
 
     
     @run_async
@@ -227,5 +226,5 @@ class metadataManager(commmandManager):
 
 
     @property
-    def run_metadata():
+    def run_metadata(self):
         return read_args.retriveArgs().metadata
