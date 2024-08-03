@@ -46,7 +46,7 @@ class commmandManager():
                     model_id = ele.id
                     try:
                         with progress_utils.setup_api_split_progress_live():
-                           self._data_helper(ele)
+                            self._data_helper(ele)
                             all_media, posts, like_posts = await post_media_process(
                                 ele, c=c
                             )
