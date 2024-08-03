@@ -21,9 +21,3 @@ from ofscraper.utils.context.run_async import run
 log = logging.getLogger("shared")
 
 
-@run
-# entrypoint for normal run
-async def process_users_metadata_normal(userdata, session):
-    user_action_funct = get_user_action_function_meta(execute_metadata_action_on_user)
-    progress_updater.update_user_activity(description="Users with Updated Metadata")
-    return await user_action_funct(userdata, session)
