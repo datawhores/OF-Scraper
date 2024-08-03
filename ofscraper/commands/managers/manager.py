@@ -34,7 +34,7 @@ class commmandManager():
         self.user_first_data = user_first_data
         self.user_first_execution = user_first_execution
         pass
-    def get_user_action_function(self,funct=None):
+    def _get_user_action_function(self,funct=None):
         funct=self.user_first_execution or funct
         if not funct:
             return
@@ -46,7 +46,7 @@ class commmandManager():
                     model_id = ele.id
                     try:
                         with progress_utils.setup_api_split_progress_live():
-                           self.data_helper(ele)
+                           self._data_helper(ele)
                             all_media, posts, like_posts = await post_media_process(
                                 ele, c=c
                             )
@@ -89,10 +89,7 @@ class commmandManager():
 
         return wrapper
     
-    def get_userfirst_data_function(self,funct=None):
-        funct=self.user_first_data or funct
-        if not funct:
-            return
+    def _get_userfirst_data_function(self,funct):
         async def wrapper(userdata, session, *args, **kwargs):
             progress_updater.update_activity_task(description="Getting all user data first")
             progress_updater.update_user_activity(description="Users with Data Retrieved")
@@ -101,7 +98,7 @@ class commmandManager():
             async with session:
                 for ele in userdata:
                     try:
-                        self.data_helper(ele)
+                        self._data_helper(ele)
                         with progress_utils.setup_activity_counter_live(revert=False):
                             data.update(await funct(session, ele))
                     except Exception as e:
@@ -117,7 +114,7 @@ class commmandManager():
         return wrapper
 
 
-    def get_userfirst_action_execution_function(self,funct):
+    def _get_userfirst_action_execution_function(self,funct):
         funct=self.user_first_execution or funct
         if not funct:
             return
@@ -170,7 +167,7 @@ class commmandManager():
                 )
             return out
         return wrapper
-    def data_helper(self,user):
+    def _data_helper(self,user):
         avatar = user.avatar
         username = user.name
         active = user.active

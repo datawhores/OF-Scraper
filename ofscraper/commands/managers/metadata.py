@@ -25,65 +25,37 @@ from ofscraper.db.operations_.media import (
     get_timeline_media,
 )
 from ofscraper.actions.actions.metadata.metadata import  metadata_process
+from ofscraper.content.post import process_areas
 
 log = logging.getLogger("shared")
 
 
 
 class metadataManager(commmandManager):
-    def __init__(self,user_action=None,user_first_data=None,user_first_execution=None):
-        user_action=self._execute_metadata_action_on_user
-        super().__init__(self,user_action=user_action,user_first_data=user_first_data,user_first_execution=user_first_execution)
-    def get_user_action_function(self):
-        if not self.user_action:
-            return
-        async def wrapper(userdata, session, *args, **kwargs):
-            async with session as c:
-                data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
-                for ele in userdata:
-                    username=ele.name
-                    model_id = ele.id
-                    try:
-                        with progress_utils.setup_api_split_progress_live():
-                            self.data_helper(ele)
-                            all_media, posts, like_posts = await post_media_process(
-                                ele, c=c
-                            )
-                            all_media = filters.filtermediaFinal(
-                                all_media, username, model_id
-                            )
-                        with progress_utils.setup_activity_group_live(revert=False):
-                            avatar = ele.avatar
-                            if (
-                                constants.getattr("SHOW_AVATAR")
-                                and avatar
-                                and read_args.retriveArgs().userfirst
-                            ):
-                                logging.getLogger("shared_other").warning(
-                                    avatar_str.format(avatar=avatar)
-                                )
-                            data.extend(
-                                await self.user_action(
-                                    media=all_media,
-                                    posts=posts,
-                                    like_posts=like_posts,
-                                    ele=ele,
-                                )
-                            )
-                    except Exception as e:
+    def __init__(self):
+        super().__init__(self)
 
-                        log.traceback_(f"failed with exception: {e}")
-                        log.traceback_(traceback.format_exc())
+    
+    @run_async
+    async def process_users_metadata_normal(self,userdata, session):
+        user_action_funct = self._get_user_action_function(self._execute_metadata_action_on_user)
+        progress_updater.update_user_activity(description="Users with Updated Metadata")
+        return await user_action_funct(userdata, session)
+    @run_async
+    async def metadata_user_first(self,userdata, session):
+        data = await self._get_userfirst_data_function(self._metadata_data_user_first)(
+            userdata, session
+        )(userdata,session)
+        progress_updater.update_activity_task(description="Changing Metadata for Users")
+        progress_updater.update_user_activity(
+            description="Users with Metadata Changed", completed=0
+        )
+        # pass all data to userfirst
+        return await self._get_userfirst_action_execution_function(
+            self._execute_metadata_action_on_user
+        )(data)
 
-                        if isinstance(e, KeyboardInterrupt):
-                            raise e
-                    finally:
-                        progress_updater.increment_user_activity()
-                progress_updater.update_activity_task(description="Finished Metadata Mode")
-                time.sleep(1)
-                return data
 
-        return wrapper
 
     @run_async
     async def metadata_paid_all(self):
@@ -162,9 +134,96 @@ class metadataManager(commmandManager):
         )
         log.info(f"Found {len(filtered_media)} stray items to mark as locked")
         batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
+    def _get_user_action_function(self,funct):
+        async def wrapper(userdata, session, *args, **kwargs):
+            async with session as c:
+                data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
+                for ele in userdata:
+                    username=ele.name
+                    model_id = ele.id
+                    try:
+                        with progress_utils.setup_api_split_progress_live():
+                            self._data_helper(ele)
+                            all_media, posts, like_posts = await post_media_process(
+                                ele, c=c
+                            )
+                            all_media = filters.filtermediaFinal(
+                                all_media, username, model_id
+                            )
+                        with progress_utils.setup_activity_group_live(revert=False):
+                            avatar = ele.avatar
+                            if (
+                                constants.getattr("SHOW_AVATAR")
+                                and avatar
+                                and read_args.retriveArgs().userfirst
+                            ):
+                                logging.getLogger("shared_other").warning(
+                                    avatar_str.format(avatar=avatar)
+                                )
+                            data.extend(
+                                await funct(
+                                    media=all_media,
+                                    posts=posts,
+                                    like_posts=like_posts,
+                                    ele=ele,
+                                )
+                            )
+                    except Exception as e:
+
+                        log.traceback_(f"failed with exception: {e}")
+                        log.traceback_(traceback.format_exc())
+
+                        if isinstance(e, KeyboardInterrupt):
+                            raise e
+                    finally:
+                        progress_updater.increment_user_activity()
+                progress_updater.update_activity_task(description="Finished Metadata Mode")
+                time.sleep(1)
+                return data
+
+        return wrapper
 
 
-        
+    # data functions
+    @run_async
+    async def _metadata_data_user_first(self,session, ele):
+        try:
+            return await self._process_ele_user_first_data_retriver(ele=ele, session=session)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+
+
+    async def _process_ele_user_first_data_retriver(self,ele=None, session=None):
+        data = {}
+        progress_utils.switch_api_progress()
+        model_id = ele.id
+        username = ele.name
+        avatar = ele.avatar
+        try:
+            model_id = ele.id
+            username = ele.name
+            await operations.table_init_create(model_id=model_id, username=username)
+            media, _, _ = await process_areas(ele, model_id, username, c=session)
+            return {
+                model_id: {
+                    "username": username,
+                    "media": media,
+                    "avatar": avatar,
+                    "ele": ele,
+                    "posts": [],
+                    "like_posts": [],
+                }
+            }
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+        return data
+    
 
 
     @property

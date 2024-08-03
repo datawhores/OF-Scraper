@@ -48,10 +48,10 @@ def metadata():
 
         elif not read_args.retriveArgs().users_first:
             userdata, session = prepare()
-            normal_data = MetadataManager.process_metadata_normal(userdata, session)
+            normal_data = MetadataManager.process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
-            userfirst_data = metadata_user_first(userdata, session)
+            userfirst_data = MetadataManager.metadata_user_first(userdata, session)
     final(normal_data ,scrape_paid_data ,userfirst_data,userdata)
 
 
