@@ -32,9 +32,6 @@ class commmandManager():
         pass
    
     def _get_user_action_function(self,funct=None):
-        funct=self.user_first_execution or funct
-        if not funct:
-            return
         async def wrapper(userdata, session, *args, **kwargs):
             async with session as c:
                 data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
@@ -112,9 +109,6 @@ class commmandManager():
 
 
     def _get_userfirst_action_execution_function(self,funct):
-        funct=self.user_first_execution or funct
-        if not funct:
-            return
         async def wrapper(data, *args, **kwargs):
             out = ["[bold yellow]User First Results[/bold yellow]"]
             progress_updater.increment_activity_count(total=2)
