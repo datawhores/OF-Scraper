@@ -30,11 +30,9 @@ from ofscraper.content.post import process_areas
 log = logging.getLogger("shared")
 
 
-class metadataManager(commmandManager):
+class metadataCommandManager(commmandManager):
     def __init__(self):
         super().__init__()
-
-    
     @run_async
     async def process_users_metadata_normal(self,userdata, session):
         user_action_funct = self._get_user_action_function(self._execute_metadata_action_on_user)
