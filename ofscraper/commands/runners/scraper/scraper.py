@@ -20,9 +20,9 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
-from ofscraper.commands.commands.scraper.utils.print import print_start
-from ofscraper.commands.commands.scraper.utils.select import process_selected_areas
-from ofscraper.commands.commands.scraper.utils.setup.prompt import process_prompts
+from ofscraper.commands.runners.scraper.utils.print import print_start
+from ofscraper.commands.runners.scraper.utils.select import process_selected_areas
+from ofscraper.commands.runners.scraper.utils.prompt import process_prompts
 
 log = logging.getLogger("shared")
 
@@ -61,7 +61,6 @@ def main():
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-
 
 def scrapper():
     global selectedusers

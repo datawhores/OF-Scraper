@@ -32,9 +32,9 @@ def is_rate_limited(exception, sleeper):
         sleeper.toomany_req()
 
 
-def async_is_rate_limited(exception, sleeper):
+async def async_is_rate_limited(exception, sleeper):
     if is_provided_exception_number(exception, 429, 504):
-        sleeper.async_toomany_req()
+        await sleeper.async_toomany_req()
 
 
 def async_check_400(exception):
@@ -520,7 +520,7 @@ class sessionManager:
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     if TOO_MANY in exceptions:
-                        async_is_rate_limited(E, sleeper)
+                        await async_is_rate_limited(E, sleeper)
                     sem.release()
                     raise E
         yield r

@@ -7,6 +7,8 @@ import  logging
 
 
 import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.console as console
+from ofscraper.__version__ import __version__
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -28,6 +30,7 @@ log = logging.getLogger("shared")
 class commmandManager():
     def __init__(self):
         pass
+   
     def _get_user_action_function(self,funct=None):
         funct=self.user_first_execution or funct
         if not funct:

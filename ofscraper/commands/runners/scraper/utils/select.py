@@ -16,15 +16,15 @@ import logging
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
-from ofscraper.commands.commands.scraper.utils.setup.prompt import process_prompts
-from ofscraper.commands.commands.scraper.manager.execute import runner
+from ofscraper.commands.runners.scraper.utils.prompt import process_prompts
+from  ofscraper.commands.managers.scraper import scraperManager
 
 log = logging.getLogger("shared")
 
-
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
-    runner()
+    scrapingManager=scraperManager()
+    scrapingManager.runner()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
@@ -36,5 +36,5 @@ def process_selected_areas():
             break
         else:
             menu.get_count() > 0 and menu.reset_menu_helper()
-            runner()
+            scrapingManager.runner()
             menu.update_count()
