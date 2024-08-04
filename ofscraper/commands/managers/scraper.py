@@ -4,7 +4,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
-from ofscraper.commands.runners.scraper.utils.setup.prepare import prepare
+from ofscraper.commands.runners.scraper.utils.prepare import prepare
 from ofscraper.utils.checkers import check_auth
 from ofscraper.final.final import final
 from ofscraper.content.scrape_paid import scrape_paid_all
@@ -21,8 +21,7 @@ log = logging.getLogger("shared")
 
 class scraperManager(commmandManager):
     def __init__(self,user_action=None,user_first_data=None,user_first_execution=None):
-        super().__init__(self,user_action=user_action,user_first_data=user_first_data,user_first_execution=user_first_execution)
-
+        super().__init__()
     @exit.exit_wrapper
     def runner(self,menu=False):
         check_auth()
