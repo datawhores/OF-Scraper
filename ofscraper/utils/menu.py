@@ -10,7 +10,8 @@ import ofscraper.utils.console as console
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.commands.scraper.manager.execute import runner
+from ofscraper.commands.managers.scraper import scraperManager
+
 
 log = logging.getLogger("shared")
 count = 0
@@ -29,6 +30,7 @@ def get_count():
 def main_menu_action():
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
+    scapingManager=scraperManager()
     while True:
         console.get_shared_console().clear_live()
         try:
@@ -41,7 +43,7 @@ def main_menu_action():
                     continue
                 else:
                     count > 0 and reset_menu_helper()
-                    runner(menu=True)
+                    scapingManager.runner(menu=True)
                     # with prompt_live():
                     #     #allow for final screen to remain
                     #     input("Press Enter to Continue")
@@ -72,7 +74,8 @@ def main_menu_action():
                     elif result_profiles_prompt == "main":
                         break
                     else:
-                        profile_menu_helper(result_profiles_prompt)
+                        profile_menu_helper
+                        (result_profiles_prompt)
             elif result_main_prompt == "merge":
                 merge.merge_runner()
             elif result_main_prompt == "quit":

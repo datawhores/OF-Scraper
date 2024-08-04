@@ -29,7 +29,7 @@ import ofscraper.utils.checkers as checkers
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
-from ofscraper.commands.commands.scraper.manager.execute import runner
+from ofscraper.commands.managers.scraper import scraperManager
 
 log = logging.getLogger("shared")
 
@@ -68,7 +68,9 @@ def daemon_run_helper():
     global jobqueue
     jobqueue = queue.Queue()
     worker_thread = None
-    jobqueue.put(runner)
+    scrapingManager=scraperManager()
+
+    jobqueue.put(scrapingManager.runner)
     if read_args.retriveArgs().output == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
@@ -76,7 +78,7 @@ def daemon_run_helper():
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
-            target=set_schedule, args=[runner], daemon=True
+            target=set_schedule, args=[scrapingManager.runner], daemon=True
         )
         worker_thread.start()
         # Check if jobqueue has function

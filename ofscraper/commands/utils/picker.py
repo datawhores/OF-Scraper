@@ -1,7 +1,7 @@
 import ofscraper.commands.runners.check as check
 import ofscraper.commands.runners.manual as manual
 import ofscraper.commands.runners.metadata.metadata as metadata
-import ofscraper.commands.runners.scraper as actions
+import ofscraper.commands.runners.scraper.scraper as actions
 import ofscraper.utils.args.accessors.read as read_args
 
 
