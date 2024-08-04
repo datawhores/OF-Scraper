@@ -20,7 +20,7 @@ from ofscraper.content.post import post_media_process
 log = logging.getLogger("shared")
 
 class scraperManager(commmandManager):
-    def __init__(self,user_action=None,user_first_data=None,user_first_execution=None):
+    def __init__(self):
         super().__init__()
     @exit.exit_wrapper
     def runner(self,menu=False):
