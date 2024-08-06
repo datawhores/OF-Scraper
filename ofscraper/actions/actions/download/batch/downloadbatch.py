@@ -37,7 +37,7 @@ import ofscraper.utils.logs.other as other_logs
 from ofscraper.utils.system.speed import add_pids_to_download_obj
 from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.mediasplit import get_mediasplits
-from ofscraper.actions.actions.download.batch.worker.consumer  import consumer
+from ofscraper.actions.actions.download.batch.utils.consumer  import consumer
 from ofscraper.actions.utils.threads import handle_threads,start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
 
