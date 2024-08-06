@@ -14,6 +14,8 @@ r"""
 import asyncio
 import pathlib
 import traceback
+from functools import partial
+
 
 import aiofiles
 import arrow
@@ -30,12 +32,6 @@ from ofscraper.actions.utils.general import (
 )
 from ofscraper.actions.actions.download.utils.check.space import (
     downloadspace
-
-
-)
-
-from ofscraper.actions.actions.download.utils.main.cache.resume import (
-    get_data,set_data
 
 
 )
@@ -67,6 +63,8 @@ import ofscraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.dates as dates
 import ofscraper.utils.system.system as system
+import ofscraper.utils.cache as cache
+
 
 class MainDownloadManager(DownloadManager):
     def  __init__(self,multi=False):
@@ -104,7 +102,7 @@ class MainDownloadManager(DownloadManager):
                     common_globals.attempt.set(common_globals.attempt.get(0) + 1)
                     if common_globals.attempt.get() > 1:
                         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
-                    data = await get_data(ele)
+                    data = await self._get_data(ele)
                     total = None
                     placeholderObj = None
                     status = False
@@ -185,7 +183,7 @@ class MainDownloadManager(DownloadManager):
                 common_globals.log.debug(
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await set_data(ele,data)
+                await self._set_data(ele,data)
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = content_type or get_unknown_content_type(ele)
                 if not placeholderObj:
@@ -315,4 +313,17 @@ class MainDownloadManager(DownloadManager):
         await common.set_profile_cache_helper(ele)
         common.add_additional_data(placeholderObj, ele)
 
-        return ele.mediatype, total            
+        return ele.mediatype, total       
+    async def _get_data(self,ele):
+        data = await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(cache.get, f"{ele.id}_{ele.username}_headers"),
+        )
+        # data=cache.get(f"{ele.id}_{ele.username}_headers")
+        return data
+    async def _set_data(self,ele,data):
+        data = await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(cache.set, f"{ele.id}_{ele.username}_headers",data),
+        )
+        return data     
