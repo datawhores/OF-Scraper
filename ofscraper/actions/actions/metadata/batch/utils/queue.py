@@ -18,6 +18,7 @@ from  ofscraper.actions.actions.metadata.utils.desc import desc
 platform_name = platform.system()
 def queue_process(pipe_, task1, total):
     count = 0
+    medias={"images","videos","audios","skipped","forced_skipped"}
     while True:
         try:
             if count == 1:
@@ -25,7 +26,7 @@ def queue_process(pipe_, task1, total):
             try:
                 if not pipe_.poll(timeout=1) :
                     continue
-                results = pipe_.recv()
+                results = pipe_.recv() 
                 if not isinstance(results, list):
                     results = [results]
             except Exception as E:
@@ -34,7 +35,7 @@ def queue_process(pipe_, task1, total):
                 continue
             for result in results:
                 try:
-                    if isinstance(result, list) or isinstance(result, tuple):
+                    if result in medias:
                         media_type= result
                         with common_globals.count_lock:
                             if media_type == "images":
