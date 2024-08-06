@@ -47,10 +47,6 @@ from ofscraper.actions.actions.download.utils.check.size import (
 
 )
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
-from ofscraper.actions.actions.download.utils.main.handlers import (
-    fresh_data_handler_main,
-    resume_data_handler_main,
-)
 from ofscraper.actions.utils.force import force_download
 from ofscraper.actions.actions.download.utils.chunk import (
     get_ideal_chunk_size
@@ -107,11 +103,11 @@ class MainDownloadManager(DownloadManager):
                     placeholderObj = None
                     status = False
                     if data:
-                        total, placeholderObj, status = await resume_data_handler_main(
+                        total, placeholderObj, status = await self._resume_data_handler_main(
                             data, ele, tempholderObj
                         )
                     else:
-                        await fresh_data_handler_main(ele, tempholderObj)
+                        await self._fresh_data_handler_main(ele, tempholderObj)
                     if not status:
                         try:
                             return await self._main_download_sendreq(
@@ -326,4 +322,50 @@ class MainDownloadManager(DownloadManager):
             common_globals.thread,
             partial(cache.set, f"{ele.id}_{ele.username}_headers",data),
         )
-        return data     
+        return data  
+
+    async def _fresh_data_handler_main(self,ele, tempholderObj):
+        common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
+        )
+        resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+        common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
+
+
+    async def _resume_data_handler_main(self,data, ele, tempholderObj):
+        common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+        )
+        common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
+        common_globals.log.debug(
+            f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+        )
+
+        content_type = data.get("content-type").split("/")[-1]
+        total = int(data.get("content-total")) if data.get("content-total") else None
+        resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+        resume_size=self._resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
+
+        common_globals.log.debug(
+            f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total}"
+        )
+        placeholderObj = await placeholder.Placeholders(ele, content_type).init()
+
+        # other
+        check = None
+        if await check_forced_skip(ele, total) == 0:
+            path_to_file_logger(placeholderObj, ele, common_globals.log)
+            check = True
+        elif total == resume_size:
+            common_globals.log.debug(
+                f"{get_medialog(ele)} total==resume_size skipping download"
+            )
+            path_to_file_logger(placeholderObj, ele, common_globals.log)
+            if common_globals.attempt.get() == 0:
+                pass
+            elif not self._multi:
+                self._total_change_helper(None, total)
+            elif self._multi:
+                await self._batch_total_change_helper(None, total)
+            check = True
+        return total, placeholderObj, check   
