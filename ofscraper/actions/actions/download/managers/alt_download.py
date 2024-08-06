@@ -57,7 +57,7 @@ from ofscraper.actions.utils.log import (
     path_to_file_logger,
     temp_file_logger,
 )
-from ofscraper.actions.actions.download.utils.progress.chunk import (
+from ofscraper.actions.actions.download.utils.chunk import (
     get_ideal_chunk_size,
 )
 from ofscraper.actions.utils.retries import get_download_retries

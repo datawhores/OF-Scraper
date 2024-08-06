@@ -56,7 +56,7 @@ from ofscraper.actions.actions.download.utils.main.handlers import (
     resume_data_handler_main,
 )
 from ofscraper.actions.utils.force import force_download
-from ofscraper.actions.actions.download.utils.progress.chunk import (
+from ofscraper.actions.actions.download.utils.chunk import (
     get_ideal_chunk_size
 )
 from ofscraper.actions.utils.retries import get_download_retries
