@@ -129,7 +129,7 @@ class DownloadManager:
             )
         return 0
     
-    def _downloadspace(mediatype=None):
+    def _downloadspace(self,mediatype=None):
         space_limit = config_data.get_system_freesize(mediatype=mediatype)
         if space_limit > 0 and space_limit > system.get_free():
             raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
