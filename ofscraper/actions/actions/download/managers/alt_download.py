@@ -27,10 +27,6 @@ import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.actions.actions.download.utils.alt.attempt import alt_attempt_get
-from ofscraper.actions.actions.download.utils.alt.handlers import (
-    fresh_data_handler_alt,
-    resume_data_handler_alt,
-)
 from ofscraper.actions.actions.download.utils.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
@@ -128,12 +124,12 @@ class AltDownloadManager(DownloadManager):
                     data = await get_data(ele,item)
                     status = False
                     if data:
-                        item, status = await resume_data_handler_alt(
+                        item, status = await self._resume_data_handler_alt(
                             data, item, ele, placeholderObj
                         )
 
                     else:
-                        item, status = await fresh_data_handler_alt(
+                        item, status = await self._fresh_data_handler_alt(
                             item, ele, placeholderObj
                         )
                     if not status:
@@ -354,4 +350,48 @@ class AltDownloadManager(DownloadManager):
             )
         common.add_additional_data(sharedPlaceholderObj, ele)
         return ele.mediatype, video["total"] + audio["total"]
+
+    async def _resume_data_handler_alt(self,data, item, ele, placeholderObj, batch=False):
+        common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+        )
+        common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
+        common_globals.log.debug(
+            f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+        )
+        total = int(data.get("content-total")) if data.get("content-total") else None
+        item["total"] = total
+        resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+        resume_size=self._resume_cleaner(resume_size,total,placeholderObj.tempfilepath)
+
+        common_globals.log.debug(
+            f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }"
+        )
+
+        if await self._check_forced_skip(self,ele, total) == 0:
+            item["total"] = 0
+            return item, True
+        elif total == resume_size:
+            common_globals.log.debug(
+                f"{get_medialog(ele)} total==resume_size skipping download"
+            )
+            temp_file_logger(placeholderObj, ele)
+            if alt_attempt_get(item).get() == 0:
+                pass
+            elif not batch:
+                self._total_change_helper(None, total)
+            elif batch:
+                await self._batch_total_change_helper(None, total)
+            return item, True
+        elif total != resume_size:
+            return item, False
+
+
+    async def _fresh_data_handler_alt(self,item, ele, placeholderObj):
+        common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
+        )
+        resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+        common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
+        return item, False
 

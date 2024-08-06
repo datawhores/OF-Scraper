@@ -103,7 +103,7 @@ class DownloadManager:
             return 0
         return resume_size
     
-    async def check_forced_skip(ele, total):
+    async def _check_forced_skip(ele, total):
         if total is None:
             return
         total = int(total)
