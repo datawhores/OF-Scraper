@@ -249,8 +249,8 @@ class MainDownloadManager(DownloadManager):
         pathstr = str(placeholderObj.trunicated_filepath)
         task1 = self._add_download_job_task(
             f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-            total=total,
-            file=tempholderObj.tempfilepath,
+            total,
+            tempholderObj,
         )
         try:
             fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()

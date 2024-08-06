@@ -47,8 +47,8 @@ class DownloadManager:
             await send_msg(
                     partial(progress_updater.remove_download_multi_job_task, ele.id)
          )
-    def _total_change_helper(self,*arg,**kwargs):
+    async def _total_change_helper(self,*arg,**kwargs):
         if not self._multi:
-            total_change_helper(*arg,**kwargs)
+            await total_change_helper(*arg,**kwargs)
         else:
-            batch_total_change_helper(*arg,**kwargs)
+            await batch_total_change_helper(*arg,**kwargs)
