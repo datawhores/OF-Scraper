@@ -15,8 +15,7 @@ from functools import partial
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.actions.utils.send.message import send_msg
-from ofscraper.actions.actions.download.utils.total import batch_total_change_helper,total_change_helper
-
+from ofscraper.actions.utils.progress.update import update_total
 class DownloadManager:
     def __init__(self, multi=False):
         self._multi=multi
@@ -49,6 +48,23 @@ class DownloadManager:
          )
     async def _total_change_helper(self,*arg,**kwargs):
         if not self._multi:
-            await total_change_helper(*arg,**kwargs)
+            await self._total_change_helper(*arg,**kwargs)
         else:
-            await batch_total_change_helper(*arg,**kwargs)
+            await self._batch_total_change_helper(*arg,**kwargs)
+
+    async def _batch_total_change_helper(self,past_total, new_total):
+        if not new_total and not past_total:
+            return
+        elif not past_total:
+            await send_msg((None, 0, new_total))
+        elif past_total and new_total - past_total != 0:
+            await send_msg((None, 0, new_total - past_total))
+
+
+    async def _total_change_helper(self,past_total, new_total):
+        if not new_total and not past_total:
+            return
+        elif not past_total:
+            await update_total(new_total)
+        elif past_total and new_total - past_total != 0:
+            await update_total(new_total - past_total)
