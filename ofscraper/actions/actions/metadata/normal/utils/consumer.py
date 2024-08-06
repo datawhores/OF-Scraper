@@ -22,7 +22,7 @@ from ofscraper.actions.utils.log import (
 from ofscraper.actions.utils.log import get_medialog
 
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
-from ofscraper.actions.actions.metadata.normal.worker.metadata import metadata
+from ofscraper.actions.actions.metadata.managers.metadata import MetaDataManager
 
 async def consumer(aws, task1, medialist,lock):
     while True:
@@ -36,7 +36,7 @@ async def consumer(aws, task1, medialist,lock):
         else:
             try:
                 ele = data[1]
-                pack = await metadata(*data)
+                pack = await MetaDataManager().metadata(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
             except Exception as e:

@@ -2,7 +2,7 @@ import platform
 import traceback
 
 from ofscraper.actions.utils.send.message import send_msg
-from ofscraper.actions.actions.metadata.batch.worker.metadata import metadata
+from ofscraper.actions.actions.metadata.managers.metadata import MetaDataManager
 import ofscraper.actions.utils.globals as common_globals
 
 
@@ -17,7 +17,7 @@ async def consumer(lock,aws):
             break
         else:
             try:
-                pack = await metadata(*data)
+                pack = await MetaDataManager(multi=True).metadata(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
                 await send_msg((media_type, num_bytes_downloaded, 0))
