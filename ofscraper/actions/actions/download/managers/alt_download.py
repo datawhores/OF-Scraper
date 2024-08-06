@@ -40,7 +40,6 @@ from ofscraper.actions.actions.download.utils.chunk import (
 )
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.actions.actions.download.utils.alt.cache.resume import set_data,get_data
 from ofscraper.classes.sessionmanager.sessionmanager import (
     FORCED_NEW,
     SIGN,
@@ -86,12 +85,12 @@ class AltDownloadManager(DownloadManager):
         audio = await self._alt_download_downloader(audio, c, ele)
         video = await self._alt_download_downloader(video, c, ele)
 
-        post_result = await media_item_post_process_alt(
+        post_result = await self._media_item_post_process_alt(
             audio, video, ele, username, model_id
         )
         if post_result:
             return post_result
-        await media_item_keys_alt(c, audio, video, ele)
+        await self._media_item_keys_alt(c, audio, video, ele)
 
         return await self._handle_result_alt(
             sharedPlaceholderObj, ele, audio, video, username, model_id
@@ -415,7 +414,7 @@ class AltDownloadManager(DownloadManager):
     def _get_item_total(self,item):
         return item["path"].absolute().stat().st_size
 
-    async def media_item_post_process_alt(self,audio, video, ele, username, model_id):
+    async def _media_item_post_process_alt(self,audio, video, ele, username, model_id):
         if (audio["total"] + video["total"]) == 0:
             if ele.mediatype != "forced_skipped":
                 await self._force_download(ele, username, model_id)
@@ -429,7 +428,7 @@ class AltDownloadManager(DownloadManager):
             await self._size_checker(m["path"], ele, m["total"])
 
 
-    async def media_item_keys_alt(self,c, audio, video, ele):
+    async def _media_item_keys_alt(self,c, audio, video, ele):
         for item in [audio, video]:
             item = await keyhelpers.un_encrypt(item, c, ele)
 
