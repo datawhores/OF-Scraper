@@ -38,11 +38,6 @@ from ofscraper.actions.actions.download.utils.alt.item import (
 from ofscraper.actions.utils.params import get_alt_params
 from ofscraper.actions.utils.log import get_medialog
 
-from ofscraper.actions.actions.download.utils.check.forced import (
-    check_forced_skip
-
-)
-
 from ofscraper.actions.actions.download.utils.check.space import (
     downloadspace
 
@@ -220,7 +215,7 @@ class AltDownloadManager(DownloadManager):
                 await set_data(ele,item,data)
 
                 temp_file_logger(placeholderObj, ele)
-                if await check_forced_skip(ele, total) == 0:
+                if await self._check_forced_skip(ele, total) == 0:
                     item["total"] = 0
                     total = item["total"]
                     await self._total_change_helper(total, 0)

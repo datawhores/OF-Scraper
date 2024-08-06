@@ -37,11 +37,6 @@ from ofscraper.actions.actions.download.utils.check.space import (
 )
 
 from ofscraper.actions.utils.log import get_medialog
-
-from ofscraper.actions.actions.download.utils.check.forced import (
-    check_forced_skip
-
-)
 from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
@@ -187,7 +182,7 @@ class MainDownloadManager(DownloadManager):
                         ele, content_type
                     ).init()
                 path_to_file_logger(placeholderObj, ele)
-                if await check_forced_skip(ele, total) == 0:
+                if await self._check_forced_skip(ele, total) == 0:
                     total = 0
                     await self._total_change_helper(total, 0)
                     return (total, tempholderObj.tempfilepath, placeholderObj)
@@ -353,7 +348,7 @@ class MainDownloadManager(DownloadManager):
 
         # other
         check = None
-        if await check_forced_skip(ele, total) == 0:
+        if await self._check_forced_skip(ele, total) == 0:
             path_to_file_logger(placeholderObj, ele, common_globals.log)
             check = True
         elif total == resume_size:

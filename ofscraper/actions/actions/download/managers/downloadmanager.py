@@ -13,11 +13,16 @@ r"""
 """
 from functools import partial
 import  pathlib
+from humanfriendly import format_size
+
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.actions.utils.send.message import send_msg
 from ofscraper.actions.utils.progress.update import update_total
 import ofscraper.utils.settings as settings
+import ofscraper.actions.utils.globals as common_globals
+from ofscraper.actions.utils.log import get_medialog
+
 
 class DownloadManager:
     def __init__(self, multi=False):
@@ -97,3 +102,24 @@ class DownloadManager:
             pathlib.Path(path).unlink(missing_ok=True)
             return 0
         return resume_size
+    
+    async def check_forced_skip(ele, total):
+        if total is None:
+            return
+        total = int(total)
+        if total == 0:
+            return 0
+        file_size_max = settings.get_size_max(mediatype=ele.mediatype)
+        file_size_min = settings.get_size_min(mediatype=ele.mediatype)
+        if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
+            ele.mediatype = "forced_skipped"
+            common_globals.log.debug(
+                f"{get_medialog(ele)} {format_size(total)} over size limit"
+            )
+            return 0
+        elif int(file_size_min) > 0 and (int(total) < int(file_size_min)):
+            ele.mediatype = "forced_skipped"
+            common_globals.log.debug(
+                f"{get_medialog(ele)} {format_size(total)} under size min"
+            )
+        return 0
