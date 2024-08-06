@@ -26,7 +26,6 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.classes.download_retries import download_retry
-from ofscraper.actions.actions.download.utils.alt.attempt import alt_attempt_get
 from ofscraper.actions.actions.download.utils.alt.item import (
     media_item_keys_alt,
     media_item_post_process_alt,
@@ -117,7 +116,7 @@ class AltDownloadManager(DownloadManager):
         async for _ in download_retry():
             with _:
                 try:
-                    _attempt = alt_attempt_get(item)
+                    _attempt = self._alt_attempt_get(item)
                     _attempt.set(_attempt.get(0) + 1)
                     if _attempt.get() > 1:
                         pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
@@ -158,7 +157,7 @@ class AltDownloadManager(DownloadManager):
 
     async def _alt_download_sendreq(self,item, c, ele, placeholderObj):
         try:
-            _attempt = alt_attempt_get(item)
+            _attempt = self._alt_attempt_get(item)
             base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
             url = f"{base_url}{item['origname']}"
             common_globals.log.debug(
@@ -186,7 +185,7 @@ class AltDownloadManager(DownloadManager):
             url = f"{base_url}{item['origname']}"
             headers={"Cookie":f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
             common_globals.log.debug(
-                f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
+                f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
             )
             async with c.requests_async(
                 url=url,
@@ -228,14 +227,14 @@ class AltDownloadManager(DownloadManager):
 
     async def _download_fileobject_writer(self,total, l, ele, placeholderObj,item):
         common_globals.log.debug(
-                        f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
+                        f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
                     )
         if total > constants.getattr("MAX_READ_SIZE"):
             await self._download_fileobject_writer_streamer(ele,total, l, placeholderObj)
         else:
             await self._download_fileobject_writer_reader(ele,total, l, placeholderObj)
         common_globals.log.debug(
-                        f"{get_medialog(ele)} [attempt {alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
+                        f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
         )
 
 
@@ -394,4 +393,11 @@ class AltDownloadManager(DownloadManager):
         resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
         common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
         return item, False
+    
+
+    def _alt_attempt_get(self,item):
+        if item["type"] == "video":
+            return common_globals.attempt
+        if item["type"] == "audio":
+            return common_globals.attempt2
 
