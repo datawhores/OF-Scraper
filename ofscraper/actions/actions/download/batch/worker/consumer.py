@@ -2,7 +2,7 @@ import platform
 import traceback
 
 from ofscraper.actions.utils.send.message import send_msg
-from ofscraper.actions.actions.download.batch.worker.download import download
+from ofscraper.actions.actions.download.runners.download import download
 import ofscraper.actions.utils.globals as common_globals
 
 
@@ -17,7 +17,7 @@ async def consumer(lock,aws):
             break
         else:
             try:
-                pack = await download(*data)
+                pack = await download(*data,multi=True)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
                 await send_msg((media_type, num_bytes_downloaded, 0))
