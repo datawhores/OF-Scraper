@@ -16,6 +16,7 @@ import pathlib
 import traceback
 
 import aiofiles
+import arrow
 import psutil
 from humanfriendly import format_size
 
@@ -49,7 +50,6 @@ from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
 )
-from ofscraper.actions.actions.download.utils.handle_result import handle_result_main
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
 from ofscraper.actions.actions.download.utils.main.handlers import (
     fresh_data_handler_main,
@@ -63,6 +63,11 @@ from ofscraper.actions.actions.download.utils.resume.resume import get_resume_he
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
+import ofscraper.actions.utils.paths.paths as common_paths
+import ofscraper.actions.utils.log as common_logs
+from ofscraper.db.operations_.media import download_media_update
+import ofscraper.utils.dates as dates
+import ofscraper.utils.system.system as system
 
 class MainDownloadManager(DownloadManager):
     def  __init__(self,multi=False):
@@ -86,7 +91,7 @@ class MainDownloadManager(DownloadManager):
             if ele.mediatype != "forced_skipped":
                 await force_download(ele, username, model_id)
             return ele.mediatype, 0
-        return await handle_result_main(result, ele, username, model_id)
+        return await self._handle_results_main(result, ele, username, model_id)
 
 
     async def _main_download_downloader(self,c, ele):
@@ -272,3 +277,43 @@ class MainDownloadManager(DownloadManager):
                 self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
+    async def _handle_results_main(self,result, ele, username, model_id):
+        total, temp, placeholderObj = result
+        path_to_file = placeholderObj.trunicated_filepath
+        await size_checker(temp, ele, total)
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
+        )
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
+        )
+        common_paths.moveHelper(temp, path_to_file, ele)
+        (
+            common_paths.addGlobalDir(placeholderObj.filedir)
+            if system.get_parent_process()
+            else common_paths.addLocalDir(placeholderObj.filedir)
+        )
+        if ele.postdate:
+            newDate = dates.convert_local_time(ele.postdate)
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
+            )
+            common_paths.set_time(path_to_file, newDate)
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
+            )
+
+        if ele.id:
+            await download_media_update(
+                ele,
+                filepath=path_to_file,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+                hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+                size=placeholderObj.size,
+            )
+        await common.set_profile_cache_helper(ele)
+        common.add_additional_data(placeholderObj, ele)
+
+        return ele.mediatype, total            

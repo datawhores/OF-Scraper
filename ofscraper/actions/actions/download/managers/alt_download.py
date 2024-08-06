@@ -18,6 +18,7 @@ import traceback
 
 
 import aiofiles
+import arrow
 import psutil
 from humanfriendly import format_size
 
@@ -51,7 +52,6 @@ from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
 )
-from ofscraper.actions.actions.download.utils.handle_result import handle_result_alt
 from ofscraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,
@@ -70,6 +70,16 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
 )
 import ofscraper.utils.auth.request as auth_requests
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
+import ofscraper.actions.utils.paths.paths as common_paths
+import ofscraper.actions.utils.log as common_logs
+from ofscraper.db.operations_.media import download_media_update
+import ofscraper.actions.utils.general as common
+import ofscraper.utils.dates as dates
+from ofscraper.utils.system.subprocess  import run
+import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
+
+
 
 class AltDownloadManager(DownloadManager):
     def  __init__(self,multi=False):
@@ -102,7 +112,7 @@ class AltDownloadManager(DownloadManager):
             return post_result
         await media_item_keys_alt(c, audio, video, ele)
 
-        return await handle_result_alt(
+        return await self._handle_result_alt(
             sharedPlaceholderObj, ele, audio, video, username, model_id
         )
 
@@ -283,4 +293,71 @@ class AltDownloadManager(DownloadManager):
                 await self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
+            
+    async def _handle_result_alt(
+    sharedPlaceholderObj, ele, audio, video, username, model_id
+):
+        tempPlaceholder = await placeholder.tempFilePlaceholder(
+            ele, f"temp_{ele.id or await ele.final_filename}.mp4"
+        ).init()
+        temp_path = tempPlaceholder.tempfilepath
+        temp_path.unlink(missing_ok=True)
+        t = run(
+            [
+                settings.get_ffmpeg(),
+                "-i",
+                str(video["path"]),
+                "-i",
+                str(audio["path"]),
+                "-c",
+                "copy",
+                "-movflags",
+                "use_metadata_tags",
+                str(temp_path),
+            ],
+        )
+        if t.stderr.decode().find("Output") == -1:
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
+            )
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
+            )
+
+        video["path"].unlink(missing_ok=True)
+        audio["path"].unlink(missing_ok=True)
+
+        common_globals.log.debug(
+            f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
+        )
+        common_paths.moveHelper(temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
+        (
+            common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
+            if system.get_parent_process()
+            else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
+        )
+        if ele.postdate:
+            newDate = dates.convert_local_time(ele.postdate)
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
+            )
+            common_paths.set_time(sharedPlaceholderObj.trunicated_filepath, newDate)
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
+            )
+        if ele.id:
+            await download_media_update(
+                ele,
+                filepath=sharedPlaceholderObj.trunicated_filepath,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+                hashdata=await common.get_hash(
+                    sharedPlaceholderObj, mediatype=ele.mediatype
+                ),
+                size=sharedPlaceholderObj.size,
+            )
+        common.add_additional_data(sharedPlaceholderObj, ele)
+        return ele.mediatype, video["total"] + audio["total"]
 
