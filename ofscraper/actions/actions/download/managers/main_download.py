@@ -23,7 +23,6 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.general as common
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.actions.utils.general import (
     get_unknown_content_type,
@@ -216,18 +215,18 @@ class MainDownloadManager(DownloadManager):
         if total > constants.getattr("MAX_READ_SIZE"):
             await self._download_fileobject_writer_streamer(r, ele, tempholderObj, placeholderObj, total)
         else:
-            await self._download_fileobject_writer_reader(r, tempholderObj,placeholderObj, total)
+            await self._download_fileobject_writer_reader(r,ele, tempholderObj,placeholderObj, total)
         common_globals.log.debug(
                         f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
 
 
-    async def _download_fileobject_writer_reader(self,r, tempholderObj,placeholderObj, total):
+    async def _download_fileobject_writer_reader(self,r, ele,tempholderObj,placeholderObj, total):
         pathstr = str(placeholderObj.trunicated_filepath)
-        task1 = progress_updater.add_download_job_task(
+        task1 =self._add_download_job_task(
             f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
-            file=tempholderObj.tempfilepath,
+            tempholderObj,
 
         )
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
@@ -242,13 +241,13 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                progress_updater.remove_download_job_task(task1)
+                self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
 
     async def _download_fileobject_writer_streamer(self,r, ele, tempholderObj, placeholderObj, total):
         pathstr = str(placeholderObj.trunicated_filepath)
-        task1 = progress_updater.add_download_job_task(
+        task1 = self._add_download_job_task(
             f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
             file=tempholderObj.tempfilepath,
@@ -270,6 +269,6 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                progress_updater.remove_download_job_task(task1)
+                self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E

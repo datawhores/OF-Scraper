@@ -18,7 +18,7 @@ from ofscraper.actions.utils.send.message import send_msg
 class DownloadManager:
     def __init__(self, multi=False):
         self._multi=multi
-    async def _add_download_job_task(self,ele,total,    placeholderObj):
+    async def _add_download_job_task(self,ele,total,placeholderObj):
         pathstr = str(placeholderObj.tempfilepath)
         task1=None
         if not  self._multi:
@@ -33,7 +33,7 @@ class DownloadManager:
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 ele.id,
                 total=total,
-                file=placeholderObj.tempfilepath,
+                file=file or placeholderObj.tempfilepath,
             )
             )
         return task1
