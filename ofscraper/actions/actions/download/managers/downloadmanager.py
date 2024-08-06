@@ -12,10 +12,13 @@ r"""
                                                                                       
 """
 from functools import partial
+import  pathlib
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.actions.utils.send.message import send_msg
 from ofscraper.actions.utils.progress.update import update_total
+import ofscraper.utils.settings as settings
+
 class DownloadManager:
     def __init__(self, multi=False):
         self._multi=multi
@@ -68,3 +71,29 @@ class DownloadManager:
             await update_total(new_total)
         elif past_total and new_total - past_total != 0:
             await update_total(new_total - past_total)
+
+    def _get_resume_header(self,resume_size, total):
+        return (
+            None
+            if not resume_size or not total
+            else {"Range": f"bytes={resume_size}-{total}"}
+        )
+
+
+    def _get_resume_size(self,tempholderObj, mediatype=None):
+        if not settings.get_auto_resume(mediatype=mediatype):
+            pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+            return 0
+        return (
+            0
+            if not pathlib.Path(tempholderObj.tempfilepath).exists()
+            else pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size
+        )
+
+    def _resume_cleaner(self,resume_size,total,path):
+        if not resume_size:
+            return 0
+        elif resume_size > total:
+            pathlib.Path(path).unlink(missing_ok=True)
+            return 0
+        return resume_size

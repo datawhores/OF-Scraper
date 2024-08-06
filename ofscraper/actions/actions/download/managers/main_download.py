@@ -59,7 +59,6 @@ from ofscraper.actions.utils.force import force_download
 from ofscraper.actions.actions.download.utils.progress.chunk import (
     get_ideal_chunk_size
 )
-from ofscraper.actions.actions.download.utils.resume.resume import get_resume_header, get_resume_size,resume_cleaner
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
@@ -167,8 +166,8 @@ class MainDownloadManager(DownloadManager):
 
     async def _send_req_inner(self,c, ele, tempholderObj, placeholderObj=None, total=None):
         try:
-            resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-            headers = get_resume_header(resume_size, total)
+            resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+            headers = self._get_resume_header(resume_size, total)
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
@@ -199,7 +198,7 @@ class MainDownloadManager(DownloadManager):
                     await self._total_change_helper(total, 0)
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:
-                    resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
+                    self._resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
                     await self._download_fileobject_writer(
                         r, ele, tempholderObj, placeholderObj, total
                     )

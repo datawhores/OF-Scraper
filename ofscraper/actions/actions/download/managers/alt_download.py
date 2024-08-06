@@ -62,7 +62,6 @@ from ofscraper.actions.actions.download.utils.progress.chunk import (
 )
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.actions.actions.download.utils.resume.resume import get_resume_header, get_resume_size
 from ofscraper.actions.actions.download.utils.alt.cache.resume import set_data,get_data
 from ofscraper.classes.sessionmanager.sessionmanager import (
     FORCED_NEW,
@@ -188,8 +187,8 @@ class AltDownloadManager(DownloadManager):
         total = None
         try:
 
-            resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-            headers = get_resume_header(resume_size, item["total"])
+            resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+            headers = self._get_resume_header(resume_size, item["total"])
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
