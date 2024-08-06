@@ -204,11 +204,11 @@ class MainDownloadManager(DownloadManager):
 
 
     async def _download_fileobject_writer_reader(self,r, ele,tempholderObj,placeholderObj, total):
-        pathstr = str(placeholderObj.trunicated_filepath)
-        task1 =self._add_download_job_task(
-            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-            total,
-            tempholderObj,
+        task1 =await self._add_download_job_task(
+            ele,
+            total=total,
+            tempholderObj=tempholderObj,
+            placeholderObj=placeholderObj
 
         )
 
@@ -224,16 +224,16 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                self._remove_download_job_task(task1,ele)
+                await self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
 
     async def _download_fileobject_writer_streamer(self,r, ele, tempholderObj, placeholderObj, total):
-        pathstr = str(placeholderObj.trunicated_filepath)
-        task1 = self._add_download_job_task(
-            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-            total,
-            tempholderObj,
+        task1 = await self._add_download_job_task(
+            ele,
+            total=total,
+            tempholderObj=tempholderObj,
+            placeholderObj=placeholderObj
         )
         try:
             fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
@@ -252,7 +252,7 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                self._remove_download_job_task(task1,ele)
+                await self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
     async def _handle_results_main(self,result, ele, username, model_id):
@@ -348,9 +348,7 @@ class MainDownloadManager(DownloadManager):
             path_to_file_logger(placeholderObj, ele, common_globals.log)
             if common_globals.attempt.get() == 0:
                 pass
-            elif not self._multi:
-                self._total_change_helper(None, total)
-            elif self._multi:
-                await self._batch_total_change_helper(None, total)
+            await self._total_change_helper(None, total)
             check = True
-        return total, placeholderObj, check   
+        return total, placeholderObj, check
+       

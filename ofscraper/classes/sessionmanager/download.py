@@ -24,8 +24,11 @@ class download_session(sessionManager.sessionManager):
         retries = retries or get_download_req_retries()
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
-        self.lock=asyncio.Lock()
         log = log or common_globals.log
+        self.lock=asyncio.Lock()
+        self.token_bucket=1024*1024
+        self.max_fill=1024*1024
+        self.fill_task = asyncio.create_task(self._token_filler())
         super().__init__(
             sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )
@@ -70,15 +73,23 @@ class download_session(sessionManager.sessionManager):
         if callable(input):
             return input()
         return input
-
-    async def chunk_with_limit(self,funct):
+    async def _token_filler(self):
+        while True:
+            while self.token_bucket<self.max_fill:
+                async with self.lock:
+                    self.token_bucket += (1024*1024) * 0.2
+                await asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)
+    def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
-            async with self.lock:
-                # while token_bucket < len(chunk):
-                #     await asyncio.sleep(0.1)
-                # token_bucket -= len(chunk)
-                return funct(*args, **kwargs)
-
+            size = args[0]
+            async for chunk in funct(*args, **kwargs):
+                yield chunk
+                # while True:
+                #     async with self.lock:
+                #         if self.token_bucket >=size:
+                #             self.token_bucket -= size
+                #             yield chunk                    
         return wrapper
     
 

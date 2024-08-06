@@ -32,8 +32,8 @@ from ofscraper.db.operations_.media import (
 class DownloadManager:
     def __init__(self, multi=False):
         self._multi=multi
-    async def _add_download_job_task(self,ele,total,placeholderObj):
-        pathstr = str(placeholderObj.tempfilepath)
+    async def _add_download_job_task(self,ele,total=None,placeholderObj=None,tempholderObj=None):
+        pathstr = str(placeholderObj.trunicated_filepath)
         task1=None
         if not  self._multi:
             task1 = progress_updater.add_download_job_task(
@@ -47,10 +47,11 @@ class DownloadManager:
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 ele.id,
                 total=total,
-                file=placeholderObj.tempfilepath,
+                file=tempholderObj.tempfilepath,
             )
             )
         return task1
+
     
     async def _remove_download_job_task(self,task1,ele):
         if not self._multi and task1:
@@ -61,7 +62,7 @@ class DownloadManager:
          )
     async def _total_change_helper(self,*arg,**kwargs):
         if not self._multi:
-            await self._total_change_helper(*arg,**kwargs)
+            await self._normal_total_change_helper(*arg,**kwargs)
         else:
             await self._batch_total_change_helper(*arg,**kwargs)
 
@@ -74,7 +75,7 @@ class DownloadManager:
             await send_msg((None, 0, new_total - past_total))
 
 
-    async def _total_change_helper(self,past_total, new_total):
+    async def _normal_total_change_helper(self,past_total, new_total):
         if not new_total and not past_total:
             return
         elif not past_total:
@@ -108,7 +109,7 @@ class DownloadManager:
             return 0
         return resume_size
     
-    async def _check_forced_skip(ele, total):
+    async def _check_forced_skip(self,ele, total):
         if total is None:
             return
         total = int(total)
@@ -127,14 +128,14 @@ class DownloadManager:
             common_globals.log.debug(
                 f"{get_medialog(ele)} {format_size(total)} under size min"
             )
-        return 0
+            return 0
     
     def _downloadspace(self,mediatype=None):
         space_limit = config_data.get_system_freesize(mediatype=mediatype)
         if space_limit > 0 and space_limit > system.get_free():
             raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
         
-    async def _size_checker(path, ele, total, name=None):
+    async def _size_checker(self,path, ele, total, name=None):
         name = name or ele.filename
         if total == 0:
             return True

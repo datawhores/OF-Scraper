@@ -56,6 +56,9 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 import ofscraper.actions.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache as cache
+import ofscraper.utils.live.updater as progress_updater
+from ofscraper.actions.utils.send.message import send_msg
+
 
 
 
@@ -231,7 +234,9 @@ class AltDownloadManager(DownloadManager):
 
 
     async def _download_fileobject_writer_reader(self,ele,total, res, placeholderObj):
-        task1=await self._add_download_job_task(ele,total,placeholderObj)
+    
+        task1=await self._add_download_job_task(ele,
+        total=total,placeholderObj=placeholderObj)
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         try:
             await fileobject.write(await res.read_())
@@ -275,7 +280,7 @@ class AltDownloadManager(DownloadManager):
                 raise E
             
     async def _handle_result_alt(
-    sharedPlaceholderObj, ele, audio, video, username, model_id
+    self,sharedPlaceholderObj, ele, audio, video, username, model_id
 ):
         tempPlaceholder = await placeholder.tempFilePlaceholder(
             ele, f"temp_{ele.id or await ele.final_filename}.mp4"
@@ -341,7 +346,7 @@ class AltDownloadManager(DownloadManager):
         common.add_additional_data(sharedPlaceholderObj, ele)
         return ele.mediatype, video["total"] + audio["total"]
 
-    async def _resume_data_handler_alt(self,data, item, ele, placeholderObj, batch=False):
+    async def _resume_data_handler_alt(self,data, item, ele, placeholderObj):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
         )
@@ -358,7 +363,7 @@ class AltDownloadManager(DownloadManager):
             f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }"
         )
 
-        if await self._check_forced_skip(self,ele, total) == 0:
+        if await self._check_forced_skip(ele, total) == 0:
             item["total"] = 0
             return item, True
         elif total == resume_size:
@@ -368,10 +373,7 @@ class AltDownloadManager(DownloadManager):
             temp_file_logger(placeholderObj, ele)
             if self._alt_attempt_get(item).get() == 0:
                 pass
-            elif not batch:
-                self._total_change_helper(None, total)
-            elif batch:
-                await self._batch_total_change_helper(None, total)
+            await  self._total_change_helper(None, total)
             return item, True
         elif total != resume_size:
             return item, False
@@ -404,12 +406,6 @@ class AltDownloadManager(DownloadManager):
             partial(cache.set, f"{item['name']}_{ele.id}_{ele.username}_headers",data),
         )
         return data
-
-
-
-
-
-
         
     def _get_item_total(self,item):
         return item["path"].absolute().stat().st_size
@@ -432,3 +428,22 @@ class AltDownloadManager(DownloadManager):
         for item in [audio, video]:
             item = await keyhelpers.un_encrypt(item, c, ele)
 
+    async def _add_download_job_task(self,ele,total=None,placeholderObj=None):
+        pathstr = str(placeholderObj.tempfilepath)
+        task1=None
+        if not  self._multi:
+            task1 = progress_updater.add_download_job_task(
+                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                total=total,
+            )
+        else:
+            await send_msg(
+            partial(
+                progress_updater.add_download_job_multi_task,
+                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                ele.id,
+                total=total,
+                file=placeholderObj.tempfilepath,
+            )
+            )
+        return task1

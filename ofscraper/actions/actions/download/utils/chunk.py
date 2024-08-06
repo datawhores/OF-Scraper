@@ -51,12 +51,11 @@ def get_ideal_chunk_size(total_size, curr_file):
     file_size = total_size - curr_file_size
 
     # Estimate available memory (considering a buffer for system operations)
-    available_memory = get_available_memory()
+    available_memory = min(get_available_memory(),1024*1024)
     # Target a chunk size that utilizes a reasonable portion of available memory
     max_chunk_size = min(
         available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"), constants.getattr("MAX_CHUNK_SIZE")
-    )  # Max 10MB
-    # Adjust chunk size based on file size (consider smaller sizes for larger files, with minimum)
+    ) 
     ideal_chunk_size = min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT"))
     ideal_chunk_size = max(
         ideal_chunk_size - (ideal_chunk_size % 1024),
