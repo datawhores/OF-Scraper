@@ -15,6 +15,7 @@ import asyncio
 import pathlib
 import re
 import traceback
+from functools import partial
 
 
 import aiofiles
@@ -26,22 +27,9 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.classes.download_retries import download_retry
-from ofscraper.actions.actions.download.utils.alt.item import (
-    media_item_keys_alt,
-    media_item_post_process_alt,
-)
+
 from ofscraper.actions.utils.params import get_alt_params
 from ofscraper.actions.utils.log import get_medialog
-
-from ofscraper.actions.actions.download.utils.check.space import (
-    downloadspace
-
-)
-
-from ofscraper.actions.actions.download.utils.check.size import (
-    size_checker
-
-)
 from ofscraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,
@@ -67,6 +55,10 @@ import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess  import run
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+import ofscraper.actions.actions.download.utils.keyhelpers as keyhelpers
+import ofscraper.utils.cache as cache
+
+
 
 
 
@@ -107,7 +99,7 @@ class AltDownloadManager(DownloadManager):
 
 
     async def _alt_download_downloader(self,item, c, ele):
-        downloadspace(mediatype=ele.mediatype)
+        self._downloadspace(mediatype=ele.mediatype)
         placeholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{item['name']}.part"
         ).init()
@@ -120,7 +112,7 @@ class AltDownloadManager(DownloadManager):
                     _attempt.set(_attempt.get(0) + 1)
                     if _attempt.get() > 1:
                         pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
-                    data = await get_data(ele,item)
+                    data = await self._get_data(ele,item)
                     status = False
                     if data:
                         item, status = await self._resume_data_handler_alt(
@@ -207,7 +199,7 @@ class AltDownloadManager(DownloadManager):
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
                 await self._total_change_helper(None, total)
-                await set_data(ele,item,data)
+                await self._set_data(ele,item,data)
 
                 temp_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
@@ -218,7 +210,7 @@ class AltDownloadManager(DownloadManager):
                 elif total != resume_size:
                     await self._download_fileobject_writer(total, l, ele, placeholderObj,item) 
 
-            await size_checker(placeholderObj.tempfilepath, ele, total)
+            await self._size_checker(placeholderObj.tempfilepath, ele, total)
             return item
         except Exception as E:
             await self._total_change_helper(total, 0) if total else None
@@ -375,7 +367,7 @@ class AltDownloadManager(DownloadManager):
                 f"{get_medialog(ele)} total==resume_size skipping download"
             )
             temp_file_logger(placeholderObj, ele)
-            if alt_attempt_get(item).get() == 0:
+            if self._alt_attempt_get(item).get() == 0:
                 pass
             elif not batch:
                 self._total_change_helper(None, total)
@@ -400,4 +392,44 @@ class AltDownloadManager(DownloadManager):
             return common_globals.attempt
         if item["type"] == "audio":
             return common_globals.attempt2
+        
+    async def _get_data(self,ele,item):
+        data = await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(cache.get, f"{item['name']}_{ele.id}_{ele.username}_headers"),
+        ) 
+        return data
+    async def _set_data(self,ele,item,data):
+        data = await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(cache.set, f"{item['name']}_{ele.id}_{ele.username}_headers",data),
+        )
+        return data
+
+
+
+
+
+
+        
+    def _get_item_total(self,item):
+        return item["path"].absolute().stat().st_size
+
+    async def media_item_post_process_alt(self,audio, video, ele, username, model_id):
+        if (audio["total"] + video["total"]) == 0:
+            if ele.mediatype != "forced_skipped":
+                await self._force_download(ele, username, model_id)
+            return ele.mediatype, 0
+        for m in [audio, video]:
+            m["total"] = self._get_item_total(m)
+
+        for m in [audio, video]:
+            if not isinstance(m, dict):
+                return m
+            await self._size_checker(m["path"], ele, m["total"])
+
+
+    async def media_item_keys_alt(self,c, audio, video, ele):
+        for item in [audio, video]:
+            item = await keyhelpers.un_encrypt(item, c, ele)
 

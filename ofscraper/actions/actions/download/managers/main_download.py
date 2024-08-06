@@ -30,17 +30,8 @@ from ofscraper.classes.download_retries import download_retry
 from ofscraper.actions.utils.general import (
     get_unknown_content_type,
 )
-from ofscraper.actions.actions.download.utils.check.space import (
-    downloadspace
-
-
-)
 
 from ofscraper.actions.utils.log import get_medialog
-from ofscraper.actions.actions.download.utils.check.size import (
-    size_checker
-
-)
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
 from ofscraper.actions.utils.force import force_download
 from ofscraper.actions.actions.download.utils.chunk import (
@@ -83,7 +74,7 @@ class MainDownloadManager(DownloadManager):
 
 
     async def _main_download_downloader(self,c, ele):
-        downloadspace(mediatype=ele.mediatype)
+        self._downloadspace(mediatype=ele.mediatype)
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.postid}.part"
         ).init()
@@ -193,7 +184,7 @@ class MainDownloadManager(DownloadManager):
                     )
                 
 
-            await size_checker(tempholderObj.tempfilepath, ele, total)
+            await self._size_checker(tempholderObj.tempfilepath, ele, total)
             return (total, tempholderObj.tempfilepath, placeholderObj)
         except Exception as E:
             await self._total_change_helper(total, 0) if total else None
@@ -268,7 +259,7 @@ class MainDownloadManager(DownloadManager):
     async def _handle_results_main(self,result, ele, username, model_id):
         total, temp, placeholderObj = result
         path_to_file = placeholderObj.trunicated_filepath
-        await size_checker(temp, ele, total)
+        await self._size_checker(temp, ele, total)
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
         )

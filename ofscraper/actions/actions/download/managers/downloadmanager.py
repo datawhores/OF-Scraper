@@ -22,6 +22,11 @@ from ofscraper.actions.utils.progress.update import update_total
 import ofscraper.utils.settings as settings
 import ofscraper.actions.utils.globals as common_globals
 from ofscraper.actions.utils.log import get_medialog
+import ofscraper.utils.config.data as config_data
+import ofscraper.utils.system.free as system
+    from ofscraper.db.operations_.media import (
+    download_media_update
+)
 
 
 class DownloadManager:
@@ -123,3 +128,31 @@ class DownloadManager:
                 f"{get_medialog(ele)} {format_size(total)} under size min"
             )
         return 0
+    
+    def _downloadspace(mediatype=None):
+        space_limit = config_data.get_system_freesize(mediatype=mediatype)
+        if space_limit > 0 and space_limit > system.get_free():
+            raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
+        
+    async def _size_checker(path, ele, total, name=None):
+        name = name or ele.filename
+        if total == 0:
+            return True
+        if not pathlib.Path(path).exists():
+            s = f"{get_medialog(ele)} {path} was not created"
+            raise Exception(s)
+        elif total - pathlib.Path(path).absolute().stat().st_size > 500:
+            s = f"{get_medialog(ele)} {name} size mixmatch target: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
+            raise Exception(s)
+        elif (total - pathlib.Path(path).absolute().stat().st_size) < 0:
+            s = f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
+            raise Exception(s)
+
+    async def _force_download(self,ele, username, model_id):
+        await download_media_update(
+            ele,
+            filepath=None,
+            model_id=model_id,
+            username=username,
+            downloaded=True,
+        )
