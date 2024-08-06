@@ -33,7 +33,6 @@ from ofscraper.actions.utils.general import (
 
 from ofscraper.actions.utils.log import get_medialog
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
-from ofscraper.actions.utils.force import force_download
 from ofscraper.actions.actions.download.utils.chunk import (
     get_ideal_chunk_size
 )
@@ -58,7 +57,7 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} Forcing download because known bad url"
             )
-            await force_download(ele, username, model_id)
+            await self._force_download(ele, username, model_id)
             return ele.mediatype, 0
         result = await self._main_download_downloader(
             c,
@@ -68,7 +67,7 @@ class MainDownloadManager(DownloadManager):
         # special case for zero byte files
         if result[0] == 0:
             if ele.mediatype != "forced_skipped":
-                await force_download(ele, username, model_id)
+                await self._force_download(ele, username, model_id)
             return ele.mediatype, 0
         return await self._handle_results_main(result, ele, username, model_id)
 

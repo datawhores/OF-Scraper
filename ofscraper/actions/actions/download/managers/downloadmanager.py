@@ -24,7 +24,7 @@ import ofscraper.actions.utils.globals as common_globals
 from ofscraper.actions.utils.log import get_medialog
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.system.free as system
-    from ofscraper.db.operations_.media import (
+from ofscraper.db.operations_.media import (
     download_media_update
 )
 

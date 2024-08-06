@@ -32,7 +32,7 @@ from ofscraper.actions.utils.buffer import download_log_clear_helper
 
 from ofscraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.actions.actions.download.normal.worker.consumer import consumer
+from ofscraper.actions.actions.download.normal.utils.consumer import consumer
 
 
 @run
