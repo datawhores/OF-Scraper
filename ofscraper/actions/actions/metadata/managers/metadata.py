@@ -46,7 +46,7 @@ class  MetaDataManager:
         self._multi=multi
     async def metadata(self,c, ele, model_id, username):
         try:
-            self._prepare()
+            self._prepare(ele)
             return await self._change_metadata(c, ele, username, model_id)
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
