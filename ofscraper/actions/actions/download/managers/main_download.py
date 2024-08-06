@@ -64,12 +64,11 @@ from ofscraper.actions.actions.download.utils.resume.resume import get_resume_he
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.actions.actions.download.utils.total import total_change_helper
+from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
 
-class MainDownloadManager:
+class MainDownloadManager(DownloadManager):
     def  __init__(self,multi=False):
-        pass
-        self._multi=multi
-
+        super().__init__(multi=multi)
     async def main_download(self,c, ele, username, model_id):
         common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
         common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")

@@ -15,7 +15,6 @@ import asyncio
 import pathlib
 import re
 import traceback
-from functools import partial
 
 
 import aiofiles
@@ -25,7 +24,6 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.download_retries import download_retry
 from ofscraper.actions.actions.download.utils.alt.attempt import alt_attempt_get
 from ofscraper.actions.actions.download.utils.alt.handlers import (
@@ -72,13 +70,11 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
 )
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.actions.utils.send.message import send_msg
+from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
 
-
-class AltDownloadManager:
+class AltDownloadManager(DownloadManager):
     def  __init__(self,multi=False):
-        pass
-        self._multi=multi
+        super().__init__(multi=multi)
     async def alt_download(self,c, ele, username, model_id):
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with protected media downloader"
@@ -288,30 +284,4 @@ class AltDownloadManager:
                 await self._remove_download_job_task(task1,ele)
             except Exception as E:
                 raise E
-    async def _add_download_job_task(self,ele,total,placeholderObj):
-        pathstr = str(placeholderObj.tempfilepath)
-        task1=None
-        if not  self._multi:
-            task1 = progress_updater.add_download_job_task(
-                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                total=total,
-            )
-        else:
-            await send_msg(
-            partial(
-                progress_updater.add_download_job_multi_task,
-                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                ele.id,
-                total=total,
-                file=placeholderObj.tempfilepath,
-            )
-            )
-        return task1
-    
-    async def _remove_download_job_task(self,task1,ele):
-        if not self._multi and task1:
-            progress_updater.remove_download_job_task(task1)
-        elif self._multi and not task1:
-            await send_msg(
-                    partial(progress_updater.remove_download_multi_job_task, ele.id)
-         )
+
