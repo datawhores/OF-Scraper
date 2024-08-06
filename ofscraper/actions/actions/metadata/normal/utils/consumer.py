@@ -36,20 +36,14 @@ async def consumer(aws, task1, medialist,lock):
         else:
             try:
                 ele = data[1]
-                pack = await MetaDataManager().metadata(*data)
-                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-                media_type, num_bytes_downloaded = pack
+                media_type = await MetaDataManager().metadata(*data)
             except Exception as e:
                 common_globals.log.info(
                     f"{get_medialog(ele)} Download Failed because\n{e}"
                 )
                 common_globals.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
-                num_bytes_downloaded = 0
             try:
-                common_globals.total_bytes_downloaded = (
-                    common_globals.total_bytes_downloaded + num_bytes_downloaded
-                )
                 if media_type == "images":
                     common_globals.photo_count += 1
 
@@ -78,11 +72,7 @@ async def consumer(aws, task1, medialist,lock):
                         skipped=common_globals.skipped,
                         forced_skipped=common_globals.forced_skipped,
                         mediacount=len(medialist),
-                        sumcount=sum_count,
-                        total_bytes=convert_num_bytes(common_globals.total_bytes),
-                        total_bytes_download=convert_num_bytes(
-                            common_globals.total_bytes_downloaded
-                        ),
+                        sumcount=sum_count
                     ),
                     refresh=True,
                     advance=1,

@@ -54,7 +54,7 @@ class  MetaDataManager:
                 f"{get_medialog(ele)} exception {traceback.format_exc()}"
             )
             common_globals.log.traceback_(f"{get_medialog(ele)} Metadata Failed\n")
-            return "skipped", 0
+            return "skipped"
     def _prepare(self,ele):
         if self._multi:
             set_media_log(common_globals.log, ele)
@@ -85,10 +85,8 @@ class  MetaDataManager:
             effected = prevData != await prev_download_media_data(
                 ele, model_id=model_id, username=username
             )
-        return (
-            (ele.mediatype if effected else "forced_skipped"),
-            0,
-        )
+        return ele.mediatype if effected else "forced_skipped"
+        
 
 
     def _metadata_downloaded_helper(self,placeholderObj, prevData):

@@ -12,7 +12,6 @@ from ofscraper.actions.utils.log import (
 )
 
 from ofscraper.actions.utils.paths.paths import addGlobalDir
-from ofscraper.actions.utils.progress.convert import convert_num_bytes
 
 platform_name = platform.system()
 def queue_process(pipe_, task1, total):
@@ -35,14 +34,8 @@ def queue_process(pipe_, task1, total):
             for result in results:
                 try:
                     if isinstance(result, list) or isinstance(result, tuple):
-                        media_type, num_bytes_downloaded, total_size = result
+                        media_type= result
                         with common_globals.count_lock:
-                            common_globals.total_bytes_downloaded = (
-                                common_globals.total_bytes_downloaded + num_bytes_downloaded
-                            )
-                            common_globals.total_bytes = (
-                                common_globals.total_bytes + total_size
-                            )
                             if media_type == "images":
                                 common_globals.photo_count += 1
 
@@ -63,12 +56,6 @@ def queue_process(pipe_, task1, total):
                                     a_count=common_globals.audio_count,
                                     skipped=common_globals.skipped,
                                     forced_skipped=common_globals.forced_skipped,
-                                    total_bytes_download=convert_num_bytes(
-                                        common_globals.total_bytes_downloaded
-                                    ),
-                                    total_bytes=convert_num_bytes(
-                                        common_globals.total_bytes
-                                    ),
                                     mediacount=total,
                                     sumcount=common_globals.video_count
                                     + common_globals.audio_count
