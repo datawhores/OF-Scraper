@@ -74,7 +74,7 @@ async def process_dicts(username, model_id, medialist):
                 concurrency_limit = get_max_workers()
                 lock=asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(aws, task1, medialist,lock))
+                    asyncio.create_task(consumer(aws, task1, medialist,lock,multi=False))
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)

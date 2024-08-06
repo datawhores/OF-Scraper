@@ -13,6 +13,12 @@ from ofscraper.actions.actions.download.utils.check.size import (
     size_checker
 
 )
+import ofscraper.classes.placeholder as placeholder
+from ofscraper.utils.system.subprocess  import run
+import ofscraper.utils.settings as settings
+
+
+
 
 
 async def handle_result_main(result, ele, username, model_id):
@@ -66,7 +72,7 @@ async def handle_result_alt(
     ).init()
     temp_path = tempPlaceholder.tempfilepath
     temp_path.unlink(missing_ok=True)
-    t = subprocess.run(
+    t = run(
         [
             settings.get_ffmpeg(),
             "-i",
@@ -79,8 +85,6 @@ async def handle_result_alt(
             "use_metadata_tags",
             str(temp_path),
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
     if t.stderr.decode().find("Output") == -1:
         common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
@@ -125,4 +129,4 @@ async def handle_result_alt(
             size=sharedPlaceholderObj.size,
         )
     common.add_additional_data(sharedPlaceholderObj, ele)
-    return ele.mediatype, video["total"] + audio["total"]``
+    return ele.mediatype, video["total"] + audio["total"]

@@ -13,31 +13,27 @@ r"""
 import traceback
 
 import ofscraper.actions.utils.globals as common_globals
-from ofscraper.actions.actions.download.normal.alt_download import alt_download
-from ofscraper.actions.actions.download.normal.main_download import main_download
+from ofscraper.actions.actions.download.managers.alt_download import AltDownloadManager
+from ofscraper.actions.actions.download.managers.main_download import MainDownloadManager
 from ofscraper.actions.utils.log import get_medialog
 
 
-async def download(c, ele, model_id, username):
+async def download(c, ele, model_id, username,multi=False):
     try:
         if ele.url:
-            data=await main_download(
+            data=await MainDownloadManager(multi=multi).main_download(
                 c,
                 ele,
                 username,
                 model_id,
             )
         elif ele.mpd:
-            data=await alt_download(
-                c,
+            data=await AltDownloadManager(multi=multi).alt_download( c,
                 ele,
                 username,
-                model_id,
-            )
+                model_id)
         common_globals.log.debug(f"{get_medialog(ele)} Download finished")
         return data
-
-
     except Exception as E:
         common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
         common_globals.log.debug(
