@@ -1,4 +1,4 @@
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.utils.live.progress import (

@@ -17,15 +17,15 @@ import traceback
 
 import arrow
 
-import ofscraper.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.api.common.after import get_after_pre_checks
-from ofscraper.api.common.cache.read import read_full_after_scan_check
-from ofscraper.api.common.check import update_check
+from ofscraper.data.api.common.after import get_after_pre_checks
+from ofscraper.data.api.common.cache.read import read_full_after_scan_check
+from ofscraper.data.api.common.check import update_check
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
@@ -36,7 +36,7 @@ from ofscraper.db.operations_.messages import (
     get_youngest_message_date,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.logs.logs import trace_log_raw, trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 API = "messages"
 log = logging.getLogger("shared")

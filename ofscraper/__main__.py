@@ -1,7 +1,7 @@
 #!/root/OF-Scraper/.venv/bin/python
 import multiprocessing
 
-import ofscraper.runner.load as load
+import ofscraper.runner.open.load as load
 import ofscraper.utils.system.system as system
 
 

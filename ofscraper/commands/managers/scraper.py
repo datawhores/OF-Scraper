@@ -6,14 +6,14 @@ import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.commands.runners.scraper.utils.prepare import prepare
 from ofscraper.utils.checkers import check_auth
-from ofscraper.final.final import final
-from ofscraper.content.scrape_paid import scrape_paid_all
+from ofscraper.runner.close.final.final import final
+from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.actions.actions.download.download import downloader
 import ofscraper.actions.actions.like.like as like_action
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.db.operations as operations
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.content.post import post_media_process
+from ofscraper.data.posts.post import post_media_process
 
 
 

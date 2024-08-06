@@ -1,6 +1,6 @@
 import logging
 
-import ofscraper.api.init as init
+import ofscraper.data.api.init as init
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.config.config as config_

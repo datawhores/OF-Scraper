@@ -7,7 +7,7 @@ import re
 
 import arrow
 
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom_

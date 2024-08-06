@@ -12,9 +12,9 @@ from ofscraper.__version__ import __version__
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.content.post import post_media_process
+from ofscraper.data.posts.post import post_media_process
 import ofscraper.filters.media.main as filters
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.live.tasks as progress_tasks
 from ofscraper.commands.utils.strings import (

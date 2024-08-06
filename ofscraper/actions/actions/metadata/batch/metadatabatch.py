@@ -10,7 +10,7 @@ import aioprocessing
 from aioprocessing import AioPipe
 
 import ofscraper.actions.utils.globals as common_globals
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit

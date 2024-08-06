@@ -10,21 +10,21 @@ from collections import defaultdict
 
 import arrow
 
-import ofscraper.api.archive as archived
-import ofscraper.api.highlights as highlights
-import ofscraper.api.labels as labels
-import ofscraper.api.messages as messages_
-import ofscraper.api.paid as paid_
-import ofscraper.api.pinned as pinned
-import ofscraper.api.profile as profile
-import ofscraper.api.streams as streams
-import ofscraper.api.timeline as timeline
+import ofscraper.data.api.archive as archived
+import ofscraper.data.api.highlights as highlights
+import ofscraper.data.api.labels as labels
+import ofscraper.data.api.messages as messages_
+import ofscraper.data.api.paid as paid_
+import ofscraper.data.api.pinned as pinned
+import ofscraper.data.api.profile as profile
+import ofscraper.data.api.streams as streams
+import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
@@ -34,8 +34,8 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
-from ofscraper.api.common.check import read_check, reset_check, set_check
-from ofscraper.api.common.timeline import get_individual_timeline_post
+from ofscraper.data.api.common.check import read_check, reset_check, set_check
+from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.classes.table.row_names import row_names_all
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
@@ -46,8 +46,8 @@ from ofscraper.db.operations_.media import (
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.final.final_user import  post_user_process
-from ofscraper.final.final_script import final_script
+from ofscraper.runner.close.final.final_user import  post_user_process
+from ofscraper.runner.close.final.final_script import final_script
 
 
 

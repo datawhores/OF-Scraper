@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-import ofscraper.models.selector as userselector
+import ofscraper.data.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file

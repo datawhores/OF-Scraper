@@ -1,4 +1,4 @@
-import ofscraper.api.me as me
+import ofscraper.data.api.me as me
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.encoding as encoding

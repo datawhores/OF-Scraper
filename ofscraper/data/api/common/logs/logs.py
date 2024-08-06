@@ -14,7 +14,7 @@ r"""
 
 import logging
 
-import ofscraper.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.logs.strings as common_logs
 from ofscraper.utils.logs.utils.trace import is_trace
 
 

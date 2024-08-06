@@ -21,7 +21,7 @@ from functools import partial
 import arrow
 import schedule
 
-import ofscraper.models.selector as userselector
+import ofscraper.data.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.before as before_arg

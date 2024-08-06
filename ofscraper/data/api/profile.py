@@ -23,7 +23,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 
-from ..utils import encoding
+from ...utils import encoding
 
 console = Console()
 log = logging.getLogger("shared")

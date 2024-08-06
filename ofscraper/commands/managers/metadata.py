@@ -11,11 +11,11 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.content.post import post_media_process
+from ofscraper.data.posts.post import post_media_process
 from ofscraper.commands.utils.strings import avatar_str, all_paid_metadata_str,all_paid_progress_metadata_str,metadata_activity_str,mark_stray_str
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.managers.manager import commmandManager
-from ofscraper.content.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
+from ofscraper.data.posts.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.db.operations as operations
 from ofscraper.db.operations_.media import (
@@ -25,7 +25,7 @@ from ofscraper.db.operations_.media import (
     get_timeline_media,
 )
 from ofscraper.actions.actions.metadata.metadata import  metadata_process
-from ofscraper.content.post import process_areas
+from ofscraper.data.posts.post import process_areas
 
 log = logging.getLogger("shared")
 

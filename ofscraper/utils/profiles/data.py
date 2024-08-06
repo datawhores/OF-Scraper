@@ -15,7 +15,7 @@ def get_my_info():
     if currentProfile == get_active_profile():
         return currentData
     else:
-        import ofscraper.api.me as me
+        import ofscraper.data.api.me as me
 
         currentProfile = get_active_profile()
         currentData = me.scrape_user()

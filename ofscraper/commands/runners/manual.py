@@ -2,16 +2,16 @@ import logging
 import re
 import traceback
 
-import ofscraper.api.highlights as highlights_
-import ofscraper.api.messages as messages_
-import ofscraper.api.paid as paid
-import ofscraper.api.profile as profile
+import ofscraper.data.api.highlights as highlights_
+import ofscraper.data.api.messages as messages_
+import ofscraper.data.api.paid as paid
+import ofscraper.data.api.profile as profile
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download
-import ofscraper.models.selector as selector
+import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
@@ -19,13 +19,13 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 import ofscraper.utils.system.network as network
-from ofscraper.api.common.timeline import get_individual_timeline_post
+from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import download_manual_str, post_str_manual
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.final.final_script import final_script
+from ofscraper.runner.close.final.final_script import final_script
 
 
 

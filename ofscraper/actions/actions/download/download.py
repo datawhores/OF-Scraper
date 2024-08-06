@@ -11,7 +11,7 @@ import ofscraper.utils.system.system as system
 from ofscraper.actions.utils.log import empty_log
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.final.final_user import post_user_process
+from ofscraper.runner.close.final.final_user import post_user_process
 from ofscraper.commands.utils.strings import (
     download_activity_str,
 )

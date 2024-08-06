@@ -17,7 +17,7 @@ import traceback
 
 from rich.console import Console
 
-import ofscraper.api.subscriptions.common as common
+import ofscraper.data.api.subscriptions.common as common
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils

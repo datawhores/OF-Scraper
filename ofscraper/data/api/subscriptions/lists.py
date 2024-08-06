@@ -23,7 +23,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.utils.live.updater import add_userlist_task
 from ofscraper.utils.context.run_async import run
-from ofscraper.api.common.logs.logs import trace_log_raw,trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw,trace_progress_log
 
 
 log = logging.getLogger("shared")

@@ -3,7 +3,7 @@ import os
 import platform
 import traceback
 
-import ofscraper.runner.run as run
+import ofscraper.runner.open.run as run
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.config as config_

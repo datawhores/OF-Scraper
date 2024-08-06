@@ -16,15 +16,15 @@ import logging
 import traceback
 from functools import partial
 
-import ofscraper.api.archive as archive
-import ofscraper.api.highlights as highlights
-import ofscraper.api.labels as labels_api
-import ofscraper.api.messages as messages
-import ofscraper.api.paid as paid
-import ofscraper.api.pinned as pinned
-import ofscraper.api.profile as profile
-import ofscraper.api.streams as streams
-import ofscraper.api.timeline as timeline
+import ofscraper.data.api.archive as archive
+import ofscraper.data.api.highlights as highlights
+import ofscraper.data.api.labels as labels_api
+import ofscraper.data.api.messages as messages
+import ofscraper.data.api.paid as paid
+import ofscraper.data.api.pinned as pinned
+import ofscraper.data.api.profile as profile
+import ofscraper.data.api.streams as streams
+import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
@@ -36,7 +36,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
-from ofscraper.api.common.cache.write import set_after_checks
+from ofscraper.data.api.common.cache.write import set_after_checks
 from ofscraper.commands.utils.strings import all_paid_model_id_str, all_paid_str
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.db.operations_.profile import (

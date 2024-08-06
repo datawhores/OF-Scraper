@@ -7,7 +7,7 @@ import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
-import ofscraper.models.retriver as retriver
+import ofscraper.data.models.retriver as retriver
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.user as user_helper

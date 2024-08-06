@@ -15,7 +15,7 @@ import asyncio
 import logging
 import traceback
 
-import ofscraper.api.profile as profile
+import ofscraper.data.api.profile as profile
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants

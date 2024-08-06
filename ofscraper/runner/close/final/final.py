@@ -11,8 +11,8 @@ r"""
                                                                                       f
 """
 
-from ofscraper.final.final_log import final_log
-from ofscraper.final.final_script import final_script
+from ofscraper.runner.close.final.final_log import final_log
+from ofscraper.runner.close.final.final_script import final_script
 def final(normal_data,scrape_paid_data,user_first_data,users):
     final_script(users)
     final_log(normal_data + scrape_paid_data + user_first_data)
