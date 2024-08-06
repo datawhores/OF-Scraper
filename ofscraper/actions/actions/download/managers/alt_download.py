@@ -62,7 +62,6 @@ from ofscraper.actions.actions.download.utils.progress.chunk import (
 )
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.actions.actions.download.utils.total import total_change_helper
 from ofscraper.actions.actions.download.utils.resume.resume import get_resume_header, get_resume_size
 from ofscraper.actions.actions.download.utils.alt.cache.resume import set_data,get_data
 from ofscraper.classes.sessionmanager.sessionmanager import (
@@ -208,14 +207,14 @@ class AltDownloadManager(DownloadManager):
                 common_globals.log.debug(
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await total_change_helper(None, total)
+                await self._total_change_helper(None, total)
                 await set_data(ele,item,data)
 
                 temp_file_logger(placeholderObj, ele)
                 if await check_forced_skip(ele, total) == 0:
                     item["total"] = 0
                     total = item["total"]
-                    await total_change_helper(total, 0)
+                    await self._total_change_helper(total, 0)
                     return item
                 elif total != resume_size:
                     await self._download_fileobject_writer(total, l, ele, placeholderObj,item) 
@@ -223,7 +222,7 @@ class AltDownloadManager(DownloadManager):
             await size_checker(placeholderObj.tempfilepath, ele, total)
             return item
         except Exception as E:
-            await total_change_helper(total, 0) if total else None
+            await self._total_change_helper(total, 0) if total else None
             raise E
 
 

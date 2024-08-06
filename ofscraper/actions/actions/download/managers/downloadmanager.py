@@ -15,6 +15,8 @@ from functools import partial
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.actions.utils.send.message import send_msg
+from ofscraper.actions.actions.download.utils.total import batch_total_change_helper,total_change_helper
+
 class DownloadManager:
     def __init__(self, multi=False):
         self._multi=multi
@@ -33,7 +35,7 @@ class DownloadManager:
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 ele.id,
                 total=total,
-                file=file or placeholderObj.tempfilepath,
+                file=placeholderObj.tempfilepath,
             )
             )
         return task1
@@ -45,3 +47,8 @@ class DownloadManager:
             await send_msg(
                     partial(progress_updater.remove_download_multi_job_task, ele.id)
          )
+    def _total_change_helper(self,*arg,**kwargs):
+        if not self._multi:
+            total_change_helper(*arg,**kwargs)
+        else:
+            batch_total_change_helper(*arg,**kwargs)

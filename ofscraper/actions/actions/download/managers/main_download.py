@@ -62,7 +62,6 @@ from ofscraper.actions.actions.download.utils.progress.chunk import (
 from ofscraper.actions.actions.download.utils.resume.resume import get_resume_header, get_resume_size,resume_cleaner
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.actions.actions.download.utils.total import total_change_helper
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
 
 class MainDownloadManager(DownloadManager):
@@ -172,7 +171,7 @@ class MainDownloadManager(DownloadManager):
                 url=ele.url, headers=headers,
             ) as r:
                 total = int(r.headers["content-length"])
-                await total_change_helper(None, total)
+                await self._total_change_helper(None, total)
                 data = {
                     "content-total": total,
                     "content-type": r.headers.get("content-type"),
@@ -192,7 +191,7 @@ class MainDownloadManager(DownloadManager):
                 path_to_file_logger(placeholderObj, ele)
                 if await check_forced_skip(ele, total) == 0:
                     total = 0
-                    await total_change_helper(total, 0)
+                    await self._total_change_helper(total, 0)
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:
                     resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
@@ -204,7 +203,7 @@ class MainDownloadManager(DownloadManager):
             await size_checker(tempholderObj.tempfilepath, ele, total)
             return (total, tempholderObj.tempfilepath, placeholderObj)
         except Exception as E:
-            await total_change_helper(total, 0) if total else None
+            await self._total_change_helper(total, 0) if total else None
             raise E
 
 
@@ -225,10 +224,11 @@ class MainDownloadManager(DownloadManager):
         pathstr = str(placeholderObj.trunicated_filepath)
         task1 =self._add_download_job_task(
             f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-            total=total,
+            total,
             tempholderObj,
 
         )
+
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         try:
             await fileobject.write(await r.read_())
