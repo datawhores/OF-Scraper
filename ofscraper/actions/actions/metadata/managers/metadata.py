@@ -88,7 +88,6 @@ class  MetaDataManager:
         return ele.mediatype if effected else "forced_skipped"
         
 
-
     def _metadata_downloaded_helper(self,placeholderObj, prevData):
         if read_args.retriveArgs().metadata == "check":
             return prevData["downloaded"] if prevData else None

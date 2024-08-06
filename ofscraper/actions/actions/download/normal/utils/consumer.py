@@ -24,7 +24,11 @@ from ofscraper.actions.actions.download.runners.download import download
 
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
 
+
 async def consumer(aws, task1, medialist,lock):
+
+    desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
+
     while True:
         ele=None
         async with lock:
@@ -71,7 +75,7 @@ async def consumer(aws, task1, medialist,lock):
                 log_download_progress(media_type)
                 progress_updater.update_download_task(
                     task1,
-                    description=common_globals.desc.format(
+                    description=desc.format(
                         p_count=common_globals.photo_count,
                         v_count=common_globals.video_count,
                         a_count=common_globals.audio_count,

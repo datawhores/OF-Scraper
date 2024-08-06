@@ -16,7 +16,7 @@ from ofscraper.actions.utils.paths.paths import addGlobalDir
 platform_name = platform.system()
 def queue_process(pipe_, task1, total):
     count = 0
-    # shared globals
+    desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount})"
     while True:
         try:
             if count == 1:
@@ -50,7 +50,7 @@ def queue_process(pipe_, task1, total):
                             log_download_progress(media_type)
                             progress_updater.update_metadata_task(
                                 task1,
-                                description=common_globals.desc.format(
+                                description=desc.format(
                                     p_count=common_globals.photo_count,
                                     v_count=common_globals.video_count,
                                     a_count=common_globals.audio_count,
