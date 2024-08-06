@@ -31,6 +31,8 @@ from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.actions.actions.metadata.normal.utils.consumer import consumer
+from  ofscraper.actions.actions.metadata.utils.desc import desc
+
 
 
 @run
@@ -47,7 +49,7 @@ async def process_dicts(username, model_id, medialist):
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_metadata_task(
-                    common_globals.desc.format(
+                    desc.format(
                         p_count=0,
                         v_count=0,
                         a_count=0,

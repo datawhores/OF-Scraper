@@ -17,9 +17,7 @@ async def consumer(lock,aws):
             break
         else:
             try:
-                pack = await MetaDataManager(multi=True).metadata(*data)
-                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-                media_type = pack
+                media_type= await MetaDataManager(multi=True).metadata(*data)
                 await send_msg(media_type)
             except Exception as e:
                 common_globals.log.info(f"Download Failed because\n{e}")

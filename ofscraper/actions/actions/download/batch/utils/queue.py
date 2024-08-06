@@ -13,11 +13,11 @@ from ofscraper.actions.utils.log import (
 
 from ofscraper.actions.utils.paths.paths import addGlobalDir
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
+from  ofscraper.actions.actions.download.utils.desc import desc
 
 platform_name = platform.system()
 def queue_process(pipe_, task1, total):
     count = 0
-    desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
     while True:
         try:
             if count == 1:

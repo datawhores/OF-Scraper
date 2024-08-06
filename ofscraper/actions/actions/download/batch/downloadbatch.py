@@ -40,7 +40,7 @@ from ofscraper.actions.utils.mediasplit import get_mediasplits
 from ofscraper.actions.actions.download.batch.utils.consumer  import consumer
 from ofscraper.actions.utils.threads import handle_threads,start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
-
+from  ofscraper.actions.actions.download.utils.desc import desc
 platform_name = platform.system()
 
 
@@ -88,7 +88,7 @@ def process_dicts(username, model_id, filtered_medialist):
             add_pids_to_download_obj(map(lambda x: x.pid, processes))
 
             task1 = progress_updater.add_download_task(
-                common_globals.desc.format(
+                desc.format(
                     p_count=0,
                     v_count=0,
                     a_count=0,
@@ -125,7 +125,7 @@ def process_dicts(username, model_id, filtered_medialist):
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():
-                [process.terminate() for process in processes]
+                [process.terminate() for process in processes or []]
                 raise KeyboardInterrupt
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
@@ -136,7 +136,7 @@ def process_dicts(username, model_id, filtered_medialist):
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
-                [process.terminate() for process in processes]
+                [process.terminate() for process in processes or []]
                 raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():

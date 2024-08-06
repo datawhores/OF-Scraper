@@ -23,11 +23,10 @@ from ofscraper.actions.utils.log import get_medialog
 from ofscraper.actions.actions.download.runners.download import download
 
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
-
+from  ofscraper.actions.actions.download.utils.desc import desc
 
 async def consumer(aws, task1, medialist,lock):
 
-    desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
     while True:
         ele=None

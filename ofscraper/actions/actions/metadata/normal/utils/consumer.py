@@ -22,10 +22,10 @@ from ofscraper.actions.utils.log import (
 from ofscraper.actions.utils.log import get_medialog
 
 from ofscraper.actions.actions.metadata.managers.metadata import MetaDataManager
+from  ofscraper.actions.actions.metadata.utils.desc import desc
+
 
 async def consumer(aws, task1, medialist,lock):
-    desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount})"
-
     while True:
         ele=None
         async with lock:
