@@ -131,7 +131,7 @@ def add_stdout_handler(log,clear=True,rich_array=None):
     sh.addFilter(log_class.NoTraceBack())
     tx = TextHandler()
     tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
-    tx.setFormatter(log_class.SensitiveFormatter(format))
+    tx.setFormatter(log_class.LogFileFormatter(format))
     log.addHandler(sh)
     log.addHandler(tx)
 
