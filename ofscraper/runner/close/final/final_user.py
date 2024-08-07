@@ -11,10 +11,17 @@ def post_user_process(username, model_id, medialist, postlist):
         return
     log.debug(f"Running post script for {username}")
     try:
-        master_dump={"username":username,"model_id":model_id,"media":list(map(lambda x: x.media, medialist)),"posts":list(map(lambda x: x.post, postlist))}
+        post_dump=list(map(lambda x: x.post, postlist))
+        media_dump=list(map(lambda x: x.media, medialist))
+
+        master_dump={"username":username,"model_id":model_id,"media":media_dump,"posts":post_dump}
         run(
             [
                 settings.get_post_download_script(),
+                username,
+                model_id,
+                json.dumps(media_dump),
+                json.dumps(post_dump),
                 json.dumps(master_dump),
             ]
         )
