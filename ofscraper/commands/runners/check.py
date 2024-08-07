@@ -61,14 +61,19 @@ MEDIA_KEY = ["id", "postid", "username"]
 
 def process_download_cart():
     global usernames
+    global cart_dict
     while True:
         usernames=set()
+        cart_dict={}
+
         while not table.row_queue.empty():
             try:
                 process_item()
             except Exception:
                 # handle getting new downloads
                 None
+        for key,val in cart_dict.items():
+            post_user_process(val["username"],key,val["media"],val["post"])
         if len(usernames) > 0:
             final_script(list(usernames))
         time.sleep(10)
@@ -77,7 +82,6 @@ def process_download_cart():
 
 def process_item():
     global app
-    global usernames
     if process_download_cart.counter == 0:
         if not network.check_cdm():
             log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
@@ -115,15 +119,15 @@ def process_item():
                 operations.table_init_create(model_id=model_id, username=username)
                 textDownloader(post, username=username)
                 values = downloadnormal.process_dicts(username, model_id, [media])
-                post_user_process(username,model_id,media,post)
                 if values is None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
             else:
                 raise Exception("Issue getting download")
+ 
 
             log.info("Download Finished")
+            update_globals(model_id,username,post,media)
             table.app.update_cell(key, "download_cart", "[downloaded]")
-            usernames.add(username)
             break
         except Exception as E:
             if count == 1:
@@ -135,6 +139,14 @@ def process_item():
             log.traceback_(traceback.format_exc())
     if table.row_queue.empty():
         log.info("Download cart is currently empty")
+
+def update_globals(model_id,username,post,media):
+    global cart_dict
+    global usernames
+    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id})
+    cart_dict[model_id]["post"].extend([post])
+    cart_dict[model_id]["media"].extend([media])
+    usernames.add(username)
 
 
 @run
