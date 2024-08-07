@@ -355,7 +355,7 @@ def get_download_limit(config=None,mediatype=None):
                 .get((mediatype or "").lower(), {})
                 .get("download_limit")
                 or config.get("download_limit",)
-                or config.get("download_options", {}).get("download_limit")
+                or config.get("performance_options", {}).get("download_limit")
                 or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
             )
         )

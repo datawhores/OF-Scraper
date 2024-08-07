@@ -77,7 +77,7 @@ class MultiProcessDownloadSpeed:
                 previous_stats = self.previous_stats[pid]
                 previous_time=self.previous_time[pid]
                 previous_speed=self.previous_speed[pid]
-                if curr_time-previous_time<1.6:
+                if curr_time-previous_time<1.5:
                    total_bytes_second=total_bytes_second+previous_speed
                 else:
                   self.previous_stats[pid] = curr_stats  # Update previous stats
