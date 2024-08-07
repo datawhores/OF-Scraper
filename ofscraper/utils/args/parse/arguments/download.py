@@ -50,7 +50,7 @@ download_threads_option = click.option(
 download_limit_option = click.option(
     "-dl",
     "download_limit",
-    help="restricts the speed of downloads using 'token bucket'",
+    help="restricts the speed of downloads per thread'",
     default=None,
     type=parse_size,
 )

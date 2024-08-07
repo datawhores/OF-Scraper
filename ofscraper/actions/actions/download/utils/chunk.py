@@ -14,8 +14,9 @@ r"""
 import pathlib
 
 import psutil
-
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
+
 
 AVALIBLE_MEMORY=None
 
@@ -51,7 +52,7 @@ def get_ideal_chunk_size(total_size, curr_file):
     file_size = total_size - curr_file_size
 
     # Estimate available memory (considering a buffer for system operations)
-    available_memory = min(get_available_memory(),1024*1024)
+    available_memory = min(get_available_memory(),settings.get_download_limit())
     # Target a chunk size that utilizes a reasonable portion of available memory
     max_chunk_size = min(
         available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"), constants.getattr("MAX_CHUNK_SIZE")
