@@ -345,6 +345,22 @@ def get_threads(config=None):
         threads = int(constants_attr.getattr("THREADS_DEFAULT"))
     return threads
 
+@wrapper.config_reader
+def get_download_limit(config=None,mediatype=None):
+    if config is False:
+        return constants.DOWNLOAD_LIMIT_DEFAULT
+    return parse_size(
+            str(
+                config.get("overwrites", {})
+                .get((mediatype or "").lower(), {})
+                .get("download_limit")
+                or config.get("download_limit",)
+                or config.get("download_options", {}).get("download_limit")
+                or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
+            )
+        )
+    
+
 
 @wrapper.config_reader
 def get_ffmpeg(config=None):

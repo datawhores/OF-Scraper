@@ -213,3 +213,6 @@ def get_max_length(mediatype=None):
     if read_args.retriveArgs().length_max is not None:
         return read_args.retriveArgs().length_max
     return config_data.get_max_length(mediatype=mediatype)
+
+def get_download_limit():
+    return read_args.retriveArgs().download_limit or config_data.get_download_limit()

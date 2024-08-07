@@ -14,6 +14,8 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
     TOO_MANY,
 )
+import ofscraper.utils.settings as settings
+
 
 
 
@@ -25,6 +27,8 @@ class TokenBucket:
         self.last_update = time.time()
 
     async def consume(self, tokens):
+        if self.capacity<=0:
+            return True
         while True:
             now = time.time()
             delta = now - self.last_update
@@ -51,7 +55,7 @@ class download_session(sessionManager.sessionManager):
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
         self.lock=asyncio.Lock()
-        self.token_bucket=TokenBucket(1024 * 1024*5, 1024 * 1024*5) 
+        self.token_bucket=TokenBucket(settings.get_download_limit(), settings.get_download_limit()) 
         super().__init__(
             sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )

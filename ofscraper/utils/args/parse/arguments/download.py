@@ -1,4 +1,5 @@
 import cloup as click
+from humanfriendly import parse_size
 
 no_auto_resume_option = click.option(
     "-ar",
@@ -44,4 +45,12 @@ download_threads_option = click.option(
     help="Number of threads to use (minimum 1)",
     default=None,
     type=int,
+)
+
+download_limit_option = click.option(
+    "-dl",
+    "download_limit",
+    help="restricts the speed of downloads using 'token bucket'",
+    default=None,
+    type=parse_size,
 )
