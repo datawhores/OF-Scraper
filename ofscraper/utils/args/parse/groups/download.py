@@ -6,7 +6,6 @@ from ofscraper.utils.args.parse.arguments.download import (
     download_limit_option,
     show_download_bars_option,
     no_auto_resume_option,
-    show_download_bars_option,
 )
 
 download_options = click.option_group(
