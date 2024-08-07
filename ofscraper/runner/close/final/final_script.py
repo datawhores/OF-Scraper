@@ -28,7 +28,7 @@ def final_script(users):
     data=[]
     for ele  in users:
         if isinstance(ele,Model):
-            data.append(vars(ele)["_model"])
+            data.append(ele.model)
         elif isinstance(ele,dict):
             data.append(ele)
     out_dict={"users":users,

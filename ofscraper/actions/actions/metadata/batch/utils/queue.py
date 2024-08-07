@@ -35,7 +35,13 @@ def queue_process(pipe_, task1, total):
                 continue
             for result in results:
                 try:
-                    if result in medias:
+                    if result is None or result == "None":
+                        count = count + 1
+                    elif isinstance(result, dict) and "dir_update" in result:
+                        addGlobalDir(result["dir_update"])
+                    elif callable(result):
+                        job_progress_helper(result)
+                    elif result in medias:
                         media_type= result
                         with common_globals.count_lock:
                             if media_type == "images":
@@ -73,12 +79,7 @@ def queue_process(pipe_, task1, total):
                                 + common_globals.forced_skipped,
                             )
 
-                    elif result is None or result == "None":
-                        count = count + 1
-                    elif isinstance(result, dict) and "dir_update" in result:
-                        addGlobalDir(result["dir_update"])
-                    elif callable(result):
-                        job_progress_helper(result)
+
                 except Exception as E:
                     common_globals.log.traceback_(E)
                     common_globals.log.traceback_(traceback.format_exc())
