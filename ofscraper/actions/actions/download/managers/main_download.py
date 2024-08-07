@@ -240,12 +240,10 @@ class MainDownloadManager(DownloadManager):
         )
         try:
             fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
-            download_sleep = constants.getattr("DOWNLOAD_SLEEP")
             chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
             async for chunk in r.iter_chunked(chunk_size):
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)
-                (await asyncio.sleep(download_sleep)) if download_sleep else None
         except Exception as E:
             raise E
         finally:

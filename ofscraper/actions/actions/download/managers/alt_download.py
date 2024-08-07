@@ -261,13 +261,11 @@ class AltDownloadManager(DownloadManager):
 
         task1=await self._add_download_job_task(ele,total,placeholderObj)
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
-        download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
         try:
             async for chunk in res.iter_chunked(chunk_size):
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, placeholderObj)
-                (await asyncio.sleep(download_sleep)) if download_sleep else None
         except Exception as E:
             raise E
         finally:
