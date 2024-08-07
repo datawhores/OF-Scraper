@@ -51,7 +51,7 @@ download_limit_option = click.option(
     "-dl",
     "--download-limit",
     "download_limit",
-    help="restricts the speed of downloads per thread",
+    help="the amount of data per second to restrict downloads to per thread",
     default=None,
     type=parse_size,
 )
