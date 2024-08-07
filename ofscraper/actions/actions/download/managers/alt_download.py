@@ -173,6 +173,8 @@ class AltDownloadManager(DownloadManager):
 
             resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
             headers = self._get_resume_header(resume_size, item["total"])
+            #reset total
+            total=None
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
@@ -223,10 +225,11 @@ class AltDownloadManager(DownloadManager):
         common_globals.log.debug(
                         f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
                     )
-        if total > constants.getattr("MAX_READ_SIZE"):
-            await self._download_fileobject_writer_streamer(ele,total, l, placeholderObj)
-        else:
-            await self._download_fileobject_writer_reader(ele,total, l, placeholderObj)
+        await self._download_fileobject_writer_streamer(ele,total, l, placeholderObj)
+        # if total > constants.getattr("MAX_READ_SIZE"):
+        #     await self._download_fileobject_writer_streamer(ele,total, l, placeholderObj)
+        # else:
+        #     await self._download_fileobject_writer_reader(ele,total, l, placeholderObj)
         common_globals.log.debug(
                         f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
         )

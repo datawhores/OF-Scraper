@@ -1012,6 +1012,22 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "limiter"
+version = "0.5.0"
+description = "⏲️ Easy rate limiting for Python. Rate limiting async and thread-safe decorators and context managers that use a token bucket algorithm."
+category = "main"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "limiter-0.5.0-py2.py3-none-any.whl", hash = "sha256:920ee7587596b6421690ee2009a755a9970b743001567ae1005310d9b654985c"},
+    {file = "limiter-0.5.0.tar.gz", hash = "sha256:71b9e972e04f1dcf3fa9b541ca3a16dcc1be6ce0d6a12407b25a0888a57e612f"},
+]
+
+[package.dependencies]
+strenum = ">=0.4.7,<0.5.0"
+token-bucket = ">=0.3.0,<0.4.0"
+
+[[package]]
 name = "linkify-it-py"
 version = "2.0.3"
 description = "Links recognition library with FULL unicode support."
@@ -2318,6 +2334,23 @@ standalone = ["Sphinx (>=5)"]
 test = ["pytest"]
 
 [[package]]
+name = "strenum"
+version = "0.4.15"
+description = "An Enum that inherits from str."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "StrEnum-0.4.15-py3-none-any.whl", hash = "sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659"},
+    {file = "StrEnum-0.4.15.tar.gz", hash = "sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff"},
+]
+
+[package.extras]
+docs = ["myst-parser[linkify]", "sphinx", "sphinx-rtd-theme"]
+release = ["twine"]
+test = ["pylint", "pytest", "pytest-black", "pytest-cov", "pytest-pylint"]
+
+[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -2351,6 +2384,18 @@ typing-extensions = ">=4.4.0,<5.0.0"
 
 [package.extras]
 syntax = ["tree-sitter (>=0.20.1,<0.21.0)", "tree_sitter_languages (>=1.7.0)"]
+
+[[package]]
+name = "token-bucket"
+version = "0.3.0"
+description = "Very fast implementation of the token bucket algorithm."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "token_bucket-0.3.0-py2.py3-none-any.whl", hash = "sha256:6df24309e3cf5b808ae5ef714a3191ec5b54f48c34ef959e4882eef140703369"},
+    {file = "token_bucket-0.3.0.tar.gz", hash = "sha256:979571c99db2ff9e651f2b2146a62b2ebadf7de6c217a8781698282976cb675f"},
+]
 
 [[package]]
 name = "tomlkit"
@@ -2754,4 +2799,4 @@ pyinstaller = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
-content-hash = "157b84add6b18b2805e9489d8bace0426bc605a089687442b756f9b471c5f494"
+content-hash = "6e1e777ff0026fccdf5600fe6287860e266e501540c4e2ccc975e2cec140cca4"

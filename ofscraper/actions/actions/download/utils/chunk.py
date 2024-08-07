@@ -56,11 +56,9 @@ def get_ideal_chunk_size(total_size, curr_file):
     max_chunk_size = min(
         available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"), constants.getattr("MAX_CHUNK_SIZE")
     ) 
-    ideal_chunk_size = min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT"))
-    ideal_chunk_size = max(
-        ideal_chunk_size - (ideal_chunk_size % 1024),
-        constants.getattr("MIN_CHUNK_SIZE"),
-    )  # Minimum 64KB chunk
+    ideal_chunk_size = max(min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT")),constants.getattr("MIN_CHUNK_SIZE"))
+    ideal_chunk_size =ideal_chunk_size - (ideal_chunk_size % 1024)
+    
     return ideal_chunk_size
 
 

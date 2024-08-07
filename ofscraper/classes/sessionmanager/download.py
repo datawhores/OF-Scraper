@@ -1,6 +1,6 @@
 import contextlib
+import time
 import asyncio
-
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.actions.utils.globals as common_globals
@@ -16,6 +16,31 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
 )
 
 
+
+class TokenBucket:
+    def __init__(self, capacity, fill_rate):
+        self.capacity = capacity
+        self.fill_rate = fill_rate
+        self.tokens = 0
+        self.last_update = time.time()
+
+    async def consume(self, tokens):
+        while True:
+            now = time.time()
+            delta = now - self.last_update
+            self.last_update = now
+            self.tokens = min(self.capacity, self.tokens + delta * self.fill_rate)
+
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return True
+
+            # Not enough tokens, wait for refill
+            await asyncio.sleep(0.01)
+
+
+
+
 class download_session(sessionManager.sessionManager):
     def __init__(
         self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
@@ -26,9 +51,7 @@ class download_session(sessionManager.sessionManager):
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
         self.lock=asyncio.Lock()
-        self.token_bucket=1024*1024
-        self.max_fill=1024*1024
-        self.fill_task = asyncio.create_task(self._token_filler())
+        self.token_bucket=TokenBucket(1024 * 1024*5, 1024 * 1024*5) 
         super().__init__(
             sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )
@@ -73,23 +96,17 @@ class download_session(sessionManager.sessionManager):
         if callable(input):
             return input()
         return input
-    async def _token_filler(self):
-        while True:
-            while self.token_bucket<self.max_fill:
-                async with self.lock:
-                    self.token_bucket += (1024*1024) * 0.2
-                await asyncio.sleep(0.1)
-            await asyncio.sleep(0.1)
     def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
-            size = args[0]
-            async for chunk in funct(*args, **kwargs):
-                yield chunk
-                # while True:
-                #     async with self.lock:
-                #         if self.token_bucket >=size:
-                #             self.token_bucket -= size
-                #             yield chunk                    
+            while True:
+                try:
+                    chunk=await anext(funct(*args, **kwargs))
+                    size=len(chunk)
+                    await self.token_bucket.consume(size) 
+                    yield chunk
+                except StopAsyncIteration:
+                    break
+               
         return wrapper
     
 
