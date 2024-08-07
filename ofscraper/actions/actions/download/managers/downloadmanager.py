@@ -39,6 +39,7 @@ class DownloadManager:
             task1 = progress_updater.add_download_job_task(
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 total=total,
+                file=tempholderObj.tempfilepath
             )
         else:
             await send_msg(

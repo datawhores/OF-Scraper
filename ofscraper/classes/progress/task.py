@@ -22,10 +22,10 @@ class Task(rich.progress.Task):
             return 0
         new_bytes_received=pathlib.Path(self._file).stat().st_size
         new_time=arrow.now().float_timestamp
-        if new_bytes_received==self._bytes_received:
+        if new_time-self._last_updated<2:
             return self._file_speed or 0
-        elif new_time-self._last_updated<5:
-            return self._file_speed or 0
+        elif new_bytes_received==self._bytes_received:
+            return 0
         else:
             new_time=arrow.now().float_timestamp
             speed=(new_bytes_received-self._bytes_received)/(new_time-self._last_updated)

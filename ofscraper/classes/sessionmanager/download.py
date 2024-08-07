@@ -1,5 +1,6 @@
 import contextlib
 import time
+from  aiolimiter import AsyncLimiter
 import asyncio
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
@@ -55,7 +56,8 @@ class download_session(sessionManager.sessionManager):
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
         self.lock=asyncio.Lock()
-        self.token_bucket=TokenBucket(settings.get_download_limit(), settings.get_download_limit()) 
+        # self.token_bucket=TokenBucket(settings.get_download_limit(), settings.get_download_limit()) 
+        self.token_bucket=AsyncLimiter(settings.get_download_limit(),1)
         super().__init__(
             sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
         )
@@ -106,12 +108,14 @@ class download_session(sessionManager.sessionManager):
                 try:
                     chunk=await anext(funct(*args, **kwargs))
                     size=len(chunk)
-                    await self.token_bucket.consume(size) 
+                    await self.get_token(size)
                     yield chunk
                 except StopAsyncIteration:
                     break
                
         return wrapper
+    async def get_token(self,size):
+        await self.token_bucket.acquire(size)
     
 
 

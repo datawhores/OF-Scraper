@@ -4,7 +4,6 @@ from rich.progress import (
 from rich.text import Text
 import ofscraper.utils.live.progress as progress_utils
 from rich.filesize import decimal
-from ofscraper.utils.system.speed import get_download_speed
 
 class OverallTransferSpeedColumn(TransferSpeedColumn):
     """Renders human readable transfer speed."""
@@ -13,7 +12,7 @@ class OverallTransferSpeedColumn(TransferSpeedColumn):
         self._process_list=None
     def render(self, task) -> Text:
             """Show data transfer speed."""
-            speed = get_download_speed()
+            speed = self._get_curr_speed_helper(task)
             if not speed:
                 return Text("?", style="progress.data.speed")
             data_speed = decimal(int(speed))

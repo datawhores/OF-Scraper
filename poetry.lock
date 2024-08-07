@@ -109,6 +109,18 @@ yarl = ">=1.0,<2.0"
 speedups = ["Brotli", "aiodns", "brotlicffi"]
 
 [[package]]
+name = "aiolimiter"
+version = "1.1.0"
+description = "asyncio rate limiter, a leaky bucket implementation"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "aiolimiter-1.1.0-py3-none-any.whl", hash = "sha256:0b4997961fc58b8df40279e739f9cf0d3e255e63e9a44f64df567a8c17241e24"},
+    {file = "aiolimiter-1.1.0.tar.gz", hash = "sha256:461cf02f82a29347340d031626c92853645c099cb5ff85577b831a7bd21132b5"},
+]
+
+[[package]]
 name = "aioprocessing"
 version = "2.0.1"
 description = "A Python 3.5+ library that integrates the multiprocessing module with asyncio."
@@ -2799,4 +2811,4 @@ pyinstaller = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
-content-hash = "6e1e777ff0026fccdf5600fe6287860e266e501540c4e2ccc975e2cec140cca4"
+content-hash = "5f0744305965a889b8a78efd18938666cccceb3e88bc76e36a0b6baaa7b7bfbf"
