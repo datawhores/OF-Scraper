@@ -2,7 +2,6 @@ import cloup as click
 
 from ofscraper.utils.args.parse.arguments.content import (
     after_option,
-    allow_ads_option,
     before_option,
     block_ads_option,
     download_area_option,
