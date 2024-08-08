@@ -349,16 +349,19 @@ def get_threads(config=None):
 def get_download_limit(config=None,mediatype=None):
     if config is False:
         return constants.DOWNLOAD_LIMIT_DEFAULT
-    return parse_size(
-            str(
-                config.get("overwrites", {})
-                .get((mediatype or "").lower(), {})
-                .get("download_limit")
-                or config.get("download_limit",)
-                or config.get("performance_options", {}).get("download_limit")
-                or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
-            )
-        )
+    try:
+        return parse_size(
+                str(
+                    config.get("overwrites", {})
+                    .get((mediatype or "").lower(), {})
+                    .get("download_limit")
+                    or config.get("download_limit",)
+                    or config.get("performance_options", {}).get("download_limit")
+                    or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
+                )
+            )   
+    except Exception:
+        return 0
     
 
 
