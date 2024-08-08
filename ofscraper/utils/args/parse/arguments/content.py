@@ -124,13 +124,13 @@ block_ads_option = click.option(
     is_flag=True,
 )
 
-allow_ads_option = click.option(
-    "-aa",
-    "--allow-ads",
-    help="Allows posts with common advertisment words",
-    default=False,
-    is_flag=True,
-)
+# allow_ads_option = click.option(
+#     "-aa",
+#     "--allow-ads",
+#     help="Allows posts with common advertisment words",
+#     default=False,
+#     is_flag=True,
+# )
 
 
 scrape_paid_option = click.option(

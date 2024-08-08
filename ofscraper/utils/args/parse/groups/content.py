@@ -37,7 +37,7 @@ content_options_tuple=(
     filter_option,
     neg_filter_option,
     scrape_paid_option,
-    click.constraints.mutually_exclusive(block_ads_option, allow_ads_option),
+    click.constraints.mutually_exclusive(block_ads_option),
     max_count_option,
     item_sort_option,
     force_all_option,
