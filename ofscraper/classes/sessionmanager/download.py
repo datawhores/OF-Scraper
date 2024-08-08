@@ -113,8 +113,6 @@ class download_session(sessionManager.sessionManager):
                
         return wrapper
     async def get_token(self,size):
-        if settings.get_download_limit()==0:
-            return
         await self.leaky_bucket.acquire(size)
     
 
