@@ -4,7 +4,7 @@ from ofscraper.utils.args.parse.arguments.check import force, url_group
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
-from ofscraper.utils.args.parse.groups.check_content import content_options
+from ofscraper.utils.args.parse.groups.check_content import content_check_options
 from  ofscraper.utils.args.helpers.hide_args import hide_check_mode
 
 
@@ -20,7 +20,7 @@ def post_check_args(func):
     @url_group
     @force
     @common_args
-    @content_options
+    @content_check_options
     @advanced_args
     @check_mode_changes
     @click.pass_context
