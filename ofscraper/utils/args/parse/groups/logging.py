@@ -7,6 +7,8 @@ from ofscraper.utils.args.parse.arguments.logging import (
     log_level_option,
 )
 
+logging_options_desc="Logging Options"
+logging_options_help="Settings for logging"
 # Create the option group
 logging_options = click.option_group(
     "Logging Options",
@@ -14,5 +16,5 @@ logging_options = click.option_group(
     discord_log_level_option,
     console_output_level_option,
     console_rich_toggle,
-    help="Settings for logging",
+    help=logging_options_help,
 )

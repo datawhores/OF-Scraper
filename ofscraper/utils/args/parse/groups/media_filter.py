@@ -11,10 +11,11 @@ from ofscraper.utils.args.parse.arguments.media_type import (
     protected_only,
     quality_option,
 )
-
+media_filter_options_desc="Media Filters Options"
+media_filter_options_help="Options for controlling which media is downloaded"
 # Create the option group
-media_type_options = click.option_group(
-    "Media Filters Options",
+media_filter_options = click.option_group(
+    media_filter_options_desc,
     quality_option,
     media_type_option,
     max_size_option,
@@ -26,5 +27,5 @@ media_type_options = click.option_group(
         normal_only,
     ),
     media_id_filter,
-    help="Options for controlling which media is downloaded",
+    help=media_filter_options_help
 )

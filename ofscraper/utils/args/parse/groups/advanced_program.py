@@ -10,9 +10,11 @@ from ofscraper.utils.args.parse.arguments.advanced_program import (
     update_profile_option,
 )
 
+advanced_options_desc="Advanced Program Options"
+advanced_options_help="Advanced control of program behavior"
 # Create the option group
 advanced_options = click.option_group(
-    "Advanced Program Options",
+   advanced_options_desc,
     no_cache_option,
     no_api_cache_option,
     key_mode_option,
@@ -20,5 +22,5 @@ advanced_options = click.option_group(
     update_profile_option,
     download_script_option,
     post_script_option,
-    help="Advanced control of program behavior",
+    help=advanced_options_help
 )

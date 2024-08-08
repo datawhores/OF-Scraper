@@ -13,9 +13,12 @@ from ofscraper.utils.args.parse.arguments.user_list import (
     sub_status_option,
 )
 
+userlist_options_desc="User List Filter Options"
+userlist_options_help="Filter users with options like price (current/renewal/regular/promo), free trial, promo availability, alongside userlist filters (include/exclude)"
+
 # Create the option group
 userlist_options = click.option_group(
-    "User List Filter Options",
+   userlist_options_desc,
     current_price_option,
     renewal_price_option,
     regular_price_option,
@@ -26,5 +29,5 @@ userlist_options = click.option_group(
     all_promo_option,
     sub_status_option,
     renewal_option,
-    help="Filter users with options like price (current/renewal/regular/promo), free trial, promo availability, alongside userlist filters (include/exclude)",
+    help=userlist_options_help,
 )

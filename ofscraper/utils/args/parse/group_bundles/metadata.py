@@ -2,14 +2,6 @@ import cloup as click
 from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.parse.arguments.advanced_program import (
-    download_script_option,
-    post_script_option,
-    dynamic_rules_option,
-    no_api_cache_option,
-    no_cache_option,
-    update_profile_option,
-)
 from ofscraper.utils.args.parse.arguments.content import (
     after_option,
     before_option,
@@ -38,10 +30,14 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
-from ofscraper.utils.args.parse.arguments.download import (
-    download_sem_option,
-    download_threads_option
-)
+from ofscraper.utils.args.parse.groups.download import download_options
+from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
+from ofscraper.utils.args.parse.groups.content import content_options_help,content_options_desc
+from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
+
+
+from  ofscraper.utils.args.helpers.hide_args import hide_metadata_mode
+
 
 
 def metadata_args(func):
@@ -105,12 +101,13 @@ It also uses a new filename if one is available
     )
     @program_options
     @logging_options
-    @click.option_group(
-        "Media Filter Options", quality_option,normal_only,protected_only, media_id_filter,length_max,length_min,media_type_option,help="Options for controlling which media is processes"
-    )
+    # @click.option_group(
+    #     "Media Filter Options", quality_option,normal_only,protected_only, media_id_filter,length_max,length_min,media_type_option,help="Options for controlling which media is processes"
+    # )
+    @media_filter_options
     @file_options
     @click.option_group(
-        "Content Options",
+        content_options_desc,
         posts_option,
         filter_option,
         neg_filter_option,
@@ -130,32 +127,15 @@ It also uses a new filename if one is available
         timed_only_option,
         force_all_option,
         force_model_unique_option,
-        help="""
-    \b
-     Define what posts to target
-    """,
+        help=content_options_help,
     )
-    @click.option_group(
-    "Download Options",
-    download_sem_option,
-    download_threads_option,
-    help="Options for downloads and download performance",
-)
+    @download_options
     @user_select_options
     @userlist_options
     @advanced_userfilters_options
     @user_sorting_options
     @advanced_processing_options
-    @click.option_group(
-        "Advanced Program Options",
-        no_cache_option,
-        no_api_cache_option,
-        dynamic_rules_option,
-        update_profile_option,
-        download_script_option,
-        post_script_option,
-        help="Advanced control of program behavior",
-    )
+    @advanced_options
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         if ctx.params["anon"]:
@@ -170,5 +150,5 @@ It also uses a new filename if one is available
             raise UsageError("'--scrape-paid' and/or --metadata is required")
         ctx.params["action"] = []
         return func(ctx, *args, **kwargs)
-
+    hide_metadata_mode(wrapper)
     return wrapper

@@ -4,6 +4,8 @@ from ofscraper.utils.args.parse.arguments.check import force, username_group
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
+from  ofscraper.utils.args.helpers.hide_args import hide_check_mode
+
 
 
 def story_check_args(func):
@@ -26,5 +28,6 @@ def story_check_args(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
+    hide_check_mode(wrapper)
 
     return wrapper

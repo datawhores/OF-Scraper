@@ -23,8 +23,14 @@ from ofscraper.utils.args.parse.arguments.content import (
     timeline_strict,
 )
 
+
+content_options_desc="Content Options"
+content_options_help="""
+    \b
+    Define what posts to target (areas, filters) and actions to perform (like, unlike, download)
+    Filter by type, date, label, size, and media type"""
 content_options = click.option_group(
-    "Content Options",
+    content_options_desc,
     posts_option,
     download_area_option,
     like_area_option,
@@ -44,8 +50,5 @@ content_options = click.option_group(
     mass_msg_option,
     timed_only_option,
     timeline_strict,
-    help="""
-    \b
-    Define what posts to target (areas, filters) and actions to perform (like, unlike, download)
-    Filter by type, date, label, size, and media type""",
+    help=content_options_help,
 )
