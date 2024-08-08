@@ -30,7 +30,7 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
-from ofscraper.utils.args.parse.groups.download import download_options
+from ofscraper.utils.args.parse.groups.download import download_options_help,download_options_tuple
 from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
 from ofscraper.utils.args.parse.groups.content import content_options_help,content_options_desc
 from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
@@ -129,7 +129,11 @@ It also uses a new filename if one is available
         force_model_unique_option,
         help=content_options_help,
     )
-    @download_options
+    @click.option_group(
+        "Metadata Options",
+        *download_options_tuple,
+        help=download_options_help
+    )
     @user_select_options
     @userlist_options
     @advanced_userfilters_options
