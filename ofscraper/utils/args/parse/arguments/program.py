@@ -20,8 +20,8 @@ profile_option = click.option(
     "--profile",
     help="""
 Change which profile you want to use
-If not set then the config file is used
-Profiles are always within the config file parent directory
+If not set then the default profile is used, based on the config.json file
+Profiles are always within the config.json file parent directory
 """,
     default=None,
     callback=lambda ctx, param, value: (
