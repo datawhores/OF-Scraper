@@ -142,7 +142,7 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_system_freesize()),
-                "filter": int,
+                "filter": lambda x:int(x) if x!="None" else 0,
             },
             {
                 "type": "input",
@@ -154,7 +154,7 @@ This only applies to videos
 Enter 0 to disable
 """,
                 "default": str(data.get_min_length()),
-                "filter": int,
+                "filter": lambda x:int(x) if x!="None" else 0
             },
             {
                 "type": "input",
@@ -166,7 +166,7 @@ This only applies to videos
 Enter 0 to disable
 """,
                 "default": str(data.get_max_length()),
-                "filter": int,
+                "filter": lambda x:int(x) if x!="None" else 0,
             },
             {
                 "type": "list",
