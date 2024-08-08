@@ -8,11 +8,14 @@ from ofscraper.utils.args.parse.arguments.program import (
 
 program_options_desc="Program Options"
 program_options_help="Control the application's behavior with these settings"
-# Create the option group
-program_options = click.option_group(
-    program_options_desc,
+program_options_tuple=(
     version_option,
     config_location_option,
     profile_option,
+)
+# Create the option group
+program_options = click.option_group(
+    program_options_desc,
+    *program_options_tuple,
     help=program_options_help,
 )

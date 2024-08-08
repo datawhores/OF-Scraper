@@ -29,8 +29,7 @@ content_options_help="""
     \b
     Define what posts to target (areas, filters) and actions to perform (like, unlike, download)
     Filter by type, date, label, size, and media type"""
-content_options = click.option_group(
-    content_options_desc,
+content_options_tuple=(
     posts_option,
     download_area_option,
     like_area_option,
@@ -49,6 +48,11 @@ content_options = click.option_group(
     after_option,
     mass_msg_option,
     timed_only_option,
-    timeline_strict,
+    timeline_strict
+
+)
+content_options = click.option_group(
+    content_options_desc,
+    *content_options_tuple,
     help=content_options_help,
 )
