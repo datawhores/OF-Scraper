@@ -74,8 +74,7 @@ def main_menu_action():
                     elif result_profiles_prompt == "main":
                         break
                     else:
-                        profile_menu_helper
-                        (result_profiles_prompt)
+                        profile_menu_helper(result_profiles_prompt)
             elif result_main_prompt == "merge":
                 merge.merge_runner()
             elif result_main_prompt == "quit":
