@@ -81,9 +81,14 @@ def funct(prompt_):
     [Performance Options]
     download_sems: number of downloads per processor/worker
     thread_count: number of processors/workers
+    download_limit: max download speed per second for each thread
     -----------------------------------
     [Content Filter Options]
     block_ads: use common key words to block ads
+    --------------------------------------------------
+    [Scripts Options]
+    post_download_script: script to run after actions on each model
+    post_script: script to run after all models are processed
     --------------------------------------------------
     [Advanced Options]
     code-execution: allow eval on custom_val
@@ -305,7 +310,7 @@ def script_config():
             {
                 "type": "input",
                 "name": "post_download_script",
-                "message": "Script to run after each model download",
+                "message": "Script to run after each model is processed",
                 "default": data.get_post_download_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
             },
@@ -390,7 +395,7 @@ def performance_config():
     out.update(threads)
     max_allowed = get_max_sems(threads)
 
-    answer = promptClasses.batchConverter(
+    sems = promptClasses.batchConverter(
         *[
             {
                 "type": "number",
@@ -406,7 +411,30 @@ def performance_config():
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
     )
-    out.update(answer)
+    out.update(sems)
+
+    speed = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": "download_limit",
+                "message": "Maximum download speed per second for  each thread: ",
+                "validate": EmptyInputValidator(),
+                "option_instruction":  \
+                """
+                Input can be int representing bytes
+                or human readable such as 10mb
+                """,
+                "default": str(data.get_download_limit()),
+                "filter": lambda x:int(x) if x!="None" else 0
+            }
+        ],
+        altx=funct,
+        more_instruction=prompt_strings.CONFIG_MENU,
+    )
+    out.update(speed)
+
+
     config = config_file.open_config()
     config.update(out)
     final = schema.get_current_config_schema({"config": config})
