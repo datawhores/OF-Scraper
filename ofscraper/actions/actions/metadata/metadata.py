@@ -14,9 +14,9 @@ from ofscraper.runner.close.final.final_user import post_user_script
 
 @run_async
 async def metadata_process(username, model_id, medialist, posts=None):
-    data = await metadata_picker(username, model_id, medialist)
+    data,values= await metadata_picker(username, model_id, medialist)
     post_user_script(username, model_id, medialist, posts)
-    return data
+    return  data,values
 
 
 async def metadata_picker(username, model_id, medialist):

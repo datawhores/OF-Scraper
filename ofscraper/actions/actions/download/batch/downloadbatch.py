@@ -121,7 +121,7 @@ def process_dicts(username, model_id, filtered_medialist):
         progress_updater.remove_download_task(task1)
         setDirectoriesDate(log)
         final_log(username)
-        return final_log_text(username)
+        return final_log_text(username),(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():

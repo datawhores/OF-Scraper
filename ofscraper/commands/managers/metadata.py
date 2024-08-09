@@ -96,7 +96,7 @@ class metadataCommandManager(commmandManager):
         progress_updater.update_activity_task(
             description=metadata_activity_str.format(username=username)
         )
-        data = await metadata_process(username, model_id, media)
+        data,_ = await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
         return [data]
 

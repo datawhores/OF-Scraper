@@ -81,7 +81,7 @@ async def process_dicts(username, model_id, medialist):
         download_log_clear_helper()
         final_log(username, log=logging.getLogger("shared"))
         progress_updater.remove_download_task(task1)
-        return final_log_text(username)
+        return final_log_text(username),(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
     
 
 

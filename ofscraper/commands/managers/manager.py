@@ -60,13 +60,14 @@ class commmandManager():
                                 logging.getLogger("shared_other").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
-                            data.extend(
-                                await funct(
+                            result=await funct(
                                     media=all_media,
                                     posts=posts,
                                     like_posts=like_posts,
                                     ele=ele,
                                 )
+                            data.extend(
+                                result
                             )
                     except Exception as e:
 
@@ -130,15 +131,16 @@ class commmandManager():
                         )
                     try:
                         with progress_utils.setup_activity_counter_live(revert=False):
-                            out.extend(
-                                await funct(
+                            result=await funct(
                                     posts,
                                     like_posts,
                                     *args,
                                     media=all_media,
                                     ele=ele,
                                     **kwargs,
-                                )
+                            )
+                            out.extend(
+                            result 
                             )
                     except Exception as e:
                         log.traceback_(f"failed with exception: {e}")

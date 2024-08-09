@@ -100,7 +100,7 @@ async def process_user(value, length):
         {username: models.Model(profile.scrape_profile(model_id))}
     )
     progress_updater.increment_activity_count(total=length)
-    data=await download.download_process(username, model_id, medias, posts=posts)
+    data,_=await download.download_process(username, model_id, medias, posts=posts)
     post_user_script(value,medias,posts)
     return data
     

@@ -38,9 +38,8 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
         download_activity_str.format(username=username)
     )
     progress_updater.update_activity_task(description="")
-    data = await download_process(ele, media, posts=posts)
-    return data
-
+    data,values = await download_process(ele, media, posts=posts)
+    return data,values
 
 @run_async
 async def download_process(userdata, medialist, posts=None):
@@ -48,9 +47,9 @@ async def download_process(userdata, medialist, posts=None):
     model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
 
     await textDownloader(posts, username=username)
-    data = await download_picker(username, model_id, medialist)
+    data,values = await download_picker(username, model_id, medialist)
     post_user_script(userdata, medialist, posts=None)
-    return data
+    return data,values
 
 
 async def download_picker(username, model_id, medialist):

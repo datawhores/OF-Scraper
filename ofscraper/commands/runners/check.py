@@ -126,7 +126,7 @@ def process_item():
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 textDownloader(post, username=username)
-                values = downloadnormal.process_dicts(username, model_id, [media])
+                output,values = downloadnormal.process_dicts(username, model_id, [media])
                 if values is None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
             else:

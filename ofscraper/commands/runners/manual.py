@@ -74,9 +74,10 @@ def manual_download(urls=None):
                 make_changes_to_content_tables(
                     value.get("post_list", []), model_id=model_id, username=username
                 )
-                results.append(download.download_process(
+                result,_=download.download_process(
                     userdata, medialist, posts=None
-                ))
+                )
+                results.append(result)
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
