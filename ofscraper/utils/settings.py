@@ -185,7 +185,7 @@ def get_post_download_script():
     )
 
 
-def post_script():
+def get_post_script():
     return (
         read_args.retriveArgs().post_script
         or config_data.get_post_script()

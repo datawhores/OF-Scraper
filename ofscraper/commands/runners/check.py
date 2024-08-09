@@ -60,7 +60,6 @@ MEDIA_KEY = ["id", "postid", "username"]
 
 
 def process_download_cart():
-    global usernames
     global cart_dict
     while True:
         usernames=set()
@@ -73,9 +72,9 @@ def process_download_cart():
                 # handle getting new downloads
                 None
         for key,val in cart_dict.items():
-            post_user_process(val["username"],key,val["media"],val["post"])
+            post_user_process(val["userdata"],key,val["media"],val["post"])
         if len(usernames) > 0:
-            final_script(list(usernames))
+            final_script(list(lambda x:x["userdata"],cart_dict.values()))
         time.sleep(10)
 
 
@@ -142,11 +141,9 @@ def process_item():
 
 def update_globals(model_id,username,post,media):
     global cart_dict
-    global usernames
-    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id})
+    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id,"userdata":selector.get_model_fromParsed(username)})
     cart_dict[model_id]["post"].extend([post])
     cart_dict[model_id]["media"].extend([media])
-    usernames.add(username)
 
 
 @run
