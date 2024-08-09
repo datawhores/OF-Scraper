@@ -3,7 +3,6 @@ import pathlib
 
 import ofscraper.actions.actions.download.batch.downloadbatch as batch
 import ofscraper.actions.actions.download.normal.downloadnormal as normal
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
@@ -48,8 +47,7 @@ async def download_process(userdata, medialist, posts=None):
     username = userdata["name"] if isinstance(userdata, dict) else userdata.name
     model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
 
-    if not read_args.retriveArgs().command == "metadata":
-        await textDownloader(posts, username=username)
+    await textDownloader(posts, username=username)
     data = await download_picker(username, model_id, medialist)
     post_user_script(userdata, medialist, posts=None)
     return data

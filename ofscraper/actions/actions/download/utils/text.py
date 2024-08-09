@@ -6,11 +6,14 @@ import ofscraper.actions.utils.log as logs
 import ofscraper.utils.settings as settings
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.args.accessors.read as read_args
 
 
 @run
 async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")
+    if read_args.retriveArgs().command == "metadata":
+        return
     if not bool(objectdicts):
         return
     try:
