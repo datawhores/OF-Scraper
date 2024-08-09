@@ -11,7 +11,7 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.data.posts.post import post_media_process
+from ofscraper.data.posts.post import post_media_process_all
 from ofscraper.commands.utils.strings import avatar_str, all_paid_metadata_str,all_paid_progress_metadata_str,metadata_activity_str,mark_stray_str
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.managers.manager import commmandManager
@@ -141,12 +141,10 @@ class metadataCommandManager(commmandManager):
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
-                            all_media, posts, like_posts = await post_media_process(
+                            all_media, posts, like_posts = await post_media_process_all(
                                 ele, c=c
                             )
-                            all_media = filters.filtermediaFinal(
-                                all_media, username, model_id
-                            )
+
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
                             if (

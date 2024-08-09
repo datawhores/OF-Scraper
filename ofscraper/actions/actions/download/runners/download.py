@@ -20,6 +20,7 @@ from ofscraper.actions.utils.log import get_medialog
 
 async def download(c, ele, model_id, username,multi=False):
     try:
+        data=None
         if ele.url:
             data=await MainDownloadManager(multi=multi).main_download(
                 c,

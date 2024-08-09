@@ -40,7 +40,7 @@ class scraperManager(commmandManager):
 
                 elif read_args.retriveArgs().users_first:
                     userdata, session = prepare(menu=menu)
-                    user_first_data ,_= self._process_users_actions_user_first(userdata, session)
+                    user_first_data = self._process_users_actions_user_first(userdata, session)
                 else:
                     userdata, session = prepare()
                     normal_data = self._process_users_actions_normal(userdata, session)

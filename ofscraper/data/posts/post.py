@@ -59,9 +59,21 @@ async def post_media_process(ele, c=None):
     username = ele.name
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
+    insert_medias, posts, like_post = await process_areas(ele, model_id, username, c=c)
+    filter_medias= filters.filtermediaFinal(
+    insert_medias, username, model_id
+    )
+    return filter_medias, posts, like_post
+
+
+@run
+async def post_media_process_all(ele, c=None):
+
+    username = ele.name
+    model_id = ele.id
+    await operations.table_init_create(model_id=model_id, username=username)
     data = await process_areas(ele, model_id, username, c=c)
     return data
-
 
 @free.space_checker
 async def process_messages(model_id, username, c):

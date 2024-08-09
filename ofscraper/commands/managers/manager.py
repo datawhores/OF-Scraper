@@ -44,9 +44,7 @@ class commmandManager():
                             all_media, posts, like_posts = await post_media_process(
                                 ele, c=c
                             )
-                            all_media = filters.filtermediaFinal(
-                                all_media, username, model_id
-                            )
+    
                             posts = filters.filterPostFinal(posts)
                             like_posts = filters.post_filter_for_like(like_posts)
 
