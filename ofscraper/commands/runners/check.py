@@ -47,7 +47,8 @@ from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import  post_user_script
-from ofscraper.runner.close.final.final_script import final_script
+from ofscraper.runner.close.final.final import final
+
 
 
 
@@ -76,8 +77,10 @@ def process_download_cart():
             if len(cart_dict.keys())>0:
                 for val in cart_dict.values():
                     post_user_script(val["userdata"],val["media"],val["post"])
-                final_script(list(lambda x:x["userdata"],cart_dict.values()))
-            time.sleep(10)
+                results=["check cart results"] +list(map(lambda x:x["results"],cart_dict.values()))
+                userdata=list(map(lambda x:x["userdata"],cart_dict.values()))
+                final(normal_data=results,userdata=userdata)
+            time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
             log.traceback_(f"Error in process_item: {traceback.format_exc()}")
@@ -131,7 +134,7 @@ def process_item():
  
 
             log.info("Download Finished")
-            update_globals(model_id,username,post,media)
+            update_globals(model_id,username,post,media,values)
             table.app.update_cell(key, "download_cart", "[downloaded]")
             break
         except Exception as E:
@@ -145,9 +148,9 @@ def process_item():
     if table.row_queue.empty():
         log.info("Download cart is currently empty")
 
-def update_globals(model_id,username,post,media):
+def update_globals(model_id,username,post,media,values):
     global cart_dict
-    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id,"userdata":selector.get_model_fromParsed(username)})
+    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id,"userdata":selector.get_model_fromParsed(username),"results":values})
     cart_dict[model_id]["post"].extend([post])
     cart_dict[model_id]["media"].extend([media])
 
