@@ -13,10 +13,8 @@ r"""
 
 import asyncio
 import logging
-from functools import partial
 
 import ofscraper.actions.utils.globals as common_globals
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
