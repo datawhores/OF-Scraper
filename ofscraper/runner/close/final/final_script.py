@@ -32,7 +32,7 @@ def final_script(users):
              "file_format":config_data.get_fileformat(),
              "metadata":config_data.get_metadata()
              })
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(suffix='.json') as f:
         with open(f.name, "w") as g:
             g.write(out_dict)
         run([settings.get_post_script(),f.name])

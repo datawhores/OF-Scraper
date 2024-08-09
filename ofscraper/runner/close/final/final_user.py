@@ -24,7 +24,7 @@ def post_user_script(userdata, media=None, posts=None):
         media=list(map(lambda x: x.media, media or []))
         master_dump=json.dumps({"username":username,"model_id":model_id,"media":media,"posts":posts,"userdata":userdict})
 
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(suffix='.json') as f:
           with open(f.name, "w") as g:
               g.write(master_dump)
           run([settings.get_post_download_script(),f.name])
