@@ -18,8 +18,8 @@ def post_user_process(username, model_id, medialist, postlist):
         run(
             [
                 settings.get_post_download_script(),
-                username,
-                model_id,
+                str(username),
+                str(model_id),
                 json.dumps(media_dump),
                 json.dumps(post_dump),
                 json.dumps(master_dump),
