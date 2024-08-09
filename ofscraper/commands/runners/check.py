@@ -62,20 +62,26 @@ MEDIA_KEY = ["id", "postid", "username"]
 def process_download_cart():
     global cart_dict
     while True:
-        usernames=set()
-        cart_dict={}
+        try:
+            cart_dict={}
+            if table.row_queue.empty():
+                continue
 
-        while not table.row_queue.empty():
-            try:
-                process_item()
-            except Exception:
-                # handle getting new downloads
-                None
-        for key,val in cart_dict.items():
-            post_user_script(val["userdata"],key,val["media"],val["post"])
-        if len(usernames) > 0:
-            final_script(list(lambda x:x["userdata"],cart_dict.values()))
-        time.sleep(10)
+            while not table.row_queue.empty():
+                try:
+                    process_item()
+                except Exception:
+                    # handle getting new downloads
+                    None
+            if len(cart_dict.keys())>0:
+                for val in cart_dict.values():
+                    post_user_script(val["userdata"],val["media"],val["post"])
+                final_script(list(lambda x:x["userdata"],cart_dict.values()))
+            time.sleep(10)
+        except Exception as e:
+            log.traceback_(f"Error in process_item: {e}")
+            log.traceback_(f"Error in process_item: {traceback.format_exc()}")
+            continue
 
 
 
