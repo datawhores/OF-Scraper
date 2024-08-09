@@ -25,19 +25,20 @@ from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.runner.close.final.final_script import final_script
+from ofscraper.runner.close.final.final import final
 
 
 
 
 
 def manual_download(urls=None):
-    log = logging.getLogger("shared")
-    check_auth()
     try:
         network.check_cdm()
         allow_manual_dupes()
+        log = logging.getLogger("shared")
+        check_auth()
         url_dicts = process_urls(urls)
+
         with progress_utils.setup_activity_progress_live():
             progress_updater.update_activity_task(
                 description="Getting data from retrived posts"
@@ -57,7 +58,8 @@ def manual_download(urls=None):
             if len(all_media) == 0 and len(all_posts) == 0:
                 return
             set_user_data(url_dicts)
-
+        
+        results=[]
         for _, value in url_dicts.items():
             with progress_utils.setup_activity_progress_live():
                 model_id = value.get("model_id")
@@ -72,23 +74,24 @@ def manual_download(urls=None):
                 make_changes_to_content_tables(
                     value.get("post_list", []), model_id=model_id, username=username
                 )
-                download.download_process(
+                results.append(download.download_process(
                     userdata, medialist, posts=None
-                )
-
+                ))
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
-        final(url_dicts)
+        final_action(url_dicts,results)
         
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         raise e
 
-def final(url_dicts):
+def final_action(url_dicts,results):
+    normal_data=["Manual Mode Results"]
+    normal_data.extend(results)
     user_data=list(map(lambda x:x["user_data"],url_dicts.values()))
-    final_script(user_data)
+    final(normal_data=normal_data , scrape_paid_data=None ,user_first_data=None,userdata=user_data)
 
 def allow_manual_dupes():
     args = read_args.retriveArgs()
