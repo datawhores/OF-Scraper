@@ -11,7 +11,7 @@ def post_user_script(userdata, media=None, posts=None):
     if not settings.get_post_download_script():
         return
     try:
-        username=userdata["name"] if isinstance(userdata,dict) else userdata.name
+        username=userdata["username"] if isinstance(userdata,dict) else userdata.name
         model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
         userdict=userdata if isinstance(userdata,dict) else userdata.model
     

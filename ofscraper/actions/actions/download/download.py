@@ -44,7 +44,7 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
 
 @run_async
 async def download_process(userdata, medialist, posts=None):
-    username = userdata["name"] if isinstance(userdata, dict) else userdata.name
+    username = userdata["username"] if isinstance(userdata, dict) else userdata.name
     model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
 
     await textDownloader(posts, username=username)
