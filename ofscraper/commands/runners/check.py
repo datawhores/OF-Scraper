@@ -134,7 +134,7 @@ def process_item():
  
 
             log.info("Download Finished")
-            update_globals(model_id,username,post,media,values)
+            update_globals(model_id,username,post,media,output)
             table.app.update_cell(key, "download_cart", "[downloaded]")
             break
         except Exception as E:
