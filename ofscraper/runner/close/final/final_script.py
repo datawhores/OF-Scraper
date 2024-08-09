@@ -13,6 +13,7 @@ r"""
 import json
 import tempfile
 import logging
+from collections import defaultdict
 from ofscraper.classes.models import Model
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
@@ -26,6 +27,9 @@ def final_script(users):
     if not isinstance(users, list):
         users=[users]
     log.debug("Running post script")
+    data={}
+    for ele in users:
+        data[ele.id]=ele
     data=list(map(lambda  x:x.model if isinstance(x,Model) else x,users))
     out_dict=json.dumps({"users":data,
              "dir_format":config_data.get_dirformat(),
