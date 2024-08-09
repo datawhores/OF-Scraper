@@ -29,6 +29,8 @@ from ofscraper.runner.close.final.final_script import final_script
 
 
 
+
+
 def manual_download(urls=None):
     log = logging.getLogger("shared")
     check_auth()
@@ -60,8 +62,8 @@ def manual_download(urls=None):
             with progress_utils.setup_activity_progress_live():
                 model_id = value.get("model_id")
                 username = value.get("username")
-                model_id = value.get("model_id")
-                username = value.get("username")
+                userdata=value.get("user_data")
+                medialist=value.get("media_list")
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
@@ -71,8 +73,9 @@ def manual_download(urls=None):
                     value.get("post_list", []), model_id=model_id, username=username
                 )
                 download.download_process(
-                    username, model_id, value.get("media_list", []), posts=None
+                    userdata, medialist, posts=None
                 )
+
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )

@@ -15,6 +15,8 @@ from ofscraper.commands.utils.strings import (
 
 )
 from ofscraper.utils.context.run_async import run
+from ofscraper.runner.close.final.final_user import post_user_script
+
 
 log = logging.getLogger("shared")
 
@@ -98,4 +100,10 @@ async def process_user(value, length):
         {username: models.Model(profile.scrape_profile(model_id))}
     )
     progress_updater.increment_activity_count(total=length)
-    return await download.download_process(username, model_id, medias, posts=posts)
+    data=await download.download_process(username, model_id, medias, posts=posts)
+    post_user_script(value,medias,posts)
+    return data
+    
+
+
+

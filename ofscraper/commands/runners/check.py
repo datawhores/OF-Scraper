@@ -46,7 +46,7 @@ from ofscraper.db.operations_.media import (
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.runner.close.final.final_user import  post_user_process
+from ofscraper.runner.close.final.final_user import  post_user_script
 from ofscraper.runner.close.final.final_script import final_script
 
 
@@ -72,7 +72,7 @@ def process_download_cart():
                 # handle getting new downloads
                 None
         for key,val in cart_dict.items():
-            post_user_process(val["userdata"],key,val["media"],val["post"])
+            post_user_script(val["userdata"],key,val["media"],val["post"])
         if len(usernames) > 0:
             final_script(list(lambda x:x["userdata"],cart_dict.values()))
         time.sleep(10)

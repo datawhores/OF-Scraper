@@ -7,15 +7,22 @@ import tempfile
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
-def post_user_process(username, model_id, medialist, postlist):
-    log = logging.getLogger("shared")
+def post_user_script(userdata, media=None, posts=None):
     if not settings.get_post_download_script():
         return
-    log.debug(f"Running post script for {username}")
     try:
-        posts=list(map(lambda x: x.post, postlist or []))
-        media=list(map(lambda x: x.media, medialist or []))
-        master_dump=json.dumps({"username":username,"model_id":model_id,"media":media,"posts":posts})
+        username=userdata["name"] if isinstance(userdata,dict) else userdata.name
+        model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
+        userdict=userdata if isinstance(userdata,dict) else userdata.model
+    
+        log = logging.getLogger("shared")
+
+
+        log.debug(f"Running post script for {username}")
+
+        posts=list(map(lambda x: x.post, posts or []))
+        media=list(map(lambda x: x.media, media or []))
+        master_dump=json.dumps({"username":username,"model_id":model_id,"media":media,"posts":posts,"userdata":userdict})
 
         with tempfile.NamedTemporaryFile() as f:
           with open(f.name, "w") as g:
