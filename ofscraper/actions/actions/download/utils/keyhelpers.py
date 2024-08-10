@@ -92,6 +92,7 @@ async def un_encrypt(item, c, ele, input_=None):
         return item
     except Exception as E:
         log.traceback_(E)
+        raise E
 
 
 def get_ffmpeg_key(key):
