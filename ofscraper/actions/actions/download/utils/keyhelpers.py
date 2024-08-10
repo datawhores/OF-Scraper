@@ -241,8 +241,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
         pssh_obj = PSSH(pssh)
 
         # load device
-        private_key = pathlib.Path(config_data.get_private_key()).read_bytes()
-        client_id = pathlib.Path(config_data.get_client_id()).read_bytes()
+        private_key = pathlib.Path(settings.get_private_key()).read_bytes()
+        client_id = pathlib.Path(settings.get_client_id()).read_bytes()
         device = Device(
             security_level=3,
             private_key=private_key,

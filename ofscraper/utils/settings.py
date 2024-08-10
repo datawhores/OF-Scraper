@@ -218,3 +218,9 @@ def get_download_limit():
 
 def get_keydb_api():
     return read_args.retriveArgs().keydb_api or config_data.get_keydb_api()
+
+def get_client_id():
+    return read_args.retriveArgs().client_id or config_data.get_client_id()
+
+def get_private_key():
+    return read_args.retriveArgs().private_key or config_data.get_private_key()
