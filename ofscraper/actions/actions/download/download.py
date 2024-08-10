@@ -56,7 +56,7 @@ async def download_picker(username, model_id, medialist):
     if len(medialist) == 0:
         out = empty_log(username)
         logging.getLogger("shared").error(out)
-        return out
+        return out,(0,0,0,0,0)
     elif (
         system.getcpu_count() > 1
         and (

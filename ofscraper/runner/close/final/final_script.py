@@ -29,8 +29,7 @@ def final_script(users):
     log.debug("Running post script")
     data={}
     for ele in users:
-        data[ele.id]=ele
-    data=list(map(lambda  x:x.model if isinstance(x,Model) else x,users))
+        data[ele.id]=ele.model if isinstance(ele,Model) else ele
     out_dict=json.dumps({"users":data,
              "dir_format":config_data.get_dirformat(),
              "file_format":config_data.get_fileformat(),
