@@ -39,6 +39,8 @@ async def process_dicts(username, model_id, medialist):
     task1=None
     with progress_utils.setup_download_progress_live(multi=False):
         common_globals.mainProcessVariableInit()
+        log = logging.getLogger("shared")
+        log.info("Downloading in main thread mode")
         try:
            
             aws = []
