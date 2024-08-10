@@ -193,7 +193,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
         headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
             "Content-Type": "application/json",
-            "X-API-Key": config_data.get_keydb_api(),
+            "X-API-Key": settings.get_keydb_api(),
         }
 
         async with c.requests_async(

@@ -33,7 +33,7 @@ def check_config():
 
 
 def check_config_key_mode():
-    if settings.get_key_mode() == "keydb" and not data.get_keydb_api():
+    if settings.get_key_mode() == "keydb" and not settings.get_keydb_api():
         console.shared_console.print(
             "[red]You must setup keydb API Key\nhttps://keysdb.net[/red]"
         )

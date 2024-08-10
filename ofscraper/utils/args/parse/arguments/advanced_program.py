@@ -22,9 +22,19 @@ no_api_cache_option = click.option(
 key_mode_option = click.option(
     "-k",
     "--key-mode",
-    help="Key mode override",
+    help="Key mode for decrypting content",
     default=None,
     type=click.Choice(KEY_OPTIONS),
+)
+
+
+key_db_option = click.option(
+    "-kd",
+    "--keydb-api",
+    "--key-db-api",
+    "keydb_api",
+    help="keydb api key",
+    default=None,
 )
 
 dynamic_rules_option = click.option(

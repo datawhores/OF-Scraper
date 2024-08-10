@@ -215,3 +215,6 @@ def get_max_length(mediatype=None):
 def get_download_limit():
     out= read_args.retriveArgs().download_limit or config_data.get_download_limit()
     return max(out,1024) if out else out
+
+def get_keydb_api():
+    return read_args.retriveArgs().keydb_api or config_data.get_keydb_api()
