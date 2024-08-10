@@ -33,7 +33,23 @@ key_db_option = click.option(
     "--keydb-api",
     "--key-db-api",
     "keydb_api",
-    help="keydb api key",
+    help="api key for keydb cdrm",
+    default=None,
+)
+
+private_key_option = click.option(
+    "-pk",
+    "--private-key",
+    "private_key",
+    help="private key path for manual cdrm",
+    default=None,
+)
+
+client_id_option = click.option(
+    "-ci",
+    "--client-id",
+    "client_id",
+    help="client id path for manual cdrm",
     default=None,
 )
 
