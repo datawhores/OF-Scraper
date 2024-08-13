@@ -17,6 +17,7 @@ __url__ = "https://github.com/datawhores/OF-Scraper"
 __license__ = "GNU General Public License v3 or later (GPLv3+)"
 __copyright__ = "Copyright 2023"
 
+
 try:
     from dunamai import Version
 
@@ -24,7 +25,8 @@ try:
     __version__ = __hardcoded__ or Version.from_git(
         pattern="(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))"
     ).serialize(format="{base}+{branch}.{commit}", metadata=False)
+    if  __version__=="0.0.0":
+        raise Exception("pipx error")
 except:
-    import pkg_resources
-
-    __version__ = pkg_resources.get_distribution("ofscraper").version
+    import importlib
+    __version__ = importlib.metadata.version('ofscraper')
