@@ -73,6 +73,8 @@ def mediatype_type_filter(media):
     filtersettings = settings.get_mediatypes()
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
+    elif len(filtersettings) == 1 and filtersettings[0]=="Text":
+        return media
     if isinstance(filtersettings, list):
         filtersettings = list(map(lambda x: x.lower().replace(" ", ""), filtersettings))
         filtersettings = list(filter(lambda x: x != "", filtersettings))
