@@ -168,10 +168,10 @@ def filterPostFinal(post):
         log.debug("Skipping filtering because download not in actions")
         return post
 
-    if "Text" not in settings.get_mediatypes():
-        log.info("Skipping filtering Text not in mediatypes")
+    if not settings.get_download_text():
+        log.info("Skipping filtering Text files download not  toggled")
         return post
-    log.info("Filtering posts fot text")
+    log.info("Filtering posts for text")
 
     count = 1
     trace_log_post(count, post, "initial posts no filter:")

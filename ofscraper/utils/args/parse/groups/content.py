@@ -20,7 +20,8 @@ from ofscraper.utils.args.parse.arguments.content import (
     scrape_paid_option,
     timed_only_option,
     timeline_strict,
-    text_option
+    text_option,
+    text_only_option
 )
 
 
@@ -44,7 +45,10 @@ content_options_tuple=(
     force_model_unique_option,
     like_toggle_force,
     label_option,
-    text_option,
+    click.constraints.mutually_exclusive(
+        text_only_option,
+        text_option,
+    ),
     before_option,
     after_option,
     mass_msg_option,

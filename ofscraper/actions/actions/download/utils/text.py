@@ -17,7 +17,7 @@ async def textDownloader(objectdicts, username=None):
     if not bool(objectdicts):
         return
     try:
-        if not  read_args.retriveArgs().download_text:
+        if not settings.get_download_text():
             log.info("Skipping Downloading of Text Files")
             return
         objectdicts = (

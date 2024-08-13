@@ -34,7 +34,7 @@ async def get_text(values):
 async def get_text_process(ele, dupe=None):
     log = logging.getLogger("shared")
     try:
-        if "Text" not in settings.get_mediatypes():
+        if not settings.get_download_text():
             return
         elif bool(ele.text) is False:
             return

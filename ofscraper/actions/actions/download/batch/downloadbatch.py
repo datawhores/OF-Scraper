@@ -42,12 +42,15 @@ from ofscraper.actions.utils.threads import handle_threads,start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
 from  ofscraper.actions.actions.download.utils.desc import desc
 platform_name = platform.system()
+from ofscraper.actions.actions.download.utils.text import textDownloader
 
 
-
-def process_dicts(username, model_id, filtered_medialist):
+def process_dicts(username, model_id, filtered_medialist,posts):
     log = logging.getLogger("shared")
     log.info("Downloading in batch mode")
+    textDownloader(posts, username=username)
+    if read_args.retriveArgs().download_text_only:
+        return
     try:
         common_globals.main_globals()
         download_log_clear_helper()

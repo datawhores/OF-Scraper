@@ -116,18 +116,14 @@ def process_item():
             log.info("Sending URLs to OF-Scraper")
             selector.set_data_all_subs_dict(username)
             post = media.post
-            if settings.get_mediatypes() == ["Text"]:
-                textDownloader(post, username=username)
-            elif len(settings.get_mediatypes()) > 1:
-                model_id = media.post.model_id
-                username = media.post.username
-                log.info(
+            model_id = media.post.model_id
+            username = media.post.username
+            log.info(
                     f"Downloading individual media ({media.filename}) to disk for {username}"
-                )
-                operations.table_init_create(model_id=model_id, username=username)
-                textDownloader(post, username=username)
-                output,values = downloadnormal.process_dicts(username, model_id, [media])
-                if values is None or values[-1] == 1:
+            )
+            operations.table_init_create(model_id=model_id, username=username)
+            output,values = downloadnormal.process_dicts(username, model_id, [media])
+            if values is None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
             else:
                 raise Exception("Issue getting download")

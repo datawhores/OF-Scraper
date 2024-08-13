@@ -124,7 +124,8 @@ def get_max_post_count():
 def get_mediatypes():
     return read_args.retriveArgs().mediatype or config_data.get_filter()
 
-
+def get_download_text():
+    return read_args.retriveArgs().download_text or read_args.retriveArgs().download_text_only
 def get_download_bars():
     return (
         config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars

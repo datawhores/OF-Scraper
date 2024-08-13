@@ -32,10 +32,15 @@ from ofscraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.actions.actions.download.normal.utils.consumer import consumer
 from  ofscraper.actions.actions.download.utils.desc import desc
+from ofscraper.actions.actions.download.utils.text import textDownloader
+import ofscraper.utils.args.accessors.read as read_args
 
 @run
-async def process_dicts(username, model_id, medialist):
+async def process_dicts(username, model_id, medialist,posts):
     download_log_clear_helper()
+    await textDownloader(posts, username=username)
+    if read_args.retriveArgs().download_text_only:
+        return [],[]
     task1=None
     with progress_utils.setup_download_progress_live(multi=False):
         common_globals.mainProcessVariableInit()

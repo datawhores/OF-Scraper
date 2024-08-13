@@ -130,7 +130,25 @@ text_option = click.option(
     "--text",
     "--download-text"
     "download_text",
-    help="Filter posts with regex to block posts with common words for advertisements",
+    help="""
+    Download Text files in addition to all media from --mediatype or filter in the config
+    Text files are based on the --mediatype option
+    """,
+    default=False,
+    is_flag=True,
+)
+
+text_only_option = click.option(
+    "-tn",
+    "--text-only",
+    "--download-text-only",
+    "download_text_only",
+    help=
+    """
+    Download Text files, but skip download media
+    Text files are based on the --mediatype option
+    """
+    ,
     default=False,
     is_flag=True,
 )
