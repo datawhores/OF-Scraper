@@ -45,7 +45,7 @@ class commmandManager():
                                 ele, c=c
                             )
     
-                            posts = filters.filterPostFinal(posts)
+                            text_posts = filters.filterPostFinalText(posts)
                             like_posts = filters.post_filter_for_like(like_posts)
 
                         with progress_utils.setup_activity_group_live(revert=False):
@@ -60,7 +60,7 @@ class commmandManager():
                                 )
                             result=await funct(
                                     media=all_media,
-                                    posts=posts,
+                                    posts=text_posts,
                                     like_posts=like_posts,
                                     ele=ele,
                                 )

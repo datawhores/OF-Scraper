@@ -6,7 +6,7 @@ import ofscraper.actions.actions.metadata.normal.metadata as normal
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.actions.utils.log import empty_log
+from ofscraper.actions.utils.log import final_log_text
 from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.runner.close.final.final_user import post_user_script
 
@@ -21,7 +21,7 @@ async def metadata_process(username, model_id, medialist, posts=None):
 
 async def metadata_picker(username, model_id, medialist):
     if len(medialist) == 0:
-        out = empty_log(username)
+        out =final_log_text(username,0,0,0,0,0,0)
         logging.getLogger("shared").error(out)
         return out
     elif (

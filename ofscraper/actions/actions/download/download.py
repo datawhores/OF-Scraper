@@ -7,7 +7,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.actions.utils.log import empty_log
+from ofscraper.actions.utils.log import final_log_text
 from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.commands.utils.strings import (
@@ -51,11 +51,7 @@ async def download_process(userdata, medialist, posts=None):
 
 
 async def download_picker(username, model_id, medialist,posts):
-    if len(medialist) == 0:
-        out = empty_log(username)
-        logging.getLogger("shared").error(out)
-        return out,(0,0,0,0,0)
-    elif (
+    if(
         system.getcpu_count() > 1
         and (
             len(medialist)
@@ -63,7 +59,7 @@ async def download_picker(username, model_id, medialist,posts):
         )
         and settings.not_solo_thread()
     ):
-        return batch.process_dicts(username, model_id, medialist,posts)
+        return await batch.process_dicts(username, model_id, medialist,posts)
     else:
         return await normal.process_dicts(username, model_id, medialist,posts)
 

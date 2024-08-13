@@ -7,11 +7,6 @@ import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 
-def empty_log(username):
-    if read_args.retriveArgs().metadata:
-        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({0} MB) ({0}  changed media items total \\[{0}  videos, {0}  audios, {0}  photos], {0}  items unchanged, {0}  failed))[/white]"
-    else:
-        return f"[white][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({0} MB) ({0}  downloads total \\[{0}  videos, {0}  audios, {0}  photos], {0}  skipped, {0}  failed))[/white]"
 
 
 def get_medialog(ele):
@@ -72,74 +67,90 @@ def final_log(username, log=None):
     log.error("\n")
 
 
-def final_log_text(username):
+def final_log_text(username,photo_count=0,audio_count=0,video_count=0,forced_skipped_count=0,skipped_count=0,total_bytes_downloaded=0):
+    photo_count = photo_count or common_globals.photo_count
+    audio_count = audio_count or common_globals.audio_count
+    video_count = video_count or common_globals.video_count
+    skipped_count= skipped_count or common_globals.skipped
+    forced_skipped_count= forced_skipped_count or common_globals.forced_skipped
+    total_bytes_downloaded = total_bytes_downloaded or common_globals.total_bytes_downloaded
     total_count = (
-        common_globals.audio_count
-        + common_globals.photo_count
-        + common_globals.video_count
-    )
-    size_log = f"[bold green]{format_size(common_globals.total_bytes )}[/bold green]"
-
-    photo_log = (
-        f"[bold green]{common_globals.photo_count} photos[/bold green]"
-        if common_globals.photo_count > 0
-        else f"{common_globals.photo_count} photos"
+        photo_count + audio_count + video_count
     )
 
-    audio_log = (
-        f"[bold green]{common_globals.audio_count} audios[/bold green]"
-        if common_globals.audio_count > 0
-        else f"{common_globals.audio_count} audios"
-    )
+    size_log=_get_size_log(total_bytes_downloaded)
 
-    video_log = (
-        f"[bold green]{common_globals.video_count} videos[/bold green]"
-        if common_globals.video_count > 0
-        else f"{common_globals.video_count} videos"
-    )
+    photo_log =_section_log_helper(photo_count,"photos")
+    audio_log =_section_log_helper(audio_count,"audios")
+    video_log =_section_log_helper(video_count,"videos")
+    failed_log = _section_log_helper(skipped_count,"failed",color="red")
+    total_log=_get_total_log(total_count)
+    action=_get_action()
 
-    failed_log = (
-        f"[bold red]{common_globals.skipped} failed[/bold red]"
-        if common_globals.skipped > 0
-        else f"{common_globals.skipped} failed"
-    )
 
-    log_format = None
-    skipped_log = ""
+    skipped_log = _get_forced_skipped_log(forced_skipped_count)
+
+    outer_color=_get_outer_color(audio_count,video_count,photo_count)
+
+    return f"[{outer_color}]\\[{username}]\\[Action {action}] ({size_log}) ({total_log}\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/{outer_color}]"
+
+def _get_outer_color(audio_count,video_count,photo_count):
+    return "white" if (audio_count+video_count+photo_count)==0 else "bold deep_sky_blue2"
+def _get_size_log(total_bytes_downloaded):
+    color="white" if total_bytes_downloaded==0 else "bold green"
+    return f"[{color}]{format_size(total_bytes_downloaded )}[/{color}]"
+
+
+def _get_total_log(total_count):
+    color="white" if total_count==0 else "bold green"
     if read_args.retriveArgs().metadata:
-        log_format = "[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Metadata][/bold] ({size_log}) ([bold green]{total_count} changed media item total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
-        skipped_log = (
-            f"[bold yellow]{common_globals.forced_skipped} metadata unchanged[/bold yellow]"
-            if common_globals.forced_skipped > 0
-            else f"{common_globals.forced_skipped} items unchanged"
-        )
+        total=f"[{color}]{total_count} changed media item total [/{color}]"
     else:
-        log_format = "[deep_sky_blue2][bold]\\[{username}][/bold] [bold]\\[Action Download][/bold] ({size_log}) ([bold green]{total_count} downloads total [/bold green]\\[{video_log}, {audio_log}, {photo_log}], {skipped_log}, {failed_log}))[/deep_sky_blue2]"
+        total=f"[{color}]{total_count} downloads total [/{color}]"
+    return total
+
+def _get_action():
+    if read_args.retriveArgs().metadata:
+        return "Metadata"
+    
+    return "Download"
+
+def _get_forced_skipped_log(forced_skipped_count):
+    color="white" if forced_skipped_count==0 else "bold yellow"
+    if read_args.retriveArgs().metadata:
         skipped_log = (
-            f"[bold yellow]{common_globals.forced_skipped} skipped[/bold yellow]"
-            if common_globals.forced_skipped > 0
-            else f"{common_globals.forced_skipped} skipped"
-        )
+                f"[{color}]{forced_skipped_count} metadata unchanged[/{color}]"
+                if forced_skipped_count > 0
+                else f"{forced_skipped_count} items unchanged"
+            )
+    else:
+        skipped_log = (
+                    f"[bold yellow]{forced_skipped_count} skipped[/bold yellow]"
+                    if forced_skipped_count > 0
+                    else f"{forced_skipped_count} skipped"
+                )
+    return skipped_log
 
-    return log_format.format(
-        username=username,
-        total_count=total_count,
-        video_log=video_log,
-        audio_log=audio_log,
-        skipped_log=skipped_log,
-        failed_log=failed_log,
-        photo_log=photo_log,
-        size_log=size_log,
+
+def _section_log_helper(count,area,color="green"): 
+    return (
+        f"[bold {color}]{count} {area}[/bold {color}]"
+        if count > 0
+        else f"{count} {area}"
     )
-
-
-
+    
 
 
 def text_log(username, value=0, fails=0, exists=0, log=None):
+    outer_color="white" if  (value+fails+exists)==0 else "bold deep_sky_blue2"
+    text_log=_section_log_helper(value,"text")
+    exists_log=_section_log_helper(exists,"skipped")
+    fails_log=_section_log_helper(fails,"failed",color="red")
+    val=f"[{outer_color}]\\[{username}]\\[Action Text Download] \\[{text_log}, {exists_log}, {fails_log}][/{outer_color}]"
     (log or common_globals.log).warning(
-        f"[bold]{username}[/bold] {value} text, {exists} skipped, {fails} failed"
+        val
     )
+    return val
 
 
 def set_media_log(log, ele):

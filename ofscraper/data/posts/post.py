@@ -47,6 +47,7 @@ from ofscraper.utils.args.accessors.areas import (
     get_download_area,
     get_final_posts_area,
     get_like_area,
+    get_text_area
 )
 from ofscraper.utils.context.run_async import run
 
@@ -370,7 +371,6 @@ async def process_all_paid():
             insert_media = filters.filtermediaAreas(
                 all_medias, model_id=model_id, username=username
             )
-            new_posts = filters.filterPostFinal(new_posts)
             await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,
@@ -382,11 +382,13 @@ async def process_all_paid():
                 username=username,
                 downloaded=False,
             )
+            text_posts = filters.filterPostFinalText(new_posts)
+
             final_medias = filters.filtermediaFinal(insert_media, username, model_id)
             output[model_id] = dict(
                 model_id=model_id,
                 username=username,
-                posts=new_posts,
+                posts=text_posts,
                 medias=final_medias,
             )
             log.debug(
@@ -482,12 +484,13 @@ def process_single_task(func):
 
 async def process_tasks(model_id, username, ele, c=None):
     mediaObjs = []
-    postObjs = []
+    textObjs = []
     likeObjs = []
     tasks = []
 
     like_area = get_like_area()
     download_area = get_download_area()
+    text_area= get_text_area()
     final_post_areas = get_final_posts_area()
     max_count = max(
         min(
@@ -592,7 +595,8 @@ async def process_tasks(model_id, username, ele, c=None):
                     likeObjs.extend(posts or [])
                 if area.title() in download_area:
                     mediaObjs.extend(medias or [])
-                    postObjs.extend(posts or [])
+                if area.title() in text_area:
+                    textObjs.extend(posts or [])
             except Exception as E:
                 log.debug(E)
-    return mediaObjs, postObjs, likeObjs
+    return mediaObjs, textObjs, likeObjs

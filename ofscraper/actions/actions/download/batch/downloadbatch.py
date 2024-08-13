@@ -43,14 +43,22 @@ from ofscraper.actions.actions.download.batch.utils.queue import queue_process
 from  ofscraper.actions.actions.download.utils.desc import desc
 platform_name = platform.system()
 from ofscraper.actions.actions.download.utils.text import textDownloader
+from ofscraper.utils.args.accessors.areas import get_download_area
 
 
-def process_dicts(username, model_id, filtered_medialist,posts):
+async def process_dicts(username, model_id, filtered_medialist,posts):
     log = logging.getLogger("shared")
     log.info("Downloading in batch mode")
-    textDownloader(posts, username=username)
-    if read_args.retriveArgs().download_text_only:
-        return
+    log_text_array=[]
+    if read_args.retriveArgs().download_text:
+        log_text_array.append(await textDownloader(posts, username=username))
+    if len(get_download_area())==0:
+        return  log_text_array,(0,0,0,0,0)
+    elif len(filtered_medialist)==0:
+        empty_log=final_log_text(username,0,0,0,0,0,0)
+        logging.getLogger("shared").error(empty_log)
+        log_text_array.append(empty_log)
+        return  log_text_array,(0,0,0,0,0)
     try:
         common_globals.main_globals()
         download_log_clear_helper()
@@ -125,7 +133,8 @@ def process_dicts(username, model_id, filtered_medialist,posts):
         progress_updater.remove_download_task(task1)
         setDirectoriesDate(log)
         final_log(username)
-        return final_log_text(username),(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
+        log_text_array.append(final_log_text(username))
+        return log_text_array,(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():

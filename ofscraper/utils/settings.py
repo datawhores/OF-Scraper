@@ -4,6 +4,7 @@ import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
+from ofscraper.utils.args.accessors.areas import get_text_area
 
 
 def not_solo_thread():
@@ -125,7 +126,7 @@ def get_mediatypes():
     return read_args.retriveArgs().mediatype or config_data.get_filter()
 
 def get_download_text():
-    return read_args.retriveArgs().download_text or read_args.retriveArgs().download_text_only
+    return get_text_area()
 def get_download_bars():
     return (
         config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars

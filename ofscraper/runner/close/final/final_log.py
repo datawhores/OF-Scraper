@@ -12,9 +12,11 @@ r"""
 """
 import logging
 import time
+import itertools
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.stdout as stdout_logs
+
 
 
 
@@ -26,7 +28,11 @@ def final_log(data):
         time.sleep(2)
         log.warning("\n\n\n")
         log.warning("[bold yellow]Final Results Logs[/bold yellow]")
-        for record in data:
+        flattened_list = []
+        [flattened_list.extend(ele) if isinstance(ele, list) else flattened_list.append(ele) for ele in data]
+        for record in flattened_list:
+            if record==None:
+                continue
             log.warning(record)
         log.warning("\n\n\n")
         # give time for last long to process

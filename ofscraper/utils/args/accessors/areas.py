@@ -37,6 +37,25 @@ def get_download_area():
         post.update(set(all_choices))
     return finalize_choice(all_choices, post)
 
+def get_text_area():
+    post = None
+    all_choices = [
+        "Highlights",
+        "Archived",
+        "Messages",
+        "Timeline",
+        "Pinned",
+        "Stories",
+        "Purchased",
+        "Profile",
+        "Streams",
+    ]
+    all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
+    post = set(read_args.retriveArgs().download_text or [])
+    if "All" in post:
+        post.update(set(all_choices))
+    return finalize_choice(all_choices, post)
+
 
 def finalize_choice(all_choices, post):
     out = set(post)
@@ -65,6 +84,7 @@ def get_final_posts_area():
     args = read_args.retriveArgs()
     if "download" in args.action:
         final_post_areas.update(get_download_area())
+        final_post_areas.update(get_text_area())
     if args.command == "metadata":
         final_post_areas.update(get_download_area())
     if "like" in args.action or "unlike" in args.action:

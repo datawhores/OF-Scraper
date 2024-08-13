@@ -3,7 +3,6 @@ import traceback
 
 import ofscraper.classes.media as media_class
 import ofscraper.actions.utils.log as logs
-import ofscraper.utils.settings as settings
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.args.accessors.read as read_args
@@ -13,13 +12,10 @@ import ofscraper.utils.args.accessors.read as read_args
 async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")
     if read_args.retriveArgs().command == "metadata":
-        return
+        return 
     if not bool(objectdicts):
-        return
+        return 
     try:
-        if not settings.get_download_text():
-            log.info("Skipping Downloading of Text Files")
-            return
         objectdicts = (
             [objectdicts] if not isinstance(objectdicts, list) else objectdicts
         )
@@ -32,7 +28,7 @@ async def textDownloader(objectdicts, username=None):
         ).values()
         count, fails, exists = await text.get_text(data)
         username = username or "Unknown"
-        logs.text_log(username, count, fails, exists, log=log)
+        return logs.text_log(username, count, fails, exists, log=log)
     except Exception as E:
         log.debug(f"Issue with text {E}")
         log.debug(f"Issue with text {traceback.format_exc()}")

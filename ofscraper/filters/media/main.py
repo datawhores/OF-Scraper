@@ -161,18 +161,16 @@ def filterMediaAreasHelper(media):
     return list(media)
 
 
-def filterPostFinal(post):
+def filterPostFinalText(post):
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
     if "download" not in actions and not scrape_paid:
         log.debug("Skipping filtering because download not in actions")
-        return post
+        return []
 
     if not settings.get_download_text():
         log.info("Skipping filtering Text files download not  toggled")
-        return post
-    log.info("Filtering posts for text")
-
+        return []
     count = 1
     trace_log_post(count, post, "initial posts no filter:")
     log.debug(f"filter {count}-> initial posts no filter count: {len(post)}")

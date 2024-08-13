@@ -128,30 +128,47 @@ block_ads_option = click.option(
 text_option = click.option(
     "-t",
     "--text",
-    "--download-text"
+    "--download-text",
     "download_text",
+    type=MultiChoicePost(
+        [
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Stories",
+            "Purchased",
+            "Profile",
+            "Labels",
+            "Labels+",
+            "Labels*",
+        ],
+        case_sensitive=False,
+    ),
+    callback=StringSplitParseTitle,
     help="""
     Download Text files in addition to all media from --mediatype or filter in the config
     Text files are based on the --mediatype option
     """,
-    default=False,
-    is_flag=True,
 )
 
-text_only_option = click.option(
-    "-tn",
-    "--text-only",
-    "--download-text-only",
-    "download_text_only",
-    help=
-    """
-    Download Text files, but skip download media
-    Text files are based on the --mediatype option
-    """
-    ,
-    default=False,
-    is_flag=True,
-)
+# text_only_option = click.option(
+#     "-tn",
+#     "--text-only",
+#     "--download-text-only",
+#     "download_text_only",
+#     help=
+#     """
+#     Download Text files, but skip download media
+#     Text files are based on the --mediatype option
+#     """
+#     ,
+#     default=False,
+#     is_flag=True,
+# )
 
 # allow_ads_option = click.option(
 #     "-aa",

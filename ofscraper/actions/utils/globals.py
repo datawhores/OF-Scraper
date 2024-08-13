@@ -26,6 +26,13 @@ innerlog = None
 localDirSet = None
 log=None
 
+#count
+photo_count=0
+video_count=0
+audio_count=0
+skipped=0
+forced_skipped=0
+total_bytes_downloaded=0
 
 
 
