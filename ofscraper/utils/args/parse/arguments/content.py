@@ -124,6 +124,17 @@ block_ads_option = click.option(
     is_flag=True,
 )
 
+
+text_option = click.option(
+    "-t",
+    "--text",
+    "--download-text"
+    "download_text",
+    help="Filter posts with regex to block posts with common words for advertisements",
+    default=False,
+    is_flag=True,
+)
+
 # allow_ads_option = click.option(
 #     "-aa",
 #     "--allow-ads",
