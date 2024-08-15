@@ -671,6 +671,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
             datawhores/of-scraper:latest
@@ -756,6 +757,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
             ghcr.io/datawhores/of-scraper:latest
@@ -811,6 +813,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
 
@@ -895,6 +898,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
