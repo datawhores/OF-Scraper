@@ -85,3 +85,16 @@ text_only_option = click.option(
     is_flag=True,
 )
 
+text_option = click.option(
+    "-tn",
+    "--text",
+    "--download-text",
+    "text_only",
+    help=
+    """
+    Download Text files in addition to media
+    """
+    ,
+    default=False,
+    is_flag=True,
+)

@@ -123,7 +123,8 @@ def process_item():
             )
             operations.table_init_create(model_id=model_id, username=username)
             if read_args.retriveArgs().text_only:
-                textDownloader(post,username)
+                output=textDownloader(post,username)
+
             else:
                 output,values = downloadnormal.process_dicts(username, model_id, [media])
                 if values is None or values[-1] == 1:

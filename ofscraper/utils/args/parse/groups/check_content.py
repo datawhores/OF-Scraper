@@ -19,6 +19,8 @@ content_check_options = click.option_group(
 )
 
 
+
+
 url_group = click.constraints.require_one(url_option, file_option)
 
 username_group = click.constraints.require_one(user_option, file_username_option)
