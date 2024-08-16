@@ -50,8 +50,7 @@ RUN make install
 
 FROM base AS final
 
-ARG TARGETPLATFORM
-ARG BUILDARCH
+ARG TARGETARCH
 
 COPY --from=builder /venv /venv
 
@@ -82,7 +81,7 @@ RUN addgroup --gid 1000 ofscraper && \
 RUN USER=ofscraper && \
     GROUP=ofscraper && \
     LATEST_VERSION=$(curl -s https://api.github.com/repos/boxboat/fixuid/releases/latest | grep "tag_name"| cut -d'v' -f2 | cut -d'"' -f1) && \
-    curl -SsL "https://github.com/boxboat/fixuid/releases/latest/download/fixuid-$LATEST_VERSION-linux-$BUILDARCH.tar.gz" | tar -C /usr/local/bin -xzf - && \
+    curl -SsL "https://github.com/boxboat/fixuid/releases/latest/download/fixuid-$LATEST_VERSION-linux-$TARGETARCH.tar.gz" | tar -C /usr/local/bin -xzf - && \
     chown root:root /usr/local/bin/fixuid && \
     chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid && \
