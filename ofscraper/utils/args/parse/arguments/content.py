@@ -153,6 +153,7 @@ text_option = click.option(
     Download Text files in addition to all media from --mediatype or filter in the config
     Text files are based on the --mediatype option
     """,
+    default=""
 )
 
 # text_only_option = click.option(
