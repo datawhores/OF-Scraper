@@ -1,5 +1,6 @@
 import json
 import re
+import logging
 
 from rich.console import Console
 
@@ -10,11 +11,16 @@ import ofscraper.utils.auth.utils.prompt as auth_prompt
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.auth.utils.warning.check import check_auth_warning
 from ofscraper.utils.auth.utils.warning.warning import authwarning
+import ofscraper.utils.args.accessors.read as read_args
+
 
 console = Console()
 
 
 def make_auth(auth=None):
+    if read_args.retriveArgs().auth_fail:
+        logging.getLogger("shared").info("auth failed quitting on error")
+        quit()
     while True:
         authwarning(common_paths.get_auth_file())
         browserSelect = prompts.browser_prompt()

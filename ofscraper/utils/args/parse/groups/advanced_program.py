@@ -11,6 +11,7 @@ from ofscraper.utils.args.parse.arguments.advanced_program import (
     no_api_cache_option,
     no_cache_option,
     update_profile_option,
+    auth_fail,
 )
 
 advanced_options_desc="Advanced Program Options"
@@ -23,6 +24,7 @@ advanced_options_tuple=( no_cache_option,
     client_id_option,
     dynamic_rules_option,
     update_profile_option,
+    auth_fail,
     download_script_option,
     post_script_option)
 # Create the option group
