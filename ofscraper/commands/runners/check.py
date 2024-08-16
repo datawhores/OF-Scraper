@@ -122,11 +122,14 @@ def process_item():
                     f"Downloading individual media ({media.filename}) to disk for {username}"
             )
             operations.table_init_create(model_id=model_id, username=username)
-            output,values = downloadnormal.process_dicts(username, model_id, [media])
-            if values is None or values[-1] == 1:
-                    raise Exception("Download is marked as skipped")
+            if read_args.retriveArgs().text_only:
+                textDownloader(post,username)
             else:
-                raise Exception("Issue getting download")
+                output,values = downloadnormal.process_dicts(username, model_id, [media])
+                if values is None or values[-1] == 1:
+                        raise Exception("Download is marked as skipped")
+                else:
+                    raise Exception("Issue getting download")
  
 
             log.info("Download Finished")
@@ -174,6 +177,8 @@ async def data_refill(media_id, post_id, target_name, model_id):
         ):
             break
 
+def get_areas():
+    return read_args.retriveArgs().check_area
 
 def checker():
     args = read_args.retriveArgs()
@@ -248,7 +253,7 @@ async def post_check_retriver():
                 user_dict.setdefault(model_id, {})["model_id"] = model_id
                 user_dict.setdefault(model_id, {})["username"] = user_name
             if user_dict.get(model_id) and model_id and user_name:
-                areas = read_args.retriveArgs().check_area
+                areas = get_areas()
                 await operations.table_init_create(
                     username=user_name, model_id=model_id
                 )

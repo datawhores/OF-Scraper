@@ -1,6 +1,7 @@
 import cloup as click
 
-from ofscraper.utils.args.parse.arguments.check import force, url_group
+from ofscraper.utils.args.parse.arguments.check import force
+from ofscraper.utils.args.parse.groups.check_content import url_group
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes

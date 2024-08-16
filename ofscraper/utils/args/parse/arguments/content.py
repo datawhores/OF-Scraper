@@ -156,28 +156,8 @@ text_option = click.option(
     default=""
 )
 
-# text_only_option = click.option(
-#     "-tn",
-#     "--text-only",
-#     "--download-text-only",
-#     "download_text_only",
-#     help=
-#     """
-#     Download Text files, but skip download media
-#     Text files are based on the --mediatype option
-#     """
-#     ,
-#     default=False,
-#     is_flag=True,
-# )
 
-# allow_ads_option = click.option(
-#     "-aa",
-#     "--allow-ads",
-#     help="Allows posts with common advertisment words",
-#     default=False,
-#     is_flag=True,
-# )
+
 
 
 scrape_paid_option = click.option(

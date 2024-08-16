@@ -70,6 +70,18 @@ force = click.option(
     is_flag=True,
     default=False,
 )
-url_group = click.constraints.require_one(url_option, file_option)
 
-username_group = click.constraints.require_one(user_option, file_username_option)
+text_only_option = click.option(
+    "-tn",
+    "--text-only",
+    "--download-text-only",
+    "text_only",
+    help=
+    """
+    Download Text files, but skip download media
+    """
+    ,
+    default=False,
+    is_flag=True,
+)
+
