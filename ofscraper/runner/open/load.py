@@ -50,6 +50,7 @@ def setLogger():
     logs.discord_warning()
     logger.start_threads()
 
+
 def systemSet():
     system.setName()
     system.set_eventloop()

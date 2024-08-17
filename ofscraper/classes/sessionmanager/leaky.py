@@ -4,15 +4,16 @@ import ofscraper.utils.settings as settings
 from aiolimiter.compat import wait_for
 
 
-class LeakyBucket( AsyncLimiter):
-    def __init__(self,*args,**kwargs):
-        self.max_amount=1024*1024*10
-        super().__init__(*args,**kwargs)
+class LeakyBucket(AsyncLimiter):
+    def __init__(self, *args, **kwargs):
+        self.max_amount = 1024 * 1024 * 10
+        super().__init__(*args, **kwargs)
+
     async def acquire(self, amount: float = 1):
-        if settings.get_download_limit()<=0:
+        if settings.get_download_limit() <= 0:
             return
         if not isinstance(amount, int):
-            amount=len(amount)
+            amount = len(amount)
         loop = asyncio.get_running_loop()
         task = asyncio.current_task(loop)
         assert task is not None
@@ -31,7 +32,8 @@ class LeakyBucket( AsyncLimiter):
             fut.cancel()
         self._waiters.pop(task, None)
         self._level += amount
-        return None  
+        return None
+
     def has_capacity(self, amount: float = 1) -> bool:
         """Check if there is enough capacity remaining in the limiter
 
@@ -48,7 +50,7 @@ class LeakyBucket( AsyncLimiter):
                 if not fut.done():
                     fut.set_result(True)
                     break
-        #allows for one packet to be received until bucket empties
-        if self._level>self.max_rate:
+        # allows for one packet to be received until bucket empties
+        if self._level > self.max_rate:
             return False
         return self._level + amount <= self.max_amount

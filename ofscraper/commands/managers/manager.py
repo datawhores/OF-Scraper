@@ -1,9 +1,6 @@
-
-
 import traceback
 import time
-import  logging
-
+import logging
 
 
 import ofscraper.utils.args.accessors.read as read_args
@@ -27,11 +24,12 @@ from ofscraper.commands.utils.strings import (
 
 log = logging.getLogger("shared")
 
-class commmandManager():
+
+class commmandManager:
     def __init__(self):
         pass
-   
-    def _get_user_action_function(self,funct=None):
+
+    def _get_user_action_function(self, funct=None):
         async def wrapper(userdata, session, *args, **kwargs):
             async with session as c:
                 data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
@@ -44,7 +42,7 @@ class commmandManager():
                             all_media, posts, like_posts = await post_media_process(
                                 ele, c=c
                             )
-    
+
                             text_posts = filters.filterPostFinalText(posts)
                             like_posts = filters.post_filter_for_like(like_posts)
 
@@ -58,15 +56,13 @@ class commmandManager():
                                 logging.getLogger("shared_other").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
-                            result=await funct(
-                                    media=all_media,
-                                    posts=text_posts,
-                                    like_posts=like_posts,
-                                    ele=ele,
-                                )
-                            data.extend(
-                                result
+                            result = await funct(
+                                media=all_media,
+                                posts=text_posts,
+                                like_posts=like_posts,
+                                ele=ele,
                             )
+                            data.extend(result)
                     except Exception as e:
 
                         log.traceback_(f"failed with exception: {e}")
@@ -76,17 +72,25 @@ class commmandManager():
                             raise e
                     finally:
                         progress_updater.increment_user_activity()
-                progress_updater.update_activity_task(description="Finished Action Mode")
+                progress_updater.update_activity_task(
+                    description="Finished Action Mode"
+                )
                 time.sleep(1)
                 return data
 
         return wrapper
-    
-    def _get_userfirst_data_function(self,funct):
+
+    def _get_userfirst_data_function(self, funct):
         async def wrapper(userdata, session, *args, **kwargs):
-            progress_updater.update_activity_task(description="Getting all user data first")
-            progress_updater.update_user_activity(description="Users with Data Retrieved")
-            progress_updater.update_activity_count(description="Overall progress", total=2)
+            progress_updater.update_activity_task(
+                description="Getting all user data first"
+            )
+            progress_updater.update_user_activity(
+                description="Users with Data Retrieved"
+            )
+            progress_updater.update_activity_count(
+                description="Overall progress", total=2
+            )
             data = {}
             async with session:
                 for ele in userdata:
@@ -106,8 +110,7 @@ class commmandManager():
 
         return wrapper
 
-
-    def _get_userfirst_action_execution_function(self,funct):
+    def _get_userfirst_action_execution_function(self, funct):
         async def wrapper(data, *args, **kwargs):
             out = ["[bold yellow]User First Results[/bold yellow]"]
             progress_updater.increment_activity_count(total=2)
@@ -129,17 +132,15 @@ class commmandManager():
                         )
                     try:
                         with progress_utils.setup_activity_counter_live(revert=False):
-                            result=await funct(
-                                    posts,
-                                    like_posts,
-                                    *args,
-                                    media=all_media,
-                                    ele=ele,
-                                    **kwargs,
+                            result = await funct(
+                                posts,
+                                like_posts,
+                                *args,
+                                media=all_media,
+                                ele=ele,
+                                **kwargs,
                             )
-                            out.extend(
-                            result 
-                            )
+                            out.extend(result)
                     except Exception as e:
                         log.traceback_(f"failed with exception: {e}")
                         log.traceback_(traceback.format_exc())
@@ -157,8 +158,10 @@ class commmandManager():
                     description="Overall progress", total=2
                 )
             return out
+
         return wrapper
-    def _data_helper(self,user):
+
+    def _data_helper(self, user):
         avatar = user.avatar
         username = user.name
         active = user.active
@@ -177,14 +180,11 @@ class commmandManager():
             )
         )
         logging.getLogger("shared_other").info(
-            area_str.format(areas=",".join(final_post_areas), name=username, active=active)
+            area_str.format(
+                areas=",".join(final_post_areas), name=username, active=active
+            )
         )
+
     @property
     def run_action(self):
         return len(read_args.retriveArgs().action) > 0
-
-    
-
-
-
-

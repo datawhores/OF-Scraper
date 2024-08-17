@@ -53,7 +53,7 @@ client_id_option = click.option(
     default=None,
 )
 
-auth_fail= click.option(
+auth_fail = click.option(
     "-al",
     "--auth-fail",
     "--auth-quit",

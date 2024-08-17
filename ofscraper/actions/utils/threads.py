@@ -1,17 +1,18 @@
 import time
-import  logging
-def start_threads(queue_threads,processes):
+import logging
+
+
+def start_threads(queue_threads, processes):
     [thread.start() for thread in queue_threads]
     [process.start() for process in processes]
 
-def handle_threads(queue_threads,processes,log_threads):
+
+def handle_threads(queue_threads, processes, log_threads):
     log = logging.getLogger("shared")
     log.debug(f"Initial Queue Threads: {queue_threads}")
     log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
     while True:
-        newqueue_threads = list(
-            filter(lambda x: x and x.is_alive(), queue_threads)
-        )
+        newqueue_threads = list(filter(lambda x: x and x.is_alive(), queue_threads))
         if len(newqueue_threads) != len(queue_threads):
             log.debug(f"Remaining Queue Threads: {newqueue_threads}")
             log.debug(f"Number of Queue Threads: {len(newqueue_threads)}")

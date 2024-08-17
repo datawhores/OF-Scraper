@@ -23,14 +23,8 @@ import ofscraper.utils.hash as hash
 from ofscraper.actions.utils.paths.media import add_path
 
 
-
 def add_additional_data(placeholderObj, ele):
     add_path(placeholderObj, ele)
-
-
-
-
-
 
 
 async def set_profile_cache_helper(ele):
@@ -40,12 +34,10 @@ async def set_profile_cache_helper(ele):
         )
 
 
-
 async def get_hash(file_data, mediatype=None):
     return await asyncio.get_event_loop().run_in_executor(
         common_globals.thread, partial(hash.get_hash, file_data, mediatype=mediatype)
     )
-
 
 
 def get_unknown_content_type(ele):
@@ -63,6 +55,6 @@ def is_bad_url(url):
     elif len(match.groups()) < 1:
         return False
     for ele in constants.getattr("BAD_URL_HOST"):
-        if re.search(ele,match.group(1)):
+        if re.search(ele, match.group(1)):
             return True
     return False

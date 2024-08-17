@@ -47,7 +47,7 @@ from ofscraper.utils.args.accessors.areas import (
     get_download_area,
     get_final_posts_area,
     get_like_area,
-    get_text_area
+    get_text_area,
 )
 from ofscraper.utils.context.run_async import run
 
@@ -61,9 +61,7 @@ async def post_media_process(ele, c=None):
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
     insert_medias, posts, like_post = await process_areas(ele, model_id, username, c=c)
-    filter_medias= filters.filtermediaFinal(
-    insert_medias, username, model_id
-    )
+    filter_medias = filters.filtermediaFinal(insert_medias, username, model_id)
     return filter_medias, posts, like_post
 
 
@@ -75,6 +73,7 @@ async def post_media_process_all(ele, c=None):
     await operations.table_init_create(model_id=model_id, username=username)
     data = await process_areas(ele, model_id, username, c=c)
     return data
+
 
 @free.space_checker
 async def process_messages(model_id, username, c):
@@ -490,7 +489,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
     like_area = get_like_area()
     download_area = get_download_area()
-    text_area= get_text_area()
+    text_area = get_text_area()
     final_post_areas = get_final_posts_area()
     max_count = max(
         min(

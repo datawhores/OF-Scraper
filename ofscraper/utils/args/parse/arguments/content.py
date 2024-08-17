@@ -8,7 +8,7 @@ from ofscraper.utils.args.callbacks.string import (
     StringTupleList,
 )
 from ofscraper.utils.args.types.arrow import ArrowType
-from ofscraper.utils.args.types.choice import MultiChoice,MultiChoicePost
+from ofscraper.utils.args.types.choice import MultiChoice, MultiChoicePost
 
 # Define individual options
 posts_option = click.option(
@@ -153,11 +153,8 @@ text_option = click.option(
     Download Text files in addition to all media from --mediatype or filter in the config
     Text files are based on the --mediatype option
     """,
-    default=""
+    default="",
 )
-
-
-
 
 
 scrape_paid_option = click.option(

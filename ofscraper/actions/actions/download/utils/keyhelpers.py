@@ -19,8 +19,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
 from ofscraper.actions.utils.retries import get_cmd_download_req_retries
 from ofscraper.actions.utils.log import get_medialog
-from ofscraper.utils.system.subprocess  import run
-
+from ofscraper.utils.system.subprocess import run
 
 
 log = None
@@ -58,7 +57,9 @@ async def un_encrypt(item, c, ele, input_=None):
             raise Exception(f"{get_medialog(ele)} Could not get key")
         await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
-            partial(cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")),
+            partial(
+                cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")
+            ),
         )
         log.debug(f"{get_medialog(ele)} got key")
         newpath = pathlib.Path(
@@ -78,7 +79,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 "-codec",
                 "copy",
                 str(newpath),
-                "-y"
+                "-y",
             ]
         )
         if not pathlib.Path(newpath).exists():

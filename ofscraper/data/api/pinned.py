@@ -25,7 +25,7 @@ import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.data.api.common.timeline import process_individual
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw,trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 
 log = logging.getLogger("shared")
@@ -93,7 +93,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} tasks",new_posts)
+                trace_progress_log(f"{API} tasks", new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -104,7 +104,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API} final",responseArray,final_count=True)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)}")
     return responseArray
 
@@ -127,11 +127,13 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
             f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
-        log.debug(f"trying access  {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
-        async with c.requests_async(
-            url=url
-        ) as r:
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
+        log.debug(
+            f"trying access  {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+        )
+        async with c.requests_async(url=url) as r:
+            log.debug(
+                f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            )
             posts = (await r.json_())["list"]
             posts = list(sorted(posts, key=lambda x: float(x["postedAtPrecise"])))
             posts = list(
@@ -156,7 +158,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
                 log.debug(
                     f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}"
                 )
-                trace_progress_log(f"{API} requests",posts)
+                trace_progress_log(f"{API} requests", posts)
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_pinned_posts(

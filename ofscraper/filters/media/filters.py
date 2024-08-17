@@ -18,7 +18,6 @@ import ofscraper.utils.constants as constants
 log = logging.getLogger("shared")
 
 
-
 def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 

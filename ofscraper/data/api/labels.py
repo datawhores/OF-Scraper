@@ -94,7 +94,7 @@ async def process_tasks_labels(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} names tasks",new_posts)
+                trace_progress_log(f"{API} names tasks", new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -105,7 +105,7 @@ async def process_tasks_labels(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API} names final",responseArray,final_count=True)
+    trace_log_raw(f"{API} names final", responseArray, final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)}")
 
     return responseArray
@@ -119,7 +119,6 @@ async def scrape_labels(c, model_id, offset=0):
     task = None
     log.debug(f"trying access label names with url:{url}  offset:{offset}")
 
-
     try:
 
         task = progress_utils.add_api_job_task(
@@ -127,19 +126,19 @@ async def scrape_labels(c, model_id, offset=0):
             visible=True,
         )
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
 
             data = await r.json_()
-            log.debug(f"successfully access label names with url:{url}  offset:{offset}")
+            log.debug(
+                f"successfully access label names with url:{url}  offset:{offset}"
+            )
 
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labels names found {len(labels)}")
             log.debug(
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
-            trace_progress_log(f"{API} names requests",data)
+            trace_progress_log(f"{API} names requests", data)
 
             if (
                 data.get("hasMore")
@@ -187,13 +186,11 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
                 progress_utils.update_api_task(
                     page_task, description=f"Labels Progress: {page_count}"
                 )
-                new_posts = label_dedupe(
-                    responseDict[label["id"]]["seen"], posts
-                )
+                new_posts = label_dedupe(responseDict[label["id"]]["seen"], posts)
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} content tasks",new_posts)
+                trace_progress_log(f"{API} content tasks", new_posts)
                 responseDict[label["id"]]["posts"].extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -226,7 +223,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
             ]
         )
     )
-    trace_log_raw(f"{API} content final",list(responseDict.values()),final_count=True)
+    trace_log_raw(f"{API} content final", list(responseDict.values()), final_count=True)
     progress_utils.remove_api_task(page_task)
     return list(responseDict.values())
 
@@ -244,9 +241,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
         )
         log.debug(f"trying to access label names with url:{url}  offset:{offset}")
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
 
             data = await r.json_()
             log.debug(f"trying to access label names with url:{url}  offset:{offset}")
@@ -256,7 +251,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             log.debug(
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
-            trace_progress_log(f"{API} content requests",data)
+            trace_progress_log(f"{API} content requests", data)
 
             if data.get("hasMore") and len(posts) > 0:
                 offset += len(posts)
@@ -301,5 +296,3 @@ def get_default_label_dict(labels):
         output[label["id"]]["seen"] = set()
         output[label["id"]]["posts"] = []
     return output
-
-

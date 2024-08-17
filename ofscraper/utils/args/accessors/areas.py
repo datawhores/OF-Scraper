@@ -37,6 +37,7 @@ def get_download_area():
         post.update(set(all_choices))
     return finalize_choice(all_choices, post)
 
+
 def get_text_area():
     post = None
     all_choices = [

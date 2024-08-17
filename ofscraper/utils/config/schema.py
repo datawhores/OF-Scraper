@@ -41,7 +41,7 @@ def get_current_config_schema(config: dict = None) -> dict:
         "performance_options": {
             "download_sems": data.get_download_semaphores(config=config),
             "thread_count": data.get_threads(config=config),
-            "download_limit":data.get_download_limit(config=config),
+            "download_limit": data.get_download_limit(config=config),
         },
         "content_filter_options": {
             "block_ads": data.get_block_ads(config=config),
@@ -66,7 +66,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
         },
-        "scripts_options":{
+        "scripts_options": {
             "post_download_script": data.get_post_download_script(config=config),
             "post_script": data.get_post_script(config=config),
         },

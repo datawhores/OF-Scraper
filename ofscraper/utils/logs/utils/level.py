@@ -77,8 +77,7 @@ def getNumber(input_):
         return logging.getLevelName(input_)
     return input_
 
+
 def getNumberOutput():
-    level_name=read_args.retriveArgs().output
+    level_name = read_args.retriveArgs().output
     return getNumber(level_name)
-
-

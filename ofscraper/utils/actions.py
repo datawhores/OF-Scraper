@@ -19,7 +19,6 @@ import ofscraper.utils.system.free as free
 import ofscraper.utils.settings as settings
 
 
-
 def reset_download():
     args = read_args.retriveArgs()
 
@@ -98,7 +97,7 @@ def set_download_area(action=None):
     selected = areas.get_download_area()
     if areas.get_text_area():
         pass
-    elif args.command == "metadata": 
+    elif args.command == "metadata":
         if args.anon and all([ele in not_anon_safe for ele in selected]):
             selected = prompts.metadata_anon_areas_prompt()
         elif not args.anon and len(selected) == 0:

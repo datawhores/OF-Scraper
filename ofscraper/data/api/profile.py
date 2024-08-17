@@ -53,7 +53,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                 r.json(),
                 int(constants.getattr("PROFILE_DATA_EXPIRY")),
             )
-            
+
             log.trace(f"username date: {r.json()}")
             return r.json()
     except Exception as E:
@@ -71,9 +71,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
     try:
 
         log.info(f"getting {username} with {url}")
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             if r.status == 404:
                 return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
             cache.set(

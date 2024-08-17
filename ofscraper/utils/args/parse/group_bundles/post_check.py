@@ -6,7 +6,7 @@ from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_ar
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
 from ofscraper.utils.args.parse.groups.check_content import content_check_options
-from  ofscraper.utils.args.helpers.hide_args import hide_check_mode
+from ofscraper.utils.args.helpers.hide_args import hide_check_mode
 
 
 def post_check_args(func):
@@ -27,7 +27,7 @@ def post_check_args(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
-    hide_check_mode(wrapper)
 
+    hide_check_mode(wrapper)
 
     return wrapper

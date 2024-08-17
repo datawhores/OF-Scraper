@@ -62,6 +62,7 @@ def main():
             with exit.DelayedKeyboardInterrupt():
                 raise E
 
+
 def scrapper():
     global selectedusers
     selectedusers = None

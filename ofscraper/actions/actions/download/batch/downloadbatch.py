@@ -37,29 +37,30 @@ import ofscraper.utils.logs.other as other_logs
 from ofscraper.utils.system.speed import add_pids_to_download_obj
 from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.mediasplit import get_mediasplits
-from ofscraper.actions.actions.download.batch.utils.consumer  import consumer
-from ofscraper.actions.utils.threads import handle_threads,start_threads
+from ofscraper.actions.actions.download.batch.utils.consumer import consumer
+from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
-from  ofscraper.actions.actions.download.utils.desc import desc
+from ofscraper.actions.actions.download.utils.desc import desc
+
 platform_name = platform.system()
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
 
 
-async def process_dicts(username, model_id, filtered_medialist,posts):
+async def process_dicts(username, model_id, filtered_medialist, posts):
     log = logging.getLogger("shared")
     log.info("Downloading in batch mode")
-    log_text_array=[]
+    log_text_array = []
     log_text_array.append(await textDownloader(posts, username=username) or [])
     if read_args.retriveArgs().text_only:
-        return  log_text_array,(0,0,0,0,0)
-    elif len(get_download_area())==0:
-        return  log_text_array,(0,0,0,0,0)
-    elif len(filtered_medialist)==0:
-        empty_log=final_log_text(username,0,0,0,0,0,0)
+        return log_text_array, (0, 0, 0, 0, 0)
+    elif len(get_download_area()) == 0:
+        return log_text_array, (0, 0, 0, 0, 0)
+    elif len(filtered_medialist) == 0:
+        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(empty_log)
         log_text_array.append(empty_log)
-        return  log_text_array,(0,0,0,0,0)
+        return log_text_array, (0, 0, 0, 0, 0)
     try:
         common_globals.main_globals()
         download_log_clear_helper()
@@ -69,17 +70,16 @@ async def process_dicts(username, model_id, filtered_medialist,posts):
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
             stdout_logqueues = [AioPipe() for _ in range(num_proc)]
-    
-            #start stdout/main queues consumers
-            log_threads=[]
+
+            # start stdout/main queues consumers
+            log_threads = []
             for i in range(num_proc):
-                thread=stdout_logs.start_stdout_logthread(
-                input_=stdout_logqueues[i][0],
-                name=f"ofscraper_{model_id}_{i+1}",
-                count=1,
+                thread = stdout_logs.start_stdout_logthread(
+                    input_=stdout_logqueues[i][0],
+                    name=f"ofscraper_{model_id}_{i+1}",
+                    count=1,
                 )
                 log_threads.append(thread)
-
 
             processes = [
                 aioprocessing.AioProcess(
@@ -94,7 +94,6 @@ async def process_dicts(username, model_id, filtered_medialist,posts):
                         selector.get_ALL_SUBS_DICT(),
                         read_args.retriveArgs(),
                     ),
-
                 )
                 for i in range(num_proc)
             ]
@@ -127,15 +126,21 @@ async def process_dicts(username, model_id, filtered_medialist,posts):
                 )
                 for i in range(num_proc)
             ]
-            start_threads(queue_threads,processes)
-            handle_threads(queue_threads,processes,log_threads)
+            start_threads(queue_threads, processes)
+            handle_threads(queue_threads, processes, log_threads)
             # for reading completed downloads
         download_log_clear_helper()
         progress_updater.remove_download_task(task1)
         setDirectoriesDate(log)
         final_log(username)
         log_text_array.append(final_log_text(username))
-        return log_text_array,(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
+        return log_text_array, (
+            common_globals.video_count,
+            common_globals.audio_count,
+            common_globals.photo_count,
+            common_globals.forced_skipped,
+            common_globals.skipped,
+        )
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():
@@ -160,7 +165,6 @@ async def process_dicts(username, model_id, filtered_medialist,posts):
                 raise E
 
 
-
 def process_dict_starter(
     username,
     model_id,
@@ -171,15 +175,10 @@ def process_dict_starter(
     userNameList,
     argsCopy,
 ):
-    #queue for file and discord
-    file_logqueue=AioPipe()
+    # queue for file and discord
+    file_logqueue = AioPipe()
     subProcessVariableInit(
-        dateDict,
-        userNameList,
-        pipe_,
-        argsCopy,
-        stdout_logqueue,
-        file_logqueue[0]
+        dateDict, userNameList, pipe_, argsCopy, stdout_logqueue, file_logqueue[0]
     )
     common_globals.log.debug(f"{pid_log_helper()} preparing thread")
     priority.setpriority()
@@ -187,6 +186,7 @@ def process_dict_starter(
     plat = platform.system()
     if plat == "Linux":
         import uvloop
+
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     other_logs.start_other_thread(
         input_=file_logqueue[1], name=str(os.getpid()), count=1
@@ -197,12 +197,10 @@ def process_dict_starter(
         with exit.DelayedKeyboardInterrupt():
             try:
                 pipe_.send(None)
-                common_globals.log.log(100,None)
+                common_globals.log.log(100, None)
                 raise E
             except Exception as E:
                 raise E
-
-
 
 
 @run
@@ -219,7 +217,7 @@ async def process_dicts_split(username, model_id, medialist):
         concurrency_limit = get_max_workers()
         lock = asyncio.Lock()
         consumers = [
-            asyncio.create_task(consumer(lock,aws)) for _ in range(concurrency_limit)
+            asyncio.create_task(consumer(lock, aws)) for _ in range(concurrency_limit)
         ]
 
         await asyncio.gather(*consumers)
@@ -227,12 +225,10 @@ async def process_dicts_split(username, model_id, medialist):
     # send message directly
     await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
-    common_globals.log.log(100,None)
+    common_globals.log.log(100, None)
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
 
 
 def pid_log_helper():
     return f"PID: {os.getpid()}"
-
-

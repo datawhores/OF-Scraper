@@ -1,6 +1,11 @@
-import  click
+import click
 import functools
-from ofscraper.utils.args.parse.arguments.check import force,text_only_option,text_option
+from ofscraper.utils.args.parse.arguments.check import (
+    force,
+    text_only_option,
+    text_option,
+)
+
 
 def main_check(func):
     @force

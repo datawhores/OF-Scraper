@@ -3,7 +3,6 @@ import logging
 from collections.abc import Iterable
 
 
-
 class ZMQHandler(logging.Handler):
     """
     This handler sends events to a queue. Typically, it would be used together
@@ -21,7 +20,7 @@ class ZMQHandler(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.pipes = pipes
-        self.index=-1
+        self.index = -1
 
     def prepare(self, record):
         """
@@ -64,8 +63,8 @@ class ZMQHandler(logging.Handler):
         """
         try:
             msg = self.prepare(record)
-            if isinstance(self.pipes,Iterable):
-                self.index=(self.index+1)%len(self.pipes)
+            if isinstance(self.pipes, Iterable):
+                self.index = (self.index + 1) % len(self.pipes)
                 self.pipes[self.index].send_pyobj(msg)
             else:
                 self.pipes.send_pyobj(msg)

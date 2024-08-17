@@ -158,7 +158,6 @@ class CustomTenacity(AsyncRetrying):
         return sleep
 
 
-
 class sessionManager:
     def __init__(
         self,
@@ -329,9 +328,7 @@ class sessionManager:
         exceptions = exceptions or []
         actions = actions or []
         for _ in Retrying(
-            retry=retry_if_not_exception_type(
-                (KeyboardInterrupt)
-            ),
+            retry=retry_if_not_exception_type((KeyboardInterrupt)),
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=min, max=max),
             before=lambda x: (
@@ -436,9 +433,7 @@ class sessionManager:
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
-            retry=retry_if_not_exception_type(
-                (KeyboardInterrupt)
-            ),
+            retry=retry_if_not_exception_type((KeyboardInterrupt)),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
             before=lambda x: (
@@ -568,7 +563,7 @@ class sessionManager:
         r.request = r.request_info
         r.status_code = r.status
         r.read_ = r.content.read
-        r.eof=r.content.at_eof
+        r.eof = r.content.at_eof
         return r
 
     async def factoryasync(self, input):

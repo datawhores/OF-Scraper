@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       f
 """
+
 import json
 import tempfile
 import logging
@@ -18,24 +19,28 @@ from ofscraper.classes.models import Model
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 
-from ofscraper.utils.system.subprocess  import run
+from ofscraper.utils.system.subprocess import run
+
 
 def final_script(users):
     log = logging.getLogger("shared")
     if not settings.get_post_script():
         return
     if not isinstance(users, list):
-        users=[users]
+        users = [users]
     log.debug("Running post script")
-    data={}
+    data = {}
     for ele in users:
-        data[ele.id]=ele.model if isinstance(ele,Model) else ele
-    out_dict=json.dumps({"users":data,
-             "dir_format":config_data.get_dirformat(),
-             "file_format":config_data.get_fileformat(),
-             "metadata":config_data.get_metadata()
-             })
-    with tempfile.NamedTemporaryFile(suffix='.json') as f:
+        data[ele.id] = ele.model if isinstance(ele, Model) else ele
+    out_dict = json.dumps(
+        {
+            "users": data,
+            "dir_format": config_data.get_dirformat(),
+            "file_format": config_data.get_fileformat(),
+            "metadata": config_data.get_metadata(),
+        }
+    )
+    with tempfile.NamedTemporaryFile(suffix=".json") as f:
         with open(f.name, "w") as g:
             g.write(out_dict)
-        run([settings.get_post_script(),f.name])
+        run([settings.get_post_script(), f.name])

@@ -22,7 +22,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw,trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -66,7 +66,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} tasks",new_posts)
+                trace_progress_log(f"{API} tasks", new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -78,7 +78,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API} final",responseArray,final_count=True)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
 
     return responseArray
@@ -101,14 +101,13 @@ async def scrape_paid(c, username, offset=0):
         )
         log.debug(f"trying access {API.lower()} posts with url:{url} offset:{offset}")
 
-
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
 
             data = await r.json_()
-            log.debug(f"successfully access {API.lower()} posts with url:{url} offset:{offset}")
-            trace_progress_log(f"{API} all users requests",data)
+            log.debug(
+                f"successfully access {API.lower()} posts with url:{url} offset:{offset}"
+            )
+            trace_progress_log(f"{API} all users requests", data)
 
             media = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> media found {len(media)}")
@@ -192,7 +191,7 @@ async def create_tasks_scrape_paid():
                     log.debug(
                         f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
                     )
-                    trace_progress_log(f"{API} all users tasks",result)
+                    trace_progress_log(f"{API} all users tasks", result)
 
                     tasks.extend(new_tasks_batch)
 
@@ -204,7 +203,7 @@ async def create_tasks_scrape_paid():
         progress_utils.remove_api_task(page_task)
 
     log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-    trace_log_raw(f"{API} all users final",output,final_count=True)
+    trace_log_raw(f"{API} all users final", output, final_count=True)
 
     cache.set(
         "purchased_all",
@@ -239,9 +238,7 @@ async def scrape_all_paid(c, offset=0, required=None):
             visible=True,
         )
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
 
             log_id = f"offset {offset or 0}:"
             data = await r.json_()

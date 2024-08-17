@@ -82,7 +82,7 @@ async def get_old_messages(model_id, username):
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-    trace_log_raw("oldmessages",oldmessages)
+    trace_log_raw("oldmessages", oldmessages)
 
     return oldmessages
 
@@ -126,7 +126,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Messages')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} tasks",new_posts)
+                trace_progress_log(f"{API} tasks", new_posts)
 
                 responseArray.extend(new_posts)
             except Exception as E:
@@ -139,7 +139,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API} final",responseArray,final_count=True)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
 
     log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)}")
 
@@ -294,22 +294,23 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     )
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
-    log_id = (
-                f"offset messageid:{message_id if message_id else 'init messageid'}"
-            )
+    log_id = f"offset messageid:{message_id if message_id else 'init messageid'}"
     new_tasks = []
     task = None
-    log.debug(f"trying access {API.lower()} posts with url:{url} message_id:{message_id}")
-
+    log.debug(
+        f"trying access {API.lower()} posts with url:{url} message_id:{message_id}"
+    )
 
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = progress_utils.add_api_job_task(
                 f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url} message_id:{message_id}")
+            log.debug(
+                f"successfully accessed {API.lower()} posts with url:{url} message_id:{message_id}"
+            )
             messages = (await r.json_())["list"]
-           
+
             if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
                 return [], []
@@ -323,7 +324,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
             log.debug(
                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
             )
-            trace_progress_log(f"{API} requests",messages)
+            trace_progress_log(f"{API} requests", messages)
 
             # check if first value(newest) is less then then the required time
             if max(
@@ -422,10 +423,6 @@ async def get_after(model_id, username, forced_after=None):
             f"Setting date slightly before oldest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
         )
         return arrow.get(missing_items[0]["posted_at"]).float_timestamp
-
-
-
-
 
 
 def log_after_before(after, before, username):

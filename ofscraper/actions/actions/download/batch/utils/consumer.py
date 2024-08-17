@@ -7,17 +7,19 @@ import ofscraper.actions.utils.globals as common_globals
 
 
 platform_name = platform.system()
-async def consumer(lock,aws):
+
+
+async def consumer(lock, aws):
     while True:
         async with lock:
-            if not(bool(aws)):
+            if not (bool(aws)):
                 break
             data = aws.pop()
         if data is None:
             break
         else:
             try:
-                pack = await download(*data,multi=True)
+                pack = await download(*data, multi=True)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
                 await send_msg((media_type, num_bytes_downloaded, 0))

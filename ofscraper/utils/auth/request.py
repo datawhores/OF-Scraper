@@ -93,7 +93,6 @@ def get_request_auth_generic():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -111,7 +110,6 @@ def get_request_auth_deviint():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -129,7 +127,6 @@ def get_request_auth_datawhores():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -147,7 +144,6 @@ def get_request_auth_xagler():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -165,7 +161,6 @@ def get_request_auth_rafa():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -183,7 +178,6 @@ def get_request_auth_riley():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
 
         with c.requests(
@@ -201,7 +195,6 @@ def get_request_auth_digitalcriminals():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-        
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),

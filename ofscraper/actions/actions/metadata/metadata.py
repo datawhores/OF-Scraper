@@ -1,4 +1,3 @@
-
 import logging
 
 import ofscraper.actions.actions.metadata.batch.metadatabatch as batch
@@ -11,17 +10,16 @@ from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.runner.close.final.final_user import post_user_script
 
 
-
 @run_async
 async def metadata_process(username, model_id, medialist, posts=None):
-    data,values= await metadata_picker(username, model_id, medialist)
+    data, values = await metadata_picker(username, model_id, medialist)
     post_user_script(username, model_id, medialist, posts)
-    return  data,values
+    return data, values
 
 
 async def metadata_picker(username, model_id, medialist):
     if len(medialist) == 0:
-        out =final_log_text(username,0,0,0,0,0,0)
+        out = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(out)
         return out
     elif (

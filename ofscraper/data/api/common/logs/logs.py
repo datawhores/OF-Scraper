@@ -1,4 +1,3 @@
-
 r"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
@@ -24,27 +23,22 @@ log = logging.getLogger("shared")
 sem = None
 
 
-
-
-def trace_progress_log(area,data,offset=None):
+def trace_progress_log(area, data, offset=None):
     if not is_trace():
         return
     log.trace(f"{common_logs.PROGRESS_RAW_TITLE.format(area)}")
-    for count,ele in enumerate(data):
-        if offset!=None and offset!=False:
-            log.trace(common_logs.PROGRESS_RAW_OFFSET.format(offset,area,count,ele))
-        log.trace(common_logs.PROGRESS_RAW.format(area,count,ele))
+    for count, ele in enumerate(data):
+        if offset != None and offset != False:
+            log.trace(common_logs.PROGRESS_RAW_OFFSET.format(offset, area, count, ele))
+        log.trace(common_logs.PROGRESS_RAW.format(area, count, ele))
 
 
-
-def trace_log_raw(title,responseArray,final_count=None):
+def trace_log_raw(title, responseArray, final_count=None):
     if not is_trace():
         return
-    if not  final_count:
+    if not final_count:
         log.trace(title)
     else:
         log.trace(common_logs.FINAL_COUNT.format(title))
-    for count,ele in enumerate(responseArray):
-        log.trace(
-            f"[{title}]  current item count:{count} data: {ele}"
-        )
+    for count, ele in enumerate(responseArray):
+        log.trace(f"[{title}]  current item count:{count} data: {ele}")

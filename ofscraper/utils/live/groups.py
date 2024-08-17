@@ -13,7 +13,7 @@ from ofscraper.utils.live.progress import (
     multi_download_job_progress,
     userlist_job_progress,
     userlist_overall_progress,
-    metadata_overall_progress
+    metadata_overall_progress,
 )
 
 # activity group
@@ -49,7 +49,9 @@ api_progress_group = Group(
 
 # download
 
-download_overall_panel = Blue_Panel(download_overall_progress, style="bold deep_sky_blue2")
+download_overall_panel = Blue_Panel(
+    download_overall_progress, style="bold deep_sky_blue2"
+)
 multi_panel = Blue_Panel(multi_download_job_progress, style="bold deep_sky_blue2")
 single_panel = Blue_Panel(download_job_progress, style="bold deep_sky_blue2")
 download_progress_group = None
@@ -60,7 +62,7 @@ def get_download_group():
     global download_progress_group
     if not download_progress_group:
         download_progress_group = (
-            Group(activity_group, download_overall_panel , single_panel, fit=True)
+            Group(activity_group, download_overall_panel, single_panel, fit=True)
             if settings.get_download_bars()
             else Group(activity_group, download_overall_panel, fit=True)
         )
@@ -76,10 +78,15 @@ def get_multi_download_progress_group():
             else Group(activity_group, download_overall_panel, fit=True)
         )
     return multi_download_progress_group
-download_overall_progress_group= Group(activity_group, download_overall_panel, fit=True)
 
+
+download_overall_progress_group = Group(
+    activity_group, download_overall_panel, fit=True
+)
 
 
 # metadata
-metadata_overall_panel = Blue_Panel( metadata_overall_progress, style="bold deep_sky_blue2")
-metadata_group = Group(activity_group, metadata_overall_panel , fit=True)
+metadata_overall_panel = Blue_Panel(
+    metadata_overall_progress, style="bold deep_sky_blue2"
+)
+metadata_group = Group(activity_group, metadata_overall_panel, fit=True)

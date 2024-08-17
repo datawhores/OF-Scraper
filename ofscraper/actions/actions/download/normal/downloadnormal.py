@@ -21,9 +21,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.actions.utils.log import (
-    final_log,final_log_text
-)
+from ofscraper.actions.utils.log import final_log, final_log_text
 
 from ofscraper.actions.utils.paths.paths import setDirectoriesDate
 from ofscraper.actions.utils.buffer import download_log_clear_helper
@@ -31,32 +29,33 @@ from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.actions.actions.download.normal.utils.consumer import consumer
-from  ofscraper.actions.actions.download.utils.desc import desc
+from ofscraper.actions.actions.download.utils.desc import desc
 from ofscraper.actions.actions.download.utils.text import textDownloader
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.areas import get_download_area
 
+
 @run
-async def process_dicts(username, model_id, medialist,posts):
-    log_text_array=[]
+async def process_dicts(username, model_id, medialist, posts):
+    log_text_array = []
     download_log_clear_helper()
-    log_text_array.append(await textDownloader(posts, username=username)or [])
+    log_text_array.append(await textDownloader(posts, username=username) or [])
     if read_args.retriveArgs().text_only:
-        return  log_text_array,(0,0,0,0,0)
-    elif len(get_download_area())==0:
-        return  log_text_array,(0,0,0,0,0)
-    elif len(medialist)==0:
-        empty_log=final_log_text(username,0,0,0,0,0,0)
+        return log_text_array, (0, 0, 0, 0, 0)
+    elif len(get_download_area()) == 0:
+        return log_text_array, (0, 0, 0, 0, 0)
+    elif len(medialist) == 0:
+        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(empty_log)
         log_text_array.append(empty_log)
-        return  log_text_array,(0,0,0,0,0)
-    task1=None
+        return log_text_array, (0, 0, 0, 0, 0)
+    task1 = None
     with progress_utils.setup_download_progress_live(multi=False):
         common_globals.mainProcessVariableInit()
         log = logging.getLogger("shared")
         log.info("Downloading in main thread mode")
         try:
-           
+
             aws = []
 
             async with download_session() as c:
@@ -78,9 +77,9 @@ async def process_dicts(username, model_id, medialist,posts):
                     visible=True,
                 )
                 concurrency_limit = get_max_workers()
-                lock=asyncio.Lock()
+                lock = asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(aws, task1, medialist,lock))
+                    asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
@@ -92,16 +91,16 @@ async def process_dicts(username, model_id, medialist,posts):
                 common_globals.thread, cache.close
             )
             common_globals.thread.shutdown()
-   
+
         setDirectoriesDate()
         download_log_clear_helper()
         final_log(username, log=logging.getLogger("shared"))
         progress_updater.remove_download_task(task1)
         log_text_array.append(final_log_text(username))
-        return log_text_array,(common_globals.video_count,common_globals.audio_count,common_globals.photo_count,common_globals.forced_skipped,common_globals.skipped)
-    
-
-
-
-
-
+        return log_text_array, (
+            common_globals.video_count,
+            common_globals.audio_count,
+            common_globals.photo_count,
+            common_globals.forced_skipped,
+            common_globals.skipped,
+        )

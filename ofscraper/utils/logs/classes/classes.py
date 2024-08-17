@@ -1,4 +1,3 @@
-
 import logging
 import re
 
@@ -40,9 +39,6 @@ class NoDebug(logging.Filter):
         if record.levelno <= 11:
             return False
         return True
-
-
-
 
 
 class SensitiveFormatter(logging.Formatter):

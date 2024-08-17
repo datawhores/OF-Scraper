@@ -19,7 +19,6 @@ import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.string import format_safe
 
 
-
 async def downloader(ele=None, posts=None, media=None, **kwargs):
     model_id = ele.id
     username = ele.name
@@ -38,20 +37,21 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
         download_activity_str.format(username=username)
     )
     progress_updater.update_activity_task(description="")
-    data,values = await download_process(ele, media, posts=posts)
-    return data,values
+    data, values = await download_process(ele, media, posts=posts)
+    return data, values
+
 
 @run_async
 async def download_process(userdata, medialist, posts=None):
     username = userdata["username"] if isinstance(userdata, dict) else userdata.name
-    model_id=userdata["id"] if isinstance(userdata,dict) else userdata.id
-    data,values = await download_picker(username, model_id, medialist,posts)
+    model_id = userdata["id"] if isinstance(userdata, dict) else userdata.id
+    data, values = await download_picker(username, model_id, medialist, posts)
     post_user_script(userdata, medialist, posts=None)
-    return data,values
+    return data, values
 
 
-async def download_picker(username, model_id, medialist,posts):
-    if(
+async def download_picker(username, model_id, medialist, posts):
+    if (
         system.getcpu_count() > 1
         and (
             len(medialist)
@@ -59,9 +59,9 @@ async def download_picker(username, model_id, medialist,posts):
         )
         and settings.not_solo_thread()
     ):
-        return await batch.process_dicts(username, model_id, medialist,posts)
+        return await batch.process_dicts(username, model_id, medialist, posts)
     else:
-        return await normal.process_dicts(username, model_id, medialist,posts)
+        return await normal.process_dicts(username, model_id, medialist, posts)
 
 
 def remove_downloads_with_hashes(username, model_id):

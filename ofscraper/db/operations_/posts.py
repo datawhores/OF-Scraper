@@ -341,7 +341,6 @@ async def make_post_table_changes(all_posts, model_id=None, username=None, **kwa
         )
     )
 
-
     curr_id = set(await get_all_post_ids(model_id=model_id, username=username))
     unique_post_data = list({ele.id: ele for ele in all_posts_data}.values())
 

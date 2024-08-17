@@ -108,10 +108,9 @@ def get_download_bars():
         read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
     )
 
+
 def get_download_sems():
-    return (
-        read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
-    )
+    return read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
 
 
 def get_threads():
@@ -125,8 +124,15 @@ def get_max_post_count():
 def get_mediatypes():
     return read_args.retriveArgs().mediatype or config_data.get_filter()
 
+
 def get_download_text():
-    return get_text_area() or read_args.retriveArgs().text or read_args.retriveArgs().text_only
+    return (
+        get_text_area()
+        or read_args.retriveArgs().text
+        or read_args.retriveArgs().text_only
+    )
+
+
 def get_download_bars():
     return (
         config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
@@ -188,10 +194,9 @@ def get_post_download_script():
 
 
 def get_post_script():
-    return (
-        read_args.retriveArgs().post_script
-        or config_data.get_post_script()
-    )
+    return read_args.retriveArgs().post_script or config_data.get_post_script()
+
+
 def get_hash(mediatype=None):
     return config_data.get_hash(mediatype=mediatype)
 
@@ -214,15 +219,19 @@ def get_max_length(mediatype=None):
         return read_args.retriveArgs().length_max
     return config_data.get_max_length(mediatype=mediatype)
 
+
 def get_download_limit():
-    out= read_args.retriveArgs().download_limit or config_data.get_download_limit()
-    return max(out,1024) if out else out
+    out = read_args.retriveArgs().download_limit or config_data.get_download_limit()
+    return max(out, 1024) if out else out
+
 
 def get_keydb_api():
     return read_args.retriveArgs().keydb_api or config_data.get_keydb_api()
 
+
 def get_client_id():
     return read_args.retriveArgs().client_id or config_data.get_client_id()
+
 
 def get_private_key():
     return read_args.retriveArgs().private_key or config_data.get_private_key()

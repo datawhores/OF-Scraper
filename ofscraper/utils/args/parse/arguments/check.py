@@ -76,11 +76,9 @@ text_only_option = click.option(
     "--text-only",
     "--download-text-only",
     "text_only",
-    help=
-    """
+    help="""
     Download Text files, but skip download media
-    """
-    ,
+    """,
     default=False,
     is_flag=True,
 )
@@ -90,11 +88,9 @@ text_option = click.option(
     "--text",
     "--download-text",
     "text_only",
-    help=
-    """
+    help="""
     Download Text files in addition to media
-    """
-    ,
+    """,
     default=False,
     is_flag=True,
 )

@@ -11,15 +11,14 @@ from ofscraper.commands.utils.strings import (
     all_paid_download_str,
     all_paid_progress_metadata_str,
     metadata_activity_str,
-    download_activity_str,all_paid_progress_download_str
-
+    download_activity_str,
+    all_paid_progress_download_str,
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 
 
 log = logging.getLogger("shared")
-
 
 
 @run
@@ -37,7 +36,6 @@ async def scrape_paid_all():
         )
         out.append(await process_user(value, length))
     return out
-
 
 
 @run
@@ -100,10 +98,6 @@ async def process_user(value, length):
         {username: models.Model(profile.scrape_profile(model_id))}
     )
     progress_updater.increment_activity_count(total=length)
-    data,_=await download.download_process(username, model_id, medias, posts=posts)
-    post_user_script(value,medias,posts)
+    data, _ = await download.download_process(username, model_id, medias, posts=posts)
+    post_user_script(value, medias, posts)
     return data
-    
-
-
-

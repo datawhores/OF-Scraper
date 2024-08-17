@@ -1,6 +1,6 @@
 import contextlib
 import time
-from  aiolimiter import AsyncLimiter
+from aiolimiter import AsyncLimiter
 import asyncio
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
@@ -18,8 +18,6 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
 import ofscraper.utils.settings as settings
 
 
-
-
 class TokenBucket:
     def __init__(self, capacity, fill_rate):
         self.capacity = capacity
@@ -28,7 +26,7 @@ class TokenBucket:
         self.last_update = time.time()
 
     async def consume(self, tokens):
-        if self.capacity<=0:
+        if self.capacity <= 0:
             return True
         while True:
             now = time.time()
@@ -44,8 +42,6 @@ class TokenBucket:
             await asyncio.sleep(0.01)
 
 
-
-
 class download_session(sessionManager.sessionManager):
     def __init__(
         self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
@@ -55,21 +51,25 @@ class download_session(sessionManager.sessionManager):
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
-        self.leaky_bucket=AsyncLimiter(settings.get_download_limit(),1)
+        self.leaky_bucket = AsyncLimiter(settings.get_download_limit(), 1)
         super().__init__(
-            sem_count=sem_count, retries=retries, wait_min=wait_min, wait_max=wait_max, log=log
+            sem_count=sem_count,
+            retries=retries,
+            wait_min=wait_min,
+            wait_max=wait_max,
+            log=log,
         )
+
     @contextlib.asynccontextmanager
     async def requests_async(self, *args, **kwargs):
         if not kwargs.get("actions"):
             actions = [SIGN, COOKIES, HEADERS]
             actions.append([FORCED_NEW]) if constants.getattr("API_FORCE_KEY") else None
-            kwargs["actions"]= actions
-        kwargs["exceptions"]= [TOO_MANY, AUTH]
-        async with super().requests_async(
-            *args,**kwargs
-        ) as r:
+            kwargs["actions"] = actions
+        kwargs["exceptions"] = [TOO_MANY, AUTH]
+        async with super().requests_async(*args, **kwargs) as r:
             yield r
+
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
         t.ok = not t.is_error
@@ -82,7 +82,6 @@ class download_session(sessionManager.sessionManager):
         t.request = t.request
         return t
 
-
     async def _aio_funct(self, method, *args, **kwargs):
         # public function forces context manager use
         r = await self._session._request(method, *args, **kwargs)
@@ -93,28 +92,29 @@ class download_session(sessionManager.sessionManager):
         r.request = r.request_info
         r.status_code = r.status
         r.read_ = r.content.read
-        r.eof=r.content.at_eof
+        r.eof = r.content.at_eof
         return r
 
     async def factoryasync(self, input):
         if callable(input):
             return input()
         return input
+
     def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
             while True:
                 try:
-                    chunk=await anext(funct(*args, **kwargs))
-                    size=len(chunk)
+                    chunk = await anext(funct(*args, **kwargs))
+                    size = len(chunk)
                     await self.get_token(size)
                     yield chunk
                 except StopAsyncIteration:
                     break
-               
+
         return wrapper
-    async def get_token(self,size):
+
+    async def get_token(self, size):
         await self.leaky_bucket.acquire(size)
-    
 
 
 class cdm_session(sessionManager.sessionManager):
