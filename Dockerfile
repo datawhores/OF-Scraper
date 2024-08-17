@@ -32,7 +32,7 @@ RUN poetry build && /venv/bin/pip install dist/*.whl
 
 FROM base AS bento4
 
-RUN apt-get update && apt-get install cmake wget
+RUN apt-get update && apt-get install cmake wget -y
 
 RUN wget https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.tar.gz
 
