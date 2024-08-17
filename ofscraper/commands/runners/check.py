@@ -122,17 +122,10 @@ def process_item():
                     f"Downloading individual media ({media.filename}) to disk for {username}"
             )
             operations.table_init_create(model_id=model_id, username=username)
-            if read_args.retriveArgs().text_only:
-                output=textDownloader(post,username)
-
-            else:
-                output,values = downloadnormal.process_dicts(username, model_id, [media])
-                if values is None or values[-1] == 1:
-                        raise Exception("Download is marked as skipped")
-                else:
-                    raise Exception("Issue getting download")
- 
-
+        
+            output,values = downloadnormal.process_dicts(username, model_id, [media],[post])
+            if values is None or values[-1] == 1:
+                raise Exception("Download is marked as skipped")
             log.info("Download Finished")
             update_globals(model_id,username,post,media,output)
             table.app.update_cell(key, "download_cart", "[downloaded]")
