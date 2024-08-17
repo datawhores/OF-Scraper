@@ -183,6 +183,10 @@ async def data_refill(media_id, post_id, target_name, model_id):
         ):
             break
 
+def allow_check_dupes():
+    args = read_args.retriveArgs()
+    args.force_all = True
+    write_args.setArgs(args)
 
 def get_areas():
     return read_args.retriveArgs().check_area
@@ -191,6 +195,7 @@ def get_areas():
 def checker():
     args = read_args.retriveArgs()
     check_auth()
+    allow_check_dupes()
     try:
         if args.command == "post_check":
             post_checker()
