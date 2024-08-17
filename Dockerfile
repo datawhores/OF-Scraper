@@ -15,7 +15,7 @@ RUN python -m ensurepip --upgrade
 
 RUN apt-get update && apt-get -y dist-upgrade
 
-RUN apt-get update && apt-get install ffmpeg cmake wget -y
+RUN apt-get update && apt-get install ffmpeg -y
 
 FROM base AS builder
 
@@ -31,6 +31,8 @@ RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
 FROM base AS bento4
+
+RUN apt-get update && apt-get install cmake wget
 
 RUN wget https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.tar.gz
 
