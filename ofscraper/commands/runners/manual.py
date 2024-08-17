@@ -26,6 +26,7 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
+from ofscraper.actions.actions.download.utils.text import textDownloader
 
 
 
@@ -66,21 +67,26 @@ def manual_download(urls=None):
                 username = value.get("username")
                 userdata=value.get("user_data")
                 medialist=value.get("media_list")
+                posts=value.get("post_list",[])
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 make_changes_to_content_tables(
-                    value.get("post_list", []), model_id=model_id, username=username
+                    posts, model_id=model_id, username=username
                 )
-                result,_=download.download_process(
-                    userdata, medialist, posts=None
-                )
-                results.append(result)
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
+                if read_args.retriveArgs().text_only:
+                    result=textDownloader(posts,username)
+                else:
+                    result,_=download.download_process(
+                        userdata, medialist, posts=None
+                    )   
+                results.append(result)
+    
         final_action(url_dicts,results)
         
     except Exception as e:

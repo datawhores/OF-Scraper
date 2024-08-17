@@ -10,7 +10,6 @@ import aiofiles
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.settings as settings
 
 
 async def get_text(values):
@@ -34,9 +33,7 @@ async def get_text(values):
 async def get_text_process(ele, dupe=None):
     log = logging.getLogger("shared")
     try:
-        if not settings.get_download_text():
-            return
-        elif bool(ele.text) is False:
+        if bool(ele.text) is False:
             return
         # make new text mediatype
         new_ele = copy.deepcopy(ele)

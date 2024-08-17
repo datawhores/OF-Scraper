@@ -126,7 +126,7 @@ def get_mediatypes():
     return read_args.retriveArgs().mediatype or config_data.get_filter()
 
 def get_download_text():
-    return get_text_area()
+    return get_text_area() or read_args.retriveArgs().text or read_args.retriveArgs().text_only
 def get_download_bars():
     return (
         config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars

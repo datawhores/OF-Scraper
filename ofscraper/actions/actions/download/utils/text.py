@@ -6,6 +6,7 @@ import ofscraper.actions.utils.log as logs
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.settings as settings
 
 
 @run
@@ -13,8 +14,10 @@ async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")
     if read_args.retriveArgs().command == "metadata":
         return 
-    if not bool(objectdicts):
+    elif not bool(objectdicts):
         return 
+    elif not settings.get_download_text():
+        return
     try:
         objectdicts = (
             [objectdicts] if not isinstance(objectdicts, list) else objectdicts

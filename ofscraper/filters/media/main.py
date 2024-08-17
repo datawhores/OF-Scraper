@@ -169,7 +169,7 @@ def filterPostFinalText(post):
         return []
 
     if not settings.get_download_text():
-        log.info("Skipping filtering Text files download not  toggled")
+        log.info("Skipping filtering Text files download not toggled")
         return []
     count = 1
     trace_log_post(count, post, "initial posts no filter:")
