@@ -39,12 +39,13 @@ from ofscraper.utils.system.speed import add_pids_to_download_obj
 from ofscraper.actions.utils.buffer import download_log_clear_helper
 from ofscraper.actions.utils.mediasplit import get_mediasplits
 from ofscraper.actions.actions.metadata.batch.utils.consumer import consumer
-from ofscraper.actions.utils.threads import handle_threads,start_threads
+from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.metadata.batch.utils.queue import queue_process
-from  ofscraper.actions.actions.metadata.utils.desc import desc
+from ofscraper.actions.actions.metadata.utils.desc import desc
 
 
 platform_name = platform.system()
+
 
 def process_dicts(username, model_id, filtered_medialist):
     log = logging.getLogger("shared")
@@ -61,17 +62,16 @@ def process_dicts(username, model_id, filtered_medialist):
             log.debug(f"Number of download threads: {num_proc}")
             connect_tuples = [AioPipe() for _ in range(num_proc)]
             stdout_logqueues = [AioPipe() for _ in range(num_proc)]
-    
-            #start stdout/main queues consumers
-            log_threads=[]
+
+            # start stdout/main queues consumers
+            log_threads = []
             for i in range(num_proc):
-                thread=stdout_logs.start_stdout_logthread(
-                input_=stdout_logqueues[i][0],
-                name=f"ofscraper_{model_id}_{i+1}",
-                count=1,
+                thread = stdout_logs.start_stdout_logthread(
+                    input_=stdout_logqueues[i][0],
+                    name=f"ofscraper_{model_id}_{i+1}",
+                    count=1,
                 )
                 log_threads.append(thread)
-
 
             processes = [
                 aioprocessing.AioProcess(
@@ -86,7 +86,6 @@ def process_dicts(username, model_id, filtered_medialist):
                         selector.get_ALL_SUBS_DICT(),
                         read_args.retriveArgs(),
                     ),
-
                 )
                 for i in range(num_proc)
             ]
@@ -119,8 +118,8 @@ def process_dicts(username, model_id, filtered_medialist):
                 )
                 for i in range(num_proc)
             ]
-            start_threads(queue_threads,processes)
-            handle_threads(queue_threads,processes,log_threads)
+            start_threads(queue_threads, processes)
+            handle_threads(queue_threads, processes, log_threads)
             # for reading completed downloads
         download_log_clear_helper()
         progress_updater.remove_metadata_task(task1)
@@ -141,7 +140,7 @@ def process_dicts(username, model_id, filtered_medialist):
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
-                [process.terminate() for process in processes or []] 
+                [process.terminate() for process in processes or []]
                 raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
@@ -149,7 +148,6 @@ def process_dicts(username, model_id, filtered_medialist):
         except Exception:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-
 
 
 def process_dict_starter(
@@ -162,15 +160,10 @@ def process_dict_starter(
     userNameList,
     argsCopy,
 ):
-    #queue for file and discord
-    file_logqueue=AioPipe()
+    # queue for file and discord
+    file_logqueue = AioPipe()
     subProcessVariableInit(
-        dateDict,
-        userNameList,
-        pipe_,
-        argsCopy,
-        stdout_logqueue,
-        file_logqueue[0]
+        dateDict, userNameList, pipe_, argsCopy, stdout_logqueue, file_logqueue[0]
     )
     common_globals.log.debug(f"{pid_log_helper()} preparing thread")
     priority.setpriority()
@@ -178,6 +171,7 @@ def process_dict_starter(
     plat = platform.system()
     if plat == "Linux":
         import uvloop
+
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     other_logs.start_other_thread(
         input_=file_logqueue[1], name=str(os.getpid()), count=1
@@ -188,15 +182,10 @@ def process_dict_starter(
         with exit.DelayedKeyboardInterrupt():
             try:
                 pipe_.send(None)
-                common_globals.log.log(100,None)
+                common_globals.log.log(100, None)
                 raise E
             except Exception as E:
                 raise E
-
-
-
-
-
 
 
 @run
@@ -213,7 +202,7 @@ async def process_dicts_split(username, model_id, medialist):
         concurrency_limit = get_max_workers()
         lock = asyncio.Lock()
         consumers = [
-            asyncio.create_task(consumer(lock,aws)) for _ in range(concurrency_limit)
+            asyncio.create_task(consumer(lock, aws)) for _ in range(concurrency_limit)
         ]
 
         await asyncio.gather(*consumers)
@@ -221,12 +210,10 @@ async def process_dicts_split(username, model_id, medialist):
     # send message directly
     await asyncio.get_event_loop().run_in_executor(common_globals.thread, cache.close)
     common_globals.thread.shutdown()
-    common_globals.log.log(100,None)
+    common_globals.log.log(100, None)
     await send_msg({"dir_update": common_globals.localDirSet})
     await send_msg(None)
 
 
 def pid_log_helper():
     return f"PID: {os.getpid()}"
-
-

@@ -88,7 +88,7 @@ async def process_tasks_batch(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} tasks",new_posts)
+                trace_progress_log(f"{API} tasks", new_posts)
                 responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
@@ -101,7 +101,7 @@ async def process_tasks_batch(tasks):
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")
-    trace_log_raw(f"{API} final",responseArray,final_count=True)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     return responseArray
 
 
@@ -123,7 +123,7 @@ async def get_oldtimeline(model_id, username):
         if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    trace_log_raw("oldtimeline",oldtimeline)
+    trace_log_raw("oldtimeline", oldtimeline)
     return oldtimeline
 
 
@@ -290,15 +290,15 @@ async def scrape_timeline_posts(
         )
         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
 
-        log.debug(f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
+        log.debug(
+            f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+        )
 
-
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
             posts = (await r.json_())["list"]
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}")
-
+            log.debug(
+                f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            )
 
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
@@ -314,7 +314,7 @@ async def scrape_timeline_posts(
             log.debug(
                 f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
             )
-            trace_progress_log(f"{API} requests",posts,offset=offset)
+            trace_progress_log(f"{API} requests", posts, offset=offset)
             if min(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
             ):
@@ -346,6 +346,7 @@ async def scrape_timeline_posts(
         raise E
     finally:
         progress_utils.remove_api_job_task(task)
+
 
 def time_log(username, after):
     log.info(

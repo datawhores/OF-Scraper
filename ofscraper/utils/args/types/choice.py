@@ -13,6 +13,10 @@ class MultiChoice(click.Choice):
         # first do token_normalize_func, then lowercase
         # preserve original `value` to produce an accurate message in
         # `self.fail`
+        if isinstance(value, list):
+            return value
+        elif not bool(value):
+            return []
         values = re.split(",| ", value)
         # dedupe
         seen = set()
@@ -66,6 +70,10 @@ class MultiChoicePost(MultiChoice):
         # first do token_normalize_func, then lowercase
         # preserve original `value` to produce an accurate message in
         # `self.fail`
+        if isinstance(value, list):
+            return value
+        elif not bool(value):
+            return []
         values = re.split(",| ", value)
         # dedupe
         seen = set()

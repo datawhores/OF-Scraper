@@ -33,9 +33,7 @@ from ofscraper.actions.utils.general import (
 
 from ofscraper.actions.utils.log import get_medialog
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
-from ofscraper.actions.actions.download.utils.chunk import (
-    get_ideal_chunk_size
-)
+from ofscraper.actions.actions.download.utils.chunk import get_ideal_chunk_size
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
@@ -48,11 +46,16 @@ import ofscraper.utils.cache as cache
 
 
 class MainDownloadManager(DownloadManager):
-    def  __init__(self,multi=False):
+    def __init__(self, multi=False):
         super().__init__(multi=multi)
-    async def main_download(self,c, ele, username, model_id):
-        common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
-        common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
+
+    async def main_download(self, c, ele, username, model_id):
+        common_globals.log.debug(
+            f"{get_medialog(ele)} Downloading with normal downloader"
+        )
+        common_globals.log.debug(
+            f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+        )
         if common.is_bad_url(ele.url):
             common_globals.log.debug(
                 f"{get_medialog(ele)} Forcing download because known bad url"
@@ -71,8 +74,7 @@ class MainDownloadManager(DownloadManager):
             return ele.mediatype, 0
         return await self._handle_results_main(result, ele, username, model_id)
 
-
-    async def _main_download_downloader(self,c, ele):
+    async def _main_download_downloader(self, c, ele):
         self._downloadspace(mediatype=ele.mediatype)
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.postid}.part"
@@ -88,8 +90,10 @@ class MainDownloadManager(DownloadManager):
                     placeholderObj = None
                     status = False
                     if data:
-                        total, placeholderObj, status = await self._resume_data_handler_main(
-                            data, ele, tempholderObj
+                        total, placeholderObj, status = (
+                            await self._resume_data_handler_main(
+                                data, ele, tempholderObj
+                            )
                         )
                     else:
                         await self._fresh_data_handler_main(ele, tempholderObj)
@@ -128,8 +132,9 @@ class MainDownloadManager(DownloadManager):
                     )
                     raise E
 
-
-    async def _main_download_sendreq(self,c, ele, tempholderObj, placeholderObj=None, total=None):
+    async def _main_download_sendreq(
+        self, c, ele, tempholderObj, placeholderObj=None, total=None
+    ):
         try:
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
@@ -142,18 +147,20 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             raise E
 
-
-    async def _send_req_inner(self,c, ele, tempholderObj, placeholderObj=None, total=None):
+    async def _send_req_inner(
+        self, c, ele, tempholderObj, placeholderObj=None, total=None
+    ):
         try:
             resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
             headers = self._get_resume_header(resume_size, total)
-            #reset total
-            total=None
+            # reset total
+            total = None
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
             async with c.requests_async(
-                url=ele.url, headers=headers,
+                url=ele.url,
+                headers=headers,
             ) as r:
                 total = int(r.headers["content-length"])
                 await self._total_change_helper(None, total)
@@ -162,11 +169,13 @@ class MainDownloadManager(DownloadManager):
                     "content-type": r.headers.get("content-type"),
                 }
 
-                common_globals.log.debug(f"{get_medialog(ele)} data from request {data}")
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} data from request {data}"
+                )
                 common_globals.log.debug(
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await self._set_data(ele,data)
+                await self._set_data(ele, data)
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = content_type or get_unknown_content_type(ele)
                 if not placeholderObj:
@@ -179,11 +188,10 @@ class MainDownloadManager(DownloadManager):
                     await self._total_change_helper(total, 0)
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:
-                    self._resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
+                    self._resume_cleaner(resume_size, total, tempholderObj.tempfilepath)
                     await self._download_fileobject_writer(
                         r, ele, tempholderObj, placeholderObj, total
                     )
-                
 
             await self._size_checker(tempholderObj.tempfilepath, ele, total)
             return (total, tempholderObj.tempfilepath, placeholderObj)
@@ -191,28 +199,28 @@ class MainDownloadManager(DownloadManager):
             await self._total_change_helper(total, 0) if total else None
             raise E
 
-
-    async def _download_fileobject_writer(self,r, ele, tempholderObj, placeholderObj, total):
+    async def _download_fileobject_writer(
+        self, r, ele, tempholderObj, placeholderObj, total
+    ):
         common_globals.log.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
         )
-        await self._download_fileobject_writer_streamer(r, ele, tempholderObj, placeholderObj, total)
+        await self._download_fileobject_writer_streamer(
+            r, ele, tempholderObj, placeholderObj, total
+        )
         # if total > constants.getattr("MAX_READ_SIZE"):
         #     await self._download_fileobject_writer_streamer(r, ele, tempholderObj, placeholderObj, total)
         # else:
         #     await self._download_fileobject_writer_reader(r,ele, tempholderObj,placeholderObj, total)
         common_globals.log.debug(
-                        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
 
-
-    async def _download_fileobject_writer_reader(self,r, ele,tempholderObj,placeholderObj, total):
-        task1 =await self._add_download_job_task(
-            ele,
-            total=total,
-            tempholderObj=tempholderObj,
-            placeholderObj=placeholderObj
-
+    async def _download_fileobject_writer_reader(
+        self, r, ele, tempholderObj, placeholderObj, total
+    ):
+        task1 = await self._add_download_job_task(
+            ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
 
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
@@ -227,19 +235,20 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                await self._remove_download_job_task(task1,ele)
+                await self._remove_download_job_task(task1, ele)
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(self,r, ele, tempholderObj, placeholderObj, total):
+    async def _download_fileobject_writer_streamer(
+        self, r, ele, tempholderObj, placeholderObj, total
+    ):
         task1 = await self._add_download_job_task(
-            ele,
-            total=total,
-            tempholderObj=tempholderObj,
-            placeholderObj=placeholderObj
+            ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
         try:
-            fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
+            fileobject = await aiofiles.open(
+                tempholderObj.tempfilepath, "ab"
+            ).__aenter__()
             chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
             async for chunk in r.iter_chunked(chunk_size):
                 await fileobject.write(chunk)
@@ -253,10 +262,11 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
             try:
-                await self._remove_download_job_task(task1,ele)
+                await self._remove_download_job_task(task1, ele)
             except Exception as E:
                 raise E
-    async def _handle_results_main(self,result, ele, username, model_id):
+
+    async def _handle_results_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result
         path_to_file = placeholderObj.trunicated_filepath
         await self._size_checker(temp, ele, total)
@@ -295,30 +305,31 @@ class MainDownloadManager(DownloadManager):
         await common.set_profile_cache_helper(ele)
         common.add_additional_data(placeholderObj, ele)
 
-        return ele.mediatype, total       
-    async def _get_data(self,ele):
+        return ele.mediatype, total
+
+    async def _get_data(self, ele):
         data = await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
             partial(cache.get, f"{ele.id}_{ele.username}_headers"),
         )
         # data=cache.get(f"{ele.id}_{ele.username}_headers")
         return data
-    async def _set_data(self,ele,data):
+
+    async def _set_data(self, ele, data):
         data = await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
-            partial(cache.set, f"{ele.id}_{ele.username}_headers",data),
+            partial(cache.set, f"{ele.id}_{ele.username}_headers", data),
         )
-        return data  
+        return data
 
-    async def _fresh_data_handler_main(self,ele, tempholderObj):
+    async def _fresh_data_handler_main(self, ele, tempholderObj):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
         )
         resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
         common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
 
-
-    async def _resume_data_handler_main(self,data, ele, tempholderObj):
+    async def _resume_data_handler_main(self, data, ele, tempholderObj):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
         )
@@ -330,7 +341,9 @@ class MainDownloadManager(DownloadManager):
         content_type = data.get("content-type").split("/")[-1]
         total = int(data.get("content-total")) if data.get("content-total") else None
         resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
-        resume_size=self._resume_cleaner(resume_size,total,tempholderObj.tempfilepath)
+        resume_size = self._resume_cleaner(
+            resume_size, total, tempholderObj.tempfilepath
+        )
 
         common_globals.log.debug(
             f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total}"
@@ -352,4 +365,3 @@ class MainDownloadManager(DownloadManager):
             await self._total_change_helper(None, total)
             check = True
         return total, placeholderObj, check
-       

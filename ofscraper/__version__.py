@@ -25,9 +25,10 @@ try:
     __version__ = __hardcoded__ or Version.from_git(
         pattern="(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))"
     ).serialize(format="{base}+{branch}.{commit}", metadata=False)
-    if  __version__=="0.0.0":
+    if __version__ == "0.0.0":
         print(__version__)
-        raise Exception("pipx error")
+        # raise Exception("pipx error")
 except:
     import importlib
-    __version__ = importlib.metadata.version('ofscraper')
+
+    __version__ = importlib.metadata.version("ofscraper")

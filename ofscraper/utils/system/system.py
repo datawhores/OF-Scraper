@@ -95,14 +95,13 @@ def get_dupe_ofscraper():
             pass
     log.debug(f"Duplicated Processes {found}")
     return found
+
+
 def get_all_ofscrapers_processes():
-    found=[]
+    found = []
     for proc in psutil.process_iter():
         try:
-            if (
-                proc
-                and (re.search("^OF-Scraper", proc.name()))
-            ):
+            if proc and (re.search("^OF-Scraper", proc.name())):
                 found.append(proc)
         except psutil.NoSuchProcess:
             pass
@@ -123,6 +122,7 @@ def setNameAlt():
         setproctitle("OF-Scraper_")
     except Exception as E:
         log.debug(E)
+
 
 def getName():
     return psutil.Process().name()

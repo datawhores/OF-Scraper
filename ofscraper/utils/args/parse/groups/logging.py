@@ -7,9 +7,9 @@ from ofscraper.utils.args.parse.arguments.logging import (
     log_level_option,
 )
 
-logging_options_desc="Logging Options"
-logging_options_help="Settings for logging"
-logging_options_tuple=(
+logging_options_desc = "Logging Options"
+logging_options_help = "Settings for logging"
+logging_options_tuple = (
     console_output_level_option,
     console_rich_toggle,
     discord_log_level_option,

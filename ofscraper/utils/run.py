@@ -68,7 +68,7 @@ def daemon_run_helper():
     global jobqueue
     jobqueue = queue.Queue()
     worker_thread = None
-    scrapingManager=scraperManager()
+    scrapingManager = scraperManager()
 
     jobqueue.put(scrapingManager.runner)
     if read_args.retriveArgs().output == "PROMPT":

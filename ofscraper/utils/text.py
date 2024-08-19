@@ -10,13 +10,12 @@ import aiofiles
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.settings as settings
 
 
 async def get_text(values):
     dupe = (
         read_args.retriveArgs().force_all
-        or read_args.retriveArgs().force_model_uniqueme
+        or read_args.retriveArgs().force_model_unique
     )
     async with asyncio.TaskGroup() as tg:
         tasks = [tg.create_task(get_text_process(value, dupe=dupe)) for value in values]
@@ -34,9 +33,7 @@ async def get_text(values):
 async def get_text_process(ele, dupe=None):
     log = logging.getLogger("shared")
     try:
-        if not settings.get_download_text():
-            return
-        elif bool(ele.text) is False:
+        if bool(ele.text) is False:
             return
         # make new text mediatype
         new_ele = copy.deepcopy(ele)

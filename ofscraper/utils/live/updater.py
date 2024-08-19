@@ -130,9 +130,7 @@ def add_download_job_task(*args, **kwargs):
     visible = (
         settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
     )
-    task = download_job_progress.add_task(
-        *args, visible=visible, **kwargs
-    )
+    task = download_job_progress.add_task(*args, visible=visible, **kwargs)
 
     if not visible:
         downloads_pending.add(task)
@@ -154,7 +152,7 @@ def add_download_job_multi_task(*args, file=None, **kwargs):
 
 
 def add_download_task(*args, **kwargs):
-    return download_overall_progress.add_task(*args, start=True,**kwargs)
+    return download_overall_progress.add_task(*args, start=True, **kwargs)
 
 
 def start_download_job_task(*args, **kwargs):
@@ -179,7 +177,6 @@ def update_download_multi_job_task(*args, **kwargs):
     multi_download_job_progress.update(*args, **kwargs)
 
 
-
 def remove_download_job_task(task):
     min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
 
@@ -188,8 +185,11 @@ def remove_download_job_task(task):
     try:
         download_job_progress.remove_task(task)
         downloads_pending.discard(task)
-        if len(list(filter(lambda x:x.visible,download_job_progress.tasks))) < min_add_visible:
-            new_task=None
+        if (
+            len(list(filter(lambda x: x.visible, download_job_progress.tasks)))
+            < min_add_visible
+        ):
+            new_task = None
             while new_task not in download_job_progress.tasks and downloads_pending:
                 new_task = downloads_pending.pop()
             if new_task:
@@ -206,9 +206,12 @@ def remove_download_multi_job_task(task):
         return
     try:
         multi_download_job_progress.remove_task(task)
-        if len(list(filter(lambda x:x.visible,download_job_progress.tasks)))  < min_add_visible:
+        if (
+            len(list(filter(lambda x: x.visible, download_job_progress.tasks)))
+            < min_add_visible
+        ):
 
-            new_task=None
+            new_task = None
             while new_task not in download_job_progress.tasks and downloads_pending:
                 new_task = downloads_pending.pop()
             if new_task:
@@ -225,9 +228,12 @@ def remove_download_task(task):
         download_overall_progress.remove_task(task)
     except KeyError:
         pass
-#metadata
+
+
+# metadata
 def add_metadata_task(*args, **kwargs):
-    return metadata_overall_progress.add_task(*args, start=True,**kwargs)
+    return metadata_overall_progress.add_task(*args, start=True, **kwargs)
+
 
 def update_metadata_task(*args, **kwargs):
     metadata_overall_progress.update(*args, **kwargs)
@@ -240,6 +246,8 @@ def remove_metadata_task(task):
         metadata_overall_progress.remove_task(task)
     except KeyError:
         pass
+
+
 # like
 def add_like_task(*args, **kwargs):
     return like_overall_progress.add_task(*args, **kwargs)

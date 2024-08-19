@@ -16,17 +16,21 @@ import ofscraper.utils.dates as dates
 from ofscraper.actions.utils.send.message import set_send_msg
 
 
-
-
 attempt = None
 attempt2 = None
 total_count = None
 total_count2 = None
 innerlog = None
 localDirSet = None
-log=None
+log = None
 
-
+# count
+photo_count = 0
+video_count = 0
+audio_count = 0
+skipped = 0
+forced_skipped = 0
+total_bytes_downloaded = 0
 
 
 def main_globals():
@@ -65,23 +69,25 @@ def main_globals():
     global fileHashes
     fileHashes = {}
     global log
-    log = logger.get_shared_logger(
-                name="ofscraper_download"
-    )
+    log = logger.get_shared_logger(name="ofscraper_download")
 
 
-
-def subProcessVariableInit(dateDict, userList, pipeCopy, argsCopy,stdout_logqueue,file_logqueue):
+def subProcessVariableInit(
+    dateDict, userList, pipeCopy, argsCopy, stdout_logqueue, file_logqueue
+):
     set_up_contexvars()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     selector.set_ALL_SUBS_DICT(userList)
-    process_split_globals(pipeCopy,stdout_logqueue,file_logqueue)
+    process_split_globals(pipeCopy, stdout_logqueue, file_logqueue)
     set_send_msg()
+
 
 def mainProcessVariableInit():
     set_up_contexvars()
     main_globals()
+
+
 def set_up_contexvars():
     global attempt
     global attempt2
@@ -93,16 +99,16 @@ def set_up_contexvars():
     total_count2 = contextvars.ContextVar("total2", default=0)
 
 
-def process_split_globals(pipeCopy,stdout_logqueue,file_logqueue):
+def process_split_globals(pipeCopy, stdout_logqueue, file_logqueue):
     global pipe
     global pipe_lock
     global pipe_alt_lock
     global lock_pool
     global log
     main_globals()
-    log=logging.getLogger("shared_process")
-    log=add_stdout_handler_multi(log,clear=False,main_=stdout_logqueue)
-    log=add_other_handler_multi(log,clear=False,other_=file_logqueue)
+    log = logging.getLogger("shared_process")
+    log = add_stdout_handler_multi(log, clear=False, main_=stdout_logqueue)
+    log = add_other_handler_multi(log, clear=False, other_=file_logqueue)
     pipe = pipeCopy
     pipe_lock = threading.Lock()
     pipe_alt_lock = threading.Lock()

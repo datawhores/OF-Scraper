@@ -1,1 +1,1 @@
-ALT_FORCE_KEY=True
+ALT_FORCE_KEY = True

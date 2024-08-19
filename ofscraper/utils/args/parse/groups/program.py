@@ -6,9 +6,9 @@ from ofscraper.utils.args.parse.arguments.program import (
     version_option,
 )
 
-program_options_desc="Program Options"
-program_options_help="Control the application's behavior with these settings"
-program_options_tuple=(
+program_options_desc = "Program Options"
+program_options_help = "Control the application's behavior with these settings"
+program_options_tuple = (
     version_option,
     config_location_option,
     profile_option,

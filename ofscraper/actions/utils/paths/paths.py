@@ -68,7 +68,7 @@ def set_time(path, timestamp):
 
 
 def setDirectoriesDate(log=None):
-    log=log or common_globals.log
+    log = log or common_globals.log
     log.info("Setting Date for modified directories")
     output = set()
     rootDir = pathlib.Path(common_paths.get_save_location())

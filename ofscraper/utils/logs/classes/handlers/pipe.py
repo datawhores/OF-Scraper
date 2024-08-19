@@ -3,7 +3,6 @@ import logging
 import ofscraper.utils.logs.globals as log_globals
 
 
-
 class PipeHandler(logging.Handler):
     """
     This handler sends events to a queue. Typically, it would be used together
@@ -61,11 +60,11 @@ class PipeHandler(logging.Handler):
 
         Writes the LogRecord to the queue, preparing it for pickling first.
         """
-        if hasattr(record,"message") and (record.message in log_globals.stop_codes):
+        if hasattr(record, "message") and (record.message in log_globals.stop_codes):
             return
         try:
             msg = self.prepare(record)
-            if isinstance(self.pipe,list):
+            if isinstance(self.pipe, list):
                 self.pipe[0].send(msg)
             else:
                 self.pipe.send(msg)

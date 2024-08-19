@@ -26,9 +26,7 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
-
-
-
+from ofscraper.actions.actions.download.utils.text import textDownloader
 
 
 def manual_download(urls=None):
@@ -58,41 +56,53 @@ def manual_download(urls=None):
             if len(all_media) == 0 and len(all_posts) == 0:
                 return
             set_user_data(url_dicts)
-        
-        results=[]
+
+        results = []
         for _, value in url_dicts.items():
             with progress_utils.setup_activity_progress_live():
                 model_id = value.get("model_id")
                 username = value.get("username")
-                userdata=value.get("user_data")
-                medialist=value.get("media_list")
+                userdata = value.get("user_data")
+                medialist = value.get("media_list")
+                posts = value.get("post_list", [])
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 make_changes_to_content_tables(
-                    value.get("post_list", []), model_id=model_id, username=username
+                    posts, model_id=model_id, username=username
                 )
-                result,_=download.download_process(
-                    userdata, medialist, posts=None
-                )
-                results.append(result)
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
-        final_action(url_dicts,results)
-        
+                if read_args.retriveArgs().text_only:
+                    result = textDownloader(posts, username)
+                else:
+                    result, _ = download.download_process(
+                        userdata, medialist, posts=None
+                    )
+                results.append(result)
+
+        final_action(url_dicts, results)
+
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         raise e
 
-def final_action(url_dicts,results):
-    normal_data=["Manual Mode Results"]
+
+def final_action(url_dicts, results):
+    normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
-    user_data=list(map(lambda x:x["user_data"],url_dicts.values()))
-    final(normal_data=normal_data , scrape_paid_data=None ,user_first_data=None,userdata=user_data)
+    user_data = list(map(lambda x: x["user_data"], url_dicts.values()))
+    final(
+        normal_data=normal_data,
+        scrape_paid_data=None,
+        user_first_data=None,
+        userdata=user_data,
+    )
+
 
 def allow_manual_dupes():
     args = read_args.retriveArgs()

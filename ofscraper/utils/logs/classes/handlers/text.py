@@ -24,4 +24,3 @@ class TextHandler(logging.Handler):
     @widget.setter
     def widget(self, widget):
         self._widget = widget
-

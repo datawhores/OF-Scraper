@@ -147,7 +147,7 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_system_freesize()),
-                "filter": lambda x:int(x) if x!="None" else 0,
+                "filter": lambda x: int(x) if x != "None" else 0,
             },
             {
                 "type": "input",
@@ -159,7 +159,7 @@ This only applies to videos
 Enter 0 to disable
 """,
                 "default": str(data.get_min_length()),
-                "filter": lambda x:int(x) if x!="None" else 0
+                "filter": lambda x: int(x) if x != "None" else 0,
             },
             {
                 "type": "input",
@@ -171,7 +171,7 @@ This only applies to videos
 Enter 0 to disable
 """,
                 "default": str(data.get_max_length()),
-                "filter": lambda x:int(x) if x!="None" else 0,
+                "filter": lambda x: int(x) if x != "None" else 0,
             },
             {
                 "type": "list",
@@ -302,7 +302,6 @@ Certain content requires decryption to process please provide the full path to f
     return final
 
 
-
 def script_config():
     out = {}
     answer = promptClasses.batchConverter(
@@ -420,20 +419,18 @@ def performance_config():
                 "name": "download_limit",
                 "message": "Maximum download speed per second for  each thread: ",
                 "validate": EmptyInputValidator(),
-                "option_instruction":  \
-                """
+                "option_instruction": """
                 Input can be int representing bytes
                 or human readable such as 10mb
                 """,
                 "default": str(data.get_download_limit()),
-                "filter": lambda x:int(x) if x!="None" else 0
+                "filter": lambda x: int(x) if x != "None" else 0,
             }
         ],
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(speed)
-
 
     config = config_file.open_config()
     config.update(out)
@@ -800,7 +797,7 @@ def manual_config_prompt(configText) -> str:
 
 def get_max_sems(threads):
     thread_count = int(threads["thread_count"])
-    max_allowed = math.ceil(15 /thread_count)
+    max_allowed = math.ceil(15 / thread_count)
     return max_allowed
 
 

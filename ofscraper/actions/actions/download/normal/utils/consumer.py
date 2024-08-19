@@ -23,15 +23,15 @@ from ofscraper.actions.utils.log import get_medialog
 from ofscraper.actions.actions.download.runners.download import download
 
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
-from  ofscraper.actions.actions.download.utils.desc import desc
+from ofscraper.actions.actions.download.utils.desc import desc
 
-async def consumer(aws, task1, medialist,lock):
 
+async def consumer(aws, task1, medialist, lock):
 
     while True:
-        ele=None
+        ele = None
         async with lock:
-            if not(bool(aws)):
+            if not (bool(aws)):
                 break
             data = aws.pop()
         if data is None:
@@ -39,7 +39,7 @@ async def consumer(aws, task1, medialist,lock):
         else:
             try:
                 ele = data[1]
-                pack = await download(*data,multi=False)
+                pack = await download(*data, multi=False)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
             except Exception as e:

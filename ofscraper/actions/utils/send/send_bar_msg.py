@@ -4,7 +4,6 @@
 # import ofscraper.utils.settings as settings
 
 
-
 # async def send_bar_msg_batch(msg, count, update_count):
 #     if not settings.get_download_bars():
 #         return

@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 
@@ -62,13 +61,15 @@ class DiscordHandler(logging.Handler):
                 pass
 
     def emit(self, record):
-        if hasattr(record,"message") and (record.message in log_globals.stop_codes or record.message==""):
+        if hasattr(record, "message") and (
+            record.message in log_globals.stop_codes or record.message == ""
+        ):
             return
-        elif record in log_globals.stop_codes or record=="":
+        elif record in log_globals.stop_codes or record == "":
             return
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
-        if log_entry is None or log_entry=="None" or log_entry=="":
+        if log_entry is None or log_entry == "None" or log_entry == "":
             return
         elif constants.getattr("DISCORD_ASYNC"):
             self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
@@ -124,11 +125,10 @@ class DiscordHandler(logging.Handler):
             pass
 
 
-
 class DiscordHandlerMulti(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
-        self.lock=FileLock(common_paths.getDiscord())
+        self.lock = FileLock(common_paths.getDiscord())
 
         self.asess = sessionManager.sessionManager(
             backend="httpx",
@@ -176,11 +176,13 @@ class DiscordHandlerMulti(logging.Handler):
                 pass
 
     def emit(self, record):
-        if hasattr(record,"message") and (record.message in log_globals.stop_codes or record.message==""):
+        if hasattr(record, "message") and (
+            record.message in log_globals.stop_codes or record.message == ""
+        ):
             return
-        elif record in log_globals.stop_codes or record=="":
+        elif record in log_globals.stop_codes or record == "":
             return
-            
+
         log_entry = self.format(record)
         log_entry = f"{log_entry}\n\n"
         if constants.getattr("DISCORD_ASYNC"):
@@ -192,29 +194,31 @@ class DiscordHandlerMulti(logging.Handler):
     def close(self) -> None:
         if constants.getattr("DISCORD_ASYNC"):
             with self.lock:
-                self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
+                self.loop.run_until_complete(
+                    asyncio.gather(*asyncio.all_tasks(self.loop))
+                )
                 self.loop.close()
 
     def _emit(self, record):
-            url = data.get_discord()
-            try:
-                sess = self.sess
-                if url is None or url == "":
-                    return
-                with self.lock:
-                    with sess.requests(
-                        self._url,
-                        method="post",
-                        headers={"Content-type": "application/json"},
-                        json={
-                            "content": record,
-                            # "thread_name": self._thread,
-                        },
-                    ) as r:
-                        if not r.status == 204:
-                            raise Exception
-            except Exception:
-                pass
+        url = data.get_discord()
+        try:
+            sess = self.sess
+            if url is None or url == "":
+                return
+            with self.lock:
+                with sess.requests(
+                    self._url,
+                    method="post",
+                    headers={"Content-type": "application/json"},
+                    json={
+                        "content": record,
+                        # "thread_name": self._thread,
+                    },
+                ) as r:
+                    if not r.status == 204:
+                        raise Exception
+        except Exception:
+            pass
 
     async def _async_emit(self, record):
         url = data.get_discord()

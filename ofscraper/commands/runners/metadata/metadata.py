@@ -22,7 +22,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.utils.scrape_context import scrape_context_manager 
+from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.checkers import check_auth
 from ofscraper.commands.managers.metadata import metadataCommandManager
@@ -30,10 +30,8 @@ from ofscraper.commands.managers.metadata import metadataCommandManager
 log = logging.getLogger("shared")
 
 
-
-
 def metadata():
-    metaCommandManager=metadataCommandManager()
+    metaCommandManager = metadataCommandManager()
     check_auth()
     with progress_utils.setup_activity_progress_live(
         revert=True, stop=True, setup=True
@@ -42,17 +40,19 @@ def metadata():
         userfirst_data = []
         normal_data = []
         if read_args.retriveArgs().scrape_paid:
-            scrape_paid_data =metaCommandManager.metadata_paid_all()
+            scrape_paid_data = metaCommandManager.metadata_paid_all()
         if not metadataCommandManager.run_metadata:
             pass
 
         elif not read_args.retriveArgs().users_first:
             userdata, session = prepare()
-            normal_data = metaCommandManager.process_users_metadata_normal(userdata, session)
+            normal_data = metaCommandManager.process_users_metadata_normal(
+                userdata, session
+            )
         else:
             userdata, session = prepare()
             userfirst_data = metaCommandManager.metadata_user_first(userdata, session)
-    final(normal_data ,scrape_paid_data ,userfirst_data,userdata)
+    final(normal_data, scrape_paid_data, userfirst_data, userdata)
 
 
 def process_selected_areas():

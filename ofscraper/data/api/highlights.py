@@ -62,17 +62,17 @@ async def scrape_stories(c, user_id) -> list:
         )
         log.debug(f"trying to access {API_S.lower()} with url:{url}  user_id:{user_id}")
 
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
 
             stories = await r.json_()
-            log.debug(f"successfully accessed {API_S.lower()} with url:{url}  user_id:{user_id}")
+            log.debug(
+                f"successfully accessed {API_S.lower()} with url:{url}  user_id:{user_id}"
+            )
 
             log.debug(
                 f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
             )
-            trace_progress_log(f"{API_S} requests",stories)
+            trace_progress_log(f"{API_S} requests", stories)
     except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -114,7 +114,7 @@ async def process_stories_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Stories')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API_S} task",new_posts)
+                trace_progress_log(f"{API_S} task", new_posts)
 
                 responseArray.extend(new_posts)
             except Exception as E:
@@ -127,7 +127,7 @@ async def process_stories_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API_S} final",responseArray,final_count=True)
+    trace_log_raw(f"{API_S} final", responseArray, final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)}")
 
     return responseArray
@@ -153,7 +153,10 @@ async def get_highlight_list(model_id, c=None):
 
 async def get_highlights_via_list(highlightLists, c=None):
     tasks = []
-    [tasks.append(asyncio.create_task(scrape_highlights_from_list(c, i))) for i in highlightLists]
+    [
+        tasks.append(asyncio.create_task(scrape_highlights_from_list(c, i)))
+        for i in highlightLists
+    ]
     return await process_task_highlights(tasks)
 
 
@@ -192,7 +195,7 @@ async def process_task_get_highlight_list(tasks):
         tasks = new_tasks
 
     progress_utils.remove_api_task(page_task)
-    trace_log_raw(f"{API_H} list final",get_highlight_list,final_count=True)
+    trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
 
     log.debug(
         f"{common_logs.FINAL_COUNT.format('Highlight List')} {len(highlightLists)}"
@@ -227,7 +230,7 @@ async def process_task_highlights(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API_H} list posts task",new_posts)
+                trace_progress_log(f"{API_H} list posts task", new_posts)
 
                 highlightResponse.extend(new_posts)
             except Exception as E:
@@ -239,7 +242,7 @@ async def process_task_highlights(tasks):
         log.debug(
             f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
         )
-        trace_log_raw(f"{API_H} lists posts final",highlightResponse,final_count=True)
+        trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
 
         log.debug(
             f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)}"
@@ -253,23 +256,26 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     task = None
-    log.debug(f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}")
-
+    log.debug(
+        f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}"
+    )
 
     try:
         task = progress_utils.add_api_job_task(
             f"[Highlights] scraping highlight list  offset-> {offset}",
             visible=True,
         )
-        log.debug(f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}")
-        async with c.requests_async(
-            url
-        ) as r:
+        log.debug(
+            f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}"
+        )
+        async with c.requests_async(url) as r:
 
             resp_data = await r.json_()
-            log.debug(f"successfully accessed {API_H.lower()} lists with url:{url}  user_id:{user_id}")
+            log.debug(
+                f"successfully accessed {API_H.lower()} lists with url:{url}  user_id:{user_id}"
+            )
 
-            trace_progress_log(f"{API_H} list requests",resp_data)
+            trace_progress_log(f"{API_H} list requests", resp_data)
             data = get_highlightList(resp_data)
             log.debug(f"highlights list: -> found list ids {data}")
 
@@ -299,14 +305,14 @@ async def scrape_highlights_from_list(c, id) -> list:
             visible=True,
         )
         log.debug(f"trying to access {API_H.lower()} post with url:{url}  id:{id}")
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
 
             resp_data = await r.json_()
-            log.debug(f"successfully accessed {API_H.lower()} posts with url:{url}  id:{id}")
+            log.debug(
+                f"successfully accessed {API_H.lower()} posts with url:{url}  id:{id}"
+            )
 
-            trace_progress_log(f"{API_H} list post requests",resp_data)
+            trace_progress_log(f"{API_H} list post requests", resp_data)
             log.debug(
                 f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
             )

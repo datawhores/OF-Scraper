@@ -22,14 +22,14 @@ from ofscraper.actions.utils.log import (
 from ofscraper.actions.utils.log import get_medialog
 
 from ofscraper.actions.actions.metadata.managers.metadata import MetaDataManager
-from  ofscraper.actions.actions.metadata.utils.desc import desc
+from ofscraper.actions.actions.metadata.utils.desc import desc
 
 
-async def consumer(aws, task1, medialist,lock):
+async def consumer(aws, task1, medialist, lock):
     while True:
-        ele=None
+        ele = None
         async with lock:
-            if not(bool(aws)):
+            if not (bool(aws)):
                 break
             data = aws.pop()
         if data is None:
@@ -73,7 +73,7 @@ async def consumer(aws, task1, medialist,lock):
                         skipped=common_globals.skipped,
                         forced_skipped=common_globals.forced_skipped,
                         mediacount=len(medialist),
-                        sumcount=sum_count
+                        sumcount=sum_count,
                     ),
                     refresh=True,
                     advance=1,

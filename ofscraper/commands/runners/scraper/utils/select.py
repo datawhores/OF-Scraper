@@ -17,13 +17,14 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
 from ofscraper.commands.runners.scraper.utils.prompt import process_prompts
-from  ofscraper.commands.managers.scraper import scraperManager
+from ofscraper.commands.managers.scraper import scraperManager
 
 log = logging.getLogger("shared")
 
+
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
-    scrapingManager=scraperManager()
+    scrapingManager = scraperManager()
     scrapingManager.runner()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":

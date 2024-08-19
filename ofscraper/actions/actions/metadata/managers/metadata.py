@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import traceback
 
 import ofscraper.actions.utils.globals as common_globals
@@ -34,17 +35,15 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.params import get_alt_params
-from ofscraper.classes.sessionmanager.sessionmanager import (
-    FORCED_NEW,SIGN
-)
+from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.constants as constants
 
 
+class MetaDataManager:
+    def __init__(self, multi=False):
+        self._multi = multi
 
-class  MetaDataManager:
-    def __init__(self,multi=False):
-        self._multi=multi
-    async def metadata(self,c, ele, model_id, username):
+    async def metadata(self, c, ele, model_id, username):
         try:
             self._prepare(ele)
             return await self._change_metadata(c, ele, username, model_id)
@@ -55,11 +54,13 @@ class  MetaDataManager:
             )
             common_globals.log.traceback_(f"{get_medialog(ele)} Metadata Failed\n")
             return "skipped"
-    def _prepare(self,ele):
+
+    def _prepare(self, ele):
         if self._multi:
             set_media_log(common_globals.log, ele)
             common_globals.attempt.set(0)
-    async def _change_metadata(self,c, ele, username, model_id, placeholderObj=None):
+
+    async def _change_metadata(self, c, ele, username, model_id, placeholderObj=None):
         common_globals.log.info(
             f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
         )
@@ -69,7 +70,9 @@ class  MetaDataManager:
         effected = None
         if ele.id:
             prevData = (
-                await prev_download_media_data(ele, model_id=model_id, username=username)
+                await prev_download_media_data(
+                    ele, model_id=model_id, username=username
+                )
                 or {}
             )
             await download_media_update(
@@ -86,9 +89,8 @@ class  MetaDataManager:
                 ele, model_id=model_id, username=username
             )
         return ele.mediatype if effected else "forced_skipped"
-        
 
-    def _metadata_downloaded_helper(self,placeholderObj, prevData):
+    def _metadata_downloaded_helper(self, placeholderObj, prevData):
         if read_args.retriveArgs().metadata == "check":
             return prevData["downloaded"] if prevData else None
         elif read_args.retriveArgs().metadata == "complete":
@@ -104,8 +106,7 @@ class  MetaDataManager:
             return 1
         return 0
 
-
-    def _metadata_file_helper(self,placeholderObj, prevData):
+    def _metadata_file_helper(self, placeholderObj, prevData):
         if read_args.retriveArgs().metadata != "update":
             return str(placeholderObj.trunicated_filename)
         # for update
@@ -121,8 +122,7 @@ class  MetaDataManager:
             )
         return str(placeholderObj.trunicated_filename)
 
-
-    def _metadata_dir_helper(self,placeholderObj, prevData):
+    def _metadata_dir_helper(self, placeholderObj, prevData):
         if read_args.retriveArgs().metadata != "update":
             return str(placeholderObj.trunicated_filedir)
         # for update
@@ -138,13 +138,13 @@ class  MetaDataManager:
             ).parent
         return str(placeholderObj.trunicated_filedir)
 
-
-    def _metadata_hash_helper(self,placeholderObj, prevData, ele):
+    def _metadata_hash_helper(self, placeholderObj, prevData, ele):
         if not settings.get_hash(mediatype=ele.mediatype):
             return prevData.get("hash")
         elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
             return hash.get_hash(
-                pathlib.Path(placeholderObj.trunicated_filepath), mediatype=ele.mediatype
+                pathlib.Path(placeholderObj.trunicated_filepath),
+                mediatype=ele.mediatype,
             )
         elif pathlib.Path(
             prevData.get("directory") or "", prevData.get("filename") or ""
@@ -155,8 +155,7 @@ class  MetaDataManager:
                 )
             )
 
-
-    def _metadata_size_helper(self,placeholderObj, prevData):
+    def _metadata_size_helper(self, placeholderObj, prevData):
         if placeholderObj.size:
             return placeholderObj.size
         elif pathlib.Path(
@@ -172,8 +171,7 @@ class  MetaDataManager:
         else:
             return prevData.get("size")
 
-
-    async def _metadata_helper(self,c, ele):
+    async def _metadata_helper(self, c, ele):
         placeholderObj = None
         if not ele.url and not ele.mpd:
             placeholderObj = placeholder.Placeholders(
@@ -182,32 +180,30 @@ class  MetaDataManager:
             return placeholderObj
         else:
             url = ele.url or ele.mpd
-            params = get_alt_params(ele) if ele.mpd else None   
-            actions=[FORCED_NEW,SIGN] if ele.mpd and constants.getattr("ALT_FORCE_KEY") else []
+            params = get_alt_params(ele) if ele.mpd else None
+            actions = (
+                [FORCED_NEW, SIGN]
+                if ele.mpd and constants.getattr("ALT_FORCE_KEY")
+                else []
+            )
             common_globals.attempt.set(common_globals.attempt.get() + 1)
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}]  Getting data for metadata insert"
             )
             async with c.requests_async(
-                url=url,
-                headers=None,
-                params=params,
-                actions=actions
+                url=url, headers=None, params=params, actions=actions
             ) as r:
                 headers = r.headers
                 content_type = headers.get("content-type").split("/")[
                     -1
                 ] or media.content_type_missing(ele)
-                #request fail if not read
+                # request fail if not read
                 async for _ in r.iter_chunked(20000):
                     pass
-                placeholderObj = placeholder.Placeholders(
-                ele, ext=content_type
-                )
+                placeholderObj = placeholder.Placeholders(ele, ext=content_type)
                 return placeholderObj
 
-
-    async def _placeholderObjHelper(self,c, ele):
+    async def _placeholderObjHelper(self, c, ele):
         download_data = await asyncio.get_event_loop().run_in_executor(
             common_globals.thread, partial(cache.get, f"{ele.id}_headers")
         )
@@ -218,4 +214,3 @@ class  MetaDataManager:
             return placeholder.Placeholders(ele, content_type)
         # final fallback
         return await self._metadata_helper(c, ele)
-

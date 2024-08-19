@@ -79,7 +79,7 @@ async def get_oldarchived(model_id, username):
     ]
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    trace_log_raw(f"oldarchived",oldarchived)
+    trace_log_raw(f"oldarchived", oldarchived)
 
     return oldarchived
 
@@ -113,7 +113,7 @@ async def process_tasks(tasks):
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Archived')} {list(map(lambda x:x['id'],new_posts))}"
                 )
-                trace_progress_log(f"{API} task",new_posts)
+                trace_progress_log(f"{API} task", new_posts)
                 responseArray.extend(new_posts)
 
             except Exception as E:
@@ -127,7 +127,7 @@ async def process_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    trace_log_raw(f"{API} final",responseArray,final_count=True)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")
     return responseArray
 
@@ -288,14 +288,16 @@ async def scrape_archived_posts(
             f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
-        log.debug(f"trying to access {API.lower()} posts with url:{url}  offset:{offset}")
+        log.debug(
+            f"trying to access {API.lower()} posts with url:{url}  offset:{offset}"
+        )
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
 
             posts = (await r.json_())["list"]
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url}  offset:{offset}")
+            log.debug(
+                f"successfully accessed {API.lower()} posts with url:{url}  offset:{offset}"
+            )
 
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
@@ -312,7 +314,7 @@ async def scrape_archived_posts(
             log.debug(
                 f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
             )
-            trace_progress_log(f"{API} request",posts)
+            trace_progress_log(f"{API} request", posts)
 
             if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
@@ -347,6 +349,7 @@ async def scrape_archived_posts(
         progress_utils.remove_api_job_task(task)
 
     return posts, new_tasks
+
 
 def time_log(username, after):
     log.info(

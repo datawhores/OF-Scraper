@@ -22,27 +22,24 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.actions.utils.log import (
-    final_log,final_log_text
-)
+from ofscraper.actions.utils.log import final_log, final_log_text
 from ofscraper.actions.utils.paths.paths import setDirectoriesDate
 from ofscraper.actions.utils.buffer import download_log_clear_helper
 
 from ofscraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.actions.actions.metadata.normal.utils.consumer import consumer
-from  ofscraper.actions.actions.metadata.utils.desc import desc
-
+from ofscraper.actions.actions.metadata.utils.desc import desc
 
 
 @run
 async def process_dicts(username, model_id, medialist):
     download_log_clear_helper()
-    task1=None
+    task1 = None
     with progress_utils.setup_metadata_progress_live():
         common_globals.mainProcessVariableInit()
         try:
-           
+
             aws = []
 
             async with download_session() as c:
@@ -64,9 +61,9 @@ async def process_dicts(username, model_id, medialist):
                     visible=True,
                 )
                 concurrency_limit = get_max_workers()
-                lock=asyncio.Lock()
+                lock = asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(aws, task1, medialist,lock))
+                    asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
@@ -78,15 +75,9 @@ async def process_dicts(username, model_id, medialist):
                 common_globals.thread, cache.close
             )
             common_globals.thread.shutdown()
-   
+
         setDirectoriesDate()
         download_log_clear_helper()
         progress_updater.remove_metadata_task(task1)
         final_log(username)
         return final_log_text(username)
-    
-
-
-
-
-

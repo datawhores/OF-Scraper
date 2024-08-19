@@ -46,10 +46,8 @@ from ofscraper.db.operations_.media import (
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.runner.close.final.final_user import  post_user_script
+from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
-
-
 
 
 log = logging.getLogger("shared")
@@ -64,7 +62,7 @@ def process_download_cart():
     global cart_dict
     while True:
         try:
-            cart_dict={}
+            cart_dict = {}
             if table.row_queue.empty():
                 continue
 
@@ -74,18 +72,19 @@ def process_download_cart():
                 except Exception:
                     # handle getting new downloads
                     None
-            if len(cart_dict.keys())>0:
+            if len(cart_dict.keys()) > 0:
                 for val in cart_dict.values():
-                    post_user_script(val["userdata"],val["media"],val["post"])
-                results=["check cart results"] +list(map(lambda x:x["results"],cart_dict.values()))
-                userdata=list(map(lambda x:x["userdata"],cart_dict.values()))
-                final(normal_data=results,userdata=userdata)
+                    post_user_script(val["userdata"], val["media"], val["post"])
+                results = ["check cart results"] + list(
+                    map(lambda x: x["results"], cart_dict.values())
+                )
+                userdata = list(map(lambda x: x["userdata"], cart_dict.values()))
+                final(normal_data=results, userdata=userdata)
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
             log.traceback_(f"Error in process_item: {traceback.format_exc()}")
             continue
-
 
 
 def process_item():
@@ -119,18 +118,17 @@ def process_item():
             model_id = media.post.model_id
             username = media.post.username
             log.info(
-                    f"Downloading individual media ({media.filename}) to disk for {username}"
+                f"Downloading individual media ({media.filename}) to disk for {username}"
             )
             operations.table_init_create(model_id=model_id, username=username)
-            output,values = downloadnormal.process_dicts(username, model_id, [media])
-            if values is None or values[-1] == 1:
-                    raise Exception("Download is marked as skipped")
-            else:
-                raise Exception("Issue getting download")
- 
 
+            output, values = downloadnormal.process_dicts(
+                username, model_id, [media], [post]
+            )
+            if values is None or values[-1] == 1:
+                raise Exception("Download is marked as skipped")
             log.info("Download Finished")
-            update_globals(model_id,username,post,media,output)
+            update_globals(model_id, username, post, media, output)
             table.app.update_cell(key, "download_cart", "[downloaded]")
             break
         except Exception as E:
@@ -144,9 +142,20 @@ def process_item():
     if table.row_queue.empty():
         log.info("Download cart is currently empty")
 
-def update_globals(model_id,username,post,media,values):
+
+def update_globals(model_id, username, post, media, values):
     global cart_dict
-    cart_dict.setdefault(model_id, {"post": [], "media": [], "username": username, "model_id": model_id,"userdata":selector.get_model_fromParsed(username),"results":values})
+    cart_dict.setdefault(
+        model_id,
+        {
+            "post": [],
+            "media": [],
+            "username": username,
+            "model_id": model_id,
+            "userdata": selector.get_model_fromParsed(username),
+            "results": values,
+        },
+    )
     cart_dict[model_id]["post"].extend([post])
     cart_dict[model_id]["media"].extend([media])
 
@@ -174,10 +183,19 @@ async def data_refill(media_id, post_id, target_name, model_id):
         ):
             break
 
+def allow_check_dupes():
+    args = read_args.retriveArgs()
+    args.force_all = True
+    write_args.setArgs(args)
+
+def get_areas():
+    return read_args.retriveArgs().check_area
+
 
 def checker():
     args = read_args.retriveArgs()
     check_auth()
+    allow_check_dupes()
     try:
         if args.command == "post_check":
             post_checker()
@@ -248,7 +266,7 @@ async def post_check_retriver():
                 user_dict.setdefault(model_id, {})["model_id"] = model_id
                 user_dict.setdefault(model_id, {})["username"] = user_name
             if user_dict.get(model_id) and model_id and user_name:
-                areas = read_args.retriveArgs().check_area
+                areas = get_areas()
                 await operations.table_init_create(
                     username=user_name, model_id=model_id
                 )

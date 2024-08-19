@@ -1,10 +1,12 @@
 import cloup as click
 
-from ofscraper.utils.args.parse.arguments.check import force, url_group
+
+from ofscraper.utils.args.parse.groups.check_content import url_group
+from ofscraper.utils.args.parse.group_bundles.main_check import main_check
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
-from  ofscraper.utils.args.helpers.hide_args import hide_check_mode
+from ofscraper.utils.args.helpers.hide_args import hide_check_mode
 
 
 def message_check_args(func):
@@ -19,12 +21,13 @@ def message_check_args(func):
     )
     @common_args
     @url_group
-    @force
+    @main_check
     @advanced_args
     @check_mode_changes
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
+
     hide_check_mode(wrapper)
 
     return wrapper

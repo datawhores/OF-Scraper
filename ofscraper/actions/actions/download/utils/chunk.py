@@ -18,13 +18,13 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
 
-AVALIBLE_MEMORY=None
+AVALIBLE_MEMORY = None
 
 
 def get_available_memory():
     global AVALIBLE_MEMORY
     if not AVALIBLE_MEMORY:
-        AVALIBLE_MEMORY=psutil.virtual_memory().available - 1024 * 1024
+        AVALIBLE_MEMORY = psutil.virtual_memory().available - 1024 * 1024
     return AVALIBLE_MEMORY
 
 
@@ -50,12 +50,16 @@ def get_ideal_chunk_size(total_size, curr_file):
     available_memory = get_available_memory()
     # Target a chunk size that utilizes a reasonable portion of available memory
     max_chunk_size = min(
-        available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"), constants.getattr("MAX_CHUNK_SIZE")
-    ) 
-    ideal_chunk_size = max(min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT")),constants.getattr("MIN_CHUNK_SIZE"))
-    if ideal_chunk_size//16>settings.get_download_limit() or float("inf"):
+        available_memory // constants.getattr("CHUNK_MEMORY_SPLIT"),
+        constants.getattr("MAX_CHUNK_SIZE"),
+    )
+    ideal_chunk_size = max(
+        min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT")),
+        constants.getattr("MIN_CHUNK_SIZE"),
+    )
+    if ideal_chunk_size // 16 > settings.get_download_limit() or float("inf"):
         ideal_chunk_size = settings.get_download_limit()
-    ideal_chunk_size =ideal_chunk_size - (ideal_chunk_size % 1024)
+    ideal_chunk_size = ideal_chunk_size - (ideal_chunk_size % 1024)
     return ideal_chunk_size
 
 

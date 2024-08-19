@@ -270,29 +270,33 @@ def get_default_userlist(config=None):
 def get_post_download_script(config=None):
     if config is False:
         return constants.POST_DOWNLOAD_SCRIPT_DEFAULT
-    val=None
-    if  config.get("post_download_script") is not None:
-        val= config.get("post_download_script")
+    val = None
+    if config.get("post_download_script") is not None:
+        val = config.get("post_download_script")
     elif config.get("advanced_options", {}).get("post_download_script") is not None:
-        val=config.get("advanced_options", {}).get("post_download_script")
+        val = config.get("advanced_options", {}).get("post_download_script")
     elif config.get("script_options", {}).get("post_download_script") is not None:
-        val=config.get("script_options", {}).get("post_download_script")
-    return val if val is not None else constants_attr.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+        val = config.get("script_options", {}).get("post_download_script")
+    return (
+        val
+        if val is not None
+        else constants_attr.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+    )
 
 
 @wrapper.config_reader
 def get_post_script(config=None):
     if config is False:
         return constants.POST_SCRIPT_DEFAULT
-    val=None
-    if  config.get("post_script") is not None:
-        val= config.get("post_script")
+    val = None
+    if config.get("post_script") is not None:
+        val = config.get("post_script")
     elif config.get("advanced_options", {}).get("post_script") is not None:
-        val=config.get("advanced_options", {}).get("post_script")
+        val = config.get("advanced_options", {}).get("post_script")
     elif config.get("scripts", {}).get("post_download_script") is not None:
         val = config.get("scripts", {}).get("post_download_script")
     elif config.get("script_options", {}).get("post_script") is not None:
-        val=config.get("script_options", {}).get("post_script")
+        val = config.get("script_options", {}).get("post_script")
     return val if val is not None else constants_attr.getattr("POST_SCRIPT_DEFAULT")
 
 
@@ -347,24 +351,26 @@ def get_threads(config=None):
         threads = int(constants_attr.getattr("THREADS_DEFAULT"))
     return threads
 
+
 @wrapper.config_reader
-def get_download_limit(config=None,mediatype=None):
+def get_download_limit(config=None, mediatype=None):
     if config is False:
         return constants.DOWNLOAD_LIMIT_DEFAULT
     try:
         return parse_size(
-                str(
-                    config.get("overwrites", {})
-                    .get((mediatype or "").lower(), {})
-                    .get("download_limit")
-                    or config.get("download_limit",)
-                    or config.get("performance_options", {}).get("download_limit")
-                    or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
+            str(
+                config.get("overwrites", {})
+                .get((mediatype or "").lower(), {})
+                .get("download_limit")
+                or config.get(
+                    "download_limit",
                 )
-            )   
+                or config.get("performance_options", {}).get("download_limit")
+                or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
+            )
+        )
     except Exception:
         return 0
-    
 
 
 @wrapper.config_reader

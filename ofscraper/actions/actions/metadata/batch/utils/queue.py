@@ -12,21 +12,23 @@ from ofscraper.actions.utils.log import (
 )
 
 from ofscraper.actions.utils.paths.paths import addGlobalDir
-from  ofscraper.actions.actions.metadata.utils.desc import desc
+from ofscraper.actions.actions.metadata.utils.desc import desc
 
 
 platform_name = platform.system()
+
+
 def queue_process(pipe_, task1, total):
     count = 0
-    medias={"images","videos","audios","skipped","forced_skipped"}
+    medias = {"images", "videos", "audios", "skipped", "forced_skipped"}
     while True:
         try:
             if count == 1:
                 break
             try:
-                if not pipe_.poll(timeout=1) :
+                if not pipe_.poll(timeout=1):
                     continue
-                results = pipe_.recv() 
+                results = pipe_.recv()
                 if not isinstance(results, list):
                     results = [results]
             except Exception as E:
@@ -42,7 +44,7 @@ def queue_process(pipe_, task1, total):
                     elif callable(result):
                         job_progress_helper(result)
                     elif result in medias:
-                        media_type= result
+                        media_type = result
                         with common_globals.count_lock:
                             if media_type == "images":
                                 common_globals.photo_count += 1
@@ -79,21 +81,21 @@ def queue_process(pipe_, task1, total):
                                 + common_globals.forced_skipped,
                             )
 
-
                 except Exception as E:
                     common_globals.log.traceback_(E)
                     common_globals.log.traceback_(traceback.format_exc())
-                    #increase skipped
+                    # increase skipped
                     common_globals.skipped += 1
         except Exception as E:
-                    common_globals.log.traceback_(E)
-                    common_globals.log.traceback_(traceback.format_exc())
-                    #increase skipped
+            common_globals.log.traceback_(E)
+            common_globals.log.traceback_(traceback.format_exc())
+            # increase skipped
+
 
 def job_progress_helper(funct):
     try:
         funct()
-    #probably handle by other thread
+    # probably handle by other thread
     except KeyError:
         pass
     except Exception as E:
@@ -103,10 +105,10 @@ def job_progress_helper(funct):
 async def ajob_progress_helper(funct):
     try:
         await asyncio.get_event_loop().run_in_executor(
-                None,
-                funct,
+            None,
+            funct,
         )
-    #probably handle by other thread
+    # probably handle by other thread
     except KeyError:
         pass
     except Exception as E:

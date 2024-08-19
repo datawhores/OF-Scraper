@@ -1,8 +1,6 @@
-
-
 import traceback
 import time
-import  logging
+import logging
 import copy
 import arrow
 
@@ -12,10 +10,20 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process_all
-from ofscraper.commands.utils.strings import avatar_str, all_paid_metadata_str,all_paid_progress_metadata_str,metadata_activity_str,mark_stray_str
+from ofscraper.commands.utils.strings import (
+    avatar_str,
+    all_paid_metadata_str,
+    all_paid_progress_metadata_str,
+    metadata_activity_str,
+    mark_stray_str,
+)
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.managers.manager import commmandManager
-from ofscraper.data.posts.scrape_paid import process_scrape_paid,process_user_info_printer,process_user
+from ofscraper.data.posts.scrape_paid import (
+    process_scrape_paid,
+    process_user_info_printer,
+    process_user,
+)
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.db.operations as operations
 from ofscraper.db.operations_.media import (
@@ -24,7 +32,7 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.actions.actions.metadata.metadata import  metadata_process
+from ofscraper.actions.actions.metadata.metadata import metadata_process
 from ofscraper.data.posts.post import process_areas
 
 log = logging.getLogger("shared")
@@ -33,16 +41,20 @@ log = logging.getLogger("shared")
 class metadataCommandManager(commmandManager):
     def __init__(self):
         super().__init__()
+
     @run_async
-    async def process_users_metadata_normal(self,userdata, session):
-        user_action_funct = self._get_user_action_function(self._execute_metadata_action_on_user)
+    async def process_users_metadata_normal(self, userdata, session):
+        user_action_funct = self._get_user_action_function(
+            self._execute_metadata_action_on_user
+        )
         progress_updater.update_user_activity(description="Users with Updated Metadata")
         return await user_action_funct(userdata, session)
+
     @run_async
-    async def metadata_user_first(self,userdata, session):
+    async def metadata_user_first(self, userdata, session):
         data = await self._get_userfirst_data_function(self._metadata_data_user_first)(
             userdata, session
-        )(userdata,session)
+        )(userdata, session)
         progress_updater.update_activity_task(description="Changing Metadata for Users")
         progress_updater.update_user_activity(
             description="Users with Metadata Changed", completed=0
@@ -51,8 +63,6 @@ class metadataCommandManager(commmandManager):
         return await self._get_userfirst_action_execution_function(
             self._execute_metadata_action_on_user
         )(data)
-
-
 
     @run_async
     async def metadata_paid_all(self):
@@ -72,11 +82,15 @@ class metadataCommandManager(commmandManager):
             out.append(await process_user(value, length))
         write_args.setArgs(old_args)
         return out
+
     def _force_change_metadata(self):
         args = read_args.retriveArgs()
         args.metadata = args.scrape_paid
         write_args.setArgs(args)
-    async def _execute_metadata_action_on_user(self,*args, ele=None, media=None, **kwargs):
+
+    async def _execute_metadata_action_on_user(
+        self, *args, ele=None, media=None, **kwargs
+    ):
         username = ele.name
         model_id = ele.id
         mark_stray = read_args.retriveArgs().mark_stray
@@ -96,12 +110,11 @@ class metadataCommandManager(commmandManager):
         progress_updater.update_activity_task(
             description=metadata_activity_str.format(username=username)
         )
-        data,_ = await metadata_process(username, model_id, media)
+        data, _ = await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
         return [data]
 
-
-    async def _metadata_stray_media(SELF,username, model_id, media):
+    async def _metadata_stray_media(SELF, username, model_id, media):
         if not read_args.retriveArgs().mark_stray:
             return
         all_media = []
@@ -111,11 +124,17 @@ class metadataCommandManager(commmandManager):
             description=mark_stray_str.format(username=username)
         )
         if "Timeline" in args.download_area:
-            all_media.extend(await get_timeline_media(model_id=model_id, username=username))
+            all_media.extend(
+                await get_timeline_media(model_id=model_id, username=username)
+            )
         if "Messages" in args.download_area:
-            all_media.extend(await get_messages_media(model_id=model_id, username=username))
+            all_media.extend(
+                await get_messages_media(model_id=model_id, username=username)
+            )
         if "Archived" in args.download_area:
-            all_media.extend(await get_archived_media(model_id=model_id, username=username))
+            all_media.extend(
+                await get_archived_media(model_id=model_id, username=username)
+            )
         if not bool(all_media):
             return
         filtered_media = list(
@@ -131,12 +150,13 @@ class metadataCommandManager(commmandManager):
         )
         log.info(f"Found {len(filtered_media)} stray items to mark as locked")
         batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
-    def _get_user_action_function(self,funct):
+
+    def _get_user_action_function(self, funct):
         async def wrapper(userdata, session, *args, **kwargs):
             async with session as c:
                 data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
                 for ele in userdata:
-                    username=ele.name
+                    username = ele.name
                     model_id = ele.id
                     try:
                         with progress_utils.setup_api_split_progress_live():
@@ -172,26 +192,28 @@ class metadataCommandManager(commmandManager):
                             raise e
                     finally:
                         progress_updater.increment_user_activity()
-                progress_updater.update_activity_task(description="Finished Metadata Mode")
+                progress_updater.update_activity_task(
+                    description="Finished Metadata Mode"
+                )
                 time.sleep(1)
                 return data
 
         return wrapper
 
-
     # data functions
     @run_async
-    async def _metadata_data_user_first(self,session, ele):
+    async def _metadata_data_user_first(self, session, ele):
         try:
-            return await self._process_ele_user_first_data_retriver(ele=ele, session=session)
+            return await self._process_ele_user_first_data_retriver(
+                ele=ele, session=session
+            )
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
 
-
-    async def _process_ele_user_first_data_retriver(self,ele=None, session=None):
+    async def _process_ele_user_first_data_retriver(self, ele=None, session=None):
         data = {}
         progress_utils.switch_api_progress()
         model_id = ele.id
@@ -218,8 +240,6 @@ class metadataCommandManager(commmandManager):
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
         return data
-    
-
 
     @property
     def run_metadata(self):

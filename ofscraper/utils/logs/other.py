@@ -17,13 +17,14 @@ import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.utils.logs.classes.handlers.discord import DiscordHandler,DiscordHandlerMulti
+from ofscraper.utils.logs.classes.handlers.discord import (
+    DiscordHandler,
+    DiscordHandlerMulti,
+)
 
 from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
 from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 from logging.handlers import QueueHandler
-
-
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -35,25 +36,29 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     log = init_other_logger(name)
 
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
-        funct = partial(input_.get,timeout=constants.getattr("LOGGER_TIMEOUT"))
+        funct = partial(input_.get, timeout=constants.getattr("LOGGER_TIMEOUT"))
     elif hasattr(input_, "send"):
-        funct =  lambda: input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
+        funct = lambda: (
+            input_.recv() if input_.poll(constants.getattr("LOGGER_TIMEOUT")) else False
+        )
 
     while True:
         try:
             message = funct()
             if event and event.is_set():
                 break
-            elif (message=="None" or message == None):
-                count=count+1
+            elif message == "None" or message == None:
+                count = count + 1
                 continue
-            elif hasattr(message, "message") and (message.message=="None" or message.message==None):
-                count=count+1
+            elif hasattr(message, "message") and (
+                message.message == "None" or message.message == None
+            ):
+                count = count + 1
                 continue
             elif message is False:
                 raise queue.Empty
             log.handle(message)
-        except (queue.Empty):
+        except queue.Empty:
             if count == stop_count:
                 break
             if len(log.handlers) == 0:
@@ -148,11 +153,12 @@ def updateOtherLoggerStream():
 def init_other_logger(name):
     name = name or "ofscraper_other"
     log = logging.getLogger(name)
-    log=add_other_handler(log)
+    log = add_other_handler(log)
     return log
 
-def add_other_handler(log,clear=True):
-    if clear:    
+
+def add_other_handler(log, clear=True):
+    if clear:
         log.handlers.clear()
     format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
@@ -185,8 +191,8 @@ def add_other_handler(log,clear=True):
     return log
 
 
-def add_other_handler_multi(log,clear=True,other_=None):
-    if clear:    
+def add_other_handler_multi(log, clear=True, other_=None):
+    if clear:
         log.handlers.clear()
     format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
@@ -194,7 +200,7 @@ def add_other_handler_multi(log,clear=True,other_=None):
     log_helpers.addtrace()
     # # #log file
     # #discord
-    if  not other_:
+    if not other_:
         cord = DiscordHandlerMulti()
         cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
         cord.setFormatter(log_class.DiscordFormatter("%(message)s"))

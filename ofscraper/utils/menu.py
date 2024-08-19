@@ -30,7 +30,7 @@ def get_count():
 def main_menu_action():
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
-    scapingManager=scraperManager()
+    scapingManager = scraperManager()
     while True:
         console.get_shared_console().clear_live()
         try:
@@ -126,7 +126,7 @@ def config_menu_helper(result_config_prompt):
         config_menu.response_type()
     elif result_config_prompt == "content":
         config_menu.content_config()
-    elif  result_config_prompt=="script":
+    elif result_config_prompt == "script":
         config_menu.script_config()
 
 

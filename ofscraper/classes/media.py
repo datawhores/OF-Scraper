@@ -35,9 +35,9 @@ class Media(base.base):
         self._final_url = None
         self._mpd = None
         self._log = None
-        self._hls=None
-        self._lock=asyncio.Lock()
-        self._cached_mpd=None
+        self._hls = None
+        self._lock = asyncio.Lock()
+        self._cached_mpd = None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -280,13 +280,14 @@ class Media(base.base):
             .get("hls", {})
             .get("CloudFront-Signature")
         )
+
     @property
     def hls_header(self):
         return f"CloudFront-Policy={self.hls_policy}; CloudFront-Signature={self.hls_signature}; CloudFront-Key-Pair-Id={self.hls_keypair}"
 
     @property
     def hls_base(self):
-        return re.sub(r"[a-z0-9]+.m3u8$","",self.hls)
+        return re.sub(r"[a-z0-9]+.m3u8$", "", self.hls)
 
     @property
     def mpdout(self):
@@ -335,7 +336,6 @@ class Media(base.base):
         final_filename = await self._get_final_filename_async()
         # Block and wait for the asynchronous operation to complete
         return final_filename
-        
 
     @property
     def no_quality_final_filename(self):
@@ -390,11 +390,9 @@ class Media(base.base):
                 semaphore=semaphore,
                 log=self._log,
             ) as c:
-                async with c.requests_async(
-                    url=self.mpd, params=params
-                ) as r:
-                   self._cached_mpd= MPEGDASHParser.parse(await r.text_())
-                   return self._cached_mpd
+                async with c.requests_async(url=self.mpd, params=params) as r:
+                    self._cached_mpd = MPEGDASHParser.parse(await r.text_())
+                    return self._cached_mpd
 
     @async_cached_property
     async def mpd_video(self):
@@ -402,12 +400,14 @@ class Media(base.base):
             return
         video = await self.mpd_video_helper()
         return video
+
     @async_cached_property
     async def mpd_audio(self):
         if not self.mpd:
             return
         audio = await self.mpd_audio_helper()
         return audio
+
     @property
     def license(self):
         if not self.mpd:
@@ -524,7 +524,7 @@ class Media(base.base):
                             "pssh": kId,
                             "type": "video",
                             "name": f"tempvid_{self.id}_{self.postid}",
-                            "ext":"mp4"
+                            "ext": "mp4",
                         }
 
     async def mpd_audio_helper(self, mpd=None):
@@ -547,7 +547,8 @@ class Media(base.base):
                         "origname": origname,
                         "pssh": kId,
                         "type": "audio",
-                        "name": f"tempaudio_{self.id}_{self.postid}","ext":"mp4"
+                        "name": f"tempaudio_{self.id}_{self.postid}",
+                        "ext": "mp4",
                     }
 
     def normal_quality_helper(self):
@@ -583,7 +584,7 @@ class Media(base.base):
                         None,
                     )
                 return str(selected.height) if selected else "source"
-            
+
     async def _get_final_filename_async(self):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":

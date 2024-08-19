@@ -15,9 +15,8 @@ from ofscraper.utils.args.parse.arguments.content import (
     posts_option,
     timed_only_option,
     post_id_filter,
-    item_sort_option
+    item_sort_option,
 )
-from ofscraper.utils.args.parse.arguments.media_type import quality_option,normal_only,protected_only,media_id_filter,length_max,length_min,media_type_option
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
@@ -30,14 +29,19 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
-from ofscraper.utils.args.parse.groups.download import download_options_help,download_options_tuple
+from ofscraper.utils.args.parse.groups.download import (
+    download_options_help,
+    download_options_tuple,
+)
 from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
-from ofscraper.utils.args.parse.groups.content import content_options_help,content_options_desc
+from ofscraper.utils.args.parse.groups.content import (
+    content_options_help,
+    content_options_desc,
+)
 from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
 
 
-from  ofscraper.utils.args.helpers.hide_args import hide_metadata_mode
-
+from ofscraper.utils.args.helpers.hide_args import hide_metadata_mode
 
 
 def metadata_args(func):
@@ -130,9 +134,7 @@ It also uses a new filename if one is available
         help=content_options_help,
     )
     @click.option_group(
-        "Metadata Options",
-        *download_options_tuple,
-        help=download_options_help
+        "Metadata Options", *download_options_tuple, help=download_options_help
     )
     @user_select_options
     @userlist_options
@@ -154,5 +156,6 @@ It also uses a new filename if one is available
             raise UsageError("'--scrape-paid' and/or --metadata is required")
         ctx.params["action"] = []
         return func(ctx, *args, **kwargs)
+
     hide_metadata_mode(wrapper)
     return wrapper

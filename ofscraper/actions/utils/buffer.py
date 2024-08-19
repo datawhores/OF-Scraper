@@ -1,4 +1,3 @@
-
 r"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
@@ -14,7 +13,9 @@ r"""
 
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.logs.stdout import restart_flush_main_thread
+
+
 def download_log_clear_helper():
     with progress_utils.setup_download_overall_progress():
-    #clear the rich buffer before progressing
+        # clear the rich buffer before progressing
         restart_flush_main_thread(name="shared")

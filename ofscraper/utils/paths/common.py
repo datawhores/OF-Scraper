@@ -29,19 +29,23 @@ def get_username():
 
 
 def getDB():
-    return get_profile_path() /"locks"/ "db.lock"
+    return get_profile_path() / "locks" / "db.lock"
 
 
 def getRich():
-    return get_profile_path() /"locks"/ "rich.lock"
+    return get_profile_path() / "locks" / "rich.lock"
+
 
 def getFile():
-    return get_profile_path() /"locks"/ "file.lock"
+    return get_profile_path() / "locks" / "file.lock"
+
 
 def getDiscord():
-    return get_profile_path() /"locks"/ "discord.lock"
+    return get_profile_path() / "locks" / "discord.lock"
+
+
 def getMediaDB():
-    return get_profile_path() /"locks"/ "media_db.lock"
+    return get_profile_path() / "locks" / "media_db.lock"
 
 
 def get_config_home():

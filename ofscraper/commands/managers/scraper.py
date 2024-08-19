@@ -16,14 +16,15 @@ from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.data.posts.post import post_media_process
 
 
-
 log = logging.getLogger("shared")
+
 
 class scraperManager(commmandManager):
     def __init__(self):
         super().__init__()
+
     @exit.exit_wrapper
-    def runner(self,menu=False):
+    def runner(self, menu=False):
         check_auth()
         with scrape_context_manager():
             normal_data = []
@@ -40,14 +41,17 @@ class scraperManager(commmandManager):
 
                 elif read_args.retriveArgs().users_first:
                     userdata, session = prepare(menu=menu)
-                    user_first_data = self._process_users_actions_user_first(userdata, session)
+                    user_first_data = self._process_users_actions_user_first(
+                        userdata, session
+                    )
                 else:
                     userdata, session = prepare()
                     normal_data = self._process_users_actions_normal(userdata, session)
-            final(normal_data , scrape_paid_data ,user_first_data,userdata)
+            final(normal_data, scrape_paid_data, user_first_data, userdata)
+
     @exit.exit_wrapper
     @run_async
-    async def _process_users_actions_user_first(self,userdata, session):
+    async def _process_users_actions_user_first(self, userdata, session):
         data = await self._get_userfirst_data_function(self._get_users_data_user_first)(
             userdata, session
         )
@@ -56,14 +60,14 @@ class scraperManager(commmandManager):
             description="Users with Actions completed", completed=0
         )
 
-        return await self._get_userfirst_action_execution_function(self._execute_user_action)(data)
+        return await self._get_userfirst_action_execution_function(
+            self._execute_user_action
+        )(data)
 
-
-    async def _get_users_data_user_first(self,session, ele):
+    async def _get_users_data_user_first(self, session, ele):
         return await self._process_ele_user_first_data_retriver(ele, session)
 
-
-    async def _process_ele_user_first_data_retriver(self,ele, session):
+    async def _process_ele_user_first_data_retriver(self, ele, session):
         model_id = ele.id
         username = ele.name
         avatar = ele.avatar
@@ -79,23 +83,24 @@ class scraperManager(commmandManager):
                 "ele": ele,
             }
         }
-    async def _execute_user_action(self,posts=None, like_posts=None, ele=None, media=None):
+
+    async def _execute_user_action(
+        self, posts=None, like_posts=None, ele=None, media=None
+    ):
         actions = read_args.retriveArgs().action
         username = ele.name
         model_id = ele.id
         out = []
         for action in actions:
             if action == "download":
-                result,_= await downloader(
-                        ele=ele,
-                        posts=posts,
-                        media=media,
-                        model_id=model_id,
-                        username=username,
-                    )
-                out.append(
-                   result
+                result, _ = await downloader(
+                    ele=ele,
+                    posts=posts,
+                    media=media,
+                    model_id=model_id,
+                    username=username,
                 )
+                out.append(result)
             elif action == "like":
                 out.append(
                     like_action.process_like(
@@ -117,8 +122,13 @@ class scraperManager(commmandManager):
                     )
                 )
         return out
+
     @exit.exit_wrapper
     @run_async
-    async def _process_users_actions_normal(self,userdata=None, session=None):
-        progress_updater.update_user_activity(description="Users with Actions Completed")
-        return await self._get_user_action_function(self._execute_user_action)(userdata, session)
+    async def _process_users_actions_normal(self, userdata=None, session=None):
+        progress_updater.update_user_activity(
+            description="Users with Actions Completed"
+        )
+        return await self._get_user_action_function(self._execute_user_action)(
+            userdata, session
+        )

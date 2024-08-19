@@ -53,6 +53,15 @@ client_id_option = click.option(
     default=None,
 )
 
+auth_fail = click.option(
+    "-al",
+    "--auth-fail",
+    "--auth-quit",
+    "auth_fail",
+    help="quit on authentication failure, rather then prompting",
+    default=False,
+    is_flag=True,
+)
 dynamic_rules_option = click.option(
     "-dr",
     "--dynamic-rules",

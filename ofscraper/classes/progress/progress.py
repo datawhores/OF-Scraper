@@ -2,12 +2,13 @@ from typing import Any, NewType, Optional
 import rich.progress
 from ofscraper.classes.progress.task import Task
 import ofscraper.utils.live.progress as progress_utils
+
 TaskID = NewType("TaskID", int)
 
 
 class MultiprocessFileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
-        self._last_updated={}
+        self._last_updated = {}
         super().__init__(*args, **kwargs)
 
     def get_file(self, taskID):
@@ -49,7 +50,7 @@ class MultiprocessFileProgress(rich.progress.Progress):
                 fields=fields,
                 _get_time=self.get_time,
                 _lock=self._lock,
-                file=file
+                file=file,
             )
             self._tasks[task_id] = task
             if start:
@@ -57,7 +58,6 @@ class MultiprocessFileProgress(rich.progress.Progress):
 
         self.refresh()
         return task_id
-
 
     # def update(self,*args,**kwargs):
     #     task_id=args[0]
@@ -83,7 +83,7 @@ class MultiprocessFileProgress(rich.progress.Progress):
 class FileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
         self._files = {}
-        self._last_updated={}
+        self._last_updated = {}
         super().__init__(*args, **kwargs)
 
     def get_file(self, taskID):
@@ -124,9 +124,9 @@ class FileProgress(rich.progress.Progress):
                 fields=fields,
                 _get_time=self.get_time,
                 _lock=self._lock,
-                file=file
+                file=file,
             )
-            task.progress_parent=self
+            task.progress_parent = self
             self._tasks[self._task_index] = task
             if start:
                 self.start_task(self._task_index)
@@ -134,7 +134,6 @@ class FileProgress(rich.progress.Progress):
             self._task_index = TaskID(int(self._task_index) + 1)
         self.refresh()
         return new_task_index
-
 
     # def update(self,*args,**kwargs):
     #     task_id=args[0]
@@ -156,9 +155,10 @@ class FileProgress(rich.progress.Progress):
     #         return True
     #     return False
 
+
 class OverallFileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args,**kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_file(self, taskID):
         return self._files.get(taskID)
@@ -187,16 +187,18 @@ class OverallFileProgress(rich.progress.Progress):
         Returns:
             TaskID: An ID you can use when calling `update`.
         """
-        id=super().add_task(description, start, total,completed,visible,**fields)
-        task=self._tasks[id]
+        id = super().add_task(description, start, total, completed, visible, **fields)
+        task = self._tasks[id]
         self._tasks[id] = task
-        return id 
-    @property  
+        return id
+
+    @property
     def speed(self):
-        return sum([ele.speed_via_file or  0 for ele in self.download_tasks])
-    @property 
+        return sum([ele.speed_via_file or 0 for ele in self.download_tasks])
+
+    @property
     def download_tasks(self):
-        return progress_utils.download_job_progress.tasks or progress_utils.multi_download_job_progress.tasks
-
-
-   
+        return (
+            progress_utils.download_job_progress.tasks
+            or progress_utils.multi_download_job_progress.tasks
+        )
