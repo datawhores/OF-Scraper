@@ -30,49 +30,11 @@ RUN  pip install dunamai
 RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)")
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
-FROM base AS bento4
-
-RUN apt-get update && apt-get install cmake wget -y
-
-RUN wget https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0-641.tar.gz
-
-RUN tar -xvf v1.6.0-641.tar.gz
-
-WORKDIR /app/Bento4-1.6.0-641/
-
-RUN mkdir cmakebuild
-
-WORKDIR /app/Bento4-1.6.0-641/cmakebuild
-
-RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..
-
-RUN make -j4
-
-RUN make install
-
 FROM base AS final
 
 ARG TARGETARCH
 
 COPY --from=builder /venv /venv
-
-RUN mkdir -p /temp_usr_local
-
-COPY --from=bento4 /app/Bento4-1.6.0-641/cmakebuild/install_manifest.txt /app/install_manifest.txt
-
-COPY --from=bento4 /usr/local /temp_usr_local
-
-RUN while read -r line; do \
-        temp_line="/temp_usr_local${line#/usr/local}"; \
-        dir=$(dirname "$line"); \
-        mkdir -p "$dir"; \
-        cp --preserve=all "$temp_line" "$line"; \
-    done < /app/install_manifest.txt
-
-
-RUN rm -f /app/install_manifest.txt
-
-RUN rm -rf /temp_usr_local
 
 ENV PATH="/venv/bin:${PATH}" \
     VIRTUAL_ENV="/venv"
