@@ -89,24 +89,25 @@ class Media(base.base):
         if self.protected is True:
             return None
         elif self._final_url:
-            None
+            return self._final_url
         elif self.responsetype == "stories" or self.responsetype == "highlights":
             self._final_url = self.files_source.get("full")
         elif self.responsetype == "profile":
             self._final_url = self._media.get("url")
         else:
-            self._final_url = self._url_source_helper()
+            self._final_url = self._url_quality_picker()
         return self._final_url
 
-    def _url_source_helper(self):
+    def _url_quality_picker(self):
         quality = self.normal_quality_helper()
         out=None
         if quality != "source":
             out=self._media.get("videoSources", {}).get(quality)
         elif out is None:
             out=self.files_source.get("full")
+        
         elif out is None:
-            out=self._media.get("source", {}).get("source")
+            out=self.media_source.get("source")
         return out
         
 
@@ -460,7 +461,7 @@ class Media(base.base):
             return False
         elif bool(self.media_source.get("source")):
             return False
-        elif bool(self.files_source):
+        elif bool(self.files_source.get("full")):
             return False
         return True
 
