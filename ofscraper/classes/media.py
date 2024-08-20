@@ -49,10 +49,11 @@ class Media(base.base):
     @property
     def media_source(self):
         return self._media.get("source", {})
+    
 
     @property
     def files_source(self):
-        return self._media.get("files", {}).get("source", {})
+        return {key: (inner_dict or {}).get("url") for key, inner_dict in self._media.get("files",{}).items()}
 
     @property
     def quality(self):
@@ -90,7 +91,7 @@ class Media(base.base):
         elif self._final_url:
             None
         elif self.responsetype == "stories" or self.responsetype == "highlights":
-            self._final_url = self.files_source.get("url")
+            self._final_url = self.files_source.get("full")
         elif self.responsetype == "profile":
             self._final_url = self._media.get("url")
         else:
@@ -99,9 +100,15 @@ class Media(base.base):
 
     def _url_source_helper(self):
         quality = self.normal_quality_helper()
-        if quality == "source":
-            return self._media.get("source", {}).get("source")
-        return self._media.get("videoSources", {}).get(quality)
+        out=None
+        if quality != "source":
+            out=self._media.get("videoSources", {}).get(quality)
+        elif out is None:
+            out=self.files_source.get("full")
+        elif out is None:
+            out=self._media.get("source", {}).get("source")
+        return out
+        
 
     @property
     def post(self):

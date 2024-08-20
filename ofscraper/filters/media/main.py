@@ -23,7 +23,7 @@ def filtermediaFinal(media, username, model_id):
 
 
 def filterMediaFinalMetadata(media, username, model_id):
-    log.info(f"finalizing media filtering {username} {model_id} for metadata")
+    log.info(f"finalizing media filtering username:{username} model_id:{model_id} for metadata")
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -45,7 +45,7 @@ def filterMediaFinalMetadata(media, username, model_id):
 
 
 def filterMediaFinalDownload(media, username, model_id):
-    log.info(f"finalizing media filtering {username} {model_id} for download")
+    log.info(f"finalizing media filtering username:{username} model_id: {model_id} for download")
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
