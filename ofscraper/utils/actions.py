@@ -104,8 +104,6 @@ def set_download_area(action=None):
             selected = prompts.metadata_areas_prompt()
     elif len(selected) == 0 and "download" in action:
         selected = prompts.download_areas_prompt()
-    else:
-        return
     args.download_area = selected
     write_args.setArgs(args)
 
