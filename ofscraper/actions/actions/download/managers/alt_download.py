@@ -105,6 +105,7 @@ class AltDownloadManager(DownloadManager):
         ).init()
         item["path"] = placeholderObj.tempfilepath
         item["total"] = None
+        
         async for _ in download_retry():
             with _:
                 try:

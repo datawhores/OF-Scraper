@@ -102,15 +102,10 @@ class download_session(sessionManager.sessionManager):
 
     def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
-            while True:
-                try:
-                    chunk = await anext(funct(*args, **kwargs))
-                    size = len(chunk)
-                    await self.get_token(size)
-                    yield chunk
-                except StopAsyncIteration:
-                    break
-
+            async for chunk in funct(*args, **kwargs):
+                size = len(chunk)
+                await self.get_token(size)
+                yield chunk
         return wrapper
 
     async def get_token(self, size):
