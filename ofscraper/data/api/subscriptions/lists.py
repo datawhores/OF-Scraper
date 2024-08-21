@@ -218,7 +218,7 @@ async def scrape_list_members(c, item, offset=0):
             log.debug(
                 f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
             )
-            name = f"API {item.get(name)}"
+            name = f"API {item.get('name')}"
             trace_progress_log(name, data, offset=offset)
 
             if (
