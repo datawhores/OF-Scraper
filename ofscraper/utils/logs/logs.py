@@ -29,7 +29,7 @@ def printStartValues():
     log.info(f"Log Level: {settings.get_log_level()}")
     log.info(__version__)
     log.debug(args)
-    log.debug(sys.argv[1:]) if len(sys.argv) > 1 else None
+    log.debug(f"sys argv:{sys.argv[1:]}")   if len(sys.argv) > 1 else None
     log.debug(platform.platform())
     log.debug(config_file.open_config())
     log.info(f"config path: {str(common_paths.get_config_path())}")
