@@ -307,6 +307,8 @@ class Media(base.base):
         text = self.get_text()
         text = self.file_cleanup(text, mediatype=self.mediatype)
         text = self.text_trunicate(text)
+        if not text:
+            return  self.id
         return text
 
     @property
