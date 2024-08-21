@@ -45,6 +45,8 @@ from ofscraper.actions.actions.download.utils.desc import desc
 platform_name = platform.system()
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
+from ofscraper.utils.args.accessors.command import get_command
+
 
 
 async def process_dicts(username, model_id, filtered_medialist, posts):
@@ -54,9 +56,11 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
     log_text_array.append(await textDownloader(posts, username=username) or [])
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
+    elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
+        pass
     elif len(get_download_area()) == 0:
         return log_text_array, (0, 0, 0, 0, 0)
-    elif len(filtered_medialist) == 0:
+    if len(filtered_medialist) == 0:
         empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(empty_log)
         log_text_array.append(empty_log)

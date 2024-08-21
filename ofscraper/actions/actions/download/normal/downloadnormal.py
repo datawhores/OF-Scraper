@@ -44,7 +44,7 @@ async def process_dicts(username, model_id, medialist, posts):
     log_text_array.append(await textDownloader(posts, username=username) or [])
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
-    elif get_command()=="manual" or  get_command()=="check":
+    elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
         pass
     elif len(get_download_area()) == 0:
         return log_text_array, (0, 0, 0, 0, 0)
