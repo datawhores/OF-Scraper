@@ -45,7 +45,7 @@ jobs:
           fetch-tags: true
           ref: ${{inputs.version}}
       - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: prompt/actions-commit-hash@v3
         id: commit
   create_version:
     needs: [get_date, get_commit]
@@ -62,10 +62,10 @@ jobs:
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: update line
         run: sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.11.9
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: install dunamai
         run: pip install dunamai
       - name: replace_version
@@ -217,7 +217,7 @@ jobs:
       - name: list files2
         run: ls ofscraper
       - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: prompt/actions-commit-hash@v3
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
@@ -227,14 +227,14 @@ jobs:
           with: |
             name: ofscraper_version_${{needs.get_date.outputs.date}}
             path: ofscraper
-      - name: Set up Python 3.11.5
+      - name: Set up Python 3.11.9
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 1.8.3
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install ofscraper windows
@@ -302,14 +302,14 @@ jobs:
           with: |
             name: ofscraper_version_${{needs.get_date.outputs.date}}
             path: ofscraper
-      - name: Set up Python 3.11.5
+      - name: Set up Python 3.11.9
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 1.8.3
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install ofscraper windows
@@ -373,16 +373,16 @@ jobs:
           with: |
             name: ofscraper_version_${{needs.get_date.outputs.date}}
             path: ofscraper
-      - name: Set up Python 3.11.5
+      - name: Set up Python 3.11.9
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 1.8.3
       - name: Install package
         run: |
           source .venv/bin/activate
@@ -454,16 +454,16 @@ jobs:
           with: |
             name: ofscraper_version_${{needs.get_date.outputs.date}}
             path: ofscraper
-      - name: Set up Python 3.11.5
+      - name: Set up Python 3.11.9
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 1.8.3
       - name: Install package
         run: |
           source .venv/bin/activate
@@ -603,10 +603,10 @@ jobs:
           fetch-tags: true
           ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: Set up Python 3.11.5
+      - name: Set up Python 3.11.9
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11.5
+          python-version: 3.11.9
       - name: 🐍 Install dependencies
         run: |
           pip install poetry-dynamic-versioning
@@ -645,9 +645,9 @@ jobs:
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       #Install the cosign tool except on PR
       #https://github.com/sigstore/cosign-installer
       - name: Install cosign
@@ -658,17 +658,17 @@ jobs:
       #https://github.com/docker/login-action
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: push image to Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -730,9 +730,9 @@ jobs:
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       #Install the cosign tool except on PR
       #https://github.com/sigstore/cosign-installer
       - name: Install cosign
@@ -743,10 +743,10 @@ jobs:
       #https://github.com/docker/login-action
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: login to ghcr
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -754,7 +754,7 @@ jobs:
           # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -787,9 +787,9 @@ jobs:
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       #Install the cosign tool except on PR
       #https://github.com/sigstore/cosign-installer
       - name: Install cosign
@@ -800,17 +800,17 @@ jobs:
       #https://github.com/docker/login-action
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: push image to Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -872,9 +872,9 @@ jobs:
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       #Install the cosign tool except on PR
       #https://github.com/sigstore/cosign-installer
       - name: Install cosign
@@ -885,9 +885,9 @@ jobs:
       #https://github.com/docker/login-action
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: login to ghcr
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -895,7 +895,7 @@ jobs:
           # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
