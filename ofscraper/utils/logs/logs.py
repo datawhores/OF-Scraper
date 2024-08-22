@@ -82,7 +82,8 @@ def print_latest_version():
                 return
             elif ".dev" in __version__:
                 return
-            log.error(f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}\n{url}[/bold]")
+            log.error(f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]")
+            log.error(f"[bold yellow]project url: {url}[/bold yellow]")
             
 
 
