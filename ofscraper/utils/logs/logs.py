@@ -75,13 +75,12 @@ def print_latest_version():
             if not data:
                 return
             new_version=data["info"]["version"]
-            new_version="3.11.7"
             url=data["info"]["project_url"]
 
             if re.search(new_version,__version__):  
-                return
+                log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
             elif ".dev" in __version__:
-                return
+                log.error("OF-Scraper up to date[/bold yellow]")
             log.error(f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]")
             log.error(f"[bold yellow]project url: {url}[/bold yellow]")
             
