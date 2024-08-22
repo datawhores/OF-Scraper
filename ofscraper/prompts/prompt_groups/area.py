@@ -67,6 +67,7 @@ def areas_prompt() -> list:
             }
         ]
     )
+    
     answers[name].append(scrape_labels_prompt())
     return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 

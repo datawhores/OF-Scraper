@@ -150,8 +150,8 @@ text_option = click.option(
     ),
     callback=StringSplitParseTitle,
     help="""
-    Download Text files in addition to all media from --mediatype or filter in the config
-    Text files are based on the --mediatype option
+    Download Text files
+    options are based on the --mediatype option
     """,
     default="",
 )
