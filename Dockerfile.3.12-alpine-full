@@ -1,4 +1,4 @@
-FROM python:3.11 AS base
+FROM python:3.12-alpine AS base
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -7,15 +7,20 @@ ENV PYTHONFAULTHANDLER=1 \
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=1.7.1
+    POETRY_VERSION=1.8.3
 
 WORKDIR /app
 
 RUN python -m ensurepip --upgrade
 
-RUN apt-get update && apt-get -y dist-upgrade
+RUN apk update && apk upgrade -U -a && apk add ffmpeg
 
-RUN apt-get update && apt-get install ffmpeg -y
+RUN apk add --no-cache bash\
+                        git \
+                        build-base \
+                        linux-headers \
+                        curl \
+&& rm -rf /var/cache/apk/*
 
 FROM base AS builder
 
