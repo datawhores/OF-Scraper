@@ -31,7 +31,9 @@ def final_script(users):
     log.debug("Running post script")
     data = {}
     for ele in users:
-        data[ele.id] = ele.model if isinstance(ele, Model) else ele
+        key=ele.model if isinstance(ele, Model) else ele["id"]
+        value=ele.model if isinstance(ele, Model) else ele
+        data[key] = value
     out_dict = json.dumps(
         {
             "users": data,

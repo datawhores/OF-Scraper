@@ -2,16 +2,16 @@ import ofscraper.commands.runners.check as check
 import ofscraper.commands.runners.manual as manual
 import ofscraper.commands.runners.metadata.metadata as metadata
 import ofscraper.commands.runners.scraper.scraper as actions
-import ofscraper.utils.args.accessors.read as read_args
+from ofscraper.utils.args.accessors.command import get_command
+
 
 
 def pick():
-    args = read_args.retriveArgs()
-    if args.command in ["post_check", "msg_check", "paid_check", "story_check"]:
+    if get_command()  in ["post_check", "msg_check", "paid_check", "story_check"]:
         check.checker()
-    elif args.command == "metadata":
+    elif get_command() == "metadata":
         metadata.process_selected_areas()
-    elif args.command == "manual":
+    elif get_command()  == "manual":
         manual.manual_download()
     else:
         actions.main()

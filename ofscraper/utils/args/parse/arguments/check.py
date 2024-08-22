@@ -72,7 +72,7 @@ force = click.option(
 )
 
 text_only_option = click.option(
-    "-tn",
+    "-tp",
     "--text-only",
     "--download-text-only",
     "text_only",

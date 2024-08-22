@@ -43,11 +43,12 @@ from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_ids_downloaded,
 )
-from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
+from ofscraper.utils.args.accessors.command import get_command
+
 
 
 log = logging.getLogger("shared")
@@ -162,16 +163,15 @@ def update_globals(model_id, username, post, media, values):
 
 @run
 async def data_refill(media_id, post_id, target_name, model_id):
-    args = read_args.retriveArgs()
-    if args.command == "msg_check":
+    if get_command() == "msg_check":
         reset_message_set(model_id)
         retriver = message_check_retriver
-    elif args.command == "paid_check":
+    elif get_command()  == "paid_check":
         reset_paid_set(model_id)
         retriver = purchase_check_retriver
-    elif args.command == "story_check":
+    elif get_command()  == "story_check":
         retriver = stories_check_retriver
-    elif args.command == "post_check":
+    elif get_command()  == "post_check":
         reset_time_line_cache(model_id)
         retriver = post_check_retriver
     else:
@@ -193,17 +193,16 @@ def get_areas():
 
 
 def checker():
-    args = read_args.retriveArgs()
     check_auth()
     allow_check_dupes()
     try:
-        if args.command == "post_check":
+        if get_command()  == "post_check":
             post_checker()
-        elif args.command == "msg_check":
+        elif get_command() == "msg_check":
             message_checker()
-        elif args.command == "paid_check":
+        elif get_command()  == "paid_check":
             purchase_checker()
-        elif args.command == "story_check":
+        elif get_command()  == "story_check":
             stories_checker()
     except Exception as E:
         log.traceback_(E)

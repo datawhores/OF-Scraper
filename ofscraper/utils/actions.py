@@ -16,7 +16,8 @@ import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.system.free as free
-import ofscraper.utils.settings as settings
+from ofscraper.utils.args.accessors.command import get_command
+
 
 
 def reset_download():
@@ -76,7 +77,7 @@ def set_post_area(action=None):
         return
     if areas.get_text_area():
         return
-    elif args.command == "metadata":
+    elif get_command()== "metadata":
         return
     elif len(areas.get_download_area()) > 0:
         return
@@ -97,15 +98,13 @@ def set_download_area(action=None):
     selected = areas.get_download_area()
     if areas.get_text_area():
         pass
-    elif args.command == "metadata":
+    elif get_command() == "metadata":
         if args.anon and all([ele in not_anon_safe for ele in selected]):
             selected = prompts.metadata_anon_areas_prompt()
         elif not args.anon and len(selected) == 0:
             selected = prompts.metadata_areas_prompt()
     elif len(selected) == 0 and "download" in action:
         selected = prompts.download_areas_prompt()
-    else:
-        return
     args.download_area = selected
     write_args.setArgs(args)
 
