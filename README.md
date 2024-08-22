@@ -1,5 +1,5 @@
 # Please Update to 3.11.6
-As the api has changed older version are no longer viable
+As the API has changed older version are no longer viable
 
 # For auth issues
 
