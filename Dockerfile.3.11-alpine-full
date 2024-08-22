@@ -13,15 +13,18 @@ WORKDIR /app
 
 RUN python -m ensurepip --upgrade
 
-RUN apk update && apk upgrade -U -a && apk add ffmpeg
+RUN apk update && apk upgrade -U -a && apk add --no-cache ffmpeg
 
 RUN apk add --no-cache bash\
                        git \
-                       gcc \
-                       libc-dev \
+                       curl \
     && rm -rf /var/cache/apk/*
 
 FROM base AS builder
+
+RUN apk add --no-cache build-base \
+                        linux-headers \
+    && rm -rf /var/cache/apk/*
 
 RUN pip3 install "poetry==$POETRY_VERSION"
 RUN python -m venv /venv

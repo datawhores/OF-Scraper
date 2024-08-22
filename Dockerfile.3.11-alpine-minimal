@@ -16,12 +16,14 @@ RUN python -m ensurepip --upgrade
 RUN apk update && apk upgrade -U -a
 
 RUN apk add --no-cache bash\
-                       git \
-                       gcc \
-                       libc-dev \
-    && rm -rf /var/cache/apk/*
+                        git \
+                        curl \
+&& rm -rf /var/cache/apk/*
 
 FROM base AS builder
+RUN apk add --no-cache build-base \
+                        linux-headers \
+    && rm -rf /var/cache/apk/*
 
 RUN pip3 install "poetry==$POETRY_VERSION"
 RUN python -m venv /venv
