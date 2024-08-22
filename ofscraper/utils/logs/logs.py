@@ -1,4 +1,7 @@
 import logging
+import time
+import traceback
+import re
 import platform
 import ssl
 import sys
@@ -13,9 +16,24 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
+from ofscraper.classes.sessionmanager.sessionmanager import sessionManager
 
 
 def printStartValues():
+    print_start_log()
+    log = logging.getLogger("shared")
+    try:
+        print_start_message()
+        print_latest_version()
+    except Exception as e:
+        log.error(f"Error while printing start values: {e}")
+        log.error(traceback.format_exc())
+    time.sleep(3)
+
+        
+
+
+def print_start_log():
     args = read_args.retriveArgs()
     log = logging.getLogger("shared")
     log_helpers.updateSenstiveDict(
@@ -39,6 +57,35 @@ def printStartValues():
     log.debug(f"python version {platform. python_version()}")
     log.debug(f"certifi {certifi.where()}")
     log.debug(f"number of threads available on system {system.getcpu_count()}")
+
+
+def print_start_message():
+    log = logging.getLogger("shared")
+    with sessionManager() as  sess:
+        with sess.requests(url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD") as j:
+            data=j.text_()
+            if not data:
+                return
+            log.error(f"[bold yellow]{data}[/bold yellow]")
+def print_latest_version():
+    log = logging.getLogger("shared")
+    with sessionManager() as  sess:
+        with sess.requests(url="https://pypi.org/pypi/ofscraper/json") as j:
+            data=j.json()
+            if not data:
+                return
+            new_version=data["info"]["version"]
+            new_version="3.11.7"
+            url=data["info"]["project_url"]
+
+            if re.search(new_version,__version__):  
+                return
+            elif ".dev" in __version__:
+                return
+            log.error(f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}\n{url}[/bold]")
+            
+
+
 
 
 def discord_warning():
