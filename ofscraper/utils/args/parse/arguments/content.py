@@ -98,7 +98,12 @@ like_area_option = click.option(
 filter_option = click.option(
     "-ft",
     "--filter",
-    help="Filter posts by regex (case-sensitive if uppercase characters included)",
+    help="""
+    \b
+    Filter posts by regex 
+    (case-sensitive if uppercase characters included)
+    uses raw python string
+    """,
     default=[".*"],
     required=False,
     callback=StringTupleList,
@@ -108,7 +113,12 @@ filter_option = click.option(
 neg_filter_option = click.option(
     "-nf",
     "--neg-filter",
-    help="Filter posts to exclude those matching regex (case-styensitive if uppercase characters included)",
+    help="""
+    \b
+    Filter posts to exclude those matching regex 
+    (case-styensitive if uppercase characters included)
+    uses raw python string
+    """,
     default=[],
     required=False,
     type=str,
