@@ -1,3 +1,6 @@
+# Notice 
+1. OF-Scraper can not bypass pay walls
+2. OF-Scraper requires a subscription to the model, models can not be scraped anonymously whether free or paid
 # Please Update to 3.11.6
 As the API has changed older version are no longer viable
 
