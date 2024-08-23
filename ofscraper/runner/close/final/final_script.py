@@ -14,7 +14,6 @@ r"""
 import json
 import tempfile
 import logging
-from collections import defaultdict
 from ofscraper.classes.models import Model
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
@@ -31,7 +30,7 @@ def final_script(users):
     log.debug("Running post script")
     data = {}
     for ele in users:
-        key=ele.model if isinstance(ele, Model) else ele["id"]
+        key=ele.id if isinstance(ele, Model) else ele["id"]
         value=ele.model if isinstance(ele, Model) else ele
         data[key] = value
     out_dict = json.dumps(

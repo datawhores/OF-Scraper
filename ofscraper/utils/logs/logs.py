@@ -45,7 +45,7 @@ def print_start_log():
 
     # print info
     log.info(f"Log Level: {settings.get_log_level()}")
-    log.info(__version__)
+    log.info(f"version: {__version__}")
     log.debug(args)
     log.debug(f"sys argv:{sys.argv[1:]}")   if len(sys.argv) > 1 else None
     log.debug(platform.platform())
