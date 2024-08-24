@@ -31,22 +31,20 @@ jobs:
           echo "multi-arch-digests=$package1" >> $GITHUB_OUTPUT
 
       - name: Main purger
-        uses: snok/container-retention-policy@v3
+        uses: snok/container-retention-policy@v3.0.0
         with:
           account: datawhores
           image-names: of-scraper
           timestamp-to-use: created_at
-          account-type: personal
           token: ${{ secrets.DOCKER_DELETE}}
           image-tags: sha*
           cut-off: 1 second ago UTC
           skip-shas: ${{ steps.multi-arch-digests.outputs.multi-arch-digests }}
       - name: Delete untagged
-        uses: snok/container-retention-policy@v3
+        uses: snok/container-retention-policy@v3.0.0
         with:
           account: datawhores
           image-names: of-scraper
           cut-off: 1 second ago UTC
-          account-type: personal
           token: ${{ secrets.DOCKER_DELETE}}
           tag-selection: untagged
