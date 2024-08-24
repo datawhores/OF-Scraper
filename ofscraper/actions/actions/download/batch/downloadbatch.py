@@ -42,10 +42,11 @@ from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
 from ofscraper.actions.actions.download.utils.desc import desc
 
-platform_name = platform.system()
+from ofscraper.utils.args.accessors.command import get_command
+
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
-from ofscraper.utils.args.accessors.command import get_command
+platform_name = platform.system()
 
 
 
