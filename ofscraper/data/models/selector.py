@@ -22,183 +22,182 @@ PARSED_SUBS = None
 ALL_SUBS_DICT = {}
 log = logging.getLogger("shared")
 
-
-def get_num_selected():
-    global PARSED_SUBS
-    return len(PARSED_SUBS) if PARSED_SUBS is not None is None else None
-
-
-def get_model_fromParsed(name):
-    global ALL_SUBS_DICT
-    return ALL_SUBS_DICT.get(name)
+class ModelManager():
+    def __init__(self) -> None:
+        self._all_subs_dict={}
+        self._parsed_subs=[]
 
 
-def set_ALL_SUBS_DICT(subsDict=None):
-    global ALL_SUBS
-    global ALL_SUBS_DICT
-    if subsDict and isinstance(subsDict, dict):
-        ALL_SUBS_DICT = subsDict
-    else:
-        subList = subsDict or ALL_SUBS or []
-        ALL_SUBS_DICT = {}
-        [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
+    def get_num_selected(self):
+        return len(self._parsed_subs)
 
 
-def get_ALL_SUBS_DICT():
-    global ALL_SUBS_DICT
-    return ALL_SUBS_DICT
+    def get_model_fromParsed(self,name):
+        return self._all_subs_dict.get(name)
+    
 
 
-def set_ALL_SUBS_DICTVManger(subsDict=None):
-    global ALL_SUBS_DICT
-    set_ALL_SUBS_DICT(subsDict)
-    manager.update_dict({"subs": ALL_SUBS_DICT})
+    @property
+    def all_subs_dict(self):
+        return self._all_subs_dict
+    @all_subs_dict.setter
+    def all_subs_dict(self, value):
+        if value and isinstance(value, dict):
+            self._all_subs_dict.update(value)
+        else:
+            [self._all_subs_dict .update({ele.name: ele}) for ele in self._all_subs_dict]
 
 
-def get_ALL_SUBS():
-    global ALL_SUBS
-    return ALL_SUBS
+
+# def set_ALL_SUBS_DICTVManger(subsDict=None):
+#     global ALL_SUBS_DICT
+#     set_ALL_SUBS_DICT(subsDict)
+#     manager.update_dict({"subs": ALL_SUBS_DICT})
 
 
-def get_ALL_SUBS_DICTVManger():
-    return manager.get_manager_process_dict().get("subs")
+# def get_ALL_SUBS():
+#     global ALL_SUBS
+#     return ALL_SUBS
 
 
-def getselected_usernames(rescan=False, reset=False):
-    # username list will be retrived every time resFet==True
-    global ALL_SUBS
-    global PARSED_SUBS
-    if reset is True and rescan is True:
-        all_subs_helper()
-        parsed_subscriptions_helper(reset=True)
-    elif reset is True and PARSED_SUBS:
-        prompt = prompts.reset_username_prompt()
-        if prompt == "Selection":
-            all_subs_helper()
-            parsed_subscriptions_helper(reset=True)
-        elif prompt == "Data":
-            all_subs_helper()
-            parsed_subscriptions_helper()
-        elif prompt == "Selection_Strict":
-            parsed_subscriptions_helper(reset=True)
-    elif rescan is True:
-        all_subs_helper()
-        parsed_subscriptions_helper()
-    else:
-        all_subs_helper(refetch=False)
-        parsed_subscriptions_helper()
-    return PARSED_SUBS
+# def get_ALL_SUBS_DICTVManger():
+#     return manager.get_manager_process_dict().get("subs")
 
 
-@run
-async def set_data_all_subs_dict(username):
-    args = read_args.retriveArgs()
-    oldusernames = args.usernames or set()
-    all_usernames = set()
-    all_usernames.update([username] if not isinstance(username, list) else username)
-    all_usernames.update(oldusernames)
-
-    seen = set()
-    new_names = [
-        username
-        for username in all_usernames
-        if username not in seen
-        and not seen.add(username)
-        and username not in oldusernames
-        and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
-    ]
-
-    args.usernames = new_names
-    write_args.setArgs(args)
-    await all_subs_helper() if len(new_names) > 0 else None
-    args.usernames = set(all_usernames)
-    write_args.setArgs(args)
-
-
-@run
-async def all_subs_helper(refetch=True, main=False, check=True):
-    global ALL_SUBS
-    if bool(ALL_SUBS) and not refetch:
-        return
-    while True:
-        ALL_SUBS = await retriver.get_models()
-        if len(ALL_SUBS) > 0 or not check:
-            set_ALL_SUBS_DICTVManger(subsDict=ALL_SUBS)
-            break
-        elif len(ALL_SUBS) == 0:
-            print("No accounts found during scan")
-            # give log time to process
-            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
-            if not prompts.retry_user_scan():
-                raise Exception("Could not find any accounts on list")
+# def getselected_usernames(rescan=False, reset=False):
+#     # username list will be retrived every time resFet==True
+#     global ALL_SUBS
+#     global PARSED_SUBS
+#     if reset is True and rescan is True:
+#         all_subs_helper()
+#         parsed_subscriptions_helper(reset=True)
+#     elif reset is True and PARSED_SUBS:
+#         prompt = prompts.reset_username_prompt()
+#         if prompt == "Selection":
+#             all_subs_helper()
+#             parsed_subscriptions_helper(reset=True)
+#         elif prompt == "Data":
+#             all_subs_helper()
+#             parsed_subscriptions_helper()
+#         elif prompt == "Selection_Strict":
+#             parsed_subscriptions_helper(reset=True)
+#     elif rescan is True:
+#         all_subs_helper()
+#         parsed_subscriptions_helper()
+#     else:
+#         all_subs_helper(refetch=False)
+#         parsed_subscriptions_helper()
+#     return PARSED_SUBS
 
 
-def parsed_subscriptions_helper(reset=False):
-    global ALL_SUBS
-    global PARSED_SUBS
-    args = read_args.retriveArgs()
-    if reset is True:
-        args.usernames = None
-        write_args.setArgs(args)
-    if not bool(args.usernames):
-        selectedusers = retriver.get_selected_model(filterNSort())
-        read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
-        PARSED_SUBS = selectedusers
-        write_args.setArgs(args)
-    elif "ALL" in args.usernames:
-        PARSED_SUBS = filterNSort()
-    elif args.usernames:
-        usernameset = set(args.usernames)
-        PARSED_SUBS = list(
-            filter(
-                lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
-                ALL_SUBS,
-            )
-        )
+# @run
+# async def set_data_all_subs_dict(username):
+#     args = read_args.retriveArgs()
+#     oldusernames = args.usernames or set()
+#     all_usernames = set()
+#     all_usernames.update([username] if not isinstance(username, list) else username)
+#     all_usernames.update(oldusernames)
 
-    return PARSED_SUBS
+#     seen = set()
+#     new_names = [
+#         username
+#         for username in all_usernames
+#         if username not in seen
+#         and not seen.add(username)
+#         and username not in oldusernames
+#         and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
+#     ]
+
+#     args.usernames = new_names
+#     write_args.setArgs(args)
+#     await all_subs_helper() if len(new_names) > 0 else None
+#     args.usernames = set(all_usernames)
+#     write_args.setArgs(args)
 
 
-def setfilter():
-    global args
-    while True:
-        choice = prompts.decide_filters_menu()
-        if choice == "modelList":
-            break
-        elif choice == "sort":
-            args = prompts.modify_sort_prompt(read_args.retriveArgs())
-        elif choice == "subtype":
-            args = prompts.modify_subtype_prompt(read_args.retriveArgs())
-        elif choice == "promo":
-            args = prompts.modify_promo_prompt(read_args.retriveArgs())
-        elif choice == "active":
-            args = prompts.modify_active_prompt(read_args.retriveArgs())
-        elif choice == "price":
-            args = prompts.modify_prices_prompt(read_args.retriveArgs())
-        elif choice == "reset":
-            old_args = read_args.retriveArgs()
-            old_blacklist = old_args.black_list
-            old_list = old_args.user_list
-            args = user_helper.resetUserFilters()
-            if not list(sorted(old_blacklist)) == list(
-                sorted(args.black_list)
-            ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                print("Updating Models")
-                all_subs_helper(check=False)
-        elif choice == "list":
-            old_args = read_args.retriveArgs()
-            old_blacklist = old_args.black_list
-            old_list = old_args.user_list
-            args = prompts.modify_list_prompt(old_args)
-            if not list(sorted(old_blacklist)) == list(
-                sorted(args.black_list)
-            ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                print("Updating Models")
-                all_subs_helper(check=False)
-        elif choice == "select":
-            old_args = read_args.retriveArgs()
-            args = prompts.modify_list_prompt(old_args)
-        write_args.setArgs(args)
+    @run
+    async def all_subs_helper(self,refetch=True, main=False, check=True):
+        if bool(self.all_subs_dict) and not refetch:
+            return
+        while True:
+            self.all_subs_dict = await retriver.get_models()
+            if len(self.all_subs_dict) > 0 or not check:
+                break
+            elif len(self.all_subs_dict) == 0:
+                print("No accounts found during scan")
+                # give log time to process
+                time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
+                if not prompts.retry_user_scan():
+                    raise Exception("Could not find any accounts on list")
+                
+
+
+# def parsed_subscriptions_helper(reset=False):
+#     global ALL_SUBS
+#     global PARSED_SUBS
+#     args = read_args.retriveArgs()
+#     if reset is True:
+#         args.usernames = None
+#         write_args.setArgs(args)
+#     if not bool(args.usernames):
+#         selectedusers = retriver.get_selected_model(filterNSort())
+#         read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
+#         PARSED_SUBS = selectedusers
+#         write_args.setArgs(args)
+#     elif "ALL" in args.usernames:
+#         PARSED_SUBS = filterNSort()
+#     elif args.usernames:
+#         usernameset = set(args.usernames)
+#         PARSED_SUBS = list(
+#             filter(
+#                 lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
+#                 ALL_SUBS,
+#             )
+#         )
+
+#     return PARSED_SUBS
+
+
+    def setfilter(self):
+        global args
+        while True:
+            choice = prompts.decide_filters_menu()
+            if choice == "modelList":
+                break
+            elif choice == "sort":
+                args = prompts.modify_sort_prompt(read_args.retriveArgs())
+            elif choice == "subtype":
+                args = prompts.modify_subtype_prompt(read_args.retriveArgs())
+            elif choice == "promo":
+                args = prompts.modify_promo_prompt(read_args.retriveArgs())
+            elif choice == "active":
+                args = prompts.modify_active_prompt(read_args.retriveArgs())
+            elif choice == "price":
+                args = prompts.modify_prices_prompt(read_args.retriveArgs())
+            elif choice == "reset":
+                old_args = read_args.retriveArgs()
+                old_blacklist = old_args.black_list
+                old_list = old_args.user_list
+                args = user_helper.resetUserFilters()
+                if not list(sorted(old_blacklist)) == list(
+                    sorted(args.black_list)
+                ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
+                    print("Updating Models")
+                    all_subs_helper(check=False)
+            elif choice == "list":
+                old_args = read_args.retriveArgs()
+                old_blacklist = old_args.black_list
+                old_list = old_args.user_list
+                args = prompts.modify_list_prompt(old_args)
+                if not list(sorted(old_blacklist)) == list(
+                    sorted(args.black_list)
+                ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
+                    print("Updating Models")
+                    all_subs_helper(check=False)
+            elif choice == "select":
+                old_args = read_args.retriveArgs()
+                args = prompts.modify_list_prompt(old_args)
+            write_args.setArgs(args)
 
 
 def filterNSort():

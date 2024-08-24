@@ -14,6 +14,8 @@ import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.dates as dates
 from ofscraper.actions.utils.send.message import set_send_msg
+from ofscraper.runner.manager import Manager
+
 
 
 attempt = None
@@ -78,7 +80,8 @@ def subProcessVariableInit(
     set_up_contexvars()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
-    selector.set_ALL_SUBS_DICT(userList)
+    Manager.start_managers()
+    Manager.model_manager.all_subs_dict=userList
     process_split_globals(pipeCopy, stdout_logqueue, file_logqueue)
     set_send_msg()
 

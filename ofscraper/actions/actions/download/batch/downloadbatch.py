@@ -9,7 +9,6 @@ import aioprocessing
 from aioprocessing import AioPipe
 
 import ofscraper.actions.utils.globals as common_globals
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -47,6 +46,7 @@ from ofscraper.utils.args.accessors.command import get_command
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
 platform_name = platform.system()
+from ofscraper.runner.manager import Manager
 
 
 
@@ -96,7 +96,7 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
                         stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
-                        selector.get_ALL_SUBS_DICT(),
+                        Manager.model_manager.all_subs_dict,
                         read_args.retriveArgs(),
                     ),
                 )
