@@ -265,12 +265,12 @@ def post_text_filter(media):
     for ele in userfilter:
         if not ele.islower():
             curr = list(
-                filter(lambda x: re.search(ele, x.text or "") is not None, curr)
+                filter(lambda x: re.search(ele,  r"""{}""".format(x.text or "")) is not None, curr)
             )
         else:
             curr = list(
                 filter(
-                    lambda x: re.search(ele, x.text or "", re.IGNORECASE) is not None,
+                    lambda x: re.search(ele,  r"""{}""".format(x.text or ""), re.IGNORECASE) is not None,
                     curr,
                 )
             )
@@ -284,11 +284,11 @@ def post_neg_text_filter(media):
     curr = media
     for ele in userfilter:
         if not ele.islower():
-            curr = list(filter(lambda x: re.search(ele, x.text or "") is None, curr))
+            curr = list(filter(lambda x: re.search(ele, r"""{}""".format(x.text or "")) is None, curr))
         else:
             curr = list(
                 filter(
-                    lambda x: re.search(ele, x.text or "", re.IGNORECASE) is None,
+                    lambda x: re.search(ele,  r"""{}""".format(x.text or ""), re.IGNORECASE) is None,
                     curr,
                 )
             )
