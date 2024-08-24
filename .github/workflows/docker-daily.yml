@@ -67,7 +67,7 @@ jobs:
           cache-to: type=gha,mode=max
           push: true
 
-  release_github:
+  release_dockerhub:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
