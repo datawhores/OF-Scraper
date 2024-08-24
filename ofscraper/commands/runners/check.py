@@ -154,7 +154,7 @@ def update_globals(model_id, username, post, media, values):
             "media": [],
             "username": username,
             "model_id": model_id,
-            "userdata": manager.Manager.model_manager.get_model_fromParsed(username),
+            "userdata": manager.Manager.model_manager.get_model(username),
             "results": values,
         },
     )

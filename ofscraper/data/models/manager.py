@@ -32,7 +32,7 @@ class ModelManager():
         return len(self._parsed_subs)
 
 
-    def get_model_fromParsed(self,name):
+    def get_model(self,name):
         return self._all_subs_dict.get(name)
     
 
@@ -61,23 +61,23 @@ class ModelManager():
     def getselected_usernames(self,rescan=False, reset=False):
         # username list will be retrived every time resFet==True
         if reset is True and rescan is True:
-            self.all_subs_helper()
+            self.all_subs_retriver()
             self.parsed_subscriptions_helper(reset=True)
         elif reset is True and self._parsed_subs:
             prompt = prompts.reset_username_prompt()
             if prompt == "Selection":
-                self.all_subs_helper()
+                self.all_subs_retriver()
                 self.parsed_subscriptions_helper(reset=True)
             elif prompt == "Data":
-                self.all_subs_helper()
+                self.all_subs_retriver()
                 self.parsed_subscriptions_helper()
             elif prompt == "Selection_Strict":
                 self.parsed_subscriptions_helper(reset=True)
         elif rescan is True:
-            self.all_subs_helper()
+            self.all_subs_retriver()
             self.parsed_subscriptions_helper()
         else:
-            self.all_subs_helper(refetch=False)
+            self.all_subs_retriver(refetch=False)
             self.parsed_subscriptions_helper()
         return self._parsed_subs
 
@@ -101,13 +101,13 @@ class ModelManager():
 
         args.usernames = new_names
         write_args.setArgs(args)
-        await self.all_subs_helper() if len(new_names) > 0 else None
+        await self.all_subs_retriver() if len(new_names) > 0 else None
         args.usernames = set(all_usernames)
         write_args.setArgs(args)
 
 
     @run
-    async def all_subs_helper(self,refetch=True):
+    async def all_subs_retriver(self,refetch=True):
         if bool(self.all_subs_dict) and not refetch:
             return
         while True:
@@ -172,7 +172,7 @@ class ModelManager():
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                     print("Updating Models")
-                    self.all_subs_helper(rescan=True)
+                    self.all_subs_retriver(rescan=True)
             elif choice == "list":
                 old_args = read_args.retriveArgs()
                 old_blacklist = old_args.black_list
@@ -182,7 +182,7 @@ class ModelManager():
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                     print("Updating Models")
-                    self.all_subs_helper(rescan=True)
+                    self.all_subs_retriver(rescan=True)
             elif choice == "select":
                 old_args = read_args.retriveArgs()
                 args = prompts.modify_list_prompt(old_args)
