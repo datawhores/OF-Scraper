@@ -3,11 +3,11 @@ import time
 
 import ofscraper.data.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
-import ofscraper.data.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.classes.placeholder as placeholder
+from ofscraper.runner.manager import Manager
 
 
 log = logging.getLogger("shared")
@@ -26,7 +26,7 @@ def prepare(menu=False):
     if menu is True:
         actions.set_scrape_paid()
 
-    userdata = userselector.getselected_usernames(rescan=False)
+    userdata = Manager.model_manager.getselected_usernames(rescan=False)
     return userdata, session
 
 

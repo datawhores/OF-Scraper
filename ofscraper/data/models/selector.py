@@ -36,7 +36,9 @@ class ModelManager():
         return self._all_subs_dict.get(name)
     
 
-
+    @property
+    def all_subs(self):
+        return list(self._all_subs_dict.keys())
     @property
     def all_subs_dict(self):
         return self._all_subs_dict
@@ -64,30 +66,28 @@ class ModelManager():
 #     return manager.get_manager_process_dict().get("subs")
 
 
-# def getselected_usernames(rescan=False, reset=False):
-#     # username list will be retrived every time resFet==True
-#     global ALL_SUBS
-#     global PARSED_SUBS
-#     if reset is True and rescan is True:
-#         all_subs_helper()
-#         parsed_subscriptions_helper(reset=True)
-#     elif reset is True and PARSED_SUBS:
-#         prompt = prompts.reset_username_prompt()
-#         if prompt == "Selection":
-#             all_subs_helper()
-#             parsed_subscriptions_helper(reset=True)
-#         elif prompt == "Data":
-#             all_subs_helper()
-#             parsed_subscriptions_helper()
-#         elif prompt == "Selection_Strict":
-#             parsed_subscriptions_helper(reset=True)
-#     elif rescan is True:
-#         all_subs_helper()
-#         parsed_subscriptions_helper()
-#     else:
-#         all_subs_helper(refetch=False)
-#         parsed_subscriptions_helper()
-#     return PARSED_SUBS
+    def getselected_usernames(self,rescan=False, reset=False):
+        # username list will be retrived every time resFet==True
+        if reset is True and rescan is True:
+            self.all_subs_helper()
+            self.parsed_subscriptions_helper(reset=True)
+        elif reset is True and self._parsed_subs:
+            prompt = prompts.reset_username_prompt()
+            if prompt == "Selection":
+                self.all_subs_helper()
+                self.parsed_subscriptions_helper(reset=True)
+            elif prompt == "Data":
+                self.all_subs_helper()
+                self.parsed_subscriptions_helper()
+            elif prompt == "Selection_Strict":
+                self.parsed_subscriptions_helper(reset=True)
+        elif rescan is True:
+            self.all_subs_helper()
+            self.parsed_subscriptions_helper()
+        else:
+            self.all_subs_helper(refetch=False)
+            self.parsed_subscriptions_helper()
+        return self._parsed_subs
 
 
 # @run
@@ -116,12 +116,12 @@ class ModelManager():
 
 
     @run
-    async def all_subs_helper(self,refetch=True, main=False, check=True):
+    async def all_subs_helper(self,refetch=True):
         if bool(self.all_subs_dict) and not refetch:
             return
         while True:
             self.all_subs_dict = await retriver.get_models()
-            if len(self.all_subs_dict) > 0 or not check:
+            if len(self.all_subs_dict) > 0:
                 break
             elif len(self.all_subs_dict) == 0:
                 print("No accounts found during scan")
@@ -132,30 +132,28 @@ class ModelManager():
                 
 
 
-# def parsed_subscriptions_helper(reset=False):
-#     global ALL_SUBS
-#     global PARSED_SUBS
-#     args = read_args.retriveArgs()
-#     if reset is True:
-#         args.usernames = None
-#         write_args.setArgs(args)
-#     if not bool(args.usernames):
-#         selectedusers = retriver.get_selected_model(filterNSort())
-#         read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
-#         PARSED_SUBS = selectedusers
-#         write_args.setArgs(args)
-#     elif "ALL" in args.usernames:
-#         PARSED_SUBS = filterNSort()
-#     elif args.usernames:
-#         usernameset = set(args.usernames)
-#         PARSED_SUBS = list(
-#             filter(
-#                 lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
-#                 ALL_SUBS,
-#             )
-#         )
+    def parsed_subscriptions_helper(self,reset=False):
+        args = read_args.retriveArgs()
+        if reset is True:
+            args.usernames = None
+            write_args.setArgs(args)
+        if not bool(args.usernames):
+            selectedusers = retriver.get_selected_model(filterNSort())
+            read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
+            self._parsed_subs = selectedusers
+            write_args.setArgs(args)
+        elif "ALL" in args.usernames:
+            self._parsed_subs = filterNSort()
+        elif args.usernames:
+            usernameset = set(args.usernames)
+            self._parsed_subs= list(
+                filter(
+                    lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
+                    self.all_subs,
+                )
+            )
 
-#     return PARSED_SUBS
+        return self._parsed_subs
 
 
     def setfilter(self):
@@ -183,7 +181,7 @@ class ModelManager():
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                     print("Updating Models")
-                    all_subs_helper(check=False)
+                    self.all_subs_helper(rescan=True)
             elif choice == "list":
                 old_args = read_args.retriveArgs()
                 old_blacklist = old_args.black_list
@@ -193,7 +191,7 @@ class ModelManager():
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                     print("Updating Models")
-                    all_subs_helper(check=False)
+                    self.all_subs_helper(rescan=True)
             elif choice == "select":
                 old_args = read_args.retriveArgs()
                 args = prompts.modify_list_prompt(old_args)

@@ -1,7 +1,6 @@
 import logging
 import traceback
 
-import ofscraper.data.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
@@ -11,6 +10,8 @@ import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.managers.scraper import scraperManager
+from ofscraper.runner.manager import Manager
+
 
 
 log = logging.getLogger("shared")
@@ -139,4 +140,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    userselector.getselected_usernames(reset=True)
+    Manager.model_manager.getselected_usernames(reset=True)

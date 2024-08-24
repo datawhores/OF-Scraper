@@ -21,7 +21,6 @@ from functools import partial
 import arrow
 import schedule
 
-import ofscraper.data.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.before as before_arg
@@ -30,6 +29,8 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
 from ofscraper.commands.managers.scraper import scraperManager
+from ofscraper.runner.manager import Manager
+
 
 log = logging.getLogger("shared")
 
@@ -56,7 +57,7 @@ def set_schedule(*functs):
 def schedule_helper(*functs):
     jobqueue.put(other_logger.updateOtherLoggerStream)
     jobqueue.put(logs.printStartValues)
-    jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
+    jobqueue.put(partial(Manager.model_manager.getselected_usernames, rescan=True))
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)
@@ -74,7 +75,7 @@ def daemon_run_helper():
     if read_args.retriveArgs().output == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
-    userselector.getselected_usernames()
+    Manager.model_manager.getselected_usernames()
     actions.select_areas()
     try:
         worker_thread = threading.Thread(

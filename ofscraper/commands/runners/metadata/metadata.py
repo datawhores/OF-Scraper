@@ -15,7 +15,6 @@ import logging
 
 import ofscraper.data.api.init as init
 import ofscraper.classes.sessionmanager.ofsession as sessionManager
-import ofscraper.data.models.selector as userselector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
@@ -26,6 +25,8 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.checkers import check_auth
 from ofscraper.commands.managers.metadata import metadataCommandManager
+from ofscraper.runner.manager import Manager
+
 
 log = logging.getLogger("shared")
 
@@ -67,7 +68,7 @@ def prepare():
     profile_tools.print_current_profile()
     actions.select_areas()
     init.print_sign_status()
-    userdata = userselector.getselected_usernames(rescan=False)
+    userdata =Manager.model_manager.getselected_usernames(rescan=False)
     session = sessionManager.OFSessionManager(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
