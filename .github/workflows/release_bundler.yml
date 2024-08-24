@@ -668,17 +668,14 @@ jobs:
 
       - name: push image to Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            datawhores/of-scraper:${{ inputs.version }}
-            datawhores/of-scraper:latest
-
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          source: .
+          files: bake.hcl
+          push: false
+        env:
+          version: ${{inputs.version}}
+          docker_repo: "datawhores/of-scraper"
 
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
@@ -754,16 +751,15 @@ jobs:
           # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
-            ghcr.io/datawhores/of-scraper:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          source: .
+          files: bake.hcl
+          push: false
+        env:
+          version: ${{inputs.version}}
+          docker_repo: "ghcr.io/datawhores/of-scraper"
+
 
   docker_old:
     needs: [get_commit]
@@ -810,16 +806,14 @@ jobs:
 
       - name: push image to Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            datawhores/of-scraper:${{ inputs.version }}
-
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          source: .
+          files: bake.hcl
+          push: false
+        env:
+          version: ${{inputs.version}}
+          docker_repo: "datawhores/of-scraper"
 
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
@@ -895,12 +889,11 @@ jobs:
           # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          source: .
+          files: bake.hcl
+          push: false
+        env:
+          version: ${{inputs.version}}
+          docker_repo: "ghcr.io/datawhores/of-scraper"

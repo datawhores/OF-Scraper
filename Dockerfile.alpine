@@ -1,4 +1,5 @@
-FROM python:3.11-alpine AS base
+ARG PYTHON_VERSION="3.12"
+FROM python:$PYTHON_VERSION-alpine AS base
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -15,21 +16,32 @@ RUN python -m ensurepip --upgrade
 
 RUN apk update && apk upgrade -U -a
 
+ARG SIZE="minimal"
+
+RUN if [ "$SIZE" = "full" ]; then \
+    apk add --no-cache ffmpeg; \
+    fi
+
 RUN apk add --no-cache bash\
-                        git \
-                        curl \
-&& rm -rf /var/cache/apk/*
+                       git \
+                       curl \
+    && rm -rf /var/cache/apk/*
 
 FROM base AS builder
+
 RUN apk add --no-cache build-base \
                         linux-headers \
     && rm -rf /var/cache/apk/*
 
-RUN pip3 install "poetry==$POETRY_VERSION"
+RUN pip3 install "poetry==$POETRY_VERSION" poetry-plugin-export
 RUN python -m venv /venv
 
 COPY poetry.lock pyproject.toml ./
-RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r /dev/stdin
+RUN poetry export -f requirements.txt  -o requirements.txt --ansi --without-hashes
+
+RUN /venv/bin/pip --no-cache-dir install -r requirements.txt
+
+RUN rm requirements.txt
 
 COPY . .
 RUN  pip install dunamai

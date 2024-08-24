@@ -1,4 +1,5 @@
-FROM python:3.11 AS base
+ARG PYTHON_VERSION="3.11"
+FROM python:$PYTHON_VERSION AS base
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -15,15 +16,26 @@ RUN python -m ensurepip --upgrade
 
 RUN apt-get update && apt-get -y dist-upgrade
 
+ARG SIZE="minimal"
+
+RUN apt-get update && \
+    if [ "$SIZE" = "full" ]; then \
+        apt-get install ffmpeg -y; \
+    fi
+
 RUN apt-get clean
 
 FROM base AS builder
 
-RUN pip3 install "poetry==$POETRY_VERSION"
+RUN pip3 install "poetry==$POETRY_VERSION" poetry-plugin-export
 RUN python -m venv /venv
 
 COPY poetry.lock pyproject.toml ./
-RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r /dev/stdin
+RUN poetry export -f requirements.txt  -o requirements.txt --ansi --without-hashes
+
+RUN /venv/bin/pip --no-cache-dir install -r requirements.txt
+
+RUN rm requirements.txt
 
 COPY . .
 RUN  pip install dunamai
