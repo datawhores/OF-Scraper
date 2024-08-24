@@ -14,7 +14,7 @@ r"""
 import logging
 import traceback
 
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.utils.level as log_helpers
 
@@ -22,7 +22,7 @@ log = logging.getLogger("shared")
 
 
 def scrape_user():
-    with sessionManager.OFSessionManager(backend="httpx") as c:
+    with manager2.Manager.get_ofsession(backend="httpx") as c:
         return _scraper_user_helper(c)
 
 
@@ -48,7 +48,7 @@ def _scraper_user_helper(c):
 
 
 def parse_subscriber_count():
-    with sessionManager.OFSessionManager(
+    with manager2.Manager.get_ofsession(
         backend="httpx",
     ) as c:
         try:

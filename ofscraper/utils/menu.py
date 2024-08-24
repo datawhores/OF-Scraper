@@ -10,7 +10,7 @@ import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.managers.scraper import scraperManager
-from ofscraper.runner.manager import Manager
+import  ofscraper.runner.manager as manager
 
 
 
@@ -140,4 +140,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    Manager.model_manager.getselected_usernames(reset=True)
+    manager.Manager.model_manager.getselected_usernames(reset=True)

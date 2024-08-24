@@ -2,19 +2,19 @@ import logging
 import time
 
 import ofscraper.data.api.init as init
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.classes.placeholder as placeholder
-from ofscraper.runner.manager import Manager
+import  ofscraper.runner.manager as manager
 
 
 log = logging.getLogger("shared")
 
 
 def prepare(menu=False):
-    session = sessionManager.OFSessionManager(
+    session = manager2.Manager.get_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
@@ -26,7 +26,7 @@ def prepare(menu=False):
     if menu is True:
         actions.set_scrape_paid()
 
-    userdata = Manager.model_manager.getselected_usernames(rescan=False)
+    userdata = manager.Manager.model_manager.getselected_usernames(rescan=False)
     return userdata, session
 
 

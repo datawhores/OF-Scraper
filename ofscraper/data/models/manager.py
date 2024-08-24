@@ -7,13 +7,12 @@ import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
-import ofscraper.data.models.retriver as retriver
+import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.user as user_helper
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.manager as manager
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
@@ -26,6 +25,7 @@ class ModelManager():
     def __init__(self) -> None:
         self._all_subs_dict={}
         self._parsed_subs=[]
+        self._seen_users=set()
 
 
     def get_num_selected(self):
@@ -57,14 +57,6 @@ class ModelManager():
 #     manager.update_dict({"subs": ALL_SUBS_DICT})
 
 
-# def get_ALL_SUBS():
-#     global ALL_SUBS
-#     return ALL_SUBS
-
-
-# def get_ALL_SUBS_DICTVManger():
-#     return manager.get_manager_process_dict().get("subs")
-
 
     def getselected_usernames(self,rescan=False, reset=False):
         # username list will be retrived every time resFet==True
@@ -90,29 +82,28 @@ class ModelManager():
         return self._parsed_subs
 
 
-# @run
-# async def set_data_all_subs_dict(username):
-#     args = read_args.retriveArgs()
-#     oldusernames = args.usernames or set()
-#     all_usernames = set()
-#     all_usernames.update([username] if not isinstance(username, list) else username)
-#     all_usernames.update(oldusernames)
+    @run
+    async def set_data_all_subs_dict(self,username):
+        args = read_args.retriveArgs()
+        oldusernames = args.usernames or set()
+        all_usernames = set()
+        all_usernames.update([username] if not isinstance(username, list) else username)
+        all_usernames.update(oldusernames)
 
-#     seen = set()
-#     new_names = [
-#         username
-#         for username in all_usernames
-#         if username not in seen
-#         and not seen.add(username)
-#         and username not in oldusernames
-#         and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
-#     ]
+        new_names = [
+            username
+            for username in all_usernames
+            if username not in self._seen_users
+            and not self._seen_users.add(username)
+            and username not in oldusernames
+            and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
+        ]
 
-#     args.usernames = new_names
-#     write_args.setArgs(args)
-#     await all_subs_helper() if len(new_names) > 0 else None
-#     args.usernames = set(all_usernames)
-#     write_args.setArgs(args)
+        args.usernames = new_names
+        write_args.setArgs(args)
+        await self.all_subs_helper() if len(new_names) > 0 else None
+        args.usernames = set(all_usernames)
+        write_args.setArgs(args)
 
 
     @run
@@ -138,12 +129,12 @@ class ModelManager():
             args.usernames = None
             write_args.setArgs(args)
         if not bool(args.usernames):
-            selectedusers = retriver.get_selected_model(filterNSort())
+            selectedusers = retriver.get_selected_model(self.filterNSort())
             read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
             self._parsed_subs = selectedusers
             write_args.setArgs(args)
         elif "ALL" in args.usernames:
-            self._parsed_subs = filterNSort()
+            self._parsed_subs = self.filterNSort()
         elif args.usernames:
             usernameset = set(args.usernames)
             self._parsed_subs= list(
@@ -198,40 +189,40 @@ class ModelManager():
             write_args.setArgs(args)
 
 
-def filterNSort():
-    global ALL_SUBS
-    while True:
-        # paid/free
-        usernames = ALL_SUBS
+    def filterNSort(self):
+        global ALL_SUBS
+        while True:
+            # paid/free
+            usernames = ALL_SUBS
 
-        log.debug(f"username count no filters: {len(usernames)}")
-        filterusername = filterOnly(usernames)
-        log.debug(f"final username count with all filters: {len(filterusername)}")
-        # give log time to process
-        time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
-        if len(filterusername) != 0:
-            return sort.sort_models_helper(filterusername)
-        print(
-            f"""You have filtered the user list to zero
-Change the filter settings to continue
+            log.debug(f"username count no filters: {len(usernames)}")
+            filterusername = filterOnly(usernames)
+            log.debug(f"final username count with all filters: {len(filterusername)}")
+            # give log time to process
+            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
+            if len(filterusername) != 0:
+                return sort.sort_models_helper(filterusername)
+            print(
+                f"""You have filtered the user list to zero
+    Change the filter settings to continue
 
-Active userlist : {settings.get_userlist() or 'no blacklist'}
-Active blacklist : {settings.get_blacklist() or 'no userlist'}
+    Active userlist : {settings.get_userlist() or 'no blacklist'}
+    Active blacklist : {settings.get_blacklist() or 'no userlist'}
 
-Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
-Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
+    Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
+    Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
 
-Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
+    Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
+    Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+    Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+    Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
 
-[ALT+D] More Filters
+    [ALT+D] More Filters
 
-"""
-        )
+    """
+            )
 
-        setfilter()
+            self.setfilter()
 
 
 def filterOnly(usernames=None):

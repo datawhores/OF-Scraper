@@ -7,7 +7,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.filters.models.sort as sort
-import ofscraper.data.models.selector as userselector
+import ofscraper.data.models.manager as userselector
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.prompts.utils.model_helpers as modelHelpers

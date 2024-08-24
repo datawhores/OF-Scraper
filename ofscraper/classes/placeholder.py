@@ -1,13 +1,10 @@
 import logging
-import random
-import string
 import os
 import pathlib
 import re
 
 import arrow
 
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom_
@@ -20,6 +17,8 @@ import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
 from ofscraper.utils.string import parse_safe
+import  ofscraper.runner.manager as manager
+
 
 log = logging.getLogger("shared")
 
@@ -197,7 +196,7 @@ class Placeholders(basePlaceholder):
         return self
 
     def add_price_variables(self, username):
-        modelObj = selector.get_model_fromParsed(username)
+        modelObj = manager.Manager.model_manager.get_model_fromParsed(username)
         self._variables.update(
             {
                 "current_price": (
@@ -259,7 +258,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"response_type": ele.modified_responsetype})
         self._variables.update({"label": ele.label_string})
         self._variables.update({"download_type": ele.downloadtype})
-        self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
+        self._variables.update({"modelObj": manager.Manager.model_manager.get_model_fromParsed(username)})
         self._variables.update({"quality": await ele.selected_quality_placeholder})
         self._variables.update({"file_name": await ele.final_filename})
         self._variables.update({"original_filename": ele.filename})
@@ -433,7 +432,7 @@ class Textholders(basePlaceholder):
         return self
 
     def add_price_variables(self, username):
-        modelObj = selector.get_model_fromParsed(username)
+        modelObj = manager.Manager.model_manager.get_model_fromParsed(username)
         self._variables.update(
             {
                 "current_price": (
@@ -489,7 +488,7 @@ class Textholders(basePlaceholder):
         self._variables.update({"media_type": "Text"})
         self._variables.update({"response_type": ele.modified_responsetype})
         self._variables.update({"label": ele.label_string})
-        self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
+        self._variables.update({"modelObj": manager.Manager.model_manager.get_model_fromParsed(username)})
         self._variables.update({"text": ele.text_trunicate(ele.file_sanitized_text)})
         self._variables.update({"config": config_file.open_config()})
         self._variables.update({"args": read_args.retriveArgs()})

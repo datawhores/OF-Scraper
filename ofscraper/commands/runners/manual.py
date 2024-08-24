@@ -8,10 +8,10 @@ import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download
-import ofscraper.data.models.selector as selector
+import ofscraper.data.models.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
@@ -27,6 +27,8 @@ from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
 from ofscraper.actions.actions.download.utils.text import textDownloader
+import  ofscraper.runner.manager as manager
+
 
 
 def manual_download(urls=None):
@@ -111,7 +113,7 @@ def allow_manual_dupes():
 
 
 def set_user_data(url_dicts):
-    selector.set_data_all_subs_dict(
+    manager.Manager.model_manager.set_data_all_subs_dict(
         [nested_dict.get("username") for nested_dict in url_dicts.values()]
     )
 
@@ -241,7 +243,7 @@ async def paid_failback(post_id, model_id, username):
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:

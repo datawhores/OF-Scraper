@@ -4,12 +4,12 @@ import traceback
 import ofscraper.runner.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit_context
-from ofscraper.runner.manager import Manager
+from ofscraper.runner.manager import start_manager
 
 
 def main():
     try:
-        Manager.start()
+        start_manager()
     except KeyboardInterrupt:
         console.get_shared_console().print("handling force closing of script")
         try:

@@ -41,7 +41,7 @@ from ofscraper.actions.actions.metadata.batch.utils.consumer import consumer
 from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.metadata.batch.utils.queue import queue_process
 from ofscraper.actions.actions.metadata.utils.desc import desc
-from ofscraper.runner.manager import Manager
+import  ofscraper.runner.manager as manager
 
 
 platform_name = platform.system()
@@ -83,7 +83,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
-                        Manager.model_manager.all_subs_dict,
+                        manager.Manager.model_manager.all_subs_dict,
                         read_args.retriveArgs(),
                     ),
                 )

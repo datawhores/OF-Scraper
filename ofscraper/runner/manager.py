@@ -1,14 +1,29 @@
 import time
+from contextlib import contextmanager,asynccontextmanager
 
-import ofscraper.commands.utils.picker as picker
 import ofscraper.runner.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
-from ofscraper.data.models.selector import ModelManager
+from ofscraper.data.models.manager import ModelManager
+
+Manager=None
+def start_manager():
+    global Manager
+    if not isinstance(Manager,mainManager):
+        Manager=mainManager()
+        Manager.start_managers()
+        Manager.start()
+def start_other_managers():
+    global Manager
+    if not isinstance(Manager,mainManager):
+        Manager=mainManager()
+        Manager.start_managers()
+
 class mainManager():
     def __init__(self) -> None:
         self.model_manager = None
+    
     
     
         
@@ -17,15 +32,27 @@ class mainManager():
         self.initLogs()
         time.sleep(3)
         self.print_name()
-        self.start_managers()
-        picker.pick()
+        self.pick()
         exit_manager.shutdown()
     
     def start_managers(self):
         if self.model_manager is None:
             self.model_manager = ModelManager()
     
-    
+    def pick(self):
+        import ofscraper.commands.runners.check as check
+        import ofscraper.commands.runners.manual as manual
+        import ofscraper.commands.runners.metadata.metadata as metadata
+        import ofscraper.commands.runners.scraper.scraper as actions
+        from ofscraper.utils.args.accessors.command import get_command
+        if get_command()  in ["post_check", "msg_check", "paid_check", "story_check"]:
+            check.checker()
+        elif get_command() == "metadata":
+            metadata.process_selected_areas()
+        elif get_command()  == "manual":
+            manual.manual_download()
+        else:
+            actions.main()
     def print_name(self):
         console.get_shared_console().print(
             """ 
@@ -49,4 +76,21 @@ class mainManager():
                 "[bold yellow]Warning another OF-Scraper instance was detected[bold yellow]\n\n\n"
             )
         logs.printStartValues()
-Manager=mainManager()
+    @ contextmanager
+    def get_session(self,*args,**kwargs):
+        import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+        with sessionManager.sessionManager(*args, **kwargs) as c:
+            yield c
+
+    @ contextmanager
+    def get_ofsession(self,*args,**kwargs):
+        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
+        with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
+            yield c    
+
+
+    @ asynccontextmanager
+    async def aget_ofsession(self,*args,**kwargs):
+        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
+        async with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
+            yield c  

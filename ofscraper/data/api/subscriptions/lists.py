@@ -16,7 +16,7 @@ import contextvars
 import logging
 import traceback
 
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
@@ -87,7 +87,7 @@ async def get_lists():
     output = []
     tasks = []
     page_count = 0
-    async with sessionManager.OFSessionManager(
+    async with manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks.append(asyncio.create_task(scrape_for_list(c)))
@@ -161,7 +161,7 @@ async def get_list_users(lists):
     output = []
     tasks = []
     page_count = 0
-    async with sessionManager.OFSessionManager(
+    async with manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]

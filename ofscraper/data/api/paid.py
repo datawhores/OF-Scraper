@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
@@ -146,7 +146,7 @@ async def create_tasks_scrape_paid():
     min_posts = 80
     tasks = []
     page_count = 0
-    async with sessionManager.OFSessionManager(
+    async with manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("SCRAPE_PAID_SEMS"),
     ) as c:
         allpaid = cache.get("purchased_all", default=[])
@@ -199,7 +199,7 @@ async def create_tasks_scrape_paid():
 
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-            tasks = new_tasks
+            tasks = new_tasks_batch
         progress_utils.remove_api_task(page_task)
 
     log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
@@ -282,7 +282,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+         progress_utils.remove_api_job_task(task)
 
 
 def get_individual_paid_post(username, model_id, postid):

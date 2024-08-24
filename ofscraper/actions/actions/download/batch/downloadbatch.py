@@ -46,7 +46,7 @@ from ofscraper.utils.args.accessors.command import get_command
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
 platform_name = platform.system()
-from ofscraper.runner.manager import Manager
+import  ofscraper.runner.manager as manager
 
 
 
@@ -96,7 +96,7 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
                         stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
-                        Manager.model_manager.all_subs_dict,
+                        manager.Manager.model_manager.all_subs_dict,
                         read_args.retriveArgs(),
                     ),
                 )

@@ -4,7 +4,7 @@ import ofscraper.data.api.profile as profile
 import ofscraper.classes.models as models
 import ofscraper.data.posts.post as OF
 import ofscraper.actions.actions.download.download as download
-import ofscraper.data.models.selector as userselector
+import ofscraper.data.models.manager as userselector
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import (

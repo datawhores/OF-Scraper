@@ -18,7 +18,7 @@ from typing import Union
 from rich.console import Console
 from xxhash import xxh128
 
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -32,7 +32,7 @@ API = "profile"
 
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
-    with sessionManager.OFSessionManager(
+    with manager2.Manager.get_ofsession(
         backend="httpx",
     ) as c:
         return scrape_profile_helper(c, username)
@@ -145,7 +145,7 @@ def print_profile_info(info):
 
 
 def get_id(username, c=None):
-    c = c or sessionManager.OFSessionManager(
+    c = c or manager2.Manager.get_ofsession(
         backend="httpx",
     )
     with c as c:

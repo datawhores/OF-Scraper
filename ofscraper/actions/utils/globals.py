@@ -10,11 +10,10 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.stdout import add_stdout_handler_multi
 from ofscraper.utils.logs.other import add_other_handler_multi
 import ofscraper.utils.logs.logger as logger
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.dates as dates
 from ofscraper.actions.utils.send.message import set_send_msg
-from ofscraper.runner.manager import Manager
+import ofscraper.runner.manager as manager
 
 
 
@@ -80,8 +79,8 @@ def subProcessVariableInit(
     set_up_contexvars()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
-    Manager.start_managers()
-    Manager.model_manager.all_subs_dict=userList
+    manager.start_other_managers()
+    manager.manager.Manager.model_manager.all_subs_dict=userList
     process_split_globals(pipeCopy, stdout_logqueue, file_logqueue)
     set_send_msg()
 
