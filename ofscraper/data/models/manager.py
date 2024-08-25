@@ -16,21 +16,17 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
-ALL_SUBS = None
-PARSED_SUBS = None
-ALL_SUBS_DICT = {}
 log = logging.getLogger("shared")
 
 class ModelManager():
     def __init__(self) -> None:
         self._all_subs_dict={}
         self._parsed_subs_dict={}
-        self._parsed_subs=[]
         self._seen_users=set()
 
 
     def get_num_selected(self):
-        return len(self._parsed_subs)
+        return len(self.parsed_subs)
 
 
     def get_model(self,name):
@@ -58,10 +54,10 @@ class ModelManager():
 
     @property
     def parsed_subs(self):
-        return self._parsed_subs_dict.keys()
+        return list(self._parsed_subs_dict.keys())
     @property
     def parsed_subs_obj(self):
-        return self._parsed_subs_dict.values()
+        return list(self._parsed_subs_dict.values())
 
 # def set_ALL_SUBS_DICTVManger(subsDict=None):
 #     global ALL_SUBS_DICT
@@ -75,7 +71,7 @@ class ModelManager():
         if reset is True and rescan is True:
             self.all_subs_retriver()
             self.parsed_subscriptions_helper(reset=True)
-        elif reset is True and self._parsed_subs:
+        elif reset is True and self.parsed_subs:
             prompt = prompts.reset_username_prompt()
             if prompt == "Selection":
                 self.all_subs_retriver()
