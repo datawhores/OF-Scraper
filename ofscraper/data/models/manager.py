@@ -24,6 +24,7 @@ log = logging.getLogger("shared")
 class ModelManager():
     def __init__(self) -> None:
         self._all_subs_dict={}
+        self._parsed_subs_dict={}
         self._parsed_subs=[]
         self._seen_users=set()
 
@@ -143,10 +144,10 @@ class ModelManager():
         if not bool(args.usernames):
             selectedusers = retriver.get_selected_model(self.filterNSort())
             read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
-            self._parsed_subs = selectedusers
+            self._parsed_subs_dict = {ele.name:ele for ele in selectedusers}
             write_args.setArgs(args)
         elif "ALL" in args.usernames:
-            self._parsed_subs = self.filterNSort()
+            self._parsed_subs_dict = self.filterNSort()
         elif args.usernames:
             usernameset = set(args.usernames)
             self._parsed_subs_dict= {ele.name: ele for ele in self.all_subs_obj if ele.name in usernameset}
@@ -204,6 +205,7 @@ class ModelManager():
             # give log time to process
             time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
             if len(filterusername) != 0:
+                
                 return {ele.name:self._all_subs_dict[ele.name] for ele in sort.sort_models_helper(filterusername)}
             print(
                 f"""You have filtered the user list to zero
