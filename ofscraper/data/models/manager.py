@@ -140,7 +140,7 @@ class ModelManager():
             usernameset = set(args.usernames)
             self._parsed_subs= list(
                 filter(
-                    lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
+                    lambda x: (x in usernameset) or (str(x.id) in usernameset),
                     self.all_subs,
                 )
             )
