@@ -14,7 +14,7 @@ log = logging.getLogger("shared")
 
 
 def prepare(menu=False):
-    session = manager2.Manager.get_ofsession(
+    session = manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
