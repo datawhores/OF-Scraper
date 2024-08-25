@@ -51,8 +51,16 @@ class ModelManager():
             self._all_subs_dict.update(value)
         else:
             [self._all_subs_dict .update({ele.name: ele}) for ele in value]
+    @property
+    def parsed_subs_dict(self):
+        return self._parsed_subs_dict
 
-
+    @property
+    def parsed_subs(self):
+        return self._parsed_subs_dict.keys()
+    @property
+    def parsed_subs_obj(self):
+        return self._parsed_subs_dict.values()
 
 # def set_ALL_SUBS_DICTVManger(subsDict=None):
 #     global ALL_SUBS_DICT
@@ -82,7 +90,7 @@ class ModelManager():
         else:
             self.all_subs_retriver(refetch=False)
             self.parsed_subscriptions_helper()
-        return self._parsed_subs
+        return self.parsed_subs_obj
 
 
     @run
@@ -141,14 +149,7 @@ class ModelManager():
             self._parsed_subs = self.filterNSort()
         elif args.usernames:
             usernameset = set(args.usernames)
-            self._parsed_subs= list(
-                filter(
-                    lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
-                    self.all_subs_obj,
-                )
-            )
-
-        return self._parsed_subs
+            self._parsed_subs_dict= {ele.name: ele for ele in self.all_subs_obj if ele.name in usernameset}
 
 
     def setfilter(self):
@@ -194,18 +195,16 @@ class ModelManager():
 
 
     def filterNSort(self):
-        global ALL_SUBS
         while True:
             # paid/free
-            usernames = ALL_SUBS
 
-            log.debug(f"username count no filters: {len(usernames)}")
-            filterusername = filterOnly(usernames)
+            log.debug(f"username count no filters: {len(self.all_subs)}")
+            filterusername = self.filterOnly()
             log.debug(f"final username count with all filters: {len(filterusername)}")
             # give log time to process
             time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
             if len(filterusername) != 0:
-                return sort.sort_models_helper(filterusername)
+                return {ele.name:self._all_subs_dict[ele.name] for ele in sort.sort_models_helper(filterusername)}
             print(
                 f"""You have filtered the user list to zero
     Change the filter settings to continue
@@ -229,11 +228,11 @@ class ModelManager():
             self.setfilter()
 
 
-def filterOnly(usernames=None):
-    usernames = usernames or ALL_SUBS
-    filterusername = subtype.subType(usernames)
-    filterusername = price.pricePaidFreeFilterHelper(filterusername)
-    filterusername = flags.promoFilterHelper(filterusername)
-    filterusername = date_.dateFilters(filterusername)
-    filterusername = other.otherFilters(filterusername)
-    return filterusername
+    def filterOnly(self,usernames=None):
+        usernames = self.all_subs
+        filterusername = subtype.subType(usernames)
+        filterusername = price.pricePaidFreeFilterHelper(filterusername)
+        filterusername = flags.promoFilterHelper(filterusername)
+        filterusername = date_.dateFilters(filterusername)
+        filterusername = other.otherFilters(filterusername)
+        return filterusername
