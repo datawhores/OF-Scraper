@@ -7,7 +7,6 @@ from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.filters.models.sort as sort
-import ofscraper.data.models.manager as userselector
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.prompts.utils.model_helpers as modelHelpers
@@ -15,6 +14,8 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
+import  ofscraper.runner.manager as manager
+
 
 console = Console()
 
@@ -117,7 +118,7 @@ PRESS ENTER TO RETURN
 
 
 def model_funct(prompt):
-    userselector.setfilter()
+    manager.Manager.model_manager.setfilter()
     with stdout.nostdout():
         choices = _get_choices()
         selectedSet = set(
@@ -195,7 +196,7 @@ def _select_helper(prompt, toggle=True):
 
 
 def _get_choices():
-    models = userselector.filterOnly()
+    models =manager.Manager.model_manager.filterOnly()
     models = sort.sort_models_helper(models)
     return list(
         map(

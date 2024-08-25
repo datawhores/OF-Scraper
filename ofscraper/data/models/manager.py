@@ -229,7 +229,7 @@ class ModelManager():
 
 
     def filterOnly(self,usernames=None):
-        usernames = self.all_subs
+        usernames = self.all_subs_obj
         filterusername = subtype.subType(usernames)
         filterusername = price.pricePaidFreeFilterHelper(filterusername)
         filterusername = flags.promoFilterHelper(filterusername)
