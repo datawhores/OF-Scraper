@@ -95,7 +95,7 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    if username ==constants.getattr("DELETED_MODEL_PLACEHOLDER"):
+    if profile.scrape_profile(username).get("username") ==constants.getattr("DELETED_MODEL_PLACEHOLDER"):
         data, _ =await download.download_model_deleted_process(username,model_id,medias)
     else:
         userdata=manager.Manager.model_manager.get_model(username) or profile.scrape_profile(username)

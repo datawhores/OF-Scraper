@@ -47,7 +47,7 @@ class ModelManager():
         if value and isinstance(value, dict):
             self._all_subs_dict.update(value)
         else:
-            [self._all_subs_dict .update({ele.name: ele}) for ele in self._all_subs_dict]
+            [self._all_subs_dict .update({ele.name: ele}) for ele in value]
 
 
 
@@ -111,7 +111,8 @@ class ModelManager():
         if bool(self.all_subs_dict) and not refetch:
             return
         while True:
-            self.all_subs_dict = await retriver.get_models()
+            data=await retriver.get_models()
+            self.all_subs_dict = data
             if len(self.all_subs_dict) > 0:
                 break
             elif len(self.all_subs_dict) == 0:
