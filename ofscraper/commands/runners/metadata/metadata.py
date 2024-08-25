@@ -69,7 +69,7 @@ def prepare():
     actions.select_areas()
     init.print_sign_status()
     userdata =manager.Manager.model_manager.getselected_usernames(rescan=False)
-    session = manager2.Manager.get_ofsession(
+    session = manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )

@@ -80,7 +80,7 @@ def subProcessVariableInit(
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     manager.start_other_managers()
-    manager.manager.Manager.model_manager.all_subs_dict=userList
+    manager.Manager.model_manager.all_subs_dict=userList
     process_split_globals(pipeCopy, stdout_logqueue, file_logqueue)
     set_send_msg()
 
