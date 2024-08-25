@@ -40,6 +40,9 @@ class ModelManager():
     def all_subs(self):
         return list(self._all_subs_dict.keys())
     @property
+    def all_subs_obj(self):
+        return list(self._all_subs_dict.values())
+    @property
     def all_subs_dict(self):
         return self._all_subs_dict
     @all_subs_dict.setter
@@ -140,8 +143,8 @@ class ModelManager():
             usernameset = set(args.usernames)
             self._parsed_subs= list(
                 filter(
-                    lambda x: (x in usernameset) or (str(x.id) in usernameset),
-                    self.all_subs,
+                    lambda x: (x.name in usernameset) or (str(x.id) in usernameset),
+                    self.all_subs_obj,
                 )
             )
 
