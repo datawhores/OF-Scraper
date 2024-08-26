@@ -47,7 +47,12 @@ async def process_dicts(username, model_id, medialist, posts):
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
         pass
+    elif read_args.retriveArgs().scrape_paid:
+        pass
     elif len(get_download_area()) == 0:
+        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
+        logging.getLogger("shared").error(empty_log)
+        log_text_array.append(empty_log)
         return log_text_array, (0, 0, 0, 0, 0)
     
     if len(medialist) == 0:
