@@ -198,7 +198,7 @@ class MetaDataManager:
                     -1
                 ] or media.content_type_missing(ele)
                 # request fail if not read
-                async for _ in r.iter_chunked(20000):
+                async for _ in r.iter_chunked(1024*1024*30g):
                     pass
                 placeholderObj = placeholder.Placeholders(ele, ext=content_type)
                 return placeholderObj
