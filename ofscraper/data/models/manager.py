@@ -59,13 +59,6 @@ class ModelManager():
     def parsed_subs_obj(self):
         return list(self._parsed_subs_dict.values())
 
-# def set_ALL_SUBS_DICTVManger(subsDict=None):
-#     global ALL_SUBS_DICT
-#     set_ALL_SUBS_DICT(subsDict)
-#     manager.update_dict({"subs": ALL_SUBS_DICT})
-
-
-
     def getselected_usernames(self,rescan=False, reset=False):
         # username list will be retrived every time resFet==True
         if reset is True and rescan is True:
