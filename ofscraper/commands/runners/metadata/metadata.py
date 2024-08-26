@@ -40,9 +40,10 @@ def metadata():
         scrape_paid_data = []
         userfirst_data = []
         normal_data = []
+        userdata = []
         if read_args.retriveArgs().scrape_paid:
             scrape_paid_data = metaCommandManager.metadata_paid_all()
-        if not metadataCommandManager.run_metadata:
+        if not metaCommandManager.run_metadata:
             pass
 
         elif not read_args.retriveArgs().users_first:
