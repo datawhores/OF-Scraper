@@ -41,7 +41,7 @@ from ofscraper.utils.args.accessors.command import get_command
 async def process_dicts(username, model_id, medialist, posts):
     log_text_array = []
     download_log_clear_helper()
-    log_text_array.append(await textDownloader(posts, username=username) or [])
+    log_text_array.append(await textDownloader(posts, username=username) )
     logging.getLogger("shared").info("Downloading in single thread mode")
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)

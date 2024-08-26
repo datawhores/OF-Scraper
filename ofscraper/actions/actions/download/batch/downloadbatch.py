@@ -54,7 +54,7 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
     log = logging.getLogger("shared")
     log.info("Downloading in batch mode")
     log_text_array = []
-    log_text_array.append(await textDownloader(posts, username=username) or [])
+    log_text_array.append(await textDownloader(posts, username=username))
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
