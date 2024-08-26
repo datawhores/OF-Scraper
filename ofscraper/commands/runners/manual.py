@@ -82,7 +82,7 @@ def manual_download(urls=None):
                     result = textDownloader(posts, username)
                 else:
                     result, _ = download.download_process(
-                        userdata, medialist, posts=None
+                        username,model_id, medialist, posts=None
                     )
                 results.append(result)
 

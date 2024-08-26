@@ -95,11 +95,7 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    if profile.scrape_profile(username).get("username") ==constants.getattr("DELETED_MODEL_PLACEHOLDER"):
-        data, _ =await download.download_model_deleted_process(username,model_id,medias)
-    else:
-        userdata=manager.Manager.model_manager.get_model(username) or profile.scrape_profile(username)
-        data, _ =await download.download_process(userdata, medias, posts=posts)
+    data, _ =await download.download_process(username,model_id, medias, posts=posts)
     progress_updater.increment_activity_count(total=length)
     post_user_script(value, medias, posts)
     return data

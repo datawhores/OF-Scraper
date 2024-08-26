@@ -186,7 +186,8 @@ async def process_tasks_all_paid(tasks):
         new_tasks_batch = []
         for task in asyncio.as_completed(tasks):
             try:
-                result, new_tasks_batch = await task
+                result, new_tasks = await task
+                new_tasks_batch.extend(new_tasks)
                 page_count = page_count + 1
                 progress_utils.update_api_task(
                     page_task,
