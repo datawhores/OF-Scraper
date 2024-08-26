@@ -189,8 +189,8 @@ class Placeholders(basePlaceholder):
         self._ele = ele
         self._ext = ext
 
-    async def init(self):
-        dir = await self.getmediadir()
+    async def init(self,create=True):
+        dir = await self.getmediadir(create=create)
         file = await self.createfilename()
         self._filepath = paths.truncate(pathlib.Path(dir, file))
         return self
@@ -425,8 +425,8 @@ class Textholders(basePlaceholder):
         self._ele = ele
         self._ext = ext
 
-    async def init(self):
-        dir = await self.getmediadir()
+    async def init(self,create=True):
+        dir = await self.getmediadir(create=create)
         file = await self.createfilename()
         self._filepath = paths.truncate(pathlib.Path(dir, file))
         return self

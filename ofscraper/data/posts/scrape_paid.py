@@ -1,8 +1,9 @@
 import logging
 
-import ofscraper.data.api.profile as profile
 import ofscraper.data.posts.post as OF
 import ofscraper.actions.actions.download.download as download
+import ofscraper.actions.actions.metadata.metadata as metadata
+
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import (
@@ -14,8 +15,7 @@ from ofscraper.commands.utils.strings import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
-import ofscraper.utils.constants as constants
-import  ofscraper.runner.manager as manager
+from ofscraper.utils.args.accessors.command import get_command
 
 
 
@@ -95,7 +95,10 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    data, _ =await download.download_process(username,model_id, medias, posts=posts)
+    if get_command()=="metadata":
+        data=await metadata.metadata_process(username, model_id,medias,posts=posts)
+    else:
+        data, _ =await download.download_process(username,model_id, medias, posts=posts)
     progress_updater.increment_activity_count(total=length)
     post_user_script(value, medias, posts)
     return data

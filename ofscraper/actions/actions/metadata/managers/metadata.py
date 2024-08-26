@@ -65,7 +65,7 @@ class MetaDataManager:
             f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
         )
         placeholderObj = placeholderObj or await self._placeholderObjHelper(c, ele)
-        await placeholderObj.init()
+        await placeholderObj.init(create=False)
         common.add_additional_data(placeholderObj, ele)
         effected = None
         if ele.id:
