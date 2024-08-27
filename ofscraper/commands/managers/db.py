@@ -88,7 +88,7 @@ class DBManager():
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass
         else:
-            medias=[media for media in medias if media["mediatype"] in settings.get_mediatypes()]
+            medias=[media for media in medias if media["media_type"] in settings.get_mediatypes()]
         self.media=medias
 
 
