@@ -11,10 +11,12 @@ from ofscraper.utils.args.parse.groups.content import (
     label_option,
     max_count_option,
     neg_filter_option,
+    post_id_filter,
 )
 from ofscraper.utils.args.parse.groups.media_filter import(
 media_type_option,
 media_filter_options_desc,
+media_id_filter,
 media_filter_options_help
 )
 from ofscraper.utils.args.parse.arguments.content import db_posts_option
@@ -67,6 +69,8 @@ click.option(
         filter_option,
         neg_filter_option,
         max_count_option,
+        post_id_filter,
+        
         label_option,
         before_option,
         after_option,
@@ -75,6 +79,7 @@ click.option(
     @click.option_group(
     media_filter_options_desc,
     media_type_option,
+    media_id_filter,
     help=media_filter_options_help
     )
 
@@ -89,5 +94,4 @@ click.option(
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
-
     return wrapper

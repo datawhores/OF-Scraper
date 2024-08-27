@@ -76,6 +76,7 @@ class DBManager():
             self.dedup_by_media_id()  
         self.filter_media()   
         self.sort_media()  
+        self.get_max_post()
     def filter_media(self) :
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
@@ -90,6 +91,13 @@ class DBManager():
             pass
         else:
             medias=[media for media in medias if media["media_type"] in settings.get_mediatypes()]
+        if args.post_id:
+            medias=[media for media in medias if media["post_id"] in args.post_id]
+        if args.media_id:
+            medias=[media for media in medias if media["media_id"] in args.media_id]
+        self.media=get_all_medias
+    def get_max_post(self):
+        medias=self.media
         medias=medias[:settings.get_max_post_count()] if settings.get_max_post_count() else medias
         self.media=medias
     def sort_media(self):
