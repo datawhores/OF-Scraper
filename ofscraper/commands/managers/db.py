@@ -14,6 +14,7 @@ from ofscraper.db.operations_.media import (
     get_pinned_media,
     get_highlights_media,
     get_stories_media,
+    get_all_medias
 
 )
 from ofscraper.utils.logs.other import add_other_handler
@@ -37,21 +38,36 @@ class DBManager():
         stories=[]
         model_id=self.model_id
         username=self.username
-        if "Timeline" in args.download_area:
-            timeline = await get_timeline_media(model_id=model_id, username=username)
-        if "Pinned" in args.download_area:
-            pinned = await get_pinned_media(model_id=model_id, username=username)
-        if "Archived" in args.download_area:
-            archived=await get_archived_media(model_id=model_id, username=username)
-        if "Messages" in args.download_area:
-            messages=await  get_messages_media(model_id=model_id, username=username)
-        if "Streams" in args.download_area:
-            streams=await get_streams_media(model_id=model_id, username=username)
-        if "Highlights" in args.download_area:
-            highlights=await  get_highlights_media(model_id=model_id, username=username)
-        if "Stories" in args.download_area:
-            stories=await get_stories_media(model_id=model_id, username=username)    
-        self.media=timeline+messages+archived+streams+pinned+stories+highlights
+        if all(
+        (
+        "Timeline" in args.download_area,
+        "Pinned" in args.download_area,
+        "Archived" in args.download_area,
+        "Messages" in args.download_area,
+        "Streams" in args.download_area,
+        "Highlights" in args.download_area,
+        "Stories" in args.download_area,
+        )
+        ):
+            # All conditions are true, so proceed with your logic
+           self.media= await get_all_medias()
+        else:
+            if "Timeline" in args.download_area:
+                timeline = await get_timeline_media(model_id=model_id, username=username)
+            if "Pinned" in args.download_area:
+                pinned = await get_pinned_media(model_id=model_id, username=username)
+            if "Archived" in args.download_area:
+                archived=await get_archived_media(model_id=model_id, username=username)
+            if "Messages" in args.download_area:
+                messages=await  get_messages_media(model_id=model_id, username=username)
+            if "Streams" in args.download_area:
+                streams=await get_streams_media(model_id=model_id, username=username)
+            if "Highlights" in args.download_area:
+                highlights=await  get_highlights_media(model_id=model_id, username=username)
+            if "Stories" in args.download_area:
+                stories=await get_stories_media(model_id=model_id, username=username)    
+            self.media=timeline+messages+archived+streams+pinned+stories+highlights 
+            self.dedup_by_media_id()                                        
         # if len(curr) == 0:
         #     log.debug("Setting oldest date to zero because database is empty")
         #     return 0
@@ -136,6 +152,5 @@ class DBManager():
         self.media=deduped_dictionaries
     def print_media(self):
         self.get_all_media()
-        self.dedup_by_media_id()
         self.print_dictionary_table()
         
