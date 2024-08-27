@@ -50,7 +50,7 @@ class DBManager():
         )
         ):
             # All conditions are true, so proceed with your logic
-           self.media= await get_all_medias()
+           self.media= await get_all_medias(model_id=model_id,username=username)
         else:
             if "Timeline" in args.download_area:
                 timeline = await get_timeline_media(model_id=model_id, username=username)
