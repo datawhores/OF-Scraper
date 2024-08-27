@@ -95,7 +95,7 @@ class DBManager():
             medias=[media for media in medias if media["post_id"] in args.post_id]
         if args.media_id:
             medias=[media for media in medias if media["media_id"] in args.media_id]
-        self.media=get_all_medias
+        self.media=medias
     def get_max_post(self):
         medias=self.media
         medias=medias[:settings.get_max_post_count()] if settings.get_max_post_count() else medias
