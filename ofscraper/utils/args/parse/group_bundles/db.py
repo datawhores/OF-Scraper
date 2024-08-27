@@ -7,10 +7,7 @@ from ofscraper.utils.args.parse.groups.content import (
     content_options_desc,
     after_option,
     before_option,
-    filter_option,
-    label_option,
     max_count_option,
-    neg_filter_option,
     post_id_filter,
 )
 from ofscraper.utils.args.parse.groups.media_filter import(
@@ -19,6 +16,8 @@ max_size_option,
 min_size_option,
 media_filter_options_desc,
 media_id_filter,
+length_max,
+length_min,
 media_filter_options_help
 )
 from ofscraper.utils.args.parse.arguments.content import db_posts_option
@@ -102,12 +101,8 @@ click.option(
     @click.option_group(
         content_options_desc,
         db_posts_option,
-        filter_option,
-        neg_filter_option,
         max_count_option,
         post_id_filter,
-        
-        label_option,
         before_option,
         after_option,
         help=content_options_help,
