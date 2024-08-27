@@ -108,6 +108,15 @@ class DBManager():
             medias=[media for media in medias  if self._convert_seconds(media)<= settings.get_max_length()]
         if settings.get_min_length():
             medias=[media for media in medias  if self._convert_seconds(media)>= settings.get_min_length()]
+        #date
+        if read_args.retriveArgs().posted_before:
+            medias=[media for media in medias  if arrow.get(media["posted_at"] or 0) <= read_args.retriveArgs().posted_before]
+        if  read_args.retriveArgs().posted_after:
+            medias=[media for media in medias  if arrow.get(media["posted_at"] or 0) >= read_args.retriveArgs().posted_after]
+        if read_args.retriveArgs().created_after:
+            medias=[media for media in medias  if arrow.get(media["created_at"] or 0) >= read_args.retriveArgs().created_after]
+        if read_args.retriveArgs().created_before:
+            medias=[media for media in medias  if arrow.get(media["created_at"] or 0) <= read_args.retriveArgs().created_before]
         # media type
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass

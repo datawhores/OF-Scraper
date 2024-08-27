@@ -117,7 +117,6 @@ click.option(
     "--created-before",
     help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=ArrowType(),
-    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value)
 ),
 
    click.option(
@@ -132,7 +131,6 @@ click.option(
     "--posted-before",
     help="Process posts posted at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=ArrowType(),
-    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value)
 ),
 
         help=content_options_help,
