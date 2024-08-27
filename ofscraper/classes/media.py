@@ -11,12 +11,13 @@ from mpegdash.parser import MPEGDASHParser
 from async_property import async_cached_property
 
 import ofscraper.classes.base as base
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.utils.level as log_helpers
+import  ofscraper.runner.manager as manager2
+
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -389,7 +390,7 @@ class Media(base.base):
             "Signature": self.signature,
         }
         async with self._lock:
-            async with sessionManager.OFSessionManager(
+            async with manager2.Manager.aget_ofsession(
                 retries=constants.getattr("MPD_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),

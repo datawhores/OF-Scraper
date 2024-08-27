@@ -398,7 +398,7 @@ async def process_all_paid():
         log.debug(
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"
         )
-    return output
+        return output
 
 
 @free.space_checker

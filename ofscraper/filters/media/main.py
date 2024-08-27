@@ -15,10 +15,10 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media, username, model_id):
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" in actions or scrape_paid:
-        return filterMediaFinalDownload(media, username, model_id)
-    elif get_command() == "metadata":
+    if get_command() == "metadata":
         return filterMediaFinalMetadata(media, username, model_id)
+    elif "download" in actions or scrape_paid:
+        return filterMediaFinalDownload(media, username, model_id)
     else:
         log.debug("Skipping filtering because download/metadata not in actions")
         return media
@@ -77,10 +77,10 @@ def filtermediaAreas(media, **kwargs):
 
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" in actions or scrape_paid:
-        return filterMediaAreasDownload(media)
-    elif get_command()== "metadata":
+    if get_command()== "metadata":
         return filterMediaAreasMetadata(media)
+    elif "download" in actions or scrape_paid:
+        return filterMediaAreasDownload(media)
     else:
         log.debug("Skipping filtering because download/metadata not in actions")
         return media

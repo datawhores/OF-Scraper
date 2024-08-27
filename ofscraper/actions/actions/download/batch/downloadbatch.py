@@ -9,7 +9,6 @@ import aioprocessing
 from aioprocessing import AioPipe
 
 import ofscraper.actions.utils.globals as common_globals
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -42,10 +41,12 @@ from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.download.batch.utils.queue import queue_process
 from ofscraper.actions.actions.download.utils.desc import desc
 
-platform_name = platform.system()
+from ofscraper.utils.args.accessors.command import get_command
+
 from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
-from ofscraper.utils.args.accessors.command import get_command
+platform_name = platform.system()
+import  ofscraper.runner.manager as manager
 
 
 
@@ -53,12 +54,17 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
     log = logging.getLogger("shared")
     log.info("Downloading in batch mode")
     log_text_array = []
-    log_text_array.append(await textDownloader(posts, username=username) or [])
+    log_text_array.append(await textDownloader(posts, username=username))
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
         pass
+    elif read_args.retriveArgs().scrape_paid:
+        pass
     elif len(get_download_area()) == 0:
+        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
+        logging.getLogger("shared").error(empty_log)
+        log_text_array.append(empty_log)
         return log_text_array, (0, 0, 0, 0, 0)
     if len(filtered_medialist) == 0:
         empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
@@ -95,7 +101,7 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
                         stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
-                        selector.get_ALL_SUBS_DICT(),
+                        manager.Manager.model_manager.all_subs_dict,
                         read_args.retriveArgs(),
                     ),
                 )

@@ -1,10 +1,9 @@
 import logging
 
-import ofscraper.data.api.profile as profile
-import ofscraper.classes.models as models
 import ofscraper.data.posts.post as OF
 import ofscraper.actions.actions.download.download as download
-import ofscraper.data.models.selector as userselector
+import ofscraper.actions.actions.metadata.metadata as metadata
+
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import (
@@ -16,6 +15,9 @@ from ofscraper.commands.utils.strings import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
+from ofscraper.utils.args.accessors.command import get_command
+
+
 
 
 log = logging.getLogger("shared")
@@ -24,7 +26,7 @@ log = logging.getLogger("shared")
 @run
 async def scrape_paid_all():
     out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-
+    await manager.Manager.model_manager.all_subs_retriver()
     async for count, value, length in process_scrape_paid():
         process_user_info_printer(
             value,
@@ -93,11 +95,10 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-
-    userselector.set_ALL_SUBS_DICTVManger(
-        {username: models.Model(profile.scrape_profile(model_id))}
-    )
+    if get_command()=="metadata":
+        data=await metadata.metadata_process(username, model_id,medias,posts=posts)
+    else:
+        data, _ =await download.download_process(username,model_id, medias, posts=posts)
     progress_updater.increment_activity_count(total=length)
-    data, _ = await download.download_process(username, model_id, medias, posts=posts)
     post_user_script(value, medias, posts)
     return data

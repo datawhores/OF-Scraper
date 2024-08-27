@@ -120,6 +120,7 @@ It also uses a new filename if one is available
             "--scrape-paid",
             help="Similar to --metadata, but only for --scrape paid",
             metavar="METADATA MODE",
+            type=click.Choice(METADATA_OPTIONS),
         ),
         max_count_option,
         label_option,

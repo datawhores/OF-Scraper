@@ -16,7 +16,7 @@ import logging
 import random
 import time
 
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -104,7 +104,7 @@ def _like(model_id, username, ids: list, like_action: bool):
 
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
-        with sessionManager.OFSessionManager(
+        with manager2.Manager.get_ofsession(
             sem_count=1,
             backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),

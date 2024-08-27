@@ -30,6 +30,8 @@ class scraperManager(commmandManager):
             normal_data = []
             user_first_data = []
             scrape_paid_data = []
+            userdata = []
+
             with progress_utils.setup_activity_group_live(
                 setup=True, revert=False, stop=True
             ):
@@ -94,7 +96,6 @@ class scraperManager(commmandManager):
         for action in actions:
             if action == "download":
                 result, _ = await downloader(
-                    ele=ele,
                     posts=posts,
                     media=media,
                     model_id=model_id,

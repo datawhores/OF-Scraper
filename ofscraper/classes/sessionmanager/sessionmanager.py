@@ -507,7 +507,7 @@ class sessionManager:
                         log.debug(f"[bold]status: [bold] {r.status}")
                         log.debug(f"[bold]response text [/bold]: {await r.text_()}")
                         log.debug(f"response headers {dict(r.headers)}")
-                        log.debug(f"requests headers {dict(r.request.headers)}")
+                        log.debug(f"requests headers mode{dict(r.request.headers)}")
                         r.raise_for_status()
                 except Exception as E:
                     # only call from sync req like "me"

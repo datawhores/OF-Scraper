@@ -65,7 +65,7 @@ class MetaDataManager:
             f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
         )
         placeholderObj = placeholderObj or await self._placeholderObjHelper(c, ele)
-        await placeholderObj.init()
+        await placeholderObj.init(create=False)
         common.add_additional_data(placeholderObj, ele)
         effected = None
         if ele.id:
@@ -198,7 +198,7 @@ class MetaDataManager:
                     -1
                 ] or media.content_type_missing(ele)
                 # request fail if not read
-                async for _ in r.iter_chunked(20000):
+                async for _ in r.iter_chunked(1024*1024*30):
                     pass
                 placeholderObj = placeholder.Placeholders(ele, ext=content_type)
                 return placeholderObj

@@ -16,7 +16,7 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-from ofscraper.classes.sessionmanager.sessionmanager import sessionManager
+import  ofscraper.runner.manager as manager
 
 
 def printStartValues():
@@ -61,7 +61,7 @@ def print_start_log():
 
 def print_start_message():
     log = logging.getLogger("shared")
-    with sessionManager() as  sess:
+    with manager.Manager.get_session(backend="httpx") as  sess:
         with sess.requests(url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD") as j:
             data=re.sub("\n","",j.text_())
             if not data:
@@ -69,7 +69,7 @@ def print_start_message():
             log.error(f"[bold yellow]{data}[/bold yellow]")
 def print_latest_version():
     log = logging.getLogger("shared")
-    with sessionManager() as  sess:
+    with manager.Manager.get_session(backend="httpx") as  sess:
         with sess.requests(url="https://pypi.org/pypi/ofscraper/json") as j:
             data=j.json()
             if not data:

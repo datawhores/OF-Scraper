@@ -24,7 +24,7 @@ import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
-import ofscraper.data.models.selector as selector
+import ofscraper.data.models.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
@@ -32,7 +32,6 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.data.api.common.check import read_check, reset_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
@@ -48,6 +47,8 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.args.accessors.command import get_command
+import  ofscraper.runner.manager as manager
+
 
 
 
@@ -114,7 +115,7 @@ def process_item():
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
-            selector.set_data_all_subs_dict(username)
+            manager.Manager.model_manager.set_data_all_subs_dict(username)
             post = media.post
             model_id = media.post.model_id
             username = media.post.username
@@ -153,7 +154,7 @@ def update_globals(model_id, username, post, media, values):
             "media": [],
             "username": username,
             "model_id": model_id,
-            "userdata": selector.get_model_fromParsed(username),
+            "userdata": manager.Manager.model_manager.get_model(username),
             "results": values,
         },
     )
@@ -235,7 +236,7 @@ async def post_check_runner():
 async def post_check_retriver():
     user_dict = {}
     links = list(url_helper())
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -415,7 +416,7 @@ async def message_checker_runner():
 
 async def message_check_retriver():
     links = list(url_helper())
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
     ) as c:
         for item in links:
@@ -494,7 +495,7 @@ async def purchase_checker_runner():
 async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -549,7 +550,7 @@ async def stories_checker_runner():
 @run
 async def stories_check_retriver():
     user_dict = {}
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -621,7 +622,7 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        async with sessionManager.OFSessionManager(
+        async with manager.Manager.aget_ofsession(
             backend="httpx", sem_count=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
