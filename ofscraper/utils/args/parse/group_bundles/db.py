@@ -12,6 +12,11 @@ from ofscraper.utils.args.parse.groups.content import (
     max_count_option,
     neg_filter_option,
 )
+from ofscraper.utils.args.parse.groups.media_filter import(
+media_type_option,
+media_filter_options_desc,
+media_filter_options_help
+)
 from ofscraper.utils.args.parse.arguments.content import db_posts_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
@@ -67,6 +72,12 @@ click.option(
         after_option,
         help=content_options_help,
     )
+    @click.option_group(
+    media_filter_options_desc,
+    media_type_option,
+    help=media_filter_options_help
+    )
+
     @user_select_options
     @userlist_options
     @advanced_userfilters_options

@@ -1,4 +1,5 @@
 import logging
+import time
 import arrow
 from rich.table import Table
 from rich import box
@@ -21,6 +22,8 @@ from ofscraper.db.operations_.media import (
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
+
 class DBManager():
     def __init__(self, username,model_id,remove_keys=None):
         self.username = username
@@ -76,10 +79,16 @@ class DBManager():
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
         medias=self.media
+        #downloaded
         if args.downloaded:
             medias=[media for media in medias  if media["downloaded"]]
         elif args.not_downloaded:
             medias=[media for media in medias if not media["downloaded"]]
+        #media type
+        if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
+            pass
+        else:
+            medias=[media for media in medias if media["mediatype"] in settings.get_mediatypes()]
         self.media=medias
 
 
@@ -156,5 +165,7 @@ class DBManager():
         self.media=deduped_dictionaries
     def print_media(self):
         self.get_all_media()
+        #allow logs to  print
+        time.sleep(1.5)
         self.print_dictionary_table()
         
