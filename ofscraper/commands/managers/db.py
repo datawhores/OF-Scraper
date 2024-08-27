@@ -94,6 +94,9 @@ class DBManager():
         log = logging.getLogger("db")
         add_other_handler(log)
         dictionaries=self.media
+        if len(self.media)==0:
+            self.log.error("All media filter out")
+            return
 
         # Remove specified keys from dictionaries (if provided)
         if self.remove_keys:
