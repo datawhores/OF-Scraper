@@ -62,13 +62,11 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       - name: push to image ghrc.io
         id: build-and-push2
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta2.outputs.tags }}
-          labels: ${{ steps.meta2.outputs.labels }}
-          cache-to: type=gha,mode=max
+          files: |
+            ./bake-daily.hcl
+            ${{ steps.meta2.outputs.bake-file }}
           push: true
 
   release_dockerhub:
@@ -121,13 +119,11 @@ jobs:
 
       - name: push to image Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v6
+        uses: docker/bake-action@v5
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-to: type=gha,mode=max
+          files: |
+            ./bake-daily.hcl
+            ${{ steps.meta.outputs.bake-file }}
           push: true
 
       - name: cosign-installer Docker Hub

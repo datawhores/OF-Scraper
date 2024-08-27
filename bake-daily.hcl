@@ -23,12 +23,14 @@ target "debian" {
         }
     platforms = ["linux/amd64", "linux/arm64"]
     tags = [
-        "${REGISTRY}:nightly-${size}-${GITHUB_SHA}",
-        "${REGISTRY}:nightly-${size}",
-        "${size == "minimal" ? "${REGISTRY}:nightly" : ""}"
+        "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly-${size}-${GITHUB_SHA}",
+        "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly-${size}",
+        "${size == "minimal" ? "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly" : ""}"
     ]
     cache-from=[ "type=gha" ]
     cache-to=[ "type=gha,mode=max" ]
+    labels = target.docker-metadata-action.labels
+    annotations = target.docker-metadata-action.annotations
 }
 
 target "alpine" {
@@ -45,10 +47,12 @@ target "alpine" {
     platforms = ["linux/amd64", "linux/arm64"]
     context = "."
     tags = [
-        "${REGISTRY}:nightly-python-${python_version}-alpine-${size}-${GITHUB_SHA}",
-        "${REGISTRY}:nightly-python-${python_version}-alpine-${size}",
-        "${size == "minimal" ? "${REGISTRY}:nightly-alpine" : ""}"
+        "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly-python-${python_version}-alpine-${size}-${GITHUB_SHA}",
+        "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly-python-${python_version}-alpine-${size}",
+        "${size == "minimal" ? "${target.docker-metadata-action.args.DOCKER_META_IMAGES}:nightly-alpine" : ""}"
     ]
     cache-from=[ "type=gha" ]
     cache-to=[ "type=gha,mode=max" ]
+    labels = target.docker-metadata-action.labels
+    annotations = target.docker-metadata-action.annotations
 }
