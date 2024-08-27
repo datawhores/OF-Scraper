@@ -57,8 +57,6 @@ def parse_args():
         args, command = result
         args["command"] = command
         d = AutoDotDict(args)
-        print(d)
-        quit()
         
         write_args.setArgs(d)
         return d

@@ -33,6 +33,8 @@ from ofscraper.utils.args.parse.groups.advanced_program import (
    update_profile_option
 )
 from ofscraper.utils.args.types.arrow import ArrowType
+import ofscraper.utils.args.parse.arguments.utils.date as date_helper
+
 
 
 
@@ -115,6 +117,7 @@ click.option(
     "--created-before",
     help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=ArrowType(),
+    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value)
 ),
 
    click.option(
@@ -129,6 +132,7 @@ click.option(
     "--posted-before",
     help="Process posts posted at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=ArrowType(),
+    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value)
 ),
 
         help=content_options_help,
