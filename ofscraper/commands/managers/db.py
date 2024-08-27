@@ -93,7 +93,7 @@ class DBManager():
         medias=medias[:settings.get_max_post_count()] if settings.get_max_post_count() else medias
         self.media=medias
     def sort_media(self):
-        medias=self.media.get_media
+        medias=self.media
         medias=sorted(medias,key=lambda x:arrow.get(x["posted_at"]),reverse=True)
         self.media=medias
 
