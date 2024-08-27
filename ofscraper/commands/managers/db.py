@@ -74,7 +74,8 @@ class DBManager():
                 stories=await get_stories_media(model_id=model_id, username=username)    
             self.media=timeline+messages+archived+streams+pinned+stories+highlights 
             self.dedup_by_media_id()  
-        self.filter_media()     
+        self.filter_media()   
+        self.sort_media()  
     def filter_media(self) :
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
@@ -90,6 +91,10 @@ class DBManager():
         else:
             medias=[media for media in medias if media["media_type"] in settings.get_mediatypes()]
         medias=medias[:settings.get_max_post_count()] if settings.get_max_post_count() else medias
+        self.media=medias
+    def sort_media(self):
+        medias=self.media.get_media
+        medias=sorted(medias,key=lambda x:arrow.get(x["posted_at"]),reverse=True)
         self.media=medias
 
 
