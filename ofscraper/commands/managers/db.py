@@ -113,7 +113,7 @@ class DBManager():
         for dictionary in dictionaries:
             keys.update(dictionary.keys())
 
-        table=Table(title="Database Table",box=box.HEAVY_EDGE)
+        table=Table(title="Database Table",box=box.HEAVY_EDGE,show_lines=True)
 
         #  log the header row with column names
         header_row = "|".join(f"{key:^20}" for key in keys)
