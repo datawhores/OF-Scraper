@@ -81,10 +81,10 @@ class DBManager():
         args=read_args.retriveArgs()
         medias=self.media
         #downloaded
-        if args.downloaded:
-            medias=[media for media in medias  if media["downloaded"]]
-        elif args.not_downloaded:
-            medias=[media for media in medias if not media["downloaded"]]
+        # if args.downloaded:
+        #     medias=[media for media in medias  if media["downloaded"]]
+        # elif args.not_downloaded:
+        #     medias=[media for media in medias if not media["downloaded"]]
         #media type
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass

@@ -159,14 +159,14 @@ SELECT media_id, post_id FROM medias where downloaded=(1) or unlocked=(1)
 getTimelineMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
@@ -174,7 +174,7 @@ FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 getPinnedMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
 """
@@ -182,21 +182,21 @@ FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
 getStoriesMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('stories') and model_id=(?)
 """
 getHighlightsMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('highlights') and model_id=(?)
 """
 getStreamsMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
+filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
 """
