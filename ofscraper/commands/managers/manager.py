@@ -91,19 +91,19 @@ class commmandManager:
                 description="Overall progress", total=2
             )
             data = {}
-            async with session:
+            async with session as c:
                 for ele in userdata:
                     try:
                         self._data_helper(ele)
                         with progress_utils.setup_activity_counter_live(revert=False):
-                            data.update(await funct(session, ele))
+                            data.update(await funct(c, ele))
                     except Exception as e:
                         log.traceback_(f"failed with exception: {e}")
                         log.traceback_(traceback.format_exc())
                         if isinstance(e, KeyboardInterrupt):
                             raise e
                     finally:
-                        session.reset_sleep()
+                        c.reset_sleep()
                         progress_updater.increment_user_activity()
             return data
 
