@@ -91,6 +91,11 @@ class DBManager():
             medias=[media for media in medias  if media["unlocked"]]
         elif args.locked:
             medias=[media for media in medias if not media["unlocked"]]
+        #preview
+        if args.preview:
+            medias=[media for media in medias  if media["preview"]]
+        elif args.not_preview:
+            medias=[media for media in medias if not media["preview"]]
         #size 
         if settings.get_size_max():
             medias=[media for media in medias  if media["size"] <= settings.get_size_max()]
