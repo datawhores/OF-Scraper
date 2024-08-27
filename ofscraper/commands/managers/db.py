@@ -149,7 +149,7 @@ class DBManager():
         for dictionary in dictionaries:
             dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
             dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
-            dictionary["size"]=f"{format_size(dictionary['size'] or 0)}/{dictionary['size']}"
+            dictionary["size"]=f"{dictionary['size']} [{format_size(dictionary['size'] or 0)}]"
         # Get the unique keys from all dictionaries
         keys = set()
         for dictionary in dictionaries:

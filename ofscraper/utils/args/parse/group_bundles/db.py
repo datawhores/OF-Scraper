@@ -110,8 +110,10 @@ click.option(
     @click.option_group(
     media_filter_options_desc,
     media_type_option,
-    max_size_option,
     min_size_option,
+    max_size_option,
+    length_min,
+    length_max,
     media_id_filter,
     help=media_filter_options_help
     )
