@@ -89,6 +89,7 @@ class DBManager():
             pass
         else:
             medias=[media for media in medias if media["media_type"] in settings.get_mediatypes()]
+        medias=medias[:settings.get_max_post_count()] if settings.get_max_post_count() else medias
         self.media=medias
 
 
