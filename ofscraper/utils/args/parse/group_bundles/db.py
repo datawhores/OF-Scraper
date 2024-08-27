@@ -61,6 +61,23 @@ click.option(
     default=False
 
 ))
+    @click.constraints.mutually_exclusive(
+    click.option(
+    "-ul",
+    "--unlocked",
+    "unlocked",
+    is_flag=True,
+    default=False
+
+),
+click.option(
+    "-l",
+    "--locked",
+    "locked",
+    is_flag=True,
+    default=False
+
+))
     @program_options
     @logging_options
     @click.option_group(

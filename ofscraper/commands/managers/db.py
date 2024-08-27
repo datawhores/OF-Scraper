@@ -86,11 +86,17 @@ class DBManager():
             medias=[media for media in medias  if media["downloaded"]]
         elif args.not_downloaded:
             medias=[media for media in medias if not media["downloaded"]]
+        #unlocked
+        if args.unlocked:
+            medias=[media for media in medias  if media["unlocked"]]
+        elif args.locked:
+            medias=[media for media in medias if not media["unlocked"]]
         # media type
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass
         else:
             medias=[media for media in medias if media["media_type"] in settings.get_mediatypes()]
+        #id filters
         if args.post_id:
             medias=[media for media in medias if media["post_id"] in args.post_id]
         if args.media_id:
