@@ -8,7 +8,6 @@ import ofscraper.utils.console as console
 
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.media import (
-    get_media_ids_downloaded_model,
     get_timeline_media,
     get_archived_media,
     get_messages_media,
@@ -40,6 +39,8 @@ class DBManager():
         stories=[]
         model_id=self.model_id
         username=self.username
+        log=logging.getLogger("shared")
+        log.
         if all(
         (
         "Timeline" in args.download_area,
@@ -69,23 +70,17 @@ class DBManager():
             if "Stories" in args.download_area:
                 stories=await get_stories_media(model_id=model_id, username=username)    
             self.media=timeline+messages+archived+streams+pinned+stories+highlights 
-            self.dedup_by_media_id()                                        
-        # if len(curr) == 0:
-        #     log.debug("Setting oldest date to zero because database is empty")
-        #     return 0
-        # curr_downloaded = await get_media_ids_downloaded_model(
-        #     model_id=model_id, username=username
-        # )
+            self.dedup_by_media_id()  
+        self.filter_media()     
+    def filter_media(self) :
+        args=read_args.retriveArgs()
+        if args.downloaded:
+            self.media=[media for media in self.media if media["downloaded"]]
+        elif args.not_downloaded:
+            self.media=[media for media in self.media if not media["downloaded"]]
 
-        # missing_items = list(
-        #     filter(
-        #         lambda x: x.get("downloaded") != 1
-        #         and x.get("post_id") not in curr_downloaded
-        #         and x.get("unlocked") != 0,
-        #         curr,
-        #     )
-        # )
 
+    
     def print_dictionary_table(self):
         """Prints a list of dictionaries as a table.
 
