@@ -3,6 +3,7 @@ import time
 import arrow
 from rich.table import Table
 from rich import box
+from humanfriendly import format_size
 
 
 import ofscraper.utils.console as console
@@ -148,6 +149,7 @@ class DBManager():
         for dictionary in dictionaries:
             dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
             dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
+            dictionary["size"]=f"{format_size(dictionary['size'] or 0)}/{dictionary['size']}"
         # Get the unique keys from all dictionaries
         keys = set()
         for dictionary in dictionaries:
