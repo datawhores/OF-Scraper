@@ -526,8 +526,8 @@ def get_all_medias_transition(
             )
             for row in data
         ]
-async def get_all_medias( model_id=None, username=None, conn=None, database_model=None, **kwargs):
-    return await get_all_medias_transition(model_id=model_id, username=username, conn=conn, database_model=database_model, **kwargs)
+async def get_all_medias( model_id=None, username=None, database_model=None, **kwargs):
+    return await get_all_medias_transition(model_id=model_id, username=username, database_model=database_model, **kwargs)
     
 
 
