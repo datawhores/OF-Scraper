@@ -18,7 +18,6 @@ posts_option = click.option(
     "posts",
     help="""
     Select areas for batch actions (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     """,
     default=[],
     required=False,
@@ -44,13 +43,44 @@ posts_option = click.option(
     multiple=True,
 )
 
+db_posts_option = click.option(
+    "-o",
+    "--posts",
+    "--post",
+    "posts",
+    help="""
+    Select areas for batch actions (comma or space separated)
+    """,
+    default=[],
+    required=False,
+    type=MultiChoicePost(
+        [
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Stories",
+            "Profile",
+            "Labels",
+            "Labels+",
+            "Labels*",
+        ],
+        case_sensitive=False,
+    ),
+    callback=StringSplitParseTitle,
+    multiple=True,
+)
+
+
 download_area_option = click.option(
     "-da",
     "--download-area",
     "download_area",
     help="""
     Perform download in specified areas (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     Has preference over --posts for download action
     """,
     default=[],
@@ -82,7 +112,6 @@ like_area_option = click.option(
     "--like-area",
     help="""
     Perform like/unlike in selected areas (comma or space separated).
-    Options: Archived, Timeline,fo Pinned, Labels, All
     Has preference over --posts for like action
     """,
     default=[],

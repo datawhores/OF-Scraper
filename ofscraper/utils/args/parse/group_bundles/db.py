@@ -11,8 +11,8 @@ from ofscraper.utils.args.parse.groups.content import (
     label_option,
     max_count_option,
     neg_filter_option,
-    posts_option,
 )
+from ofscraper.utils.args.parse.arguments.content import db_posts_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
@@ -58,7 +58,7 @@ click.option(
     @logging_options
     @click.option_group(
         content_options_desc,
-        posts_option,
+        db_posts_option,
         filter_option,
         neg_filter_option,
         max_count_option,
