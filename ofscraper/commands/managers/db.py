@@ -75,10 +75,12 @@ class DBManager():
     def filter_media(self) :
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
+        medias=self.media
         if args.downloaded:
-            self.media=[media for media in self.media if media["downloaded"]]
+            medias=[media for media in medias  if media["downloaded"]]
         elif args.not_downloaded:
-            self.media=[media for media in self.media if not media["downloaded"]]
+            medias=[media for media in medias if not media["downloaded"]]
+        self.media=medias
 
 
     
