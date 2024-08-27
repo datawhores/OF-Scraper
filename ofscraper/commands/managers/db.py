@@ -27,6 +27,7 @@ class DBManager():
         self.model_id=model_id
         self.media=[]
         self.remove_keys=remove_keys or ["link","linked"]
+        self.log=logging.getLogger("shared")
     @run_async
     async def get_all_media(self):
         args=read_args.retriveArgs()
@@ -39,8 +40,7 @@ class DBManager():
         stories=[]
         model_id=self.model_id
         username=self.username
-        log=logging.getLogger("shared")
-        log.
+        self.log.info(f"getting media for {self.username}_{self.model_id}")
         if all(
         (
         "Timeline" in args.download_area,
@@ -73,6 +73,7 @@ class DBManager():
             self.dedup_by_media_id()  
         self.filter_media()     
     def filter_media(self) :
+        self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
         if args.downloaded:
             self.media=[media for media in self.media if media["downloaded"]]
@@ -141,6 +142,7 @@ class DBManager():
         seen_media_ids = set()
         deduped_dictionaries = []
         dictionaries=self.media
+        self.log.info(f"deduping media for {self.username}_{self.model_id}")
         for dictionary in dictionaries:
             media_id = dictionary['media_id']
             if media_id not in seen_media_ids:
