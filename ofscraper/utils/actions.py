@@ -37,7 +37,7 @@ def reset_like():
 @free.space_checker
 def select_areas(action=None, reset=False):
     args = read_args.retriveArgs()
-    action = action or args.action
+    action = action or args.action or {}
     if "download" in action and reset:
         reset_download()
     elif ("like" or "unlike") in action and reset:
@@ -103,6 +103,8 @@ def set_download_area(action=None):
             selected = prompts.metadata_anon_areas_prompt()
         elif not args.anon and len(selected) == 0:
             selected = prompts.metadata_areas_prompt()
+    elif len(selected) == 0 and get_command() == "db":
+        selected = prompts.db_areas_prompt()
     elif len(selected) == 0 and "download" in action:
         selected = prompts.download_areas_prompt()
     args.download_area = selected

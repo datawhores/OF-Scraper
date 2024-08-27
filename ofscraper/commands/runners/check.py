@@ -20,7 +20,6 @@ import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal

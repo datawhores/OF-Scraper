@@ -20,7 +20,9 @@ import  ofscraper.runner.manager as manager
 
 
 def printStartValues():
-    print_start_log()
+    print_system_log()
+    print_args()
+    print_config()
     log = logging.getLogger("shared")
     try:
         print_start_message()
@@ -30,11 +32,14 @@ def printStartValues():
         log.error(traceback.format_exc())
     time.sleep(3)
 
+def printEndValues():
+    print_system_log()
+    print_start_message()
+    print_latest_version()
         
 
 
-def print_start_log():
-    args = read_args.retriveArgs()
+def print_system_log():
     log = logging.getLogger("shared")
     log_helpers.updateSenstiveDict(
         f"/{common_paths.get_username()}/", "/your_username/"
@@ -46,10 +51,7 @@ def print_start_log():
     # print info
     log.info(f"Log Level: {settings.get_log_level()}")
     log.info(f"version: {__version__}")
-    log.debug(args)
-    log.debug(f"sys argv:{sys.argv[1:]}")   if len(sys.argv) > 1 else None
     log.debug(platform.platform())
-    log.debug(config_file.open_config())
     log.info(f"config path: {str(common_paths.get_config_path())}")
     log.info(f"profile path: {str(common_paths.get_profile_path())}")
     log.info(f"log folder: {str(common_paths.get_config_home()/'logging')}")
@@ -57,6 +59,17 @@ def print_start_log():
     log.debug(f"python version {platform. python_version()}")
     log.debug(f"certifi {certifi.where()}")
     log.debug(f"number of threads available on system {system.getcpu_count()}")
+
+def print_args():
+    args = read_args.retriveArgs()
+    log = logging.getLogger("shared")
+    log.debug(args)
+    log.debug(f"sys argv:{sys.argv[1:]}")   if len(sys.argv) > 1 else None
+
+def print_config():
+    log = logging.getLogger("shared")
+    log.debug(config_file.open_config())
+
 
 
 def print_start_message():

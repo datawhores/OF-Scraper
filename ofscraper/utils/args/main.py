@@ -6,6 +6,8 @@ import ofscraper.utils.args.parse.commands.main as main
 import ofscraper.utils.args.parse.commands.manual as manual
 import ofscraper.utils.args.parse.commands.message as message
 import ofscraper.utils.args.parse.commands.metadata as metadata
+import ofscraper.utils.args.parse.commands.db as db
+
 import ofscraper.utils.args.parse.commands.paid as paid
 import ofscraper.utils.args.parse.commands.post as post
 import ofscraper.utils.args.parse.commands.story as story
@@ -42,6 +44,8 @@ def parse_args():
         main.program.add_command(paid.paid_check, "paid_check")
         main.program.add_command(post.post_check, "post_check")
         main.program.add_command(metadata.metadata, "metadata")
+        main.program.add_command(db.db, "db")
+
         filter_str = r"\b(multiprocessing|pipe_handle|fork|parent_pid)\b"
         result = main.program(
             standalone_mode=False,
