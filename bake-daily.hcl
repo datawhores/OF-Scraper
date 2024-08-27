@@ -9,9 +9,9 @@ variable "REGISTRY" {
 }
 
 group "default" {
-    targets = ["alpine", "ubuntu"]
+    targets = ["alpine", "debian"]
 }
-target "ubuntu" {
+target "debian" {
     matrix = {
         size = ["full", "minimal"]
     }
