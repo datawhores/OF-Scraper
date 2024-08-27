@@ -91,6 +91,11 @@ class DBManager():
             medias=[media for media in medias  if media["unlocked"]]
         elif args.locked:
             medias=[media for media in medias if not media["unlocked"]]
+        #size 
+        if settings.get_size_max():
+            medias=[media for media in medias  if media["size"] <= settings.get_size_max()]
+        if settings.get_size_min():
+            medias=[media for media in medias  if media["size"] >= settings.get_size_min()]
         # media type
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass

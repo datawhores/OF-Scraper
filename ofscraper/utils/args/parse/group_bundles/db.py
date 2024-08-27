@@ -15,6 +15,8 @@ from ofscraper.utils.args.parse.groups.content import (
 )
 from ofscraper.utils.args.parse.groups.media_filter import(
 media_type_option,
+max_size_option,
+min_size_option,
 media_filter_options_desc,
 media_id_filter,
 media_filter_options_help
@@ -96,6 +98,8 @@ click.option(
     @click.option_group(
     media_filter_options_desc,
     media_type_option,
+    max_size_option,
+    min_size_option,
     media_id_filter,
     help=media_filter_options_help
     )
