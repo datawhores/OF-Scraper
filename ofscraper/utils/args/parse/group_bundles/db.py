@@ -5,8 +5,6 @@ from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.groups.content import (
     content_options_help,
     content_options_desc,
-    after_option,
-    before_option,
     max_count_option,
     post_id_filter,
 )
@@ -34,6 +32,8 @@ from ofscraper.utils.args.parse.groups.advanced_program import (
    advanced_options_help,
    update_profile_option
 )
+from ofscraper.utils.args.types.arrow import ArrowType
+
 
 
 
@@ -103,8 +103,34 @@ click.option(
         db_posts_option,
         max_count_option,
         post_id_filter,
-        before_option,
-        after_option,
+        click.option(
+    "-cf",
+    "--created-after",
+    help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
+    click.option(
+    "-cb",
+    "--created-before",
+    help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
+   click.option(
+    "-pf",
+    "--posted-after",
+    help="Process posts posted or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
+    click.option(
+    "-pb",
+    "--posted-before",
+    help="Process posts posted at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
         help=content_options_help,
     )
     @click.option_group(
