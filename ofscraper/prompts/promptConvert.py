@@ -8,6 +8,8 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
+from  ofscraper.utils.live.clear import clear
+
 
 
 def wrapper(prompt_funct):
@@ -46,27 +48,29 @@ def wrapper(prompt_funct):
         altd_action = kwargs.pop("altd", None)
         additional_keys = kwargs.pop("additional_keys", {})
         action = [None]
-        prompt_ = prompt_funct(*args, **kwargs)
+        with prompt_live():
 
-        register_keys(prompt_, altx_action, altd_action, additional_keys, action)
+            prompt_ = prompt_funct(*args, **kwargs)
 
-        while True:
-            with prompt_live():
-                funct() if funct else None
-                out = prompt_.execute()
-                prompt_._default = get_default(prompt_funct, prompt_)
-                select = action[0]
-                action[0] = None
-                if select == "altx":
-                    prompt_ = altx_action(prompt_)
-                elif select == "altv":
-                    altv_action()
-                elif select == "altd":
-                    altd_action(prompt_)
-                elif additional_keys.get(select):
-                    prompt_ = additional_keys.get(select)(prompt_)
-                else:
-                    break
+            register_keys(prompt_, altx_action, altd_action, additional_keys, action)
+
+            while True:
+                    funct() if funct else None
+                    clear()
+                    out = prompt_.execute()
+                    prompt_._default = get_default(prompt_funct, prompt_)
+                    select = action[0]
+                    action[0] = None
+                    if select == "altx":
+                        prompt_ = altx_action(prompt_)
+                    elif select == "altv":
+                        altv_action()
+                    elif select == "altd":
+                        altd_action(prompt_)
+                    elif additional_keys.get(select):
+                        prompt_ = additional_keys.get(select)(prompt_)
+                    else:
+                        break
 
         return out
 
