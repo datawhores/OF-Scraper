@@ -1,5 +1,6 @@
 import logging
 import time
+import datetime
 import arrow
 from rich.table import Table
 from rich import box
@@ -102,6 +103,11 @@ class DBManager():
             medias=[media for media in medias  if (media["size"] or 0 )<= settings.get_size_max()]
         if settings.get_size_min():
             medias=[media for media in medias  if (media["size"] or 0 )>= settings.get_size_min()]
+        #length
+        if settings.get_max_length():
+            medias=[media for media in medias  if self._convert_seconds(media)<= settings.get_max_length()]
+        if settings.get_min_length():
+            medias=[media for media in medias  if self._convert_seconds(media)>= settings.get_min_length()]
         # media type
         if all(element in settings.get_mediatypes() for element in ["Audios", "Videos", "Images"]):
             pass
@@ -200,4 +206,10 @@ class DBManager():
         #allow logs to  print
         time.sleep(1.5)
         self.print_dictionary_table()
-        
+    def _convert_seconds(self,dictionary):
+        if not dictionary.get("duration"):
+            return 0
+        x= time.strptime(":".join(dictionary.get("duration").split(":")[-3:]),'%H:%M:%S')
+        curr_sec=datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
+        day_sec=int(dictionary.get("duration").split(":")[0])*3600
+        return curr_sec+day_sec

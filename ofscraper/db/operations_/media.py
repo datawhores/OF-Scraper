@@ -160,14 +160,14 @@ getTimelineMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
 
@@ -175,7 +175,7 @@ getPinnedMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
 """
 
@@ -183,28 +183,28 @@ getStoriesMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocke,duration
 FROM medias where LOWER(api_type) in ('stories') and model_id=(?)
 """
 getHighlightsMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('highlights') and model_id=(?)
 """
 getStreamsMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
 media_id, post_id, link, directory,
 filename, size, api_type, media_type,
-preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
+preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked,duration
 FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
 AND model_id = ?;  -- Prepared statement placeholder
