@@ -334,11 +334,11 @@ redownload_option = click.option(
     "-rd",
     "--redownload",
     "--re-download",
-    "re_download",
+    "redownload",
     help="Forces redownloading of all files in selected post types",
     default=False, 
     is_flag=True,
-    callback=lambda ctx, param, value: retry_helper.retry_callback(ctx, param, value)
+   
 )
 
 like_toggle_force = click.option(

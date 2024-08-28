@@ -1,7 +1,8 @@
 import arrow
-def retry_callback(ctx, param, value):
-    params = ctx.params
-    if value:
-        params["force_all"] = True
-        params["after"] = arrow.get(2000)
-        params["no_api_cache"]=True
+def retry_modifiy(ctx):
+     # Modify the URL based on certain conditions or ctx values
+    if ctx.params['redownload']:
+        ctx.params["force_all"] = True
+        ctx.params["after"] = arrow.get(2000)
+        ctx.params["no_api_cache"]=True
+    return ctx
