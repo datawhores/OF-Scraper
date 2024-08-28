@@ -1,6 +1,7 @@
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.utils.date as date_helper
+import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
 from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
@@ -313,7 +314,7 @@ force_all_option = click.option(
     "--dupe",
     "--dupe-all",
     "force_all",
-    help="Download all files regardless of database presence",
+    help="Download all found files regardless of database presence",
     default=False,
     is_flag=True,
 )
@@ -324,9 +325,20 @@ force_model_unique_option = click.option(
     "--dupe-model-unique",
     "--dupe-model",
     "--force_model_unique",
-    help="Only download files with media ids not present for the current model in the database",
+    help="Only download found files with media ids not present for the current model in the database",
     default=False,
     is_flag=True,
+)
+
+redownload_option = click.option(
+    "-rd",
+    "--redownload",
+    "--re-download",
+    "re_download",
+    help="Forces redownloading of all files in selected post types",
+    default=False, 
+    is_flag=True,
+    callback=lambda ctx, param, value: retry_helper.retry_callback(ctx, param, value)
 )
 
 like_toggle_force = click.option(
