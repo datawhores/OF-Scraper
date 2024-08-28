@@ -64,7 +64,6 @@ def manual_download(urls=None):
             with progress_utils.setup_activity_progress_live():
                 model_id = value.get("model_id")
                 username = value.get("username")
-                userdata = value.get("user_data")
                 medialist = value.get("media_list")
                 posts = value.get("post_list", [])
                 log.info(download_manual_str.format(username=username))
@@ -86,7 +85,7 @@ def manual_download(urls=None):
                     )
                 results.append(result)
 
-        final_action(url_dicts, results)
+        final_action( results)
 
     except Exception as e:
         log.traceback_(e)
@@ -94,7 +93,7 @@ def manual_download(urls=None):
         raise e
 
 
-def final_action(url_dicts, results):
+def final_action(results):
     normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
     final(
