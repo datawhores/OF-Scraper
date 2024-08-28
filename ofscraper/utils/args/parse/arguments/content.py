@@ -209,24 +209,69 @@ max_count_option = click.option(
     type=int,
 )
 
-item_sort_option = click.option(
-    "-it",
-    "--item-sort",
-    help="Changes media processing order before action (default: date asc or random)",
+media_sort_option = click.option(
+    "-mst",
+    "--media-sort",
+    help="""
+    \b
+    Changes media processing order before actions
+    Example: for download
+    """,
     default=None,
     required=False,
     type=click.Choice(
         [
             "random",
-            "text-asc",
-            "text-desc",
-            "date-asc",
-            "date-desc",
-            "filename-asc",
-            "filename-desc",
+            "text",
+            "text",
+            "date",
+            "filename",
         ]
     ),
 )
+
+media_desc_option = click.option(
+    "-mdc",
+    "--media-desc",
+    help=
+    """
+    \b
+    Sort the media list in descending order
+    Example: for download
+    """,
+    is_flag=True,
+    default=False,
+)
+
+post_sort_option = click.option(
+    "-pst",
+    "--post-sort",
+    help="""
+    \b
+    Changes post processing order before actions
+    Example: for like or unlike
+    """,
+    default="date",
+    required=False,
+    type=click.Choice(
+        [
+            "date",
+        ]
+    ),
+)
+
+post_desc_option = click.option(
+    "-pdc",
+    "--post-desc",
+    help=
+    """
+    Sort the post list in descending order
+    Example: for like or unlike
+    """,
+    is_flag=True,
+    default=False,
+)
+
 
 force_all_option = click.option(
     "-e",

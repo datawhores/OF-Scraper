@@ -148,27 +148,19 @@ def unviewable_media_filter(media):
 
 
 def final_media_sort(media):
-    item_sort = read_args.retriveArgs().item_sort
-    log.debug(f"Using download sort {item_sort}")
-    if not item_sort:
-        return media
-    elif item_sort == "date-asc":
-        return media
-    elif item_sort == "date-desc":
-        return list(reversed(media))
-    elif item_sort == "random":
+    media_sort = read_args.retriveArgs().media_sort
+    reversed=read_args.retriveArgs().media_desc
+    log.debug(f"Using download sort {media_sort}")
+    if media_sort == "random":
         random.shuffle(media)
-        return media
-    elif item_sort == "text-asc":
-        return sorted(media, key=lambda x: x.text)
-    elif item_sort == "text-desc":
-        return sorted(media, key=lambda x: x.text, reverse=True)
-    elif item_sort == "filename-asc":
-        return sorted(media, key=lambda x: x.filename)
-    elif item_sort == "filename-desc":
-        return sorted(media, key=lambda x: x.filename, reverse=True)
-
-
+    if media_sort=="date" and reversed:
+        media=reversed(media)
+    if media_sort == "text":
+        media=sorted(media, key=lambda x: x.text,reverse=reversed)
+    elif media_sort == "filename":
+        media=sorted(media, key=lambda x: x.filename,reverse=reversed)
+    return media
+   
 def previous_download_filter(medialist, username=None, model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous downloads")
@@ -305,14 +297,11 @@ def mass_msg_filter(media):
 
 
 def final_post_sort(post):
-    item_sort = read_args.retriveArgs().item_sort
-    log.debug(f"Using post sort {item_sort}")
-    if not item_sort:
-        pass
-    elif item_sort == "date-asc":
-        pass
-    elif item_sort == "date-desc":
+    post_sort = read_args.retriveArgs().post_sort
+    reversed = read_args.retriveArgs().post_desc
+    log.debug(f"Using post sort {post_sort}")
+    if post_sort == "date" and reversed:
         post = list(reversed(post))
-    elif item_sort == "random":
+    elif post_sort == "random":
         random.shuffle(post)
     return post
