@@ -174,13 +174,14 @@ class DBManager():
                     dictionary.pop(key, None)
 
         #modify dictionary
-        for dictionary in dictionaries:
+        for i,dictionary in enumerate(dictionaries):
             dictionary=OrderedDict(dictionary)
             dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
             dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
             size=dictionary.pop("size",None)
             dictionary["size"] = size
             dictionary["size_human"]=format_size(size or 0)
+            dictionaries[i]=dictionary
 
     
     def print_dictionary_table(self):
