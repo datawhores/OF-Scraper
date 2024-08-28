@@ -15,6 +15,8 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.console as console
+
 
 log = logging.getLogger("shared")
 
@@ -117,13 +119,12 @@ class ModelManager():
             if len(self.all_subs_dict) > 0:
                 break
             elif len(self.all_subs_dict) == 0:
-                print("No accounts found during scan")
+                console.get_console().print("[bold red]No accounts found during scan[/bold red]")
                 # give log time to process
                 time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
                 if not prompts.retry_user_scan():
                     raise Exception("Could not find any accounts on list")
                 
-
 
     def parsed_subscriptions_helper(self,reset=False):
         args = read_args.retriveArgs()
@@ -166,7 +167,7 @@ class ModelManager():
                 if not list(sorted(old_blacklist)) == list(
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                    print("Updating Models")
+                    console.get_console().print("Updating Models")
                     self.all_subs_retriver(rescan=True)
             elif choice == "list":
                 old_args = read_args.retriveArgs()
@@ -176,7 +177,7 @@ class ModelManager():
                 if not list(sorted(old_blacklist)) == list(
                     sorted(args.black_list)
                 ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                    print("Updating Models")
+                    console.get_console().print("Updating Models")
                     self.all_subs_retriver(rescan=True)
             elif choice == "select":
                 old_args = read_args.retriveArgs()
@@ -196,8 +197,8 @@ class ModelManager():
             if len(filterusername) != 0:
                 
                 return {ele.name:self._all_subs_dict[ele.name] for ele in sort.sort_models_helper(filterusername)}
-            print(
-                f"""You have filtered the user list to zero
+            console.get_console().print(
+                f"""[bold red]You have filtered the user list to zero[/bold red]
     Change the filter settings to continue
 
     Active userlist : {settings.get_userlist() or 'no blacklist'}
