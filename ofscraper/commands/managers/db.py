@@ -148,6 +148,8 @@ class DBManager():
             medias=sorted(medias,key=lambda x: x["media_id"],reverse=reversed)
         elif sort=="size":
             medias=sorted(medias,key=lambda x: x["size"] or 0,reverse=reversed)
+        elif sort=="length":
+            medias=sorted(medias,key=lambda x: self._convert_seconds(x),reverse=reversed)
         self.media=medias
 
 
