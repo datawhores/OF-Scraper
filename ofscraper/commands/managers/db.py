@@ -1,7 +1,7 @@
 import logging
 import time
 import datetime
-import pathlib
+from collections import OrderedDict
 import csv
 import arrow
 from rich.table import Table
@@ -175,6 +175,7 @@ class DBManager():
 
         #modify dictionary
         for dictionary in dictionaries:
+            dictionary=OrderedDict(dictionary)
             dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
             dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
             size=dictionary.pop("size",None)
