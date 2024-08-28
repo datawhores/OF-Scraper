@@ -119,7 +119,7 @@ jobs:
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
             source .venv/bin/activate
-            python3.11 -m pip install pyinstaller==6.4.0
+            python3.11 -m pip install pyinstaller==6.10.0
             /root/.local/bin/poetry install
             echo "ls files"
             ls .
@@ -179,7 +179,7 @@ jobs:
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
             source .venv/bin/activate
-            python3.11 -m pip install pyinstaller==6.4.0
+            python3.11 -m pip install pyinstaller==6.10.0
             /root/.local/bin/poetry install
             echo "ls files"
             ls .
@@ -245,7 +245,7 @@ jobs:
       - name: Install pyinstaller
         run: |
           .venv\Scripts\activate.bat
-          pip install pyinstaller==6.4.0
+          pip install pyinstaller==6.10.0
           .venv\Scripts\deactivate.bat
       - name: test ofscraper
         run: |
@@ -320,7 +320,7 @@ jobs:
       - name: Install pyinstaller
         run: |
           .venv\Scripts\activate.bat
-            pip install pyinstaller==6.4.0
+            pip install pyinstaller==6.10.0
           .venv\Scripts\deactivate.bat
       - name: test ofscraper
         run: ofscraper -h
@@ -391,7 +391,7 @@ jobs:
       - name: Install pyinstaller
         run: |
           source .venv/bin/activate
-          pip install pyinstaller==6.4.0
+          pip install pyinstaller==6.10.0
           deactivate
       - name: test ofscraper
         run: |
@@ -472,7 +472,7 @@ jobs:
       - name: Install pyinstaller
         run: |
           source .venv/bin/activate
-          pip install pyinstaller==6.4.0
+          pip install pyinstaller==6.10.0
           deactivate
       - name: test ofscraper
         run: |
