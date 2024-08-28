@@ -177,7 +177,9 @@ class DBManager():
         for dictionary in dictionaries:
             dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
             dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
-            dictionary["size_human"]=format_size(dictionary['size'] or 0)
+            size=dictionary.pop("size",None)
+            dictionary["size"] = size
+            dictionary["size_human"]=format_size(size or 0)
 
     
     def print_dictionary_table(self):
