@@ -23,7 +23,6 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
-import ofscraper.data.models.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
@@ -70,7 +69,7 @@ def process_download_cart():
             while not table.row_queue.empty():
                 try:
                     process_item()
-                except Exception:
+                except Exception as _:
                     # handle getting new downloads
                     None
             if len(cart_dict.keys()) > 0:
@@ -118,6 +117,7 @@ def process_item():
             post = media.post
             model_id = media.post.model_id
             username = media.post.username
+
             log.info(
                 f"Downloading individual media ({media.filename}) to disk for {username}"
             )
@@ -177,12 +177,8 @@ async def data_refill(media_id, post_id, target_name, model_id):
     else:
         return
     async for username, model_id, final_post_array in retriver():
-        if any(
-            x.id == media_id and x.postid == post_id and x.username == target_name
-            for x in await process_post_media(username, model_id, final_post_array)
-        ):
-            break
-
+        for x in await process_post_media(username, model_id, final_post_array):
+           ALL_MEDIA.update({"_".join([str(getattr(x, key)) for key in MEDIA_KEY]):x})
 def allow_check_dupes():
     args = read_args.retriveArgs()
     args.force_all = True

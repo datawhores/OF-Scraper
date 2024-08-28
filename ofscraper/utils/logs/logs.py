@@ -92,6 +92,8 @@ def print_latest_version():
 
             if re.search(new_version,__version__):  
                 log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
+            elif __version__ =="0.0.0":
+                log.error("[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]")
             elif ".dev" in __version__:
                 log.error("OF-Scraper up to date[/bold yellow]")
             else:
