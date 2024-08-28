@@ -272,6 +272,40 @@ post_desc_option = click.option(
     default=False,
 )
 
+db_sort_option = click.option(
+    "-dst",
+    "--db-sort",
+    help="""
+    \b
+    Changes order of table
+    """,
+    default="posted",
+    required=False,
+    type=click.Choice(
+        [
+            "posted",
+            "created",
+            "filename",
+            "length",
+            "postid",
+            "mediaid",
+            "size"
+        ]
+    ),
+)
+
+db_desc_option = click.option(
+    "-bdc",
+    "--db-desc",
+    help=
+    """
+    Change the sort order  of table to reverse
+    """,
+    is_flag=True,
+    default=False,
+)
+
+
 
 force_all_option = click.option(
     "-e",

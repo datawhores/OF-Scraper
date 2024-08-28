@@ -18,7 +18,7 @@ length_max,
 length_min,
 media_filter_options_help
 )
-from ofscraper.utils.args.parse.arguments.content import db_posts_option
+from ofscraper.utils.args.parse.arguments.content import db_posts_option, db_sort_option,db_desc_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
@@ -33,7 +33,6 @@ from ofscraper.utils.args.parse.groups.advanced_program import (
    update_profile_option
 )
 from ofscraper.utils.args.types.arrow import ArrowType
-import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 
 
 
@@ -105,6 +104,8 @@ click.option(
         db_posts_option,
         max_count_option,
         post_id_filter,
+        db_sort_option,
+        db_desc_option,
         click.option(
     "-cf",
     "--created-after",
