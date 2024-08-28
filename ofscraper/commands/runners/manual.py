@@ -97,12 +97,10 @@ def manual_download(urls=None):
 def final_action(url_dicts, results):
     normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
-    user_data = list(map(lambda x: x["user_data"], url_dicts.values()))
     final(
         normal_data=normal_data,
         scrape_paid_data=None,
         user_first_data=None,
-        userdata=user_data,
     )
 
 

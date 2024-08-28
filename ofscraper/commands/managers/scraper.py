@@ -49,7 +49,7 @@ class scraperManager(commmandManager):
                 else:
                     userdata, session = prepare()
                     normal_data = self._process_users_actions_normal(userdata, session)
-            final(normal_data, scrape_paid_data, user_first_data, userdata)
+            final(normal_data, scrape_paid_data, user_first_data)
 
     @exit.exit_wrapper
     @run_async

@@ -78,8 +78,7 @@ def process_download_cart():
                 results = ["check cart results"] + list(
                     map(lambda x: x["results"], cart_dict.values())
                 )
-                userdata = list(map(lambda x: x["userdata"], cart_dict.values()))
-                final(normal_data=results, userdata=userdata)
+                final(normal_data=results)
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
