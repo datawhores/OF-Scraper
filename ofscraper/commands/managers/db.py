@@ -262,7 +262,7 @@ class DBManager():
                     type_hints[key] = type(value)
         # Create a CSV writer
         filename=read_args.retriveArgs().export.with_suffix(".csv")
-        filename.parent.mkdir(parents=True,exists_ok=True)
+        filename.parent.mkdir(parents=True,exist_ok=True)
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=header)
 
