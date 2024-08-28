@@ -8,10 +8,10 @@ import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
+import  ofscraper.runner.manager as manager2
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download
-import ofscraper.data.models.selector as selector
+import ofscraper.data.models.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.constants as constants
@@ -27,6 +27,8 @@ from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
 from ofscraper.actions.actions.download.utils.text import textDownloader
+import  ofscraper.runner.manager as manager
+
 
 
 def manual_download(urls=None):
@@ -62,7 +64,6 @@ def manual_download(urls=None):
             with progress_utils.setup_activity_progress_live():
                 model_id = value.get("model_id")
                 username = value.get("username")
-                userdata = value.get("user_data")
                 medialist = value.get("media_list")
                 posts = value.get("post_list", [])
                 log.info(download_manual_str.format(username=username))
@@ -80,11 +81,11 @@ def manual_download(urls=None):
                     result = textDownloader(posts, username)
                 else:
                     result, _ = download.download_process(
-                        userdata, medialist, posts=None
+                        username,model_id, medialist, posts=None
                     )
                 results.append(result)
 
-        final_action(url_dicts, results)
+        final_action( results)
 
     except Exception as e:
         log.traceback_(e)
@@ -92,15 +93,13 @@ def manual_download(urls=None):
         raise e
 
 
-def final_action(url_dicts, results):
+def final_action(results):
     normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
-    user_data = list(map(lambda x: x["user_data"], url_dicts.values()))
     final(
         normal_data=normal_data,
         scrape_paid_data=None,
         user_first_data=None,
-        userdata=user_data,
     )
 
 
@@ -111,7 +110,7 @@ def allow_manual_dupes():
 
 
 def set_user_data(url_dicts):
-    selector.set_data_all_subs_dict(
+    manager.Manager.model_manager.set_data_all_subs_dict(
         [nested_dict.get("username") for nested_dict in url_dicts.values()]
     )
 
@@ -241,7 +240,7 @@ async def paid_failback(post_id, model_id, username):
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:

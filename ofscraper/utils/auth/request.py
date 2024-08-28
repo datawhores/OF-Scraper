@@ -21,12 +21,14 @@ from urllib.parse import urlparse
 
 import arrow
 
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+import  ofscraper.runner.manager as manager
+
+
 
 curr_auth = None
 last_check = None
@@ -88,7 +90,7 @@ def get_request_auth_dynamic_rule_manual():
 
 def get_request_auth_generic():
     logging.getLogger("shared").debug("getting new signature with generic")
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -105,7 +107,7 @@ def get_request_auth_generic():
 def get_request_auth_deviint():
     logging.getLogger("shared").debug("getting new signature with deviint")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -122,7 +124,7 @@ def get_request_auth_deviint():
 def get_request_auth_datawhores():
     logging.getLogger("shared").debug("getting new signature with datawhores")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -139,7 +141,7 @@ def get_request_auth_datawhores():
 def get_request_auth_xagler():
     logging.getLogger("shared").debug("getting new signature with xagler")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -156,7 +158,7 @@ def get_request_auth_xagler():
 def get_request_auth_rafa():
     logging.getLogger("shared").debug("getting new signature with rafa")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -173,7 +175,7 @@ def get_request_auth_rafa():
 def get_request_auth_riley():
     logging.getLogger("shared").debug("getting new signature with riley")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -190,7 +192,7 @@ def get_request_auth_riley():
 def get_request_auth_digitalcriminals():
     logging.getLogger("shared").debug("getting new signature with digitalcriminals")
 
-    with sessionManager.sessionManager(
+    with manager.Manager.get_session(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),

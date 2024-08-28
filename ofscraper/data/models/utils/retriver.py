@@ -1,3 +1,4 @@
+import logging
 import ofscraper.data.api.me as me
 import ofscraper.data.api.subscriptions.individual as individual
 import ofscraper.data.api.subscriptions.lists as lists
@@ -59,6 +60,7 @@ async def get_via_individual():
     )
     models_objects = list(map(lambda x: models.Model(x), out))
     if len(models_objects) == 0:
+        logging.getLogger("shared").warning("[bold red]No models were found[/bold red]")
         raise Exception("Provided usernames did not yield any valid models")
     return models_objects
 

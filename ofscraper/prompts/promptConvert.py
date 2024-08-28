@@ -8,65 +8,69 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
+from  ofscraper.utils.live.clear import clear
+
 
 
 def wrapper(prompt_funct):
     def inner(*args, **kwargs):
         # setup
-        with prompt_live():
-            long_message = functools.partial(
-                handle_skip_helper,
-                kwargs.pop("long_message", None)
-                or get_default_instructions(prompt_funct),
-            )
-            funct = kwargs.pop("call", None)
-            kwargs["long_instruction"] = "\n".join(
-                list(
-                    filter(
-                        lambda x: len(x) > 0,
-                        [
-                            inspect.cleandoc(
-                                f"{kwargs.pop('option_instruction', '')}".upper()
-                            ),
-                            inspect.cleandoc(
-                                f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}".upper()
-                            ),
-                            inspect.cleandoc(
-                                f"{kwargs.pop('more_instruction', '') or kwargs.pop('more_instructions', '')}".upper()
-                            ),
-                        ],
-                    )
+        long_message = functools.partial(
+            handle_skip_helper,
+            kwargs.pop("long_message", None)
+            or get_default_instructions(prompt_funct),
+        )
+        funct = kwargs.pop("call", None)
+        kwargs["long_instruction"] = "\n".join(
+            list(
+                filter(
+                    lambda x: len(x) > 0,
+                    [
+                        inspect.cleandoc(
+                            f"{kwargs.pop('option_instruction', '')}".upper()
+                        ),
+                        inspect.cleandoc(
+                            f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}".upper()
+                        ),
+                        inspect.cleandoc(
+                            f"{kwargs.pop('more_instruction', '') or kwargs.pop('more_instructions', '')}".upper()
+                        ),
+                    ],
                 )
             )
-            kwargs["message"] = (
-                f"{kwargs.get('message')}" if kwargs.get("message") else ""
-            )
+        )
+        kwargs["message"] = (
+            f"{kwargs.get('message')}" if kwargs.get("message") else ""
+        )
 
-            altv_action = kwargs.pop("altv", None) or long_message
-            altx_action = kwargs.pop("altx", None)
-            altd_action = kwargs.pop("altd", None)
-            additional_keys = kwargs.pop("additional_keys", {})
-            action = [None]
+        altv_action = kwargs.pop("altv", None) or long_message
+        altx_action = kwargs.pop("altx", None)
+        altd_action = kwargs.pop("altd", None)
+        additional_keys = kwargs.pop("additional_keys", {})
+        action = [None]
+        with prompt_live():
+
             prompt_ = prompt_funct(*args, **kwargs)
 
             register_keys(prompt_, altx_action, altd_action, additional_keys, action)
 
             while True:
-                funct() if funct else None
-                out = prompt_.execute()
-                prompt_._default = get_default(prompt_funct, prompt_)
-                select = action[0]
-                action[0] = None
-                if select == "altx":
-                    prompt_ = altx_action(prompt_)
-                elif select == "altv":
-                    altv_action()
-                elif select == "altd":
-                    altd_action(prompt_)
-                elif additional_keys.get(select):
-                    prompt_ = additional_keys.get(select)(prompt_)
-                else:
-                    break
+                    funct() if funct else None
+                    clear()
+                    out = prompt_.execute()
+                    prompt_._default = get_default(prompt_funct, prompt_)
+                    select = action[0]
+                    action[0] = None
+                    if select == "altx":
+                        prompt_ = altx_action(prompt_)
+                    elif select == "altv":
+                        altv_action()
+                    elif select == "altd":
+                        altd_action(prompt_)
+                    elif additional_keys.get(select):
+                        prompt_ = additional_keys.get(select)(prompt_)
+                    else:
+                        break
 
         return out
 

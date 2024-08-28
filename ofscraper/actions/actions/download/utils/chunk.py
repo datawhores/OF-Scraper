@@ -57,7 +57,9 @@ def get_ideal_chunk_size(total_size, curr_file):
         min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT")),
         constants.getattr("MIN_CHUNK_SIZE"),
     )
-    if ideal_chunk_size // 16 > settings.get_download_limit() or float("inf"):
+    if settings.get_download_limit()==0:
+        pass
+    elif ideal_chunk_size // 16 > settings.get_download_limit() or float("inf"):
         ideal_chunk_size = settings.get_download_limit()
     ideal_chunk_size = ideal_chunk_size - (ideal_chunk_size % 1024)
     return ideal_chunk_size

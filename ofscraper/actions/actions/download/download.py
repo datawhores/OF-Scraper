@@ -19,9 +19,7 @@ import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.string import format_safe
 
 
-async def downloader(ele=None, posts=None, media=None, **kwargs):
-    model_id = ele.id
-    username = ele.name
+async def downloader(username=None,model_id=None, posts=None, media=None, **kwargs):
     download_str = download_activity_str.format(username=username)
     path_str = format_safe(
         f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",
@@ -37,18 +35,20 @@ async def downloader(ele=None, posts=None, media=None, **kwargs):
         download_activity_str.format(username=username)
     )
     progress_updater.update_activity_task(description="")
-    data, values = await download_process(ele, media, posts=posts)
+    data, values = await download_process(username,model_id, media, posts=posts)
     return data, values
 
 
 @run_async
-async def download_process(userdata, medialist, posts=None):
-    username = userdata["username"] if isinstance(userdata, dict) else userdata.name
-    model_id = userdata["id"] if isinstance(userdata, dict) else userdata.id
+async def download_process(username,model_id, medialist=None, posts=None):
     data, values = await download_picker(username, model_id, medialist, posts)
-    post_user_script(userdata, medialist, posts=None)
+    post_user_script(username, medialist, posts=None)
     return data, values
 
+@run_async
+async def download_model_deleted_process(username,model_id, medialist=None, posts=None):
+    data, values = await download_picker(username, model_id, medialist, posts)
+    return data, values
 
 async def download_picker(username, model_id, medialist, posts):
     if (

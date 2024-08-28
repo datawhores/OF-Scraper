@@ -15,7 +15,11 @@ from ofscraper.utils.args.parse.arguments.content import (
     posts_option,
     timed_only_option,
     post_id_filter,
-    item_sort_option,
+    media_sort_option,
+    media_desc_option,
+    post_sort_option,
+    post_desc_option
+    
 )
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
@@ -120,6 +124,7 @@ It also uses a new filename if one is available
             "--scrape-paid",
             help="Similar to --metadata, but only for --scrape paid",
             metavar="METADATA MODE",
+            type=click.Choice(METADATA_OPTIONS),
         ),
         max_count_option,
         label_option,
@@ -127,7 +132,10 @@ It also uses a new filename if one is available
         after_option,
         mass_msg_option,
         post_id_filter,
-        item_sort_option,
+        media_sort_option,
+        media_desc_option,
+        post_sort_option,
+        post_desc_option,
         timed_only_option,
         force_all_option,
         force_model_unique_option,

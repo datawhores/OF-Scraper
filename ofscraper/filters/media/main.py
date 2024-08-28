@@ -6,6 +6,8 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.filters.media.utils.trace import trace_log_media, trace_log_post
+from ofscraper.utils.args.accessors.command import get_command
+
 
 log = logging.getLogger("shared")
 
@@ -13,17 +15,17 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media, username, model_id):
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" in actions or scrape_paid:
-        return filterMediaFinalDownload(media, username, model_id)
-    elif read_args.retriveArgs().command == "metadata":
+    if get_command() == "metadata":
         return filterMediaFinalMetadata(media, username, model_id)
+    elif "download" in actions or scrape_paid:
+        return filterMediaFinalDownload(media, username, model_id)
     else:
         log.debug("Skipping filtering because download/metadata not in actions")
         return media
 
 
 def filterMediaFinalMetadata(media, username, model_id):
-    log.info(f"finalizing media filtering {username} {model_id} for metadata")
+    log.info(f"finalizing media filtering username:{username} model_id:{model_id} for metadata")
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -45,7 +47,7 @@ def filterMediaFinalMetadata(media, username, model_id):
 
 
 def filterMediaFinalDownload(media, username, model_id):
-    log.info(f"finalizing media filtering {username} {model_id} for download")
+    log.info(f"finalizing media filtering username:{username} model_id: {model_id} for download")
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -75,10 +77,10 @@ def filtermediaAreas(media, **kwargs):
 
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if "download" in actions or scrape_paid:
-        return filterMediaAreasDownload(media)
-    elif read_args.retriveArgs().command == "metadata":
+    if get_command()== "metadata":
         return filterMediaAreasMetadata(media)
+    elif "download" in actions or scrape_paid:
+        return filterMediaAreasDownload(media)
     else:
         log.debug("Skipping filtering because download/metadata not in actions")
         return media

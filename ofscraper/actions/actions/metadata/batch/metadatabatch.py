@@ -10,7 +10,6 @@ import aioprocessing
 from aioprocessing import AioPipe
 
 import ofscraper.actions.utils.globals as common_globals
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -42,6 +41,7 @@ from ofscraper.actions.actions.metadata.batch.utils.consumer import consumer
 from ofscraper.actions.utils.threads import handle_threads, start_threads
 from ofscraper.actions.actions.metadata.batch.utils.queue import queue_process
 from ofscraper.actions.actions.metadata.utils.desc import desc
+import  ofscraper.runner.manager as manager
 
 
 platform_name = platform.system()
@@ -54,7 +54,7 @@ def process_dicts(username, model_id, filtered_medialist):
         common_globals.main_globals()
         download_log_clear_helper()
         with progress_utils.setup_metadata_progress_live():
-            if not read_args.retriveArgs().item_sort:
+            if not read_args.retriveArgs().media_sort:
                 random.shuffle(filtered_medialist)
 
             mediasplits = get_mediasplits(filtered_medialist)
@@ -83,7 +83,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         stdout_logqueues[i][1],
                         connect_tuples[i][1],
                         dates.getLogDate(),
-                        selector.get_ALL_SUBS_DICT(),
+                        manager.Manager.model_manager.all_subs_dict,
                         read_args.retriveArgs(),
                     ),
                 )

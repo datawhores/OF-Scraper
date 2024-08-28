@@ -20,11 +20,9 @@ import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
-import ofscraper.data.models.selector as selector
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
@@ -32,7 +30,6 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.data.api.common.check import read_check, reset_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
@@ -43,11 +40,14 @@ from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_ids_downloaded,
 )
-from ofscraper.actions.actions.download.utils.text import textDownloader
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
+from ofscraper.utils.args.accessors.command import get_command
+import  ofscraper.runner.manager as manager
+
+
 
 
 log = logging.getLogger("shared")
@@ -69,7 +69,7 @@ def process_download_cart():
             while not table.row_queue.empty():
                 try:
                     process_item()
-                except Exception:
+                except Exception as _:
                     # handle getting new downloads
                     None
             if len(cart_dict.keys()) > 0:
@@ -78,8 +78,7 @@ def process_download_cart():
                 results = ["check cart results"] + list(
                     map(lambda x: x["results"], cart_dict.values())
                 )
-                userdata = list(map(lambda x: x["userdata"], cart_dict.values()))
-                final(normal_data=results, userdata=userdata)
+                final(normal_data=results)
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
@@ -113,10 +112,11 @@ def process_item():
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
-            selector.set_data_all_subs_dict(username)
+            manager.Manager.model_manager.set_data_all_subs_dict(username)
             post = media.post
             model_id = media.post.model_id
             username = media.post.username
+
             log.info(
                 f"Downloading individual media ({media.filename}) to disk for {username}"
             )
@@ -152,7 +152,7 @@ def update_globals(model_id, username, post, media, values):
             "media": [],
             "username": username,
             "model_id": model_id,
-            "userdata": selector.get_model_fromParsed(username),
+            "userdata": manager.Manager.model_manager.get_model(username),
             "results": values,
         },
     )
@@ -162,27 +162,22 @@ def update_globals(model_id, username, post, media, values):
 
 @run
 async def data_refill(media_id, post_id, target_name, model_id):
-    args = read_args.retriveArgs()
-    if args.command == "msg_check":
+    if get_command() == "msg_check":
         reset_message_set(model_id)
         retriver = message_check_retriver
-    elif args.command == "paid_check":
+    elif get_command()  == "paid_check":
         reset_paid_set(model_id)
         retriver = purchase_check_retriver
-    elif args.command == "story_check":
+    elif get_command()  == "story_check":
         retriver = stories_check_retriver
-    elif args.command == "post_check":
+    elif get_command()  == "post_check":
         reset_time_line_cache(model_id)
         retriver = post_check_retriver
     else:
         return
     async for username, model_id, final_post_array in retriver():
-        if any(
-            x.id == media_id and x.postid == post_id and x.username == target_name
-            for x in await process_post_media(username, model_id, final_post_array)
-        ):
-            break
-
+        for x in await process_post_media(username, model_id, final_post_array):
+           ALL_MEDIA.update({"_".join([str(getattr(x, key)) for key in MEDIA_KEY]):x})
 def allow_check_dupes():
     args = read_args.retriveArgs()
     args.force_all = True
@@ -193,17 +188,16 @@ def get_areas():
 
 
 def checker():
-    args = read_args.retriveArgs()
     check_auth()
     allow_check_dupes()
     try:
-        if args.command == "post_check":
+        if get_command()  == "post_check":
             post_checker()
-        elif args.command == "msg_check":
+        elif get_command() == "msg_check":
             message_checker()
-        elif args.command == "paid_check":
+        elif get_command()  == "paid_check":
             purchase_checker()
-        elif args.command == "story_check":
+        elif get_command()  == "story_check":
             stories_checker()
     except Exception as E:
         log.traceback_(E)
@@ -236,7 +230,7 @@ async def post_check_runner():
 async def post_check_retriver():
     user_dict = {}
     links = list(url_helper())
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -416,7 +410,7 @@ async def message_checker_runner():
 
 async def message_check_retriver():
     links = list(url_helper())
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
     ) as c:
         for item in links:
@@ -495,7 +489,7 @@ async def purchase_checker_runner():
 async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -550,7 +544,7 @@ async def stories_checker_runner():
 @run
 async def stories_check_retriver():
     user_dict = {}
-    async with sessionManager.OFSessionManager(
+    async with manager.Manager.aget_ofsession(
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -622,7 +616,7 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        async with sessionManager.OFSessionManager(
+        async with manager.Manager.aget_ofsession(
             backend="httpx", sem_count=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)

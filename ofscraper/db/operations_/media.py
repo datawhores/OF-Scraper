@@ -159,29 +159,52 @@ SELECT media_id, post_id FROM medias where downloaded=(1) or unlocked=(1)
 getTimelineMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
+"""
+
+getPinnedMedia = """
+SELECT
+media_id,post_id,link,directory
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
+FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
+"""
+
+getStoriesMedia = """
+SELECT
+media_id,post_id,link,directory
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocke,duration
+FROM medias where LOWER(api_type) in ('stories') and model_id=(?)
+"""
+getHighlightsMedia = """
+SELECT
+media_id,post_id,link,directory
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
+FROM medias where LOWER(api_type) in ('highlights') and model_id=(?)
 """
 getStreamsMedia = """
 SELECT
 media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
+filename,size,api_type,media_type,
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
 media_id, post_id, link, directory,
 filename, size, api_type, media_type,
-preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
+preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked,duration
 FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
 AND model_id = ?;  -- Prepared statement placeholder
@@ -503,6 +526,9 @@ def get_all_medias_transition(
             )
             for row in data
         ]
+async def get_all_medias( model_id=None, username=None, database_model=None, **kwargs):
+    return await get_all_medias_transition(model_id=model_id, username=username, database_model=database_model, **kwargs)
+    
 
 
 @wrapper.operation_wrapper_async
@@ -546,9 +572,55 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         ]
 
 
-run
 
+@run
+@wrapper.operation_wrapper_async
+def get_pinned_media(conn=None, model_id=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(getPinnedMedia, [model_id])
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
+            for ele in data
+        ]
 
+@run
+@wrapper.operation_wrapper_async
+def get_stories_media(conn=None, model_id=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(getStoriesMedia, [model_id])
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
+            for ele in data
+        ]
+@run
+@wrapper.operation_wrapper_async
+def get_highlights_media(conn=None, model_id=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(getHighlightsMedia, [model_id])
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(
+                ele,
+                posted_at=arrow.get(
+                    ele["posted_at"] or ele["created_at"] or 0
+                ).float_timestamp,
+            )
+            for ele in data
+        ]
+        
+@run
 @wrapper.operation_wrapper_async
 def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:

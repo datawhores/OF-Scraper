@@ -253,6 +253,7 @@ class MainDownloadManager(DownloadManager):
             async for chunk in r.iter_chunked(chunk_size):
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)
+            pass
         except Exception as E:
             raise E
         finally:

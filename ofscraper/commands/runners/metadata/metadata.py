@@ -14,8 +14,7 @@ r"""
 import logging
 
 import ofscraper.data.api.init as init
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
-import ofscraper.data.models.selector as userselector
+import  ofscraper.runner.manager as manager2
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
@@ -26,6 +25,8 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.checkers import check_auth
 from ofscraper.commands.managers.metadata import metadataCommandManager
+import  ofscraper.runner.manager as manager
+
 
 log = logging.getLogger("shared")
 
@@ -39,9 +40,10 @@ def metadata():
         scrape_paid_data = []
         userfirst_data = []
         normal_data = []
+        userdata = []
         if read_args.retriveArgs().scrape_paid:
             scrape_paid_data = metaCommandManager.metadata_paid_all()
-        if not metadataCommandManager.run_metadata:
+        if not metaCommandManager.run_metadata:
             pass
 
         elif not read_args.retriveArgs().users_first:
@@ -67,8 +69,8 @@ def prepare():
     profile_tools.print_current_profile()
     actions.select_areas()
     init.print_sign_status()
-    userdata = userselector.getselected_usernames(rescan=False)
-    session = sessionManager.OFSessionManager(
+    userdata =manager.Manager.model_manager.getselected_usernames(rescan=False)
+    session = manager2.Manager.aget_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )

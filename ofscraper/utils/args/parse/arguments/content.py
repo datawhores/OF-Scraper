@@ -18,7 +18,6 @@ posts_option = click.option(
     "posts",
     help="""
     Select areas for batch actions (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     """,
     default=[],
     required=False,
@@ -44,13 +43,41 @@ posts_option = click.option(
     multiple=True,
 )
 
+db_posts_option = click.option(
+    "-o",
+    "--posts",
+    "--post",
+    "posts",
+    help="""
+    Select areas for batch actions (comma or space separated)
+    """,
+    default=[],
+    required=False,
+    type=MultiChoicePost(
+        [
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Stories",
+            "Profile",
+        ],
+        case_sensitive=False,
+    ),
+    callback=StringSplitParseTitle,
+    multiple=True,
+)
+
+
 download_area_option = click.option(
     "-da",
     "--download-area",
     "download_area",
     help="""
     Perform download in specified areas (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     Has preference over --posts for download action
     """,
     default=[],
@@ -82,7 +109,6 @@ like_area_option = click.option(
     "--like-area",
     help="""
     Perform like/unlike in selected areas (comma or space separated).
-    Options: Archived, Timeline,fo Pinned, Labels, All
     Has preference over --posts for like action
     """,
     default=[],
@@ -98,7 +124,12 @@ like_area_option = click.option(
 filter_option = click.option(
     "-ft",
     "--filter",
-    help="Filter posts by regex (case-sensitive if uppercase characters included)",
+    help="""
+    \b
+    Filter posts by regex 
+    (case-sensitive if uppercase characters included)
+    uses raw python string
+    """,
     default=[".*"],
     required=False,
     callback=StringTupleList,
@@ -108,7 +139,12 @@ filter_option = click.option(
 neg_filter_option = click.option(
     "-nf",
     "--neg-filter",
-    help="Filter posts to exclude those matching regex (case-styensitive if uppercase characters included)",
+    help="""
+    \b
+    Filter posts to exclude those matching regex 
+    (case-styensitive if uppercase characters included)
+    uses raw python string
+    """,
     default=[],
     required=False,
     type=str,
@@ -150,8 +186,8 @@ text_option = click.option(
     ),
     callback=StringSplitParseTitle,
     help="""
-    Download Text files in addition to all media from --mediatype or filter in the config
-    Text files are based on the --mediatype option
+    Download Text files
+    options are based on the --mediatype option
     """,
     default="",
 )
@@ -173,24 +209,103 @@ max_count_option = click.option(
     type=int,
 )
 
-item_sort_option = click.option(
-    "-it",
-    "--item-sort",
-    help="Changes media processing order before action (default: date asc or random)",
+media_sort_option = click.option(
+    "-mst",
+    "--media-sort",
+    help="""
+    \b
+    Changes media processing order before actions
+    Example: for download
+    """,
     default=None,
     required=False,
     type=click.Choice(
         [
             "random",
-            "text-asc",
-            "text-desc",
-            "date-asc",
-            "date-desc",
-            "filename-asc",
-            "filename-desc",
+            "text",
+            "text",
+            "date",
+            "filename",
         ]
     ),
 )
+
+media_desc_option = click.option(
+    "-mdc",
+    "--media-desc",
+    help=
+    """
+    \b
+    Sort the media list in descending order
+    Example: for download
+    """,
+    is_flag=True,
+    default=False,
+)
+
+post_sort_option = click.option(
+    "-pst",
+    "--post-sort",
+    help="""
+    \b
+    Changes post processing order before actions
+    Example: for like or unlike
+    """,
+    default="date",
+    required=False,
+    type=click.Choice(
+        [
+            "date",
+        ]
+    ),
+)
+
+post_desc_option = click.option(
+    "-pdc",
+    "--post-desc",
+    help=
+    """
+    Sort the post list in descending order
+    Example: for like or unlike
+    """,
+    is_flag=True,
+    default=False,
+)
+
+db_sort_option = click.option(
+    "-dst",
+    "--db-sort",
+    help="""
+    \b
+    Changes order of table
+    """,
+    default="posted",
+    required=False,
+    type=click.Choice(
+        [
+            "posted",
+            "created",
+            "filename",
+            "length",
+            "postid",
+            "mediaid",
+            "size"
+        ]
+    ),
+)
+
+db_desc_option = click.option(
+    "-bdc",
+    "--db-asc",
+    help=
+    """
+    Change the sort order  of table to ascending
+    """,
+    is_flag=True,
+    default=False,
+)
+
+
 
 force_all_option = click.option(
     "-e",

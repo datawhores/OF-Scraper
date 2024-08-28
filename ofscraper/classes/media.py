@@ -11,12 +11,13 @@ from mpegdash.parser import MPEGDASHParser
 from async_property import async_cached_property
 
 import ofscraper.classes.base as base
-import ofscraper.classes.sessionmanager.ofsession as sessionManager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.utils.level as log_helpers
+import  ofscraper.runner.manager as manager2
+
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -49,10 +50,11 @@ class Media(base.base):
     @property
     def media_source(self):
         return self._media.get("source", {})
+    
 
     @property
     def files_source(self):
-        return self._media.get("files", {}).get("source", {})
+        return {key: (inner_dict or {}).get("url") for key, inner_dict in self._media.get("files",{}).items()}
 
     @property
     def quality(self):
@@ -88,20 +90,27 @@ class Media(base.base):
         if self.protected is True:
             return None
         elif self._final_url:
-            None
+            return self._final_url
         elif self.responsetype == "stories" or self.responsetype == "highlights":
-            self._final_url = self.files_source.get("url")
+            self._final_url = self.files_source.get("full")
         elif self.responsetype == "profile":
             self._final_url = self._media.get("url")
         else:
-            self._final_url = self._url_source_helper()
+            self._final_url = self._url_quality_picker()
         return self._final_url
 
-    def _url_source_helper(self):
+    def _url_quality_picker(self):
         quality = self.normal_quality_helper()
-        if quality == "source":
-            return self._media.get("source", {}).get("source")
-        return self._media.get("videoSources", {}).get(quality)
+        out=None
+        if quality != "source":
+            out=self._media.get("videoSources", {}).get(quality)
+        elif out is None:
+            out=self.files_source.get("full")
+        
+        elif out is None:
+            out=self.media_source.get("source")
+        return out
+        
 
     @property
     def post(self):
@@ -299,6 +308,8 @@ class Media(base.base):
         text = self.get_text()
         text = self.file_cleanup(text, mediatype=self.mediatype)
         text = self.text_trunicate(text)
+        if not text:
+            return  self.id
         return text
 
     @property
@@ -379,7 +390,7 @@ class Media(base.base):
             "Signature": self.signature,
         }
         async with self._lock:
-            async with sessionManager.OFSessionManager(
+            async with manager2.Manager.aget_ofsession(
                 retries=constants.getattr("MPD_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -453,7 +464,7 @@ class Media(base.base):
             return False
         elif bool(self.media_source.get("source")):
             return False
-        elif bool(self.files_source):
+        elif bool(self.files_source.get("full")):
             return False
         return True
 

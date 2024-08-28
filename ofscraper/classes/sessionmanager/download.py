@@ -1,6 +1,5 @@
 import contextlib
 import time
-from aiolimiter import AsyncLimiter
 import asyncio
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
@@ -15,6 +14,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
     TOO_MANY,
 )
+from ofscraper.classes.sessionmanager.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 
 
@@ -51,7 +51,7 @@ class download_session(sessionManager.sessionManager):
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
-        self.leaky_bucket = AsyncLimiter(settings.get_download_limit(), 1)
+        self.leaky_bucket = LeakyBucket(settings.get_download_limit(), 1)
         super().__init__(
             sem_count=sem_count,
             retries=retries,
@@ -102,15 +102,10 @@ class download_session(sessionManager.sessionManager):
 
     def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
-            while True:
-                try:
-                    chunk = await anext(funct(*args, **kwargs))
-                    size = len(chunk)
-                    await self.get_token(size)
-                    yield chunk
-                except StopAsyncIteration:
-                    break
-
+            async for chunk in funct(*args, **kwargs):
+                size = len(chunk)
+                await self.get_token(size)
+                yield chunk
         return wrapper
 
     async def get_token(self, size):

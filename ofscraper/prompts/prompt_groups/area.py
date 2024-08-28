@@ -19,6 +19,8 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.args.accessors.read as read_args
+from ofscraper.utils.args.accessors.command import get_command
+
 
 
 def areas_prompt() -> list:
@@ -30,7 +32,7 @@ def areas_prompt() -> list:
         message = "Which area(s) would you do you want to download and like"
     elif "unlike" in args.action and len(args.like_area) == 0:
         message = "Which area(s) would you do you want to download and unlike"
-    elif "download" in args.action and args.command == "OF-Scraper":
+    elif "download" in args.action and get_command()== "OF-Scraper":
         message = "Which area(s) would you do you want to download"
     more_instruction = (
         """Hint: Since you have Like or Unlike set
@@ -65,6 +67,7 @@ def areas_prompt() -> list:
             }
         ]
     )
+    
     answers[name].append(scrape_labels_prompt())
     return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
@@ -149,6 +152,33 @@ def metadata_areas_prompt() -> list:
     answers[name].append(scrape_labels_prompt())
     return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
+
+def db_areas_prompt() -> list:
+    name = "areas"
+
+    answers = promptClasses.batchConverter(
+        *[
+            {
+                "type": "checkbox",
+                "qmark": "[?]",
+                "name": name,
+                "message": "Which area(s) would you to database  information from",
+                "validate": prompt_validators.emptyListValidator(),
+                "choices": [
+                    Choice("Profile"),
+                    Choice("Timeline"),
+                    Choice("Pinned"),
+                    Choice("Archived"),
+                    Choice("Highlights"),
+                    Choice("Stories"),
+                    Choice("Messages"),
+                    Choice("Purchased"),
+                    Choice("Streams"),
+                ],
+            }
+        ]
+    )
+    return answers[name]
 
 def metadata_anon_areas_prompt() -> list:
     name = "areas"
