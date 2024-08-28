@@ -1,3 +1,4 @@
+import pathlib
 import cloup as click
 
 from ofscraper.utils.args.parse.groups.program import program_options
@@ -46,6 +47,12 @@ def db_args(func):
         help="Print information from the database",
         short_help="print information from the database",
     )
+    @click.option(
+    "-ep",
+    "--export",
+    help="export the table as a csv file",
+    type=click.Path(path_type=pathlib.Path,writable=True,resolve_path=True,dir_okay=False,file_okay=True),
+)
     @click.constraints.mutually_exclusive(
     click.option(
     "-dl",

@@ -1,6 +1,8 @@
 import logging
 import time
 import datetime
+import pathlib
+import csv
 import arrow
 from rich.table import Table
 from rich import box
@@ -26,6 +28,7 @@ from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
+
 class DBManager():
     def __init__(self, username,model_id,remove_keys=None):
         self.username = username
@@ -33,6 +36,18 @@ class DBManager():
         self.media=[]
         self.remove_keys=remove_keys or ["link","linked"]
         self.log=logging.getLogger("shared")
+    def print_media(self):
+        self.get_wanted_media()
+        #allow logs to  print
+        time.sleep(1.5)
+        self.print_dictionary_table()
+        self.write_to_csv()
+    def get_wanted_media(self):
+        self.get_all_media()
+        self.filter_media()
+        self.sort_media()
+        self.get_max_post()
+        self.clean_dictionaries()
     @run_async
     async def get_all_media(self):
         args=read_args.retriveArgs()
@@ -75,10 +90,7 @@ class DBManager():
             if "Stories" in args.download_area:
                 stories=await get_stories_media(model_id=model_id, username=username)    
             self.media=timeline+messages+archived+streams+pinned+stories+highlights 
-            self.dedup_by_media_id()  
-        self.filter_media()   
-        self.sort_media()  
-        self.get_max_post()
+            self.dedup_by_media_id()
     def filter_media(self) :
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
         args=read_args.retriveArgs()
@@ -152,6 +164,20 @@ class DBManager():
             medias=sorted(medias,key=lambda x: self._convert_seconds(x),reverse=reversed)
         self.media=medias
 
+    def  clean_dictionaries(self):
+        dictionaries=self.media
+        # Remove specified keys from dictionaries (if provided)
+        if self.remove_keys:
+            remove_keys = self.remove_keys  if isinstance(self.remove_keys, list) else [self.remove_keys]
+            for dictionary in dictionaries:
+                for key in remove_keys:
+                    dictionary.pop(key, None)
+
+        #modify dictionary
+        for dictionary in dictionaries:
+            dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
+            dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
+            dictionary["size_human"]=format_size(dictionary['size'] or 0)
 
     
     def print_dictionary_table(self):
@@ -167,19 +193,6 @@ class DBManager():
         if len(self.media)==0:
             self.log.error("All media filter out")
             return
-
-        # Remove specified keys from dictionaries (if provided)
-        if self.remove_keys:
-            remove_keys = self.remove_keys  if isinstance(self.remove_keys, list) else [self.remove_keys]
-            for dictionary in dictionaries:
-                for key in remove_keys:
-                    dictionary.pop(key, None)
-
-        #modify dictionary
-        for dictionary in dictionaries:
-            dictionary["posted_at"]=arrow.get(dictionary["posted_at"]).format(constants.getattr("API_DATE_FORMAT"))
-            dictionary["created_at"]=arrow.get(dictionary["created_at"]).format(constants.getattr("API_DATE_FORMAT"))
-            dictionary["size"]=f"{dictionary['size']} [{format_size(dictionary['size'] or 0)}]"
         # Get the unique keys from all dictionaries
         keys = set()
         for dictionary in dictionaries:
@@ -225,11 +238,40 @@ class DBManager():
                 seen_media_ids.add(media_id)
             deduped_dictionaries.append(dictionary)
         self.media=deduped_dictionaries
-    def print_media(self):
-        self.get_all_media()
-        #allow logs to  print
-        time.sleep(1.5)
-        self.print_dictionary_table()
+    def write_to_csv(self):
+        """
+        Converts a list of dictionaries into a CSV file.
+
+        Args:
+            data (list): The list of dictionaries.
+            filename (str): The name of the CSV file to be created.
+        """
+        if not read_args.retriveArgs().export:
+            return
+        self.clean_dictionaries()
+        self.write_csv()
+
+    def write_csv(self):
+        # Extract unique keys and their types
+        header = []
+        type_hints = {}
+        for d in self.media:
+            for key, value in d.items():
+                if key not in header:
+                    header.append(key)
+                    type_hints[key] = type(value)
+        # Create a CSV writer
+        filename=read_args.retriveArgs().export.with_suffix(".csv")
+        filename.parent.mkdir(parents=True,exists_ok=True)
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=header)
+
+            # Write the header row, ensuring consistent order
+            writer.writeheader()
+
+            # Write the data rows, handling potential value types
+            for row in self.media:
+                writer.writerow(row)
     def _convert_seconds(self,dictionary):
         if not dictionary.get("duration"):
             return 0
