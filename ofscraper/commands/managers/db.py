@@ -134,7 +134,20 @@ class DBManager():
         self.media=medias
     def sort_media(self):
         medias=self.media
-        medias=sorted(medias,key=lambda x:arrow.get(x["posted_at"]),reverse=True)
+        reversed=not read_args.retriveArgs().db_asc
+        sort=read_args.retriveArgs().db_sort
+        if sort=="posted":
+            medias=sorted(medias,key=lambda x:arrow.get(x["posted_at"] or 0),reverse=reversed)
+        elif sort=="created":
+            medias=sorted(medias,key=lambda x:arrow.get(x["created_at"] or 0),reverse=reversed)
+        elif sort=="filename":
+            medias=sorted(medias,key=lambda x: x["filename"] or "",reverse=reversed)
+        elif sort=="postid":
+            medias=sorted(medias,key=lambda x: x["post_id"],reverse=reversed)
+        elif sort=="mediaid":
+            medias=sorted(medias,key=lambda x: x["media_id"],reverse=reversed)
+        elif sort=="size":
+            medias=sorted(medias,key=lambda x: x["size"] or 0,reverse=reversed)
         self.media=medias
 
 

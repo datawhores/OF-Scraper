@@ -296,10 +296,10 @@ db_sort_option = click.option(
 
 db_desc_option = click.option(
     "-bdc",
-    "--db-desc",
+    "--db-asc",
     help=
     """
-    Change the sort order  of table to reverse
+    Change the sort order  of table to ascending
     """,
     is_flag=True,
     default=False,
