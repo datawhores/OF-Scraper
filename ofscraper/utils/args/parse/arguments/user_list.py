@@ -96,6 +96,7 @@ all_promo_option = click.option(
 sub_status_option = click.option(
     "-ts/-es",
     "--active-subscription/--expired-subscription",
+    "--active-subscriptions/--expired-subscriptions",
     "sub_status",
     help="""\b
     Flag for enabling/disabling  accounts with active or expired subscription

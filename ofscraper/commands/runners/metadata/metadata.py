@@ -14,7 +14,7 @@ r"""
 import logging
 
 import ofscraper.data.api.init as init
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
@@ -70,7 +70,7 @@ def prepare():
     actions.select_areas()
     init.print_sign_status()
     userdata =manager.Manager.model_manager.getselected_usernames(rescan=False)
-    session = manager2.Manager.aget_ofsession(
+    session = manager.Manager.aget_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )

@@ -18,7 +18,7 @@ import traceback
 from rich.console import Console
 
 import ofscraper.data.api.subscriptions.common as common
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -35,7 +35,7 @@ async def get_subscriptions(subscribe_count, account="active"):
     task1 = add_userlist_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
-    async with manager2.Manager.aget_ofsession(
+    async with manager.Manager.aget_ofsession(
         sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         if account == "active":

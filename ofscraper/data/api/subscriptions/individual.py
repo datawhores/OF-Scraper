@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.profile as profile
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
@@ -33,7 +33,7 @@ async def get_subscription(accounts=None):
     task1 = progress_utils.add_userlist_task(
         f"Getting the following accounts => {accounts} (this may take awhile)..."
     )
-    async with manager2.Manager.aget_ofsession(
+    async with manager.Manager.aget_ofsession(
         sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         out = await get_subscription_helper(c, accounts)

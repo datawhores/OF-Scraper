@@ -2,7 +2,7 @@ import logging
 import time
 
 import ofscraper.data.api.init as init
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
@@ -14,7 +14,7 @@ log = logging.getLogger("shared")
 
 
 def prepare(menu=False):
-    session = manager2.Manager.aget_ofsession(
+    session = manager.Manager.aget_ofsession(
         sem_count=constants.getattr("API_REQ_SEM_MAX"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )

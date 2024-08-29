@@ -18,7 +18,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
@@ -370,7 +370,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
 
 
 def get_individual_messages_post(model_id, postid):
-    with manager2.Manager.get_ofsession(
+    with manager.Manager.get_ofsession(
         backend="httpx",
     ) as c:
         with c.requests(

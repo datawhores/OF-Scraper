@@ -8,7 +8,7 @@ import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download
 import ofscraper.data.models.manager as manager
