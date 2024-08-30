@@ -6,7 +6,6 @@ import ofscraper.utils.system.system as system
 
 
 def main():
-    system.set_mulitproc_start_type()
     if system.get_parent():
         load.main()
 

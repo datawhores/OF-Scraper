@@ -90,10 +90,9 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
                     count=1,
                 )
                 log_threads.append(thread)
-
             processes = [
-                aioprocessing.AioProcess(
-                    target=process_dict_starter,
+                aioprocessing.mp.get_context(system.get_mulitproc_start_type()).Process(
+                    target=process_dict_starter,    
                     args=(
                         username,
                         model_id,

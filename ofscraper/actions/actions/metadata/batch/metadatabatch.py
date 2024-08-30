@@ -74,7 +74,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 log_threads.append(thread)
 
             processes = [
-                aioprocessing.AioProcess(
+                aioprocessing.mp.get_context(system.get_mulitproc_start_type()).Process(
                     target=process_dict_starter,
                     args=(
                         username,
