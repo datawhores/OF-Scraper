@@ -501,54 +501,54 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: download linux
-        uses: Wandalen/wretry.action@master
+      # # - name: download linux
+      # #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_linux_${{needs.get_commit.outputs.short}}
-      - name: download linux zip
-        uses: Wandalen/wretry.action@master
+      # #   with:
+      # #     attempt_limit: 3
+      # #     action: actions/download-artifact@v4
+      # #     with: |
+      # #       name:  ofscraper_linux_${{needs.get_commit.outputs.short}}
+      # # - name: download linux zip
+      # #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_linux_zip_${{needs.get_commit.outputs.short}}
-      - name: download mac
-        uses: Wandalen/wretry.action@master
+      #   with:
+      #     attempt_limit: 3
+      #     action: actions/download-artifact@v4
+      #     with: |
+      #       name:  ofscraper_linux_zip_${{needs.get_commit.outputs.short}}
+      # - name: download linx
+      #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_macos_${{needs.get_commit.outputs.short}}
-      - name: download mac zip
-        uses: Wandalen/wretry.action@master
+      #   with:
+      #     attempt_limit: 3
+      #     action: actions/download-artifact@v4
+      #     with: |
+      #       name:  ofscraper_macos_${{needs.get_commit.outputs.short}}
+      # - name: download mac zip
+      #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
-      - name: download windows
-        uses: Wandalen/wretry.action@master
+      #   with:
+      #     attempt_limit: 3
+      #     action: actions/download-artifact@v4
+      #     with: |
+      #       name:  ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
+      # - name: download mac
+      #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_windows_${{needs.get_commit.outputs.short}}
-      - name: download windows zip
-        uses: Wandalen/wretry.action@master
+      #   with:
+      #     attempt_limit: 3
+      #     action: actions/download-artifact@v4
+      #     with: |
+      #       name:  ofscraper_windows_${{needs.get_commit.outputs.short}}
+      # - name: download windows zip
+      #   uses: Wandalen/wretry.action@master
 
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name:  ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
+        # with:
+        #   attempt_limit: 3
+        #   action: actions/download-artifact@v4
+        #   with: |
+        #     name:  ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
 
       - name: Get current date
         id: date
