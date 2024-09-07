@@ -533,7 +533,7 @@ jobs:
       #     action: actions/download-artifact@v4
       #     with: |
       #       name:  ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
-      # - name: download mac
+      # - name: download windows
       #   uses: Wandalen/wretry.action@master
 
       #   with:
