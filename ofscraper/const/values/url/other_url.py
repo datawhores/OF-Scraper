@@ -3,7 +3,7 @@ FFMPEG_WINDOWS = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest
 FFMPEG_MAC = "https://evermeet.cx/ffmpeg/#api-download"
 CDRM2 = "http://172.106.17.134:8080/wv"
 KEYDB = "https://keysdb.net/api"
-CDRM = "https://old.cdrm-project.com/wv"
+CDRM = "https://cdrm-project.com/"
 LARGEZIP = "https://proof.ovh.net/files/100Mb.dat"
 BAD_URL_HOST = {
     ".*\.upload.onlyfans.com",

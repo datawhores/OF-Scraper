@@ -101,6 +101,7 @@ def get_ffmpeg_key(key):
 
 
 async def key_helper_cdrm(c, pssh, licence_url, id):
+    key=None
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -109,12 +110,13 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         headers["cookie"] = auth_requests.get_cookies_str()
         auth_requests.create_sign(licence_url, headers)
         json_data = {
-            "license": licence_url,
-            "headers": json.dumps(headers),
-            "pssh": pssh,
-            "buildInfo": "",
-            "proxy": "",
-            "cache": True,
+            "License URL": licence_url,
+            "Headers": json.dumps(headers),
+            "PSSH": pssh,
+            'JSON': "{}",
+            "Cookies": "{}",
+            'Data': "{}",
+            'Proxy': ""
         }
         async with c.requests_async(
             url=constants.getattr("CDRM"),
@@ -126,11 +128,10 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             total_timeout=constants.getattr("CDM_TIMEOUT"),
             skip_expection_check=True,
         ) as r:
-            httpcontent = await r.text_()
-            log.debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, "html.parser")
-            out = soup.find("li").contents[0]
-        return out
+            data=await r.json_()
+            log.debug(f"keydb json {data}")
+            key=data["Message"]
+        return key
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -138,6 +139,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
 
 
 async def key_helper_cdrm2(c, pssh, licence_url, id):
+    key=None
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -166,8 +168,8 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, "html.parser")
-            out = soup.find("li").contents[0]
-        return out
+            key = soup.find("li").contents[0]
+        return key
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -175,6 +177,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
 
 
 async def key_helper_keydb(c, pssh, licence_url, id):
+    key=None
     log.debug(f"ID:{id} using keydb auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -211,21 +214,12 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             data = await r.json_()
             log.debug(f"keydb json {data}")
             if isinstance(data, str):
-                out = data
+                key = data
             elif isinstance(data["keys"][0], str):
-                out = data["keys"][0]
+                key = data["keys"][0]
             elif isinstance(data["keys"][0], object):
-                out = data["keys"][0]["key"]
-            await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
-                partial(
-                    cache.set,
-                    licence_url,
-                    out,
-                    expire=constants.getattr("KEY_EXPIRY"),
-                ),
-            )
-        return out
+                key = data["keys"][0]["key"]
+        return key
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -233,6 +227,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
 
 
 async def key_helper_manual(c, pssh, licence_url, id):
+    key=None
     log.debug(f"ID:{id}  manual key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
