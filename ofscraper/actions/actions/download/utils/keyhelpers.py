@@ -55,6 +55,7 @@ async def un_encrypt(item, c, ele, input_=None):
             key = await key_helper_cdrm2(c, item["pssh"], ele.license, ele.id)
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
+        key=key.strip()
         await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
             partial(
