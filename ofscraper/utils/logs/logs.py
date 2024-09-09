@@ -79,7 +79,7 @@ def print_start_message():
             data=re.sub("\n","",j.text_())
             if not data:
                 return     
-            log.error(f"[bold yellow]{data}[/bold yellow]")
+            log.error(f"{data}")
 def print_latest_version():
     log = logging.getLogger("shared")
     with manager.Manager.get_session(backend="httpx") as  sess:
