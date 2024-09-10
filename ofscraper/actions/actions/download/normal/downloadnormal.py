@@ -43,6 +43,7 @@ async def process_dicts(username, model_id, medialist, posts):
     download_log_clear_helper()
     log_text_array.append(await textDownloader(posts, username=username) )
     logging.getLogger("shared").info("Downloading in single thread mode")
+    common_globals.mainProcessVariableInit()
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
@@ -62,7 +63,6 @@ async def process_dicts(username, model_id, medialist, posts):
         return log_text_array, (0, 0, 0, 0, 0)
     task1 = None
     with progress_utils.setup_download_progress_live(multi=False):
-        common_globals.mainProcessVariableInit()
         log = logging.getLogger("shared")
         log.info("Downloading in main thread mode")
         try:
