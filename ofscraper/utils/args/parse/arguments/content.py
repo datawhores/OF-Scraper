@@ -205,6 +205,8 @@ scrape_paid_option = click.option(
 max_count_option = click.option(
     "-xc",
     "--max-count",
+    "--max-media-count",
+    "max_count",
     help="Maximum number of posts to download",
     default=0,
     type=int,
