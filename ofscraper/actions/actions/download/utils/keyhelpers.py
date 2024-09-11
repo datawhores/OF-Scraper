@@ -56,20 +56,15 @@ async def un_encrypt(item, c, ele, input_=None):
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
         key=key.strip()
-        await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(
-                cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")
-            ),
-        )
-        log.debug(f"{get_medialog(ele)} got key")
+        log.debug(f"{get_medialog(ele)} got key {key}")
         newpath = pathlib.Path(
             re.sub("\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
         )
+        ffmpeg_key = get_ffmpeg_key(key)
+        log.debug(f"{get_medialog(ele)} got ffmpeg key {ffmpeg_key}")
         log.debug(
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
         )
-        ffmpeg_key = get_ffmpeg_key(key)
         r = run(
             [
                 settings.get_ffmpeg(),
@@ -84,13 +79,25 @@ async def un_encrypt(item, c, ele, input_=None):
             ]
         )
         if not pathlib.Path(newpath).exists():
-            log.debug(f"{get_medialog(ele)} ffmpeg decryption failed")
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stdout.decode()}")
+            await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(
+                cache.set, None, key, expire=constants.getattr("KEY_EXPIRY")
+            ),
+            )
+            raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
         else:
             log.debug(f"{get_medialog(ele)} ffmpeg  decrypt success {newpath}")
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"] = newpath
+        await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(
+                cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")
+            ),
+        )
         return item
     except Exception as E:
         log.traceback_(E)
