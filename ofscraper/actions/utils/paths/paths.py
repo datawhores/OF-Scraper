@@ -73,13 +73,20 @@ def setDirectoriesDate(log=None):
     output = set()
     rootDir = pathlib.Path(common_paths.get_save_location())
     log.debug(f"Original DirSet {list(common_globals.dirSet)}")
-    log.debug(f"rooDir {rootDir}")
+    log.debug(f"rootDir {rootDir}")
 
     for ele in common_globals.dirSet:
         output.add(ele)
         while not os.path.samefile(ele, rootDir) and not os.path.samefile(
             ele.parent, rootDir
         ):
+            if ele.parent in output:
+                # We already added all subsequent paths in this tree
+                break
+            if not pathlib.PurePath(ele.parent).is_relative_to(rootDir):
+                # Don't descend if the parent path is outside rootDir such as
+                # when a symlink was used somewhere in the path
+                break
             common_globals.log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele = ele.parent
