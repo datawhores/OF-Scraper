@@ -315,6 +315,7 @@ class AltDownloadManager(DownloadManager):
 
         video["path"].unlink(missing_ok=True)
         audio["path"].unlink(missing_ok=True)
+       
 
         common_globals.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
@@ -430,8 +431,17 @@ class AltDownloadManager(DownloadManager):
             await self._size_checker(m["path"], ele, m["total"])
 
     async def _media_item_keys_alt(self, c, audio, video, ele):
-        for item in [audio, video]:
-            item = await keyhelpers.un_encrypt(item, c, ele)
+        async for _ in download_retry():
+            with _:
+                try:
+                    for item in [audio, video]:
+                        item = await keyhelpers.un_encrypt(item, c, ele)
+                except Exception as E:
+                    common_globals.log.traceback_(E)
+                    common_globals.log.traceback_(traceback.format_exc())
+                    raise E
+
+
 
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
