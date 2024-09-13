@@ -153,6 +153,33 @@ def metadata_areas_prompt() -> list:
     return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
+def db_areas_prompt() -> list:
+    name = "areas"
+
+    answers = promptClasses.batchConverter(
+        *[
+            {
+                "type": "checkbox",
+                "qmark": "[?]",
+                "name": name,
+                "message": "Which area(s) would you to database  information from",
+                "validate": prompt_validators.emptyListValidator(),
+                "choices": [
+                    Choice("Profile"),
+                    Choice("Timeline"),
+                    Choice("Pinned"),
+                    Choice("Archived"),
+                    Choice("Highlights"),
+                    Choice("Stories"),
+                    Choice("Messages"),
+                    Choice("Purchased"),
+                    Choice("Streams"),
+                ],
+            }
+        ]
+    )
+    return answers[name]
+
 def metadata_anon_areas_prompt() -> list:
     name = "areas"
     answers = promptClasses.batchConverter(

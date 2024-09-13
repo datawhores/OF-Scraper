@@ -1,6 +1,7 @@
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.utils.date as date_helper
+import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
 from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
@@ -18,7 +19,6 @@ posts_option = click.option(
     "posts",
     help="""
     Select areas for batch actions (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     """,
     default=[],
     required=False,
@@ -44,13 +44,41 @@ posts_option = click.option(
     multiple=True,
 )
 
+db_posts_option = click.option(
+    "-o",
+    "--posts",
+    "--post",
+    "posts",
+    help="""
+    Select areas for batch actions (comma or space separated)
+    """,
+    default=[],
+    required=False,
+    type=MultiChoicePost(
+        [
+            "Highlights",
+            "All",
+            "Archived",
+            "Messages",
+            "Timeline",
+            "Pinned",
+            "Streams",
+            "Stories",
+            "Profile",
+        ],
+        case_sensitive=False,
+    ),
+    callback=StringSplitParseTitle,
+    multiple=True,
+)
+
+
 download_area_option = click.option(
     "-da",
     "--download-area",
     "download_area",
     help="""
     Perform download in specified areas (comma or space separated).
-    Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
     Has preference over --posts for download action
     """,
     default=[],
@@ -82,7 +110,6 @@ like_area_option = click.option(
     "--like-area",
     help="""
     Perform like/unlike in selected areas (comma or space separated).
-    Options: Archived, Timeline,fo Pinned, Labels, All
     Has preference over --posts for like action
     """,
     default=[],
@@ -178,29 +205,110 @@ scrape_paid_option = click.option(
 max_count_option = click.option(
     "-xc",
     "--max-count",
+    "--max-media-count",
+    "max_count",
     help="Maximum number of posts to download",
     default=0,
     type=int,
 )
 
-item_sort_option = click.option(
-    "-it",
-    "--item-sort",
-    help="Changes media processing order before action (default: date asc or random)",
+media_sort_option = click.option(
+    "-mst",
+    "--media-sort",
+    help="""
+    \b
+    Changes media processing order before actions
+    Example: for download
+    """,
     default=None,
     required=False,
     type=click.Choice(
         [
             "random",
-            "text-asc",
-            "text-desc",
-            "date-asc",
-            "date-desc",
-            "filename-asc",
-            "filename-desc",
+            "text",
+            "text",
+            "date",
+            "filename",
         ]
     ),
 )
+
+media_desc_option = click.option(
+    "-mdc",
+    "--media-desc",
+    help=
+    """
+    \b
+    Sort the media list in descending order
+    Example: for download
+    """,
+    is_flag=True,
+    default=False,
+)
+
+post_sort_option = click.option(
+    "-pst",
+    "--post-sort",
+    help="""
+    \b
+    Changes post processing order before actions
+    Example: for like or unlike
+    """,
+    default="date",
+    required=False,
+    type=click.Choice(
+        [
+            "date",
+        ]
+    ),
+)
+
+post_desc_option = click.option(
+    "-pdc",
+    "--post-desc",
+    help=
+    """
+    Sort the post list in descending order
+    Example: for like or unlike
+    """,
+    is_flag=True,
+    default=False,
+)
+
+db_sort_option = click.option(
+    "-dst",
+    "--db-sort",
+    help="""
+    \b
+    Changes order of table
+    """,
+    default="posted",
+    required=False,
+    type=click.Choice(
+        [
+            "posted",
+            "created",
+            "filename",
+            "length",
+            "postid",
+            "mediaid",
+            "size"
+        ]
+    ),
+)
+
+db_desc_option = click.option(
+    "-bdc",
+    "--db-asc",
+    help=
+    """
+    Change the sort order  of table to ascending
+    """,
+    is_flag=True,
+    default=False,
+)
+
+
 
 force_all_option = click.option(
     "-e",
@@ -208,7 +316,7 @@ force_all_option = click.option(
     "--dupe",
     "--dupe-all",
     "force_all",
-    help="Download all files regardless of database presence",
+    help="Download all found files regardless of database presence",
     default=False,
     is_flag=True,
 )
@@ -219,9 +327,20 @@ force_model_unique_option = click.option(
     "--dupe-model-unique",
     "--dupe-model",
     "--force_model_unique",
-    help="Only download files with media ids not present for the current model in the database",
+    help="Only download found files with media ids not present for the current model in the database",
     default=False,
     is_flag=True,
+)
+
+redownload_option = click.option(
+    "-rd",
+    "--redownload",
+    "--re-download",
+    "redownload",
+    help="Forces redownloading of all files in selected post types",
+    default=False, 
+    is_flag=True,
+   
 )
 
 like_toggle_force = click.option(

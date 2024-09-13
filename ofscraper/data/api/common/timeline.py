@@ -12,7 +12,7 @@ r"""
 import logging
 import traceback
 
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 
@@ -20,7 +20,7 @@ log = logging.getLogger("shared")
 
 
 def get_individual_timeline_post(id, session=None):
-    with session or manager2.Manager.get_ofsession(
+    with session or manager.Manager.get_ofsession(
         backend="httpx",
     ) as c:
         with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:

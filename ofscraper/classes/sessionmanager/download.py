@@ -103,13 +103,14 @@ class download_session(sessionManager.sessionManager):
     def chunk_with_limit(self, funct):
         async def wrapper(*args, **kwargs):
             async for chunk in funct(*args, **kwargs):
-                size = len(chunk)
-                await self.get_token(size)
+                await self.get_token(chunk)
                 yield chunk
         return wrapper
 
-    async def get_token(self, size):
-        await self.leaky_bucket.acquire(size)
+    async def get_token(self, chunk):
+        if settings.get_download_limit() <= 0:
+            return
+        await self.leaky_bucket.acquire(chunk)
 
 
 class cdm_session(sessionManager.sessionManager):

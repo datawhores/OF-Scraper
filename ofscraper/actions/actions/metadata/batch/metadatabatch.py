@@ -54,7 +54,7 @@ def process_dicts(username, model_id, filtered_medialist):
         common_globals.main_globals()
         download_log_clear_helper()
         with progress_utils.setup_metadata_progress_live():
-            if not read_args.retriveArgs().item_sort:
+            if not read_args.retriveArgs().media_sort:
                 random.shuffle(filtered_medialist)
 
             mediasplits = get_mediasplits(filtered_medialist)
@@ -74,7 +74,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 log_threads.append(thread)
 
             processes = [
-                aioprocessing.AioProcess(
+                aioprocessing.mp.get_context(system.get_mulitproc_start_type()).Process(
                     target=process_dict_starter,
                     args=(
                         username,

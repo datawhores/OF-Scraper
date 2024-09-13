@@ -1,8 +1,7 @@
 import functools
+import arrow
 
 import cloup as click
-
-import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 
 
 def check_mode_changes(func):
@@ -10,8 +9,8 @@ def check_mode_changes(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         # fix before for check modes
-        ctx.params["before"] = date_helper.before_callback(ctx, ctx.params, None)
-
+        ctx.params["before"] = arrow.now().shift(days=4)
+        ctx.params["before_original"] = None
         return func(ctx, *args, **kwargs)
 
     return wrapper

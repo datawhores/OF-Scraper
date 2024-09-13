@@ -3,6 +3,11 @@ import arrow
 
 def before_callback(ctx, param, value):
     params = ctx.params
-    params["before_original"] = value
-    params["before"] = arrow.get(value or arrow.now()).shift(days=4)
-    return params["before"]
+    if not value:
+        params[f"{param.name}_original"] = value
+        params[f"{param.name}"] = arrow.get(value or arrow.now()).shift(days=4)
+        return params[f"{param.name}"]
+    else:
+        params[f"{param.name}_original"] = value
+        params[f"{param.name}"] =value
+        return params[f"{param.name}"]

@@ -19,23 +19,19 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 
 from ofscraper.utils.system.subprocess import run
+import  ofscraper.runner.manager as manager
 
 
-def final_script(users):
+
+def final_script():
     log = logging.getLogger("shared")
     if not settings.get_post_script():
         return
-    if not isinstance(users, list):
-        users = [users]
     log.debug("Running post script")
-    data = {}
-    for ele in users:
-        key=ele.id if isinstance(ele, Model) else ele["id"]
-        value=ele.model if isinstance(ele, Model) else ele
-        data[key] = value
+
     out_dict = json.dumps(
         {
-            "users": data,
+            "users": {key: value.model for key, value in manager.Manager.model_manager.all_subs_dict.items()},
             "dir_format": config_data.get_dirformat(),
             "file_format": config_data.get_fileformat(),
             "metadata": config_data.get_metadata(),

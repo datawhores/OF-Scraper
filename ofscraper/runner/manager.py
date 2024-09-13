@@ -6,6 +6,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
 from ofscraper.data.models.manager import ModelManager
+from ofscraper.commands.runners.db import db
 
 Manager=None
 def start_manager():
@@ -51,6 +52,8 @@ class mainManager():
             metadata.process_selected_areas()
         elif get_command()  == "manual":
             manual.manual_download()
+        elif get_command()  == "db":
+            db()
         else:
             actions.main()
     def print_name(self):

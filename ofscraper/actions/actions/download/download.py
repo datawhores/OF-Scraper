@@ -58,6 +58,7 @@ async def download_picker(username, model_id, medialist, posts):
             >= settings.get_threads() * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
         and settings.not_solo_thread()
+        and system.platform.system()=="Linux"
     ):
         return await batch.process_dicts(username, model_id, medialist, posts)
     else:

@@ -29,6 +29,6 @@ try:
         print(__version__)
         # raise Exception("pipx error")
 except:
-    import importlib
+    import importlib.metadata
 
     __version__ = importlib.metadata.version("ofscraper")

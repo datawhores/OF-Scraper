@@ -10,6 +10,8 @@ import sys
 import multiprocess
 import psutil
 from setproctitle import setproctitle
+import aioprocessing
+
 
 
 def is_frozen():
@@ -47,29 +49,20 @@ def getOpenFiles(unique=True):
     return out
 
 
-def set_mulitproc_start_type():
+def get_mulitproc_start_type():
     plat = platform.system()
     if is_frozen():
         f_method = "spawn"
-        multiprocess.set_start_method(f_method)
-        multiprocessing.set_start_method(f_method)
+        return f_method
     elif plat == "Darwin":
         d_method = "spawn"
-        multiprocess.set_start_method(d_method)
-        multiprocessing.set_start_method(d_method)
+        return d_method
     elif plat == "Windows":
         w_method = "spawn"
-        multiprocess.set_start_method(w_method)
-        multiprocessing.set_start_method(w_method)
+        return w_method
     else:
-        o_method = "forkserver"
-        multiprocess.set_start_method(o_method)
-        multiprocessing.set_start_method(o_method)
-    # additional for mac
-    if plat == "Darwin":
-        os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-        os.environ["no_proxy"] = "*"
-
+        o_method = "spawn"
+        return o_method
 
 def set_eventloop():
     plat = platform.system()

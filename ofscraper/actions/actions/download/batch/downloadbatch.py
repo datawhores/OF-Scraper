@@ -55,6 +55,7 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
     log.info("Downloading in batch mode")
     log_text_array = []
     log_text_array.append(await textDownloader(posts, username=username))
+    common_globals.main_globals()
     if read_args.retriveArgs().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {"manual","post_check","msg_check","story_check","paid_check"}:
@@ -72,7 +73,6 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
         log_text_array.append(empty_log)
         return log_text_array, (0, 0, 0, 0, 0)
     try:
-        common_globals.main_globals()
         download_log_clear_helper()
         with progress_utils.setup_download_progress_live(multi=True):
             mediasplits = get_mediasplits(filtered_medialist)
@@ -90,10 +90,9 @@ async def process_dicts(username, model_id, filtered_medialist, posts):
                     count=1,
                 )
                 log_threads.append(thread)
-
             processes = [
-                aioprocessing.AioProcess(
-                    target=process_dict_starter,
+                aioprocessing.mp.get_context(system.get_mulitproc_start_type()).Process(
+                    target=process_dict_starter,    
                     args=(
                         username,
                         model_id,

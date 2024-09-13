@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import  ofscraper.runner.manager as manager2
+import  ofscraper.runner.manager as manager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -354,7 +354,7 @@ def get_individual_highlights(id):
 
 
 def get_individual_stories(id, c=None):
-    with manager2.Manager.get_ofsession(
+    with manager.Manager.get_ofsession(
         backend="httpx",
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
