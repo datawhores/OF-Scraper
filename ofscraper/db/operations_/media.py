@@ -77,7 +77,7 @@ drop table medias;
 """
 mediaUpdateAPI = """Update 'medias'
 SET
-media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
+media_id=?,post_id=?,link=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 mediaUpdateDownload = """Update 'medias'
 SET
@@ -448,6 +448,7 @@ def update_media_table_via_api_batch(
                     media.id,
                     media.postid,
                     media.url or media.mpd,
+                    media.linked,
                     media.responsetype.capitalize(),
                     media.mediatype.capitalize(),
                     media.preview,
