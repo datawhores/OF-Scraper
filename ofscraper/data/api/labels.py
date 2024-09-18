@@ -117,7 +117,7 @@ async def scrape_labels(c, model_id, offset=0):
 
     url = constants.getattr("labelsEP").format(model_id, offset)
     task = None
-    log.debug(f"trying access label names with url:{url}  offset:{offset}")
+    log.debug(f"trying to access label names with url:{url}  offset:{offset}")
 
     try:
 

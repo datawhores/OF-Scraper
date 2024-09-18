@@ -99,7 +99,7 @@ async def scrape_paid(c, username, offset=0):
             f"scrape paid offset -> {offset} username -> {username}",
             visible=True,
         )
-        log.debug(f"trying access {API.lower()} posts with url:{url} offset:{offset}")
+        log.debug(f"trying to access {API.lower()} posts with url:{url} offset:{offset}")
 
         async with c.requests_async(url) as r:
 

@@ -287,7 +287,7 @@ async def scrape_stream_posts(
             visible=True,
         )
         log.debug(
-            f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            f"trying to access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
         )
         async with c.requests_async(url) as r:
 

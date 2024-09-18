@@ -128,7 +128,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
             visible=True,
         )
         log.debug(
-            f"trying access  {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            f"trying to access  {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
         )
         async with c.requests_async(url=url) as r:
             log.debug(

@@ -291,7 +291,7 @@ async def scrape_timeline_posts(
         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
 
         log.debug(
-            f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            f"trying to access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
         )
 
         async with c.requests_async(url=url) as r:

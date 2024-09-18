@@ -298,7 +298,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     new_tasks = []
     task = None
     log.debug(
-        f"trying access {API.lower()} posts with url:{url} message_id:{message_id}"
+        f"trying to access {API.lower()} posts with url:{url} message_id:{message_id}"
     )
 
     try:
