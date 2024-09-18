@@ -44,7 +44,7 @@ API = "timeline"
 @run
 async def get_timeline_posts(model_id, username, c=None):
 
-    after = await get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username)
     time_log(username, after)
     if len(read_args.retriveArgs().post_id or []) == 0 or len(
         read_args.retriveArgs().post_id or []
