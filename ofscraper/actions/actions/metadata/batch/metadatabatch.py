@@ -49,7 +49,7 @@ platform_name = platform.system()
 
 def process_dicts(username, model_id, filtered_medialist):
     log = logging.getLogger("shared")
-
+    processes = []
     try:
         common_globals.main_globals()
         download_log_clear_helper()
