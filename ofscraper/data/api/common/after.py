@@ -1,6 +1,7 @@
 import logging
 
 import ofscraper.utils.args.accessors.read as read_args
+from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check
 
@@ -15,6 +16,8 @@ def get_after_pre_checks(model_id, api):
         val = 0
     elif read_full_after_scan_check(model_id, api):
         val = 0
+    elif "like" in get_actions():
+        val =0
     return _return_val(val, api)
 
 

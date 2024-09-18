@@ -1,6 +1,8 @@
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as const
 from ofscraper.utils.args.accessors.command import get_command
+from ofscraper.utils.args.accessors.actions import get_actions
+
 
 def get_like_area():
     post = None
@@ -82,12 +84,12 @@ def finalize_choice(all_choices, post):
 
 def get_final_posts_area():
     final_post_areas = set()
-    args = read_args.retriveArgs()
-    if "download" in args.action:
+    actions=get_actions()
+    if "download" in actions:
         final_post_areas.update(get_download_area())
         final_post_areas.update(get_text_area())
     if get_command()== "metadata":
         final_post_areas.update(get_download_area())
-    if "like" in args.action or "unlike" in args.action:
+    if "like" in actions or "unlike" in actions:
         final_post_areas.update(get_like_area())
     return final_post_areas

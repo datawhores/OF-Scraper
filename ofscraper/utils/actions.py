@@ -35,17 +35,17 @@ def reset_like():
 
 
 @free.space_checker
-def select_areas(action=None, reset=False):
+def select_areas(actions=None, reset=False):
     args = read_args.retriveArgs()
-    action = action or args.action or {}
-    if "download" in action and reset:
+    actions = actions or args.action or {}
+    if "download" in actions and reset:
         reset_download()
-    elif ("like" or "unlike") in action and reset:
+    elif ("like" or "unlike") in actions and reset:
         reset_like()
     write_args.setArgs(args)
-    set_post_area(action)
-    set_download_area(action)
-    set_like_area(action)
+    set_post_area(actions)
+    set_download_area(actions)
+    set_like_area(actions)
     remove_post_area()
 
 
