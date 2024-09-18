@@ -42,7 +42,7 @@ API = "timeline"
 
 
 @run
-async def get_timeline_posts(model_id, username, forced_after=None, c=None):
+async def get_timeline_posts(model_id, username, c=None):
 
     after = await get_after(model_id, username, forced_after)
     time_log(username, after)
@@ -225,8 +225,8 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-async def get_after(model_id, username, forced_after=None):
-    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+async def get_after(model_id, username):
+    prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
         return prechecks
     curr = await get_timeline_media(model_id=model_id, username=username)

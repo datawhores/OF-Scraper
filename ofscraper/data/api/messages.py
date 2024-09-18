@@ -44,7 +44,7 @@ sleeper = None
 
 
 @run
-async def get_messages(model_id, username, forced_after=None, c=None):
+async def get_messages(model_id, username, c=None):
     global after
     after = await get_after(model_id, username, forced_after)
     if len(read_args.retriveArgs().post_id or []) == 0 or len(
@@ -380,8 +380,8 @@ def get_individual_messages_post(model_id, postid):
             return r.json()["list"][0]
 
 
-async def get_after(model_id, username, forced_after=None):
-    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+async def get_after(model_id, username):
+    prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
         return prechecks
     curr = await get_messages_media(model_id=model_id, username=username)

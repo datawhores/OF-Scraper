@@ -5,7 +5,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check
 
 
-def get_after_pre_checks(model_id, api, forced_after=None):
+def get_after_pre_checks(model_id, api):
     val = None
     if forced_after is not None:
         val = forced_after
