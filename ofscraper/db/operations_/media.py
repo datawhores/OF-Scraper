@@ -419,7 +419,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                 lambda media: [
                     media.id,
                     media.postid,
-                    media.url or media.mpd,
+                    media.link,
                     media.responsetype.capitalize(),
                     media.mediatype.capitalize(),
                     media.preview,
@@ -447,7 +447,7 @@ def update_media_table_via_api_batch(
                 lambda media: [
                     media.id,
                     media.postid,
-                    media.url or media.mpd,
+                    media.link,
                     media.linked,
                     media.responsetype.capitalize(),
                     media.mediatype.capitalize(),
@@ -657,7 +657,8 @@ def update_media_table_via_api_helper(
     insertData = [
         media.id,
         media.postid,
-        media.url or media.mpd,
+        media.link,
+        media.linked,
         media.responsetype.capitalize(),
         media.mediatype.capitalize(),
         media.preview,
