@@ -18,6 +18,8 @@ def get_after_pre_checks(model_id, api):
         val = 0
     elif "like" in get_actions():
         val =0
+    elif "unlike" in get_actions():
+        val =0
     return _return_val(val, api)
 
 
