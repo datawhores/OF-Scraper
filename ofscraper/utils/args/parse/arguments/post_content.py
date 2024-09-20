@@ -1,13 +1,11 @@
 import cloup as click
 
-import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
     StringSplitParseTitle,
     StringTupleList,
 )
-from ofscraper.utils.args.types.arrow import ArrowType
 from ofscraper.utils.args.types.choice import MultiChoice, MultiChoicePost
 
 # Define individual options
@@ -201,48 +199,13 @@ scrape_paid_option = click.option(
     is_flag=True,
 )
 
-max_count_option = click.option(
+max_post_count_option = click.option(
     "-xc",
-    "--max-count",
-    "--max-media-count",
+    "--max-post-count",
     "max_count",
-    help="Maximum number of posts to download",
+    help="Maximum number of posts to like",
     default=0,
     type=int,
-)
-
-media_sort_option = click.option(
-    "-mst",
-    "--media-sort",
-    help="""
-    \b
-    Changes media processing order before actions
-    Example: for download
-    """,
-    default=None,
-    required=False,
-    type=click.Choice(
-        [
-            "random",
-            "text",
-            "text",
-            "date",
-            "filename",
-        ]
-    ),
-)
-
-media_desc_option = click.option(
-    "-mdc",
-    "--media-desc",
-    help=
-    """
-    \b
-    Sort the media list in descending order
-    Example: for download
-    """,
-    is_flag=True,
-    default=False,
 )
 
 post_sort_option = click.option(
@@ -309,38 +272,8 @@ db_desc_option = click.option(
 
 
 
-force_all_option = click.option(
-    "-e",
-    "--force-all",
-    "--dupe",
-    "--dupe-all",
-    "force_all",
-    help="Download all found files regardless of database presence",
-    default=False,
-    is_flag=True,
-)
 
-force_model_unique_option = click.option(
-    "-eq",
-    "--force-model-unique",
-    "--dupe-model-unique",
-    "--dupe-model",
-    "--force_model_unique",
-    help="Only download found files with media ids not present for the current model in the database",
-    default=False,
-    is_flag=True,
-)
 
-redownload_option = click.option(
-    "-rd",
-    "--redownload",
-    "--re-download",
-    "redownload",
-    help="Forces redownloading of all files in selected post types",
-    default=False, 
-    is_flag=True,
-   
-)
 
 like_toggle_force = click.option(
     "-fl",
@@ -361,20 +294,6 @@ label_option = click.option(
     required=False,
     callback=StringSplitNormalizeParse,
     multiple=True,
-)
-before_option = click.option(
-    "-be",
-    "--before",
-    help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=ArrowType(),
-    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
-)
-
-after_option = click.option(
-    "-af",
-    "--after",
-    help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=ArrowType(),
 )
 
 mass_msg_option = click.option(

@@ -6,7 +6,6 @@ from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.groups.content import (
     content_options_help,
     content_options_desc,
-    max_count_option,
     post_id_filter,
 )
 from ofscraper.utils.args.parse.groups.media_filter import(
@@ -17,7 +16,8 @@ media_filter_options_desc,
 media_id_filter,
 length_max,
 length_min,
-media_filter_options_help
+media_filter_options_help,
+max_media_count_option
 )
 from ofscraper.utils.args.parse.arguments.media_content import db_posts_option, db_sort_option,db_desc_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
@@ -109,7 +109,7 @@ click.option(
     @click.option_group(
         content_options_desc,
         db_posts_option,
-        max_count_option,
+        max_media_count_option,
         post_id_filter,
         db_sort_option,
         db_desc_option,
