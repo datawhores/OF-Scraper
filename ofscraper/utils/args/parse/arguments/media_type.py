@@ -8,6 +8,8 @@ from ofscraper.utils.args.callbacks.string import (
     StringSplitParseTitle,
 )
 from ofscraper.utils.args.types.choice import MultiChoice
+from ofscraper.utils.args.types.arrow import ArrowType
+import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 
 quality_option = click.option(
     "-q",
@@ -42,21 +44,7 @@ min_size_option = click.option(
     type=parse_size,
 )
 
-protected_only = click.option(
-    "-to",
-    "--protected-only",
-    help="Restricts downloads to content that requires decryption.",
-    required=False,
-    is_flag=True,
-)
 
-normal_only = click.option(
-    "-no",
-    "--normal-only",
-    help="Restricts downloads to content that does not require decryption.",
-    required=False,
-    is_flag=True,
-)
 
 media_id_filter = click.option(
     "-md",
@@ -82,3 +70,88 @@ length_min = click.option(
     required=False,
     type=parse_size,
 )
+
+
+max_count_option = click.option(
+    "-xc",
+    "--max-media-count",
+    "max_count",
+    help="Maximum number of posts to download",
+    default=0,
+    type=int,
+)
+
+media_sort_option = click.option(
+    "-mst",
+    "--media-sort",
+    help="""
+    \b
+    Changes media processing order before actions
+    Example: for download
+    """,
+    default=None,
+    required=False,
+    type=click.Choice(
+        [
+            "random",
+            "text",
+            "text",
+            "date",
+            "filename",
+        ]
+    ),
+)
+
+media_desc_option = click.option(
+    "-mdc",
+    "--media-desc",
+    help=
+    """
+    \b
+    Sort the media list in descending order
+    Example: for download
+    """,
+    is_flag=True,
+    default=False,
+)
+
+
+force_all_option = click.option(
+    "-e",
+    "--force-all",
+    "--dupe",
+    "--dupe-all",
+    "force_all",
+    help="Download all found files regardless of database presence",
+    default=False,
+    is_flag=True,
+)
+
+force_model_unique_option = click.option(
+    "-eq",
+    "--force-model-unique",
+    "--dupe-model-unique",
+    "--dupe-model",
+    "--force_model_unique",
+    help="Only download found files with media ids not present for the current model in the database",
+    default=False,
+    is_flag=True,
+)
+
+before_option = click.option(
+    "-be",
+    "--before",
+    help="Process media from posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
+)
+
+after_option = click.option(
+    "-af",
+    "--after",
+    help="Process media from posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+)
+
+
+

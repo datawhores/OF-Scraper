@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.args.parse.arguments.content import (
+from ofscraper.utils.args.parse.arguments.media_content import (
     after_option,
     before_option,
     block_ads_option,

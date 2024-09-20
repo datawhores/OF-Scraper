@@ -1,7 +1,6 @@
 import cloup as click
 
 import ofscraper.utils.args.parse.arguments.utils.date as date_helper
-import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
 from ofscraper.utils.args.callbacks.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
@@ -418,5 +417,22 @@ timeline_strict = click.option(
     "--timeline-strict",
     help="When timeline is select removes pinned and archived",
     default=False,
+    is_flag=True,
+)
+
+
+protected_only = click.option(
+    "-to",
+    "--protected-only",
+    help="Restricts downloads to content that requires decryption.",
+    required=False,
+    is_flag=True,
+)
+
+normal_only = click.option(
+    "-no",
+    "--normal-only",
+    help="Restricts downloads to content that does not require decryption.",
+    required=False,
     is_flag=True,
 )

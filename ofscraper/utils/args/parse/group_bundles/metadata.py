@@ -2,7 +2,7 @@ import cloup as click
 from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.parse.arguments.content import (
+from ofscraper.utils.args.parse.arguments.media_content import (
     after_option,
     before_option,
     filter_option,

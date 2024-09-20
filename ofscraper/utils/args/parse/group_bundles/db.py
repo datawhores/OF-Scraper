@@ -19,7 +19,7 @@ length_max,
 length_min,
 media_filter_options_help
 )
-from ofscraper.utils.args.parse.arguments.content import db_posts_option, db_sort_option,db_desc_option
+from ofscraper.utils.args.parse.arguments.media_content import db_posts_option, db_sort_option,db_desc_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
