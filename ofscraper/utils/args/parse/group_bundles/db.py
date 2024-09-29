@@ -3,23 +3,29 @@ import cloup as click
 
 from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.logging import logging_options
-from ofscraper.utils.args.parse.groups.content import (
-    content_options_help,
-    content_options_desc,
-    post_id_filter,
+from ofscraper.utils.args.parse.groups.post_filter import (
+    post_filter_options_help,
+    post_filter_options_desc,
+    post_id_filter_option,
 )
+from ofscraper.utils.args.parse.arguments.post_content import (
+    db_sort_option,
+    db_desc_option,
+    db_posts_option,
+
+)
+
 from ofscraper.utils.args.parse.groups.media_filter import(
 media_type_option,
 max_size_option,
 min_size_option,
-media_filter_options_desc,
 media_id_filter,
 length_max,
 length_min,
 media_filter_options_help,
-max_media_count_option
+max_media_count_option,
+media_filter_options_desc,
 )
-from ofscraper.utils.args.parse.arguments.media_content import db_posts_option, db_sort_option,db_desc_option
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
@@ -107,26 +113,12 @@ click.option(
     @program_options
     @logging_options
     @click.option_group(
-        content_options_desc,
+        post_filter_options_desc,
         db_posts_option,
         max_media_count_option,
-        post_id_filter,
         db_sort_option,
         db_desc_option,
-        click.option(
-    "-cf",
-    "--created-after",
-    help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=ArrowType(),
-),
-
-    click.option(
-    "-cb",
-    "--created-before",
-    help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=ArrowType(),
-),
-
+        post_id_filter_option,
    click.option(
     "-pf",
     "--posted-after",
@@ -141,8 +133,10 @@ click.option(
     type=ArrowType(),
 ),
 
-        help=content_options_help,
+        help=post_filter_options_help,
     )
+
+
     @click.option_group(
     media_filter_options_desc,
     media_type_option,
@@ -150,6 +144,20 @@ click.option(
     max_size_option,
     length_min,
     length_max,
+    click.option(
+    "-cf",
+    "--created-after",
+    help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
+    click.option(
+    "-cb",
+    "--created-before",
+    help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+),
+
     media_id_filter,
     help=media_filter_options_help
     )

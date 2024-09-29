@@ -7,7 +7,7 @@ from ofscraper.utils.args.parse.arguments.check import (
     user_option,
     file_username_option,
 )
-from ofscraper.utils.args.parse.arguments.media_content import timeline_strict
+from ofscraper.utils.args.parse.arguments.post_content import timeline_strict
 
 content_check_options_desc = "Content Options"
 content_check_options_help = """

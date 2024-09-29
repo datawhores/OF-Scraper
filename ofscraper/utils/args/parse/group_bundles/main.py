@@ -9,7 +9,8 @@ from ofscraper.utils.args.parse.groups.advanced_user_filter import (
     advanced_userfilters_options,
 )
 from ofscraper.utils.args.parse.groups.automatic import automatic_options
-from ofscraper.utils.args.parse.groups.content import content_options
+from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
+from ofscraper.utils.args.parse.groups.post_filter import post_filter_options
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
@@ -18,7 +19,8 @@ from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 
 
 def main_program_args(func):
-    @content_options
+    @media_filter_options
+    @post_filter_options
     @automatic_options
     @user_select_options
     @userlist_options
