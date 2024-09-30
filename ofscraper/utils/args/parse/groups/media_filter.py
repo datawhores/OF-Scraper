@@ -19,7 +19,7 @@ from ofscraper.utils.args.parse.arguments.media_content import (
 )
 
 media_filter_options_desc = "Media Filters Options"
-media_filter_options_help = "Options for controlling which media is downloaded, and in which order"
+media_filter_options_help = "Options for controlling which media is processed, and in which order"
 media_filter_options_tuple = (
     quality_option,
     media_type_option,

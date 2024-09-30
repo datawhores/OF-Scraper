@@ -2,26 +2,6 @@ import cloup as click
 from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.parse.arguments.media_content import (
-    after_option,
-    before_option,
-    filter_option,
-    force_all_option,
-    force_model_unique_option,
-    redownload_option,
-    label_option,
-    mass_msg_option,
-    max_media_count_option,
-    neg_filter_option,
-    posts_option,
-    timed_only_option,
-    post_id_filter,
-    media_sort_option,
-    media_desc_option,
-    post_sort_option,
-    post_desc_option
-    
-)
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
@@ -39,11 +19,20 @@ from ofscraper.utils.args.parse.groups.download import (
     download_options_tuple,
 )
 from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
-from ofscraper.utils.args.parse.groups.content import (
-    content_options_help,
-    content_options_desc,
-)
 from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
+
+from ofscraper.utils.args.parse.groups.post_filter import (
+    filter_option,
+    label_option,
+    mass_msg_option,
+    neg_filter_option,
+    posts_option,
+    timed_only_option,
+    post_id_filter_option,
+    post_sort_option,
+    post_filter_options_desc,
+    post_filter_options_help
+)
 
 
 from ofscraper.utils.args.helpers.hide_args import hide_metadata_mode
@@ -115,33 +104,26 @@ It also uses a new filename if one is available
     # )
     @media_filter_options
     @file_options
+
     @click.option_group(
-        content_options_desc,
-        posts_option,
-        filter_option,
-        neg_filter_option,
-        click.option(
+        post_filter_options_desc,
+         click.option(
             "-sp",
             "--scrape-paid",
             help="Similar to --metadata, but only for --scrape paid",
             metavar="METADATA MODE",
             type=click.Choice(METADATA_OPTIONS),
         ),
-        redownload_option,
-        max_media_count_option,
-        label_option,
-        before_option,
-        after_option,
-        mass_msg_option,
-        post_id_filter,
-        media_sort_option,
-        media_desc_option,
+         posts_option,
+                 label_option,
+
+    filter_option,
+        neg_filter_option,
         post_sort_option,
-        post_desc_option,
         timed_only_option,
-        force_all_option,
-        force_model_unique_option,
-        help=content_options_help,
+        mass_msg_option,
+        post_id_filter_option,
+        help=post_filter_options_help
     )
     @click.option_group(
         "Metadata Options", *download_options_tuple, help=download_options_help

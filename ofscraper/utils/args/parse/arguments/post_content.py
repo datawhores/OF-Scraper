@@ -203,7 +203,7 @@ max_post_count_option = click.option(
     "-xc",
     "--max-post-count",
     "max_count",
-    help="Maximum number of posts to like",
+    help="Maximum number of posts to like/unlike",
     default=0,
     type=int,
 )
@@ -319,7 +319,7 @@ timed_only_option = click.option(
     [select one --only-timed or --skip-timed]""",
 )
 
-post_id_filter = click.option(
+post_id_filter_option = click.option(
     "-pd",
     "--post-id",
     "--url",
