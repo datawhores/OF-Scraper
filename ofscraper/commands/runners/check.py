@@ -46,6 +46,8 @@ from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.args.accessors.command import get_command
 import  ofscraper.runner.manager as manager
+import ofscraper.filters.media.main as filters
+
 
 
 
@@ -580,6 +582,11 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
+    media=await insert_media(username, model_id, posts_array)
+    return filter_media(filter_media(username,model_id,media))
+
+
+async def insert_media(username, model_id, posts_array):
     posts_array = list(
         map(
             lambda x: (
@@ -592,6 +599,7 @@ async def process_post_media(username, model_id, posts_array):
     )
     seen = set()
     unduped = [
+
         post
         for post in posts_array
         if (post.id, post.username) not in seen
@@ -599,18 +607,17 @@ async def process_post_media(username, model_id, posts_array):
     ]
     temp = []
     [temp.extend(ele.all_media) for ele in unduped]
+    
     await batch_mediainsert(
         temp,
         model_id=model_id,
         username=username,
         downloaded=False,
     )
-    new_media = {
-        "_".join([str(getattr(ele, key)) for key in MEDIA_KEY]): ele for ele in temp
-    }
-    ALL_MEDIA.update(new_media)
-    return list(new_media.values())
 
+def filter_media(username,model_id,media):
+
+    return filters.filterCheckMode(media,username,model_id)
 
 @run
 async def get_paid_ids(model_id, user_name):

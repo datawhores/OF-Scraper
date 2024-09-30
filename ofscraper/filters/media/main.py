@@ -233,3 +233,26 @@ def post_filter_for_like(post, like=False):
     post = helpers.ele_count_filter(post)
     log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(post)}")
     return post
+
+
+def filterCheckMode(media, username, model_id):
+    media=[media]
+    log.info(f"finalizing media filtering username:{username} model_id:{model_id} for metadata")
+    count = 1
+    trace_log_media(count, media, "initial media no filter:")
+    log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
+    media = helpers.sort_by_date(media)
+    count += 1
+    trace_log_media(count, media, "sorted by date initial")
+    log.debug(f"filter {count}-> sorted media count: {len(media)}")
+
+    if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
+        media = helpers.unviewable_media_filter(media)
+        count += 1
+        trace_log_media(count, media, "filtered viewable media")
+        log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
+    media = helpers.ele_count_filter(media)
+    count += 1
+    trace_log_media(count, media, "media max post count filter:")
+    log.debug(f"filter {count}->  media max post count filter count: {len(media)}")
+    return helpers.previous_download_filter(media, username=username, model_id=model_id)
