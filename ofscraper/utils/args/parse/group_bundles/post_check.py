@@ -3,7 +3,7 @@ import cloup as click
 from ofscraper.utils.args.parse.groups.check_content import url_group
 from ofscraper.utils.args.parse.group_bundles.main_check import main_check
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
-from ofscraper.utils.args.parse.group_bundles.common import common_args
+from ofscraper.utils.args.parse.group_bundles.common import common_args_check
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
 from ofscraper.utils.args.parse.groups.check_content import content_check_options
 from ofscraper.utils.args.helpers.hide_args import hide_check_mode
@@ -20,7 +20,7 @@ def post_check_args(func):
     )
     @url_group
     @main_check
-    @common_args
+    @common_args_check
     @content_check_options
     @advanced_args
     @check_mode_changes

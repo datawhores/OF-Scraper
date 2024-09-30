@@ -338,6 +338,21 @@ async def post_check_retriver():
                     model_id=model_id,
                     username=user_name,
                 )
+                all_post_data=[]
+                for ele in [pinned_data
+                        ,archived_data
+                        ,labels_data
+                        ,timeline_data
+                        ,streams_data]:
+                    if ele==timeline_data:
+
+                        all_post_data.append(timeline.filter_timeline_post(list(
+                            map(
+                                lambda x: posts_.Post(x, model_id, user_name),
+                                timeline_data
+                        ))))
+                    else:
+                        all_post_data.append(map(lambda x:posts_.Post(x, model_id, user_name),ele))
 
                 all_post_data = list(
                     map(
@@ -583,7 +598,12 @@ def url_helper():
 @run
 async def process_post_media(username, model_id, posts_array):
     media=await insert_media(username, model_id, posts_array)
-    return filter_media(filter_media(username,model_id,media))
+    media= filter_media(username,model_id,media)
+    new_media = {
+        "_".join([str(getattr(ele, key)) for key in MEDIA_KEY]): ele for ele in media
+    }
+    ALL_MEDIA.update(new_media)
+    return list(new_media.values())
 
 
 async def insert_media(username, model_id, posts_array):
@@ -605,15 +625,16 @@ async def insert_media(username, model_id, posts_array):
         if (post.id, post.username) not in seen
         and not seen.add((post.id, post.username))
     ]
-    temp = []
-    [temp.extend(ele.all_media) for ele in unduped]
+    media= []
+    [media.extend(ele.all_media) for ele in unduped]
     
     await batch_mediainsert(
-        temp,
+        media,
         model_id=model_id,
         username=username,
         downloaded=False,
     )
+    return media
 
 def filter_media(username,model_id,media):
 

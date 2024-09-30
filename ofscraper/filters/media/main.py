@@ -1,7 +1,6 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
-import ofscraper.filters.media.sorter as sorter
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.constants as constants
@@ -103,7 +102,6 @@ def filterMediaAreasHelper(media):
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
     media = helpers.sort_by_date(media)
 
-    media = sorter.post_datesorter(media)
     count += 1
     trace_log_media(count, media, "media datesort")
     log.debug(f"filter {count}-> media datesort count: {len(media)}")
@@ -236,23 +234,7 @@ def post_filter_for_like(post, like=False):
 
 
 def filterCheckMode(media, username, model_id):
-    media=[media]
-    log.info(f"finalizing media filtering username:{username} model_id:{model_id} for metadata")
-    count = 1
-    trace_log_media(count, media, "initial media no filter:")
-    log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
-    media = helpers.sort_by_date(media)
-    count += 1
-    trace_log_media(count, media, "sorted by date initial")
-    log.debug(f"filter {count}-> sorted media count: {len(media)}")
+    #no filtering for now
+    return media
+   
 
-    if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
-        media = helpers.unviewable_media_filter(media)
-        count += 1
-        trace_log_media(count, media, "filtered viewable media")
-        log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
-    media = helpers.ele_count_filter(media)
-    count += 1
-    trace_log_media(count, media, "media max post count filter:")
-    log.debug(f"filter {count}->  media max post count filter count: {len(media)}")
-    return helpers.previous_download_filter(media, username=username, model_id=model_id)

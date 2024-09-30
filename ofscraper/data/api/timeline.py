@@ -357,3 +357,11 @@ Setting timeline scan range for {username} from {arrow.get(after).format(constan
 
             """
     )
+def filter_timeline_post(timeline_posts):
+        if read_args.retriveArgs().timeline_strict:
+            timeline_only_posts = list(
+                filter(lambda x: x.regular_timeline, timeline_posts)
+            )
+        else:
+            timeline_only_posts = timeline_posts
+        return timeline_only_posts

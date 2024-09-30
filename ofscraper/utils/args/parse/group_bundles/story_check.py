@@ -3,7 +3,7 @@ import cloup as click
 from ofscraper.utils.args.parse.arguments.check import force
 from ofscraper.utils.args.parse.groups.check_content import username_group
 from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
-from ofscraper.utils.args.parse.group_bundles.common import common_args
+from ofscraper.utils.args.parse.group_bundles.common import common_args_check
 from ofscraper.utils.args.parse.group_bundles.utils.check import check_mode_changes
 from ofscraper.utils.args.helpers.hide_args import hide_check_mode
 
@@ -22,7 +22,7 @@ def story_check_args(func):
     )
     @username_group
     @force
-    @common_args
+    @common_args_check
     @advanced_args
     @check_mode_changes
     @click.pass_context

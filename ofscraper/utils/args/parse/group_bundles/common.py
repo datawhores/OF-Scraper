@@ -19,5 +19,18 @@ def common_args(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
+    return wrapper
+
+
+def common_args_check(func):
+    @program_options
+    @logging_options
+    @download_options
+    @media_filter_options
+    @file_options
+    @functools.wraps(func)
+    @click.pass_context
+    def wrapper(ctx, *args, **kwargs):
+        return func(ctx, *args, **kwargs)
 
     return wrapper

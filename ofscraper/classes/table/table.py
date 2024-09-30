@@ -24,6 +24,7 @@ from ofscraper.classes.table.inputs.strinput import StrInput
 from ofscraper.classes.table.row_names import row_names, row_names_all
 from ofscraper.classes.table.status import status
 from ofscraper.classes.table.table_console import OutConsole
+from textual.widgets import SelectionList
 
 log = logging.getLogger("shared")
 global app
@@ -213,6 +214,7 @@ SelectField,DateField,TimeField {
         self._init_mediatype = kwargs.pop("mediatype", None)
         self.run()
 
+
     def update_table(self, reset=False):
         self.run_worker(self._update_table(reset=reset))
 
@@ -323,13 +325,17 @@ SelectField,DateField,TimeField {
                     yield Container()
             with Vertical(id="console_page"):
                 yield OutConsole()
+            
 
     def on_mount(self) -> None:
+        self._set_and_sort_media_type()
         self.query_one(Sidebar).toggle_class("-hidden")
         self.set_reverse(init=True)
         self.set_cart_toggle(init=True)
-        self.update_table(reset=True)
+        self.update_table()
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
+        
+
 
     def _set_and_sort_media_type(self):
         mediatype = (
@@ -337,16 +343,10 @@ SelectField,DateField,TimeField {
             if bool(self._init_mediatype)
             else ["Audios", "Videos", "Images"]
         )
+        self.query_one("#mediatype").query_one(SelectionList).deselect_all()
+        for ele in mediatype:
+            self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
 
-        self.query_one("#Mediatype_audios").value = (
-            mediatype is None or "Audios" in mediatype
-        )
-        self.query_one("#Mediatype_videos").value = (
-            mediatype is None or "Videos" in mediatype
-        )
-        self.query_one("#Mediatype_images").value = (
-            mediatype is None or "Images" in mediatype
-        )
 
     # Cart
     def change_download_cart(self, coord):

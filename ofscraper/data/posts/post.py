@@ -190,12 +190,8 @@ async def process_timeline_posts(model_id, username, c):
                 timeline_posts,
             )
         )
-        if read_args.retriveArgs().timeline_strict:
-            timeline_only_posts = list(
-                filter(lambda x: x.regular_timeline, timeline_posts)
-            )
-        else:
-            timeline_only_posts = timeline_posts
+        timeline_only_posts=timeline.filter_timeline_post(timeline_posts)
+
         await operations.make_post_table_changes(
             timeline_only_posts,
             model_id=model_id,
