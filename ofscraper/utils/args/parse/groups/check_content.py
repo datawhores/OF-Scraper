@@ -7,14 +7,13 @@ from ofscraper.utils.args.parse.arguments.check import (
     user_option,
     file_username_option,
 )
-from ofscraper.utils.args.parse.arguments.post_content import timeline_strict
+from ofscraper.utils.args.parse.arguments.post_content import timeline_strict,normal_only,protected_only
 
 content_check_options_desc = "Content Options"
 content_check_options_help = """
     \b
-    Define what posts to target (areas, filters) and actions to perform (like, unlike, download)
-    Filter by type, date, label, size, and media type"""
-content_check_options_tuple = (timeline_strict, check_areas)
+    Define what posts to target"""
+content_check_options_tuple = (timeline_strict, check_areas,normal_only,protected_only)
 
 
 content_check_options = click.option_group(
