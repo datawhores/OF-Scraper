@@ -199,15 +199,6 @@ scrape_paid_option = click.option(
     is_flag=True,
 )
 
-max_post_count_option = click.option(
-    "-xc",
-    "--max-post-count",
-    "max_count",
-    help="Maximum number of posts to like/unlike",
-    default=0,
-    type=int,
-)
-
 post_sort_option = click.option(
     "-pst",
     "--post-sort",
@@ -241,7 +232,6 @@ db_sort_option = click.option(
     "-dst",
     "--db-sort",
     help="""
-    \b
     Changes order of table
     """,
     default="posted",
@@ -354,4 +344,13 @@ normal_only = click.option(
     help="Restricts downloads to content that does not require decryption.",
     required=False,
     is_flag=True,
+)
+
+max_post_count_option = click.option(
+    "-xc",
+    "--max-post-count",
+    "max_count",
+    help="Maximum number of posts to process",
+    default=0,
+    type=int,
 )

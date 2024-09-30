@@ -100,6 +100,12 @@ class DBManager():
             medias=[media for media in medias  if media["downloaded"]]
         elif args.not_downloaded:
             medias=[media for media in medias if not media["downloaded"]]
+
+        # download type
+        if args.protected:
+            medias=[media for media in medias  if "mpd" in media["link"]]
+        elif args.normal:
+           medias=[media for media in medias  if "mpd" not in media["link"]]
         #unlocked
         if args.unlocked:
             medias=[media for media in medias  if media["unlocked"]]

@@ -4,7 +4,6 @@ import cloup as click
 from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.groups.post_filter import (
-    post_filter_options_help,
     post_filter_options_desc,
     post_id_filter_option,
 )
@@ -23,8 +22,8 @@ media_id_filter,
 length_max,
 length_min,
 media_filter_options_help,
-max_media_count_option,
 media_filter_options_desc,
+max_media_count_option
 )
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
@@ -113,9 +112,8 @@ click.option(
     @program_options
     @logging_options
     @click.option_group(
-        post_filter_options_desc,
+        "Filter and sorting for the table based on posts",
         db_posts_option,
-        max_media_count_option,
         db_sort_option,
         db_desc_option,
         post_id_filter_option,
@@ -132,8 +130,7 @@ click.option(
     help="Process posts posted at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=ArrowType(),
 ),
-
-        help=post_filter_options_help,
+        help="Filter which posts are retrived from the database"
     )
 
 
@@ -159,6 +156,7 @@ click.option(
 ),
 
     media_id_filter,
+    max_media_count_option,
     help=media_filter_options_help
     )
 

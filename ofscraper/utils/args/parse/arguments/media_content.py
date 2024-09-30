@@ -76,7 +76,7 @@ max_media_count_option = click.option(
     "-xc",
     "--max-media-count",
     "max_count",
-    help="Maximum number of posts to download",
+    help="Maximum number of media to process",
     default=0,
     type=int,
 )

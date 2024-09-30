@@ -11,12 +11,16 @@ from ofscraper.utils.args.parse.arguments.post_content import (
     mass_msg_option,
     timed_only_option,
     posts_option,
+    normal_only,
+    protected_only,
 )
 
 post_filter_options_desc = "Posts Filters Options"
-post_filter_options_help = "Options for controlling which posts is are processed, and in which order"
+post_filter_options_help = "Options for controlling which posts are liked/unliked, and in which order"
 post_filter_options_tuple = (
     posts_option,
+     normal_only,
+    protected_only,
     post_id_filter_option,
     max_post_count_option,
     post_sort_option,
@@ -26,6 +30,8 @@ post_filter_options_tuple = (
     label_option,
     mass_msg_option,
     timed_only_option,
+    max_post_count_option
+
 )
 # Create the option group
 post_filter_options = click.option_group(
