@@ -211,7 +211,7 @@ SelectField,DateField,TimeField {
         self.mutex = kwargs.pop("mutex", None)
         self._sorted_rows = self.table_data
         self._filtered_rows = self.table_data
-        self._init_mediatype = kwargs.pop("mediatype", None)
+        self._init_args = kwargs.pop("args", None)
         self.run()
 
 
@@ -328,19 +328,29 @@ SelectField,DateField,TimeField {
             
 
     def on_mount(self) -> None:
-        self._set_and_sort_media_type()
+        self._set_media_type()
+        self._set_id()
+        self._set_sort()
+        self._set_length()
         self.query_one(Sidebar).toggle_class("-hidden")
-        self.set_reverse(init=True)
         self.set_cart_toggle(init=True)
         self.update_table()
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
-        
+    def _set_length(self):
+        if self._init_args.length_max:
+            self.query_one("#length").update_table_max(self._init_args.length_max)
+        if self._init_args.length_min:
+            self.query_one("#length").update_table_min(self._init_args.length_min)
+    def _set_sort(self):
+        self.sort_helper(reverse=self._init_args.media_desc,label=self._init_args.media_sort)
+    def _set_id(self):
+        self.query_one("#post_id").update_table_val(self._init_args.post_id or "")
+        self.query_one("#media_id").update_table_val(self._init_args.media_id or "")
 
-
-    def _set_and_sort_media_type(self):
+    def _set_media_type(self):
         mediatype = (
-            self._init_mediatype
-            if bool(self._init_mediatype)
+            self._init_args.media_type
+            if bool(self._init_args.media_type)
             else ["Audios", "Videos", "Images"]
         )
         self.query_one("#mediatype").query_one(SelectionList).deselect_all()
@@ -409,12 +419,13 @@ SelectField,DateField,TimeField {
                     log.debug(E)
 
     # Table Functions
-    def sort_helper(self, label):
-        self.run_worker(self._sort_helper(label), thread=True, exclusive=True)
+    def sort_helper(self, label=None,reverse=None):
+        self.run_worker(self._sort_helper(label,reverse), thread=True, exclusive=True)
 
-    async def _sort_helper(self, label=None):
+    async def _sort_helper(self, label=None,reverse=None):
         with self.mutex:
             if label is None:
+                self._sorted_rows=reversed(self.table_data) if reverse else  self.table_data
                 return
             key = re.sub(" ", "_", label).lower()
             if key == "download_cart":
@@ -435,7 +446,7 @@ SelectField,DateField,TimeField {
                 ]
                 return
 
-            self.set_reverse(key=key)
+            self.set_reverse(key=key,reverse=reverse)
             if self._get_sorted_hash(key):
                 self._sorted_rows = self._get_sorted_hash(key)
             elif key == "number":
@@ -544,7 +555,9 @@ SelectField,DateField,TimeField {
     def _set_sorted_hash(self, key, val):
         self._sorted_hash[f"{key}_{self.reverse}"] = val
 
-    def set_reverse(self, key=None, init=False):
+    def set_reverse(self, key=None, init=False,reverse=None):
+        if reverse:
+            self.reverse = reverse
         if init:
             self.reverse = None
             self._sortkey = "number"

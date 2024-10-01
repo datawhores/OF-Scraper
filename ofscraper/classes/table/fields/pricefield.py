@@ -25,7 +25,9 @@ class PriceField(Horizontal):
             ele.value = val
 
     def reset(self):
-        self.query_one(IntegerInput).value = ""
+        for ele in self.query(IntegerInput):
+            ele.value = ""
+
 
     def validate(self, val):
         minval = self.query_one(f"#{self.filter_name}_search").value

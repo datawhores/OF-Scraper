@@ -109,7 +109,6 @@ media_desc_option = click.option(
     """
     \b
     Sort the media list in descending order
-    Example: for download
     """,
     is_flag=True,
     default=False,

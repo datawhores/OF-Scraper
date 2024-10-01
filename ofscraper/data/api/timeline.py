@@ -42,17 +42,18 @@ API = "timeline"
 
 
 @run
-async def get_timeline_posts(model_id, username, c=None):
+async def get_timeline_posts(model_id, username, c=None,post_id=None):
 
     after = await get_after(model_id, username)
+    post_id=post_id or []
     time_log(username, after)
-    if len(read_args.retriveArgs().post_id or []) == 0 or len(
-        read_args.retriveArgs().post_id or []
+    if len(post_id) == 0 or len(
+        post_id
     ) > constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+    elif len(post_id) <= constants.getattr(
         "MAX_TIMELINE_INDIVIDUAL_SEARCH"
     ):
         data = process_individual()

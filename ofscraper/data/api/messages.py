@@ -44,11 +44,11 @@ sleeper = None
 
 
 @run
-async def get_messages(model_id, username, c=None):
-    global after
+async def get_messages(model_id, username, c=None,post_id=None):
     after = await get_after(model_id, username)
-    if len(read_args.retriveArgs().post_id or []) == 0 or len(
-        read_args.retriveArgs().post_id or []
+    post_id=post_id or[]
+    if len(post_id) == 0 or len(
+        post_id
     ) > constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
         oldmessages = await get_old_messages(model_id, username)
         before = (read_args.retriveArgs().before).float_timestamp

@@ -38,9 +38,13 @@ class Status:
     def _generic_helper(self, key, test):
         if self._status[key] is None:
             return True
-        if key == "media_id":
-            pass
-        return str(test).lower() == str(self._status[key]).lower()
+        elif self._status[key]=="":
+            return True
+        elif key in {"post_id", "media_id"}:
+            val=set(self._status[key].split(","))
+            return str(test) in val
+        else:
+            return str(test).lower() == str(self._status[key]).lower()
 
     def _length_helper(self, test):
         if not bool(self._status["max_length"]) and not bool(

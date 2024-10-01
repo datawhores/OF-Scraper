@@ -11,7 +11,7 @@ class FilterInput(Input):
         placeholder = placeholder or kwargs.get("id") or "placeholder"
         super().__init__(*args, placeholder=placeholder, **kwargs)
         # TODO: Workaround for https://github.com/Textualize/textual/issues/1216
-        self.value = self.validate_value(self.value)
+        self.update_table_val(self.value)
 
     def validate_value(self, value: str) -> str:
         """Validate the input.
@@ -42,7 +42,12 @@ class FilterInput(Input):
         return value
 
     def update_table_val(self, val):
+        if isinstance(val,list):
+            val=",".join(val)
         self.value = self.validate_value(val)
+        status[self.key] = self.value
+        return self.value
+
 
     def on_input_changed(self):
         status[self.key] = self.value

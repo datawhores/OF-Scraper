@@ -310,7 +310,7 @@ async def post_check_retriver():
                             posts=False,
                         )
                         labels_data = [
-                            post for label in labels_resp for post in label["posts"]
+                            post for label in labels_resp for post in label.get("posts",[])
                         ]
                         set_check(labels_data, model_id, labels.API)
 
@@ -325,7 +325,7 @@ async def post_check_retriver():
                         streams_data = [
                             post
                             for streams in streams_resp
-                            for post in streams["posts"]
+                            for post in streams.get("post",[])
                         ]
                         set_check(streams_data, model_id, streams.API)
 
@@ -672,7 +672,7 @@ def start_table(ROWS_):
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
     app = table.app(
-        table_data=ROWS, mutex=threading.Lock(), mediatype=init_media_type_helper()
+        table_data=ROWS, mutex=threading.Lock(), args=read_args.retriveArgs()
     )
 
 

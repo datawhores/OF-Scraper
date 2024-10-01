@@ -312,7 +312,7 @@ timed_only_option = click.option(
 post_id_filter_option = click.option(
     "-pd",
     "--post-id",
-    "--url",
+    "--postid",
     "post_id",
     help="Filter posts based on post id",
     required=False,
