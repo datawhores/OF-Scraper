@@ -53,9 +53,9 @@ def common_args_check(func):
     media_id_filter,
     media_type_option,
     check_mode_media_sort,
-    media_desc_option,
     length_max,
     length_min,
+    media_desc_option,
     help="Filters for controlling the initial table view"
     )
     @file_options

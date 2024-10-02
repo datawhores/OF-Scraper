@@ -462,11 +462,7 @@ SelectField,DateField,TimeField {
                     reverse=self.reverse,
                 )
             elif key == "downloaded":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: 1 if x.get_compare_val(key) is True else 0,
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("downloaded",key=lambda x:x.plain)
 
             elif key == "unlocked":
                 self._sorted_rows = sorted(
@@ -546,8 +542,8 @@ SelectField,DateField,TimeField {
                     key=lambda x: x.get_compare_val(key),
                     reverse=self.reverse,
                 )
-            self._set_sorted_hash(key, self._sorted_rows)
-        await asyncio.get_event_loop().run_in_executor(None, self.update_table)
+        #     self._set_sorted_hash(key, self._sorted_rows)
+        # await asyncio.get_event_loop().run_in_executor(None, self.update_table)
 
     def _get_sorted_hash(self, key):
         return self._sorted_hash.get(f"{key}_{self.reverse}")
@@ -622,7 +618,7 @@ SelectField,DateField,TimeField {
             table.clear(True)
             table.fixed_rows = 0
             table.zebra_stripes = True
-            table.add_column("number")
+            table.add_column("number",key="number")
             [
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
                 for ele in row_names()
