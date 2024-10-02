@@ -4,23 +4,17 @@ from ofscraper.utils.args.parse.arguments.check import (
     force,
     text_only_option,
     text_option,
+    check_mode_media_sort
 )
 from ofscraper.utils.args.parse.groups.media_filter import (
     length_max,
     length_min,
-    max_size_option,
     media_type_option,
-    min_size_option,
     quality_option,
-    media_sort_option,
     media_desc_option,
-    media_filter_options_desc,
-    media_filter_options_help,
     media_id_filter,
 )
 from ofscraper.utils.args.parse.groups.post_filter import (
-    post_filter_options_desc,
-    post_filter_options_help,
     post_id_filter_option, 
 )
 
@@ -58,7 +52,7 @@ def common_args_check(func):
     post_id_filter_option,
     media_id_filter,
     media_type_option,
-    media_sort_option,
+    check_mode_media_sort,
     media_desc_option,
     length_max,
     length_min,

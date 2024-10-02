@@ -94,3 +94,34 @@ text_option = click.option(
     default=False,
     is_flag=True,
 )
+
+check_mode_media_sort= click.option(
+    "-mst",
+    "--media-sort",
+    help="""
+    \b
+    Changes media processing order before actions
+    Example: for download
+    """,
+    default=None,
+    required=False,
+    type=click.Choice(
+        [
+            "number",
+            "username",
+            "downloaded",
+            "unlocked",
+            "other_posts_with_media",
+            "length",
+            "mediatype",
+            "post_date",
+            "post_media_count",
+            "responsetype",
+            "price",
+            "post_id",
+            "media_id",
+            "text"
+
+        ]
+    ),
+)
