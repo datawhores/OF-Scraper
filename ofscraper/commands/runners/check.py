@@ -733,7 +733,7 @@ async def row_gather(username, model_id, paid=False):
         out.append(
             {
                 "index": count,
-                "number": None,
+                "number": count,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
                 "downloaded": (ele.id, ele.postid) in downloaded,

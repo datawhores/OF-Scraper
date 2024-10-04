@@ -29,6 +29,13 @@ class NumField(Horizontal):
         self.query_one(IntegerInput).value = val
         status[self.filter_name] = val
         return val
+    def key(self):
+        """Key function for filtering"""
+        if self.query_one(IntegerInput).value:
+            return lambda x:int(self.query_one(IntegerInput).value)==int(x)
+        else:
+            return lambda x:True
+
 
 
     def reset(self):

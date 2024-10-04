@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import queue
 import re
@@ -8,10 +7,12 @@ from rich.text import Text
 from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Button, ContentSwitcher, DataTable, Label, Rule
+from textual.widgets import Button, ContentSwitcher, Label, Rule
 
 import ofscraper.utils.logs.logger as logger
-from ofscraper.classes.table.button import StyledButton
+from ofscraper.classes.table.components.button import StyledButton
+from ofscraper.classes.table.components.datatable import DataTable
+
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
 from ofscraper.classes.table.fields.numfield import NumField, OtherMediaNumField
@@ -23,7 +24,7 @@ from ofscraper.classes.table.fields.timefield import TimeField
 from ofscraper.classes.table.inputs.strinput import StrInput
 from ofscraper.classes.table.row_names import row_names, row_names_all
 from ofscraper.classes.table.status import status
-from ofscraper.classes.table.table_console import OutConsole
+from ofscraper.classes.table.components.table_console import OutConsole
 from textual.widgets import SelectionList
 
 log = logging.getLogger("shared")
@@ -36,19 +37,20 @@ class TableRow:
     def __init__(self, table_row):
         self._table_row = table_row
         self._other_styled = None
+        self.text={"length","text","username"}
 
     def get_styled(self, count):
         styled_row = [Text(str(count + 1))]
-        if not self._other_styled:
-            other_styled_row = [
-                Text(str(self.get_val(key)), style="italic #03AC13", overflow="fold")
-                for key in row_names()
-            ]
-            other_styled_row = [
-                self.split_join_max_len(ele, 30) for ele in other_styled_row
-            ]
-            self._other_styled = other_styled_row
-        styled_row.extend(self._other_styled)
+        styled_row.extend([ Text(str(self._table_row[key.lower()]) ,style="italic #03AC13") if key in self.text else self._table_row[key.lower()]
+for key in row_names() ])
+        # for key in row_names():
+        #     if key in self.text:
+        #         row=Text(str(self.get_val(key)), style="italic #03AC13", overflow="fold")
+        #         if key=="text":
+        #             row=self.split_join_max_len(row, 30)
+        #     else:
+        #         row=(self.get_val(key))
+        #     styled_row.append(row)
         return styled_row
 
     def split_join_max_len(self, text, max_len):
@@ -193,6 +195,7 @@ SelectField,DateField,TimeField {
 
     def __init__(self, *args, **kwargs) -> None:
         self._status = status
+        self.reverse=None
         super().__init__(*args, **kwargs)
 
     @property
@@ -209,18 +212,14 @@ SelectField,DateField,TimeField {
         self._sorted_hash = {}
         self._sortkey = None
         self.mutex = kwargs.pop("mutex", None)
-        self._sorted_rows = self.table_data
-        self._filtered_rows = self.table_data
         self._init_args = kwargs.pop("args", None)
         self.run()
 
 
+    def reset_table(self, reset=False):
+        self.query_one(DataTable).reset(refresh=True)
     def update_table(self, reset=False):
-        self.run_worker(self._update_table(reset=reset))
-
-    async def _update_table(self, reset=False):
-        self.set_filtered_rows(reset=reset)
-        self.make_table()
+        self.run_worker(self.set_filtered_rows(reset=reset))
 
     def on_data_table_header_selected(self, event):
         self.sort_helper(event.label.plain)
@@ -235,7 +234,7 @@ SelectField,DateField,TimeField {
         if event.button.id == "reset":
             self.reset_all_inputs()
             self.set_reverse(init=True)
-            self.update_table(reset=True)
+            self.reset_table()
 
         elif event.button.id == "send_downloads":
             log.info("Adding Downloads to queue")
@@ -334,7 +333,8 @@ SelectField,DateField,TimeField {
         self._set_length()
         self.query_one(Sidebar).toggle_class("-hidden")
         self.set_cart_toggle(init=True)
-        self.update_table()
+        self.make_table()
+        # self.set_filtered_rows(reset=False)
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
     def _set_length(self):
         if self._init_args.length_max:
@@ -425,7 +425,7 @@ SelectField,DateField,TimeField {
     async def _sort_helper(self, label=None,reverse=None):
         with self.mutex:
             if label is None:
-                self._sorted_rows=reversed(self.table_data) if reverse else  self.table_data
+                self._sorted_reversed(self.table_data) if reverse else  self.table_data
                 return
             key = re.sub(" ", "_", label).lower()
             if key == "download_cart":
@@ -447,115 +447,42 @@ SelectField,DateField,TimeField {
                 return
 
             self.set_reverse(key=key,reverse=reverse)
-            if self._get_sorted_hash(key):
-                self._sorted_rows = self._get_sorted_hash(key)
-            elif key == "number":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+            if key == "number":
+                self.query_one(DataTable).sort("number",key=lambda x:int(x.plain),reverse=self.reverse)
             elif key == "username":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (x.get_compare_val(key), x.get_compare_val("number")),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("username",key=lambda x:x.plain,reverse=self.reverse)
             elif key == "downloaded":
-                self.query_one(DataTable).sort("downloaded",key=lambda x:x.plain)
+                self.query_one(DataTable).sort("downloaded",key=lambda x:x,reverse=self.reverse)
 
             elif key == "unlocked":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: 1 if x.get_compare_val(key) is True else 0,
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("unlocked",key=lambda x:x,reverse=self.reverse)
             elif key == "other_posts_with_media":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key) or 0,
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("other_posts_with_media",key=lambda x:len(x),reverse=self.reverse)
             elif key == "length":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) != "N/A" else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("length",key=lambda x: arrow.get(x.plain, "h:m:s") if x.plain not in {"N/A","N\A"} else arrow.get("0:0:0", "h:m:s") ,reverse=self.reverse)
             elif key == "mediatype":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("mediatype",key=lambda x:x,reverse=self.reverse)
             elif key == "post_date":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_date",key=lambda x:arrow.get(x),reverse=self.reverse)
             elif key == "post_media_count":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_media_count",key=lambda x:x,reverse=self.reverse)
 
             elif key == "responsetype":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                 self.query_one(DataTable).sort("responsetype",key=lambda x:x,reverse=self.reverse)
+
             elif key == "price":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        int(float(x.get_compare_val(key)))
-                        if x.get_compare_val(key) != "Free"
-                        else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("price",key=lambda x:0 if x=="free" else x,reverse=self.reverse)
 
             elif key == "post_id":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_id",key=lambda x:x,reverse=self.reverse)
             elif key == "media_id":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("media_id",key=lambda x:x,reverse=self.reverse)
             elif key == "text":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
-        #     self._set_sorted_hash(key, self._sorted_rows)
-        # await asyncio.get_event_loop().run_in_executor(None, self.update_table)
-
-    def _get_sorted_hash(self, key):
-        return self._sorted_hash.get(f"{key}_{self.reverse}")
-
-    def _set_sorted_hash(self, key, val):
-        self._sorted_hash[f"{key}_{self.reverse}"] = val
+               self.query_one(DataTable).sort("text",key=lambda x:x.plain,reverse=self.reverse)
 
     def set_reverse(self, key=None, init=False,reverse=None):
         if reverse:
-            self.reverse = reverse
-        if init:
-            self.reverse = None
+            self.reverse = False
             self._sortkey = "number"
         elif key != self._sortkey:
             self._sortkey = key
@@ -579,25 +506,58 @@ SelectField,DateField,TimeField {
     def set_filtered_rows(self, reset=False):
         if reset is True:
             with self.mutex:
-                self._filtered_rows = self.table_data
+                self.reset_table()
         else:
             with self.mutex:
-                filter_rows = self._sorted_rows
+                self.reset_table()
                 for name in row_names():
-                    name = name.lower()
                     try:
-                        filter_rows = list(
-                            filter(
-                                lambda x: self._status.validate(
-                                    name, x.get_compare_val(name)
-                                ),
-                                filter_rows,
-                            )
-                        )
-                    except Exception:
+                        self._filtered_rows_helper(name)
+                    except Exception as _:
                         pass
-                self._filtered_rows = filter_rows
+        try:
+            self.query_one(DataTable).refresh()
+        except Exception as E:
+            log.debug(f"Failed to refresh table: {E}")
+    def _filtered_rows_helper(self,key):
+            key = key.lower()
+            if key=="dd":
+                pass
+            # if key == "number":
+            #     self.query_one(DataTable).filter("number",key=lambda x:int(x.plain))
+            # elif key == "username":
+            #     self.query_one(DataTable).filter("username",key=lambda x:x.plain)
+            # elif key == "downloaded":
+            #     self.query_one(DataTable).filter("downloaded",key=lambda x:x)
 
+            # elif key == "unlocked":
+            #     self.query_one(DataTable).sort("unlocked",key=lambda x:x)
+            # elif key == "other_posts_with_media":
+            #     self.query_one(DataTable).filter("other_posts_with_media",key=lambda x:len(x))
+            # elif key == "length":
+            #     self.query_one(DataTable).filter("length",key=lambda x: arrow.get(x.plain, "h:m:s") if x.plain not in {"N/A","N\A"} else arrow.get("0:0:0", "h:m:s") )
+            # elif key == "mediatype":
+            #     self.query_one(DataTable).filter("mediatype",key=lambda x:x)
+            # elif key == "post_date":
+            #     self.query_one(DataTable).filter("post_date",key=lambda x:arrow.get(x))
+            elif key == "post_media_count":
+                self.query_one(DataTable).filter("post_media_count",key=self.query_one("#post_media_count").key())
+
+            # elif key == "responsetype":
+            #      self.query_one(DataTable).filter("responsetype",key=lambda x:x)
+
+            # elif key == "price":
+            #     self.query_one(DataTable).filter("price",key=lambda x:0 if x=="free" else x)
+
+            # elif key == "post_id":
+            #     self.query_one(DataTable).filter("post_id",key=lambda x:x)
+            # elif key == "media_id":
+            #     self.query_one(DataTable).filter("media_id",key=lambda x:x)
+            # elif key == "text":
+            #    self.query_one(DataTable).filter("text",key=lambda x:x.plain)
+
+                      
+    
     def update_input(self, row_name, value):
         try:
             targetNode = self.query_one(f"#{row_name}")
@@ -623,11 +583,15 @@ SelectField,DateField,TimeField {
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
                 for ele in row_names()
             ]
-            for count, row in enumerate(self._filtered_rows):
+            rows=[]
+            for count, row in enumerate(self.table_data):
+                print(count)
                 table_row = row.get_styled(count)
-                table.add_row(*table_row, key=str(row.get_val("index")), height=None)
+                rows.append(table_row)
+            table.add_rows(rows)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
+            table.save_table()
 
 
 app = InputApp()
