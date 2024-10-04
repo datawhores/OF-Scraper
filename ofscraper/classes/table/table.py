@@ -425,7 +425,7 @@ SelectField,DateField,TimeField {
     async def _sort_helper(self, label=None,reverse=None):
         with self.mutex:
             if label is None:
-                self._sorted_rows=reversed(self.table_data) if reverse else  self.table_data
+                self._sorted_reversed(self.table_data) if reverse else  self.table_data
                 return
             key = re.sub(" ", "_", label).lower()
             if key == "download_cart":
@@ -447,116 +447,46 @@ SelectField,DateField,TimeField {
                 return
 
             self.set_reverse(key=key,reverse=reverse)
-            if self._get_sorted_hash(key):
-                self._sorted_rows = self._get_sorted_hash(key)
-            elif key == "number":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+            if key == "number":
+                self.query_one(DataTable).sort("number",key=lambda x:int(x.plain),reverse=self.reverse)
             elif key == "username":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (x.get_compare_val(key), x.get_compare_val("number")),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("username",key=lambda x:x.plain,reverse=self.reverse)
             elif key == "downloaded":
-                self.query_one(DataTable).sort("downloaded",key=lambda x:x.plain)
+                self.query_one(DataTable).sort("downloaded",key=lambda x:x,reverse=self.reverse)
 
             elif key == "unlocked":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: 1 if x.get_compare_val(key) is True else 0,
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("unlocked",key=lambda x:x,reverse=self.reverse)
             elif key == "other_posts_with_media":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key) or 0,
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("other_posts_with_media",key=lambda x:len(x),reverse=self.reverse)
             elif key == "length":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) != "N/A" else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("length",key=lambda x: arrow.get(x.plain, "h:m:s") if x.plain not in {"N/A","N\A"} else arrow.get("0:0:0", "h:m:s") ,reverse=self.reverse)
             elif key == "mediatype":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("mediatype",key=lambda x:x,reverse=self.reverse)
             elif key == "post_date":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_date",key=lambda x:arrow.get(x),reverse=self.reverse)
             elif key == "post_media_count":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_media_count",key=lambda x:x,reverse=self.reverse)
 
             elif key == "responsetype":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
+                 self.query_one(DataTable).sort("responsetype",key=lambda x:x,reverse=self.reverse)
+
             elif key == "price":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        int(float(x.get_compare_val(key)))
-                        if x.get_compare_val(key) != "Free"
-                        else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("price",key=lambda x:0 if x=="free" else x,reverse=self.reverse)
 
             elif key == "post_id":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("post_id",key=lambda x:x,reverse=self.reverse)
             elif key == "media_id":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: (
-                        x.get_compare_val(key) if x.get_compare_val(key) else 0
-                    ),
-                    reverse=self.reverse,
-                )
+                self.query_one(DataTable).sort("media_id",key=lambda x:x,reverse=self.reverse)
             elif key == "text":
-                self._sorted_rows = sorted(
-                    self.table_data,
-                    key=lambda x: x.get_compare_val(key),
-                    reverse=self.reverse,
-                )
-        #     self._set_sorted_hash(key, self._sorted_rows)
-        # await asyncio.get_event_loop().run_in_executor(None, self.update_table)
+               self.query_one(DataTable).sort("text",key=lambda x:x.plain,reverse=self.reverse)
+            pass
+ 
 
-    def _get_sorted_hash(self, key):
-        return self._sorted_hash.get(f"{key}_{self.reverse}")
 
-    def _set_sorted_hash(self, key, val):
-        self._sorted_hash[f"{key}_{self.reverse}"] = val
-
-    def set_reverse(self, key=None, init=False,reverse=None):
-        if reverse:
-            self.reverse = reverse
-        if init:
-            self.reverse = None
-            self._sortkey = "number"
+    def set_reverse(self, key=None,reverse=None):
+        if reverse is None:
+            self.reverse = False
+            self._sortkey = key
         elif key != self._sortkey:
             self._sortkey = key
             self.reverse = False
@@ -566,7 +496,6 @@ SelectField,DateField,TimeField {
 
         elif self._sortkey == key and self.reverse:
             self.reverse = False
-
     def set_cart_toggle(self, init=False):
         if init:
             self.cart_toggle = Text("[]")
