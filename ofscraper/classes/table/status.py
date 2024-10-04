@@ -20,6 +20,9 @@ class Status:
         self._status.setdefault("max_length", {})
         self._status.setdefault("media_id", None)
         self._status.setdefault("post_id", None)
+        self._status.setdefault("page", None)
+        self._status.setdefault("num_per_page", None)
+
 
     def validate(self, key, test):
         key = key.lower()

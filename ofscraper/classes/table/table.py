@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import queue
 import re
@@ -36,34 +35,24 @@ class TableRow:
     def __init__(self, table_row):
         self._table_row = table_row
         self._other_styled = None
+        self.text={"length","text","username"}
 
-    def get_styled(self, count):
-        styled_row = [Text(str(count + 1))]
-        if not self._other_styled:
-            other_styled_row = [
-                Text(str(self.get_val(key)), style="italic #03AC13", overflow="fold")
-                for key in row_names()
-            ]
-            other_styled_row = [
-                self.split_join_max_len(ele, 30) for ele in other_styled_row
-            ]
-            self._other_styled = other_styled_row
-        styled_row.extend(self._other_styled)
+    def get_styled(self):
+        styled_row = [self._table_row['index']]
+        for key in row_names():
+            key=key.lower()
+            if key=='text':
+                long_string=str(self._table_row[key])
+                final_string="\n".join([long_string[i:i+50] for i in range(0, len(long_string), 50)])
+                styled_row.append(Text(final_string,style="italic #03AC13") )
+            elif key in self.text:
+                styled_row.append(Text(str(self._table_row[key]) ,style="italic #03AC13"))
+            else:
+                styled_row.append(self._table_row[key])
+        # styled_row.extend([ Text(str(self._table_row[key.lower()]) ,style="italic #03AC13") if key in self.text else self._table_row[key.lower()]
+        # for key in row_names()])
         return styled_row
 
-    def split_join_max_len(self, text, max_len):
-        current_line = ""
-        result = ""
-        for word in str(text).split():
-            if len(current_line + word) <= max_len:
-                current_line += " " + word
-            else:
-                result += current_line.strip() + "\n"
-                current_line = word
-        result += current_line.strip()
-        result = re.sub("^\s+", "", result)
-        result = re.sub("\s+$", "", result)
-        return Text(result)
 
     def get_val(self, name):
         name = name.lower()
@@ -120,6 +109,13 @@ class InputApp(App):
 
 
     #options{
+        height:120;
+        layout: grid;
+        grid-size: 4 50;
+        margin-top:2;
+    }
+
+     #page_option{
         height:120;
         layout: grid;
         grid-size: 4 50;
@@ -186,13 +182,22 @@ SelectField,DateField,TimeField {
     }
     """
 
-    BINDINGS = [("ctrl+s", "toggle_sidebar")]
+    BINDINGS = [("ctrl+t", "toggle_page_sidebar"),("ctrl+s", "toggle_options_sidebar")]
 
-    def action_toggle_sidebar(self) -> None:
-        self.query_one(Sidebar).toggle_class("-hidden")
+
+    def action_toggle_options_sidebar(self) -> None:
+        if 'page_option' not in list(map(lambda x:x.id,self.query("Sidebar.-hidden"))):
+            self.query_one("#page_option").toggle_class("-hidden")
+        self.query_one("#options").toggle_class("-hidden")
+
+    def action_toggle_page_sidebar(self) -> None:
+        if 'options' not in list(map(lambda x:x.id,self.query("Sidebar.-hidden"))):
+            self.query_one("#options").toggle_class("-hidden")
+        self.query_one("#page_option").toggle_class("-hidden")
 
     def __init__(self, *args, **kwargs) -> None:
         self._status = status
+        self.sidebar=None
         super().__init__(*args, **kwargs)
 
     @property
@@ -242,8 +247,10 @@ SelectField,DateField,TimeField {
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
 
-        elif event.button.id == "filter":
+        elif event.button.id == "filter" or event.button.id=="filter":
             self.update_table()
+        elif event.button.id == "page_enter" or event.button.id=="page_enter2":
+            self._set_page()
         elif event.button.id in ["console", "table"]:
             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"
 
@@ -278,16 +285,27 @@ SelectField,DateField,TimeField {
             with Vertical(id="table_page"):
                 with Horizontal(id="data"):
                     yield StyledButton("Reset", id="reset")
-                    yield StyledButton("Filter", id="filter")
                     yield StyledButton(
                         ">> Send Downloads to OF-Scraper", id="send_downloads"
                     )
                 yield Label("Ctrl+S: Toggle Sidebar for search")
+                yield Label("Ctrl+T: Toggle Page Selection")
+
                 yield Label("Arrows: Navigate Table")
                 yield Label('";" or "\'": Filter Table via Cell')
                 yield Label("Add to Cart: Click cell in 'Download Cart' Column")
                 with Container(id="table_main"):
-                    with Sidebar():
+                    with Sidebar(id="page_option"):
+                        yield StyledButton("Enter", id="page_enter")
+                        for ele in ["Page"]:
+                                yield NumField(ele,default=1)
+                        for ele in ["Num_Per_Page"]:
+                                yield  NumField(ele,default=100)
+                        yield StyledButton("Enter", id="page_enter2")
+
+                    with Sidebar(id="options"):
+                        yield StyledButton("Filter", id="filter")
+                        yield Rule()
                         with Container(id="options"):
                             for ele in ["Text"]:
                                 yield TextSearch(ele)
@@ -296,9 +314,11 @@ SelectField,DateField,TimeField {
                                 yield OtherMediaNumField(ele)
 
                             for ele in ["Media_ID"]:
-                                yield NumField(ele)
+                                yield NumField(ele,default=self._init_args.media_id)
                             yield Rule()
-                            for ele in ["Post_ID", "Post_Media_Count"]:
+                            for ele in ["Post_ID"]:
+                                yield NumField(ele,default=self._init_args.post_id)
+                            for ele in ["Post_Media_Count"]:
                                 yield NumField(ele)
                             yield Rule()
                             for ele in ["Price"]:
@@ -321,6 +341,9 @@ SelectField,DateField,TimeField {
 
                             for ele in ["username"]:
                                 yield StrInput(id=ele)
+                            yield Rule()
+                            yield StyledButton("Filter", id="filter")
+
                     yield DataTable(id="data_table")
                     yield Container()
             with Vertical(id="console_page"):
@@ -328,13 +351,11 @@ SelectField,DateField,TimeField {
             
 
     def on_mount(self) -> None:
-        self._set_media_type()
-        self._set_id()
-        self._set_sort()
-        self._set_length()
-        self.query_one(Sidebar).toggle_class("-hidden")
+        self._init_table()
+        self.query_one("#options").toggle_class("-hidden")
+        self.query_one("#page_option").toggle_class("-hidden")
+
         self.set_cart_toggle(init=True)
-        self.update_table()
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
     def _set_length(self):
         if self._init_args.length_max:
@@ -342,11 +363,24 @@ SelectField,DateField,TimeField {
         if self._init_args.length_min:
             self.query_one("#length").update_table_min(self._init_args.length_min)
     def _set_sort(self):
-        self.sort_helper(reverse=self._init_args.media_desc,label=self._init_args.media_sort)
-    def _set_id(self):
-        self.query_one("#post_id").update_table_val(self._init_args.post_id or "")
-        self.query_one("#media_id").update_table_val(self._init_args.media_id or "")
-
+        self.sort_runner(reverse=self._init_args.media_desc,label=self._init_args.media_sort)
+    def _set_page(self):
+        rows=list(self.query_one(DataTable).ordered_rows)
+        num_page=self._status['num_per_page'] or 100
+        page=min(self._status['page'] or 1,len(rows)//num_page)
+        for ele in self.query_one(DataTable).ordered_rows:
+            ele.height=0
+        start=(page-1)*num_page
+        for ele in self.query_one(DataTable).ordered_rows[start:start+num_page]:
+            ele.height=1
+        self.query_one(DataTable).refresh()
+    def _init_table(self):
+        self._set_media_type()
+        self._set_length()
+        self.set_filtered_rows()
+        self.make_table()
+        self._set_sort()
+        self._set_page()
     def _set_media_type(self):
         mediatype = (
             self._init_args.media_type
@@ -420,9 +454,9 @@ SelectField,DateField,TimeField {
 
     # Table Functions
     def sort_helper(self, label=None,reverse=None):
-        self.run_worker(self._sort_helper(label,reverse), thread=True, exclusive=True)
+        self.run_worker(self.sort_runner(label,reverse), thread=True, exclusive=True)
 
-    async def _sort_helper(self, label=None,reverse=None):
+    async def sort_runner(self, label=None,reverse=None):
         with self.mutex:
             if label is None:
                 self._sorted_reversed(self.table_data) if reverse else  self.table_data
@@ -479,7 +513,6 @@ SelectField,DateField,TimeField {
                 self.query_one(DataTable).sort("media_id",key=lambda x:x,reverse=self.reverse)
             elif key == "text":
                self.query_one(DataTable).sort("text",key=lambda x:x.plain,reverse=self.reverse)
-            pass
  
 
 
@@ -553,10 +586,12 @@ SelectField,DateField,TimeField {
                 for ele in row_names()
             ]
             for count, row in enumerate(self._filtered_rows):
-                table_row = row.get_styled(count)
-                table.add_row(*table_row, key=str(row.get_val("index")), height=None)
+                table_row = row.get_styled()
+                table.add_row(*table_row, key=str(row.get_val("index")), height=0,label=count+1)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
 
+    def make_page():
+        pass
 
 app = InputApp()

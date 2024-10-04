@@ -4,7 +4,9 @@ from ofscraper.utils.args.parse.arguments.check import (
     force,
     text_only_option,
     text_option,
-    check_mode_media_sort
+    check_mode_media_sort,
+    check_media_id_filter_option,
+    check_post_id_filter_option
 )
 from ofscraper.utils.args.parse.groups.media_filter import (
     length_max,
@@ -12,7 +14,6 @@ from ofscraper.utils.args.parse.groups.media_filter import (
     media_type_option,
     quality_option,
     media_desc_option,
-    media_id_filter,
 )
 from ofscraper.utils.args.parse.groups.post_filter import (
     post_id_filter_option, 
@@ -50,11 +51,12 @@ def common_args_check(func):
     @click.option_group(
     "Table Filter Options",
     post_id_filter_option,
-    media_id_filter,
     media_type_option,
     check_mode_media_sort,
     length_max,
     length_min,
+    check_media_id_filter_option,
+    check_post_id_filter_option,
     media_desc_option,
     help="Filters for controlling the initial table view"
     )

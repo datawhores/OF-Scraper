@@ -125,3 +125,22 @@ check_mode_media_sort= click.option(
         ]
     ),
 )
+
+check_post_id_filter_option = click.option(
+    "-pd",
+    "--post-id",
+    "--postid",
+    "post_id",
+    help="Filter posts based on post id",
+    required=False,
+    type=click.STRING,
+)
+
+
+check_media_id_filter_option = click.option(
+    "-md",
+    "--media-id",
+    help="Filter media based on media id",
+    required=False,
+    type=click.STRING,
+)
