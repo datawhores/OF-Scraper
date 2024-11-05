@@ -190,6 +190,7 @@ def get_areas():
 def checker():
     check_auth()
     allow_check_dupes()
+    set_after_check_mode()
     try:
         if get_command()  == "post_check":
             post_checker()
@@ -203,7 +204,10 @@ def checker():
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
-
+def set_after_check_mode():
+    args=read_args.retriveArgs()
+    args.after=0
+    write_args.setArgs(args)
 
 def post_checker():
     post_check_runner()
@@ -270,7 +274,7 @@ async def post_check_retriver():
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
-                            model_id, user_name, forced_after=0, c=c
+                            model_id, user_name,  c=c
                         )
                         set_check(timeline_data, model_id, timeline.API)
                 if "Archived" in areas:
@@ -279,7 +283,7 @@ async def post_check_retriver():
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
-                            model_id, user_name, forced_after=0, c=c
+                            model_id, user_name,  c=c
                         )
                         set_check(archived_data, model_id, archived.API)
 
@@ -314,7 +318,7 @@ async def post_check_retriver():
                         streams_data = oldstreams
                     else:
                         streams_resp = await streams.get_streams_posts(
-                            model_id, user_name, c=c, forced_after=0
+                            model_id, user_name, c=c
                         )
                         streams_data = [
                             post
@@ -438,7 +442,7 @@ async def message_check_retriver():
                     messages = oldmessages
                 else:
                     messages = await messages_.get_messages(
-                        model_id, user_name, forced_after=0, c=c
+                        model_id, user_name,  c=c
                     )
                     set_check(messages, model_id, messages_.API)
 

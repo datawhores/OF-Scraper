@@ -559,21 +559,21 @@ jobs:
       #     action: actions/download-artifact@v4
       #     with: |
       #       name:  ofscraper_macos_zip_${{needs.get_date.outputs.date}}
-      # - name: download windows
-      #   uses: Wandalen/wretry.action@master
+      - name: download windows
+        uses: Wandalen/wretry.action@master
 
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_windows_${{needs.get_date.outputs.date}}
-      # - name: download windows zip
-      #   uses: Wandalen/wretry.action@master
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_windows_zip_${{needs.get_date.outputs.date}}
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows_${{needs.get_date.outputs.date}}
+      - name: download windows zip
+        uses: Wandalen/wretry.action@master
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows_zip_${{needs.get_date.outputs.date}}
 
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper

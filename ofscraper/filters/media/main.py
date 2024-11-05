@@ -3,6 +3,7 @@ import logging
 import ofscraper.filters.media.filters as helpers
 import ofscraper.filters.media.sorter as sorter
 import ofscraper.utils.args.accessors.read as read_args
+from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.filters.media.utils.trace import trace_log_media, trace_log_post
@@ -215,7 +216,7 @@ def filterPostFinalText(post):
 
 def post_filter_for_like(post, like=False):
 
-    actions = read_args.retriveArgs().action
+    actions = get_actions()
     if "like" not in actions and "unlike" not in actions:
         log.debug("Skipping filtering because like and unlike not in actions")
         return post

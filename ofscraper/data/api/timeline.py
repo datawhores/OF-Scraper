@@ -42,9 +42,9 @@ API = "timeline"
 
 
 @run
-async def get_timeline_posts(model_id, username, forced_after=None, c=None):
+async def get_timeline_posts(model_id, username, c=None):
 
-    after = await get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username)
     time_log(username, after)
     if len(read_args.retriveArgs().post_id or []) == 0 or len(
         read_args.retriveArgs().post_id or []
@@ -225,8 +225,8 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-async def get_after(model_id, username, forced_after=None):
-    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+async def get_after(model_id, username):
+    prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
         return prechecks
     curr = await get_timeline_media(model_id=model_id, username=username)
@@ -291,7 +291,7 @@ async def scrape_timeline_posts(
         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
 
         log.debug(
-            f"trying access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
+            f"trying to access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
         )
 
         async with c.requests_async(url=url) as r:

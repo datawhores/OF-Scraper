@@ -372,8 +372,10 @@ class Media(base.base):
 
     @property
     def linked(self):
-        return None
-
+        return (self.url or self.mpd)is not None
+    @property
+    def link(self):
+        return self.url or self.mpd
     @property
     def media(self):
         return self._media

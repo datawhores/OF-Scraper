@@ -204,7 +204,7 @@ def get_hash(mediatype=None):
 def get_neg_filter():
     neg = read_args.retriveArgs().neg_filter or []
     if read_args.retriveArgs().block_ads or config_data.get_block_ads():
-        neg = neg.append(ads.get_ad_key_words())
+        neg.append(ads.get_ad_key_words())
     return neg
 
 

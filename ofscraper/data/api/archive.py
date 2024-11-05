@@ -46,8 +46,8 @@ sem = None
 
 
 @run
-async def get_archived_posts(model_id, username, forced_after=None, c=None):
-    after = await get_after(model_id, username, forced_after)
+async def get_archived_posts(model_id, username, c=None):
+    after = await get_after(model_id, username)
     if len(read_args.retriveArgs().post_id or []) == 0 or len(
         read_args.retriveArgs().post_id or []
     ) > constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
@@ -224,8 +224,8 @@ def get_tasks(splitArrays, c, model_id, after):
     return tasks
 
 
-async def get_after(model_id, username, forced_after=None):
-    prechecks = get_after_pre_checks(model_id, API, forced_after=forced_after)
+async def get_after(model_id, username):
+    prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
         return prechecks
     curr = await get_archived_media(model_id=model_id, username=username)
