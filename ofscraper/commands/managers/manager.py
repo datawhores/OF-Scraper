@@ -21,7 +21,7 @@ from ofscraper.commands.utils.strings import (
 
 
 log = logging.getLogger("shared")
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 
 
 class commmandManager:
@@ -165,7 +165,7 @@ class commmandManager:
         username = user.name
         active = user.active
         final_post_areas = areas.get_final_posts_area()
-        length =manager.Manager.model_manager.get_num_selected()
+        length = manager.Manager.model_manager.get_num_selected()
         count = progress_tasks.get_user_task_obj().completed
         logging.getLogger("shared_other").warning(
             progress_str.format(count=count + 1, length=length)

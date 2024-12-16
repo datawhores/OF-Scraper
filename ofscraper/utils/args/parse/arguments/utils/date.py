@@ -9,5 +9,5 @@ def before_callback(ctx, param, value):
         return params[f"{param.name}"]
     else:
         params[f"{param.name}_original"] = value
-        params[f"{param.name}"] =value
+        params[f"{param.name}"] = value
         return params[f"{param.name}"]

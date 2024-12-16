@@ -10,8 +10,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.args.accessors.command import get_command
 
 
-
-
 @run
 async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")

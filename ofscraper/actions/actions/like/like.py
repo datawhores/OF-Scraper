@@ -16,7 +16,7 @@ import logging
 import random
 import time
 
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

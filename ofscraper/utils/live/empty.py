@@ -3,7 +3,7 @@ import time
 
 import ofscraper.utils.console as console
 from ofscraper.utils.live.live import get_live, stop_live
-from  ofscraper.utils.live.clear import clear
+from ofscraper.utils.live.clear import clear
 
 
 @contextlib.contextmanager

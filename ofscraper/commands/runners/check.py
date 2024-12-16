@@ -22,7 +22,6 @@ import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
-import ofscraper.actions.actions.download.normal.downloadnormal as downloadnormal
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.auth.request as auth_requests
@@ -45,11 +44,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.runner.close.final.final import final
 from ofscraper.utils.args.accessors.command import get_command
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.filters.media.main as filters
-
-
-
+from ofscraper.actions.actions.download.download import process_dicts
 
 
 log = logging.getLogger("shared")
@@ -124,7 +121,7 @@ def process_item():
             )
             operations.table_init_create(model_id=model_id, username=username)
 
-            output, values = downloadnormal.process_dicts(
+            output, values = process_dicts(
                 username, model_id, [media], [post]
             )
             if values is None or values[-1] == 1:
@@ -167,23 +164,26 @@ async def data_refill(media_id, post_id, target_name, model_id):
     if get_command() == "msg_check":
         reset_message_set(model_id)
         retriver = message_check_retriver
-    elif get_command()  == "paid_check":
+    elif get_command() == "paid_check":
         reset_paid_set(model_id)
         retriver = purchase_check_retriver
-    elif get_command()  == "story_check":
+    elif get_command() == "story_check":
         retriver = stories_check_retriver
-    elif get_command()  == "post_check":
+    elif get_command() == "post_check":
         reset_time_line_cache(model_id)
         retriver = post_check_retriver
     else:
         return
     async for username, model_id, final_post_array in retriver():
         for x in await process_post_media(username, model_id, final_post_array):
-           ALL_MEDIA.update({"_".join([str(getattr(x, key)) for key in MEDIA_KEY]):x})
+            ALL_MEDIA.update({"_".join([str(getattr(x, key)) for key in MEDIA_KEY]): x})
+
+
 def allow_check_dupes():
     args = read_args.retriveArgs()
     args.force_all = True
     write_args.setArgs(args)
+
 
 def get_areas():
     return read_args.retriveArgs().check_area
@@ -194,22 +194,25 @@ def checker():
     allow_check_dupes()
     set_after_check_mode()
     try:
-        if get_command()  == "post_check":
+        if get_command() == "post_check":
             post_checker()
         elif get_command() == "msg_check":
             message_checker()
-        elif get_command()  == "paid_check":
+        elif get_command() == "paid_check":
             purchase_checker()
-        elif get_command()  == "story_check":
+        elif get_command() == "story_check":
             stories_checker()
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
+
+
 def set_after_check_mode():
-    args=read_args.retriveArgs()
-    args.after=0
+    args = read_args.retriveArgs()
+    args.after = 0
     write_args.setArgs(args)
+
 
 def post_checker():
     post_check_runner()
@@ -276,7 +279,7 @@ async def post_check_retriver():
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
-                            model_id, user_name,  c=c
+                            model_id, user_name, c=c
                         )
                         set_check(timeline_data, model_id, timeline.API)
                 if "Archived" in areas:
@@ -285,7 +288,7 @@ async def post_check_retriver():
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
-                            model_id, user_name,  c=c
+                            model_id, user_name, c=c
                         )
                         set_check(archived_data, model_id, archived.API)
 
@@ -310,7 +313,9 @@ async def post_check_retriver():
                             posts=False,
                         )
                         labels_data = [
-                            post for label in labels_resp for post in label.get("posts",[])
+                            post
+                            for label in labels_resp
+                            for post in label.get("posts", [])
                         ]
                         set_check(labels_data, model_id, labels.API)
 
@@ -325,7 +330,7 @@ async def post_check_retriver():
                         streams_data = [
                             post
                             for streams in streams_resp
-                            for post in streams.get("post",[])
+                            for post in streams.get("post", [])
                         ]
                         set_check(streams_data, model_id, streams.API)
 
@@ -338,21 +343,30 @@ async def post_check_retriver():
                     model_id=model_id,
                     username=user_name,
                 )
-                all_post_data=[]
-                for ele in [pinned_data
-                        ,archived_data
-                        ,labels_data
-                        ,timeline_data
-                        ,streams_data]:
-                    if ele==timeline_data:
+                all_post_data = []
+                for ele in [
+                    pinned_data,
+                    archived_data,
+                    labels_data,
+                    timeline_data,
+                    streams_data,
+                ]:
+                    if ele == timeline_data:
 
-                        all_post_data.append(timeline.filter_timeline_post(list(
-                            map(
-                                lambda x: posts_.Post(x, model_id, user_name),
-                                timeline_data
-                        ))))
+                        all_post_data.append(
+                            timeline.filter_timeline_post(
+                                list(
+                                    map(
+                                        lambda x: posts_.Post(x, model_id, user_name),
+                                        timeline_data,
+                                    )
+                                )
+                            )
+                        )
                     else:
-                        all_post_data.append(map(lambda x:posts_.Post(x, model_id, user_name),ele))
+                        all_post_data.append(
+                            map(lambda x: posts_.Post(x, model_id, user_name), ele)
+                        )
 
                 all_post_data = list(
                     map(
@@ -458,9 +472,7 @@ async def message_check_retriver():
                 if len(oldmessages) > 0 and not read_args.retriveArgs().force:
                     messages = oldmessages
                 else:
-                    messages = await messages_.get_messages(
-                        model_id, user_name,  c=c
-                    )
+                    messages = await messages_.get_messages(model_id, user_name, c=c)
                     set_check(messages, model_id, messages_.API)
 
                 message_posts_array = list(
@@ -597,8 +609,8 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
-    media=await insert_media(username, model_id, posts_array)
-    media= filter_media(username,model_id,media)
+    media = await insert_media(username, model_id, posts_array)
+    media = filter_media(username, model_id, media)
     new_media = {
         "_".join([str(getattr(ele, key)) for key in MEDIA_KEY]): ele for ele in media
     }
@@ -619,15 +631,14 @@ async def insert_media(username, model_id, posts_array):
     )
     seen = set()
     unduped = [
-
         post
         for post in posts_array
         if (post.id, post.username) not in seen
         and not seen.add((post.id, post.username))
     ]
-    media= []
+    media = []
     [media.extend(ele.all_media) for ele in unduped]
-    
+
     await batch_mediainsert(
         media,
         model_id=model_id,
@@ -636,9 +647,11 @@ async def insert_media(username, model_id, posts_array):
     )
     return media
 
-def filter_media(username,model_id,media):
 
-    return filters.filterCheckMode(media,username,model_id)
+def filter_media(username, model_id, media):
+
+    return filters.filterCheckMode(media, username, model_id)
+
 
 @run
 async def get_paid_ids(model_id, user_name):
@@ -732,8 +745,8 @@ async def row_gather(username, model_id, paid=False):
     ):
         out.append(
             {
-                "index": count,
-                "number": None,
+                "index": count - 1,
+                "number": count,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
                 "downloaded": (ele.id, ele.postid) in downloaded,

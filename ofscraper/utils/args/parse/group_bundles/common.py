@@ -9,7 +9,6 @@ from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
 from ofscraper.utils.args.parse.groups.program import program_options
 
 
-
 def common_args(func):
     @program_options
     @logging_options
@@ -20,6 +19,5 @@ def common_args(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
+
     return wrapper
-
-

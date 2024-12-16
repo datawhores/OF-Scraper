@@ -47,19 +47,17 @@ sem = None
 
 
 @run
-async def get_streams_posts(model_id, username, c=None,post_id=None):
+async def get_streams_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     time_log(username, after)
-    post_id=post_id or  []
-    if len(post_id) == 0 or len(
-        post_id
-    ) > constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+    post_id = post_id or []
+    if len(post_id) == 0 or len(post_id) > constants.getattr(
+        "MAX_STREAMS_INDIVIDUAL_SEARCH"
+    ):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(post_id) <= constants.getattr(
-        "MAX_STREAMS_INDIVIDUAL_SEARCH"
-    ):
+    elif len(post_id) <= constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, after, API)
     return data

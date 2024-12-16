@@ -28,7 +28,6 @@ class PriceField(Horizontal):
         for ele in self.query(IntegerInput):
             ele.value = ""
 
-
     def validate(self, val):
         minval = self.query_one(f"#{self.filter_name}_search").value
         maxval = self.query_one(f"#{self.filter_name}_search2").value

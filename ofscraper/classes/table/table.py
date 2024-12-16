@@ -30,29 +30,35 @@ global app
 app = None
 row_queue = queue.Queue()
 
+START_PAGE = 1
+AMOUNT_PER_PAGE = 100
+
 
 class TableRow:
     def __init__(self, table_row):
         self._table_row = table_row
         self._other_styled = None
-        self.text={"length","text","username"}
+        self.text = {"length", "text", "username"}
 
     def get_styled(self):
-        styled_row = [self._table_row['index']]
+        styled_row = [self._table_row["number"]]
         for key in row_names():
-            key=key.lower()
-            if key=='text':
-                long_string=str(self._table_row[key])
-                final_string="\n".join([long_string[i:i+50] for i in range(0, len(long_string), 50)])
-                styled_row.append(Text(final_string,style="italic #03AC13") )
+            key = key.lower()
+            if key == "text":
+                long_string = str(self._table_row[key])
+                final_string = "\n".join(
+                    [long_string[i : i + 50] for i in range(0, len(long_string), 50)]
+                )
+                styled_row.append(Text(final_string, style="italic #03AC13"))
             elif key in self.text:
-                styled_row.append(Text(str(self._table_row[key]) ,style="italic #03AC13"))
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="italic #03AC13")
+                )
             else:
                 styled_row.append(self._table_row[key])
         # styled_row.extend([ Text(str(self._table_row[key.lower()]) ,style="italic #03AC13") if key in self.text else self._table_row[key.lower()]
         # for key in row_names()])
         return styled_row
-
 
     def get_val(self, name):
         name = name.lower()
@@ -98,7 +104,7 @@ class InputApp(App):
        overflow: hidden;
     }
 
-    Sidebar {
+    #options_sidebar, #page_option_sidebar{
         width: 45%;
         dock: left;
         layer: sidebar;
@@ -108,10 +114,10 @@ class InputApp(App):
     }
 
 
-    #options{
-        height:120;
+    #main_options{
+        height:150;
         layout: grid;
-        grid-size: 4 50;
+        grid-size: 4 60;
         margin-top:2;
     }
 
@@ -182,22 +188,25 @@ SelectField,DateField,TimeField {
     }
     """
 
-    BINDINGS = [("ctrl+t", "toggle_page_sidebar"),("ctrl+s", "toggle_options_sidebar")]
-
+    BINDINGS = [("ctrl+t", "toggle_page_sidebar"), ("ctrl+s", "toggle_options_sidebar")]
 
     def action_toggle_options_sidebar(self) -> None:
-        if 'page_option' not in list(map(lambda x:x.id,self.query("Sidebar.-hidden"))):
-            self.query_one("#page_option").toggle_class("-hidden")
-        self.query_one("#options").toggle_class("-hidden")
+        if "page_option_sidebar" not in list(
+            map(lambda x: x.id, self.query("Sidebar.-hidden"))
+        ):
+            self.query_one("#page_option_sidebar").toggle_class("-hidden")
+        self.query_one("#options_sidebar").toggle_class("-hidden")
 
     def action_toggle_page_sidebar(self) -> None:
-        if 'options' not in list(map(lambda x:x.id,self.query("Sidebar.-hidden"))):
-            self.query_one("#options").toggle_class("-hidden")
-        self.query_one("#page_option").toggle_class("-hidden")
+        if "options_sidebar" not in list(
+            map(lambda x: x.id, self.query("Sidebar.-hidden"))
+        ):
+            self.query_one("#options_sidebar").toggle_class("-hidden")
+        self.query_one("#page_option_sidebar").toggle_class("-hidden")
 
     def __init__(self, *args, **kwargs) -> None:
         self._status = status
-        self.sidebar=None
+        self.sidebar = None
         super().__init__(*args, **kwargs)
 
     @property
@@ -214,18 +223,18 @@ SelectField,DateField,TimeField {
         self._sorted_hash = {}
         self._sortkey = None
         self.mutex = kwargs.pop("mutex", None)
-        self._sorted_rows = self.table_data
-        self._filtered_rows = self.table_data
         self._init_args = kwargs.pop("args", None)
         self.run()
 
-
     def update_table(self, reset=False):
-        self.run_worker(self._update_table(reset=reset))
+        # self.run_worker(self._update_table(reset=reset))
+        self._update_table(reset=reset)
 
-    async def _update_table(self, reset=False):
+    def _update_table(self, reset=False):
+        self.make_table(reset=True)
         self.set_filtered_rows(reset=reset)
-        self.make_table()
+        self._set_sort()
+        self._set_page(reset=reset)
 
     def on_data_table_header_selected(self, event):
         self.sort_helper(event.label.plain)
@@ -247,10 +256,13 @@ SelectField,DateField,TimeField {
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
 
-        elif event.button.id == "filter" or event.button.id=="filter":
+        elif event.button.id == "filter" or event.button.id == "filter2":
+            self.query_one("#options_sidebar").toggle_class("-hidden")
             self.update_table()
-        elif event.button.id == "page_enter" or event.button.id=="page_enter2":
-            self._set_page()
+
+        elif event.button.id == "page_enter" or event.button.id == "page_enter2":
+            self.query_one("#page_option_sidebar").toggle_class("-hidden")
+            self.update_table()
         elif event.button.id in ["console", "table"]:
             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"
 
@@ -295,18 +307,18 @@ SelectField,DateField,TimeField {
                 yield Label('";" or "\'": Filter Table via Cell')
                 yield Label("Add to Cart: Click cell in 'Download Cart' Column")
                 with Container(id="table_main"):
-                    with Sidebar(id="page_option"):
+                    with Sidebar(id="page_option_sidebar"):
                         yield StyledButton("Enter", id="page_enter")
                         for ele in ["Page"]:
-                                yield NumField(ele,default=1)
+                            yield NumField(ele, default=START_PAGE)
                         for ele in ["Num_Per_Page"]:
-                                yield  NumField(ele,default=100)
+                            yield NumField(ele, default=AMOUNT_PER_PAGE)
                         yield StyledButton("Enter", id="page_enter2")
 
-                    with Sidebar(id="options"):
-                        yield StyledButton("Filter", id="filter")
-                        yield Rule()
-                        with Container(id="options"):
+                    with Sidebar(id="options_sidebar"):
+                        with Container(id="main_options"):
+                            yield StyledButton("Filter", id="filter")
+                            yield Rule()
                             for ele in ["Text"]:
                                 yield TextSearch(ele)
                             yield Rule()
@@ -314,10 +326,10 @@ SelectField,DateField,TimeField {
                                 yield OtherMediaNumField(ele)
 
                             for ele in ["Media_ID"]:
-                                yield NumField(ele,default=self._init_args.media_id)
+                                yield NumField(ele, default=self._init_args.media_id)
                             yield Rule()
                             for ele in ["Post_ID"]:
-                                yield NumField(ele,default=self._init_args.post_id)
+                                yield NumField(ele, default=self._init_args.post_id)
                             for ele in ["Post_Media_Count"]:
                                 yield NumField(ele)
                             yield Rule()
@@ -338,49 +350,57 @@ SelectField,DateField,TimeField {
                             for ele in ["Responsetype"]:
                                 yield ResponseField(ele)
                             yield Rule()
-
                             for ele in ["username"]:
                                 yield StrInput(id=ele)
                             yield Rule()
-                            yield StyledButton("Filter", id="filter")
-
+                            yield StyledButton("Filter", id="filter2")
                     yield DataTable(id="data_table")
-                    yield Container()
             with Vertical(id="console_page"):
                 yield OutConsole()
-            
 
     def on_mount(self) -> None:
         self._init_table()
-        self.query_one("#options").toggle_class("-hidden")
-        self.query_one("#page_option").toggle_class("-hidden")
+        self.query_one("#options_sidebar").toggle_class("-hidden")
+        self.query_one("#page_option_sidebar").toggle_class("-hidden")
 
         self.set_cart_toggle(init=True)
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
+
     def _set_length(self):
         if self._init_args.length_max:
             self.query_one("#length").update_table_max(self._init_args.length_max)
         if self._init_args.length_min:
             self.query_one("#length").update_table_min(self._init_args.length_min)
+
     def _set_sort(self):
-        self.sort_runner(reverse=self._init_args.media_desc,label=self._init_args.media_sort)
-    def _set_page(self):
-        rows=list(self.query_one(DataTable).ordered_rows)
-        num_page=self._status['num_per_page'] or 100
-        page=min(self._status['page'] or 1,len(rows)//num_page)
-        for ele in self.query_one(DataTable).ordered_rows:
-            ele.height=0
-        start=(page-1)*num_page
-        for ele in self.query_one(DataTable).ordered_rows[start:start+num_page]:
-            ele.height=1
-        self.query_one(DataTable).refresh()
+        self.sort_runner(
+            reverse=self._init_args.media_desc, label=self._init_args.media_sort
+        )
+
+    def _set_page(self, reset=False):
+        with self.mutex:
+            for ele in self.query_one(DataTable).ordered_rows:
+                ele.height = 0
+            rows = list(self._filtered_rows)
+            num_page = self._status["num_per_page"] or 100
+            if not reset:
+                page = min(self._status["page"] or 1, len(rows) // num_page)
+            else:
+                page = 1
+            start = (page - 1) * num_page
+            for count, ele in enumerate(rows[start : start + num_page]):
+                ele.height = 1
+                ele.label = count + 1
+            pass
+
     def _init_table(self):
         self._set_media_type()
         self._set_length()
-        self.set_filtered_rows()
         self.make_table()
+        self.set_filtered_rows()
         self._set_sort()
         self._set_page()
+
     def _set_media_type(self):
         mediatype = (
             self._init_args.media_type
@@ -390,7 +410,6 @@ SelectField,DateField,TimeField {
         self.query_one("#mediatype").query_one(SelectionList).deselect_all()
         for ele in mediatype:
             self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
-
 
     # Cart
     def change_download_cart(self, coord):
@@ -453,13 +472,13 @@ SelectField,DateField,TimeField {
                     log.debug(E)
 
     # Table Functions
-    def sort_helper(self, label=None,reverse=None):
-        self.run_worker(self.sort_runner(label,reverse), thread=True, exclusive=True)
+    def sort_helper(self, label=None, reverse=None):
+        self.run_worker(self.sort_runner(label, reverse), thread=True, exclusive=True)
 
-    async def sort_runner(self, label=None,reverse=None):
+    async def sort_runner(self, label=None, reverse=None):
         with self.mutex:
             if label is None:
-                self._sorted_reversed(self.table_data) if reverse else  self.table_data
+                self._sorted_reversed(self.table_data) if reverse else self.table_data
                 return
             key = re.sub(" ", "_", label).lower()
             if key == "download_cart":
@@ -480,43 +499,75 @@ SelectField,DateField,TimeField {
                 ]
                 return
 
-            self.set_reverse(key=key,reverse=reverse)
+            self.set_reverse(key=key, reverse=reverse)
             if key == "number":
-                self.query_one(DataTable).sort("number",key=lambda x:int(x.plain),reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "number", key=lambda x: int(x.plain), reverse=self.reverse
+                )
             elif key == "username":
-                self.query_one(DataTable).sort("username",key=lambda x:x.plain,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "username", key=lambda x: x.plain, reverse=self.reverse
+                )
             elif key == "downloaded":
-                self.query_one(DataTable).sort("downloaded",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "downloaded", key=lambda x: x, reverse=self.reverse
+                )
 
             elif key == "unlocked":
-                self.query_one(DataTable).sort("unlocked",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "unlocked", key=lambda x: x, reverse=self.reverse
+                )
             elif key == "other_posts_with_media":
-                self.query_one(DataTable).sort("other_posts_with_media",key=lambda x:len(x),reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "other_posts_with_media", key=lambda x: len(x), reverse=self.reverse
+                )
             elif key == "length":
-                self.query_one(DataTable).sort("length",key=lambda x: arrow.get(x.plain, "h:m:s") if x.plain not in {"N/A","N\A"} else arrow.get("0:0:0", "h:m:s") ,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "length",
+                    key=lambda x: (
+                        arrow.get(x.plain, "h:m:s")
+                        if x.plain not in {"N/A", "N\A"}
+                        else arrow.get("0:0:0", "h:m:s")
+                    ),
+                    reverse=self.reverse,
+                )
             elif key == "mediatype":
-                self.query_one(DataTable).sort("mediatype",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "mediatype", key=lambda x: x, reverse=self.reverse
+                )
             elif key == "post_date":
-                self.query_one(DataTable).sort("post_date",key=lambda x:arrow.get(x),reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "post_date", key=lambda x: arrow.get(x), reverse=self.reverse
+                )
             elif key == "post_media_count":
-                self.query_one(DataTable).sort("post_media_count",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "post_media_count", key=lambda x: x, reverse=self.reverse
+                )
 
             elif key == "responsetype":
-                 self.query_one(DataTable).sort("responsetype",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "responsetype", key=lambda x: x, reverse=self.reverse
+                )
 
             elif key == "price":
-                self.query_one(DataTable).sort("price",key=lambda x:0 if x=="free" else x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "price", key=lambda x: 0 if x == "free" else x, reverse=self.reverse
+                )
 
             elif key == "post_id":
-                self.query_one(DataTable).sort("post_id",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "post_id", key=lambda x: x, reverse=self.reverse
+                )
             elif key == "media_id":
-                self.query_one(DataTable).sort("media_id",key=lambda x:x,reverse=self.reverse)
+                self.query_one(DataTable).sort(
+                    "media_id", key=lambda x: x, reverse=self.reverse
+                )
             elif key == "text":
-               self.query_one(DataTable).sort("text",key=lambda x:x.plain,reverse=self.reverse)
- 
+                self.query_one(DataTable).sort(
+                    "text", key=lambda x: x.plain, reverse=self.reverse
+                )
 
-
-    def set_reverse(self, key=None,reverse=None):
+    def set_reverse(self, key=None, reverse=None):
         if reverse is None:
             self.reverse = False
             self._sortkey = key
@@ -529,6 +580,7 @@ SelectField,DateField,TimeField {
 
         elif self._sortkey == key and self.reverse:
             self.reverse = False
+
     def set_cart_toggle(self, init=False):
         if init:
             self.cart_toggle = Text("[]")
@@ -541,17 +593,21 @@ SelectField,DateField,TimeField {
     def set_filtered_rows(self, reset=False):
         if reset is True:
             with self.mutex:
-                self._filtered_rows = self.table_data
+                rows = list(self.query_one(DataTable).ordered_rows)
+                self._filtered_rows = map(lambda x: rows[x["index"]], self.table_data)
         else:
             with self.mutex:
-                filter_rows = self._sorted_rows
+                filter_rows = list(self.query_one(DataTable).ordered_rows)
                 for name in row_names():
                     name = name.lower()
                     try:
                         filter_rows = list(
                             filter(
                                 lambda x: self._status.validate(
-                                    name, x.get_compare_val(name)
+                                    name,
+                                    self.table_data[int(x.key.value)].get_compare_val(
+                                        name
+                                    ),
                                 ),
                                 filter_rows,
                             )
@@ -574,24 +630,23 @@ SelectField,DateField,TimeField {
             except:
                 continue
 
-    def make_table(self):
+    def make_table(self, reset=False):
         with self.mutex:
             table = self.query_one(DataTable)
-            table.clear(True)
+            if reset:
+                table.clear(True)
             table.fixed_rows = 0
             table.zebra_stripes = True
-            table.add_column("number",key="number")
+            table.add_column("number", key="number")
             [
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
                 for ele in row_names()
             ]
-            for count, row in enumerate(self._filtered_rows):
+            for count, row in enumerate(self.table_data):
                 table_row = row.get_styled()
-                table.add_row(*table_row, key=str(row.get_val("index")), height=0,label=count+1)
+                table.add_row(*table_row, key=str(row.get_val("index")), height=0)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
 
-    def make_page():
-        pass
 
 app = InputApp()

@@ -14,7 +14,7 @@ r"""
 import logging
 import traceback
 
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.utils.level as log_helpers
 

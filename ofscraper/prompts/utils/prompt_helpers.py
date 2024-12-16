@@ -14,7 +14,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 
 
 console = Console()
@@ -196,7 +196,7 @@ def _select_helper(prompt, toggle=True):
 
 
 def _get_choices():
-    models =manager.Manager.model_manager.filterOnly()
+    models = manager.Manager.model_manager.filterOnly()
     models = sort.sort_models_helper(models)
     return list(
         map(

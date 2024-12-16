@@ -95,7 +95,7 @@ text_option = click.option(
     is_flag=True,
 )
 
-check_mode_media_sort= click.option(
+check_mode_media_sort = click.option(
     "-mst",
     "--media-sort",
     help="""
@@ -120,8 +120,7 @@ check_mode_media_sort= click.option(
             "price",
             "post_id",
             "media_id",
-            "text"
-
+            "text",
         ]
     ),
 )

@@ -7,5 +7,5 @@ import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
 @metadata_args
 @click.pass_context
 def metadata(ctx, *args, **kwargs):
-    ctx=retry_helper.retry_modifiy(ctx)
+    ctx = retry_helper.retry_modifiy(ctx)
     return ctx.params, ctx.info_name

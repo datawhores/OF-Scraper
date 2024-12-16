@@ -8,7 +8,7 @@ import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download
 import ofscraper.data.models.manager as manager
@@ -27,8 +27,7 @@ from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
 from ofscraper.actions.actions.download.utils.text import textDownloader
-import  ofscraper.runner.manager as manager
-
+import ofscraper.runner.manager as manager
 
 
 def manual_download(urls=None):
@@ -81,11 +80,11 @@ def manual_download(urls=None):
                     result = textDownloader(posts, username)
                 else:
                     result, _ = download.download_process(
-                        username,model_id, medialist, posts=None
+                        username, model_id, medialist, posts=None
                     )
                 results.append(result)
 
-        final_action( results)
+        final_action(results)
 
     except Exception as e:
         log.traceback_(e)

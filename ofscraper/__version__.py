@@ -27,7 +27,7 @@ try:
     ).serialize(format="{base}+{branch}.{commit}", metadata=False)
     # if __version__ == "0.0.0":
     #     print(__version__)
-        # raise Exception("pipx error")
+    # raise Exception("pipx error")
 except:
     import importlib.metadata
 

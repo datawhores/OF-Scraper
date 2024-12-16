@@ -10,8 +10,7 @@ import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.managers.scraper import scraperManager
-import  ofscraper.runner.manager as manager
-
+import ofscraper.runner.manager as manager
 
 
 log = logging.getLogger("shared")

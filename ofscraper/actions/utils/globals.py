@@ -16,7 +16,6 @@ from ofscraper.actions.utils.send.message import set_send_msg
 import ofscraper.runner.manager as manager
 
 
-
 attempt = None
 attempt2 = None
 total_count = None
@@ -80,7 +79,7 @@ def subProcessVariableInit(
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     manager.start_other_managers()
-    manager.Manager.model_manager.all_subs_dict=userList
+    manager.Manager.model_manager.all_subs_dict = userList
     process_split_globals(pipeCopy, stdout_logqueue, file_logqueue)
     set_send_msg()
 

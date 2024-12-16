@@ -7,11 +7,6 @@ import ofscraper.utils.constants as constants
 from ofscraper.utils.args.accessors.areas import get_text_area
 
 
-def not_solo_thread():
-    return (
-        read_args.retriveArgs().downloadthreads != 0 and config_data.get_threads() != 0
-    )
-
 
 def get_key_mode():
     return read_args.retriveArgs().key_mode or config_data.get_key_mode()
@@ -111,11 +106,6 @@ def get_download_bars():
 
 def get_download_sems():
     return read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
-
-
-def get_threads():
-    return read_args.retriveArgs().downloadthreads or config_data.get_threads()
-
 
 def get_max_post_count():
     return read_args.retriveArgs().max_count or config_data.get_max_post_count()

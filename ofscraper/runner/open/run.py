@@ -28,6 +28,3 @@ def main():
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
                 raise E
-
-
-

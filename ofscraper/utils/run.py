@@ -29,7 +29,7 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
 from ofscraper.commands.managers.scraper import scraperManager
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 
 
 log = logging.getLogger("shared")
@@ -57,7 +57,9 @@ def set_schedule(*functs):
 def schedule_helper(*functs):
     jobqueue.put(other_logger.updateOtherLoggerStream)
     jobqueue.put(logs.printStartValues)
-    jobqueue.put(partial(manager.Manager.model_manager.getselected_usernames, rescan=True))
+    jobqueue.put(
+        partial(manager.Manager.model_manager.getselected_usernames, rescan=True)
+    )
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)

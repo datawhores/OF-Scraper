@@ -336,23 +336,6 @@ def get_metadata(config=None):
 
 
 @wrapper.config_reader
-def get_threads(config=None):
-    if config is False:
-        return constants.THREADS_DEFAULT
-    threads = config.get("thread_count") or config.get("performance_options", {}).get(
-        "thread_count",
-    )
-    threads = (
-        threads if threads is not None else constants_attr.getattr("THREADS_DEFAULT")
-    )
-    try:
-        threads = int(threads)
-    except ValueError:
-        threads = int(constants_attr.getattr("THREADS_DEFAULT"))
-    return threads
-
-
-@wrapper.config_reader
 def get_download_limit(config=None, mediatype=None):
     if config is False:
         return constants.DOWNLOAD_LIMIT_DEFAULT

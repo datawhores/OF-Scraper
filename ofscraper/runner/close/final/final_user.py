@@ -7,14 +7,13 @@ import tempfile
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
-import  ofscraper.runner.manager as manager
-
+import ofscraper.runner.manager as manager
 
 
 def post_user_script(username, media=None, posts=None):
     if not settings.get_post_download_script():
         return
-    userdata=manager.Manager.model_manager.get_model(username)
+    userdata = manager.Manager.model_manager.get_model(username)
     if not userdata:
         return
     try:

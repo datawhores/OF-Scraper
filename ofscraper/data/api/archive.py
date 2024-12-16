@@ -46,19 +46,17 @@ sem = None
 
 
 @run
-async def get_archived_posts(model_id, username, c=None,post_id=None):
-    post_id=post_id or []
+async def get_archived_posts(model_id, username, c=None, post_id=None):
+    post_id = post_id or []
     after = await get_after(model_id, username)
-    if len(post_id) == 0 or len(
-        post_id
-    ) > constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
+    if len(post_id) == 0 or len(post_id) > constants.getattr(
+        "MAX_ARCHIVED_INDIVIDUAL_SEARCH"
+    ):
         time_log(username, after)
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks(tasks)
-    elif len(post_id) <= constants.getattr(
-        "MAX_ARCHIVED_INDIVIDUAL_SEARCH"
-    ):
+    elif len(post_id) <= constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, after, API)
     return data

@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
@@ -99,7 +99,9 @@ async def scrape_paid(c, username, offset=0):
             f"scrape paid offset -> {offset} username -> {username}",
             visible=True,
         )
-        log.debug(f"trying to access {API.lower()} posts with url:{url} offset:{offset}")
+        log.debug(
+            f"trying to access {API.lower()} posts with url:{url} offset:{offset}"
+        )
 
         async with c.requests_async(url) as r:
 
@@ -141,7 +143,7 @@ async def get_all_paid_posts():
         sem_count=constants.getattr("SCRAPE_PAID_SEMS"),
     ) as c:
         tasks = await create_tasks_scrape_paid(c)
-        data= await process_tasks_all_paid(tasks)
+        data = await process_tasks_all_paid(tasks)
         return create_all_paid_dict(data)
 
 
@@ -173,6 +175,7 @@ async def create_tasks_scrape_paid(c):
     else:
         tasks.append(asyncio.create_task(scrape_all_paid(c)))
     return tasks
+
 
 async def process_tasks_all_paid(tasks):
     output = []
@@ -215,7 +218,6 @@ async def process_tasks_all_paid(tasks):
     )
     # filter at user level
     return output
-
 
 
 def create_all_paid_dict(paid_content):
@@ -286,7 +288,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         raise E
 
     finally:
-         progress_utils.remove_api_job_task(task)
+        progress_utils.remove_api_job_task(task)
 
 
 def get_individual_paid_post(username, model_id, postid):

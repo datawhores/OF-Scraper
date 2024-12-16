@@ -536,7 +536,7 @@ jobs:
       #     action: actions/download-artifact@v4
       #     with: |
       #       name:  ofscraper_linux_${{needs.get_date.outputs.date}}
-      
+
       # - name: download linux zip
       #   uses: Wandalen/wretry.action@master
       #   with:

@@ -527,9 +527,12 @@ def get_all_medias_transition(
             )
             for row in data
         ]
-async def get_all_medias( model_id=None, username=None, database_model=None, **kwargs):
-    return await get_all_medias_transition(model_id=model_id, username=username, database_model=database_model, **kwargs)
-    
+
+
+async def get_all_medias(model_id=None, username=None, database_model=None, **kwargs):
+    return await get_all_medias_transition(
+        model_id=model_id, username=username, database_model=database_model, **kwargs
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -573,7 +576,6 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         ]
 
 
-
 @run
 @wrapper.operation_wrapper_async
 def get_pinned_media(conn=None, model_id=None, **kwargs) -> list:
@@ -590,6 +592,7 @@ def get_pinned_media(conn=None, model_id=None, **kwargs) -> list:
             for ele in data
         ]
 
+
 @run
 @wrapper.operation_wrapper_async
 def get_stories_media(conn=None, model_id=None, **kwargs) -> list:
@@ -605,6 +608,8 @@ def get_stories_media(conn=None, model_id=None, **kwargs) -> list:
             )
             for ele in data
         ]
+
+
 @run
 @wrapper.operation_wrapper_async
 def get_highlights_media(conn=None, model_id=None, **kwargs) -> list:
@@ -620,7 +625,8 @@ def get_highlights_media(conn=None, model_id=None, **kwargs) -> list:
             )
             for ele in data
         ]
-        
+
+
 @run
 @wrapper.operation_wrapper_async
 def get_streams_media(conn=None, model_id=None, **kwargs) -> list:

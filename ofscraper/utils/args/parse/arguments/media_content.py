@@ -45,7 +45,6 @@ min_size_option = click.option(
 )
 
 
-
 media_id_filter = click.option(
     "-md",
     "--media-id",
@@ -105,8 +104,7 @@ media_sort_option = click.option(
 media_desc_option = click.option(
     "-mdc",
     "--media-desc",
-    help=
-    """
+    help="""
     \b
     Sort the media list in descending order
     """,
@@ -158,8 +156,6 @@ redownload_option = click.option(
     "--re-download",
     "redownload",
     help="Forces redownloading of all files in selected post types",
-    default=False, 
+    default=False,
     is_flag=True,
-   
 )
-

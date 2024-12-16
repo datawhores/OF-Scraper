@@ -42,20 +42,18 @@ API = "timeline"
 
 
 @run
-async def get_timeline_posts(model_id, username, c=None,post_id=None):
+async def get_timeline_posts(model_id, username, c=None, post_id=None):
 
     after = await get_after(model_id, username)
-    post_id=post_id or []
+    post_id = post_id or []
     time_log(username, after)
-    if len(post_id) == 0 or len(
-        post_id
-    ) > constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
+    if len(post_id) == 0 or len(post_id) > constants.getattr(
+        "MAX_TIMELINE_INDIVIDUAL_SEARCH"
+    ):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(post_id) <= constants.getattr(
-        "MAX_TIMELINE_INDIVIDUAL_SEARCH"
-    ):
+    elif len(post_id) <= constants.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
         data = process_individual()
 
     update_check(data, model_id, after, API)
@@ -358,11 +356,11 @@ Setting timeline scan range for {username} from {arrow.get(after).format(constan
 
             """
     )
+
+
 def filter_timeline_post(timeline_posts):
-        if read_args.retriveArgs().timeline_strict:
-            timeline_only_posts = list(
-                filter(lambda x: x.regular_timeline, timeline_posts)
-            )
-        else:
-            timeline_only_posts = timeline_posts
-        return timeline_only_posts
+    if read_args.retriveArgs().timeline_strict:
+        timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
+    else:
+        timeline_only_posts = timeline_posts
+    return timeline_only_posts

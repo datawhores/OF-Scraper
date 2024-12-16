@@ -25,7 +25,9 @@ def filtermediaFinal(media, username, model_id):
 
 
 def filterMediaFinalMetadata(media, username, model_id):
-    log.info(f"finalizing media filtering username:{username} model_id:{model_id} for metadata")
+    log.info(
+        f"finalizing media filtering username:{username} model_id:{model_id} for metadata"
+    )
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -47,7 +49,9 @@ def filterMediaFinalMetadata(media, username, model_id):
 
 
 def filterMediaFinalDownload(media, username, model_id):
-    log.info(f"finalizing media filtering username:{username} model_id: {model_id} for download")
+    log.info(
+        f"finalizing media filtering username:{username} model_id: {model_id} for download"
+    )
     count = 1
     trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
@@ -77,7 +81,7 @@ def filtermediaAreas(media, **kwargs):
 
     actions = read_args.retriveArgs().action
     scrape_paid = read_args.retriveArgs().scrape_paid
-    if get_command()== "metadata":
+    if get_command() == "metadata":
         return filterMediaAreasMetadata(media)
     elif "download" in actions or scrape_paid:
         return filterMediaAreasDownload(media)
@@ -234,7 +238,5 @@ def post_filter_for_like(post, like=False):
 
 
 def filterCheckMode(media, username, model_id):
-    #no filtering for now
+    # no filtering for now
     return media
-   
-

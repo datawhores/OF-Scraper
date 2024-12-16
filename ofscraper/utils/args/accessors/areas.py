@@ -84,11 +84,11 @@ def finalize_choice(all_choices, post):
 
 def get_final_posts_area():
     final_post_areas = set()
-    actions=get_actions()
+    actions = get_actions()
     if "download" in actions:
         final_post_areas.update(get_download_area())
         final_post_areas.update(get_text_area())
-    if get_command()== "metadata":
+    if get_command() == "metadata":
         final_post_areas.update(get_download_area())
     if "like" in actions or "unlike" in actions:
         final_post_areas.update(get_like_area())

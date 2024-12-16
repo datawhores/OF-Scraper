@@ -23,7 +23,6 @@ class Status:
         self._status.setdefault("page", None)
         self._status.setdefault("num_per_page", None)
 
-
     def validate(self, key, test):
         key = key.lower()
         if key in {"unlocked", "downloaded", "mediatype", "responsetype"}:
@@ -41,10 +40,10 @@ class Status:
     def _generic_helper(self, key, test):
         if self._status[key] is None:
             return True
-        elif self._status[key]=="":
+        elif self._status[key] == "":
             return True
         elif key in {"post_id", "media_id"}:
-            val=set(self._status[key].split(","))
+            val = set(self._status[key].split(","))
             return str(test) in val
         else:
             return str(test).lower() == str(self._status[key]).lower()

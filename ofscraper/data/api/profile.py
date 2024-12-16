@@ -18,7 +18,7 @@ from typing import Union
 from rich.console import Console
 from xxhash import xxh128
 
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

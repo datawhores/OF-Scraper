@@ -20,36 +20,38 @@ import ofscraper.utils.console as console
 
 log = logging.getLogger("shared")
 
-class ModelManager():
-    def __init__(self) -> None:
-        self._all_subs_dict={}
-        self._parsed_subs_dict={}
-        self._seen_users=set()
 
+class ModelManager:
+    def __init__(self) -> None:
+        self._all_subs_dict = {}
+        self._parsed_subs_dict = {}
+        self._seen_users = set()
 
     def get_num_selected(self):
         return len(self.parsed_subs)
 
-
-    def get_model(self,name):
+    def get_model(self, name):
         return self._all_subs_dict.get(name)
-    
 
     @property
     def all_subs(self):
         return list(self._all_subs_dict.keys())
+
     @property
     def all_subs_obj(self):
         return list(self._all_subs_dict.values())
+
     @property
     def all_subs_dict(self):
         return self._all_subs_dict
+
     @all_subs_dict.setter
     def all_subs_dict(self, value):
         if value and isinstance(value, dict):
             self._all_subs_dict.update(value)
         else:
-            [self._all_subs_dict .update({ele.name: ele}) for ele in value]
+            [self._all_subs_dict.update({ele.name: ele}) for ele in value]
+
     @property
     def parsed_subs_dict(self):
         return self._parsed_subs_dict
@@ -57,11 +59,12 @@ class ModelManager():
     @property
     def parsed_subs(self):
         return list(self._parsed_subs_dict.keys())
+
     @property
     def parsed_subs_obj(self):
         return list(self._parsed_subs_dict.values())
 
-    def getselected_usernames(self,rescan=False, reset=False):
+    def getselected_usernames(self, rescan=False, reset=False):
         # username list will be retrived every time resFet==True
         if reset is True and rescan is True:
             self.all_subs_retriver()
@@ -84,9 +87,8 @@ class ModelManager():
             self.parsed_subscriptions_helper()
         return self.parsed_subs_obj
 
-
     @run
-    async def set_data_all_subs_dict(self,username):
+    async def set_data_all_subs_dict(self, username):
         args = read_args.retriveArgs()
         oldusernames = args.usernames or set()
         all_usernames = set()
@@ -108,40 +110,43 @@ class ModelManager():
         args.usernames = set(all_usernames)
         write_args.setArgs(args)
 
-
     @run
-    async def all_subs_retriver(self,refetch=True):
+    async def all_subs_retriver(self, refetch=True):
         if bool(self.all_subs_dict) and not refetch:
             return
         while True:
-            data=await retriver.get_models()
+            data = await retriver.get_models()
             self.all_subs_dict = data
             if len(self.all_subs_dict) > 0:
                 break
             elif len(self.all_subs_dict) == 0:
-                console.get_console().print("[bold red]No accounts found during scan[/bold red]")
+                console.get_console().print(
+                    "[bold red]No accounts found during scan[/bold red]"
+                )
                 # give log time to process
                 time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
                 if not prompts.retry_user_scan():
                     raise Exception("Could not find any accounts on list")
-                
 
-    def parsed_subscriptions_helper(self,reset=False):
+    def parsed_subscriptions_helper(self, reset=False):
         args = read_args.retriveArgs()
         if reset is True:
             args.usernames = None
             write_args.setArgs(args)
         if not bool(args.usernames):
             selectedusers = retriver.get_selected_model(self.filterNSort())
-            read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
-            self._parsed_subs_dict = {ele.name:ele for ele in selectedusers}
+            read_args.retriveArgs().usernames = list(
+                map(lambda x: x.name, selectedusers)
+            )
+            self._parsed_subs_dict = {ele.name: ele for ele in selectedusers}
             write_args.setArgs(args)
         elif "ALL" in args.usernames:
             self._parsed_subs_dict = self.filterNSort()
         elif args.usernames:
             usernameset = set(args.usernames)
-            self._parsed_subs_dict= {ele.name: ele for ele in self.all_subs_obj if ele.name in usernameset}
-
+            self._parsed_subs_dict = {
+                ele.name: ele for ele in self.all_subs_obj if ele.name in usernameset
+            }
 
     def setfilter(self):
         global args
@@ -184,7 +189,6 @@ class ModelManager():
                 args = prompts.modify_list_prompt(old_args)
             write_args.setArgs(args)
 
-
     def filterNSort(self):
         while True:
             # paid/free
@@ -195,8 +199,11 @@ class ModelManager():
             # give log time to process
             time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
             if len(filterusername) != 0:
-                
-                return {ele.name:self._all_subs_dict[ele.name] for ele in sort.sort_models_helper(filterusername)}
+
+                return {
+                    ele.name: self._all_subs_dict[ele.name]
+                    for ele in sort.sort_models_helper(filterusername)
+                }
             console.get_console().print(
                 f"""[bold red]You have filtered the user list to zero[/bold red]
     Change the filter settings to continue
@@ -219,8 +226,7 @@ class ModelManager():
 
             self.setfilter()
 
-
-    def filterOnly(self,usernames=None):
+    def filterOnly(self, usernames=None):
         usernames = self.all_subs_obj
         filterusername = subtype.subType(usernames)
         filterusername = price.pricePaidFreeFilterHelper(filterusername)

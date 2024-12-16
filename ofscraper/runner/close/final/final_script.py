@@ -19,8 +19,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 
 from ofscraper.utils.system.subprocess import run
-import  ofscraper.runner.manager as manager
-
+import ofscraper.runner.manager as manager
 
 
 def final_script():
@@ -31,7 +30,10 @@ def final_script():
 
     out_dict = json.dumps(
         {
-            "users": {key: value.model for key, value in manager.Manager.model_manager.all_subs_dict.items()},
+            "users": {
+                key: value.model
+                for key, value in manager.Manager.model_manager.all_subs_dict.items()
+            },
             "dir_format": config_data.get_dirformat(),
             "file_format": config_data.get_fileformat(),
             "metadata": config_data.get_metadata(),

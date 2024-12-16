@@ -9,7 +9,6 @@ import ofscraper.utils.constants as constants
 from InquirerPy.base import Choice
 
 
-
 def action_prompt() -> int:
     action_prompt_choices = [*constants.getattr("actionPromptChoices")]
     action_prompt_choices.insert(3, Separator())
@@ -22,7 +21,7 @@ def action_prompt() -> int:
     args = read_args.retriveArgs()
     action = constants.getattr("actionPromptChoices")[answer]
     if "download" in action and not args.redownload:
-        args=redownload_prompt()
+        args = redownload_prompt()
     if isinstance(action, str):
         return action
     args.action = action
@@ -33,10 +32,10 @@ def redownload_prompt() -> int:
     args = read_args.retriveArgs()
     answer = promptClasses.getChecklistSelection(
         message="Would you like to redownload all files",
-        choices=[Choice(True,"Yes"),Choice(False,"No")]
+        choices=[Choice(True, "Yes"), Choice(False, "No")],
     )
     if answer:
-        args.force_all=True
-        args.no_api_cache=True
-        args.after=arrow.get(2000)
+        args.force_all = True
+        args.no_api_cache = True
+        args.after = arrow.get(2000)
     return args

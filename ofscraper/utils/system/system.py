@@ -13,7 +13,6 @@ from setproctitle import setproctitle
 import aioprocessing
 
 
-
 def is_frozen():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return True
@@ -63,6 +62,7 @@ def get_mulitproc_start_type():
     else:
         o_method = "spawn"
         return o_method
+
 
 def set_eventloop():
     plat = platform.system()

@@ -544,11 +544,11 @@ jobs:
       # - name: download windows zip
       #   uses: Wandalen/wretry.action@master
 
-        # with:
-        #   attempt_limit: 3
-        #   action: actions/download-artifact@v4
-        #   with: |
-        #     name:  ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
+      # with:
+      #   attempt_limit: 3
+      #   action: actions/download-artifact@v4
+      #   with: |
+      #     name:  ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
 
       - name: Get current date
         id: date

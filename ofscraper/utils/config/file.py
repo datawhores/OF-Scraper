@@ -31,6 +31,7 @@ def make_config_original():
 
 def open_config():
     import ofscraper.utils.config.utils.context as config_context
+
     with config_context.config_context():
         configText = config_string()
         config = json_loads(configText)

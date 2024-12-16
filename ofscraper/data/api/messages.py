@@ -18,7 +18,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
@@ -44,12 +44,12 @@ sleeper = None
 
 
 @run
-async def get_messages(model_id, username, c=None,post_id=None):
+async def get_messages(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
-    post_id=post_id or[]
-    if len(post_id) == 0 or len(
-        post_id
-    ) > constants.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
+    post_id = post_id or []
+    if len(post_id) == 0 or len(post_id) > constants.getattr(
+        "MAX_MESSAGES_INDIVIDUAL_SEARCH"
+    ):
         oldmessages = await get_old_messages(model_id, username)
         before = (read_args.retriveArgs().before).float_timestamp
         log_after_before(after, before, username)

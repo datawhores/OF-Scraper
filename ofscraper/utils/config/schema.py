@@ -40,7 +40,6 @@ def get_current_config_schema(config: dict = None) -> dict:
         },
         "performance_options": {
             "download_sems": data.get_download_semaphores(config=config),
-            "thread_count": data.get_threads(config=config),
             "download_limit": data.get_download_limit(config=config),
         },
         "content_filter_options": {

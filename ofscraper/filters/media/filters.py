@@ -149,18 +149,19 @@ def unviewable_media_filter(media):
 
 def final_media_sort(media):
     media_sort = read_args.retriveArgs().media_sort
-    reversed=read_args.retriveArgs().media_desc
+    reversed = read_args.retriveArgs().media_desc
     log.debug(f"Using download sort {media_sort}")
     if media_sort == "random":
         random.shuffle(media)
-    if media_sort=="date" and reversed:
-        media=reversed(media)
+    if media_sort == "date" and reversed:
+        media = reversed(media)
     if media_sort == "text":
-        media=sorted(media, key=lambda x: x.text,reverse=reversed)
+        media = sorted(media, key=lambda x: x.text, reverse=reversed)
     elif media_sort == "filename":
-        media=sorted(media, key=lambda x: x.filename,reverse=reversed)
+        media = sorted(media, key=lambda x: x.filename, reverse=reversed)
     return media
-   
+
+
 def previous_download_filter(medialist, username=None, model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous downloads")
@@ -257,12 +258,19 @@ def post_text_filter(media):
     for ele in userfilter:
         if not ele.islower():
             curr = list(
-                filter(lambda x: re.search(ele,  r"""{}""".format(x.text or "")) is not None, curr)
+                filter(
+                    lambda x: re.search(ele, r"""{}""".format(x.text or ""))
+                    is not None,
+                    curr,
+                )
             )
         else:
             curr = list(
                 filter(
-                    lambda x: re.search(ele,  r"""{}""".format(x.text or ""), re.IGNORECASE) is not None,
+                    lambda x: re.search(
+                        ele, r"""{}""".format(x.text or ""), re.IGNORECASE
+                    )
+                    is not None,
                     curr,
                 )
             )
@@ -276,11 +284,19 @@ def post_neg_text_filter(media):
     curr = media
     for ele in userfilter:
         if not ele.islower():
-            curr = list(filter(lambda x: re.search(ele, r"""{}""".format(x.text or "")) is None, curr))
+            curr = list(
+                filter(
+                    lambda x: re.search(ele, r"""{}""".format(x.text or "")) is None,
+                    curr,
+                )
+            )
         else:
             curr = list(
                 filter(
-                    lambda x: re.search(ele,  r"""{}""".format(x.text or ""), re.IGNORECASE) is None,
+                    lambda x: re.search(
+                        ele, r"""{}""".format(x.text or ""), re.IGNORECASE
+                    )
+                    is None,
                     curr,
                 )
             )

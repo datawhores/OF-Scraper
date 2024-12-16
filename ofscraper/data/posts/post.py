@@ -78,7 +78,9 @@ async def post_media_process_all(ele, c=None):
 @free.space_checker
 async def process_messages(model_id, username, c):
     try:
-        messages_ = await messages.get_messages(model_id, username, c=c,post_id=read_args.retriveArgs().post_id)
+        messages_ = await messages.get_messages(
+            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+        )
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         await operations.make_messages_table_changes(
             messages_,
@@ -182,7 +184,9 @@ async def process_highlights(model_id, username, c):
 @free.space_checker
 async def process_timeline_posts(model_id, username, c):
     try:
-        timeline_posts = await timeline.get_timeline_posts(model_id, username, c=c,post_id=read_args.retriveArgs().post_id)
+        timeline_posts = await timeline.get_timeline_posts(
+            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+        )
 
         timeline_posts = list(
             map(
@@ -190,7 +194,7 @@ async def process_timeline_posts(model_id, username, c):
                 timeline_posts,
             )
         )
-        timeline_only_posts=timeline.filter_timeline_post(timeline_posts)
+        timeline_only_posts = timeline.filter_timeline_post(timeline_posts)
 
         await operations.make_post_table_changes(
             timeline_only_posts,
@@ -213,7 +217,9 @@ async def process_timeline_posts(model_id, username, c):
 @free.space_checker
 async def process_archived_posts(model_id, username, c):
     try:
-        archived_posts = await archive.get_archived_posts(model_id, username, c=c,post_id=read_args.retriveArgs().post_id)
+        archived_posts = await archive.get_archived_posts(
+            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+        )
         archived_posts = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, archive.API),
@@ -241,7 +247,9 @@ async def process_archived_posts(model_id, username, c):
 @free.space_checker
 async def process_streamed_posts(model_id, username, c):
     try:
-        streams_posts = await streams.get_streams_posts(model_id, username, c=c,post_id=read_args.retriveArgs().post_id)
+        streams_posts = await streams.get_streams_posts(
+            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+        )
         streams_posts = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, streams.API),
@@ -269,7 +277,9 @@ async def process_streamed_posts(model_id, username, c):
 @free.space_checker
 async def process_pinned_posts(model_id, username, c):
     try:
-        pinned_posts = await pinned.get_pinned_posts(model_id, c=c,post_id=read_args.retriveArgs().post_id)
+        pinned_posts = await pinned.get_pinned_posts(
+            model_id, c=c, post_id=read_args.retriveArgs().post_id
+        )
         pinned_posts = list(
             map(lambda x: posts_.Post(x, model_id, username), pinned_posts)
         )
@@ -490,7 +500,6 @@ async def process_tasks(model_id, username, ele, c=None):
     max_count = max(
         min(
             constants.getattr("API_MAX_AREAS"),
-            system.getcpu_count(),
             len(final_post_areas),
         ),
         1,

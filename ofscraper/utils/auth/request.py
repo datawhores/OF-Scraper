@@ -26,8 +26,7 @@ import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-import  ofscraper.runner.manager as manager
-
+import ofscraper.runner.manager as manager
 
 
 curr_auth = None

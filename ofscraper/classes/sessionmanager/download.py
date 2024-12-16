@@ -105,6 +105,7 @@ class download_session(sessionManager.sessionManager):
             async for chunk in funct(*args, **kwargs):
                 await self.get_token(chunk)
                 yield chunk
+
         return wrapper
 
     async def get_token(self, chunk):

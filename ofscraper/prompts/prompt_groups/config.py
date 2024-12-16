@@ -374,25 +374,6 @@ def cdm_config():
 
 def performance_config():
     out = {}
-    threads = promptClasses.batchConverter(
-        *[
-            {
-                "type": "number",
-                "name": "thread_count",
-                "message": "Number of Download processes/threads: ",
-                "min_allowed": 0,
-                "max_allowed": 3,
-                "validate": EmptyInputValidator(),
-                "option_instruction": f"Value can be 1-3",
-                "default": data.get_threads(),
-            },
-        ],
-        altx=funct,
-        more_instruction=prompt_strings.CONFIG_MENU,
-    )
-
-    out.update(threads)
-    max_allowed = get_max_sems(threads)
 
     sems = promptClasses.batchConverter(
         *[
@@ -401,9 +382,9 @@ def performance_config():
                 "name": "download_sems",
                 "message": "Number of semaphores per thread: ",
                 "min_allowed": 1,
-                "max_allowed": max_allowed,
+                "max_allowed": 15,
                 "validate": EmptyInputValidator(),
-                "option_instruction": f"Value can be 1-{max_allowed}",
+                "option_instruction": f"Value can be 1-15",
                 "default": data.get_download_semaphores(),
             }
         ],
@@ -793,12 +774,6 @@ def manual_config_prompt(configText) -> str:
     )
 
     return questions[name]
-
-
-def get_max_sems(threads):
-    thread_count = int(threads["thread_count"])
-    max_allowed = math.ceil(15 / thread_count)
-    return max_allowed
 
 
 def retry_user_scan():

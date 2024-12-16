@@ -31,7 +31,7 @@ from ofscraper.utils.args.parse.groups.post_filter import (
     post_id_filter_option,
     post_sort_option,
     post_filter_options_desc,
-    post_filter_options_help
+    post_filter_options_help,
 )
 
 
@@ -104,26 +104,24 @@ It also uses a new filename if one is available
     # )
     @media_filter_options
     @file_options
-
     @click.option_group(
         post_filter_options_desc,
-         click.option(
+        click.option(
             "-sp",
             "--scrape-paid",
             help="Similar to --metadata, but only for --scrape paid",
             metavar="METADATA MODE",
             type=click.Choice(METADATA_OPTIONS),
         ),
-         posts_option,
-                 label_option,
-
-    filter_option,
+        posts_option,
+        label_option,
+        filter_option,
         neg_filter_option,
         post_sort_option,
         timed_only_option,
         mass_msg_option,
         post_id_filter_option,
-        help=post_filter_options_help
+        help=post_filter_options_help,
     )
     @click.option_group(
         "Metadata Options", *download_options_tuple, help=download_options_help

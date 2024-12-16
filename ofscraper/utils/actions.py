@@ -19,7 +19,6 @@ import ofscraper.utils.system.free as free
 from ofscraper.utils.args.accessors.command import get_command
 
 
-
 def reset_download():
     args = read_args.retriveArgs()
 
@@ -77,7 +76,7 @@ def set_post_area(action=None):
         return
     if areas.get_text_area():
         return
-    elif get_command()== "metadata":
+    elif get_command() == "metadata":
         return
     elif len(areas.get_download_area()) > 0:
         return

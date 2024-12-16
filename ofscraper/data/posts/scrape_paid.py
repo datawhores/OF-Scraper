@@ -16,9 +16,7 @@ from ofscraper.commands.utils.strings import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final_user import post_user_script
 from ofscraper.utils.args.accessors.command import get_command
-import  ofscraper.runner.manager as manager
-
-
+import ofscraper.runner.manager as manager
 
 
 log = logging.getLogger("shared")
@@ -96,10 +94,12 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    if get_command()=="metadata":
-        data=await metadata.metadata_process(username, model_id,medias,posts=posts)
+    if get_command() == "metadata":
+        data = await metadata.metadata_process(username, model_id, medias, posts=posts)
     else:
-        data, _ =await download.download_process(username,model_id, medias, posts=posts)
+        data, _ = await download.download_process(
+            username, model_id, medias, posts=posts
+        )
     progress_updater.increment_activity_count(total=length)
     post_user_script(value, medias, posts)
     return data

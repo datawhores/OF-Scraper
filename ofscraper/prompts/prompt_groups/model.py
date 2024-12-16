@@ -35,7 +35,10 @@ def model_selector(models_) -> bool:
     global models
     models = models_
     choices = list(
-        map(lambda x: modelHelpers.model_selectorHelper(x[0], x[1]), enumerate(models.values()))
+        map(
+            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+            enumerate(models.values()),
+        )
     )
 
     p = promptClasses.getFuzzySelection(

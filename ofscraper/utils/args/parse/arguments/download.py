@@ -34,19 +34,6 @@ download_sem_option = click.option(
     type=int,
 )
 
-download_threads_option = click.option(
-    "-dp",
-    "--downloadthreads",
-    "--download-threads",
-    "--threads",
-    "--thread",
-    "--downloadthread",
-    "downloadthreads",
-    help="Number of threads to use (minimum 1)",
-    default=None,
-    type=int,
-)
-
 download_limit_option = click.option(
     "-dl",
     "--download-limit",

@@ -219,8 +219,7 @@ post_sort_option = click.option(
 post_desc_option = click.option(
     "-pdc",
     "--post-desc",
-    help=
-    """
+    help="""
     Sort the post list in descending order
     Example: for like or unlike
     """,
@@ -237,32 +236,19 @@ db_sort_option = click.option(
     default="posted",
     required=False,
     type=click.Choice(
-        [
-            "posted",
-            "created",
-            "filename",
-            "length",
-            "postid",
-            "mediaid",
-            "size"
-        ]
+        ["posted", "created", "filename", "length", "postid", "mediaid", "size"]
     ),
 )
 
 db_desc_option = click.option(
     "-bdc",
     "--db-asc",
-    help=
-    """
+    help="""
     Change the sort order  of table to ascending
     """,
     is_flag=True,
     default=False,
 )
-
-
-
-
 
 
 like_toggle_force = click.option(

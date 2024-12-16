@@ -47,35 +47,37 @@ class TimeField(Container):
     def update_table_val(self, val):
         self.update_table_min(val)
         self.update_table_max(val)
+
     def update_table_min(self, val):
         minLenthInputs = list(self.query_one("#minContainer").query(IntegerInput))
-        if isinstance(val,int) or str(val).isnumeric():
-            val=int(val)
+        if isinstance(val, int) or str(val).isnumeric():
+            val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60
             seconds = val % 60
-        
+
         elif val != "N/A" and val != "N\A":
             valArray = val.split(":")
-            hours,minutes,seconds = valArray
+            hours, minutes, seconds = valArray
         else:
-            hours,minutes,seconds=0,0,0
-        for  pack in zip(minLenthInputs,[hours,minutes,seconds]):
-            pack[0].value = str(pack[1])            
+            hours, minutes, seconds = 0, 0, 0
+        for pack in zip(minLenthInputs, [hours, minutes, seconds]):
+            pack[0].value = str(pack[1])
+
     def update_table_max(self, val):
         maxLenthInputs = list(self.query_one("#maxContainer").query(IntegerInput))
-        if isinstance(val,int) or str(val).isnumeric():
-            val=int(val)
+        if isinstance(val, int) or str(val).isnumeric():
+            val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60
             seconds = val % 60
-        
+
         elif val != "N/A" and val != "N\A":
             valArray = val.split(":")
-            hours,minutes,seconds = valArray
+            hours, minutes, seconds = valArray
         else:
-            hours,minutes,seconds =0,0,0
-        for  pack in zip(maxLenthInputs,[hours,minutes,seconds]):
+            hours, minutes, seconds = 0, 0, 0
+        for pack in zip(maxLenthInputs, [hours, minutes, seconds]):
             pack[0].value = str(pack[1])
 
     def reset(self):

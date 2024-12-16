@@ -20,10 +20,13 @@ from ofscraper.actions.utils.log import (
     log_download_progress,
 )
 from ofscraper.actions.utils.log import get_medialog
-from ofscraper.actions.actions.download.runners.download import download
 
 from ofscraper.actions.utils.progress.convert import convert_num_bytes
 from ofscraper.actions.actions.download.utils.desc import desc
+from ofscraper.actions.actions.download.managers.alt_download import AltDownloadManager
+from ofscraper.actions.actions.download.managers.main_download import (
+    MainDownloadManager,
+)
 
 
 async def consumer(aws, task1, medialist, lock):
@@ -96,3 +99,27 @@ async def consumer(aws, task1, medialist, lock):
                     f"{get_medialog(ele)} Download Failed because\n{e}"
                 )
                 common_globals.log.traceback_(traceback.format_exc())
+
+async def download(c, ele, model_id, username, multi=False):
+    try:
+        data = None
+        if ele.url:
+            data = await MainDownloadManager(multi=multi).main_download(
+                c,
+                ele,
+                username,
+                model_id,
+            )
+        elif ele.mpd:
+            data = await AltDownloadManager(multi=multi).alt_download(
+                c, ele, username, model_id
+            )
+        common_globals.log.debug(f"{get_medialog(ele)} Download finished")
+        return data
+    except Exception as E:
+        common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
+        common_globals.log.debug(
+            f"{get_medialog(ele)} exception {traceback.format_exc()}"
+        )
+        return "skipped", 0
+

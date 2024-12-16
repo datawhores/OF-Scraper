@@ -55,7 +55,7 @@ async def un_encrypt(item, c, ele, input_=None):
             key = await key_helper_cdrm2(c, item["pssh"], ele.license, ele.id)
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
-        key=key.strip()
+        key = key.strip()
         log.debug(f"{get_medialog(ele)} got key {key}")
         newpath = pathlib.Path(
             re.sub("\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
@@ -82,10 +82,10 @@ async def un_encrypt(item, c, ele, input_=None):
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stdout.decode()}")
             await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(
-                cache.set,  ele.license, None, expire=constants.getattr("KEY_EXPIRY")
-            ),
+                common_globals.thread,
+                partial(
+                    cache.set, ele.license, None, expire=constants.getattr("KEY_EXPIRY")
+                ),
             )
             raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
         else:
@@ -108,7 +108,7 @@ def get_ffmpeg_key(key):
 
 
 async def key_helper_cdrm(c, pssh, licence_url, id):
-    key=None
+    key = None
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -120,10 +120,10 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             "License URL": licence_url,
             "Headers": json.dumps(headers),
             "PSSH": pssh,
-            'JSON': "{}",
+            "JSON": "{}",
             "Cookies": "{}",
-            'Data': "{}",
-            'Proxy': ""
+            "Data": "{}",
+            "Proxy": "",
         }
         async with c.requests_async(
             url=constants.getattr("CDRM"),
@@ -135,9 +135,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             total_timeout=constants.getattr("CDM_TIMEOUT"),
             skip_expection_check=True,
         ) as r:
-            data=await r.json_()
+            data = await r.json_()
             log.debug(f"keydb json {data}")
-            key=data["Message"]
+            key = data["Message"]
         return key
     except Exception as E:
         log.traceback_(E)
@@ -146,7 +146,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
 
 
 async def key_helper_cdrm2(c, pssh, licence_url, id):
-    key=None
+    key = None
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -184,7 +184,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
 
 
 async def key_helper_keydb(c, pssh, licence_url, id):
-    key=None
+    key = None
     log.debug(f"ID:{id} using keydb auto key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
@@ -234,7 +234,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
 
 
 async def key_helper_manual(c, pssh, licence_url, id):
-    key=None
+    key = None
     log.debug(f"ID:{id}  manual key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")

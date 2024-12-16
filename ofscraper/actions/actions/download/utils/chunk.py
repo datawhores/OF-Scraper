@@ -57,20 +57,9 @@ def get_ideal_chunk_size(total_size, curr_file):
         min(max_chunk_size, file_size // constants.getattr("CHUNK_FILE_SPLIT")),
         constants.getattr("MIN_CHUNK_SIZE"),
     )
-    if settings.get_download_limit()==0:
+    if settings.get_download_limit() == 0:
         pass
     elif ideal_chunk_size // 16 > settings.get_download_limit() or float("inf"):
         ideal_chunk_size = settings.get_download_limit()
     ideal_chunk_size = ideal_chunk_size - (ideal_chunk_size % 1024)
     return ideal_chunk_size
-
-
-def get_update_count(total_size, curr_file, chunk_size):
-    curr_file_size = (
-        pathlib.Path(curr_file).absolute().stat().st_size
-        if pathlib.Path(curr_file).exists()
-        else 0
-    )
-    file_size = total_size - curr_file_size
-
-    return max((file_size // chunk_size) // constants.getattr("CHUNK_UPDATE_COUNT"), 1)

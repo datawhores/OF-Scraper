@@ -16,7 +16,7 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.utils.level as log_helpers
-import  ofscraper.runner.manager as manager
+import ofscraper.runner.manager as manager
 
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
@@ -50,11 +50,13 @@ class Media(base.base):
     @property
     def media_source(self):
         return self._media.get("source", {})
-    
 
     @property
     def files_source(self):
-        return {key: (inner_dict or {}).get("url") for key, inner_dict in self._media.get("files",{}).items()}
+        return {
+            key: (inner_dict or {}).get("url")
+            for key, inner_dict in self._media.get("files", {}).items()
+        }
 
     @property
     def quality(self):
@@ -101,16 +103,15 @@ class Media(base.base):
 
     def _url_quality_picker(self):
         quality = self.normal_quality_helper()
-        out=None
+        out = None
         if quality != "source":
-            out=self._media.get("videoSources", {}).get(quality)
+            out = self._media.get("videoSources", {}).get(quality)
         elif out is None:
-            out=self.files_source.get("full")
-        
+            out = self.files_source.get("full")
+
         elif out is None:
-            out=self.media_source.get("source")
+            out = self.media_source.get("source")
         return out
-        
 
     @property
     def post(self):
@@ -309,7 +310,7 @@ class Media(base.base):
         text = self.file_cleanup(text, mediatype=self.mediatype)
         text = self.text_trunicate(text)
         if not text:
-            return  self.id
+            return self.id
         return text
 
     @property
@@ -372,10 +373,12 @@ class Media(base.base):
 
     @property
     def linked(self):
-        return (self.url or self.mpd)is not None
+        return (self.url or self.mpd) is not None
+
     @property
     def link(self):
         return self.url or self.mpd
+
     @property
     def media(self):
         return self._media

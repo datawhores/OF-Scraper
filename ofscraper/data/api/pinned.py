@@ -33,16 +33,14 @@ API = "pinned"
 
 
 @run
-async def get_pinned_posts(model_id, c=None,post_id=None):
-    post_id=post_id or []
-    if len(post_id) == 0 or len(
-        post_id
-    ) > constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
-        tasks = get_tasks(c, model_id)
-        data = await process_tasks(tasks)
-    elif len(post_id) <= constants.getattr(
+async def get_pinned_posts(model_id, c=None, post_id=None):
+    post_id = post_id or []
+    if len(post_id) == 0 or len(post_id) > constants.getattr(
         "MAX_PINNED_INDIVIDUAL_SEARCH"
     ):
+        tasks = get_tasks(c, model_id)
+        data = await process_tasks(tasks)
+    elif len(post_id) <= constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, None, API)
     return data
