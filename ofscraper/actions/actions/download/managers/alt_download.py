@@ -36,7 +36,7 @@ from ofscraper.actions.utils.log import (
     temp_file_logger,
 )
 from ofscraper.actions.actions.download.utils.chunk import (
-    get_ideal_chunk_size,
+    get_chunk_size,
 )
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
@@ -265,7 +265,7 @@ class AltDownloadManager(DownloadManager):
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
-        chunk_size = get_ideal_chunk_size(total, placeholderObj.tempfilepath)
+        chunk_size = get_chunk_size()
         try:
             async for chunk in res.iter_chunked(chunk_size):
                 await fileobject.write(chunk)

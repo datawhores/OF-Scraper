@@ -33,7 +33,7 @@ from ofscraper.actions.utils.general import (
 
 from ofscraper.actions.utils.log import get_medialog
 from ofscraper.actions.utils.log import get_url_log, path_to_file_logger
-from ofscraper.actions.actions.download.utils.chunk import get_ideal_chunk_size
+from ofscraper.actions.actions.download.utils.chunk import get_chunk_size
 from ofscraper.actions.utils.retries import get_download_retries
 from ofscraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
@@ -250,7 +250,7 @@ class MainDownloadManager(DownloadManager):
             fileobject = await aiofiles.open(
                 tempholderObj.tempfilepath, "ab"
             ).__aenter__()
-            chunk_size = get_ideal_chunk_size(total, tempholderObj.tempfilepath)
+            chunk_size = get_chunk_size()
             async for chunk in r.iter_chunked(chunk_size):
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)

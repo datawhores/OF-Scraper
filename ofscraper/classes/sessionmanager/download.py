@@ -18,30 +18,6 @@ from ofscraper.classes.sessionmanager.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 
 
-class TokenBucket:
-    def __init__(self, capacity, fill_rate):
-        self.capacity = capacity
-        self.fill_rate = fill_rate
-        self.tokens = 0
-        self.last_update = time.time()
-
-    async def consume(self, tokens):
-        if self.capacity <= 0:
-            return True
-        while True:
-            now = time.time()
-            delta = now - self.last_update
-            self.last_update = now
-            self.tokens = min(self.capacity, self.tokens + delta * self.fill_rate)
-
-            if self.tokens >= tokens:
-                self.tokens -= tokens
-                return True
-
-            # Not enough tokens, wait for refill
-            await asyncio.sleep(0.01)
-
-
 class download_session(sessionManager.sessionManager):
     def __init__(
         self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
@@ -105,12 +81,9 @@ class download_session(sessionManager.sessionManager):
             async for chunk in funct(*args, **kwargs):
                 await self.get_token(chunk)
                 yield chunk
-
         return wrapper
 
     async def get_token(self, chunk):
-        if settings.get_download_limit() <= 0:
-            return
         await self.leaky_bucket.acquire(chunk)
 
 
