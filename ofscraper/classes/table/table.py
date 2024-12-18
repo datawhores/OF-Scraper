@@ -26,28 +26,47 @@ from ofscraper.classes.table.table_console import OutConsole
 from textual.widgets import SelectionList
 
 log = logging.getLogger("shared")
-global app
 app = None
 row_queue = queue.Queue()
 
 START_PAGE = 1
-AMOUNT_PER_PAGE = 500
+AMOUNT_PER_PAGE =  100
 
 
 class TableRow:
     def __init__(self, table_row):
         self._table_row = table_row
         self._other_styled = None
-        self.text = {"length", "text", "username"}
 
     def get_styled(self):
         styled_row = [self._table_row["number"]]
         for key in row_names():
             key = key.lower()
-            if key in self.text:
+            if key in ["length","post_date"]:
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="italic #03AC13")
+                    Text(str(self._table_row[key]), style="bold deep_sky_blue1")
                 )
+            elif key =="download_cart":
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="bold light_goldenrod2")
+                )
+            elif key=="text":
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="bold dark_sea_green1")
+                )
+            elif isinstance(self._table_row[key],str):
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="bold medium_spring_green")
+                )
+            elif isinstance(self._table_row[key],bool):
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="bold plum1")
+                )
+            elif isinstance(self._table_row[key],(int,list)):
+                styled_row.append(
+                    Text(str(self._table_row[key]), style="bold bright_white")
+                )
+        
             else:
                 styled_row.append(self._table_row[key])
         return styled_row
@@ -683,7 +702,7 @@ SelectField,DateField,TimeField {
             table.zebra_stripes = True
             table.add_column("number", key="number")
             for ele in row_names():
-                width=15
+                width=18
                 width=50 if ele=="text" else width
                 width=50 if ele=="other_posts_with_media" else width
                 table.add_column(re.sub("_", " ", ele), key=str(ele),width=width)
