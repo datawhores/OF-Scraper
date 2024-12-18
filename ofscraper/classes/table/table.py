@@ -48,11 +48,6 @@ class TableRow:
                 styled_row.append(
                     Text(str(self._table_row[key]), style="italic #03AC13")
                 )
-            elif isinstance(self._table_row[key],list):
-                styled_row.append(
-                    Text(",".join(map(lambda x:str(x),self._table_row[key])), style="italic #03AC13")
-                )
-
             else:
                 styled_row.append(self._table_row[key])
         return styled_row
@@ -418,10 +413,8 @@ SelectField,DateField,TimeField {
             start = (page - 1) * num_page
             for count, ele in enumerate(rows[start : start + num_page]):
                 values=list(ele.values())
-                height=max(map(lambda x:len(str(x)),ele.values()))
-                height=max(height//100,1)
                 key=str(values[0])
-                self.query_one("#data_table").add_row(*values,key=key,height=height,label=count+1)
+                self.query_one("#data_table").add_row(*values,height=None,key=key,label=count+1)
             pass
 
     def init_table(self):
@@ -689,10 +682,11 @@ SelectField,DateField,TimeField {
             table.fixed_rows = 0
             table.zebra_stripes = True
             table.add_column("number", key="number")
-            [
-                table.add_column(re.sub("_", " ", ele), key=str(ele))
-                for ele in row_names()
-            ]
+            for ele in row_names():
+                width=15
+                width=50 if ele=="text" else width
+                width=50 if ele=="other_posts_with_media" else width
+                table.add_column(re.sub("_", " ", ele), key=str(ele),width=width)
 
     def update_search_info(self):
         page=self.query_one("#page").IntegerInput.value
