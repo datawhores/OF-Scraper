@@ -35,6 +35,10 @@ class NumField(Horizontal):
 
     def reset(self):
         self.query_one(IntegerInput).value = self.default
+    
+    @property
+    def IntegerInput(self):
+        return self.query_one(IntegerInput)
 
 
 class OtherMediaNumField(NumField):
