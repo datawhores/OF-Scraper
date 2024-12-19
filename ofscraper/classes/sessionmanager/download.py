@@ -14,7 +14,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
     TOO_MANY,
 )
-from ofscraper.classes.sessionmanager.leaky import LeakyBucket
+from ofscraper.actions.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 
 
