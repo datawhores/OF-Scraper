@@ -22,9 +22,9 @@ from ofscraper.scraper.utils.log import (
 from ofscraper.scraper.utils.log import get_medialog
 
 from ofscraper.scraper.utils.progress.convert import convert_num_bytes
-from ofscraper.scraper.actions.download.utils.desc import desc
-from ofscraper.scraper.actions.download.managers.alt_download import AltDownloadManager
-from ofscraper.scraper.actions.download.managers.main_download import (
+from ofscraper.scraper.download.utils.desc import desc
+from ofscraper.scraper.download.managers.alt_download import AltDownloadManager
+from ofscraper.scraper.download.managers.main_download import (
     MainDownloadManager,
 )
 

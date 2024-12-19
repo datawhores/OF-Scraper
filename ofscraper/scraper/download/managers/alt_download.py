@@ -26,7 +26,7 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.scraper.actions.download.utils.retries import download_retry
+from ofscraper.scraper.download.utils.retries import download_retry
 
 from ofscraper.scraper.utils.params import get_alt_params
 from ofscraper.scraper.utils.log import get_medialog
@@ -35,7 +35,7 @@ from ofscraper.scraper.utils.log import (
     path_to_file_logger,
     temp_file_logger,
 )
-from ofscraper.scraper.actions.download.utils.chunk import (
+from ofscraper.scraper.download.utils.chunk import (
     get_chunk_size,
 )
 from ofscraper.scraper.utils.retries import get_download_retries
@@ -45,7 +45,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
 )
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.scraper.actions.download.managers.downloadmanager import DownloadManager
+from ofscraper.scraper.download.managers.downloadmanager import DownloadManager
 import ofscraper.scraper.utils.paths.paths as common_paths
 import ofscraper.scraper.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
@@ -54,7 +54,7 @@ import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-import ofscraper.scraper.actions.download.utils.keyhelpers as keyhelpers
+import ofscraper.scraper.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache as cache
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.scraper.utils.send.message import send_msg

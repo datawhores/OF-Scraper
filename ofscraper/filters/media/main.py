@@ -5,8 +5,8 @@ import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.filters.media.utils.trace import trace_log_media, trace_log_post
 from ofscraper.utils.args.accessors.command import get_command
+from ofscraper.utils.logs.utils.trace import is_trace
 
 
 log = logging.getLogger("shared")
@@ -240,3 +240,24 @@ def post_filter_for_like(post, like=False):
 def filterCheckMode(media, username, model_id):
     # no filtering for now
     return media
+
+def trace_log_media(count, media, filter_str):
+    if not is_trace():
+        return
+    log.trace(f"filter {filter_str} ->  total item count:{count}->")
+    for count, ele in enumerate(media):
+        log.trace(
+            "{} current item count: {} mediaid: {} postid: {} data: {} \n\n".format(
+                filter_str, count, ele.id, ele.postid, ele.media, ele.media
+            )
+        )
+def trace_log_post(count, media, filter_str):
+    if not is_trace():
+        return
+
+    log.trace(f"filter {count}-> {filter_str}")
+    for count, ele in enumerate(media):
+        log.trace(
+            "{} current item  count: {} postid: {} data: {} \n\n".format(
+                filter_str, count, ele.id, ele.post
+            ))

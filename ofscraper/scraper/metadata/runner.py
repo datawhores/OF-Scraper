@@ -21,8 +21,8 @@ from ofscraper.scraper.utils.log import (
 )
 from ofscraper.scraper.utils.log import get_medialog
 
-from ofscraper.scraper.actions.metadata.managers.metadata import MetaDataManager
-from ofscraper.scraper.actions.metadata.utils.desc import desc
+from ofscraper.scraper.metadata.managers.metadata import MetaDataManager
+from ofscraper.scraper.metadata.utils.desc import desc
 
 
 async def consumer(aws, task1, medialist, lock):

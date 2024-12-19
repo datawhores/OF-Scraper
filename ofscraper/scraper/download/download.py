@@ -26,9 +26,9 @@ from ofscraper.scraper.utils.buffer import download_log_clear_helper
 
 from ofscraper.scraper.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.scraper.actions.download.run import consumer
-from ofscraper.scraper.actions.download.utils.desc import desc
-from ofscraper.scraper.actions.download.utils.text import textDownloader
+from ofscraper.scraper.download.run import consumer
+from ofscraper.scraper.download.utils.desc import desc
+from ofscraper.scraper.download.utils.text import textDownloader
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.areas import get_download_area
 from ofscraper.utils.args.accessors.command import get_command

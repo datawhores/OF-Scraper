@@ -16,8 +16,8 @@ from ofscraper.scraper.utils.buffer import download_log_clear_helper
 
 from ofscraper.scraper.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.scraper.actions.metadata.runner import consumer
-from ofscraper.scraper.actions.metadata.utils.desc import desc
+from ofscraper.scraper.metadata.runner import consumer
+from ofscraper.scraper.metadata.utils.desc import desc
 @run
 async def process_dicts(username, model_id, medialist):
     download_log_clear_helper()

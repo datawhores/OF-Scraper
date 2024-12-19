@@ -46,7 +46,7 @@ from ofscraper.runner.close.final.final import final
 from ofscraper.utils.args.accessors.command import get_command
 import ofscraper.runner.manager as manager
 import ofscraper.filters.media.main as filters
-from ofscraper.scraper.actions.download.download import process_dicts
+from ofscraper.scraper.download.download import process_dicts
 
 
 log = logging.getLogger("shared")

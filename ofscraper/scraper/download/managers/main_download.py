@@ -26,17 +26,17 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.scraper.utils.general as common
 import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.scraper.actions.download.utils.retries import download_retry
+from ofscraper.scraper.download.utils.retries import download_retry
 from ofscraper.scraper.utils.general import (
     get_unknown_content_type,
 )
 
 from ofscraper.scraper.utils.log import get_medialog
 from ofscraper.scraper.utils.log import get_url_log, path_to_file_logger
-from ofscraper.scraper.actions.download.utils.chunk import get_chunk_size
+from ofscraper.scraper.download.utils.chunk import get_chunk_size
 from ofscraper.scraper.utils.retries import get_download_retries
 from ofscraper.scraper.utils.send.chunk import send_chunk_msg
-from ofscraper.scraper.actions.download.managers.downloadmanager import DownloadManager
+from ofscraper.scraper.download.managers.downloadmanager import DownloadManager
 import ofscraper.scraper.utils.paths.paths as common_paths
 import ofscraper.scraper.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update

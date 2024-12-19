@@ -12,7 +12,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
     TOO_MANY,
 )
-from ofscraper.scraper.actions.download.utils.leaky import LeakyBucket
+from ofscraper.scraper.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 
 

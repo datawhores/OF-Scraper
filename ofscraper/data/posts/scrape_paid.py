@@ -1,8 +1,8 @@
 import logging
 
 import ofscraper.data.posts.post as OF
-import ofscraper.scraper.actions.download.download as download
-import ofscraper.scraper.actions.metadata.metadata as metadata
+import ofscraper.scraper.download.download as download
+import ofscraper.scraper.metadata.metadata as metadata
 
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater

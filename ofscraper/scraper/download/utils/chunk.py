@@ -12,7 +12,7 @@ r"""
 """
 
 import ofscraper.utils.settings as settings
-from ofscraper.scraper.actions.download.utils.leaky import CHUNK_SIZE
+from ofscraper.scraper.download.utils.leaky import CHUNK_SIZE
 
 
 
