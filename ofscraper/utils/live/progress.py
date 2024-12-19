@@ -12,11 +12,11 @@ from rich.style import Style
 from rich.table import Column
 
 import ofscraper.utils.console as console_
-from ofscraper.classes.progress.progress import (
+from ofscraper.utils.live.classes.progress import (
     FileProgress,
     OverallFileProgress,
 )
-from ofscraper.classes.progress.transfercol import (
+from ofscraper.utils.live.classes.transfercol import (
     OverallTransferSpeedColumn,
     TransferFileSpeedColumn,
 )
