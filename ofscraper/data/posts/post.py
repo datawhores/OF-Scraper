@@ -26,8 +26,8 @@ import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.labels as labels
-import ofscraper.classes.media as media
-import ofscraper.classes.posts as posts_
+import ofscraper.classes.of.media as media
+import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.accessors.read as read_args
