@@ -46,9 +46,7 @@ import ofscraper.utils.cache as cache
 
 
 class MainDownloadManager(DownloadManager):
-    def __init__(self, multi=False):
-        super().__init__(multi=multi)
-
+ 
     async def main_download(self, c, ele, username, model_id):
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with normal downloader"

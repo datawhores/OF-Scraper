@@ -100,7 +100,7 @@ async def process_dicts(username, model_id, medialist, posts):
         log_text_array.append(empty_log)
         return log_text_array, (0, 0, 0, 0, 0)
     task1 = None
-    with progress_utils.setup_download_progress_live(multi=False):
+    with progress_utils.setup_download_progress_live():
         try:
 
             aws = []

@@ -9,10 +9,8 @@ from ofscraper.utils.live.groups import (
     activity_progress_group,
     api_progress_group,
     get_download_group,
-    get_multi_download_progress_group,
     like_progress_group,
     metadata_group,
-    multi_panel,
     single_panel,
     userlist_group,
     download_overall_progress_group,
@@ -54,20 +52,15 @@ def remove_task():
 
 
 @contextlib.contextmanager
-def setup_download_progress_live(multi=False, setup=False, revert=True, stop=False):
+def setup_download_progress_live(setup=False, revert=True, stop=False):
     with live_progress_context(setup=setup, revert=revert, stop=stop):
         height = max(15, console_.get_shared_console().size[-1] - 2)
-        multi_panel.height = height
         single_panel.height = height
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_DOWNLOAD_DISPLAY"
         )
-        if multi:
-            live = get_live()
-            live.update(get_multi_download_progress_group(), refresh=True)
-        else:
-            live = get_live()
-            live.update(get_download_group(), refresh=True)
+        live = get_live()
+        live.update(get_download_group(), refresh=True)
         yield
 
 
@@ -75,7 +68,6 @@ def setup_download_progress_live(multi=False, setup=False, revert=True, stop=Fal
 def setup_download_overall_progress(setup=False, revert=True, stop=False):
     with live_progress_context(setup=setup, revert=revert, stop=stop):
         height = max(15, console_.get_shared_console().size[-1] - 2)
-        multi_panel.height = height
         single_panel.height = height
         console_.get_shared_console().quiet = get_quiet_toggle_helper(
             "SUPRESS_DOWNLOAD_DISPLAY"

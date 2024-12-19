@@ -1,6 +1,6 @@
 from typing import Any, NewType, Optional
 import rich.progress
-from ofscraper.classes.progress.task import Task
+from ofscraper.utils.live.classes.task import Task
 import ofscraper.utils.live.progress as progress_utils
 
 TaskID = NewType("TaskID", int)

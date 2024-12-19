@@ -42,7 +42,7 @@ async def consumer(aws, task1, medialist, lock):
         else:
             try:
                 ele = data[1]
-                pack = await download(*data, multi=False)
+                pack = await download(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
             except Exception as e:
@@ -100,18 +100,18 @@ async def consumer(aws, task1, medialist, lock):
                 )
                 common_globals.log.traceback_(traceback.format_exc())
 
-async def download(c, ele, model_id, username, multi=False):
+async def download(c, ele, model_id, username):
     try:
         data = None
         if ele.url:
-            data = await MainDownloadManager(multi=multi).main_download(
+            data = await MainDownloadManager().main_download(
                 c,
                 ele,
                 username,
                 model_id,
             )
         elif ele.mpd:
-            data = await AltDownloadManager(multi=multi).alt_download(
+            data = await AltDownloadManager().alt_download(
                 c, ele, username, model_id
             )
         common_globals.log.debug(f"{get_medialog(ele)} Download finished")

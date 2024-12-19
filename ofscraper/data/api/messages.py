@@ -57,7 +57,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         splitArrays = get_split_array(filteredArray)
         # Set charged sleeper
         get_sleeper(reset=True)
-        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
+        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c,after)
         data = await process_tasks(tasks)
     elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
@@ -214,7 +214,7 @@ def get_split_array(filteredArray):
     ]
 
 
-def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
+def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c,after):
     tasks = []
     # special case pass after to stop work
     if len(splitArrays) > 2:

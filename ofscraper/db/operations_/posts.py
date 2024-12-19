@@ -18,7 +18,7 @@ import sqlite3
 import arrow
 from rich.console import Console
 
-import ofscraper.classes.posts as posts_
+import ofscraper.classes.of.posts as posts_
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper

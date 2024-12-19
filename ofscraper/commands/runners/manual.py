@@ -6,8 +6,8 @@ import ofscraper.data.api.highlights as highlights_
 import ofscraper.data.api.messages as messages_
 import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
-import ofscraper.classes.media as media_
-import ofscraper.classes.posts as posts_
+import ofscraper.classes.of.media as media_
+import ofscraper.classes.of.posts as posts_
 import ofscraper.runner.manager as manager
 import ofscraper.db.operations as operations
 import ofscraper.actions.actions.download.download as download

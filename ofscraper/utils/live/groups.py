@@ -10,7 +10,6 @@ from ofscraper.utils.live.progress import (
     download_job_progress,
     download_overall_progress,
     like_overall_progress,
-    multi_download_job_progress,
     userlist_job_progress,
     userlist_overall_progress,
     metadata_overall_progress,
@@ -52,10 +51,8 @@ api_progress_group = Group(
 download_overall_panel = Blue_Panel(
     download_overall_progress, style="bold deep_sky_blue2"
 )
-multi_panel = Blue_Panel(multi_download_job_progress, style="bold deep_sky_blue2")
 single_panel = Blue_Panel(download_job_progress, style="bold deep_sky_blue2")
 download_progress_group = None
-multi_download_progress_group = None
 
 
 def get_download_group():
@@ -67,17 +64,6 @@ def get_download_group():
             else Group(activity_group, download_overall_panel, fit=True)
         )
     return download_progress_group
-
-
-def get_multi_download_progress_group():
-    global multi_download_progress_group
-    if not multi_download_progress_group:
-        multi_download_progress_group = (
-            Group(activity_group, download_overall_panel, multi_panel, fit=True)
-            if settings.get_download_bars()
-            else Group(activity_group, download_overall_panel, fit=True)
-        )
-    return multi_download_progress_group
 
 
 download_overall_progress_group = Group(

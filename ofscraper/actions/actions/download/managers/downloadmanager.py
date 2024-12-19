@@ -28,61 +28,30 @@ from ofscraper.db.operations_.media import download_media_update
 
 
 class DownloadManager:
-    def __init__(self, multi=False):
-        self._multi = multi
 
     async def _add_download_job_task(
         self, ele, total=None, placeholderObj=None, tempholderObj=None
     ):
         pathstr = str(placeholderObj.trunicated_filepath)
-        task1 = None
-        if not self._multi:
-            task1 = progress_updater.add_download_job_task(
-                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                total=total,
-                file=tempholderObj.tempfilepath,
-            )
-        else:
-            await send_msg(
-                partial(
-                    progress_updater.add_download_job_multi_task,
-                    f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                    ele.id,
-                    total=total,
-                    file=tempholderObj.tempfilepath,
-                )
-            )
+        task1 = progress_updater.add_download_job_task(
+            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+            total=total,
+            file=tempholderObj.tempfilepath,
+        )
         return task1
 
     async def _remove_download_job_task(self, task1, ele):
-        if not self._multi and task1:
+        if task1:
             progress_updater.remove_download_job_task(task1)
-        elif self._multi and not task1:
-            await send_msg(
-                partial(progress_updater.remove_download_multi_job_task, ele.id)
-            )
 
-    async def _total_change_helper(self, *arg, **kwargs):
-        if not self._multi:
-            await self._normal_total_change_helper(*arg, **kwargs)
-        else:
-            await self._batch_total_change_helper(*arg, **kwargs)
-
-    async def _batch_total_change_helper(self, past_total, new_total):
-        if not new_total and not past_total:
-            return
-        elif not past_total:
-            await send_msg((None, 0, new_total))
-        elif past_total and new_total - past_total != 0:
-            await send_msg((None, 0, new_total - past_total))
-
-    async def _normal_total_change_helper(self, past_total, new_total):
+    async def _total_change_helper(self, past_total, new_total, **kwargs):
         if not new_total and not past_total:
             return
         elif not past_total:
             await update_total(new_total)
         elif past_total and new_total - past_total != 0:
             await update_total(new_total - past_total)
+
 
     def _get_resume_header(self, resume_size, total):
         return (

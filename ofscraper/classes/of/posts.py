@@ -2,8 +2,8 @@ import logging
 
 import arrow
 
-import ofscraper.classes.base as base
-import ofscraper.classes.media as Media
+import ofscraper.classes.of.base as base
+import ofscraper.classes.of.media as Media
 import ofscraper.utils.config.data as data
 
 log = logging.getLogger("shared")

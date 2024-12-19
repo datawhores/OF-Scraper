@@ -40,12 +40,9 @@ import ofscraper.utils.constants as constants
 
 
 class MetaDataManager:
-    def __init__(self, multi=False):
-        self._multi = multi
 
     async def metadata(self, c, ele, model_id, username):
         try:
-            self._prepare(ele)
             return await self._change_metadata(c, ele, username, model_id)
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
@@ -54,11 +51,6 @@ class MetaDataManager:
             )
             common_globals.log.traceback_(f"{get_medialog(ele)} Metadata Failed\n")
             return "skipped"
-
-    def _prepare(self, ele):
-        if self._multi:
-            set_media_log(common_globals.log, ele)
-            common_globals.attempt.set(0)
 
     async def _change_metadata(self, c, ele, username, model_id, placeholderObj=None):
         common_globals.log.info(

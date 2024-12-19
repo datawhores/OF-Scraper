@@ -9,7 +9,6 @@ from ofscraper.utils.live.progress import (
     download_overall_progress,
     metadata_overall_progress,
     like_overall_progress,
-    multi_download_job_progress,
     userlist_job_progress,
     userlist_overall_progress,
 )
@@ -147,19 +146,6 @@ def add_download_job_task(*args, **kwargs):
     return task
 
 
-def add_download_job_multi_task(*args, file=None, **kwargs):
-    max_visible = constants.getattr("MAX_PROGRESS_BARS")
-
-    visible = (
-        settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
-    )
-    task = multi_download_job_progress.add_task(
-        *args, visible=visible, start=True, file=file, **kwargs
-    )
-    if not visible:
-        downloads_pending.add(task)
-    return task
-
 
 def add_download_task(*args, **kwargs):
     return download_overall_progress.add_task(*args, start=True, **kwargs)
@@ -168,9 +154,6 @@ def add_download_task(*args, **kwargs):
 def start_download_job_task(*args, **kwargs):
     download_job_progress.start_task(*args, **kwargs)
 
-
-def start_download_multi_job_task(*args, **kwargs):
-    multi_download_job_progress.start_task(*args, **kwargs)
 
 
 def update_download_task(*args, **kwargs):
@@ -181,10 +164,6 @@ def update_download_job_task(*args, **kwargs):
     if not settings.get_download_bars():
         return
     download_job_progress.update(*args, **kwargs)
-
-
-def update_download_multi_job_task(*args, **kwargs):
-    multi_download_job_progress.update(*args, **kwargs)
 
 
 def remove_download_job_task(task):
@@ -207,29 +186,6 @@ def remove_download_job_task(task):
                 start_download_job_task(new_task)
     except KeyError:
         pass
-
-
-def remove_download_multi_job_task(task):
-    min_add_visible = constants.getattr("MIN_ADD_PROGRESS_BARS")
-
-    if task is None:
-        return
-    try:
-        multi_download_job_progress.remove_task(task)
-        if (
-            len(list(filter(lambda x: x.visible, download_job_progress.tasks)))
-            < min_add_visible
-        ):
-
-            new_task = None
-            while new_task not in download_job_progress.tasks and downloads_pending:
-                new_task = downloads_pending.pop()
-            if new_task:
-                update_download_multi_job_task(new_task, visible=True)
-                start_download_multi_job_task(task)
-    except KeyError:
-        pass
-
 
 def remove_download_task(task):
     if task is None:

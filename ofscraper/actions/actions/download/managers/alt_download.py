@@ -61,8 +61,6 @@ from ofscraper.actions.utils.send.message import send_msg
 
 
 class AltDownloadManager(DownloadManager):
-    def __init__(self, multi=False):
-        super().__init__(multi=multi)
 
     async def alt_download(self, c, ele, username, model_id):
         common_globals.log.debug(
@@ -444,20 +442,8 @@ class AltDownloadManager(DownloadManager):
 
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
-        task1 = None
-        if not self._multi:
-            task1 = progress_updater.add_download_job_task(
+        task1 = progress_updater.add_download_job_task(
                 f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                 total=total,
-            )
-        else:
-            await send_msg(
-                partial(
-                    progress_updater.add_download_job_multi_task,
-                    f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                    ele.id,
-                    total=total,
-                    file=placeholderObj.tempfilepath,
-                )
-            )
+        )
         return task1

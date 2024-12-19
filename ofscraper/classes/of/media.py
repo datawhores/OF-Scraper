@@ -10,7 +10,7 @@ from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
 from async_property import async_cached_property
 
-import ofscraper.classes.base as base
+import ofscraper.classes.of.base as base
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
