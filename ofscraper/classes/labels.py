@@ -1,4 +1,4 @@
-import ofscraper.classes.posts as posts_
+import ofscraper.classes.of.posts as posts_
 
 
 class Label:

@@ -13,7 +13,6 @@ from rich.table import Column
 
 import ofscraper.utils.console as console_
 from ofscraper.classes.progress.progress import (
-    MultiprocessFileProgress as MultiFileProgress,
     FileProgress,
     OverallFileProgress,
 )
@@ -44,17 +43,6 @@ download_job_progress = FileProgress(
     refresh_per_second=1.5,
     auto_refresh=True,
 )
-
-multi_download_job_progress = MultiFileProgress(
-    TextColumn("[white]{task.description}[/white]", table_column=Column(ratio=2)),
-    BarColumn(),
-    TaskProgressColumn(),
-    TransferFileSpeedColumn(),
-    DownloadColumn(),
-    refresh_per_second=3,
-    auto_refresh=True,
-)
-
 download_overall_progress = OverallFileProgress(
     TextColumn("[white]{task.description}[/white]"),
     BarColumn(),
