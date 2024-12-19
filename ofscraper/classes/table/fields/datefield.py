@@ -3,8 +3,7 @@ import re
 import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Input
-
-from ofscraper.classes.table.status import status
+from ofscraper.classes.table.utils.status import status
 
 
 class DateField(Container):

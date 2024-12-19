@@ -2,7 +2,7 @@ from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import Checkbox
 
-from ofscraper.classes.table.status import status
+from ofscraper.classes.table.utils.status import status
 
 
 class BoolField(Widget):

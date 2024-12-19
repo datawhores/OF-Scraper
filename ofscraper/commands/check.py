@@ -20,7 +20,7 @@ import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.of.posts as posts_
-import ofscraper.classes.table.table as table
+import ofscraper.classes.table.app as app
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -32,7 +32,7 @@ import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.network as network
 from ofscraper.data.api.common.check import read_check, reset_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
-from ofscraper.classes.table.row_names import row_names_all
+from ofscraper.classes.table.utils.row_names import row_names_all
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import (
@@ -62,10 +62,10 @@ def process_download_cart():
     while True:
         try:
             cart_dict = {}
-            if table.row_queue.empty():
+            if app.row_queue.empty():
                 continue
 
-            while not table.row_queue.empty():
+            while not app.row_queue.empty():
                 try:
                     process_item()
                 except Exception as _:
@@ -86,7 +86,6 @@ def process_download_cart():
 
 
 def process_item():
-    global app
     if process_download_cart.counter == 0:
         if not network.check_cdm():
             log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
@@ -95,7 +94,7 @@ def process_item():
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     try:
-        row, key = table.row_queue.get()
+        row, key = app.row_queue.get()
     except Exception as E:
         log.debug(f"Error getting item from queue: {E}")
         return
@@ -128,17 +127,17 @@ def process_item():
                 raise Exception("Download is marked as skipped")
             log.info("Download Finished")
             update_globals(model_id, username, post, media, output)
-            table.app.update_cell(key, "download_cart", "[downloaded]")
+            app.app.update_cell(key, "download_cart", "[downloaded]")
             break
         except Exception as E:
             if count == 1:
-                table.app.update_cell(key, "download_cart", "[failed]")
+                app.app.update_cell(key, "download_cart", "[failed]")
                 raise E
             log.info("Download Failed Refreshing data")
             data_refill(media_id, post_id, username, model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-    if table.row_queue.empty():
+    if app.row_queue.empty():
         log.info("Download cart is currently empty")
 
 
@@ -680,11 +679,10 @@ def thread_starters(ROWS_):
 
 
 def start_table(ROWS_):
-    global app
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
-    app = table.app(
+    app.app(
         table_data=ROWS, mutex=threading.Lock(), args=read_args.retriveArgs()
     )
 

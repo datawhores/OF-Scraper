@@ -1,5 +1,5 @@
 from ofscraper.classes.table.inputs.filterinput import FilterInput
-from ofscraper.classes.table.status import status
+from ofscraper.classes.table.utils.status import status
 
 
 class StrInput(FilterInput):

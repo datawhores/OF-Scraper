@@ -1,7 +1,5 @@
 from textual.containers import Horizontal
-
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
-from ofscraper.classes.table.status import status
 
 
 class NumField(Horizontal):

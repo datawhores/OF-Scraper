@@ -2,7 +2,7 @@ from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
-from ofscraper.classes.table.status import status
+from ofscraper.classes.table.utils.status import status
 
 
 class TimeField(Container):

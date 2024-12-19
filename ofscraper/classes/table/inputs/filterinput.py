@@ -2,7 +2,6 @@ from typing import Any
 
 from textual.widgets import Input
 
-from ofscraper.classes.table.status import status
 
 
 class FilterInput(Input):
