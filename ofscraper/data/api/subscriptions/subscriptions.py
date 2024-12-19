@@ -18,7 +18,7 @@ import traceback
 from rich.console import Console
 
 import ofscraper.data.api.subscriptions.common as common
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run

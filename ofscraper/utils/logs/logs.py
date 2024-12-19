@@ -16,7 +16,7 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 def printStartValues():

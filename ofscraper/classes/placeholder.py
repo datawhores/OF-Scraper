@@ -17,7 +17,7 @@ import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
 from ofscraper.utils.string import parse_safe
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 log = logging.getLogger("shared")

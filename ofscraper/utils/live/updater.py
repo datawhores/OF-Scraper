@@ -17,7 +17,7 @@ from ofscraper.utils.live.tasks import (
     get_activity_task,
     get_user_first_task,
 )
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 def update_activity_task(**kwargs):

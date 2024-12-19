@@ -14,7 +14,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 console = Console()

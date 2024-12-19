@@ -9,8 +9,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.managers.scraper import scraperManager
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 log = logging.getLogger("shared")
@@ -28,6 +27,7 @@ def get_count():
 
 
 def main_menu_action():
+    from ofscraper.commands.scraper.scraper import scraperManager
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     scapingManager = scraperManager()

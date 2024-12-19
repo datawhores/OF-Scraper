@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.profile as profile
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils

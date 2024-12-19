@@ -16,7 +16,7 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.utils.level as log_helpers
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)

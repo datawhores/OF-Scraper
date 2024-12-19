@@ -1,8 +1,8 @@
 import logging
 
 import ofscraper.data.posts.post as OF
-import ofscraper.scraper.download.download as download
-import ofscraper.scraper.metadata.metadata as metadata
+import ofscraper.commands.scraper.actions.download.download as download
+import ofscraper.commands.metadata.metadata as metadata
 
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -14,9 +14,9 @@ from ofscraper.commands.utils.strings import (
     all_paid_progress_download_str,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.runner.close.final.final_user import post_user_script
+from ofscraper.main.close.final.final_user import post_user_script
 from ofscraper.utils.args.accessors.command import get_command
-import ofscraper.runner.manager as manager
+import ofscraper.main.manager as manager
 
 
 log = logging.getLogger("shared")
