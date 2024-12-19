@@ -3,7 +3,7 @@ import ofscraper.data.api.me as me
 import ofscraper.data.api.subscriptions.individual as individual
 import ofscraper.data.api.subscriptions.lists as lists
 import ofscraper.data.api.subscriptions.subscriptions as subscriptions
-import ofscraper.classes.models as models
+import ofscraper.data.models.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console

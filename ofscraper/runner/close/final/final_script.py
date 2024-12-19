@@ -14,7 +14,7 @@ r"""
 import json
 import tempfile
 import logging
-from ofscraper.classes.models import Model
+from ofscraper.data.models.models import Model
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 
