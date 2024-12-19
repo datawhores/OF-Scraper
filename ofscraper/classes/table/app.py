@@ -276,9 +276,7 @@ SelectField,DateField,TimeField {
 
     def on_data_table_cell_selected(self, event):
         table = self.query_one("#data_table")
-        cursor_coordinate = table.cursor_coordinate
-        if list(row_names_all())[cursor_coordinate.column] == "download_cart":
-            self.change_download_cart(event.coordinate)
+        self.change_download_cart(table.cursor_coordinate)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "reset":
@@ -457,13 +455,13 @@ SelectField,DateField,TimeField {
 
     # Cart
     def change_download_cart(self, coord):
-        table = self.query_one("#data_table")
-        download_cart = table.get_cell_at(coord)
-
+        row,_=coord
+        download_cart = self._filtered_rows[row]['download_cart']
         if download_cart.plain == "Not Unlocked":
             return
         elif download_cart.plain == "[]":
             self.update_cell_at_coords(coord, "[added]")
+            # self._cart_nums.remove()
 
         elif download_cart.plain == "[added]":
             self.update_cell_at_coords(coord, "[]")
@@ -473,10 +471,8 @@ SelectField,DateField,TimeField {
 
     def add_to_row_queue(self):
         table = self.query_one("#data_table")
-        row_keys = [str(ele.get_val("index")) for ele in self._filtered_rows]
-        cart_index = list(row_names_all()).index("download_cart")
         filter_row_keys = list(
-            filter(lambda x: table.get_row(x)[cart_index].plain == "[added]", row_keys)
+            filter(lambda x: x["download_cart"].plain == "[added]", self._filtered_rows)
         )
         self.update_downloadcart_cells(filter_row_keys, "[downloading]")
         log.info(f"Number of Downloads sent to queue {len(filter_row_keys)}")
@@ -488,19 +484,23 @@ SelectField,DateField,TimeField {
     def update_downloadcart_cells(self, keys, value):
         self.update_cell(keys, "download_cart", value)
 
-    def update_cell_at_coords(self, coords, value, persist=True):
+    def update_cell_at_coords(self, coords, value):
         with self.mutex:
             for coord in coords if isinstance(coords, list) else [coords]:
                 try:
                     table = self.query_one("#data_table")
                     table.update_cell_at(coord, Text(value))
-                    key = list(row_names_all())[coord.column]
-                    if persist:
-                        self.table_data[coord.row].set_val(key, value)
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
 
+
+    # def get_row_dict_at(self,coord):
+    #     out={}
+    #     for key,value in zip(get)
+        
+
+    
     def update_cell(self, keys, name, value, persist=True):
         if not isinstance(keys, list):
             keys = [keys]
