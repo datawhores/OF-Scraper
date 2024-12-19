@@ -62,27 +62,6 @@ class FileProgress(rich.progress.Progress):
         self.refresh()
         return new_task_index
 
-    # def update(self,*args,**kwargs):
-    #     task_id=args[0]
-    #     now=arrow.now()
-    #     if not self._check_last_updated(task_id,now=now):
-    #         return
-    #     super().update(*args,**kwargs)
-    #     self._update_last_updated(task_id,now=now)
-
-    # def _update_last_updated(self,task_id,now=None):
-    #     now=now or arrow.now()
-    #     self._last_updated[task_id]=now.float_timestamp
-    # def _check_last_updated(self,task_id,now=None):
-    #     last_updated=self._last_updated.get(task_id)
-    #     if not last_updated:
-    #         return True
-    #     update_freq=constants.getattr("PROGRESS_JOB_UPDATE_FREQ")
-    #     if ((now or arrow.now()).float_timestamp-last_updated)>update_freq:
-    #         return True
-    #     return False
-
-
 class OverallFileProgress(rich.progress.Progress):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -127,5 +106,4 @@ class OverallFileProgress(rich.progress.Progress):
     def download_tasks(self):
         return (
             progress_utils.download_job_progress.tasks
-            or progress_utils.multi_download_job_progress.tasks
         )
