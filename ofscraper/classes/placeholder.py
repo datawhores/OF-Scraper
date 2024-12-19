@@ -23,23 +23,6 @@ import ofscraper.runner.manager as manager
 log = logging.getLogger("shared")
 
 
-def check_uniquename():
-    format = data.get_fileformat()
-    if re.search("text", format):
-        return True
-    elif re.search("filename", format):
-        return True
-    elif re.search("post_id", format):
-        return True
-    elif re.search("postid", format):
-        return True
-    elif re.search("media_id", format):
-        return True
-    elif re.search("mediaid", format):
-        return True
-    elif re.search("custom", format):
-        return True
-    return False
 
 
 class basePlaceholder:

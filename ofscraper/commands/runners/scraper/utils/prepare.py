@@ -1,13 +1,14 @@
 import logging
 import time
+import re
 
 import ofscraper.data.api.init as init
 import ofscraper.runner.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.classes.placeholder as placeholder
 import ofscraper.runner.manager as manager
+import ofscraper.utils.config.data as data
 
 
 log = logging.getLogger("shared")
@@ -30,8 +31,25 @@ def prepare(menu=False):
     return userdata, session
 
 
+def check_uniquename():
+    format = data.get_fileformat()
+    if re.search("text", format):
+        return True
+    elif re.search("filename", format):
+        return True
+    elif re.search("post_id", format):
+        return True
+    elif re.search("postid", format):
+        return True
+    elif re.search("media_id", format):
+        return True
+    elif re.search("mediaid", format):
+        return True
+    elif re.search("custom", format):
+        return True
+    return False
 def unique_name_warning():
-    if not placeholder.check_uniquename():
+    if not check_uniquename():
         log.warning(
             "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
