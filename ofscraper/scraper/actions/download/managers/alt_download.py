@@ -24,40 +24,40 @@ import psutil
 from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.actions.actions.download.utils.retries import download_retry
+from ofscraper.scraper.actions.download.utils.retries import download_retry
 
-from ofscraper.actions.utils.params import get_alt_params
-from ofscraper.actions.utils.log import get_medialog
-from ofscraper.actions.utils.log import (
+from ofscraper.scraper.utils.params import get_alt_params
+from ofscraper.scraper.utils.log import get_medialog
+from ofscraper.scraper.utils.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
 )
-from ofscraper.actions.actions.download.utils.chunk import (
+from ofscraper.scraper.actions.download.utils.chunk import (
     get_chunk_size,
 )
-from ofscraper.actions.utils.retries import get_download_retries
-from ofscraper.actions.utils.send.chunk import send_chunk_msg
+from ofscraper.scraper.utils.retries import get_download_retries
+from ofscraper.scraper.utils.send.chunk import send_chunk_msg
 from ofscraper.classes.sessionmanager.sessionmanager import (
     FORCED_NEW,
     SIGN,
 )
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.actions.actions.download.managers.downloadmanager import DownloadManager
-import ofscraper.actions.utils.paths.paths as common_paths
-import ofscraper.actions.utils.log as common_logs
+from ofscraper.scraper.actions.download.managers.downloadmanager import DownloadManager
+import ofscraper.scraper.utils.paths.paths as common_paths
+import ofscraper.scraper.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
-import ofscraper.actions.utils.general as common
+import ofscraper.scraper.utils.general as common
 import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-import ofscraper.actions.actions.download.utils.keyhelpers as keyhelpers
+import ofscraper.scraper.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache as cache
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.actions.utils.send.message import send_msg
+from ofscraper.scraper.utils.send.message import send_msg
 
 
 class AltDownloadManager(DownloadManager):

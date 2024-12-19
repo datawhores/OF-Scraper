@@ -10,7 +10,7 @@ import ofscraper.classes.of.media as media_
 import ofscraper.classes.of.posts as posts_
 import ofscraper.runner.manager as manager
 import ofscraper.db.operations as operations
-import ofscraper.actions.actions.download.download as download
+import ofscraper.scraper.actions.download.download as download
 import ofscraper.data.models.manager as manager
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -26,7 +26,7 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.runner.close.final.final import final
-from ofscraper.actions.actions.download.utils.text import textDownloader
+from ofscraper.scraper.actions.download.utils.text import textDownloader
 import ofscraper.runner.manager as manager
 
 

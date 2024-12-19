@@ -12,7 +12,7 @@ from ofscraper.utils.logs.other import add_other_handler_multi
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.dates as dates
-from ofscraper.actions.utils.send.message import set_send_msg
+from ofscraper.scraper.utils.send.message import set_send_msg
 import ofscraper.runner.manager as manager
 
 

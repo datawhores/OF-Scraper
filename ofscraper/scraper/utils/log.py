@@ -3,7 +3,7 @@ import os
 
 from humanfriendly import format_size
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 

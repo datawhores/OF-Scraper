@@ -1,9 +1,9 @@
 import pathlib
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 from ofscraper.utils.logs.utils.level import getNumber
-from ofscraper.actions.utils.log import get_medialog
+from ofscraper.scraper.utils.log import get_medialog
 
 
 def send_chunk_msg(ele, total, placeholderObj):

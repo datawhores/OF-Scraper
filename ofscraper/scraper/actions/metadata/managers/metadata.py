@@ -13,9 +13,9 @@ r"""
 
 import traceback
 
-import ofscraper.actions.utils.globals as common_globals
-from ofscraper.actions.utils.log import get_medialog
-from ofscraper.actions.utils.log import (
+import ofscraper.scraper.utils.globals as common_globals
+from ofscraper.scraper.utils.log import get_medialog
+from ofscraper.scraper.utils.log import (
     set_media_log,
 )
 import asyncio
@@ -23,8 +23,8 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.actions.utils.general as common
-import ofscraper.actions.utils.paths.media as media
+import ofscraper.scraper.utils.general as common
+import ofscraper.scraper.utils.paths.media as media
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.hash as hash
@@ -33,8 +33,8 @@ from ofscraper.db.operations_.media import (
     download_media_update,
     prev_download_media_data,
 )
-from ofscraper.actions.utils.retries import get_download_retries
-from ofscraper.actions.utils.params import get_alt_params
+from ofscraper.scraper.utils.retries import get_download_retries
+from ofscraper.scraper.utils.params import get_alt_params
 from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.constants as constants
 

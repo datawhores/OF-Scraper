@@ -3,21 +3,21 @@ import asyncio
 
 from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.runner.close.final.final_user import post_user_script
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.actions.utils.log import final_log, final_log_text
-from ofscraper.actions.utils.paths.paths import setDirectoriesDate
-from ofscraper.actions.utils.buffer import download_log_clear_helper
+from ofscraper.scraper.utils.log import final_log, final_log_text
+from ofscraper.scraper.utils.paths.paths import setDirectoriesDate
+from ofscraper.scraper.utils.buffer import download_log_clear_helper
 
-from ofscraper.actions.utils.workers import get_max_workers
+from ofscraper.scraper.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.actions.actions.metadata.runner import consumer
-from ofscraper.actions.actions.metadata.utils.desc import desc
+from ofscraper.scraper.actions.metadata.runner import consumer
+from ofscraper.scraper.actions.metadata.utils.desc import desc
 @run
 async def process_dicts(username, model_id, medialist):
     download_log_clear_helper()

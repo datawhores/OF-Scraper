@@ -14,17 +14,17 @@ r"""
 import asyncio
 import traceback
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.actions.utils.log import (
+from ofscraper.scraper.utils.log import (
     log_download_progress,
 )
-from ofscraper.actions.utils.log import get_medialog
+from ofscraper.scraper.utils.log import get_medialog
 
-from ofscraper.actions.utils.progress.convert import convert_num_bytes
-from ofscraper.actions.actions.download.utils.desc import desc
-from ofscraper.actions.actions.download.managers.alt_download import AltDownloadManager
-from ofscraper.actions.actions.download.managers.main_download import (
+from ofscraper.scraper.utils.progress.convert import convert_num_bytes
+from ofscraper.scraper.actions.download.utils.desc import desc
+from ofscraper.scraper.actions.download.managers.alt_download import AltDownloadManager
+from ofscraper.scraper.actions.download.managers.main_download import (
     MainDownloadManager,
 )
 

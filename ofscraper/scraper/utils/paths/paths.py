@@ -5,10 +5,10 @@ import platform
 import shutil
 from collections.abc import Iterable
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.common as common_paths
-from ofscraper.actions.utils.log import get_medialog
+from ofscraper.scraper.utils.log import get_medialog
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error

@@ -1,4 +1,4 @@
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 
 
 async def update_total(update):

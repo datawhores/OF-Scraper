@@ -1,7 +1,7 @@
 from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_random
 
 import ofscraper.utils.constants as constants
-from ofscraper.actions.utils.retries import get_download_retries
+from ofscraper.scraper.utils.retries import get_download_retries
 
 
 class download_retry(AsyncRetrying):

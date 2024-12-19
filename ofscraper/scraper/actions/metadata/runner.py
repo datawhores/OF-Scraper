@@ -14,15 +14,15 @@ r"""
 import asyncio
 import traceback
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.actions.utils.log import (
+from ofscraper.scraper.utils.log import (
     log_download_progress,
 )
-from ofscraper.actions.utils.log import get_medialog
+from ofscraper.scraper.utils.log import get_medialog
 
-from ofscraper.actions.actions.metadata.managers.metadata import MetaDataManager
-from ofscraper.actions.actions.metadata.utils.desc import desc
+from ofscraper.scraper.actions.metadata.managers.metadata import MetaDataManager
+from ofscraper.scraper.actions.metadata.utils.desc import desc
 
 
 async def consumer(aws, task1, medialist, lock):

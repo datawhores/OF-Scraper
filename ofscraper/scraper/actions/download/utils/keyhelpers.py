@@ -10,15 +10,15 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
-from ofscraper.actions.utils.retries import get_cmd_download_req_retries
-from ofscraper.actions.utils.log import get_medialog
+from ofscraper.scraper.utils.retries import get_cmd_download_req_retries
+from ofscraper.scraper.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import run
 
 

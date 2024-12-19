@@ -1,11 +1,9 @@
 import contextlib
-import time
-import asyncio
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.actions.utils.retries import get_download_req_retries
+from ofscraper.scraper.utils.retries import get_download_req_retries
 from ofscraper.classes.sessionmanager.sessionmanager import (
     AUTH,
     COOKIES,
@@ -14,7 +12,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
     TOO_MANY,
 )
-from ofscraper.actions.actions.download.utils.leaky import LeakyBucket
+from ofscraper.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 
 

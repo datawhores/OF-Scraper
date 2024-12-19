@@ -13,22 +13,22 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.string import format_safe
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 
 from ofscraper.classes.sessionmanager.download import download_session
-from ofscraper.actions.utils.log import final_log, final_log_text
+from ofscraper.scraper.utils.log import final_log, final_log_text
 
-from ofscraper.actions.utils.paths.paths import setDirectoriesDate
-from ofscraper.actions.utils.buffer import download_log_clear_helper
+from ofscraper.scraper.utils.paths.paths import setDirectoriesDate
+from ofscraper.scraper.utils.buffer import download_log_clear_helper
 
-from ofscraper.actions.utils.workers import get_max_workers
+from ofscraper.scraper.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
-from ofscraper.actions.actions.download.run import consumer
-from ofscraper.actions.actions.download.utils.desc import desc
-from ofscraper.actions.actions.download.utils.text import textDownloader
+from ofscraper.scraper.actions.download.run import consumer
+from ofscraper.scraper.actions.download.utils.desc import desc
+from ofscraper.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.areas import get_download_area
 from ofscraper.utils.args.accessors.command import get_command

@@ -17,11 +17,11 @@ from humanfriendly import format_size
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.actions.utils.send.message import send_msg
-from ofscraper.actions.utils.progress.update import update_total
+from ofscraper.scraper.utils.send.message import send_msg
+from ofscraper.scraper.utils.progress.update import update_total
 import ofscraper.utils.settings as settings
-import ofscraper.actions.utils.globals as common_globals
-from ofscraper.actions.utils.log import get_medialog
+import ofscraper.scraper.utils.globals as common_globals
+from ofscraper.scraper.utils.log import get_medialog
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import download_media_update

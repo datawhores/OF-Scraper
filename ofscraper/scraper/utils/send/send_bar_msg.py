@@ -1,6 +1,6 @@
 # import asyncio
 
-# import ofscraper.actions.utils.globals as common_globals
+# import ofscraper.scraper.utils.globals as common_globals
 # import ofscraper.utils.settings as settings
 
 

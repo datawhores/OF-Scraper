@@ -16,11 +16,11 @@ import re
 from functools import partial
 
 
-import ofscraper.actions.utils.globals as common_globals
+import ofscraper.scraper.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.hash as hash
-from ofscraper.actions.utils.paths.media import add_path
+from ofscraper.scraper.utils.paths.media import add_path
 
 
 def add_additional_data(placeholderObj, ele):
