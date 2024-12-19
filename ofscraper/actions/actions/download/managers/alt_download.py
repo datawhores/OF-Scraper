@@ -26,7 +26,7 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
-from ofscraper.classes.download_retries import download_retry
+from ofscraper.actions.actions.download.utils.retries import download_retry
 
 from ofscraper.actions.utils.params import get_alt_params
 from ofscraper.actions.utils.log import get_medialog
