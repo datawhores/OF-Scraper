@@ -1,7 +1,6 @@
 from textual.containers import Horizontal
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
-
 class NumField(Horizontal):
     def __init__(self, name: str, default=None) -> None:
         name = name.lower()
@@ -33,7 +32,9 @@ class NumField(Horizontal):
 
     def reset(self):
         self.query_one(IntegerInput).value = self.default
-
+    @property
+    def IntegerInput(self):
+        return self.query_one(IntegerInput)
 
 class OtherMediaNumField(NumField):
     def empty(self):
