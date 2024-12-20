@@ -1,15 +1,6 @@
-import logging
-import queue
-import re
-
-import arrow
-from rich.text import Text
-from textual import events
-from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Button, ContentSwitcher, Rule,Static
 
-import ofscraper.utils.logs.logger as logger
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
 from ofscraper.classes.table.fields.numfield import NumField, OtherMediaNumField
@@ -19,14 +10,9 @@ from ofscraper.classes.table.fields.selectfield import SelectField
 from ofscraper.classes.table.fields.textsearch import TextSearch
 from ofscraper.classes.table.fields.timefield import TimeField
 from ofscraper.classes.table.inputs.strinput import StrInput
-from ofscraper.classes.table.utils.row_names import row_names, row_names_all
-from ofscraper.classes.table.utils.status import status
-from ofscraper.classes.table.utils.lock import mutex
 from ofscraper.classes.table.sections.table_console import OutConsole
 from ofscraper.classes.table.sections.sidebar import Sidebar
-from ofscraper.classes.table.sections.table import TableRow, DataTableExtended as DataTable
-from textual.widgets import SelectionList
-from ofscraper.classes.table.css import CSS
+from ofscraper.classes.table.sections.table import  DataTableExtended as DataTable
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE,START_PAGE
 
 
