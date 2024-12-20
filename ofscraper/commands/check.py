@@ -47,6 +47,7 @@ from ofscraper.utils.args.accessors.command import get_command
 import ofscraper.main.manager as manager
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.scraper.actions.download.download import process_dicts
+from rich.text import Text
 
 
 log = logging.getLogger("shared")
@@ -94,15 +95,15 @@ def process_item():
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     try:
-        row, key = app.row_queue.get()
+       key,row=app.row_queue.get()
     except Exception as E:
         log.debug(f"Error getting item from queue: {E}")
         return
     for count, _ in enumerate(range(0, 2)):
         try:
-            username = row[list(row_names_all()).index("username")].plain
-            post_id = int(row[list(row_names_all()).index("post_id")].plain)
-            media_id = int(row[list(row_names_all()).index("media_id")].plain)
+            username = row["username"]
+            post_id = int( row["post_id"] )
+            media_id =  int(row["media_id"])
             media = ALL_MEDIA.get(
                 "_".join(map(lambda x: str(x), [media_id, post_id, username]))
             )
@@ -127,18 +128,18 @@ def process_item():
                 raise Exception("Download is marked as skipped")
             log.info("Download Finished")
             update_globals(model_id, username, post, media, output)
-            app.app.update_cell(key, "download_cart", "[downloaded]")
+            app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]",style="bold green"))
             break
         except Exception as E:
             if count == 1:
-                app.app.update_cell(key, "download_cart", "[failed]")
+                app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]",style="bold red"))
                 raise E
             log.info("Download Failed Refreshing data")
             data_refill(media_id, post_id, username, model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     if app.row_queue.empty():
-        log.info("Download cart is currently empty")
+        log.info("Download cart is currently emp__ty")
 
 
 def update_globals(model_id, username, post, media, values):
@@ -683,7 +684,7 @@ def start_table(ROWS_):
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
     app.app(
-        table_data=ROWS, mutex=threading.Lock(), args=read_args.retriveArgs()
+        table_data=ROWS, args=read_args.retriveArgs()
     )
 
 
