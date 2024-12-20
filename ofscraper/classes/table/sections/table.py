@@ -11,6 +11,33 @@ log = logging.getLogger("shared")
 class DataTableExtended(DataTable):
     def __init_(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+    #cart
+    def toggle_cart(self):
+        for key in self.ordered_row_keys:
+            if self.get_row_dict(key)["download_cart"] == "[downloaded]":
+                pass
+            elif self._download_cart_toggle:
+                self.update_cell_at_key(key, "download_cart", "[]")
+            elif self.get_row_dict(key)["download_cart"] == "[]":
+                self.update_cell_at_key(key, "download_cart", "[added]")
+        self._download_cart_toggle=not self._download_cart_toggle
+    def change_cart_cell(self, coord):
+        row,col=coord
+        table=self
+        if list(table.ordered_columns_keys)[col]!="download_cart":
+            return
+        download_cart = table.get_row_dict_at(row)["download_cart"]
+        if download_cart == "Not Unlocked":
+            pass
+        elif download_cart == "[]":
+            table.update_cell_at_coord(coord, Text("[added]",style="bold light_goldenrod2"))
+
+        elif download_cart == "[added]":
+            table.update_cell_at_coord(coord, Text("[]",style="bold light_goldenrod2"))
+        elif download_cart == "[downloaded]" or "[failed]":
+            table.update_cell_at_coord(coord, Text("[added]",style="bold light_goldenrod2"))
+        self._download_cart_toggle=False
+    #cell modification and retrieval
     def get_row_dict_at(self, row_index):
         return {key:value for key,value in zip(self.ordered_columns_keys,map(lambda x:x.plain if isinstance(x,Text) else x,self.get_row_at(row_index)))}
     def get_row_dict(self,row_key):
