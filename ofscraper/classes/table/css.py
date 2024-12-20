@@ -16,6 +16,7 @@ CSS = """
         layer: sidebar;
         overflow-y:scroll;
         overflow-x:scroll;
+        height: 100%;
 
     }
 

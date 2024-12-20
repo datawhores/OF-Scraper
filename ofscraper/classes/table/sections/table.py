@@ -1,8 +1,9 @@
 import arrow
+import re
 import logging
 from rich.text import Text
-
 from ofscraper.classes.table.utils.row_names import row_names
+
 from textual.widgets import DataTable
 from ofscraper.classes.table.utils.lock import mutex
 log = logging.getLogger("shared")
@@ -24,7 +25,7 @@ class DataTableExtended(DataTable):
     def change_cart_cell(self, coord):
         row,col=coord
         table=self
-        if list(table.ordered_columns_keys)[col]!="download_cart":
+        if table.ordered_columns_keys[col]!="download_cart":
             return
         download_cart = table.get_row_dict_at(row)["download_cart"]
         if download_cart == "Not Unlocked":
@@ -45,7 +46,7 @@ class DataTableExtended(DataTable):
 
     def update_cell_at_coord(self, coords, value):
         with mutex:
-            value=value if isinstance(value,Text) else Text(value)
+            value=value if isinstance(str(value),Text) else Text(value)
             for coord in coords if isinstance(coords, list) else [coords]:
                 try:
                     
@@ -56,8 +57,8 @@ class DataTableExtended(DataTable):
 
     def update_cell_at_key(self, keys, col_key,value):
         with mutex:
-            value=value if isinstance(value,Text) else Text(value)
-            for key in key if isinstance(keys, list) else [keys]:
+            value=value if isinstance(str(value),Text) else Text(value)
+            for key in keys if isinstance(keys, list) else [keys]:
                 try:
                     self.update_cell(key,col_key, value)
                 except Exception as E:
@@ -74,81 +75,77 @@ class DataTableExtended(DataTable):
     
     @property
     def ordered_columns_keys(self):
-        return map(lambda x:x.key.value,self.ordered_columns)
+        return list(map(lambda x:x.key.value,self.ordered_columns))
     
     @property
     def ordered_row_keys(self):
-        return map(lambda x:x.key.value,self.ordered_rows)
+        return list(map(lambda x:x.key.value,self.ordered_rows))
 
         
 
 
-class TableRow:
-    def __init__(self, table_row):
-        self._table_row = table_row
-        self._other_styled = None
 
-    def get_styled(self):
-        styled_row = [self._table_row["number"]]
+def get_styled(row):
+        styled_row = []
         for key in row_names():
-            key = key.lower()
             if key in ["length","post_date"]:
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold deep_sky_blue1")
+                    Text(str(row[key]), style="bold deep_sky_blue1")
                 )
             elif key =="download_cart":
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold light_goldenrod2")
+                    Text(str(row[key]), style="bold light_goldenrod2")
                 )
             elif key=="text":
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold dark_sea_green1")
+                    Text(str(row[key]), style="bold dark_sea_green1")
                 )
-            elif isinstance(self._table_row[key],str):
+            elif  key=="number":
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold medium_spring_green")
+                    Text(str(row[key]), style="bold bright_white")
                 )
-            elif isinstance(self._table_row[key],bool):
+                
+            elif isinstance(str(row[key]),str):
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold plum1")
+                    Text(str(row[key]), style="bold medium_spring_green")
                 )
-            elif isinstance(self._table_row[key],(int,list)):
+            elif isinstance(str(row[key]),bool):
                 styled_row.append(
-                    Text(str(self._table_row[key]), style="bold bright_white")
+                    Text(str(row[key]), style="bold plum1")
+                )
+            elif isinstance(str(row[key]),(int,list)):
+                styled_row.append(
+                    Text(str(row[key]), style="bold bright_white")
                 )
         
             else:
-                styled_row.append(self._table_row[key])
+                styled_row.append(Text(row[key]), style="bold white")
         return styled_row
 
-    def get_val(self, name):
-        name = name.lower()
-        name = name if name != "number" else "index"
-        return self._table_row[name]
 
-    def get_compare_val(self, name):
+def get_compare_val(name,value):
+        value=value.plain if isinstance(value,Text) else value
         if name == "length":
-            return self._get_length_val(name)
+            return get_length_val(value)
         if name == "post_date":
-            return self._get_post_date_val(name)
+            return get_post_date_val(value)
         if name == "other_posts_with_media":
-            return self._get_list_length(name)
+            return get_list_length(value)
         else:
-            return self.get_val(name)
+            return value
 
-    def _get_post_date_val(self, name):
-        return arrow.get(self._table_row[name]).floor("day")
+def get_post_date_val(value):
+    return arrow.get(value).floor("day")
 
-    def _get_length_val(self, name):
-        timestr = self._table_row[name]
+def get_length_val(timestr):
         if timestr == "N\A" or timestr == "N/A":
             timestr = "0:0:0"
         return arrow.get(timestr, "h:m:s")
 
-    def _get_list_length(self, name):
-        return len(self._table_row[name])
+def get_list_length(value):
+    return len(re.findall(r'\d+', value))
 
-    def set_val(self, key, val):
-        self._table_row[key.lower()] = val
-        self._other_styled = None
+
+    
+
 

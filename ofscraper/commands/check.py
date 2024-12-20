@@ -32,7 +32,6 @@ import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.network as network
 from ofscraper.data.api.common.check import read_check, reset_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
-from ofscraper.classes.table.utils.row_names import row_names_all
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import (
@@ -411,15 +410,9 @@ def reset_data():
     write_args.setArgs(args)
 
 
-def set_count(ROWS):
-    for count, ele in enumerate(ROWS):
-        ele[0] = count + 1
-
-
 def start_helper():
     global ROWS
     reset_data()
-    set_count(ROWS)
     network.check_cdm()
     thread_starters(ROWS)
 
@@ -744,8 +737,8 @@ async def row_gather(username, model_id, paid=False):
     ):
         out.append(
             {
-                "index": count - 1,
-                "number": count,
+                "index": count+1,
+                "number": count+1,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
                 "downloaded": (ele.id, ele.postid) in downloaded,

@@ -1,3 +1,4 @@
+import re
 from textual.containers import Horizontal
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
@@ -42,7 +43,7 @@ class OtherMediaNumField(NumField):
         return self.query_one(IntegerInput).value
 
     def update_table_val(self, val):
-        val = str(val)
+        val = str(len(re.findall(r'\d+', val)))
         self.query_one(IntegerInput).value = val
 
     def reset(self):

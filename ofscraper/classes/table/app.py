@@ -6,11 +6,11 @@ from rich.text import Text
 from textual import events
 from textual.app import App, ComposeResult
 from textual.widgets import Button, ContentSwitcher
-from ofscraper.classes.table.utils.row_names import row_names, row_names_all
+from ofscraper.classes.table.utils.row_names import row_names
 from ofscraper.classes.table.utils.status import status
 from ofscraper.classes.table.utils.lock import mutex
 from ofscraper.classes.table.sections.table_console import OutConsole
-from ofscraper.classes.table.sections.table import TableRow
+from ofscraper.classes.table.sections.table import get_styled,get_compare_val
 from textual.widgets import SelectionList
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
@@ -37,7 +37,7 @@ class InputApp(App):
 
     def __call__(self, *args, **kwargs):
         self._init_args = kwargs.pop("args", None)
-        self.table_data = [TableRow(ele) for ele in kwargs.pop("table_data", None)[1:]]
+        self.table_data = kwargs.pop("table_data", None)
         self._sorted_hash = {}
         self._sortkey = None
         self._reverse = False       
@@ -78,6 +78,7 @@ class InputApp(App):
             self.query_one(ContentSwitcher).current = "console_page"
 
         elif event.button.id == "filter" or event.button.id == "filter2":
+
             self.query_one("#options_sidebar").toggle_class("-hidden")
             self.filter_table()
 
@@ -94,20 +95,14 @@ class InputApp(App):
         if event.character in set([";", "'"]):
             table =self.table
             cursor_coordinate = table.cursor_coordinate
-            if len(table._data) == 0:
+            _,col=cursor_coordinate
+            if len(table.ordered_rows) == 0:
                 return
-            cell_key = table.coordinate_to_cell_key(cursor_coordinate)
-            event = table.CellSelected(
-                self,
-                table.get_cell_at(cursor_coordinate),
-                coordinate=cursor_coordinate,
-                cell_key=cell_key,
-            )
-            row_name = list(row_names_all())[event.coordinate[1]]
-            if row_name != "download_cart":
-                self.update_input(row_name, event.value.plain)
+            col_name =table.ordered_columns_keys[col]
+            if col_name != "download_cart":
+                self.update_input(col_name,table.get_cell_at(cursor_coordinate) )
             else:
-                self.change_download_cart(event.coordinate)
+                self.change_download_cart(table.cursor_coordinate)
 
     def action_toggle_options_sidebar(self) -> None:
         if "page_option_sidebar" not in list(
@@ -122,6 +117,12 @@ class InputApp(App):
         ):
             self.query_one("#options_sidebar").toggle_class("-hidden")
         self.query_one("#page_option_sidebar").toggle_class("-hidden")
+    def _set_length(self):
+        if self._init_args.length_max:
+            self.query_one("#length").update_table_max(self._init_args.length_max)
+        if self._init_args.length_min:
+            self.query_one("#length").update_table_min(self._init_args.length_min)
+
    
 
     # Cart
@@ -237,20 +238,19 @@ class InputApp(App):
         with mutex:
             filter_rows=None
             if reset is True:
-                row_order=sorted([str(x.value) for x in self.query_one("#data_table_hidden")._row_locations],key=lambda x:int(x))
-                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in row_order]
+                key_order=sorted([str(x.value) for x in self.query_one("#data_table_hidden")._row_locations],key=lambda x:int(x))
+                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in key_order]
             else:
-                row_order=[str(x.value) for x in self.query_one("#data_table_hidden")._row_locations]
-                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in row_order]
+                key_order=[str(x.value) for x in self.query_one("#data_table_hidden")._row_locations]
+                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in key_order]
                 for name in row_names():
-                    name = name.lower()    
                     try:
                         filter_rows = list(
                             filter(
                                 lambda x: self._status.validate(
                                     name,
-                                    self.table_data[int(x.key.value)].get_compare_val(
-                                        name
+                                    get_compare_val(
+                                        name,x[name]
                                     ),
                                 ),
                                 filter_rows,
@@ -263,6 +263,7 @@ class InputApp(App):
     #inputs
     def update_input(self, row_name, value):
         try:
+            value=value.plain if isinstance(value, Text) else value
             targetNode = self.query_one(f"#{row_name}")
             targetNode.update_table_val(value)
         except:
@@ -332,14 +333,13 @@ class InputApp(App):
             table.clear(True)
             table.fixed_rows = 0
             table.zebra_stripes = True
-            table.add_column("number", key="number")
             [
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
                 for ele in row_names()
             ]
             for row in self.table_data:
-                table_row = row.get_styled()
-                table.add_row(*table_row, key=str(row.get_val("index")), height=0)
+                table_row = get_styled(row)
+                table.add_row(*table_row, key=str(row.get("index")), height=0)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
     def _insert_visible_table(self):
@@ -347,7 +347,6 @@ class InputApp(App):
             table.clear(True)
             table.fixed_rows = 0
             table.zebra_stripes = True
-            table.add_column("number", key="number")
             for ele in row_names():
                 width=18
                 width=50 if ele=="text" else width
@@ -367,7 +366,6 @@ class InputApp(App):
         download_cart=len(list(self.table.get_matching_rows("download_cart","[added]")))
         self.query(".search_info")[2].update(f"[bold blue]Items in Cart[/bold blue]: {download_cart}")
 
-    #getters/setters
 
     @property
     def status(self):

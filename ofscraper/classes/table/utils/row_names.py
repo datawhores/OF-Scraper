@@ -1,15 +1,21 @@
-import re
-
-import ofscraper.utils.constants as constants
-
+ROW_NAMES = (
+    "Number",
+    "Download_Cart",
+    "UserName",
+    "Downloaded",
+    "Unlocked",
+    "other_posts_with_media",
+    "Length",
+    "Mediatype",
+    "Post_Date",
+    "Post_Media_Count",
+    "Responsetype",
+    "Price",
+    "Post_ID",
+    "Media_ID",
+    "Text",
+)
 
 def row_names():
-    for ele in row_names_all():
-        if re.search("^number$", ele, re.IGNORECASE):
-            continue
-        yield ele
-
-
-def row_names_all():
-    for ele in constants.getattr("ROW_NAMES"):
+    for ele in ROW_NAMES:
         yield ele.lower()
