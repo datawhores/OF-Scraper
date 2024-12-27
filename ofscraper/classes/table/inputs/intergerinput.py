@@ -1,13 +1,9 @@
 from ofscraper.classes.table.inputs.filterinput import FilterInput
-from ofscraper.classes.table.utils.status import status
 
 
+class PostiveIntegerInput(FilterInput):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, type="integer",restrict="^(?!0+$)\d*$",valid_empty=True, **kwargs)
 class IntegerInput(FilterInput):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, type="integer", **kwargs)
-
-    def on_input_changed(self):
-        status[self.key] = int(self.value) if self.value else ""
-
-    def on_input_submitted(self):
-        status[self.key] = int(self.value) if self.value else ""
+        super().__init__(*args, type="integer",valid_empty=True, **kwargs)

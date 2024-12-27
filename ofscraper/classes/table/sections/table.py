@@ -1,8 +1,6 @@
-import arrow
-import re
 import logging
 from rich.text import Text
-from ofscraper.classes.table.utils.row_names import row_names
+from ofscraper.classes.table.utils.names import get_col_names
 
 from textual.widgets import DataTable
 from ofscraper.classes.table.utils.lock import mutex
@@ -10,8 +8,9 @@ log = logging.getLogger("shared")
 
 
 class DataTableExtended(DataTable):
-    def __init_(self,*args,**kwargs):
+    def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        self._download_cart_toggle=False
     #cart
     def toggle_cart(self):
         for key in self.ordered_row_keys:
@@ -46,7 +45,7 @@ class DataTableExtended(DataTable):
 
     def update_cell_at_coord(self, coords, value):
         with mutex:
-            value=value if isinstance(str(value),Text) else Text(value)
+            value=value if isinstance(value,Text) else Text(value)
             for coord in coords if isinstance(coords, list) else [coords]:
                 try:
                     
@@ -57,7 +56,7 @@ class DataTableExtended(DataTable):
 
     def update_cell_at_key(self, keys, col_key,value):
         with mutex:
-            value=value if isinstance(str(value),Text) else Text(value)
+            value=value if isinstance(value,Text) else Text(value)
             for key in keys if isinstance(keys, list) else [keys]:
                 try:
                     self.update_cell(key,col_key, value)
@@ -87,7 +86,7 @@ class DataTableExtended(DataTable):
 
 def get_styled(row):
         styled_row = []
-        for key in row_names():
+        for key in get_col_names():
             if key in ["length","post_date"]:
                 styled_row.append(
                     Text(str(row[key]), style="bold deep_sky_blue1")
@@ -105,15 +104,15 @@ def get_styled(row):
                     Text(str(row[key]), style="bold bright_white")
                 )
                 
-            elif isinstance(str(row[key]),str):
+            elif isinstance(row[key],str):
                 styled_row.append(
                     Text(str(row[key]), style="bold medium_spring_green")
                 )
-            elif isinstance(str(row[key]),bool):
+            elif isinstance(row[key],bool):
                 styled_row.append(
                     Text(str(row[key]), style="bold plum1")
                 )
-            elif isinstance(str(row[key]),(int,list)):
+            elif isinstance(row[key],(int,list)):
                 styled_row.append(
                     Text(str(row[key]), style="bold bright_white")
                 )
@@ -123,27 +122,6 @@ def get_styled(row):
         return styled_row
 
 
-def get_compare_val(name,value):
-        value=value.plain if isinstance(value,Text) else value
-        if name == "length":
-            return get_length_val(value)
-        if name == "post_date":
-            return get_post_date_val(value)
-        if name == "other_posts_with_media":
-            return get_list_length(value)
-        else:
-            return value
-
-def get_post_date_val(value):
-    return arrow.get(value).floor("day")
-
-def get_length_val(timestr):
-        if timestr == "N\A" or timestr == "N/A":
-            timestr = "0:0:0"
-        return arrow.get(timestr, "h:m:s")
-
-def get_list_length(value):
-    return len(re.findall(r'\d+', value))
 
 
     

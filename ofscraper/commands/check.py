@@ -138,7 +138,7 @@ def process_item():
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     if app.row_queue.empty():
-        log.info("Download cart is currently emp__ty")
+        log.info("Download cart is currently empty")
 
 
 def update_globals(model_id, username, post, media, values):

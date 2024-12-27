@@ -21,6 +21,7 @@ class TextSearch(Horizontal):
 """
 
     def __init__(self, name: str) -> None:
+        name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
 
@@ -29,30 +30,16 @@ class TextSearch(Horizontal):
             placeholder=f"{self.filter_name.capitalize()} Search",
             id=f"{self.filter_name}_search",
         )
-        yield Checkbox("FullString", False, id="fullstring_search")
+        yield Checkbox("Exact Match", False, id="exact_match")
 
-    def empty(self):
-        return self.query_one(Input).value == ""
 
     def update_table_val(self, val):
         self.query_one(Input).value = val
 
     def reset(self):
-        self.query_one(Input).value = ""
-
-    def validate(self, val):
-        if self.query_one(Input).value == "" or self.query_one(Input).value is None:
+        self.query_one(f"#{self.filter_name}_search").value = ""
+        self.query_one("#exact_match").value = False
+    def compare(self,value):
+        if self.query_one(f"#{self.filter_name}_search").value=="":
             return True
-        elif self.query_one(Checkbox).value and re.fullmatch(
-            self.query_one(Input).value,
-            str(val),
-            (re.IGNORECASE if self.query_one(Input).islower() else 0),
-        ):
-            return True
-        elif not self.query_one(Checkbox).value and re.search(
-            self.query_one(Input).value,
-            str(val),
-            (re.IGNORECASE if self.query_one(Input).value.islower() else 0),
-        ):
-            return True
-        return False
+        return self.query_one(f"#{self.filter_name}_search").value.lower() ==value.lower() if self.query_one("#exact_match").value else re.search(self.query_one(f"#{self.filter_name}_search").value, value, flags=re.IGNORECASE) is not None

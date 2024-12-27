@@ -1,8 +1,8 @@
+import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
-from ofscraper.classes.table.utils.status import status
 
 
 class TimeField(Container):
@@ -40,9 +40,6 @@ class TimeField(Container):
             yield IntegerInput(placeholder="Hour", classes="max_length", id="max_hour")
             yield IntegerInput(placeholder="Min", classes="max_length", id="max_minute")
             yield IntegerInput(placeholder="Sec", classes="max_length", id="max_second")
-
-    def empty(self):
-        return len(list(filter(lambda x: x.value != "", self.query(IntegerInput)))) == 0
 
     def update_table_val(self, val):
         self.update_table_min(val)
@@ -83,13 +80,27 @@ class TimeField(Container):
     def reset(self):
         for ele in self.query(IntegerInput):
             ele.value = ""
+    def compare(self,value):
 
-    def on_input_changed(self, input):
-        key = input.input.id.lower()
-        out_key = next(
-            (x for x in input.input.classes if x in {"max_length", "min_length"}), None
-        )
-        status[out_key][key] = input.input.value
+        max_val=arrow.get(
+                "{hour}:{minute}:{second}".format(
+                    hour= self.query_one("#max_hour").value or 0,
+                    minute= self.query_one("#max_minute").value or 0,
+                    second= self.query_one("#max_second").value or 0,
+                ),
+                ["h:m:s"],
+            )
+        min_val=arrow.get(
+                "{hour}:{minute}:{second}".format(
+                    hour= self.query_one("#min_hour").value or 0,
+                    minute= self.query_one("#min_minute").value or 0,
+                    second= self.query_one("#min_second").value or 0,
+                ),
+                ["h:m:s"],
+            )
+        if min_val==max_val and min_val==arrow.get("0:0:0",["h:m:s"]):
+            return True
+        return arrow.get("0:0:0" if value in {"N\A","N/A"} else value,["h:m:s"]).is_between(min_val,max_val,bounds="[]")
 
     @property
     def key(self):

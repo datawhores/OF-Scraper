@@ -1,50 +1,50 @@
-import re
 from textual.containers import Horizontal
-from ofscraper.classes.table.inputs.intergerinput import IntegerInput
+from ofscraper.classes.table.inputs.intergerinput import PostiveIntegerInput
 
 class NumField(Horizontal):
+    Field=PostiveIntegerInput
     def __init__(self, name: str, default=None) -> None:
         name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
         self._set_default(default)
+        
 
     def _set_default(self, default):
         self.default = str(default if str(default).isnumeric() else "")
 
     def compose(self):
-        yield IntegerInput(
+        yield self.Field(
             placeholder=self.filter_name.capitalize().replace("_", " "),
             id=f"{self.filter_name}_input",
             value=self.default,
         )
 
-    def empty(self):
-        self.query_one(IntegerInput).value = self.default
-        return self.query_one(IntegerInput).value
+
 
     def update_table_val(self, val):
         if isinstance(val, list):
             val = ",".join(val)
         if not str(val).isnumeric():
             return
-        self.query_one(IntegerInput).value = str(val)
+        self.query_one(self.Field).value = str(val)
         return val
 
     def reset(self):
-        self.query_one(IntegerInput).value = self.default
+        self.query_one(self.Field).value = self.default
+    def compare(self, value):
+        if self.query_one(self.Field).value=="":
+            return True
+        return int(self.query_one(self.Field).value)==int(value)
     @property
-    def IntegerInput(self):
-        return self.query_one(IntegerInput)
+    def integer_input(self):
+        return self.query_one(self.Field)
 
-class OtherMediaNumField(NumField):
-    def empty(self):
-        self.query_one(IntegerInput).value = self.default
-        return self.query_one(IntegerInput).value
-
-    def update_table_val(self, val):
-        val = str(len(re.findall(r'\d+', val)))
-        self.query_one(IntegerInput).value = val
-
-    def reset(self):
-        self.query_one(IntegerInput).value = self.default
+class PostiveNumField(NumField):
+    Field=PostiveIntegerInput
+    def compose(self):
+        yield self.Field(
+            placeholder=self.filter_name.capitalize().replace("_", " "),
+            id=f"{self.filter_name}_input",
+            value=self.default,
+        )

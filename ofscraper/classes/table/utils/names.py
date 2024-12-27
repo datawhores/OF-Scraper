@@ -1,4 +1,4 @@
-ROW_NAMES = (
+col_names = (
     "Number",
     "Download_Cart",
     "UserName",
@@ -16,6 +16,12 @@ ROW_NAMES = (
     "Text",
 )
 
-def row_names():
-    for ele in ROW_NAMES:
+input_only_names=("num_per_page","page")
+
+def get_col_names():
+    for ele in col_names:
+        yield ele.lower()
+
+def get_input_names():
+    for ele in [*col_names,*input_only_names]:
         yield ele.lower()

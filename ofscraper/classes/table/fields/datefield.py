@@ -3,7 +3,6 @@ import re
 import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Input
-from ofscraper.classes.table.utils.status import status
 
 
 class DateField(Container):
@@ -15,6 +14,9 @@ class DateField(Container):
     #maxDate{
         width:50%;
 
+    }
+    DateField{
+    row-span:2;
     }
 
     """
@@ -29,8 +31,6 @@ class DateField(Container):
             yield Input(placeholder="Earliest Date", id="minDate")
             yield Input(placeholder="Latest Date", id="maxDate")
 
-    def empty(self):
-        return self.query(Input)[0].value == "" and self.query(Input)[1].value == ""
 
     def update_table_val(self, val):
         val = self.convertString(val)
@@ -44,12 +44,15 @@ class DateField(Container):
         for ele in self.query(Input):
             ele.value = ""
 
-    def on_input_changed(self, input):
-        key = input.input.id.lower()
-        status.status[key] = input.input.value
-
     def convertString(self, val):
         match = re.search("[0-9-/\.]+", val)
         if not match:
             return ""
         return match.group(0)
+    
+    def compare(self,value):
+        value=arrow.get(value).floor("day")
+        min_val = arrow.get(self.query_one("#minDate").value ) if self.query_one("#minDate").value  else arrow.get(0)
+        max_val = arrow.get(self.query_one("#minDate").value ) if self.query_one("#minDate").value  else arrow.now()
+        return arrow.get(value).is_between(min_val, max_val, bounds="[]")
+

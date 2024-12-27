@@ -61,34 +61,9 @@ height:15vh;
     column-span:4;
     row-span:2;
     }
-    NumField {
-    column-span:3;
-    }
-
-SelectField,DateField,TimeField {
-    row-span:3;
-    }
-
-    SelectField{
+   
+    #post_id,#media_id{
     column-span:2;
-    }
-
-    MediaField {
-    column-span:3;
-    row-span:3;
-    }
-   
-
-    ResponseField {
-    column-span:4;
-    row-span:4;
-    }
-   
-    #other_posts_with_media{
-    column-span:1;
-    }
-    #Post_Media_Count{
-    column-span:1;
     }
     #table_main{
     height:6fr;

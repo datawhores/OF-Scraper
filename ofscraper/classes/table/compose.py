@@ -3,7 +3,7 @@ from textual.widgets import Button, ContentSwitcher, Rule,Static
 
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
-from ofscraper.classes.table.fields.numfield import NumField, OtherMediaNumField
+from ofscraper.classes.table.fields.numfield import NumField,PostiveNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
 from ofscraper.classes.table.fields.responsefield import ResponseField
 from ofscraper.classes.table.fields.selectfield import SelectField
@@ -47,9 +47,9 @@ def composer(args):
                     with Sidebar(id="page_option_sidebar"):
                         yield Button("Enter", id="page_enter")
                         for ele in ["Page"]:
-                            yield NumField(ele, default=START_PAGE)
+                            yield PostiveNumField(ele, default=START_PAGE)
                         for ele in ["Num_Per_Page"]:
-                            yield NumField(ele, default=AMOUNT_PER_PAGE)
+                            yield PostiveNumField(ele, default=AMOUNT_PER_PAGE)
                         yield Button("Enter", id="page_enter2")
 
                     with Sidebar(id="options_sidebar"):
@@ -59,14 +59,12 @@ def composer(args):
                             for ele in ["Text"]:
                                 yield TextSearch(ele)
                             yield Rule()
-                            for ele in ["other_posts_with_media"]:
-                                yield OtherMediaNumField(ele)
 
                             for ele in ["Media_ID"]:
                                 yield NumField(ele, default=args.media_id)
-                            yield Rule()
                             for ele in ["Post_ID"]:
                                 yield NumField(ele, default=args.post_id)
+                            yield Rule()
                             for ele in ["Post_Media_Count"]:
                                 yield NumField(ele)
                             yield Rule()

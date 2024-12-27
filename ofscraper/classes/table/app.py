@@ -4,13 +4,12 @@ import re
 import arrow
 from rich.text import Text
 from textual import events
-from textual.app import App, ComposeResult
+from textual.app import App
 from textual.widgets import Button, ContentSwitcher
-from ofscraper.classes.table.utils.row_names import row_names
-from ofscraper.classes.table.utils.status import status
+from ofscraper.classes.table.utils.names import get_col_names,get_input_names
 from ofscraper.classes.table.utils.lock import mutex
 from ofscraper.classes.table.sections.table_console import OutConsole
-from ofscraper.classes.table.sections.table import get_styled,get_compare_val
+from ofscraper.classes.table.sections.table import get_styled
 from textual.widgets import SelectionList
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
@@ -30,7 +29,7 @@ class InputApp(App):
     BINDINGS = [("ctrl+t", "toggle_page_sidebar"), ("ctrl+s", "toggle_options_sidebar")]
     CSS=CSS
     def __init__(self, *args, **kwargs) -> None:
-        self._status = status
+        # self._status = status
         self.sidebar = None
         super().__init__(*args, **kwargs)
     # Main
@@ -38,15 +37,15 @@ class InputApp(App):
     def __call__(self, *args, **kwargs):
         self._init_args = kwargs.pop("args", None)
         self.table_data = kwargs.pop("table_data", None)
-        self._sorted_hash = {}
         self._sortkey = None
         self._reverse = False       
         self._download_cart_toggle=False 
         self.run()
-    def compose(self) -> ComposeResult:
+    
+    def compose(self):
         return composer(self._init_args)
-           
-    def on_mount(self) -> None:
+
+    def on_ready(self) -> None:
         self.init_table()
         self.query_one("#options_sidebar").toggle_class("-hidden")
         self.query_one("#page_option_sidebar").toggle_class("-hidden")
@@ -99,7 +98,9 @@ class InputApp(App):
             if len(table.ordered_rows) == 0:
                 return
             col_name =table.ordered_columns_keys[col]
-            if col_name != "download_cart":
+            if col_name=="other_posts_with_media":
+                pass
+            elif col_name != "download_cart":
                 self.update_input(col_name,table.get_cell_at(cursor_coordinate) )
             else:
                 self.change_download_cart(table.cursor_coordinate)
@@ -117,11 +118,6 @@ class InputApp(App):
         ):
             self.query_one("#options_sidebar").toggle_class("-hidden")
         self.query_one("#page_option_sidebar").toggle_class("-hidden")
-    def _set_length(self):
-        if self._init_args.length_max:
-            self.query_one("#length").update_table_max(self._init_args.length_max)
-        if self._init_args.length_min:
-            self.query_one("#length").update_table_min(self._init_args.length_min)
 
    
 
@@ -144,7 +140,13 @@ class InputApp(App):
 
 
 
-    # sort/filer
+    # sort/filterr
+    def init_sort(self):
+        self._reverse = False
+        self._sortkey="number"
+        self.query_one("#data_table_hidden").sort(
+                    "number", key=lambda x: int(x.plain),
+        )
     def set_sort(self, label):
         self._sort_runner(label)
 
@@ -154,7 +156,7 @@ class InputApp(App):
             #sort
             if key == "number":
                 self.query_one("#data_table_hidden").sort(
-                    "number", key=lambda x: x, reverse=self._reverse
+                    "number", key=lambda x: int(x.plain), reverse=self._reverse
                 )
             elif key == "username":
                 self.query_one("#data_table_hidden").sort(
@@ -162,16 +164,16 @@ class InputApp(App):
                 )
             elif key == "downloaded":
                 self.query_one("#data_table_hidden").sort(
-                    "downloaded", key=lambda x: x, reverse=self._reverse
+                    "downloaded", key=lambda x: x.plain, reverse=self._reverse
                 )
 
             elif key == "unlocked":
                 self.query_one("#data_table_hidden").sort(
-                    "unlocked", key=lambda x: x, reverse=self._reverse
+                    "unlocked", key=lambda x: x.plain, reverse=self._reverse
                 )
             elif key == "other_posts_with_media":
                 self.query_one("#data_table_hidden").sort(
-                    "other_posts_with_media", key=lambda x: len(x), reverse=self._reverse
+                    "other_posts_with_media", key=lambda x: len(re.findall(r'\d+', x.plain)), reverse=self._reverse
                 )
             elif key == "length":
                 self.query_one("#data_table_hidden").sort(
@@ -185,34 +187,34 @@ class InputApp(App):
                 )
             elif key == "mediatype":
                 self.query_one("#data_table_hidden").sort(
-                    "mediatype", key=lambda x: x, reverse=self._reverse
+                    "mediatype", key=lambda x: x.plain, reverse=self._reverse
                 )
             elif key == "post_date":
                 self.query_one("#data_table_hidden").sort(
-                    "post_date", key=lambda x: arrow.get(x), reverse=self._reverse
+                    "post_date", key=lambda x: arrow.get(x.plain), reverse=self._reverse
                 )
             elif key == "post_media_count":
                 self.query_one("#data_table_hidden").sort(
-                    "post_media_count", key=lambda x: x, reverse=self._reverse
+                    "post_media_count", key=lambda x: x.plain, reverse=self._reverse
                 )
 
             elif key == "responsetype":
                 self.query_one("#data_table_hidden").sort(
-                    "responsetype", key=lambda x: x, reverse=self._reverse
+                    "responsetype", key=lambda x: x.plain, reverse=self._reverse
                 )
 
             elif key == "price":
                 self.query_one("#data_table_hidden").sort(
-                    "price", key=lambda x: 0 if x == "free" else x, reverse=self._reverse
+                    "price", key=lambda x: 0 if x.plain.lower() == "free" else float(x.plain), reverse=self._reverse
                 )
 
             elif key == "post_id":
                 self.query_one("#data_table_hidden").sort(
-                    "post_id", key=lambda x: x, reverse=self._reverse
+                    "post_id", key=lambda x: x.plain, reverse=self._reverse
                 )
             elif key == "media_id":
                 self.query_one("#data_table_hidden").sort(
-                    "media_id", key=lambda x: x, reverse=self._reverse
+                    "media_id", key=lambda x: x.plain, reverse=self._reverse
                 )
             elif key == "text":
                 self.query_one("#data_table_hidden").sort(
@@ -237,40 +239,34 @@ class InputApp(App):
     def set_filtered_rows(self, reset=False):
         with mutex:
             filter_rows=None
-            if reset is True:
-                key_order=sorted([str(x.value) for x in self.query_one("#data_table_hidden")._row_locations],key=lambda x:int(x))
-                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in key_order]
-            else:
-                key_order=[str(x.value) for x in self.query_one("#data_table_hidden")._row_locations]
-                filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in key_order]
-                for name in row_names():
-                    try:
-                        filter_rows = list(
-                            filter(
-                                lambda x: self._status.validate(
-                                    name,
-                                    get_compare_val(
-                                        name,x[name]
-                                    ),
-                                ),
-                                filter_rows,
-                            )
+            key_order=[str(x.value) for x in self.query_one("#data_table_hidden")._row_locations]
+            filter_rows = [self.query_one("#data_table_hidden")._data[ele] for ele in key_order]
+            for name in get_col_names():
+                if name in {"number","download_cart"}:
+                    continue
+                try:
+                    filter_rows = list(
+                        filter(
+                            lambda x: self.query_one(f"#{name}").compare(
+                                    str(x[name])
+                            ),
+                            filter_rows,
                         )
-                    except Exception:
-                        pass
-
+                    )
+                except Exception:
+                    pass
             self._filtered_rows = filter_rows
     #inputs
-    def update_input(self, row_name, value):
+    def update_input(self, col_name, value):
         try:
             value=value.plain if isinstance(value, Text) else value
-            targetNode = self.query_one(f"#{row_name}")
+            targetNode = self.query_one(f"#{col_name}")
             targetNode.update_table_val(value)
         except:
             None
 
     def reset_all_inputs(self):
-        for ele in list(row_names())[1:]:
+        for ele in get_input_names():
             try:
                 self.query_one(f"#{ele}").reset()
             except:
@@ -286,7 +282,20 @@ class InputApp(App):
         for ele in mediatype:
             self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
 
-    #table     
+
+    def _set_length(self):
+        if self._init_args.length_max:
+            self.query_one("#length").update_table_max(self._init_args.length_max)
+        if self._init_args.length_min:
+            self.query_one("#length").update_table_min(self._init_args.length_min)
+
+    #table 
+    def reset_table(self):
+        self.reset_all_inputs()
+        self.init_sort()
+        self.set_filtered_rows()
+        self.set_page()
+        self.update_search_info()
     def update_table_sort(self,key):
             self.set_sort(key)
             self.set_filtered_rows()
@@ -297,27 +306,23 @@ class InputApp(App):
         self.set_filtered_rows()
         self.set_page()
         self.update_search_info()  
-    def set_page(self, reset=False):
+    def set_page(self):
         with mutex:
             self.table.clear()
             rows = list(self._filtered_rows)
-            num_page = self._status["num_per_page"] or AMOUNT_PER_PAGE
-            if not reset:
-                page = min(self._status["page"], len(rows) // num_page)
-                page=max(page, 1)
-            else:
-                page = 1
+            num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
+            page = min(int(self.query_one("#page_input").value) or 1, max(len(rows) // num_page,1))
             start = (page - 1) * num_page
             for count, ele in enumerate(rows[start : start + num_page]):
                 values=list(ele.values())
                 key=str(values[0])
                 self.table.add_row(*values,height=None,key=key,label=count+1)
-            pass
 
     def init_table(self):
         self._set_media_type()
         self._set_length()
         self.insert_data_table()
+        self.init_sort()
         self.set_filtered_rows()
         self.set_page()
         self.update_search_info()
@@ -335,7 +340,7 @@ class InputApp(App):
             table.zebra_stripes = True
             [
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
-                for ele in row_names()
+                for ele in get_col_names()
             ]
             for row in self.table_data:
                 table_row = get_styled(row)
@@ -347,33 +352,26 @@ class InputApp(App):
             table.clear(True)
             table.fixed_rows = 0
             table.zebra_stripes = True
-            for ele in row_names():
+            for ele in get_col_names():
                 width=18
                 width=50 if ele=="text" else width
-                width=50 if ele=="other_posts_with_media" else width
+                width=30 if ele=="other_posts_with_media" else width
                 table.add_column(re.sub("_", " ", ele), key=str(ele),width=width)
 
     #stats
     def update_search_info(self):
-        page=self.query_one("#page").IntegerInput.value
-        num_page=self.query_one("#num_per_page").IntegerInput.value
+        page=self.query_one("#page").integer_input.value
+        num_page=self.query_one("#num_per_page").integer_input.value
         sort=self._sortkey or "number"
         reverse=str(self._reverse)
-        self.query(".search_info")[0].update(f"[bold blue]Page Info[/bold blue]: \[Page: {page}] \[Num_per_page: {num_page}]")
+        self.query(".search_info")[0].update(f"[bold blue]Page Info[/bold blue]: \[Page: {page}] \[Num_per_page: {num_page}] [Total: {len(self._filtered_rows)}]")
         self.query(".search_info")[1].update(f"[bold blue]Sort Info[/bold blue]: \[Sort: {sort}] \[Reversed: {reverse}]")
 
     def update_cart_info(self):
         download_cart=len(list(self.table.get_matching_rows("download_cart","[added]")))
         self.query(".search_info")[2].update(f"[bold blue]Items in Cart[/bold blue]: {download_cart}")
 
-
-    @property
-    def status(self):
-        return self._status._status
     @property
     def table(self):
         return self.query_one("#data_table")
-    @status.setter
-    def status(self, val):
-        self._status._status = val
 app = InputApp()

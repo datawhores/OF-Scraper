@@ -1,23 +1,38 @@
 from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import SelectionList
+from textual.widgets.selection_list import Selection
 
-from ofscraper.classes.table.utils.status import status
+
 
 
 class SelectField(Widget):
+    DEFAULT_CSS = """
+        SelectField{
+        row-span:2;
+        column-span:2;
+
+        }
+    """
     def __init__(self, name: str, classes=None) -> None:
         name = name.lower()
         super().__init__(id=name, classes=classes)
         self.filter_name = name
+        self._true=Selection(f"{self.filter_name} True",value="True",disabled=False,id=f"{self.filter_name}_true",initial_state=True)
+        self._false=Selection(f"{self.filter_name} False",value="False",disabled=False,id=f"{self.filter_name}_false",initial_state=True)
+
+
+    def compare(self,value):
+        return value in  self.query_one(SelectionList).selected
 
     def compose(self):
         with Horizontal():
             yield SelectionList(
-                *[
-                    (f"{self.filter_name.capitalize()} True", True, True),
-                    (f"{self.filter_name.capitalize()} False", False, True),
-                ]
+
+                self._true,
+                self._false,
+
+
             )
 
     def reset(self):
@@ -25,18 +40,8 @@ class SelectField(Widget):
             ele.select_all()
 
     def update_table_val(self, val):
+        self.query_one(SelectionList).deselect_all()
         if val == "True":
-            self.query_one(f"#{self.filter_name}_true").value = True
-            self.query_one(f"#{self.filter_name}_false").value = False
+            self.query_one(SelectionList).select(self._true)
         elif val == "False":
-            self.query_one(f"#{self.filter_name}_false").value = True
-            self.query_one(f"#{self.filter_name}_true").value = False
-
-    def on_selection_list_selected_changed(self, checkbox):
-        key = self.id.lower()
-        status.status[key] = checkbox.selection_list.selected
-
-    def update_table_val(self, val):
-        select = self.query(SelectionList)[0]
-        select.deselect_all()
-        select.select(val)
+            self.query_one(SelectionList).select(self._false)
