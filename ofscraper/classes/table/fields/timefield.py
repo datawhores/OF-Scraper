@@ -100,7 +100,12 @@ class TimeField(Container):
             )
         if min_val==max_val and min_val==arrow.get("0:0:0",["h:m:s"]):
             return True
-        return arrow.get("0:0:0" if value in {"N\A","N/A"} else value,["h:m:s"]).is_between(min_val,max_val,bounds="[]")
+        elif max_val==arrow.get("0:0:0",["h:m:s"]):
+            return arrow.get(value,["h:m:s"])>min_val
+        elif min_val==arrow.get("0:0:0",["h:m:s"]):
+            return arrow.get(value,["h:m:s"])<max_val
+        else:
+            return arrow.get("0:0:0" if value in {"N\A","N/A"} else value,["h:m:s"]).is_between(min_val,max_val,bounds="[]")
 
     @property
     def key(self):
