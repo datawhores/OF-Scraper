@@ -15,6 +15,8 @@ from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
 import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.args.accessors.read as read_args
+
 
 
 log = logging.getLogger("shared")
@@ -35,7 +37,6 @@ class InputApp(App):
     # Main
 
     def __call__(self, *args, **kwargs):
-        self._init_args = kwargs.pop("args", None)
         self.table_data = kwargs.pop("table_data", None)
         self._sortkey = None
         self._reverse = False       
@@ -43,7 +44,7 @@ class InputApp(App):
         self.run()
     
     def compose(self):
-        return composer(self._init_args)
+        return composer(read_args.retriveArgs())
 
     def on_ready(self) -> None:
         self.init_table()
@@ -140,19 +141,23 @@ class InputApp(App):
 
 
 
-    # sort/filterr
+    # sort
     def init_sort(self):
-        self._reverse = False
-        self._sortkey="number"
-        self.query_one("#data_table_hidden").sort(
-                    "number", key=lambda x: int(x.plain),
-        )
+        self._reverse = False if read_args.retriveArgs().desc is None else read_args.retriveArgs().desc
+        self._sortkey="number" if read_args.retriveArgs().mediasort is None else read_args.retriveArgs().mediasort
+        self._sort_runner(key=self._sortkey)
+    def reset_sort(self):
+        self._reverse=False
+        self._sortkey="number" 
+        self._sort_runner(key=self._sortkey)
+
+    
     def set_sort(self, label):
-        self._sort_runner(label)
+        with mutex:
+            self.set_reverse(key=label)
+            self._sort_runner(label)
 
     def _sort_runner(self, key):
-        with mutex:
-            self.set_reverse(key=key)
             #sort
             if key == "number":
                 self.query_one("#data_table_hidden").sort(
@@ -235,8 +240,15 @@ class InputApp(App):
 
         elif self._sortkey == key and self._reverse:
             self._reverse = False
+    # filter runner
+    def init_filtered_rows(self):
+        self._set_media_type()
+        self._set_length()
+        self._filter_runner()
+    def set_filtered_rows(self):
+        self._filter_runner()
 
-    def set_filtered_rows(self, reset=False):
+    def _filter_runner(self):
         with mutex:
             filter_rows=None
             key_order=[str(x.value) for x in self.query_one("#data_table_hidden")._row_locations]
@@ -274,8 +286,8 @@ class InputApp(App):
 
     def _set_media_type(self):
         mediatype = (
-            self._init_args.media_type
-            if bool(self._init_args.media_type)
+            read_args.retriveArgs().mediatype
+            if bool(read_args.retriveArgs().mediatype)
             else ["Audios", "Videos", "Images"]
         )
         self.query_one("#mediatype").query_one(SelectionList).deselect_all()
@@ -284,15 +296,15 @@ class InputApp(App):
 
 
     def _set_length(self):
-        if self._init_args.length_max:
-            self.query_one("#length").update_table_max(self._init_args.length_max)
-        if self._init_args.length_min:
-            self.query_one("#length").update_table_min(self._init_args.length_min)
+        if read_args.retriveArgs().length_max:
+            self.query_one("#length").update_table_max(read_args.retriveArgs().length_max)
+        if read_args.retriveArgs().length_min:
+            self.query_one("#length").update_table_min(read_args.retriveArgs().length_min)
 
     #table 
     def reset_table(self):
         self.reset_all_inputs()
-        self.init_sort()
+        self.reset_sort()
         self.set_filtered_rows()
         self.set_page()
         self.update_search_info()
@@ -319,11 +331,9 @@ class InputApp(App):
                 self.table.add_row(*values,height=None,key=key,label=count+1)
 
     def init_table(self):
-        self._set_media_type()
-        self._set_length()
         self.insert_data_table()
         self.init_sort()
-        self.set_filtered_rows()
+        self.init_filtered_rows()
         self.set_page()
         self.update_search_info()
 

@@ -98,6 +98,7 @@ text_option = click.option(
 check_mode_media_sort = click.option(
     "-mst",
     "--media-sort",
+    "mediasort",
     help="""
     \b
     Changes media processing order before actions
@@ -132,7 +133,7 @@ check_post_id_filter_option = click.option(
     "post_id",
     help="Filter posts based on post id",
     required=False,
-    type=click.STRING,
+    # type=click.STRING,
 )
 
 

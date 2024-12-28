@@ -677,7 +677,7 @@ def start_table(ROWS_):
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
     app.app(
-        table_data=ROWS, args=read_args.retriveArgs()
+        table_data=ROWS
     )
 
 

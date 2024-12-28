@@ -20,6 +20,7 @@ quality_option = click.option(
 media_type_option = click.option(
     "-mt",
     "--mediatype",
+    "mediatype",
     help="Filter by media type (Videos, Audios, Images)",
     default=[],
     required=False,
@@ -83,6 +84,7 @@ max_media_count_option = click.option(
 media_sort_option = click.option(
     "-mst",
     "--media-sort",
+    "mediasort",
     help="""
     \b
     Changes media processing order before actions

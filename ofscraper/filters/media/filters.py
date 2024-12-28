@@ -148,7 +148,7 @@ def unviewable_media_filter(media):
 
 
 def final_media_sort(media):
-    media_sort = read_args.retriveArgs().media_sort
+    media_sort = read_args.retriveArgs().mediasort
     reversed = read_args.retriveArgs().media_desc
     log.debug(f"Using download sort {media_sort}")
     if media_sort == "random":

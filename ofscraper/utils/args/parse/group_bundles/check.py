@@ -48,7 +48,6 @@ def common_args_check(func):
     )
     @click.option_group(
         "Table Filter Options",
-        post_id_filter_option,
         media_type_option,
         check_mode_media_sort,
         length_max,
