@@ -9,8 +9,8 @@ Widget {
     }
 Screen {
        layers: sidebar;
-        overflow-y:scroll;
-        overflow-x:scroll;
+        overflow-y:hidden;
+        overflow-x:hidden;
     }
 
     Button{
@@ -20,10 +20,9 @@ height:3;
 
 Table="""
  #data_table{
-    margin-bottom:5;
-    margin-top:2;
-    height:70%;
-    min-height:40;
+    margin-bottom:4;
+    margin-top:1;
+    min-height:120;
     }
 
     #data_table_hidden {
@@ -32,7 +31,6 @@ Table="""
 
     #table_main{
     height:70%;
-    min-height:50;
     }
     #table_header{
     height:30%;

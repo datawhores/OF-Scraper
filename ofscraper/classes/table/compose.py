@@ -1,4 +1,4 @@
-from textual.containers import Container, Horizontal, Vertical,HorizontalGroup,VerticalGroup
+from textual.containers import Container, Horizontal, Vertical,VerticalScroll,VerticalGroup,HorizontalGroup
 from textual.widgets import Button, ContentSwitcher, Rule,Static
 
 from ofscraper.classes.table.fields.datefield import DateField
@@ -17,12 +17,12 @@ from ofscraper.classes.table.const import AMOUNT_PER_PAGE,START_PAGE
 
 
 def composer():
-        with Horizontal(id="buttons"):
+        with HorizontalGroup(id="buttons"):
             yield Button("DataTable", id="table")
             yield Button("Console", id="console")
 
         with ContentSwitcher(initial="table_page"):
-            with VerticalGroup(id="table_page"):
+            with VerticalScroll(id="table_page"):
                 with Container(id="table_header"):
                     with Horizontal():
                         with Vertical(classes="table_info"):
@@ -38,10 +38,10 @@ def composer():
                         yield Static("",classes="search_info",shrink=True,markup=True)
                 yield Rule()
                 with HorizontalGroup(id="data"):
-                        yield Button("Reset", id="reset")
-                        yield Button(
-                                    ">> Send Downloads to OF-Scraper", id="send_downloads"
-                            )
+                    yield Button("Reset", id="reset")
+                    yield Button(
+                                ">> Send Downloads to OF-Scraper", id="send_downloads"
+                        )
                 with VerticalGroup(id="table_main"):
                     yield DataTable(id="data_table")
                     yield DataTable(id="data_table_hidden")
