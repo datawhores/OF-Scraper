@@ -94,7 +94,11 @@ def process_item():
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     try:
+<<<<<<< HEAD:ofscraper/commands/check.py
        key,row=app.row_queue.get()
+=======
+        row, key = app.row_queue.get()
+>>>>>>> fasttable:ofscraper/commands/runners/check.py
     except Exception as E:
         log.debug(f"Error getting item from queue: {E}")
         return
@@ -127,11 +131,19 @@ def process_item():
                 raise Exception("Download is marked as skipped")
             log.info("Download Finished")
             update_globals(model_id, username, post, media, output)
+<<<<<<< HEAD:ofscraper/commands/check.py
             app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]",style="bold green"))
             break
         except Exception as E:
             if count == 1:
                 app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]",style="bold red"))
+=======
+            app.app.update_cell(key, "download_cart", "[downloaded]")
+            break
+        except Exception as E:
+            if count == 1:
+                app.app.update_cell(key, "download_cart", "[failed]")
+>>>>>>> fasttable:ofscraper/commands/runners/check.py
                 raise E
             log.info("Download Failed Refreshing data")
             data_refill(media_id, post_id, username, model_id)
@@ -676,8 +688,13 @@ def start_table(ROWS_):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
+<<<<<<< HEAD:ofscraper/commands/check.py
     app.app(
         table_data=ROWS
+=======
+    app = app.app(
+        table_data=ROWS, mutex=threading.Lock(), args=read_args.retriveArgs()
+>>>>>>> fasttable:ofscraper/commands/runners/check.py
     )
 
 
