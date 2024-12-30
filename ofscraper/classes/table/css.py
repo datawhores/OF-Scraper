@@ -1,7 +1,43 @@
-CSS = """
-    Screen {
+Widgets="""
+ Sidebar.-hidden {
+        display: none;
+    }
+
+Widget {
+    column-span:4;
+    row-span:2;
+    }
+Screen {
        layers: sidebar;
-       overflow: hidden;
+        overflow-y:scroll;
+        overflow-x:scroll;
+    }
+
+    Button{
+height:3;
+}
+"""
+
+Table="""
+ #data_table{
+    margin-bottom:5;
+    margin-top:2;
+    height:70%;
+    min-height:40;
+    }
+
+    #data_table_hidden {
+    display:None;
+    }
+
+    #table_main{
+    height:70%;
+    min-height:50;
+    }
+    #table_header{
+    height:30%;
+    max-height:18;
+    min-height:15;
     }
     .table_info,Static{
     max-width:45;
@@ -9,14 +45,16 @@ CSS = """
     min-width:20;
     }
 
+"""
 
-    #options_sidebar, #page_option_sidebar{
+Options="""
+#options_sidebar, #page_option_sidebar{
         width: 45%;
         dock: left;
         layer: sidebar;
         overflow-y:scroll;
         overflow-x:scroll;
-        height: 100%;
+        height: 100vh;
 
     }
 
@@ -35,38 +73,10 @@ CSS = """
         margin-top:2;
     }
 
-#buttons{
-height:15vh;
-}
- 
-    Sidebar.-hidden {
-        display: none;
-    }
+"""
 
-    #data_table {
-    margin-bottom:2;
-    height:95vh;
-    width:100vw;
-    }
-
-
-    #data_table_holder {
-         overflow-x:scroll;
-        overflow-y:scroll;
-        width:80%;
-        height:80%;
-    }
-
-    Widget {
-    column-span:4;
-    row-span:2;
-    }
-   
+CSS="""
     #post_id,#media_id{
     column-span:2;
     }
-    #table_main{
-    height:6fr;
-    }
-
-    """
+""" + Widgets+Table+Options

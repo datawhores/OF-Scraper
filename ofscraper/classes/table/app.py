@@ -44,12 +44,13 @@ class InputApp(App):
         self.run()
     
     def compose(self):
-        return composer(read_args.retriveArgs())
+        try:
+            return composer()
+        except Exception as e:
+            pass
 
     def on_ready(self) -> None:
         self.init_table()
-        self.query_one("#options_sidebar").toggle_class("-hidden")
-        self.query_one("#page_option_sidebar").toggle_class("-hidden")
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
 
 

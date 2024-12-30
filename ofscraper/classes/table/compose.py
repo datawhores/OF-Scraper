@@ -1,4 +1,4 @@
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical,HorizontalGroup,VerticalGroup
 from textual.widgets import Button, ContentSwitcher, Rule,Static
 
 from ofscraper.classes.table.fields.datefield import DateField
@@ -16,81 +16,80 @@ from ofscraper.classes.table.sections.table import  DataTableExtended as DataTab
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE,START_PAGE
 
 
-def composer(args):
+def composer():
         with Horizontal(id="buttons"):
             yield Button("DataTable", id="table")
             yield Button("Console", id="console")
 
         with ContentSwitcher(initial="table_page"):
-            with Vertical(id="table_page"):
-                with Horizontal():
-                    with Vertical(classes="table_info"):
-                        yield Static("[bold blue]Toggle Sidebar for search[/bold blue]: Ctrl+S",markup=True)
-                        yield Static("[bold blue]Toggle Page Selection[/bold blue]: Ctrl+T",markup=True)
-                    yield Rule( orientation="vertical")
-                    with Vertical(classes="table_info"):
-                        yield Static("[bold blue]Navigate Table[/bold blue]: Arrows",markup=True)
-                        yield Static('[bold blue]Filter Table via Cell[/bold blue]: ; or \'',markup=True)
-                        yield Static("[bold blue]Add to Cart[/bold blue]: Click cell in \'download cart\' Column",markup=True)
+            with VerticalGroup(id="table_page"):
+                with Container(id="table_header"):
+                    with Horizontal():
+                        with Vertical(classes="table_info"):
+                            yield Static("[bold blue]Toggle Sidebar for search[/bold blue]: Ctrl+S",markup=True)
+                            yield Static("[bold blue]Toggle Page Selection[/bold blue]: Ctrl+T",markup=True)
+                        yield Rule( orientation="vertical")
+                        with Vertical(classes="table_info"):
+                            yield Static("[bold blue]Navigate Table[/bold blue]: Arrows",markup=True)
+                            yield Static('[bold blue]Filter Table via Cell[/bold blue]: ; or \'',markup=True)
+                            yield Static("[bold blue]Add to Cart[/bold blue]: Click cell in \'download cart\' Column",markup=True)
+                    yield Rule()
+                    for _ in range(3):
+                        yield Static("",classes="search_info",shrink=True,markup=True)
                 yield Rule()
-                for _ in range(3):
-                    yield Static("",classes="search_info",shrink=True,markup=True)
-                yield Rule()
-                with Horizontal(id="data"):
-                    yield Button("Reset", id="reset")
-                    yield Button(
-                        ">> Send Downloads to OF-Scraper", id="send_downloads"
-                    )
-
-            
-                with Container(id="table_main"):
-                    with Sidebar(id="page_option_sidebar"):
-                        yield Button("Enter", id="page_enter")
-                        for ele in ["Page"]:
-                            yield PostiveNumField(ele, default=START_PAGE)
-                        for ele in ["Num_Per_Page"]:
-                            yield PostiveNumField(ele, default=AMOUNT_PER_PAGE)
-                        yield Button("Enter", id="page_enter2")
-
-                    with Sidebar(id="options_sidebar"):
-                        with Container(id="main_options"):
-                            yield Button("Filter", id="filter")
-                            yield Rule()
-                            for ele in ["Text"]:
-                                yield TextSearch(ele)
-                            yield Rule()
-
-                            for ele in ["Media_ID"]:
-                                yield NumField(ele, default=args.media_id)
-                            for ele in ["Post_ID"]:
-                                yield NumField(ele, default=args.post_id)
-                            yield Rule()
-                            for ele in ["Post_Media_Count"]:
-                                yield NumField(ele)
-                            yield Rule()
-                            for ele in ["Price"]:
-                                yield PriceField(ele)
-                            yield Rule()
-                            for ele in ["Post_Date"]:
-                                yield DateField(ele)
-                            yield Rule()
-                            for ele in ["Length"]:
-                                yield TimeField(ele)
-                            yield Rule()
-                            yield SelectField("Downloaded")
-                            yield SelectField("Unlocked")
-                            yield Rule()
-                            for ele in ["Mediatype"]:
-                                yield MediaField(ele)
-                            for ele in ["Responsetype"]:
-                                yield ResponseField(ele)
-                            yield Rule()
-                            for ele in ["username"]:
-                                yield StrInput(id=ele)
-                            yield Rule()
-                            yield Button("Filter", id="filter2")
+                with HorizontalGroup(id="data"):
+                        yield Button("Reset", id="reset")
+                        yield Button(
+                                    ">> Send Downloads to OF-Scraper", id="send_downloads"
+                            )
+                with VerticalGroup(id="table_main"):
                     yield DataTable(id="data_table")
                     yield DataTable(id="data_table_hidden")
 
+                with Sidebar(id="page_option_sidebar",classes="-hidden"):
+                    yield Button("Enter", id="page_enter")
+                    for ele in ["Page"]:
+                        yield PostiveNumField(ele, default=START_PAGE)
+                    for ele in ["Num_Per_Page"]:
+                        yield PostiveNumField(ele, default=AMOUNT_PER_PAGE)
+                    yield Button("Enter", id="page_enter2")
+
+                with Sidebar(id="options_sidebar",classes="-hidden"):
+                    with Container(id="main_options"):
+                        yield Button("Filter", id="filter")
+                        yield Rule()
+                        for ele in ["Text"]:
+                            yield TextSearch(ele)
+                        yield Rule()
+
+                        for ele in ["Media_ID"]:
+                            yield NumField(ele)
+                        for ele in ["Post_ID"]:
+                            yield NumField(ele)
+                        yield Rule()
+                        for ele in ["Post_Media_Count"]:
+                            yield NumField(ele)
+                        yield Rule()
+                        for ele in ["Price"]:
+                            yield PriceField(ele)
+                        yield Rule()
+                        for ele in ["Post_Date"]:
+                            yield DateField(ele)
+                        yield Rule()
+                        for ele in ["Length"]:
+                            yield TimeField(ele)
+                        yield Rule()
+                        yield SelectField("Downloaded")
+                        yield SelectField("Unlocked")
+                        yield Rule()
+                        for ele in ["Mediatype"]:
+                            yield MediaField(ele)
+                        for ele in ["Responsetype"]:
+                            yield ResponseField(ele)
+                        yield Rule()
+                        for ele in ["username"]:
+                            yield StrInput(id=ele)
+                        yield Rule()
+                        yield Button("Filter", id="filter2")
             with Vertical(id="console_page"):
-                yield OutConsole()
+                 yield OutConsole(id="console_page", classes="-hidden")
