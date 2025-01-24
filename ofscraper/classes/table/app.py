@@ -356,8 +356,6 @@ class InputApp(App):
             for row in self.table_data:
                 table_row = get_styled(row)
                 table.add_row(*table_row, key=str(row.get("index")), height=0)
-            if len(table.rows) == 0:
-                table.add_row("All Items Filtered")
     def _insert_visible_table(self):
             table = self.table
             table.clear(True)
@@ -375,8 +373,11 @@ class InputApp(App):
         num_page=self.query_one("#num_per_page").integer_input.value
         sort=self._sortkey or "number"
         reverse=str(self._reverse)
-        self.query(".search_info")[0].update(f"[bold blue]Page Info[/bold blue]: \[Page: {page}] \[Num_per_page: {num_page}] [Total: {len(self._filtered_rows)}]")
+        self.query(".search_info")[0].update(f"[bold blue]Page Info[/bold blue]: \[Page: {page}] \[Num_per_page: {num_page}] [Total With Filters: {len(self._filtered_rows)}] [Total: {len(self.table_data)}]")
         self.query(".search_info")[1].update(f"[bold blue]Sort Info[/bold blue]: \[Sort: {sort}] \[Reversed: {reverse}]")
+        if len(self._filtered_rows) ==0:
+            self.query(".search_info")[2].update(f"[bold blue]Additional Info[/bold blue]: All Items Filtered")
+
 
     def update_cart_info(self):
         download_cart=len(list(self.table.get_matching_rows("download_cart","[added]")))

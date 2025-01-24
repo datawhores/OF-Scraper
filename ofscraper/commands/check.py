@@ -231,7 +231,7 @@ async def post_check_runner():
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
-            await row_gather(user_name, model_id, paid=True)
+            await row_gather(user_name, model_id)
 
 
 @run
@@ -329,7 +329,7 @@ async def post_check_retriver():
                         streams_data = [
                             post
                             for streams in streams_resp
-                            for post in streams.get("post", [])
+                            for post in streams.get("posts", [])
                         ]
                         set_check(streams_data, model_id, streams.API)
 
@@ -433,7 +433,7 @@ async def message_checker_runner():
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
-            await row_gather(user_name, model_id, paid=True)
+            await row_gather(user_name, model_id)
 
 
 async def message_check_retriver():
@@ -508,7 +508,7 @@ async def purchase_checker_runner():
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
-            await row_gather(user_name, model_id, paid=True)
+            await row_gather(user_name, model_id)
 
 
 @run
@@ -564,7 +564,7 @@ async def stories_checker_runner():
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
             )
-            await row_gather(user_name, model_id, paid=True)
+            await row_gather(user_name, model_id)
 
 
 @run
@@ -725,7 +725,7 @@ def get_media_dict(downloaded):
     return mediadict
 
 
-async def row_gather(username, model_id, paid=False):
+async def row_gather(username, model_id):
     global ROWS
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)

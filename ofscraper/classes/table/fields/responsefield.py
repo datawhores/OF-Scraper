@@ -23,12 +23,14 @@ class ResponseField(SelectField):
         self._timeline=Selection("Timeline",value="timeline",disabled=False,id=f"{self.filter_name}_timeline",initial_state=True)
         self._stories=Selection("Stories",value="stories",disabled=False,id=f"{self.filter_name}_stories",initial_state=True)
         self._highlights=Selection("Highlights",value="highlights",disabled=False,id=f"{self.filter_name}_highlights",initial_state=True)
-        self._streams=Selection("Streams",value="streams",disabled=False,id=f"{self.filter_name}_streams",initial_state=True)
+        self._streams=Selection("Stream",value="stream",disabled=False,id=f"{self.filter_name}_stream",initial_state=True)
+        self._messages=Selection("Message",value="message",disabled=False,id=f"{self.filter_name}_message",initial_state=True)
+
 
 
     def compose(self):
         yield SelectionList(
-           self._timeline,self._archived,self._pinned,self._streams,self._stories,self._highlights
+           self._timeline,self._archived,self._pinned,self._streams,self._stories,self._highlights,self._messages
         )
     def update_table_val(self, val):
         self.query_one(SelectionList).deselect_all()
@@ -42,5 +44,7 @@ class ResponseField(SelectField):
             self.query_one(SelectionList).select(self._stories)
         elif val == "highlights":
             self.query_one(SelectionList).select(self._highlights)
-        elif val == "streams":
+        elif val == "stream":
             self.query_one(SelectionList).select(self._streams)
+        elif val == "messages":
+            self.query_one(SelectionList).select(self._messages)            
