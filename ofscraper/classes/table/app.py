@@ -201,7 +201,7 @@ class InputApp(App):
                 )
             elif key == "post_media_count":
                 self.query_one("#data_table_hidden").sort(
-                    "post_media_count", key=lambda x: x.plain, reverse=self._reverse
+                    "post_media_count", key=lambda x: int(x.plain), reverse=self._reverse
                 )
 
             elif key == "responsetype":
@@ -216,11 +216,11 @@ class InputApp(App):
 
             elif key == "post_id":
                 self.query_one("#data_table_hidden").sort(
-                    "post_id", key=lambda x: x.plain, reverse=self._reverse
+                    "post_id", key=lambda x: int(x.plain), reverse=self._reverse
                 )
             elif key == "media_id":
                 self.query_one("#data_table_hidden").sort(
-                    "media_id", key=lambda x: x.plain, reverse=self._reverse
+                    "media_id", key=lambda x: int(x.plain), reverse=self._reverse
                 )
             elif key == "text":
                 self.query_one("#data_table_hidden").sort(

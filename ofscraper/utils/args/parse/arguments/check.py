@@ -66,6 +66,7 @@ user_option = click.option(
 force = click.option(
     "-fo",
     "--force",
+    "--forced",
     help="Force retrieval of new posts info from API",
     is_flag=True,
     default=False,
