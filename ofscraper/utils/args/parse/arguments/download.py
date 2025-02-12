@@ -40,7 +40,7 @@ download_limit_option = click.option(
     "download_limit",
     help="""
     \b
-    Maximum download speed per second for each thread
+    Maximum download speed per second
     can parse Human readable string '10MB' or int representing bytes per second
     """,
     default=None,
