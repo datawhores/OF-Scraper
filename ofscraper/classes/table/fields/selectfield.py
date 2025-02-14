@@ -40,8 +40,13 @@ class SelectField(Widget):
             ele.select_all()
 
     def update_table_val(self, val):
-        self.query_one(SelectionList).deselect_all()
         if val == "True":
-            self.query_one(SelectionList).select(self._true)
+            self.select_true()
         elif val == "False":
-            self.query_one(SelectionList).select(self._false)
+            self.select_false()
+    def select_true(self):
+        self.query_one(SelectionList).deselect_all()
+        self.query_one(SelectionList).select(self._true)
+    def select_false(self):
+        self.query_one(SelectionList).deselect_all()
+        self.query_one(SelectionList).select(self._false)

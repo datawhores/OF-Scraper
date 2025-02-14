@@ -14,7 +14,7 @@ from ofscraper.classes.table.sections.table_console import OutConsole
 from ofscraper.classes.table.sections.sidebar import Sidebar
 from ofscraper.classes.table.sections.table import  DataTableExtended as DataTable
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE,START_PAGE
-
+from ofscraper.classes.table.fields.sizefield import SizeMaxField,SizeMinField
 
 def composer():
         with HorizontalGroup(id="buttons"):
@@ -26,8 +26,9 @@ def composer():
                 with Container(id="table_header"):
                     with Horizontal():
                         with Vertical(classes="table_info"):
-                            yield Static("[bold blue]Toggle Sidebar for search[/bold blue]: Ctrl+S",markup=True)
-                            yield Static("[bold blue]Toggle Page Selection[/bold blue]: Ctrl+T",markup=True)
+                            yield Static("[bold blue]Toggle Search Sidebar[/bold blue]: Ctrl+S",markup=True)
+                            yield Static("[bold blue]Toggle Page Selection Sidebar[/bold blue]: Ctrl+T",markup=True)
+                            yield Static("[bold blue]Toggle Download Filter Sidebar[/bold blue]: Ctrl+D",markup=True)
                         yield Rule( orientation="vertical")
                         with Vertical(classes="table_info"):
                             yield Static("[bold blue]Navigate Table[/bold blue]: Arrows",markup=True)
@@ -45,6 +46,11 @@ def composer():
                 with VerticalGroup(id="table_main"):
                     yield DataTable(id="data_table")
                     yield DataTable(id="data_table_hidden")
+
+                with Sidebar(id="download_option_sidebar",classes="-hidden"):
+                    yield Static("Values are change right away",shrink=True,markup=True)
+                    yield SizeMinField("Download_Size_Min")
+                    yield SizeMaxField("Download_Size_Max")
 
                 with Sidebar(id="page_option_sidebar",classes="-hidden"):
                     yield Button("Enter", id="page_enter")

@@ -7,6 +7,8 @@ from ofscraper.utils.args.parse.arguments.check import (
     check_mode_media_sort,
     check_media_id_filter_option,
     check_post_id_filter_option,
+    lock_option,
+    downloaded_option,
 )
 from ofscraper.utils.args.parse.groups.media_filter import (
     length_max,
@@ -14,9 +16,8 @@ from ofscraper.utils.args.parse.groups.media_filter import (
     media_type_option,
     quality_option,
     media_desc_option,
-)
-from ofscraper.utils.args.parse.groups.post_filter import (
-    post_id_filter_option,
+    max_size_option,
+    min_size_option
 )
 
 from ofscraper.utils.args.parse.groups.download import download_options
@@ -52,10 +53,19 @@ def common_args_check(func):
         check_mode_media_sort,
         length_max,
         length_min,
+        lock_option,
+        downloaded_option,
         check_media_id_filter_option,
         check_post_id_filter_option,
         media_desc_option,
         help="Filters for controlling the initial table view",
+    )
+
+    @click.option_group(
+        "Download Filter Options",
+        min_size_option,
+        max_size_option,  
+        help="Filters for controlling which media to download",
     )
     @file_options
     @functools.wraps(func)

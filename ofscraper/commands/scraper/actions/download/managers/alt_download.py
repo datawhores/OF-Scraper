@@ -202,24 +202,24 @@ class AltDownloadManager(DownloadManager):
                 common_globals.log.debug(
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await self._total_change_helper(None, total)
                 await self._set_data(ele, item, data)
 
                 temp_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
                     item["total"] = 0
                     total = item["total"]
-                    await self._total_change_helper(total, 0)
                     return item
                 elif total != resume_size:
                     await self._download_fileobject_writer(
                         total, l, ele, placeholderObj, item
                     )
+                    await self._total_change_helper(total)
+
 
             await self._size_checker(placeholderObj.tempfilepath, ele, total)
             return item
         except Exception as E:
-            await self._total_change_helper(total, 0) if total else None
+            await self._total_change_helper( 0)
             raise E
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
@@ -380,7 +380,6 @@ class AltDownloadManager(DownloadManager):
             temp_file_logger(placeholderObj, ele)
             if self._alt_attempt_get(item).get() == 0:
                 pass
-            await self._total_change_helper(None, total)
             return item, True
         elif total != resume_size:
             return item, False

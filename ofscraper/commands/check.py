@@ -124,11 +124,16 @@ def process_item():
                 username, model_id, [media], [post]
             )
             if values is None or values[-1] == 1:
-                raise Exception("Download is marked as skipped")
-            log.info("Download Finished")
-            update_globals(model_id, username, post, media, output)
-            app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]",style="bold green"))
-            break
+                raise Exception("Download is marked as failed")
+            elif values[-2]==1:
+                log.info("Download Skipped")
+                app.app.table.update_cell_at_key(key, "download_cart", Text("[skipped]",style="bold bright_yellow"))
+
+            else:
+                log.info("Download Finished")
+                update_globals(model_id, username, post, media, output)
+                app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]",style="bold green"))
+                break
         except Exception as E:
             if count == 1:
                 app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]",style="bold red"))

@@ -145,3 +145,34 @@ check_media_id_filter_option = click.option(
     required=False,
     type=click.STRING,
 )
+
+
+lock_option = click.option(
+    "-ul/-l",
+    "--unlocked/--locked",
+    "unlocked",
+    help="""
+        \b
+        Flag for filtering accounts based on whether media is unlocked
+        [select one --unlock or --locked]""",
+    default=None,
+    required=False,
+    is_flag=True,
+)
+
+downloaded_option = click.option(
+    "-dl/-ndl",
+    "--downloaded/--not-downloaded",
+    "downloaded",
+    help="""
+        \b
+        Flag for filtering accounts based on whether media is downloaded
+        [select one --downloaded or --not-downloaded]""",
+    default=None,
+    required=False,
+    is_flag=True,
+)
+
+
+
+

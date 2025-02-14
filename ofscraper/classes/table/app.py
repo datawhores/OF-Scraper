@@ -16,6 +16,7 @@ from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.settings as settings
 
 
 
@@ -28,7 +29,7 @@ row_queue = queue.Queue()
 
 
 class InputApp(App):
-    BINDINGS = [("ctrl+t", "toggle_page_sidebar"), ("ctrl+s", "toggle_options_sidebar")]
+    BINDINGS = [("ctrl+t", "toggle_page_sidebar"), ("ctrl+s", "toggle_options_sidebar"),("ctrl+d", "toggle_download_sidebar")]
     CSS=CSS
     def __init__(self, *args, **kwargs) -> None:
         # self._status = status
@@ -79,13 +80,12 @@ class InputApp(App):
             self.query_one(ContentSwitcher).current = "console_page"
 
         elif event.button.id == "filter" or event.button.id == "filter2":
-
-            self.query_one("#options_sidebar").toggle_class("-hidden")
+            self.query_one("#options_sidebar").toggle_hidden()
             self.filter_table()
 
 
         elif event.button.id == "page_enter" or event.button.id == "page_enter2":
-            self.query_one("#page_option_sidebar").toggle_class("-hidden")
+            self.query_one("#page_option_sidebar").toggle_hidden()
             self.filter_table()
         elif event.button.id in ["console", "table"]:
             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"
@@ -108,21 +108,19 @@ class InputApp(App):
                 self.change_download_cart(table.cursor_coordinate)
 
     def action_toggle_options_sidebar(self) -> None:
-        if "page_option_sidebar" not in list(
-            map(lambda x: x.id, self.query("Sidebar.-hidden"))
-        ):
-            self.query_one("#page_option_sidebar").toggle_class("-hidden")
-        self.query_one("#options_sidebar").toggle_class("-hidden")
+        for ele in filter(lambda x:x.id!="options_sidebar",self.query("Sidebar.-show")):
+             ele.toggle_hidden()    
+        self.query_one("#options_sidebar").toggle_hidden()
 
     def action_toggle_page_sidebar(self) -> None:
-        if "options_sidebar" not in list(
-            map(lambda x: x.id, self.query("Sidebar.-hidden"))
-        ):
-            self.query_one("#options_sidebar").toggle_class("-hidden")
-        self.query_one("#page_option_sidebar").toggle_class("-hidden")
+        for ele in filter(lambda x:x.id!="page_option_sidebar",self.query("Sidebar.-show")):
+             ele.toggle_hidden() 
+        self.query_one("#page_option_sidebar").toggle_hidden()
 
-   
-
+    def action_toggle_download_sidebar(self) -> None:
+        for ele in filter(lambda x:x.id!="download_option_sidebar",self.query("Sidebar.-show")):
+             ele.toggle_hidden() 
+        self.query_one("#download_option_sidebar").toggle_hidden()
     # Cart
     def change_download_cart(self, coord):
         self.table.change_cart_cell(coord)
@@ -133,7 +131,7 @@ class InputApp(App):
         matching_rows=table.get_matching_rows("download_cart","[added]")
         cart=[]
         for key,value in matching_rows.items():
-            table.update_cell_at_key(key,"download_cart",Text("[downloading]",style="bold yellow"))
+            table.update_cell_at_key(key,"download_cart",Text("[downloading]",style="bold bright_blue"))
             cart.append((key,value))
         self.update_cart_info()
         for ele in cart:
@@ -245,6 +243,8 @@ class InputApp(App):
     def init_filtered_rows(self):
         self._set_media_type()
         self._set_length()
+        self._set_unlocked()
+        self._set_downloaded()
         self._filter_runner()
     def set_filtered_rows(self):
         self._filter_runner()
@@ -294,14 +294,35 @@ class InputApp(App):
         self.query_one("#mediatype").query_one(SelectionList).deselect_all()
         for ele in mediatype:
             self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
+    def _set_unlocked(self):
+        if  read_args.retriveArgs().unlocked:
+            self.query_one("#unlocked").select_true()
 
+        elif  read_args.retriveArgs().unlocked==False:
+            self.query_one("#unlocked").select_false()
+    def _set_downloaded(self):
+        if  read_args.retriveArgs().downloaded:
+            self.query_one("#downloaded").select_true()
 
+        elif  read_args.retriveArgs().downloaded==False:
+            self.query_one("#downloaded").select_false()
+    
+    
+    
     def _set_length(self):
         if read_args.retriveArgs().length_max:
             self.query_one("#length").update_table_max(read_args.retriveArgs().length_max)
         if read_args.retriveArgs().length_min:
             self.query_one("#length").update_table_min(read_args.retriveArgs().length_min)
 
+    #download_filters
+    def init_download_filter(self):
+        self._set_download_size()
+    def _set_download_size(self):
+        if settings.get_size_max():
+            self.query_one("#download_size_max").update_table_val(settings.get_size_max())
+        if settings.get_size_min():
+            self.query_one("#download_size_min").update_table_val(settings.get_size_min())
     #table 
     def reset_table(self):
         self.reset_all_inputs()
@@ -335,6 +356,7 @@ class InputApp(App):
         self.insert_data_table()
         self.init_sort()
         self.init_filtered_rows()
+        self.init_download_filter()
         self.set_page()
         self.update_search_info()
 

@@ -113,7 +113,7 @@ class DBManager:
         # downloaded
         if args.downloaded:
             medias = [media for media in medias if media["downloaded"]]
-        elif args.not_downloaded:
+        elif args.downloaded==False:
             medias = [media for media in medias if not media["downloaded"]]
 
         # download type
@@ -124,12 +124,12 @@ class DBManager:
         # unlocked
         if args.unlocked:
             medias = [media for media in medias if media["unlocked"]]
-        elif args.locked:
+        elif args.unlocked==False:
             medias = [media for media in medias if not media["unlocked"]]
         # preview
         if args.preview:
             medias = [media for media in medias if media["preview"]]
-        elif args.not_preview:
+        elif args.preview==False:
             medias = [media for media in medias if not media["preview"]]
         # size
         if settings.get_size_max():

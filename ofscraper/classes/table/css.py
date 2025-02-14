@@ -2,7 +2,6 @@ Widgets="""
  Sidebar.-hidden {
         display: none;
     }
-
 Widget {
     column-span:4;
     row-span:2;
@@ -46,7 +45,7 @@ Table="""
 """
 
 Options="""
-#options_sidebar, #page_option_sidebar{
+#options_sidebar, #page_option_sidebar,#download_option_sidebar{
         width: 45%;
         dock: left;
         layer: sidebar;
