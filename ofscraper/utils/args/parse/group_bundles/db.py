@@ -3,9 +3,6 @@ import cloup as click
 
 from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.groups.logging import logging_options
-from ofscraper.utils.args.parse.groups.post_filter import (
-    post_id_filter_option,
-)
 from ofscraper.utils.args.parse.arguments.post_content import (
     db_sort_option,
     db_desc_option,
@@ -16,7 +13,6 @@ from ofscraper.utils.args.parse.groups.media_filter import (
     media_type_option,
     max_size_option,
     min_size_option,
-    media_id_filter,
     length_max,
     length_min,
     media_filter_options_desc,
@@ -25,8 +21,8 @@ from ofscraper.utils.args.parse.groups.media_filter import (
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
-from ofscraper.utils.args.parse.arguments.check import downloaded_option,lock_option
-from ofscraper.utils.args.parse.arguments.db import preview_option,posted_after,posted_before
+from ofscraper.utils.args.parse.arguments.metadata_filters import downloaded_option,lock_option,check_post_id_filter_option,check_media_id_filter_option,preview_option,created_after,created_before,posted_after,posted_before,normal_only,protected_only
+
 
 from ofscraper.utils.args.parse.groups.advanced_user_filter import (
     advanced_userfilters_options,
@@ -78,10 +74,14 @@ def db_args(func):
         lock_option,
         preview_option,
         downloaded_option,
+        normal_only,
+        protected_only,
         posted_before,
         posted_after,
-        media_id_filter,
-        post_id_filter_option,
+        created_before,
+        created_after,
+        check_media_id_filter_option,
+        check_post_id_filter_option,
         help="Filter based on properties of the media in the database",
     )
     @user_select_options

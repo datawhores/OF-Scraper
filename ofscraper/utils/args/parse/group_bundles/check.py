@@ -5,11 +5,9 @@ from ofscraper.utils.args.parse.arguments.check import (
     text_only_option,
     text_option,
     check_mode_media_sort,
-    check_media_id_filter_option,
-    check_post_id_filter_option,
-    lock_option,
-    downloaded_option,
 )
+from ofscraper.utils.args.parse.arguments.metadata_filters import downloaded_option,lock_option,check_media_id_filter_option,check_post_id_filter_option
+
 from ofscraper.utils.args.parse.groups.media_filter import (
     length_max,
     length_min,
@@ -24,7 +22,7 @@ from ofscraper.utils.args.parse.groups.download import download_options
 from ofscraper.utils.args.parse.groups.file import file_options
 from ofscraper.utils.args.parse.groups.logging import logging_options
 from ofscraper.utils.args.parse.groups.program import program_options
-
+from ofscraper.utils.args.parse.arguments.metadata_filters import posted_after,posted_before
 
 def main_check(func):
     @force

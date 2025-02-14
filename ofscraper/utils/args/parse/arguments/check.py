@@ -8,6 +8,7 @@ from ofscraper.utils.args.callbacks.string import (
 )
 from ofscraper.utils.args.types.choice import MultiChoice
 
+#check
 check_areas = click.option(
     "-ca",
     "--check-area",
@@ -126,53 +127,6 @@ check_mode_media_sort = click.option(
         ]
     ),
 )
-
-check_post_id_filter_option = click.option(
-    "-pd",
-    "--post-id",
-    "--postid",
-    "post_id",
-    help="Filter posts based on post id",
-    required=False,
-    # type=click.STRING,
-)
-
-
-check_media_id_filter_option = click.option(
-    "-md",
-    "--media-id",
-    help="Filter media based on media id",
-    required=False,
-    type=click.STRING,
-)
-
-
-lock_option = click.option(
-    "-ul/-l",
-    "--unlocked/--locked",
-    "unlocked",
-    help="""
-        \b
-        Flag for filtering accounts based on whether media is unlocked
-        [select one --unlock or --locked]""",
-    default=None,
-    required=False,
-    is_flag=True,
-)
-
-downloaded_option = click.option(
-    "-dl/-ndl",
-    "--downloaded/--not-downloaded",
-    "downloaded",
-    help="""
-        \b
-        Flag for filtering accounts based on whether media is downloaded
-        [select one --downloaded or --not-downloaded]""",
-    default=None,
-    required=False,
-    is_flag=True,
-)
-
 
 
 
