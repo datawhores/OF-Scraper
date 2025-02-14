@@ -29,7 +29,8 @@ from ofscraper.db.operations_.media import download_media_update
 
 class DownloadManager:
     def __init__(self):
-        self.total=None
+        self.total = None
+
     async def _add_download_job_task(
         self, ele, total=None, placeholderObj=None, tempholderObj=None
     ):
@@ -50,11 +51,10 @@ class DownloadManager:
             return
         elif not self.total:
             await update_total(new_total)
-            self.total=new_total
+            self.total = new_total
         elif self.total and new_total - self.total != 0:
             await update_total(new_total - self.total)
-            self.total=new_total
-
+            self.total = new_total
 
     def _get_resume_header(self, resume_size, total):
         return (

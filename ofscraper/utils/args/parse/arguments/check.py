@@ -8,7 +8,7 @@ from ofscraper.utils.args.callbacks.string import (
 )
 from ofscraper.utils.args.types.choice import MultiChoice
 
-#check
+# check
 check_areas = click.option(
     "-ca",
     "--check-area",
@@ -127,6 +127,3 @@ check_mode_media_sort = click.option(
         ]
     ),
 )
-
-
-

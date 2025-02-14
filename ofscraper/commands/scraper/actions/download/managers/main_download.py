@@ -32,11 +32,16 @@ from ofscraper.commands.scraper.actions.utils.general import (
 )
 
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
-from ofscraper.commands.scraper.actions.utils.log import get_url_log, path_to_file_logger
+from ofscraper.commands.scraper.actions.utils.log import (
+    get_url_log,
+    path_to_file_logger,
+)
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
+    DownloadManager,
+)
 import ofscraper.commands.scraper.actions.utils.paths.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
@@ -46,7 +51,7 @@ import ofscraper.utils.cache as cache
 
 
 class MainDownloadManager(DownloadManager):
- 
+
     async def main_download(self, c, ele, username, model_id):
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with normal downloader"
@@ -351,7 +356,7 @@ class MainDownloadManager(DownloadManager):
         # other
         check = None
         if await self._check_forced_skip(ele, total) == 0:
-            total=0
+            total = 0
             path_to_file_logger(placeholderObj, ele, common_globals.log)
             check = True
         elif total == resume_size:

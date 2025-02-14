@@ -94,15 +94,15 @@ def process_item():
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     try:
-       key,row=app.row_queue.get()
+        key, row = app.row_queue.get()
     except Exception as E:
         log.debug(f"Error getting item from queue: {E}")
         return
     for count, _ in enumerate(range(0, 2)):
         try:
             username = row["username"]
-            post_id = int( row["post_id"] )
-            media_id =  int(row["media_id"])
+            post_id = int(row["post_id"])
+            media_id = int(row["media_id"])
             media = ALL_MEDIA.get(
                 "_".join(map(lambda x: str(x), [media_id, post_id, username]))
             )
@@ -120,23 +120,27 @@ def process_item():
             )
             operations.table_init_create(model_id=model_id, username=username)
 
-            output, values = process_dicts(
-                username, model_id, [media], [post]
-            )
+            output, values = process_dicts(username, model_id, [media], [post])
             if values is None or values[-1] == 1:
                 raise Exception("Download is marked as failed")
-            elif values[-2]==1:
+            elif values[-2] == 1:
                 log.info("Download Skipped")
-                app.app.table.update_cell_at_key(key, "download_cart", Text("[skipped]",style="bold bright_yellow"))
+                app.app.table.update_cell_at_key(
+                    key, "download_cart", Text("[skipped]", style="bold bright_yellow")
+                )
 
             else:
                 log.info("Download Finished")
                 update_globals(model_id, username, post, media, output)
-                app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]",style="bold green"))
+                app.app.table.update_cell_at_key(
+                    key, "download_cart", Text("[downloaded]", style="bold green")
+                )
                 break
         except Exception as E:
             if count == 1:
-                app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]",style="bold red"))
+                app.app.table.update_cell_at_key(
+                    key, "download_cart", Text("[failed]", style="bold red")
+                )
                 raise E
             log.info("Download Failed Refreshing data")
             data_refill(media_id, post_id, username, model_id)
@@ -681,9 +685,7 @@ def start_table(ROWS_):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
-    app.app(
-        table_data=ROWS
-    )
+    app.app(table_data=ROWS)
 
 
 def texthelper(text):
@@ -742,8 +744,8 @@ async def row_gather(username, model_id):
     ):
         out.append(
             {
-                "index": count+1,
-                "number": count+1,
+                "index": count + 1,
+                "number": count + 1,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
                 "downloaded": (ele.id, ele.postid) in downloaded,

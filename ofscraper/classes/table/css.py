@@ -1,4 +1,4 @@
-Widgets="""
+Widgets = """
  Sidebar.-hidden {
         display: none;
     }
@@ -17,7 +17,7 @@ height:3;
 }
 """
 
-Table="""
+Table = """
  #data_table{
     margin-bottom:4;
     margin-top:1;
@@ -44,7 +44,7 @@ Table="""
 
 """
 
-Options="""
+Options = """
 #options_sidebar, #page_option_sidebar,#download_option_sidebar{
         width: 45%;
         dock: left;
@@ -72,8 +72,13 @@ Options="""
 
 """
 
-CSS="""
+CSS = (
+    """
     #post_id,#media_id{
     column-span:2;
     }
-""" + Widgets+Table+Options
+"""
+    + Widgets
+    + Table
+    + Options
+)

@@ -10,10 +10,11 @@ class SizeMaxField(PostiveNumField):
             id=f"{self.filter_name}_input",
             value=self.default,
         )
-    def on_input_changed(self,event):
-        value=event.value if event.value else "0"
-        args=read_args.retriveArgs()
-        args.size_max=int(value)
+
+    def on_input_changed(self, event):
+        value = event.value if event.value else "0"
+        args = read_args.retriveArgs()
+        args.size_max = int(value)
         write_args.setArgs(args)
 
 
@@ -23,10 +24,10 @@ class SizeMinField(PostiveNumField):
             placeholder=self.filter_name.capitalize().replace("_", " "),
             id=f"{self.filter_name}_input",
             value=self.default,
-        )      
+        )
 
-    def on_input_changed(self,event):
-        value=event.value if event.value else "0"
-        args=read_args.retriveArgs()
-        args.size_min=int(value)
+    def on_input_changed(self, event):
+        value = event.value if event.value else "0"
+        args = read_args.retriveArgs()
+        args.size_min = int(value)
         write_args.setArgs(args)

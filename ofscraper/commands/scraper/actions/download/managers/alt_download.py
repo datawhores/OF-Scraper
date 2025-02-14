@@ -45,7 +45,9 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
     SIGN,
 )
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
+    DownloadManager,
+)
 import ofscraper.commands.scraper.actions.utils.paths.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
@@ -215,11 +217,10 @@ class AltDownloadManager(DownloadManager):
                     )
                     await self._total_change_helper(total)
 
-
             await self._size_checker(placeholderObj.tempfilepath, ele, total)
             return item
         except Exception as E:
-            await self._total_change_helper( 0)
+            await self._total_change_helper(0)
             raise E
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
@@ -442,7 +443,7 @@ class AltDownloadManager(DownloadManager):
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
         task1 = progress_updater.add_download_job_task(
-                f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                total=total,
+            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+            total=total,
         )
         return task1

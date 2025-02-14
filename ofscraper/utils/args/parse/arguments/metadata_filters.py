@@ -1,7 +1,7 @@
 import cloup as click
 from ofscraper.utils.args.types.arrow import ArrowType
 
-#Filter/sort retrived metadata
+# Filter/sort retrived metadata
 
 check_post_id_filter_option = click.option(
     "-pd",
@@ -48,31 +48,31 @@ downloaded_option = click.option(
     is_flag=True,
 )
 
-posted_after=click.option(
-            "-pf",
-            "--posted-after",
-            help="Filter out posts posted on or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=ArrowType(),
-        )
-posted_before=click.option(
-            "-pb",
-            "--posted-before",
-            help="Filter out posts posted at on or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=ArrowType(),
+posted_after = click.option(
+    "-pf",
+    "--posted-after",
+    help="Filter out posts posted on or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+)
+posted_before = click.option(
+    "-pb",
+    "--posted-before",
+    help="Filter out posts posted at on or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
 )
 
 
-created_after=click.option(
-            "-cf",
-            "--created-after",
-            help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=ArrowType(),
-        )
-created_before=click.option(
-            "-cb",
-            "--created-before",
-            help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=ArrowType(),
+created_after = click.option(
+    "-cf",
+    "--created-after",
+    help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
+)
+created_before = click.option(
+    "-cb",
+    "--created-before",
+    help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    type=ArrowType(),
 )
 
 
@@ -86,7 +86,7 @@ preview_option = click.option(
         [select one --preview or --no-preview]""",
     default=None,
     required=False,
-    is_flag=True, 
+    is_flag=True,
 )
 
 

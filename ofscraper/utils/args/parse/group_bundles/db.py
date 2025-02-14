@@ -21,7 +21,19 @@ from ofscraper.utils.args.parse.groups.media_filter import (
 from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
-from ofscraper.utils.args.parse.arguments.metadata_filters import downloaded_option,lock_option,check_post_id_filter_option,check_media_id_filter_option,preview_option,created_after,created_before,posted_after,posted_before,normal_only,protected_only
+from ofscraper.utils.args.parse.arguments.metadata_filters import (
+    downloaded_option,
+    lock_option,
+    check_post_id_filter_option,
+    check_media_id_filter_option,
+    preview_option,
+    created_after,
+    created_before,
+    posted_after,
+    posted_before,
+    normal_only,
+    protected_only,
+)
 
 
 from ofscraper.utils.args.parse.groups.advanced_user_filter import (
