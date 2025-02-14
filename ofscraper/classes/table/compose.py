@@ -10,6 +10,8 @@ from textual.widgets import Button, ContentSwitcher, Rule, Static
 
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
+from ofscraper.classes.table.fields.downloadfield import DownloadField
+
 from ofscraper.classes.table.fields.numfield import NumField, PostiveNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
 from ofscraper.classes.table.fields.responsefield import ResponseField
@@ -75,6 +77,7 @@ def composer():
                 yield SizeMinField("Download_Size_Min")
                 yield SizeMaxField("Download_Size_Max")
 
+
             with Sidebar(id="page_option_sidebar", classes="-hidden"):
                 yield Button("Enter", id="page_enter")
                 for ele in ["Page"]:
@@ -115,6 +118,8 @@ def composer():
                         yield MediaField(ele)
                     for ele in ["Responsetype"]:
                         yield ResponseField(ele)
+                    yield Rule()
+                    yield DownloadField("Download_Type")
                     yield Rule()
                     for ele in ["username"]:
                         yield StrInput(id=ele)

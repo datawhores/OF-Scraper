@@ -4,6 +4,7 @@ col_names = (
     "UserName",
     "Downloaded",
     "Unlocked",
+    "Download_Type",
     "other_posts_with_media",
     "Length",
     "Mediatype",

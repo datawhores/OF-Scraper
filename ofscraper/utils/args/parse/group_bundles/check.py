@@ -30,6 +30,8 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
     posted_after,
     posted_before,
+    normal_only,
+    protected_only
 )
 
 
