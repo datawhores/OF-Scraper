@@ -33,6 +33,13 @@ class DownloadField(SelectField):
             self.query_one(SelectionList).select(self._protected)
             self.query_one(SelectionList).select(self._normal)
 
+    def select_protected(self):
+        self.query_one(SelectionList).deselect_all()
+        self.query_one(SelectionList).select(self._protected)
+  
+    def select_normal(self):
+        self.query_one(SelectionList).deselect_all()
+        self.query_one(SelectionList).select(self._normal)
 
     def compare(self, value):
         if not self._protected.value in self.query_one(SelectionList).selected:

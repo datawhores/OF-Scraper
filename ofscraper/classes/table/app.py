@@ -264,6 +264,8 @@ class InputApp(App):
         self._set_length()
         self._set_unlocked()
         self._set_downloaded()
+        self._set_date_filter()
+        self._set_download_type()
         self._filter_runner()
 
     def set_filtered_rows(self):
@@ -341,6 +343,25 @@ class InputApp(App):
         if read_args.retriveArgs().length_min:
             self.query_one("#length").update_table_min(
                 read_args.retriveArgs().length_min
+            )
+
+
+    def _set_date_filter(self):
+        if read_args.retriveArgs().posted_after:
+            self.query_one("#post_date").update_min_val(
+                read_args.retriveArgs().posted_after
+            )
+        if read_args.retriveArgs().posted_before:
+            self.query_one("#post_date").update_max_val(
+                read_args.retriveArgs().posted_before
+            )
+
+    def _set_download_type(self):
+        if read_args.retriveArgs().protected:
+            self.query_one("#download_type").select_protected(
+            )
+        if read_args.retriveArgs().normal:
+            self.query_one("#download_type").select_normal(
             )
 
     # download_filters

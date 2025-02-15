@@ -90,7 +90,7 @@ preview_option = click.option(
 )
 
 
-protected_only = click.option(
+protected_only_option = click.option(
     "-to",
     "--protected-only",
     help="Restricts to content that requires decryption.",
@@ -98,10 +98,13 @@ protected_only = click.option(
     is_flag=True,
 )
 
-normal_only = click.option(
+normal_only_option = click.option(
     "-no",
     "--normal-only",
     help="Restricts to content that does not require decryption.",
     required=False,
     is_flag=True,
 )
+
+download_type_option=click.constraints.mutually_exclusive( normal_only_option,
+protected_only_option)

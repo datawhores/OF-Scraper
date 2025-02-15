@@ -30,8 +30,7 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
     posted_after,
     posted_before,
-    normal_only,
-    protected_only
+    download_type_option
 )
 
 
@@ -67,6 +66,10 @@ def common_args_check(func):
         check_media_id_filter_option,
         check_post_id_filter_option,
         media_desc_option,
+        posted_after,
+        posted_before,
+
+        download_type_option,
         help="Filters for controlling the initial table view",
     )
     @click.option_group(

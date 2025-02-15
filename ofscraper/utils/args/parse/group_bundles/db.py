@@ -31,8 +31,7 @@ from ofscraper.utils.args.parse.arguments.metadata_filters import (
     created_before,
     posted_after,
     posted_before,
-    normal_only,
-    protected_only,
+    download_type_option
 )
 
 
@@ -86,8 +85,8 @@ def db_args(func):
         lock_option,
         preview_option,
         downloaded_option,
-        normal_only,
-        protected_only,
+        download_type_option,
+       
         posted_before,
         posted_after,
         created_before,

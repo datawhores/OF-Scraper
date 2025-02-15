@@ -295,6 +295,8 @@ timed_only_option = click.option(
     [select one --only-timed or --skip-timed]""",
 )
 
+
+
 post_id_filter_option = click.option(
     "-pd",
     "--post-id",
@@ -340,3 +342,5 @@ max_post_count_option = click.option(
     default=0,
     type=int,
 )
+download_type_option= click.constraints.mutually_exclusive( normal_only,
+protected_only)
