@@ -33,7 +33,6 @@ from ofscraper.utils.args.parse.arguments.metadata_filters import (
     download_type_option
 )
 
-
 def main_check(func):
     @force
     @text_option

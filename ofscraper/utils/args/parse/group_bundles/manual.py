@@ -12,6 +12,8 @@ def manual_args(func):
         "manual",
         help="Manually download media by providing a list of urls or IDs",
         short_help="Manually download media by providing a list of urls or IDs",
+            show_constraints=True
+
     )
     @common_args
     @main_check

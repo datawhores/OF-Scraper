@@ -52,6 +52,8 @@ def db_args(func):
         "db",
         help="Print information from the database",
         short_help="print information from the database",
+            show_constraints=True
+
     )
     @click.option(
         "-ep",
