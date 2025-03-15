@@ -293,8 +293,8 @@ def get_post_script(config=None):
         val = config.get("post_script")
     elif config.get("advanced_options", {}).get("post_script") is not None:
         val = config.get("advanced_options", {}).get("post_script")
-    elif config.get("scripts", {}).get("post_download_script") is not None:
-        val = config.get("scripts", {}).get("post_download_script")
+    elif config.get("scripts", {}).get("post_script") is not None:
+        val = config.get("scripts", {}).get("post_script")
     elif config.get("script_options", {}).get("post_script") is not None:
         val = config.get("script_options", {}).get("post_script")
     return val if val is not None else constants_attr.getattr("POST_SCRIPT_DEFAULT")

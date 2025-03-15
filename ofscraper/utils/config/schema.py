@@ -65,7 +65,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
         },
-        "scripts_options": {
+        "script_options": {
             "post_download_script": data.get_post_download_script(config=config),
             "post_script": data.get_post_script(config=config),
         },
