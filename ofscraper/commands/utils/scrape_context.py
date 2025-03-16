@@ -12,7 +12,7 @@ r"""
 """
 
 import logging
-import timeit
+from datetime import datetime
 from contextlib import contextmanager
 
 import arrow
@@ -24,7 +24,7 @@ log = logging.getLogger("shared")
 def scrape_context_manager():
     # reset stream if needed
     # Before yield as the enter method
-    start = timeit.default_timer()
+    start = datetime.now()
     log.warning(
         """
 ==============================                            
@@ -33,12 +33,14 @@ def scrape_context_manager():
 """
     )
     yield
-    end = timeit.default_timer()
+    end = datetime.now()
     log.warning(
         f"""
 ===========================
 [bold] Script Finished [/bold]
 Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
+Started At:  [bold]{str(arrow.get(start)).split(".")[0]}[/bold]
+Finished At:  [bold]{str(arrow.get(end)).split(".")[0]}[/bold]
 ===========================
 """
     )
