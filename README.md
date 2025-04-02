@@ -19,7 +19,7 @@ https://github.com/datawhores/OF-Scraper/issues/442
 
 ```Text
 
-Docker and binary releases also availible
+Docker and binary releases also available
 ```
 
 ## Stable
