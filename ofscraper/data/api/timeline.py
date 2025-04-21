@@ -152,7 +152,7 @@ async def get_split_array(model_id, username, after):
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     # special case pass before to stop work
-    before = arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
+    before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
 
     if len(splitArrays) > 2:
         tasks.append(
@@ -350,7 +350,7 @@ async def scrape_timeline_posts(
 def time_log(username, after):
     log.info(
         f"""
-Setting timeline scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting timeline scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
 
@@ -359,7 +359,7 @@ Setting timeline scan range for {username} from {arrow.get(after).format(constan
 
 
 def filter_timeline_post(timeline_posts):
-    if read_args.retriveArgs().timeline_strict:
+    if settings.get_settings().timeline_strict:
         timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
     else:
         timeline_only_posts = timeline_posts

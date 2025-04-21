@@ -51,7 +51,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
     ):
         oldmessages = await get_old_messages(model_id, username)
-        before = (read_args.retriveArgs().before).float_timestamp
+        before = (settings.get_settings().before).float_timestamp
         log_after_before(after, before, username)
         filteredArray = get_filterArray(after, before, oldmessages)
         splitArrays = get_split_array(filteredArray)
@@ -59,7 +59,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         get_sleeper(reset=True)
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c,after)
         data = await process_tasks(tasks)
-    elif len(read_args.retriveArgs().post_id or []) <= constants.getattr(
+    elif len(settings.get_settings().post_id or []) <= constants.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
     ):
         data = process_individual(model_id)
@@ -89,7 +89,7 @@ async def get_old_messages(model_id, username):
 
 def process_individual(model_id):
     data = []
-    for ele in read_args.retriveArgs().post_id:
+    for ele in settings.get_settings().post_id:
         try:
             post = get_individual_messages_post(model_id, ele)
             if not post.get("error"):

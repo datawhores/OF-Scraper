@@ -79,7 +79,7 @@ async def post_media_process_all(ele, c=None):
 async def process_messages(model_id, username, c):
     try:
         messages_ = await messages.get_messages(
-            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+            model_id, username, c=c, post_id=settings.get_settings().post_id
         )
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         await operations.make_messages_table_changes(
@@ -185,7 +185,7 @@ async def process_highlights(model_id, username, c):
 async def process_timeline_posts(model_id, username, c):
     try:
         timeline_posts = await timeline.get_timeline_posts(
-            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+            model_id, username, c=c, post_id=settings.get_settings().post_id
         )
 
         timeline_posts = list(
@@ -218,7 +218,7 @@ async def process_timeline_posts(model_id, username, c):
 async def process_archived_posts(model_id, username, c):
     try:
         archived_posts = await archive.get_archived_posts(
-            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+            model_id, username, c=c, post_id=settings.get_settings().post_id
         )
         archived_posts = list(
             map(
@@ -248,7 +248,7 @@ async def process_archived_posts(model_id, username, c):
 async def process_streamed_posts(model_id, username, c):
     try:
         streams_posts = await streams.get_streams_posts(
-            model_id, username, c=c, post_id=read_args.retriveArgs().post_id
+            model_id, username, c=c, post_id=settings.get_settings().post_id
         )
         streams_posts = list(
             map(
@@ -278,7 +278,7 @@ async def process_streamed_posts(model_id, username, c):
 async def process_pinned_posts(model_id, username, c):
     try:
         pinned_posts = await pinned.get_pinned_posts(
-            model_id, c=c, post_id=read_args.retriveArgs().post_id
+            model_id, c=c, post_id=settings.get_settings().post_id
         )
         pinned_posts = list(
             map(lambda x: posts_.Post(x, model_id, username), pinned_posts)

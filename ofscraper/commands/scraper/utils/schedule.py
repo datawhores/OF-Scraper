@@ -16,11 +16,11 @@ log = logging.getLogger("shared")
 
 
 def set_schedule(*functs):
-    sleep = min(max(read_args.retriveArgs().daemon / 5, 1), 60)
+    sleep = min(max(settings.get_settings().daemon / 5, 1), 60)
     while True:
         try:
             jobqueue.join()
-            next = arrow.now().shift(minutes=read_args.retriveArgs().daemon)
+            next = arrow.now().shift(minutes=settings.get_settings().daemon)
             log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
             schedule.every().day.at(next.format("HH:mm:ss")).do(
                 schedule_helper, *functs

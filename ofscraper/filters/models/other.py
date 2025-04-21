@@ -10,11 +10,11 @@ from ofscraper.filters.models.utils.logs import trace_log_user
 
 def otherFilters(filterusername):
     log = logging.getLogger("shared")
-    log.debug(f"Excluded usernames: {read_args.retriveArgs().excluded_username}")
-    if len(read_args.retriveArgs().excluded_username) > 0:
+    log.debug(f"Excluded usernames: {settings.get_settings().excluded_username}")
+    if len(settings.get_settings().excluded_username) > 0:
         filterusername = list(
             filter(
-                lambda x: x.name not in read_args.retriveArgs().excluded_username,
+                lambda x: x.name not in settings.get_settings().excluded_username,
                 filterusername,
             )
         )

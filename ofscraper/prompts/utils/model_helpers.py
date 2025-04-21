@@ -15,8 +15,8 @@ def model_selectorHelper(count, x):
 
 def renewHelper(x):
     if (
-        read_args.retriveArgs().sort != "expired"
-        and read_args.retriveArgs().renewal is None
+        settings.get_settings().sort != "expired"
+        and settings.get_settings().renewal is None
     ):
         return ""
     return (
@@ -34,10 +34,10 @@ def generalDated(value):
 
 def lastSeenHelper(x):
     if (
-        read_args.retriveArgs().sort != "last-seen"
-        and not read_args.retriveArgs().last_seen
-        and not read_args.retriveArgs().last_seen_after
-        and not read_args.retriveArgs().last_seen_before
+        settings.get_settings().sort != "last-seen"
+        and not settings.get_settings().last_seen
+        and not settings.get_settings().last_seen_after
+        and not settings.get_settings().last_seen_before
     ):
         return ""
     return (
@@ -50,35 +50,35 @@ def lastSeenHelper(x):
 def getPriceHelper(x):
     value = None
     value2 = None
-    if read_args.retriveArgs().sort in {
+    if settings.get_settings().sort in {
         "current-price",
         "renewal-price",
         "regular-price",
         "promo-price",
     }:
-        value = re.sub("-", "_", read_args.retriveArgs().sort).replace("-", "_")
+        value = re.sub("-", "_", settings.get_settings().sort).replace("-", "_")
     if (
-        read_args.retriveArgs().promo_price
-        or read_args.retriveArgs().promo_price_min
-        or read_args.retriveArgs().promo_price_max
+        settings.get_settings().promo_price
+        or settings.get_settings().promo_price_min
+        or settings.get_settings().promo_price_max
     ):
         value2 = "promo_price"
     elif (
-        read_args.retriveArgs().regular_price
-        or read_args.retriveArgs().regular_price_min
-        or read_args.retriveArgs().regular_price_max
+        settings.get_settings().regular_price
+        or settings.get_settings().regular_price_min
+        or settings.get_settings().regular_price_max
     ):
         value2 = "regular_price"
     elif (
-        read_args.retriveArgs().renewal_price
-        or read_args.retriveArgs().renewal_price_min
-        or read_args.retriveArgs().renewal_price_max
+        settings.get_settings().renewal_price
+        or settings.get_settings().renewal_price_min
+        or settings.get_settings().renewal_price_max
     ):
         value2 = "renewal_price"
     elif (
-        read_args.retriveArgs().current_price
-        or read_args.retriveArgs().current_price_min
-        or read_args.retriveArgs().current_price_max
+        settings.get_settings().current_price
+        or settings.get_settings().current_price_min
+        or settings.get_settings().current_price_max
     ):
         value2 = "current_price"
     final_value = value or value2 or "current_price"

@@ -78,9 +78,9 @@ class MetaDataManager:
         return ele.mediatype if effected else "forced_skipped"
 
     def _metadata_downloaded_helper(self, placeholderObj, prevData):
-        if read_args.retriveArgs().metadata == "check":
+        if settings.get_settings().metadata == "check":
             return prevData["downloaded"] if prevData else None
-        elif read_args.retriveArgs().metadata == "complete":
+        elif settings.get_settings().metadata == "complete":
             return 1
         # for update
         elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
@@ -94,7 +94,7 @@ class MetaDataManager:
         return 0
 
     def _metadata_file_helper(self, placeholderObj, prevData):
-        if read_args.retriveArgs().metadata != "update":
+        if settings.get_settings().metadata != "update":
             return str(placeholderObj.trunicated_filename)
         # for update
         elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
@@ -110,7 +110,7 @@ class MetaDataManager:
         return str(placeholderObj.trunicated_filename)
 
     def _metadata_dir_helper(self, placeholderObj, prevData):
-        if read_args.retriveArgs().metadata != "update":
+        if settings.get_settings().metadata != "update":
             return str(placeholderObj.trunicated_filedir)
         # for update
         elif pathlib.Path(placeholderObj.trunicated_filedir).exists():

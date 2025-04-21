@@ -11,7 +11,7 @@ def set_after_checks(model_id, api):
 def set_full_after_scan_check(model_id, api):
     api = api.lower()
     cache.set(
-        f"{model_id}_full_{api}_v2_scrape", read_args.retriveArgs().after is not None
+        f"{model_id}_full_{api}_v2_scrape", settings.get_settings().after is not None
     )
 
 

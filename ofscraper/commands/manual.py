@@ -74,7 +74,7 @@ def manual_download(urls=None):
                 batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
-                if read_args.retriveArgs().text_only:
+                if settings.get_settings().text_only:
                     result = textDownloader(posts, username)
                 else:
                     result, _ = download.download_process(

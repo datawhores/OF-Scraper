@@ -240,7 +240,7 @@ async def make_label_table_changes(
             await write_labels_table(
                 label, new_posts, model_id=model_id, username=username
             )
-        if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        if settings.get_settings().metadata and len(curr_posts) > 0:
             curr_posts = convert.converthelper(curr_posts)
             await update_labels_table(
                 label, curr_posts, model_id=model_id, username=username

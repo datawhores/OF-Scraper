@@ -32,10 +32,10 @@ async def get_labels(model_id, c=None):
     labels_ = await get_labels_data(model_id, c=c)
     labels_ = (
         labels_
-        if not read_args.retriveArgs().label
+        if not settings.get_settings().label
         else list(
             filter(
-                lambda x: x.get("name").lower() in read_args.retriveArgs().label,
+                lambda x: x.get("name").lower() in settings.get_settings().label,
                 labels_,
             )
         )

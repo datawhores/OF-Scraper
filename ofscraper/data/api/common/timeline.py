@@ -30,7 +30,7 @@ def get_individual_timeline_post(id, session=None):
 
 def process_individual():
     data = []
-    for ele in read_args.retriveArgs().post_id:
+    for ele in settings.get_settings().post_id:
         try:
             post = get_individual_timeline_post(ele)
             if not post.get("error"):

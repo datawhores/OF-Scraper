@@ -47,7 +47,7 @@ class commmandManager:
                             if (
                                 constants.getattr("SHOW_AVATAR")
                                 and avatar
-                                and read_args.retriveArgs().userfirst
+                                and settings.get_settings().userfirst
                             ):
                                 logging.getLogger("shared_other").warning(
                                     avatar_str.format(avatar=avatar)
@@ -121,7 +121,7 @@ class commmandManager:
                     if (
                         constants.getattr("SHOW_AVATAR")
                         and avatar
-                        and read_args.retriveArgs().userfirst
+                        and settings.get_settings().userfirst
                     ):
                         logging.getLogger("shared_other").warning(
                             avatar_str.format(avatar=avatar)
@@ -183,4 +183,4 @@ class commmandManager:
 
     @property
     def run_action(self):
-        return len(read_args.retriveArgs().action) > 0
+        return len(settings.get_settings().action) > 0

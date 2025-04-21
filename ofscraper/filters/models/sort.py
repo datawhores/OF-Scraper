@@ -4,8 +4,8 @@ import ofscraper.utils.args.accessors.read as read_args
 
 
 def sort_models_helper(models):
-    sort = read_args.retriveArgs().sort
-    reverse = read_args.retriveArgs().desc
+    sort = settings.get_settings().sort
+    reverse = settings.get_settings().desc
     logging.getLogger("shared").debug(
         f"sorting details  [name:{sort} direction:{reverse}]"
     )

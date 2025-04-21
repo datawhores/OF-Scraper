@@ -54,8 +54,8 @@ def get_tasks(c, model_id):
                 c,
                 model_id,
                 timestamp=(
-                    read_args.retriveArgs().after.float_timestamp
-                    if read_args.retriveArgs().after
+                    settings.get_settings().after.float_timestamp
+                    if settings.get_settings().after
                     else None
                 ),
             )
@@ -112,7 +112,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
     posts = None
 
     if timestamp and (
-        float(timestamp) > (read_args.retriveArgs().before).float_timestamp
+        float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)

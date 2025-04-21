@@ -116,7 +116,7 @@ def _get_size_log(total_bytes_downloaded):
 
 def _get_total_log(total_count):
     color = "white" if total_count == 0 else "bold green"
-    if read_args.retriveArgs().metadata:
+    if settings.get_settings().metadata:
         total = f"[{color}]{total_count} changed media item total [/{color}]"
     else:
         total = f"[{color}]{total_count} downloads total [/{color}]"
@@ -124,7 +124,7 @@ def _get_total_log(total_count):
 
 
 def _get_action():
-    if read_args.retriveArgs().metadata:
+    if settings.get_settings().metadata:
         return "Metadata"
 
     return "Download"
@@ -132,7 +132,7 @@ def _get_action():
 
 def _get_forced_skipped_log(forced_skipped_count):
     color = "white" if forced_skipped_count == 0 else "bold yellow"
-    if read_args.retriveArgs().metadata:
+    if settings.get_settings().metadata:
         skipped_log = (
             f"[{color}]{forced_skipped_count} metadata unchanged[/{color}]"
             if forced_skipped_count > 0

@@ -76,7 +76,7 @@ async def process_dicts(username, model_id, medialist, posts):
     log_text_array.append(await textDownloader(posts, username=username))
     logging.getLogger("shared").info("Downloading in single thread mode")
     common_globals.mainProcessVariableInit()
-    if read_args.retriveArgs().text_only:
+    if settings.get_settings().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
     elif get_command() in {
         "manual",
@@ -86,7 +86,7 @@ async def process_dicts(username, model_id, medialist, posts):
         "paid_check",
     }:
         pass
-    elif read_args.retriveArgs().scrape_paid:
+    elif settings.get_settings().scrape_paid:
         pass
     elif len(get_download_area()) == 0:
         empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)

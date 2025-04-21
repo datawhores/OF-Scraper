@@ -3,7 +3,7 @@ import ofscraper.utils.constants as constants
 
 
 def in_check_mode():
-    return read_args.retriveArgs().command.find("_check") != -1
+    return settings.get_settings().command.find("_check") != -1
 
 
 def get_download_retries():

@@ -113,14 +113,14 @@ class metadataCommandManager(commmandManager):
     ):
         username = ele.name
         model_id = ele.id
-        mark_stray = read_args.retriveArgs().mark_stray
-        metadata_action = read_args.retriveArgs().metadata
+        mark_stray = settings.get_settings().mark_stray
+        metadata_action = settings.get_settings().metadata
         active = ele.active
         log.warning(
             f"""
                     Perform Meta {metadata_action} with
                     Mark Stray: {mark_stray}
-                    Anon Mode {read_args.retriveArgs().anon}
+                    Anon Mode {settings.get_settings().anon}
 
                     for [bold]{username}[/bold]
                     [bold]Subscription Active:[/bold] {active}
@@ -135,7 +135,7 @@ class metadataCommandManager(commmandManager):
         return [data]
 
     async def _metadata_stray_media(SELF, username, model_id, media):
-        if not read_args.retriveArgs().mark_stray:
+        if not settings.get_settings().mark_stray:
             return
         all_media = []
         curr_media_set = set(map(lambda x: str(x.id), media))
@@ -190,7 +190,7 @@ class metadataCommandManager(commmandManager):
                             if (
                                 constants.getattr("SHOW_AVATAR")
                                 and avatar
-                                and read_args.retriveArgs().userfirst
+                                and settings.get_settings().userfirst
                             ):
                                 logging.getLogger("shared_other").warning(
                                     avatar_str.format(avatar=avatar)
@@ -263,7 +263,7 @@ class metadataCommandManager(commmandManager):
 
     @property
     def run_metadata(self):
-        return read_args.retriveArgs().metadata
+        return settings.get_settings().metadata
 
 
 def metadata():
@@ -276,12 +276,12 @@ def metadata():
         userfirst_data = []
         normal_data = []
         userdata = []
-        if read_args.retriveArgs().scrape_paid:
+        if settings.get_settings().scrape_paid:
             scrape_paid_data = metaCommandManager.metadata_paid_all()
         if not metaCommandManager.run_metadata:
             pass
 
-        elif not read_args.retriveArgs().users_first:
+        elif not settings.get_settings().users_first:
             userdata, session = prepare()
             normal_data = metaCommandManager.process_users_metadata_normal(
                 userdata, session

@@ -23,7 +23,7 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.classes.table.app as app
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
+import ofscraper.utils.settings as settings
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
@@ -190,11 +190,11 @@ async def data_refill(media_id, post_id, target_name, model_id):
 def allow_check_dupes():
     args = read_args.retriveArgs()
     args.force_all = True
-    write_args.setArgs(args)
+    settings.update_settings(args)
 
 
 def get_areas():
-    return read_args.retriveArgs().check_area
+    return settings.get_settings().check_area
 
 
 def checker():
@@ -219,7 +219,7 @@ def checker():
 def set_after_check_mode():
     args = read_args.retriveArgs()
     args.after = 0
-    write_args.setArgs(args)
+    settings.update_settings(args)
 
 
 def post_checker():
@@ -283,7 +283,7 @@ async def post_check_retriver():
                 )
                 if "Timeline" in areas:
                     oldtimeline = read_check(model_id, timeline.API)
-                    if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+                    if len(oldtimeline) > 0 and not settings.get_settings().force:
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
@@ -292,7 +292,7 @@ async def post_check_retriver():
                         set_check(timeline_data, model_id, timeline.API)
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
-                    if len(oldarchive) > 0 and not read_args.retriveArgs().force:
+                    if len(oldarchive) > 0 and not settings.get_settings().force:
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
@@ -302,7 +302,7 @@ async def post_check_retriver():
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
-                    if len(oldpinned) > 0 and not read_args.retriveArgs().force:
+                    if len(oldpinned) > 0 and not settings.get_settings().force:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
@@ -310,7 +310,7 @@ async def post_check_retriver():
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
-                    if len(oldlabels) > 0 and not read_args.retriveArgs().force:
+                    if len(oldlabels) > 0 and not settings.get_settings().force:
                         labels_data = oldlabels
                     else:
                         labels_resp = await labels.get_labels(model_id, c=c)
@@ -329,7 +329,7 @@ async def post_check_retriver():
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
-                    if len(oldstreams) > 0 and not read_args.retriveArgs().force:
+                    if len(oldstreams) > 0 and not settings.get_settings().force:
                         streams_data = oldstreams
                     else:
                         streams_resp = await streams.get_streams_posts(
@@ -413,10 +413,9 @@ async def post_check_retriver():
 def reset_data():
     # clean up args once check modes are ready to launch
     args = read_args.retriveArgs()
-    argdict = vars(args)
-    if argdict.get("username"):
-        read_args.retriveArgs().usernames = None
-    write_args.setArgs(args)
+    if args.username:
+        args.username=settings.get_settings().usernames = None
+    settings.update_settings(args)
 
 
 def start_helper():
@@ -471,7 +470,7 @@ async def message_check_retriver():
                 oldmessages = read_check(model_id, messages_.API)
                 log.debug(f"Number of messages in cache {len(oldmessages)}")
 
-                if len(oldmessages) > 0 and not read_args.retriveArgs().force:
+                if len(oldmessages) > 0 and not settings.get_settings().force:
                     messages = oldmessages
                 else:
                     messages = await messages_.get_messages(model_id, user_name, c=c)
@@ -487,7 +486,7 @@ async def message_check_retriver():
                 oldpaid = read_check(model_id, paid_.API) or []
                 paid = None
                 # paid content
-                if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+                if len(oldpaid) > 0 and not settings.get_settings().force:
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
@@ -528,7 +527,7 @@ async def purchase_check_retriver():
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for name in read_args.retriveArgs().check_usernames:
+        for name in settings.get_settings().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(model_id, [])
@@ -538,7 +537,7 @@ async def purchase_check_retriver():
             oldpaid = read_check(model_id, paid_.API)
             paid = None
 
-            if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+            if len(oldpaid) > 0 and not settings.get_settings().force:
                 paid = oldpaid
             elif user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
                 paid_user_dict = await paid_.get_all_paid_posts()
@@ -583,7 +582,7 @@ async def stories_check_retriver():
         backend="httpx",
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for user_name in read_args.retriveArgs().check_usernames:
+        for user_name in settings.get_settings().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(user_name, [])
@@ -604,8 +603,8 @@ async def stories_check_retriver():
 
 def url_helper():
     out = []
-    out.extend(read_args.retriveArgs().file or [])
-    out.extend(read_args.retriveArgs().url or [])
+    out.extend(settings.get_settings().file or [])
+    out.extend(settings.get_settings().url or [])
     return map(lambda x: x.strip(), out)
 
 
@@ -660,7 +659,7 @@ async def get_paid_ids(model_id, user_name):
     oldpaid = read_check(model_id, paid_.API)
     paid = None
 
-    if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+    if len(oldpaid) > 0 and not settings.get_settings().force:
         paid = oldpaid
     else:
         async with manager.Manager.aget_ofsession(
@@ -774,14 +773,6 @@ async def row_gather(username, model_id):
         )
     ROWS = ROWS or []
     ROWS.extend(out)
-
-
-def init_media_type_helper():
-    args = read_args.retriveArgs()
-    mediatype = args.mediatype
-    args.mediatype = None
-    write_args.setArgs(args)
-    return mediatype
 
 
 def reset_time_line_cache(model_id):

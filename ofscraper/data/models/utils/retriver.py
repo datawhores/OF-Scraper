@@ -16,18 +16,18 @@ async def get_models() -> list:
     Get user's subscriptions in form of a list.
     """
     update_activity_task(description="Getting subscriptions")
-    if read_args.retriveArgs().anon:
+    if settings.get_settings().anon:
         return await get_via_individual()
     count = get_sub_count()
-    if not bool(read_args.retriveArgs().usernames):
+    if not bool(settings.get_settings().usernames):
         return await get_via_list(count)
-    elif "ALL" in read_args.retriveArgs().usernames:
+    elif "ALL" in settings.get_settings().usernames:
         return await get_via_list(count)
-    elif read_args.retriveArgs().individual:
+    elif settings.get_settings().individual:
         return await get_via_individual()
-    elif read_args.retriveArgs().list:
+    elif settings.get_settings().list:
         return get_via_list(count)
-    elif (sum(count) // 12) >= len(read_args.retriveArgs().usernames):
+    elif (sum(count) // 12) >= len(settings.get_settings().usernames):
         return await get_via_individual()
     else:
         return await get_via_list(count)

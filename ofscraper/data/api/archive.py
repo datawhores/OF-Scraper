@@ -153,7 +153,7 @@ async def get_split_array(model_id, username, after):
 
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
-    before = arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
+    before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
@@ -269,7 +269,7 @@ async def scrape_archived_posts(
     global sem
     posts = None
     if timestamp and (
-        float(timestamp) > (read_args.retriveArgs().before).float_timestamp
+        float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
@@ -353,7 +353,7 @@ async def scrape_archived_posts(
 def time_log(username, after):
     log.info(
         f"""
-Setting archived scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting archived scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
 

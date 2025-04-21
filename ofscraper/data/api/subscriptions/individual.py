@@ -27,7 +27,7 @@ log = logging.getLogger("shared")
 
 @run
 async def get_subscription(accounts=None):
-    accounts = accounts or read_args.retriveArgs().usernames
+    accounts = accounts or settings.get_settings().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
     task1 = progress_utils.add_userlist_task(

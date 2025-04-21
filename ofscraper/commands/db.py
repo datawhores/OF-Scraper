@@ -158,33 +158,33 @@ class DBManager:
                 if self._convert_seconds(media) >= settings.get_settings().length_min
             ]
         # date
-        if read_args.retriveArgs().posted_before:
+        if settings.get_settings().posted_before:
             medias = [
                 media
                 for media in medias
                 if arrow.get(media["posted_at"] or 0)
-                <= read_args.retriveArgs().posted_before
+                <= settings.get_settings().posted_before
             ]
-        if read_args.retriveArgs().posted_after:
+        if settings.get_settings().posted_after:
             medias = [
                 media
                 for media in medias
                 if arrow.get(media["posted_at"] or 0)
-                >= read_args.retriveArgs().posted_after
+                >= settings.get_settings().posted_after
             ]
-        if read_args.retriveArgs().created_after:
+        if settings.get_settings().created_after:
             medias = [
                 media
                 for media in medias
                 if arrow.get(media["created_at"] or 0)
-                >= read_args.retriveArgs().created_after
+                >= settings.get_settings().created_after
             ]
-        if read_args.retriveArgs().created_before:
+        if settings.get_settings().created_before:
             medias = [
                 media
                 for media in medias
                 if arrow.get(media["created_at"] or 0)
-                <= read_args.retriveArgs().created_before
+                <= settings.get_settings().created_before
             ]
         # media type
         if all(
@@ -216,8 +216,8 @@ class DBManager:
 
     def sort_media(self):
         medias = self.media
-        reversed = not read_args.retriveArgs().db_asc
-        sort = read_args.retriveArgs().db_sort
+        reversed = not settings.get_settings().db_asc
+        sort = settings.get_settings().db_sort
         if sort == "posted":
             medias = sorted(
                 medias, key=lambda x: arrow.get(x["posted_at"] or 0), reverse=reversed
@@ -333,7 +333,7 @@ class DBManager:
             data (list): The list of dictionaries.
             filename (str): The name of the CSV file to be created.
         """
-        if not read_args.retriveArgs().export:
+        if not settings.get_settings().export:
             return
         self.clean_dictionaries()
         self.write_csv()
@@ -348,7 +348,7 @@ class DBManager:
                     header.append(key)
                     type_hints[key] = type(value)
         # Create a CSV writer
-        filename = read_args.retriveArgs().export.with_suffix(".csv")
+        filename = settings.get_settings().export.with_suffix(".csv")
         filename.parent.mkdir(parents=True, exist_ok=True)
         with open(filename, "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=header)

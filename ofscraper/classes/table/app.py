@@ -15,7 +15,6 @@ from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
 import ofscraper.utils.logs.logger as logger
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 
 
@@ -151,13 +150,13 @@ class InputApp(App):
     def init_sort(self):
         self._reverse = (
             False
-            if read_args.retriveArgs().desc is None
-            else read_args.retriveArgs().desc
+            if settings.get_settings().desc is None
+            else settings.get_settings().desc
         )
         self._sortkey = (
             "number"
-            if read_args.retriveArgs().mediasort is None
-            else read_args.retriveArgs().mediasort
+            if settings.get_settings().mediasort is None
+            else settings.get_settings().mediasort
         )
         self._sort_runner(key=self._sortkey)
 
@@ -313,8 +312,8 @@ class InputApp(App):
 
     def _set_media_type(self):
         mediatype = (
-            read_args.retriveArgs().mediatype
-            if bool(read_args.retriveArgs().mediatype)
+            settings.get_settings().mediatype
+            if bool(settings.get_settings().mediatype)
             else ["Audios", "Videos", "Images"]
         )
         self.query_one("#mediatype").query_one(SelectionList).deselect_all()
@@ -322,45 +321,45 @@ class InputApp(App):
             self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
 
     def _set_unlocked(self):
-        if read_args.retriveArgs().unlocked:
+        if settings.get_settings().unlocked:
             self.query_one("#unlocked").select_true()
 
-        elif read_args.retriveArgs().unlocked == False:
+        elif settings.get_settings().unlocked == False:
             self.query_one("#unlocked").select_false()
 
     def _set_downloaded(self):
-        if read_args.retriveArgs().downloaded:
+        if settings.get_settings().downloaded:
             self.query_one("#downloaded").select_true()
 
-        elif read_args.retriveArgs().downloaded == False:
+        elif settings.get_settings().downloaded == False:
             self.query_one("#downloaded").select_false()
 
     def _set_length(self):
-        if read_args.retriveArgs().length_max:
+        if settings.get_settings().length_max:
             self.query_one("#length").update_table_max(
-                read_args.retriveArgs().length_max
+                settings.get_settings().length_max
             )
-        if read_args.retriveArgs().length_min:
+        if settings.get_settings().length_min:
             self.query_one("#length").update_table_min(
-                read_args.retriveArgs().length_min
+                settings.get_settings().length_min
             )
 
 
     def _set_date_filter(self):
-        if read_args.retriveArgs().posted_after:
+        if settings.get_settings().posted_after:
             self.query_one("#post_date").update_min_val(
-                read_args.retriveArgs().posted_after
+                settings.get_settings().posted_after
             )
-        if read_args.retriveArgs().posted_before:
+        if settings.get_settings().posted_before:
             self.query_one("#post_date").update_max_val(
-                read_args.retriveArgs().posted_before
+                settings.get_settings().posted_before
             )
 
     def _set_download_type(self):
-        if read_args.retriveArgs().protected:
+        if settings.get_settings().protected:
             self.query_one("#download_type").select_protected(
             )
-        if read_args.retriveArgs().normal:
+        if settings.get_settings().normal:
             self.query_one("#download_type").select_normal(
             )
 

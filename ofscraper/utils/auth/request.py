@@ -228,7 +228,7 @@ def request_auth_helper(content):
 
 
 def make_headers():
-    if read_args.retriveArgs().anon:
+    if settings.get_settings().anon:
         return make_anon_headers()
     else:
         return make_login_headers()
@@ -259,7 +259,7 @@ def make_login_headers():
 
 
 def add_cookies():
-    if read_args.retriveArgs().anon:
+    if settings.get_settings().anon:
         return None
     auth = auth_file.read_auth()
     cookies = {}
@@ -278,7 +278,7 @@ def create_sign(link, headers):
     """
     credit: DC and hippothon
     """
-    if read_args.retriveArgs().anon:
+    if settings.get_settings().anon:
         return create_anon_sign(link, headers)
     else:
         return create_login_sign(link, headers)

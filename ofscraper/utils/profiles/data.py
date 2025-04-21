@@ -41,8 +41,8 @@ def get_current_config_profile():
 
 
 def get_active_profile():
-    if read_args.retriveArgs().profile:
-        profile = read_args.retriveArgs().profile
+    if settings.get_settings().profile:
+        profile = settings.get_settings().profile
     else:
         profile = get_current_config_profile()
     return tools.profile_name_fixer(profile)

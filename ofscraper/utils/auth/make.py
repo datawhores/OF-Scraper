@@ -18,7 +18,7 @@ console = Console()
 
 
 def make_auth(auth=None):
-    if read_args.retriveArgs().auth_fail:
+    if settings.get_settings().auth_fail:
         logging.getLogger("shared").info("auth failed quitting on error")
         quit()
     while True:

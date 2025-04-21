@@ -14,7 +14,7 @@ import ofscraper.utils.constants as constants
 
 async def get_text(values):
     dupe = (
-        read_args.retriveArgs().force_all or read_args.retriveArgs().force_model_unique
+        settings.get_settings().force_all or settings.get_settings().force_model_unique
     )
     async with asyncio.TaskGroup() as tg:
         tasks = [tg.create_task(get_text_process(value, dupe=dupe)) for value in values]

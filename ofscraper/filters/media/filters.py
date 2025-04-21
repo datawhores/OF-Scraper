@@ -86,19 +86,19 @@ def mediatype_type_filter(media):
 
 
 def posts_date_filter_media(media):
-    if read_args.retriveArgs().before:
+    if settings.get_settings().before:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) <= read_args.retriveArgs().before,
+                or arrow.get(x.postdate) <= settings.get_settings().before,
                 media,
             )
         )
-    if read_args.retriveArgs().after:
+    if settings.get_settings().after:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) >= read_args.retriveArgs().after,
+                or arrow.get(x.postdate) >= settings.get_settings().after,
                 media,
             )
         )
@@ -106,9 +106,9 @@ def posts_date_filter_media(media):
 
 
 def download_type_filter(media):
-    if read_args.retriveArgs().download_type=="protected":
+    if settings.get_settings().download_type=="protected":
         return list(filter(lambda x: x.protected, media))
-    elif read_args.retriveArgs().download_type=="normal":
+    elif settings.get_settings().download_type=="normal":
         return list(filter(lambda x: not x.protected, media))
     else:
         return media
@@ -148,8 +148,8 @@ def unviewable_media_filter(media):
 
 
 def final_media_sort(media):
-    media_sort = read_args.retriveArgs().mediasort
-    reversed = read_args.retriveArgs().media_desc
+    media_sort = settings.get_settings().mediasort
+    reversed = settings.get_settings().media_desc
     log.debug(f"Using download sort {media_sort}")
     if media_sort == "random":
         random.shuffle(media)
@@ -166,9 +166,9 @@ def previous_download_filter(medialist, username=None, model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous downloads")
     medialist = seperate.seperate_by_self(medialist)
-    if read_args.retriveArgs().force_all:
+    if settings.get_settings().force_all:
         log.info("forcing all media to be downloaded")
-    elif read_args.retriveArgs().force_model_unique:
+    elif settings.get_settings().force_model_unique:
         log.info("Downloading unique media for model")
         media_ids = set(
             get_media_ids_downloaded_model(model_id=model_id, username=username)
@@ -195,16 +195,16 @@ def previous_download_filter(medialist, username=None, model_id=None):
 
 
 def media_id_filter(media):
-    if not bool(read_args.retriveArgs().media_id):
+    if not bool(settings.get_settings().media_id):
         return media
-    wanted = set([str(x) for x in read_args.retriveArgs().media_id])
+    wanted = set([str(x) for x in settings.get_settings().media_id])
     return list(filter(lambda x: str(x.id) in wanted, media))
 
 
 def post_id_filter(media):
-    if not bool(read_args.retriveArgs().post_id):
+    if not bool(settings.get_settings().post_id):
         return media
-    wanted = set([str(x) for x in read_args.retriveArgs().post_id])
+    wanted = set([str(x) for x in settings.get_settings().post_id])
     return list(filter(lambda x: str(x.postid) in wanted, media))
 
 
@@ -212,19 +212,19 @@ def post_id_filter(media):
 
 
 def posts_date_filter(media):
-    if read_args.retriveArgs().before:
+    if settings.get_settings().before:
         media = list(
             filter(
                 lambda x: x.date is None
-                or arrow.get(x.date) <= read_args.retriveArgs().before,
+                or arrow.get(x.date) <= settings.get_settings().before,
                 media,
             )
         )
-    if read_args.retriveArgs().after:
+    if settings.get_settings().after:
         media = list(
             filter(
                 lambda x: x.date is None
-                or arrow.get(x.date) >= read_args.retriveArgs().after,
+                or arrow.get(x.date) >= settings.get_settings().after,
                 media,
             )
         )
@@ -232,9 +232,9 @@ def posts_date_filter(media):
 
 
 def temp_post_filter(media):
-    if read_args.retriveArgs().timed_only is False:
+    if settings.get_settings().timed_only is False:
         return list(filter(lambda x: not x.expires, media))
-    elif read_args.retriveArgs().timed_only is True:
+    elif settings.get_settings().timed_only is True:
         return list(filter(lambda x: x.expires, media))
     return media
 
@@ -251,7 +251,7 @@ def likable_post_filter(post):
 
 
 def post_text_filter(media):
-    userfilter = read_args.retriveArgs().filter
+    userfilter = settings.get_settings().filter
     if not userfilter:
         return media
     curr = media
@@ -304,17 +304,17 @@ def post_neg_text_filter(media):
 
 
 def mass_msg_filter(media):
-    if read_args.retriveArgs().mass_msg is None:
+    if settings.get_settings().mass_msg is None:
         return media
-    elif read_args.retriveArgs().mass_msg is True:
+    elif settings.get_settings().mass_msg is True:
         return list((filter(lambda x: x.mass is True, media)))
-    elif read_args.retriveArgs().mass_msg is False:
+    elif settings.get_settings().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))
 
 
 def final_post_sort(post):
-    post_sort = read_args.retriveArgs().post_sort
-    reversed = read_args.retriveArgs().post_desc
+    post_sort = settings.get_settings().post_sort
+    reversed = settings.get_settings().post_desc
     log.debug(f"Using post sort {post_sort}")
     if post_sort == "date" and reversed:
         post = list(reversed(post))

@@ -51,13 +51,13 @@ class scraperManager(commmandManager):
             with progress_utils.setup_activity_group_live(
                 setup=True, revert=False, stop=True
             ):
-                if read_args.retriveArgs().scrape_paid:
+                if settings.get_settings().scrape_paid:
                     scrape_paid_data = scrape_paid_all()
 
                 if not self.run_action:
                     pass
 
-                elif read_args.retriveArgs().users_first:
+                elif settings.get_settings().users_first:
                     userdata, session = prepare(menu=menu)
                     user_first_data = self._process_users_actions_user_first(
                         userdata, session
@@ -105,7 +105,7 @@ class scraperManager(commmandManager):
     async def _execute_user_action(
         self, posts=None, like_posts=None, ele=None, media=None
     ):
-        actions = read_args.retriveArgs().action
+        actions = settings.get_settings().action
         username = ele.name
         model_id = ele.id
         out = []

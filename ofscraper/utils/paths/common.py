@@ -53,7 +53,7 @@ def get_config_home():
 
 
 def get_config_path():
-    configPath = read_args.retriveArgs().config
+    configPath = settings.get_settings().config
     defaultPath = pathlib.Path.home() / constants.configPath / constants.configFile
     ofscraperHome = pathlib.Path.home() / constants.configPath
 
@@ -97,10 +97,10 @@ def getlogpath():
 def get_profile_path(name=None):
     if name:
         profile = get_config_home() / name
-    elif not read_args.retriveArgs().profile:
+    elif not settings.get_settings().profile:
         profile = get_config_home() / profile_data.get_current_config_profile()
     else:
-        profile = get_config_home() / read_args.retriveArgs().profile
+        profile = get_config_home() / settings.get_settings().profile
     return pathlib.Path(tools.profile_name_fixer(profile))
 
 

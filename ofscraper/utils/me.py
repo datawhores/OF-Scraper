@@ -6,7 +6,7 @@ import ofscraper.utils.profiles.data as profile_data
 
 
 def parse_user():
-    if read_args.retriveArgs().anon:
+    if settings.get_settings().anon:
         return ("anon", "anon")
     profile = profile_data.get_my_info()
     name = encoding.encode_utf_16(profile["name"])

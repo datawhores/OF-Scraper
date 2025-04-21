@@ -177,7 +177,7 @@ def _toggle_like_requests(c, id, model_id):
         sleep=constants.getattr("SESSION_429_SLEEP_STARTER_VAL"),
         difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
     )
-    if not read_args.retriveArgs().force_like and cache.get(f"liked_status_{id}", None):
+    if not settings.get_settings().force_like and cache.get(f"liked_status_{id}", None):
         log.debug(f"ID: {id} marked as liked in cache")
         return 0
     max_duration = constants.getattr("MAX_SLEEP_DURATION_LIKE")
@@ -205,7 +205,7 @@ def _toggle_unlike_requests(c, id, model_id):
         difmin=constants.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
     )
     if (
-        not read_args.retriveArgs().force_like
+        not settings.get_settings().force_like
         and cache.get(f"liked_status_{id}", None) is False
     ):
         log.debug(f"ID: {id} marked as unliked in cache")

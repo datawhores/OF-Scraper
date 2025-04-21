@@ -135,7 +135,7 @@ class ModelManager:
             write_args.setArgs(args)
         if not bool(args.usernames):
             selectedusers = retriver.get_selected_model(self.filterNSort())
-            read_args.retriveArgs().usernames = list(
+            settings.get_settings().usernames = list(
                 map(lambda x: x.name, selectedusers)
             )
             self._parsed_subs_dict = {ele.name: ele for ele in selectedusers}
@@ -211,13 +211,13 @@ class ModelManager:
     Active userlist : {settings.get_settings().userlist or 'no userlist'}
     Active blacklist : {settings.get_settings().blacklist or 'no blacklist'}
 
-    Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
-    Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
+    Sub Status: {settings.get_settings().sub_status or 'No Filter'}
+    Renewal Status: {settings.get_settings().renewal or 'No Filter'}
 
-    Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
-    Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-    Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-    Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
+    Promo Price Filter: {settings.get_settings().promo_price or 'No Filter'}
+    Current Price Filter: {settings.get_settings().current_price or 'No Filter'}
+    Current Price Filter: {settings.get_settings().current_price or 'No Filter'}
+    Renewal Price Filter: {settings.get_settings().renewal_price or 'No Filter'}
 
     [ALT+D] More Filters
 

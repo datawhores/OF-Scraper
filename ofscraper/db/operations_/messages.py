@@ -226,7 +226,7 @@ async def make_messages_table_changes(
     if len(new_posts) > 0:
         new_posts = convert.converthelper(new_posts)
         await write_messages_table(new_posts, model_id=model_id, username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+    if settings.get_settings().metadata and len(curr_posts) > 0:
         curr_posts = convert.converthelper(curr_posts)
         await update_messages_table(curr_posts, model_id=model_id, username=username)
 

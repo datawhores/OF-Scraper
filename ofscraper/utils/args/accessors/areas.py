@@ -8,10 +8,10 @@ def get_like_area():
     post = None
     all_choices = ["Archived", "Timeline", "Pinned", "Streams"]
     all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
-    if len(read_args.retriveArgs().like_area or []) == 0:
-        post = set(read_args.retriveArgs().posts or [])
+    if len(settings.get_settings().like_area or []) == 0:
+        post = set(settings.get_settings().posts or [])
     else:
-        post = set(read_args.retriveArgs().like_area or [])
+        post = set(settings.get_settings().like_area or [])
     if "All" in post:
         post.update(set(all_choices))
     return finalize_choice(all_choices, post)
@@ -31,10 +31,10 @@ def get_download_area():
         "Streams",
     ]
     all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
-    if len(read_args.retriveArgs().download_area or []) == 0:
-        post = set(read_args.retriveArgs().posts or [])
+    if len(settings.get_settings().download_area or []) == 0:
+        post = set(settings.get_settings().posts or [])
     else:
-        post = set(read_args.retriveArgs().download_area or [])
+        post = set(settings.get_settings().download_area or [])
     if "All" in post:
         post.update(set(all_choices))
     return finalize_choice(all_choices, post)
@@ -54,7 +54,7 @@ def get_text_area():
         "Streams",
     ]
     all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
-    post = set(read_args.retriveArgs().download_text or [])
+    post = set(settings.get_settings().download_text or [])
     if "All" in post:
         post.update(set(all_choices))
     return finalize_choice(all_choices, post)

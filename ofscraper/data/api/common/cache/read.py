@@ -6,7 +6,7 @@ def read_full_after_scan_check(model_id, api):
     api = api.lower()
     return cache.get(
         f"{model_id}_full_{api}_v2_scrape",
-        read_args.retriveArgs().after is not None,
+        settings.get_settings().after is not None,
     )
 
 
