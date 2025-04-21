@@ -20,7 +20,7 @@ def get_chunk_size():
     """
     get chunk size in bytes
     """
-    if settings.get_download_limit() <=0:
+    if settings.get_settings().download_limit <=0:
         return CHUNK_SIZE
-    return min(CHUNK_SIZE, settings.get_download_limit())
+    return min(CHUNK_SIZE, settings.get_settings().download_limit)
   

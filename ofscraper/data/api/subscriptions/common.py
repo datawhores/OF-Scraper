@@ -25,11 +25,11 @@ console = Console()
 
 
 def get_user_list_helper():
-    return settings.get_userlist(as_list=True)
+    return settings.get_settings().userlist
 
 
 def get_black_list_helper():
-    return settings.get_blacklist(as_list=True)
+    return settings.get_settings().blacklist
 
 
 async def sort_list(c) -> list:

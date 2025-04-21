@@ -64,7 +64,7 @@ class DownloadManager:
         )
 
     def _get_resume_size(self, tempholderObj, mediatype=None):
-        if not settings.get_auto_resume(mediatype=mediatype):
+        if not settings.get_settings(mediatype=mediatype).auto_resume:
             pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
             return 0
         return (
@@ -87,8 +87,8 @@ class DownloadManager:
         total = int(total)
         if total == 0:
             return 0
-        file_size_max = settings.get_size_max(mediatype=ele.mediatype)
-        file_size_min = settings.get_size_min(mediatype=ele.mediatype)
+        file_size_max = settings.get_settings(mediatype=ele.mediatype).size_max
+        file_size_min = settings.get_settings(mediatype=ele.mediatype).size_min
         if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
             ele.mediatype = "forced_skipped"
             common_globals.log.debug(

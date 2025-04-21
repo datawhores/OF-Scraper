@@ -14,7 +14,7 @@ def get(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if settings.get_cache_disabled():
+        if settings.get_settings().cached_disabled:
             return kwargs.get("default")
         global cache
         if cache is None:
@@ -30,7 +30,7 @@ def set(*args, auto_close=True, **kwargs):
     global lock
     lock.acquire()
     try:
-        if settings.get_cache_disabled():
+        if settings.get_settings().cached_disabled:
             return
         global cache
         if cache is None:
@@ -48,7 +48,7 @@ def close(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if settings.get_cache_disabled():
+        if settings.get_settings().cached_disabled:
             return None
         global cache
         if cache is None:
@@ -64,7 +64,7 @@ def touch(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if settings.get_cache_disabled():
+        if settings.get_settings().cached_disabled:
             return None
         global cache
         if cache is None:

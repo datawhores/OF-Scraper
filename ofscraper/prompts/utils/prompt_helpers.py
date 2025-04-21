@@ -237,9 +237,9 @@ subscription => [bold deep_sky_blue2]{'active' if read_args.retriveArgs().sub_st
 renew => [bold deep_sky_blue2]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal is False else 'renew on/off'}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-user-list in use=> [bold deep_sky_blue2]{settings.get_userlist() or 'no userlist'}[/bold deep_sky_blue2]
+user-list in use=> [bold deep_sky_blue2]{settings.get_settings().userlist or 'no userlist'}[/bold deep_sky_blue2]
 ---------------------------------------------------------------------------------------
-black-list in use=> [bold deep_sky_blue2]{settings.get_blacklist() or 'no blacklist'}[/bold deep_sky_blue2]
+black-list in use=> [bold deep_sky_blue2]{settings.get_settings().blacklist or 'no blacklist'}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
 promo status => [bold deep_sky_blue2]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo is False else 'promo off/on'}[/bold deep_sky_blue2]

@@ -132,30 +132,30 @@ class DBManager:
         elif args.preview is False:
             medias = [media for media in medias if not media["preview"]]
         # size
-        if settings.get_size_max():
+        if settings.get_settings().size_max:
             medias = [
                 media
                 for media in medias
-                if (media["size"] or 0) <= settings.get_size_max()
+                if (media["size"] or 0) <= settings.get_settings().size_max
             ]
-        if settings.get_size_min():
+        if settings.get_settings().size_min:
             medias = [
                 media
                 for media in medias
-                if (media["size"] or 0) >= settings.get_size_min()
+                if (media["size"] or 0) >= settings.get_settings().size_min
             ]
         # length
-        if settings.get_max_length():
+        if settings.get_settings().length_max:
             medias = [
                 media
                 for media in medias
-                if self._convert_seconds(media) <= settings.get_max_length()
+                if self._convert_seconds(media) <= settings.get_settings().length_max
             ]
-        if settings.get_min_length():
+        if settings.get_settings().length_min:
             medias = [
                 media
                 for media in medias
-                if self._convert_seconds(media) >= settings.get_min_length()
+                if self._convert_seconds(media) >= settings.get_settings().length_min
             ]
         # date
         if read_args.retriveArgs().posted_before:
@@ -188,7 +188,7 @@ class DBManager:
             ]
         # media type
         if all(
-            element in settings.get_mediatypes()
+            element in settings.get_settings().mediatypes
             for element in ["Audios", "Videos", "Images"]
         ):
             pass
@@ -196,7 +196,7 @@ class DBManager:
             medias = [
                 media
                 for media in medias
-                if media["media_type"] in settings.get_mediatypes()
+                if media["media_type"] in settings.get_settings().mediatypes
             ]
         # id filters
         if args.post_id:
@@ -208,8 +208,8 @@ class DBManager:
     def get_max_post(self):
         medias = self.media
         medias = (
-            medias[: settings.get_max_post_count()]
-            if settings.get_max_post_count()
+            medias[: settings.get_settings().max_post_count]
+            if settings.get_settings().max_post_count
             else medias
         )
         self.media = medias

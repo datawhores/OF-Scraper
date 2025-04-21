@@ -12,7 +12,7 @@ def get_after_pre_checks(model_id, api):
         val = 0
     elif read_args.retriveArgs().after is not None:
         val = read_args.retriveArgs().after.float_timestamp
-    elif not settings.auto_after_enabled():
+    elif not settings.get_settings().auto_after():
         val = 0
     elif read_full_after_scan_check(model_id, api):
         val = 0

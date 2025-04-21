@@ -42,7 +42,7 @@ def _calc_hash(file_data):
 
 
 def remove_dupes_hash(username, model_id, mediatype=None):
-    if not settings.get_hash():
+    if not settings.get_settings().hash:
         return
     hashes = get_dupe_media_hashes(username=username, model_id=model_id, mediatype=None)
     for hash in hashes:

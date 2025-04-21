@@ -208,8 +208,8 @@ class ModelManager:
                 f"""[bold red]You have filtered the user list to zero[/bold red]
     Change the filter settings to continue
 
-    Active userlist : {settings.get_userlist() or 'no blacklist'}
-    Active blacklist : {settings.get_blacklist() or 'no userlist'}
+    Active userlist : {settings.get_settings().userlist or 'no userlist'}
+    Active blacklist : {settings.get_settings().blacklist or 'no blacklist'}
 
     Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
     Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}

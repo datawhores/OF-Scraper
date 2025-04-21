@@ -60,7 +60,7 @@ def get_request_auth():
         arrow.now().float_timestamp - last_check.float_timestamp
     ) < constants.getattr("THIRTY_EXPIRY"):
         return curr_auth
-    dynamic = settings.get_dynamic_rules()
+    dynamic = settings.get_settings().dynamic_rules
     auth = None
     if constants.getattr("DYNAMIC_RULE") and dynamic in {"manual"}:
         auth = get_request_auth_dynamic_rule_manual()

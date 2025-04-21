@@ -66,7 +66,7 @@ async def get_oldarchived(model_id, username):
     oldarchived = None
     if read_full_after_scan_check(model_id, API):
         return []
-    if not settings.get_api_cache_disabled():
+    if not settings.get_settings().api_cache_disabled:
         oldarchived = await get_archived_post_info(model_id=model_id, username=username)
     else:
         oldarchived = []

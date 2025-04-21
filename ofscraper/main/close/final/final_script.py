@@ -24,7 +24,7 @@ import ofscraper.main.manager as manager
 
 def final_script():
     log = logging.getLogger("shared")
-    if not settings.get_post_script():
+    if not settings.get_settings().post_script:
         return
     log.debug("Running post script")
 
@@ -42,4 +42,4 @@ def final_script():
     with tempfile.NamedTemporaryFile(suffix=".json") as f:
         with open(f.name, "w") as g:
             g.write(out_dict)
-        run([settings.get_post_script(), f.name])
+        run([settings.get_settings().post_script, f.name])

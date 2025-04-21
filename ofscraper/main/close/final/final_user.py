@@ -11,7 +11,7 @@ import ofscraper.main.manager as manager
 
 
 def post_user_script(username, media=None, posts=None):
-    if not settings.get_post_download_script():
+    if not settings.get_settings().download_script:
         return
     userdata = manager.Manager.model_manager.get_model(username)
     if not userdata:
@@ -40,7 +40,7 @@ def post_user_script(username, media=None, posts=None):
         with tempfile.NamedTemporaryFile(suffix=".json") as f:
             with open(f.name, "w") as g:
                 g.write(master_dump)
-            run([settings.get_post_download_script(), f.name])
+            run([settings.get_settings().download_script, f.name])
 
     except Exception as e:
         log.traceback_(e)

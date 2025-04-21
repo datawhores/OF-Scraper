@@ -137,7 +137,7 @@ downloads_pending = set()
 def add_download_job_task(*args, **kwargs):
     max_visible = constants.getattr("MAX_PROGRESS_BARS")
     visible = (
-        settings.get_download_bars() and len(download_job_progress.tasks) < max_visible
+        settings.get_settings().download_bars() and len(download_job_progress.tasks) < max_visible
     )
     task = download_job_progress.add_task(*args, visible=visible, **kwargs)
 
@@ -161,7 +161,7 @@ def update_download_task(*args, **kwargs):
 
 
 def update_download_job_task(*args, **kwargs):
-    if not settings.get_download_bars():
+    if not settings.get_settings().download_bars():
         return
     download_job_progress.update(*args, **kwargs)
 

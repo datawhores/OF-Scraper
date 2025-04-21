@@ -383,7 +383,7 @@ class Placeholders(basePlaceholder):
 
     @property
     def trunicated_filepath(self):
-        if settings.get_trunication(mediatype=self._ele.mediatype):
+        if settings.get_settings(mediatype=self._ele.mediatype).trunicate:
             return pathlib.Path(paths.truncate(self._filepath))
         return self._filepath
 
@@ -582,7 +582,7 @@ class Textholders(basePlaceholder):
 
     @property
     def trunicated_filepath(self):
-        if settings.get_trunication(mediatype=self._ele.mediatype):
+        if settings.get_settings(mediatype=self._ele.mediatype).trunicate:
             return pathlib.Path(paths.truncate(self._filepath))
         return self._filepath
 

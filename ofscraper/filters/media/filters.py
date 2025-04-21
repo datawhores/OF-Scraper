@@ -62,14 +62,14 @@ def dupefilterPost(post):
 
 # media filters
 def ele_count_filter(media):
-    count = settings.get_max_post_count() or None
+    count = settings.get_settings().max_post_count or None
     if count:
         return media[:count]
     return media
 
 
 def mediatype_type_filter(media):
-    filtersettings = settings.get_mediatypes()
+    filtersettings = settings.get_settings().mediatypes
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):
@@ -106,9 +106,9 @@ def posts_date_filter_media(media):
 
 
 def download_type_filter(media):
-    if read_args.retriveArgs().protected_only:
+    if read_args.retriveArgs().download_type=="protected":
         return list(filter(lambda x: x.protected, media))
-    elif read_args.retriveArgs().normal_only:
+    elif read_args.retriveArgs().download_type=="normal":
         return list(filter(lambda x: not x.protected, media))
     else:
         return media
@@ -116,8 +116,8 @@ def download_type_filter(media):
 
 def media_length_filter(media):
     filteredMedia = media
-    max_length = settings.get_max_length()
-    min_length = settings.get_min_length()
+    max_length = settings.get_settings().length_max
+    min_length = settings.get_settings().length_min
     if max_length:
         filteredMedia = list(
             filter(
@@ -278,7 +278,7 @@ def post_text_filter(media):
 
 
 def post_neg_text_filter(media):
-    userfilter = settings.get_neg_filter()
+    userfilter = settings.get_settings().neg_filter
     if not bool(userfilter):
         return media
     curr = media

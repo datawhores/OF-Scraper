@@ -49,7 +49,7 @@ def print_system_log():
     )
 
     # print info
-    log.info(f"Log Level: {settings.get_log_level()}")
+    log.info(f"Log Level: {settings.get_settings().log_level}")
     log.info(f"version: {__version__}")
     log.debug(platform.platform())
     log.info(f"config path: {str(common_paths.get_config_path())}")
@@ -111,7 +111,7 @@ def print_latest_version():
 
 
 def discord_warning():
-    if read_args.retriveArgs().discord == "DEBUG":
+    if settings.get_settings().discord_level == "DEBUG":
         console.get_shared_console().print(
             "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
         )

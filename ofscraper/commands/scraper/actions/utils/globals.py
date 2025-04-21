@@ -55,7 +55,7 @@ def main_globals():
 
     # global
     global thread
-    thread = ThreadPoolExecutor(max_workers=settings.get_download_sems() * 2)
+    thread = ThreadPoolExecutor(max_workers=settings.get_settings().download_sems * 2)
     global sem
     sem = None
     global dirSet

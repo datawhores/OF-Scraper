@@ -8,7 +8,7 @@ class LeakyBucket(AsyncLimiter):
         super().__init__(*args, **kwargs)
 
     async def acquire(self, amount: float = 1):
-        if settings.get_download_limit() <= 0:
+        if settings.get_settings().download_limit <= 0:
             return
         await super().acquire(amount or CHUNK_SIZE)
     

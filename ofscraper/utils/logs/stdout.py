@@ -8,7 +8,6 @@ import traceback
 from functools import partial
 
 from logging.handlers import QueueHandler
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
@@ -23,6 +22,8 @@ from ofscraper.utils.logs.classes.handlers.text import TextHandler
 
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.utils.level as log_helpers
+import ofscraper.utils.settings as settings
+
 
 
 def logger_process(input_, name=None, stop_count=1, event=None, s=None):
@@ -103,11 +104,11 @@ def add_rich_handler(log, clear=True):
         show_level=False,
         console=console.get_console(),
     )
-    sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
+    sh.setLevel(log_helpers.getLevel(settings.get_settings().output_level))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
     log.addHandler(sh)
-    if read_args.retriveArgs().output in {"TRACE", "DEBUG"}:
+    if settings.get_settings().output_level in {"TRACE", "DEBUG"}:
         sh2 = RichHandlerMulti(
             rich_tracebacks=True,
             console=console.get_shared_console(),
@@ -116,7 +117,7 @@ def add_rich_handler(log, clear=True):
             show_time=False,
         )
 
-        sh2.setLevel(read_args.retriveArgs().output)
+        sh2.setLevel(settings.get_settings().output_level)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(sh2)
@@ -137,16 +138,16 @@ def add_stdout_handler(log, clear=True, rich_array=None):
         show_level=False,
         console=console.get_console(),
     )
-    sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
+    sh.setLevel(log_helpers.getLevel(settings.get_settings().output_level))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
     tx = TextHandler()
-    tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
+    tx.setLevel(log_helpers.getLevel(settings.get_settings().output_level))
     tx.setFormatter(log_class.LogFileFormatter(format))
     log.addHandler(sh)
     log.addHandler(tx)
 
-    if read_args.retriveArgs().output in {"TRACE", "DEBUG"}:
+    if settings.get_settings().output_level in {"TRACE", "DEBUG"}:
         sh2 = RichHandlerMulti(
             rich_tracebacks=True,
             console=console.get_shared_console(),
@@ -154,7 +155,7 @@ def add_stdout_handler(log, clear=True, rich_array=None):
             tracebacks_show_locals=True,
             show_time=False,
         )
-        sh2.setLevel(read_args.retriveArgs().output)
+        sh2.setLevel(settings.get_settings().output_level)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(log_class.TraceBackOnly())
 
@@ -175,7 +176,7 @@ def add_stdout_handler_multi(log, clear=True, main_=None):
     elif hasattr(main_, "send"):
         mainhandle = PipeHandler(main_)
     mainhandle.name = "stdout"
-    mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
+    mainhandle.setLevel(log_helpers.getLevel(settings.get_settings().output_level))
     # add a handler that uses the shared queue
     log.addHandler(mainhandle)
     return log

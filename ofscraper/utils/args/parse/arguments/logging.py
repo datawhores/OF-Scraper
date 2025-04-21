@@ -3,6 +3,7 @@ import cloup as click
 log_level_option = click.option(
     "-l",
     "--log",
+    "log_level",
     help="Set log file level",
     type=click.Choice(
         ["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
@@ -15,6 +16,7 @@ log_level_option = click.option(
 discord_log_level_option = click.option(
     "-dc",
     "--discord",
+    "discord_level",
     help="Set discord log level",
     type=click.Choice(
         ["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
@@ -27,6 +29,7 @@ discord_log_level_option = click.option(
 console_output_level_option = click.option(
     "-p",
     "--output",
+    "output_level",
     help="Set console output log level",
     type=click.Choice(
         ["PROMPT", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],

@@ -107,7 +107,7 @@ async def process_tasks_batch(tasks):
 async def get_oldtimeline(model_id, username):
     if read_full_after_scan_check(model_id, API):
         return []
-    if not settings.get_api_cache_disabled():
+    if not settings.get_settings().api_cache_disabled:
         oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )

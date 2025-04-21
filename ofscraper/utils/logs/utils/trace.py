@@ -1,6 +1,4 @@
-import ofscraper.utils.args.accessors.read as read_args
-
+import ofscraper.utils.settings as settings
 
 def is_trace():
-    args = read_args.retriveArgs()
-    return args.discord == "TRACE" or args.logs == "TRACE" or args.output == "TRACE"
+    return settings.get_settings().discord_level == "TRACE" or settings.get_settings().log_level == "TRACE" or settings.get_settings().output_level == "TRACE"

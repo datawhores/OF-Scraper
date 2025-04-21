@@ -33,7 +33,7 @@ async def un_encrypt(item, c, ele, input_=None):
     try:
         setLog(input_ or common_globals.log)
         key = None
-        keymode = settings.get_key_mode()
+        keymode = settings.get_settings().key_mode
         past_key = (
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, partial(cache.get, ele.license)
@@ -243,8 +243,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
         pssh_obj = PSSH(pssh)
 
         # load device
-        private_key = pathlib.Path(settings.get_private_key()).read_bytes()
-        client_id = pathlib.Path(settings.get_client_id()).read_bytes()
+        private_key = pathlib.Path(settings.get_settings().private_key).read_bytes()
+        client_id = pathlib.Path(settings.get_settings().client_id).read_bytes()
         device = Device(
             security_level=3,
             private_key=private_key,

@@ -369,13 +369,13 @@ class InputApp(App):
         self._set_download_size()
 
     def _set_download_size(self):
-        if settings.get_size_max():
+        if settings.get_settings().size_max:
             self.query_one("#download_size_max").update_table_val(
-                settings.get_size_max()
+                settings.get_settings().size_max
             )
-        if settings.get_size_min():
+        if settings.get_settings().size_min:
             self.query_one("#download_size_min").update_table_val(
-                settings.get_size_min()
+                settings.get_settings().size_min
             )
 
     # table

@@ -30,7 +30,7 @@ def get_shared_logger(name=None):
     add_stdout_handler(logger, clear=False)
     add_other_handler(logger, clear=False)
     add_other_handler(logger_other, clear=False)
-    if settings.get_output_level() == "LOW":
+    if settings.get_settings().output_level == "LOW":
         add_stdout_handler(logger_other, clear=False)
     # log all messages, debug and up
     logger.setLevel(1)

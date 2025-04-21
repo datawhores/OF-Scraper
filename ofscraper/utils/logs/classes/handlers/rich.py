@@ -8,8 +8,9 @@ from rich.console import Group
 from ofscraper.utils.console import get_console
 import ofscraper.utils.logs.globals as log_globals
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
+
 
 
 logs = deque()
@@ -29,7 +30,7 @@ def flush_buffer(event=None, split=None):
     global close_event
     force_close_event = event
     split = split or 1
-    sleep = 0.2 if read_args.retriveArgs().output == "TRACE" else 0.5
+    sleep = 0.2 if settings.get_settings().output_level == "TRACE" else 0.5
     normal_max_entries = constants.getattr("DEFAULT_FLUSH_MAX") // split
     alt_max_entries = constants.getattr("CLOSING_FLUSH_MAX") // split
 

@@ -81,9 +81,9 @@ def logger_other(input_, name=None, stop_count=1, event=None):
 # wrapper function for discord and  log, check if threads/process should star
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
-        if settings.get_discord():
+        if settings.get_settings().discord_level:
             return func(*args_, **kwargs)
-        elif settings.get_log():
+        elif settings.get_setting().log_level:
             return func(*args_, **kwargs)
 
     return inner
@@ -137,7 +137,7 @@ def start_other_helper():
 
 # updates stream for main process
 def updateOtherLoggerStream():
-    if settings.get_log_level() and settings.get_log_level() != "OFF":
+    if settings.get_settings().log_level and settings.get_settings().log_level != "OFF":
         dates.resetLogDateVManager()
         stream = open(
             common_paths.getlogpath(),
@@ -145,7 +145,7 @@ def updateOtherLoggerStream():
             mode="a",
         )
         log_globals.otherqueue_.put_nowait(stream)
-    if read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF":
+    if settings.get_settings().discord_level and settings.get_settings().discord_level != "OFF":
         temp = DiscordHandler()
         log_globals.otherqueue_.put_nowait(temp._url)
 
@@ -167,24 +167,24 @@ def add_other_handler(log, clear=True):
     # # #log file
     # #discord
     cord = DiscordHandler()
-    cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
+    cord.setLevel(log_helpers.getLevel(settings.get_settings().discord_level))
     cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
     # console
     log.addHandler(cord)
-    if settings.get_log_level() != "OFF":
+    if settings.get_settings().log_level != "OFF":
         stream = open(
             common_paths.getlogpath(),
             encoding="utf-8",
             mode="a",
         )
         fh = StreamHandlerMulti(stream)
-        fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
+        fh.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
         fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh.addFilter(log_class.NoTraceBack())
         log.addHandler(fh)
-    if settings.get_log_level() in {"TRACE", "DEBUG"}:
+    if settings.get_settings().log_level in {"TRACE", "DEBUG"}:
         fh2 = StreamHandlerMulti(stream)
-        fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
+        fh2.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
         fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(fh2)
@@ -202,31 +202,31 @@ def add_other_handler_multi(log, clear=True, other_=None):
     # #discord
     if not other_:
         cord = DiscordHandlerMulti()
-        cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
+        cord.setLevel(log_helpers.getLevel(settings.get_settings().discord_level))
         cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
         # console
         log.addHandler(cord)
-        if settings.get_log_level() != "OFF":
+        if settings.get_settings().log_level != "OFF":
             stream = open(
                 common_paths.getlogpath(),
                 encoding="utf-8",
                 mode="a",
             )
             fh = StreamHandlerMulti(stream)
-            fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
+            fh.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
             fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
             fh.addFilter(log_class.NoTraceBack())
             log.addHandler(fh)
-        if settings.get_log_level() in {"TRACE", "DEBUG"}:
+        if settings.get_settings().log_level in {"TRACE", "DEBUG"}:
             fh2 = StreamHandlerMulti(stream)
-            fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
+            fh2.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
             fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
             fh2.addFilter(log_class.TraceBackOnly())
             log.addHandler(fh2)
     else:
         # add a handler that uses the shared queue
-        discord_level = log_helpers.getNumber(settings.get_discord_level())
-        file_level = log_helpers.getNumber(settings.get_log_level())
+        discord_level = log_helpers.getNumber(settings.get_settings().discord_level)
+        file_level = log_helpers.getNumber(settings.get_settings().log_level)
         if hasattr(other_, "get") and hasattr(other_, "put_nowait"):
             otherhandle = QueueHandler(other_)
             otherhandle.name = "other"

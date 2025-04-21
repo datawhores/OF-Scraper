@@ -25,7 +25,7 @@ class download_session(sessionManager.sessionManager):
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
         log = log or common_globals.log
-        self.leaky_bucket = LeakyBucket(settings.get_download_limit(), 1)
+        self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
         super().__init__(
             sem_count=sem_count,
             retries=retries,

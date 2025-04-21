@@ -29,6 +29,7 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
+import ofscraper.utils.settings as settings
 
 
 log = logging.getLogger("shared")
@@ -188,7 +189,7 @@ def daemon_process():
     scrapingManager = scraperManager()
 
     jobqueue.put(scrapingManager.runner)
-    if read_args.retriveArgs().output == "PROMPT":
+    if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
     manager.Manager.model_manager.getselected_usernames()
