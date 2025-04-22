@@ -117,25 +117,30 @@ PRESS ENTER TO RETURN
 
 
 def model_funct(prompt):
-    manager.Manager.model_manager.setfilter()
-    with stdout.nostdout():
-        choices = _get_choices()
-        selectedSet = set(
-            map(
-                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
-                prompt.selected_choices or [],
+    while True:
+        manager.Manager.model_manager.setfilter()
+        with stdout.nostdout():
+            choices = _get_choices()
+        if len(choices)==0:
+            console.print("Model list filtered to zero")
+            continue
+        with stdout.nostdout():
+            selectedSet = set(
+                map(
+                    lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                    prompt.selected_choices or [],
+                )
             )
-        )
-        for model in choices:
-            name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
-            if name in selectedSet:
-                model.enabled = True
-        prompt.content_control._raw_choices = choices
-        prompt.content_control.choices = prompt.content_control._get_choices(
-            prompt.content_control._raw_choices, prompt.content_control._default
-        )
-        prompt.content_control._format_choices()
-        return prompt
+            for model in choices:
+                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                if name in selectedSet:
+                    model.enabled = True
+            prompt.content_control._raw_choices = choices
+            prompt.content_control.choices = prompt.content_control._get_choices(
+                prompt.content_control._raw_choices, prompt.content_control._default
+            )
+            prompt.content_control._format_choices()
+            return prompt
 
 
 def model_select_funct(prompt):
