@@ -13,7 +13,7 @@ on:
     tags: ["*.*.*"]
 
 jobs:
-  release_ghcr: 
+  release_ghcr:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -25,21 +25,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: login to ghcr
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -48,25 +48,28 @@ jobs:
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata ghrc.io
         id: meta2
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/datawhores/of-scraper
           tags: |
-            type=raw,value={{branch}}
-            type=raw,value={{branch}}-{{sha}}
-
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
       - name: push to image ghrc.io
         id: build-and-push2
-        uses: docker/build-push-action@v4
+        uses: docker/bake-action@v5
         with:
-          context: .
-          tags: ${{ steps.meta2.outputs.tags }}
-          labels: ${{ steps.meta2.outputs.labels }}
-          cache-to: type=gha,mode=max
+          files: |
+            ./bake-daily.hcl
+            ${{ steps.meta2.outputs.bake-file }}
           push: true
 
-  release_github:
+  release_dockerhub:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -78,21 +81,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -101,26 +104,30 @@ jobs:
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata for Docker Hub
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             datawhores/of-scraper
           tags: |
-            type=raw,value={{branch}}
-            type=raw,value={{branch}}-{{sha}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: push to image Docker Hub
         id: build-and-push
-        uses: docker/build-push-action@v4
+        uses: docker/bake-action@v5
         with:
-          context: .
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-to: type=gha,mode=max
+          files: |
+            ./bake-daily.hcl
+            ${{ steps.meta.outputs.bake-file }}
           push: true
 
       - name: cosign-installer Docker Hub
-        uses: sigstore/cosign-installer@v3.0.5
+        uses: sigstore/cosign-installer@v3
 
       - name: Write signing key to disk Docker Hub
         run: 'echo "$KEY" > cosign.key'
