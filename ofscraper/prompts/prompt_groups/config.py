@@ -104,6 +104,7 @@ def funct(prompt_):
     enable_auto_after: whether to dynamically set --after: default True
     default_user_list: default user list for --action
     default_black_list: default black list for --action
+    logs_expire_time: max age for a log before it is autodeleted
     remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
@@ -632,6 +633,20 @@ List are case insensitive\n
                 "name": "default_black_list",
                 "message": "Default User Black Lists",
                 "default": data.get_default_blacklist(),
+                "option_instruction": """
+A comma seperated list of userlists to set as black listed
+Main user list with all active+expired users can be called main or ofscraper.main
+Active user list can be called active or ofscraper.active
+Expired user list can be called expired or ofscraper.expired
+List are case insensitive\n
+""",
+            },
+
+                        {
+                "type": "input",
+                "name": "logs_expire_time",
+                "message": "Logs expire Time",
+                "default": data.get_logs_expire_time(),
                 "option_instruction": """
 A comma seperated list of userlists to set as black listed
 Main user list with all active+expired users can be called main or ofscraper.main

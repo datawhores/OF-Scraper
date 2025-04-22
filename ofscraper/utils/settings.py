@@ -98,6 +98,7 @@ def setup_settings(mediatype):
     )
     merged.auto_resume = get_auto_resume(mediatype)
     merged.cached_disabled = get_auto_after_enabled()
+    merged.logs_expire_time=config_data.get_logs_expire()
 
     return merged
 

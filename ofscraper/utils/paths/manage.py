@@ -1,8 +1,10 @@
 import logging
 import shutil
+import arrow
 import traceback
-
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
+
 
 
 def make_folders():
@@ -26,3 +28,23 @@ def copy_path(source, dst):
         shutil.copy(source, dst)
     except Exception as e:
         raise e
+
+
+
+
+def delete_old_logs():
+    """
+    Recursively finds and deletes .log files in the specified folder
+    that are older than the given maximum age
+    """
+    log_path = common_paths.get_log_folder()
+    now = arrow.now().float_timestamp
+    if not settings.get_settings().logs_expire_time:
+        return
+    for log_file in log_path.rglob("*.log"):  # rglob for recursive globbing
+        try:
+            if (now - log_file.stat().st_mtime) > settings.get_settings().logs_expire_time:
+                log_file.unlink()  # pathlib's way to delete a file
+                print(f"Deleted old log file: {log_file}")
+        except OSError as e:
+            print(f"Error deleting file {log_file}: {e}")

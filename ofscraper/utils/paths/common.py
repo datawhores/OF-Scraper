@@ -78,21 +78,24 @@ def getlogpath():
     path = None
     if not data.get_appendlog():
         path = (
-            get_config_home()
-            / "logging"
+            get_log_folder()
             / f'{data.get_main_profile()}_{dates_manager.getLogDate().get("day")}'
             / f'ofscraper_{data.get_main_profile()}_{dates_manager.getLogDate().get("now")}.log'
         )
     else:
         path = (
-            get_config_home()
-            / "logging"
+           get_log_folder()
             / f'ofscraper_{data.get_main_profile()}_{dates_manager.getLogDate().get("day")}.log'
         )
     path = pathlib.Path(path).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
+
+def get_log_folder():
+    return (
+            get_config_home()
+            / "logging")
 
 def get_profile_path(name=None):
     if name:
