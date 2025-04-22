@@ -151,9 +151,6 @@ class scraperManager(commmandManager):
         )
 
 
-
-
-
 def main():
     try:
         print_start()
@@ -183,6 +180,8 @@ def main():
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 raise E
+
+
 def daemon_process():
     checkers.check_auth()
     worker_thread = None
@@ -236,6 +235,8 @@ def process_prompts():
             break
         elif prompts.continue_prompt() == "No":
             break
+
+
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
     scrapingManager = scraperManager()
@@ -254,6 +255,7 @@ def process_selected_areas():
             scrapingManager.runner()
             menu.update_count()
 
+
 def scrapper():
     global selectedusers
     selectedusers = None
@@ -266,6 +268,7 @@ def scrapper():
         process_selected_areas()
     elif len(args.action) == 0:
         process_prompts()
+
 
 def print_start():
     console.get_shared_console().print(

@@ -26,7 +26,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.main.close.final.final import final
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.main.manager as manager
-
+import ofscraper.utils.settings as settings
 
 def manual_download(urls=None):
     try:

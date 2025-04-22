@@ -23,8 +23,6 @@ import ofscraper.main.manager as manager
 log = logging.getLogger("shared")
 
 
-
-
 class basePlaceholder:
     def __init__(self) -> None:
         self._ele = None

@@ -24,9 +24,8 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.prompts.utils.prompt_helpers as prompt_helpers
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
-
+import ofscraper.utils.settings as settings
 console = Console()
 models = None
 
@@ -279,10 +278,10 @@ def modify_promo_prompt(args):
                     "message": f"Filter accounts presence of {'Any Promotions' if promo_type=='all_promo' else 'Claimable Promotions'}",
                     "default": (
                         True
-                        if read_args.retriveArgs()[promo_type]
+                        if settings.get_args()[promo_type]
                         else (
                             False
-                            if read_args.retriveArgs()[promo_type] is False
+                            if settings.get_args()[promo_type] is False
                             else None
                         )
                     ),

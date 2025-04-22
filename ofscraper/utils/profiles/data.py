@@ -1,9 +1,9 @@
 import re
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.profiles.tools as tools
+import ofscraper.utils.settings as settings
 
 currentProfile = None
 currentData = None

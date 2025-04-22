@@ -1,6 +1,3 @@
-import ofscraper.utils.args.accessors.read as read_args
-
-
 def get_allowed_qualities():
     qualities = {"source": 4000, "240": 240, "720": 720}
     minQuality = settings.get_settings().quality or "source"

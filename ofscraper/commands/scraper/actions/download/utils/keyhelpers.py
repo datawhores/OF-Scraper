@@ -16,7 +16,9 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
-from ofscraper.commands.scraper.actions.utils.retries import get_cmd_download_req_retries
+from ofscraper.commands.scraper.actions.utils.retries import (
+    get_cmd_download_req_retries,
+)
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import run
 

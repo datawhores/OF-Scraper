@@ -19,7 +19,6 @@ import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.main.manager as manager
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
@@ -57,7 +56,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         splitArrays = get_split_array(filteredArray)
         # Set charged sleeper
         get_sleeper(reset=True)
-        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c,after)
+        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after)
         data = await process_tasks(tasks)
     elif len(settings.get_settings().post_id or []) <= constants.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
@@ -214,7 +213,7 @@ def get_split_array(filteredArray):
     ]
 
 
-def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c,after):
+def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after):
     tasks = []
     # special case pass after to stop work
     if len(splitArrays) > 2:

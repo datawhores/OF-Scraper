@@ -21,7 +21,6 @@ from urllib.parse import urlparse
 
 import arrow
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

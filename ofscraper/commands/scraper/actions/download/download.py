@@ -29,9 +29,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.scraper.actions.download.run import consumer
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
-import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.areas import get_download_area
 from ofscraper.utils.args.accessors.command import get_command
+import ofscraper.utils.settings as settings
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):

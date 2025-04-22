@@ -19,8 +19,7 @@ def story_check_args(func):
     It presents this data in a table format with filtering options for focused searches 
     Allows unlocked media entries to be directly downloaded through the table
     """,
-        show_constraints=True
-
+        show_constraints=True,
     )
     @username_group
     @force

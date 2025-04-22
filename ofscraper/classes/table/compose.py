@@ -77,7 +77,6 @@ def composer():
                 yield SizeMinField("Download_Size_Min")
                 yield SizeMaxField("Download_Size_Max")
 
-
             with Sidebar(id="page_option_sidebar", classes="-hidden"):
                 yield Button("Enter", id="page_enter")
                 for ele in ["Page"]:

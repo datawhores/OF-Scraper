@@ -1,7 +1,6 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
-import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
@@ -241,6 +240,7 @@ def filterCheckMode(media, username, model_id):
     # no filtering for now
     return media
 
+
 def trace_log_media(count, media, filter_str):
     if not is_trace():
         return
@@ -251,6 +251,8 @@ def trace_log_media(count, media, filter_str):
                 filter_str, count, ele.id, ele.postid, ele.media, ele.media
             )
         )
+
+
 def trace_log_post(count, media, filter_str):
     if not is_trace():
         return
@@ -260,4 +262,5 @@ def trace_log_post(count, media, filter_str):
         log.trace(
             "{} current item  count: {} postid: {} data: {} \n\n".format(
                 filter_str, count, ele.id, ele.post
-            ))
+            )
+        )

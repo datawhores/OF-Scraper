@@ -15,12 +15,10 @@ import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.leaky import CHUNK_SIZE
 
 
-
 def get_chunk_size():
     """
     get chunk size in bytes
     """
-    if settings.get_settings().download_limit <=0:
+    if settings.get_settings().download_limit <= 0:
         return CHUNK_SIZE
     return min(CHUNK_SIZE, settings.get_settings().download_limit)
-  

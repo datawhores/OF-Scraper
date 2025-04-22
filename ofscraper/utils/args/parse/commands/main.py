@@ -10,8 +10,7 @@ import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
     help="OF-Scraper Options",
     context_settings=dict(help_option_names=["-h", "--help"]),
     invoke_without_command=True,
-    show_constraints=True
-
+    show_constraints=True,
 )
 @common_args
 @main_program_args

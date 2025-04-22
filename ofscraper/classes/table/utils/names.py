@@ -17,12 +17,14 @@ col_names = (
     "Text",
 )
 
-input_only_names=("num_per_page","page")
+input_only_names = ("num_per_page", "page")
+
 
 def get_col_names():
     for ele in col_names:
         yield ele.lower()
 
+
 def get_input_names():
-    for ele in [*col_names,*input_only_names]:
+    for ele in [*col_names, *input_only_names]:
         yield ele.lower()

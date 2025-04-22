@@ -19,7 +19,6 @@ from functools import partial
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.paths.media as media
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
@@ -33,6 +32,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.constants as constants
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
+
 
 class MetaDataManager:
 

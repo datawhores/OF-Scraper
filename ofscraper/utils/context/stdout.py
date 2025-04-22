@@ -6,6 +6,7 @@ import ofscraper.utils.constants as constants
 
 import ofscraper.utils.settings as settings
 
+
 @contextlib.contextmanager
 def lowstdout():
     if settings.get_settings().output_level in constants.getattr("SUPRESS_OUTPUTS"):

@@ -5,7 +5,6 @@ from collections import defaultdict
 
 import arrow
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
@@ -106,9 +105,9 @@ def posts_date_filter_media(media):
 
 
 def download_type_filter(media):
-    if settings.get_settings().download_type=="protected":
+    if settings.get_settings().download_type == "protected":
         return list(filter(lambda x: x.protected, media))
-    elif settings.get_settings().download_type=="normal":
+    elif settings.get_settings().download_type == "normal":
         return list(filter(lambda x: not x.protected, media))
     else:
         return media

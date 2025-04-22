@@ -324,14 +324,14 @@ class InputApp(App):
         if settings.get_settings().unlocked:
             self.query_one("#unlocked").select_true()
 
-        elif settings.get_settings().unlocked == False:
+        elif settings.get_settings().unlocked is False:
             self.query_one("#unlocked").select_false()
 
     def _set_downloaded(self):
         if settings.get_settings().downloaded:
             self.query_one("#downloaded").select_true()
 
-        elif settings.get_settings().downloaded == False:
+        elif settings.get_settings().downloaded is False:
             self.query_one("#downloaded").select_false()
 
     def _set_length(self):
@@ -343,7 +343,6 @@ class InputApp(App):
             self.query_one("#length").update_table_min(
                 settings.get_settings().length_min
             )
-
 
     def _set_date_filter(self):
         if settings.get_settings().posted_after:
@@ -357,11 +356,9 @@ class InputApp(App):
 
     def _set_download_type(self):
         if settings.get_settings().protected:
-            self.query_one("#download_type").select_protected(
-            )
+            self.query_one("#download_type").select_protected()
         if settings.get_settings().normal:
-            self.query_one("#download_type").select_normal(
-            )
+            self.query_one("#download_type").select_normal()
 
     # download_filters
     def init_download_filter(self):
@@ -464,7 +461,7 @@ class InputApp(App):
         )
         if len(self._filtered_rows) == 0:
             self.query(".search_info")[2].update(
-                f"[bold blue]Additional Info[/bold blue]: All Items Filtered"
+                "[bold blue]Additional Info[/bold blue]: All Items Filtered"
             )
 
     def update_cart_info(self):

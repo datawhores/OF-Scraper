@@ -5,8 +5,7 @@ import copy
 import arrow
 import asyncio
 
-import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
+import ofscraper.utils.settings as settings
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -55,13 +54,14 @@ from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
-log = logging.getLogger("shared")
 
+log = logging.getLogger("shared")
 
 
 class metadataCommandManager(commmandManager):
     def __init__(self):
         super().__init__()
+
     @run_async
     async def process_users_metadata_normal(self, userdata, session):
         user_action_funct = self._get_user_action_function(
@@ -86,7 +86,7 @@ class metadataCommandManager(commmandManager):
 
     @run_async
     async def metadata_paid_all(self):
-        old_args = copy.deepcopy(read_args.retriveArgs())
+        old_args = copy.deepcopy(settings.get_args())
         self._force_change_metadata()
         out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
 
@@ -100,13 +100,13 @@ class metadataCommandManager(commmandManager):
                 log_progress=all_paid_progress_metadata_str,
             )
             out.append(await process_user(value, length))
-        write_args.setArgs(old_args)
+        settings.update_settings(old_args)
         return out
 
     def _force_change_metadata(self):
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         args.metadata = args.scrape_paid
-        write_args.setArgs(args)
+        settings.update_settings(args)
 
     async def _execute_metadata_action_on_user(
         self, *args, ele=None, media=None, **kwargs
@@ -139,7 +139,7 @@ class metadataCommandManager(commmandManager):
             return
         all_media = []
         curr_media_set = set(map(lambda x: str(x.id), media))
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         progress_updater.update_activity_task(
             description=mark_stray_str.format(username=username)
         )
@@ -290,6 +290,7 @@ def metadata():
             userdata, session = prepare()
             userfirst_data = metaCommandManager.metadata_user_first(userdata, session)
     final(normal_data, scrape_paid_data, userfirst_data, userdata)
+
 
 @run
 async def process_dicts(username, model_id, medialist):

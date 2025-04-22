@@ -5,12 +5,12 @@ import time
 import traceback
 from functools import partial
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
 import ofscraper.main.manager as manager
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 

@@ -17,7 +17,6 @@ import random
 import time
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -25,6 +24,7 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 warning_str = "\n[red]Current Like rate can eat through the ~1000 like limit in ~1 hour\nIncreasing the rate could lead to getting logged out[/red]"

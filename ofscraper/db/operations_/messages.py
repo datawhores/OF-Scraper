@@ -21,8 +21,8 @@ from rich.console import Console
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.profile import get_single_model_via_profile
+import ofscraper.utils.settings as settings
 
 console = Console()
 log = logging.getLogger("shared")

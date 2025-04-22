@@ -8,7 +8,6 @@ import traceback
 import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 
 

@@ -1,8 +1,7 @@
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as const
 from ofscraper.utils.args.accessors.command import get_command
 from ofscraper.utils.args.accessors.actions import get_actions
-
+import ofscraper.utils.settings as settings
 
 def get_like_area():
     post = None

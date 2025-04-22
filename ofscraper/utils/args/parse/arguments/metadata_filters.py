@@ -90,9 +90,7 @@ preview_option = click.option(
 )
 
 
-
-
-download_type_option=preview_option = click.option(
+download_type_option = preview_option = click.option(
     "-no/-to",
     "--normal-only/--protected_only",
     "download_type_filter",

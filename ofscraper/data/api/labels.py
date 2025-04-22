@@ -16,12 +16,12 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 API = "labels"

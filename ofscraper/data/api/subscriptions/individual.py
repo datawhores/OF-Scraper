@@ -17,10 +17,10 @@ import traceback
 
 import ofscraper.data.api.profile as profile
 import ofscraper.main.manager as manager
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 

@@ -31,7 +31,7 @@ from ofscraper.utils.args.parse.arguments.metadata_filters import (
     created_before,
     posted_after,
     posted_before,
-    download_type_option
+    download_type_option,
 )
 
 
@@ -52,8 +52,7 @@ def db_args(func):
         "db",
         help="Print information from the database",
         short_help="print information from the database",
-            show_constraints=True
-
+        show_constraints=True,
     )
     @click.option(
         "-ep",
@@ -88,7 +87,6 @@ def db_args(func):
         preview_option,
         downloaded_option,
         download_type_option,
-       
         posted_before,
         posted_after,
         created_before,

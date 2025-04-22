@@ -45,8 +45,7 @@ def metadata_args(func):
         help="""
 Uses API to modify db files without the need for downloading
 """,
-    show_constraints=True
-
+        show_constraints=True,
     )
     @click.option_group(
         "metadata_options",

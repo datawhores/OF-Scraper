@@ -25,7 +25,6 @@ import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.settings as settings
 
 
-
 def logger_process(input_, name=None, stop_count=1, event=None, s=None):
     # create a logger
     # the thread must stay alive while processing pipe

@@ -1,7 +1,8 @@
 from aiolimiter import AsyncLimiter
 import ofscraper.utils.settings as settings
 
-CHUNK_SIZE = 10*1024*1024
+CHUNK_SIZE = 10 * 1024 * 1024
+
 
 class LeakyBucket(AsyncLimiter):
     def __init__(self, *args, **kwargs):
@@ -11,8 +12,3 @@ class LeakyBucket(AsyncLimiter):
         if settings.get_settings().download_limit <= 0:
             return
         await super().acquire(amount or CHUNK_SIZE)
-    
-        
-
-
-    

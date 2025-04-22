@@ -3,7 +3,6 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 
 
-
 class SizeMaxField(PostiveNumField):
     def compose(self):
         yield self.Field(

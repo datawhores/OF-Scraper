@@ -4,9 +4,8 @@ import os
 from humanfriendly import format_size
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
-
+import ofscraper.utils.settings as settings
 
 def get_medialog(ele):
     if not ele:

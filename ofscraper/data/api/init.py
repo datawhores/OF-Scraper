@@ -14,9 +14,8 @@ r"""
 import logging
 import traceback
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
-
+import ofscraper.utils.settings as settings
 from . import me
 
 log = logging.getLogger("shared")

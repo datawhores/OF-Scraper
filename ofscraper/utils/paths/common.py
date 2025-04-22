@@ -2,13 +2,13 @@ import os
 import pathlib
 
 import ofscraper.const.constants as constants
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.constants as constants_attr
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.tools as tools
+import ofscraper.utils.settings as settings
 
 
 def getcachepath():

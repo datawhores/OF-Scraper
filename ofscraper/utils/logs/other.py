@@ -145,7 +145,10 @@ def updateOtherLoggerStream():
             mode="a",
         )
         log_globals.otherqueue_.put_nowait(stream)
-    if settings.get_settings().discord_level and settings.get_settings().discord_level != "OFF":
+    if (
+        settings.get_settings().discord_level
+        and settings.get_settings().discord_level != "OFF"
+    ):
         temp = DiscordHandler()
         log_globals.otherqueue_.put_nowait(temp._url)
 

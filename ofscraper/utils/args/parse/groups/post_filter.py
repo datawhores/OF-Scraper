@@ -11,7 +11,7 @@ from ofscraper.utils.args.parse.arguments.post_content import (
     mass_msg_option,
     timed_only_option,
     posts_option,
-    download_type_option
+    download_type_option,
 )
 
 post_filter_options_desc = "Posts Filters Options"

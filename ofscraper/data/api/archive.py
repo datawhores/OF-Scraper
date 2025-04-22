@@ -19,7 +19,6 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings

@@ -30,7 +30,6 @@ import ofscraper.classes.of.media as media
 import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -50,6 +49,7 @@ from ofscraper.utils.args.accessors.areas import (
     get_text_area,
 )
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 

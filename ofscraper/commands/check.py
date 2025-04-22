@@ -414,7 +414,7 @@ def reset_data():
     # clean up args once check modes are ready to launch
     args = read_args.retriveArgs()
     if args.username:
-        args.username=settings.get_settings().usernames = None
+        args.username = settings.get_settings().usernames = None
     settings.update_settings(args)
 
 
@@ -706,11 +706,13 @@ def unlocked_helper(ele):
 
 
 def download_type_helper(ele):
-   if ele.mpd:
-       return "protected"
-   elif ele.url:
-       return "normal"
-   return "n/a"
+    if ele.mpd:
+        return "protected"
+    elif ele.url:
+        return "normal"
+    return "n/a"
+
+
 def datehelper(date):
     if date == "None":
         return "Probably Deleted"
@@ -755,7 +757,7 @@ async def row_gather(username, model_id):
                 "username": username,
                 "downloaded": (ele.id, ele.postid) in downloaded,
                 "unlocked": unlocked_helper(ele),
-                "download_type":download_type_helper(ele),
+                "download_type": download_type_helper(ele),
                 "other_posts_with_media": times_helper(ele, media_dict),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,

@@ -12,7 +12,6 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
 
-
 logs = deque()
 close_event = None
 sleep = None

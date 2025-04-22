@@ -5,10 +5,10 @@ import ofscraper.data.api.subscriptions.lists as lists
 import ofscraper.data.api.subscriptions.subscriptions as subscriptions
 import ofscraper.data.models.models as models
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
 from ofscraper.utils.live.updater import update_activity_task
+import ofscraper.utils.settings as settings
 
 
 async def get_models() -> list:

@@ -30,8 +30,9 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
     posted_after,
     posted_before,
-    download_type_option
+    download_type_option,
 )
+
 
 def main_check(func):
     @force
@@ -67,7 +68,6 @@ def common_args_check(func):
         media_desc_option,
         posted_after,
         posted_before,
-
         download_type_option,
         help="Filters for controlling the initial table view",
     )

@@ -1,6 +1,5 @@
 import logging
 
-import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check

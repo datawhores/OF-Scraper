@@ -19,9 +19,9 @@ from rich.console import Console
 from xxhash import xxh128
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 
 from ...utils import encoding
 

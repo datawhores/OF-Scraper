@@ -21,7 +21,7 @@ class base:
         length = int(settings.get_settings(mediatype=self.mediatype).text_length)
         if length == 0:
             return text
-        elif settings.get_settings(mediatype=self.mediatype).text_type== "letter":
+        elif settings.get_settings(mediatype=self.mediatype).text_type == "letter":
             return f"{''.join(list(text)[:length])}"
         else:
             # split and reduce
@@ -37,7 +37,9 @@ class base:
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
-        text = re.sub(" ", settings.get_settings(mediatype=mediatype).space_replacer, text)
+        text = re.sub(
+            " ", settings.get_settings(mediatype=mediatype).space_replacer, text
+        )
         return text
 
     def db_cleanup(self, string):

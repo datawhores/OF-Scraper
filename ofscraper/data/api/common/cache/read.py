@@ -1,5 +1,5 @@
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.settings as settings
 
 
 def read_full_after_scan_check(model_id, api):

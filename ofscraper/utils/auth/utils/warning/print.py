@@ -19,7 +19,9 @@ def print_auth_warning(auth=None):
         )
     )
     console.get_console().print_json(json.dumps(auth))
-    console.get_console().print(f"[bold] Dynamic Rule: {settings.get_settings().dynamic_rules}")
+    console.get_console().print(
+        f"[bold] Dynamic Rule: {settings.get_settings().dynamic_rules}"
+    )
     console.get_console().print(
         textwrap.dedent(
             """
