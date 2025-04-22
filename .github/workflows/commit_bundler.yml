@@ -4,7 +4,7 @@ permissions: read-all
 jobs:
   get_commit:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       long: ${{ steps.commit.outputs.long}}
       short: ${{ steps.commit.outputs.short}}
@@ -23,7 +23,7 @@ jobs:
   create_version:
     needs: [get_commit]
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: create version doc
     steps:
       - name: Checkout
@@ -60,7 +60,7 @@ jobs:
   linux_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version, get_commit]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: create linux release file
     steps:
       - name: Checkout
@@ -118,7 +118,7 @@ jobs:
   linux_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version, get_commit]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: create linux release zip
     steps:
       - name: Checkout

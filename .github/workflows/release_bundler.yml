@@ -20,7 +20,7 @@ on:
         type: boolean
 jobs:
   get_date:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ inputs.files}}
     name: get_date
     steps:
@@ -31,7 +31,7 @@ jobs:
       date: ${{ steps.date.outputs.date}}
 
   get_commit:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       long: ${{ steps.commit.outputs.long}}
       short: ${{ steps.commit.outputs.short}}
@@ -49,7 +49,7 @@ jobs:
         id: commit
   create_version:
     needs: [get_date, get_commit]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ inputs.files}}
     name: create version doc
     steps:
@@ -84,7 +84,7 @@ jobs:
 
   linux_file:
     needs: [create_version, get_date, get_commit]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: create linux release file
     steps:
       - name: Checkout
@@ -143,7 +143,7 @@ jobs:
 
   linux_dir:
     needs: [create_version, get_date, get_commit]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: create linux release zip
     steps:
       - name: Checkout
