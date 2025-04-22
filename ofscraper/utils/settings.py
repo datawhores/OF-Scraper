@@ -2,6 +2,8 @@ import shutil
 
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
+import ofscraper.utils.args.mutators.write as write_args
+
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.args.accessors.areas import get_text_area
@@ -13,7 +15,8 @@ def get_args():
     return read_args.retriveArgs()
 
 
-def update_args():
+def update_args(args):
+    write_args.setArgs(args)
     for key in settings.keys():
         settings[key] = setup_settings(key)
 
