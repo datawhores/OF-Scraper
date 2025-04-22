@@ -102,7 +102,7 @@ def print_latest_version():
                     "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
                 )
             elif ".dev" in __version__:
-                log.error("OF-Scraper up to date[/bold yellow]")
+                log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
             else:
                 log.error(
                     f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
