@@ -122,7 +122,7 @@ def model_funct(prompt):
         with stdout.nostdout():
             choices = _get_choices()
         if len(choices)==0:
-            console.print("Model list filtered to zero")
+            console.print("Current filters return zero models")
             continue
         with stdout.nostdout():
             selectedSet = set(

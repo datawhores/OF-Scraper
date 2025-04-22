@@ -220,7 +220,7 @@ class ModelManager:
     Renewal Price Filter: {settings.get_settings().renewal_price or 'No Filter'}
 
     [ALT+D] More Filters
-
+gi
     """
             )
 
