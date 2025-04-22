@@ -3,6 +3,7 @@ import logging
 from ofscraper.filters.models.utils.logs import trace_log_user
 import ofscraper.utils.settings as settings
 
+
 def subType(filterusername):
     log = logging.getLogger("shared")
     log.debug(f"Renewal: {settings.get_settings().renewal}")

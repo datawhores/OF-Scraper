@@ -7,6 +7,7 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
+
 def get_medialog(ele):
     if not ele:
         return ""

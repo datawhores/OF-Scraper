@@ -15,6 +15,7 @@ import traceback
 import ofscraper.main.manager as manager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+
 log = logging.getLogger("shared")
 
 

@@ -18,6 +18,7 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.system.free as free
 import ofscraper.utils.settings as settings
 
+
 def reset_download():
     args = read_args.retriveArgs()
 

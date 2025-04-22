@@ -28,6 +28,7 @@ from ofscraper.commands.scraper.actions.download.utils.text import textDownloade
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 
+
 def manual_download(urls=None):
     try:
         network.check_cdm()

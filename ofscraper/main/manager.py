@@ -48,7 +48,12 @@ class mainManager:
             self.model_manager = ModelManager()
 
     def pick(self):
-        if settings.get_settings().command in ["post_check", "msg_check", "paid_check", "story_check"]:
+        if settings.get_settings().command in [
+            "post_check",
+            "msg_check",
+            "paid_check",
+            "story_check",
+        ]:
             check.checker()
         elif settings.get_settings().command == "metadata":
             metadata.process_selected_areas()

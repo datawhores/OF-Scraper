@@ -3,6 +3,7 @@ import logging
 from ofscraper.filters.models.utils.logs import trace_log_user
 import ofscraper.utils.settings as settings
 
+
 def promoFilterHelper(filterusername):
     log = logging.getLogger("shared")
 

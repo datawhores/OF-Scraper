@@ -1,6 +1,7 @@
 import ofscraper.utils.constants as const
 import ofscraper.utils.settings as settings
 
+
 def get_like_area():
     post = None
     all_choices = ["Archived", "Timeline", "Pinned", "Streams"]

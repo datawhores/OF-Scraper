@@ -4,6 +4,7 @@ import arrow
 from InquirerPy.base import Choice
 import ofscraper.utils.settings as settings
 
+
 def model_selectorHelper(count, x):
     return Choice(
         x,

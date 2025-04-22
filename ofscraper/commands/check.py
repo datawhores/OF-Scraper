@@ -168,15 +168,15 @@ def update_globals(model_id, username, post, media, values):
 
 @run
 async def data_refill(media_id, post_id, target_name, model_id):
-    if settings.get_settings().command== "msg_check":
+    if settings.get_settings().command == "msg_check":
         reset_message_set(model_id)
         retriver = message_check_retriver
-    elif settings.get_settings().command== "paid_check":
+    elif settings.get_settings().command == "paid_check":
         reset_paid_set(model_id)
         retriver = purchase_check_retriver
-    elif settings.get_settings().command== "story_check":
+    elif settings.get_settings().command == "story_check":
         retriver = stories_check_retriver
-    elif settings.get_settings().command== "post_check":
+    elif settings.get_settings().command == "post_check":
         reset_time_line_cache(model_id)
         retriver = post_check_retriver
     else:
@@ -201,13 +201,13 @@ def checker():
     allow_check_dupes()
     set_after_check_mode()
     try:
-        if settings.get_settings().command== "post_check":
+        if settings.get_settings().command == "post_check":
             post_checker()
-        elif settings.get_settings().command== "msg_check":
+        elif settings.get_settings().command == "msg_check":
             message_checker()
-        elif settings.get_settings().command== "paid_check":
+        elif settings.get_settings().command == "paid_check":
             purchase_checker()
-        elif settings.get_settings().command== "story_check":
+        elif settings.get_settings().command == "story_check":
             stories_checker()
     except Exception as E:
         log.traceback_(E)

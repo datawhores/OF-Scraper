@@ -1,6 +1,8 @@
 import ofscraper.utils.constants as constants
 
 import ofscraper.utils.settings as settings
+
+
 def in_check_mode():
     return settings.get_settings().command.find("_check") != -1
 

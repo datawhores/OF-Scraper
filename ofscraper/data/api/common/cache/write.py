@@ -2,6 +2,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
+
 def set_after_checks(model_id, api):
     api = api.lower()
     set_full_after_scan_check(model_id, api)

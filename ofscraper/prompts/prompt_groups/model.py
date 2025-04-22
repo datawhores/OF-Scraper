@@ -26,6 +26,7 @@ import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.prompts.utils.prompt_helpers as prompt_helpers
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+
 console = Console()
 models = None
 
@@ -280,9 +281,7 @@ def modify_promo_prompt(args):
                         True
                         if settings.get_args()[promo_type]
                         else (
-                            False
-                            if settings.get_args()[promo_type] is False
-                            else None
+                            False if settings.get_args()[promo_type] is False else None
                         )
                     ),
                     "choices": [
