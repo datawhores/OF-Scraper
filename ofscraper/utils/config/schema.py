@@ -99,21 +99,27 @@ def config_diff(config):
     if config.get("config"):
         config = config["config"]
     schema = get_current_config_schema()
-    return config_diff_helper(config, schema)
+    return _config_diff_helper(config, schema)
 
-
-def config_diff_helper(config, schema, key=None):
-    if key:
-        config = config[key]
-        schema = schema[key]
-    diff = set(schema.keys()) - set(config.keys())
-    if len(diff) > 0:
+def _config_diff_helper(config, schema):
+    # Check for keys in schema but missing in config
+    if set(schema.keys()) - set(config.keys()):
         return True
-    for key in schema.keys():
-        if not isinstance(schema[key], dict):
-            continue
-        elif not isinstance(config[key], dict):
-            return True
-        elif config_diff_helper(config, schema, key):
-            return True
+
+    # Check for keys in config but missing in schema
+    if set(config.keys()) - set(schema.keys()):
+        return True
+
+    for key, schema_value in schema.items():
+        if key in config:
+            config_value = config[key]
+            if isinstance(schema_value, dict):
+                if not isinstance(config_value, dict):
+                    return True
+                if _config_diff_helper(config_value, schema_value):
+                    return True
+            elif schema_value != config_value:  # Simple value comparison
+                return True
+        # Keys missing from config are already handled above
+
     return False
