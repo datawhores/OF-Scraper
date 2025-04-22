@@ -49,7 +49,7 @@ def setLogger():
     logger.get_shared_logger()
     logs.discord_warning()
     logger.start_threads()
-    paths_manage.delete_old_logs()
+    paths_manage.cleanup_logs()
 
 def systemSet():
     system.setName()

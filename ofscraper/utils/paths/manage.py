@@ -4,7 +4,10 @@ import arrow
 import traceback
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
+import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.console as console_
 
+console=console_.get_shared_console()
 
 
 def make_folders():
@@ -30,12 +33,20 @@ def copy_path(source, dst):
         raise e
 
 
-
+def cleanup_logs():
+    """
+    Performs actions to cleanup logs
+    """
+    with stdout.lowstdout():
+        delete_old_logs()
+        delete_empty_folders()
 
 def delete_old_logs():
     """
     Recursively finds and deletes .log files in the specified folder
     that are older than the given maximum age
+
+    Also cleans up folder
     """
     log_path = common_paths.get_log_folder()
     now = arrow.now().float_timestamp
@@ -45,6 +56,22 @@ def delete_old_logs():
         try:
             if (now - log_file.stat().st_mtime) > settings.get_settings().logs_expire_time:
                 log_file.unlink()  # pathlib's way to delete a file
-                print(f"Deleted old log file: {log_file}")
+                console.print(f"Deleted old log file: {log_file}")
         except OSError as e:
-            print(f"Error deleting file {log_file}: {e}")
+            console.print(f"Error deleting file {log_file}: {e}")
+def delete_empty_folders():
+    """
+    Recursively finds and deletes empty folders within thelog folder.
+
+    """
+    log_path = common_paths.get_log_folder()
+
+    # Iterate through all directories within the log folder and its subdirectories
+    for folder in sorted(log_path.rglob("*"), key=lambda p: len(str(p)), reverse=True):
+        if folder.is_dir() and not any(folder.iterdir()):
+            try:
+                folder.rmdir()
+                console.print(f"Deleted empty folder: {folder}")
+            except OSError as e:
+                console.print(f"Error deleting folder {folder}: {e}")
+
