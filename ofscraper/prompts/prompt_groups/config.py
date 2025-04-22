@@ -104,7 +104,8 @@ def funct(prompt_):
     enable_auto_after: whether to dynamically set --after: default True
     default_user_list: default user list for --action
     default_black_list: default black list for --action
-    logs_expire_time: max age for a log before it is autodeleted
+    logs_expire_time: max age for a log before it is autodelete
+    ssl_validation: option for whether to validate ssl certificates
     remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
@@ -646,13 +647,20 @@ List are case insensitive\n
                 "type": "input",
                 "name": "logs_expire_time",
                 "message": "Logs expire Time",
-                "default": data.get_logs_expire_time(),
+                "default": data.get_logs_expire(),
                 "option_instruction": """
-A comma seperated list of userlists to set as black listed
-Main user list with all active+expired users can be called main or ofscraper.main
-Active user list can be called active or ofscraper.active
-Expired user list can be called expired or ofscraper.expired
-List are case insensitive\n
+Logs will auto delete after the selected amount of time has passed
+If value is 'None' or '0' no logs will be touched
+""",
+            },
+
+             {
+                "type": "input",
+                "name": "ssl_validation",
+                "message": "ssl validation",
+                "default": data.get_ssl_validation(),
+                "option_instruction": """
+Option to disable ssl certificate validation
 """,
             },
             {

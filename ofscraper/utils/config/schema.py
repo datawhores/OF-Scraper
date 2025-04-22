@@ -64,7 +64,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "enable_auto_after": data.get_enable_after(config=config),
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
-            "logs_expire_time":data.get_logs_expire(config=config)
+            "logs_expire_time":data.get_logs_expire(config=config),
+            "ssl_validation":data.get_ssl_validation(config=config)
         },
         "scripts_options": {
             "post_download_script": data.get_post_download_script(config=config),
@@ -115,3 +116,4 @@ def config_diff_helper(config, schema, key=None):
             return True
         elif config_diff_helper(config, schema, key):
             return True
+    return False

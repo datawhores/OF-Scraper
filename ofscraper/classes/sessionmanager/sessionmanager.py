@@ -7,7 +7,6 @@ import time
 import traceback
 
 import aiohttp
-import aiohttp.client_exceptions
 import arrow
 import certifi
 import httpx
@@ -18,6 +17,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
+import ofscraper.utils.settings as settings
 
 TOO_MANY = "too_many"
 AUTH = "auth"
@@ -481,7 +481,7 @@ class sessionManager:
                             params=params,
                             json=json,
                             data=data,
-                            ssl=ssl.create_default_context(cafile=certifi.where()),
+                            ssl=False if not settings.get_settings().ssl_validation else ssl.create_default_context(cafile=certifi.where()),
                         )
                     else:
                         r = await self._httpx_funct_async(
