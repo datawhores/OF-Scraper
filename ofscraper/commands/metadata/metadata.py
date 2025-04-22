@@ -106,7 +106,7 @@ class metadataCommandManager(commmandManager):
     def _force_change_metadata(self):
         args = settings.get_args()
         args.metadata = args.scrape_paid
-        settings.update_settings(args)
+        settings.update_args(args)
 
     async def _execute_metadata_action_on_user(
         self, *args, ele=None, media=None, **kwargs

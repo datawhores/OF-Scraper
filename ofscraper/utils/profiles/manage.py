@@ -27,7 +27,7 @@ def change_profile():
     args = settings.get_args()
     # remove profile argument
     args.profile = None
-    settings.update_settings(args)
+    settings.update_args(args)
     print(f"[green]Successfully changed profile to[/green] {profile}")
 
 
@@ -76,7 +76,7 @@ def change_current_profile(new_profile, old_profile):
     args = settings.get_args()
     if args.profile == old_profile:
         args.profile = new_profile
-        settings.update_settings(args)
+        settings.update_args(args)
     # required because name has changed
     if old_profile == profile_data.get_current_config_profile():
         config_.update_config(constants.getattr("mainProfile"), new_profile)

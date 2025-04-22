@@ -15,7 +15,7 @@ class SizeMaxField(PostiveNumField):
         value = event.value if event.value else "0"
         args = read_args.retriveArgs()
         args.size_max = int(value)
-        settings.update_settings(args)
+        settings.update_args(args)
 
 
 class SizeMinField(PostiveNumField):
@@ -30,4 +30,4 @@ class SizeMinField(PostiveNumField):
         value = event.value if event.value else "0"
         args = read_args.retriveArgs()
         args.size_min = int(value)
-        settings.update_settings(args)
+        settings.update_args(args)

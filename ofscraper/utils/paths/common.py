@@ -53,7 +53,7 @@ def get_config_home():
 
 
 def get_config_path():
-    configPath = settings.get_settings().config
+    configPath = settings.get_args().config
     defaultPath = pathlib.Path.home() / constants.configPath / constants.configFile
     ofscraperHome = pathlib.Path.home() / constants.configPath
 

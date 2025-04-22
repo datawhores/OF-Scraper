@@ -30,7 +30,6 @@ from ofscraper.commands.scraper.actions.download.run import consumer
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
-from ofscraper.utils.args.accessors.command import get_command
 import ofscraper.utils.settings as settings
 
 
@@ -78,7 +77,7 @@ async def process_dicts(username, model_id, medialist, posts):
     common_globals.mainProcessVariableInit()
     if settings.get_settings().text_only:
         return log_text_array, (0, 0, 0, 0, 0)
-    elif get_command() in {
+    elif settings.get_settings().command in {
         "manual",
         "post_check",
         "msg_check",

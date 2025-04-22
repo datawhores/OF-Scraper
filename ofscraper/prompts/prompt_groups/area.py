@@ -19,8 +19,7 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.args.accessors.read as read_args
-from ofscraper.utils.args.accessors.command import get_command
-
+import ofscraper.utils.settings as settings
 
 def areas_prompt() -> list:
     args = read_args.retriveArgs()
@@ -31,7 +30,7 @@ def areas_prompt() -> list:
         message = "Which area(s) would you do you want to download and like"
     elif "unlike" in args.action and len(args.like_area) == 0:
         message = "Which area(s) would you do you want to download and unlike"
-    elif "download" in args.action and get_command() == "OF-Scraper":
+    elif "download" in args.action and settings.get_settings().command == "OF-Scraper":
         message = "Which area(s) would you do you want to download"
     more_instruction = (
         """Hint: Since you have Like or Unlike set

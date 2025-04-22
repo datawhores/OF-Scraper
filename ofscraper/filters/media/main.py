@@ -1,10 +1,8 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
-from ofscraper.utils.args.accessors.actions import get_actions
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.utils.args.accessors.command import get_command
 from ofscraper.utils.logs.utils.trace import is_trace
 
 
@@ -14,7 +12,7 @@ log = logging.getLogger("shared")
 def filtermediaFinal(media, username, model_id):
     actions = settings.get_settings().action
     scrape_paid = settings.get_settings().scrape_paid
-    if get_command() == "metadata":
+    if settings.get_settings().command == "metadata":
         return filterMediaFinalMetadata(media, username, model_id)
     elif "download" in actions or scrape_paid:
         return filterMediaFinalDownload(media, username, model_id)
@@ -80,7 +78,7 @@ def filtermediaAreas(media, **kwargs):
 
     actions = settings.get_settings().action
     scrape_paid = settings.get_settings().scrape_paid
-    if get_command() == "metadata":
+    if settings.get_settings().command == "metadata":
         return filterMediaAreasMetadata(media)
     elif "download" in actions or scrape_paid:
         return filterMediaAreasDownload(media)
@@ -217,7 +215,7 @@ def filterPostFinalText(post):
 
 def post_filter_for_like(post, like=False):
 
-    actions = get_actions()
+    actions = settings.get_settings().action
     if "like" not in actions and "unlike" not in actions:
         log.debug("Skipping filtering because like and unlike not in actions")
         return post
