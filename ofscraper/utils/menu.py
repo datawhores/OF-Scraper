@@ -44,9 +44,6 @@ def main_menu_action():
                 else:
                     count > 0 and reset_menu_helper()
                     scapingManager.runner(menu=True)
-                    # with prompt_live():
-                    #     #allow for final screen to remain
-                    #     input("Press Enter to Continue")
                     count = count + 1
 
             elif result_main_prompt == "auth":

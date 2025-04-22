@@ -3,6 +3,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.profiles.data as profile_data
 
+import ofscraper.utils.settings as settings
 
 def parse_user():
     if settings.get_settings().anon:

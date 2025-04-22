@@ -18,7 +18,6 @@ from ofscraper.main.close.final.final_user import post_user_script
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 
-
 log = logging.getLogger("shared")
 
 
