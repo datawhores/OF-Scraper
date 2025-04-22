@@ -279,9 +279,9 @@ def modify_promo_prompt(args):
                     "message": f"Filter accounts presence of {'Any Promotions' if promo_type=='all_promo' else 'Claimable Promotions'}",
                     "default": (
                         True
-                        if settings.get_args()[promo_type]
+                        if settings.get_settings()[promo_type]
                         else (
-                            False if settings.get_args()[promo_type] is False else None
+                            False if settings.get_settings()[promo_type] is False else None
                         )
                     ),
                     "choices": [
