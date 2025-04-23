@@ -76,7 +76,7 @@ def get_config_path():
 
 def getlogpath():
     path = None
-    if not data.get_appendlog():
+    if not data.get_rotate_logs():
         path = (
             get_log_folder()
             / f'{data.get_main_profile()}_{dates_manager.getLogDate().get("day")}'
