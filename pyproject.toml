@@ -53,6 +53,7 @@ async-property = "^0.2.2"
 limiter = "^0.5.0"
 aiolimiter = "^1.1.0"
 textual = "1.0.0"
+ua-generator = "^2.0.5"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -18,6 +18,8 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
+import ua_generator
+
 
 TOO_MANY = "too_many"
 AUTH = "auth"
@@ -25,6 +27,7 @@ FORCED_NEW = "get_new_sign"
 SIGN = "get_sign"
 COOKIES = "get_cookies_str"
 HEADERS = "create_header"
+AGENT=str(ua_generator.generate())
 
 
 def is_rate_limited(exception, sleeper):
@@ -343,17 +346,21 @@ class sessionManager:
                 try:
                     sleeper.do_sleep()
                     # remake each time
-                    headers = (
-                        self._create_headers(
-                            headers, url, SIGN in actions, FORCED_NEW in actions
-                        )
-                        if (
+                    if (
                             SIGN in actions
                             or FORCED_NEW in actions
                             or HEADERS in actions
-                        )
-                        else None
-                    )
+                       ):
+                            headers = self._create_headers(
+                                    headers, url, SIGN in actions, FORCED_NEW in actions
+                                )
+                    elif not headers or not "user-agent" in headers:
+                        headers=headers or {}
+                        headers.update({"user-agent":AGENT})
+                        
+                        
+                       
+                    
                     cookies = self._create_cookies() if COOKIES in actions else None
                     r = self._httpx_funct(
                         method,
@@ -448,17 +455,21 @@ class sessionManager:
                 await sem.acquire()
                 try:
                     await sleeper.async_do_sleep()
-                    headers = (
-                        self._create_headers(
-                            headers, url, SIGN in actions, FORCED_NEW in actions
-                        )
-                        if (
+                    if (
                             SIGN in actions
                             or FORCED_NEW in actions
                             or HEADERS in actions
+                    ): 
+                        headers = (
+                        self._create_headers(
+                            headers, url, SIGN in actions, FORCED_NEW in actions
                         )
-                        else headers
+                       
                     )
+                    elif not headers or not "user-agent" in headers:
+                        headers= headers or {}
+                        headers.update({"user-agent":AGENT})
+                        
 
                     cookies = self._create_cookies() if COOKIES in actions else None
                     json = json

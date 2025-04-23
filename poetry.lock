@@ -2769,6 +2769,18 @@ files = [
 ]
 
 [[package]]
+name = "ua-generator"
+version = "2.0.5"
+description = "A random user-agent generator"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "ua_generator-2.0.5-py3-none-any.whl", hash = "sha256:ed7437db60ad1c9a3dfa89e32700a37636944fd7adfccd12013dfbb3b540116f"},
+    {file = "ua_generator-2.0.5.tar.gz", hash = "sha256:5a75d25d71d574da8ec259c06ad55009c8c91cd4b520c2820ad9ba9d6dd28053"},
+]
+
+[[package]]
 name = "uc-micro-py"
 version = "1.0.3"
 description = "Micro subset of unicode data files for linkify-it-py projects."
@@ -3144,4 +3156,4 @@ pyinstaller = []
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "e1cf8e4751a41e230b5f1f4a153151a4660f11f5f7edb8faf470284015f54991"
+content-hash = "e53fb4eb7132eb215e1b80b31f759cbd57166929fbee52fc4372df3f6ad81f1c"
