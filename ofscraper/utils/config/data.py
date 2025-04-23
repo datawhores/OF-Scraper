@@ -281,7 +281,10 @@ def get_ssl_validation(config=None):
         if not any(x == config.get("ssl_validation") for x in [None, ""])
         else config.get("advanced_options", {}).get("ssl_validation")
     )
-    return val if val else True
+    if val==None:
+        return True
+    else:
+        return val
 @wrapper.config_reader
 def get_post_download_script(config=None):
     if config is False:
