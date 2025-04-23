@@ -96,7 +96,7 @@ def funct(prompt_):
     backend: which downloader to utilize
     downloadbars: toggle for download-bars
     cache-mode: cache type for Disk Cache
-    appendlog: toggle for appending log values
+    rotate_logs: toggle for rotating logs
     custom_values: custom values/functions for placeholders
     sanitize_text: toggle for cleaning text for db
     temp_dir: directory for storing temp files
@@ -582,9 +582,9 @@ def advanced_config() -> dict:
             },
             {
                 "type": "list",
-                "name": "appendlog",
-                "message": "append logs into daily log files",
-                "default": data.get_appendlog(),
+                "name": "rotate_logs",
+                "message": "Whether to rotate logs or not",
+                "default": data.get_rotate_logs(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {

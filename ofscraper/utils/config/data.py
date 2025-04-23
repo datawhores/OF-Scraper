@@ -734,15 +734,15 @@ def cache_mode_helper(config=None):
 
 
 @wrapper.config_reader
-def get_appendlog(config=None):
+def get_rotate_logs(config=None):
     if config is False:
-        return constants.APPEND_DEFAULT
+        return constants.ROTATE_DEFAULT
     value = (
-        config.get("appendlog")
+        config.get("rotate_logs")
         if config.get("appendlog") is not None
-        else config.get("advanced_options", {}).get("appendlog")
+        else config.get("advanced_options", {}).get("rotate_logs")
     )
-    return value if value is not None else constants_attr.getattr("APPEND_DEFAULT")
+    return value if value is not None else constants_attr.getattr("ROTATE_DEFAULT")
 
 
 @wrapper.config_reader

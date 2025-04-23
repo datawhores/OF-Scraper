@@ -32,7 +32,7 @@ TEXT_TYPE_DEFAULT = "letter"
 TRUNCATION_DEFAULT = True
 MAX_COUNT_DEFAULT = 0
 TEMP_FOLDER_DEFAULT = None
-APPEND_DEFAULT = True
+ROTATE_DEFAULT = True
 RESPONSE_TYPE_DEFAULT = {
     "message": "Messages",
     "timeline": "Posts",

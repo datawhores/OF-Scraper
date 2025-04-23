@@ -37,6 +37,10 @@ def cleanup_logs():
     """
     Performs actions to cleanup logs
     """
+    if not settings.get_settings().logs_expire_time:
+        return
+    if not settings.get_settings().rotate_logs:
+        return
     with stdout.lowstdout():
         delete_old_logs()
         delete_empty_folders()
@@ -50,8 +54,6 @@ def delete_old_logs():
     """
     log_path = common_paths.get_log_folder()
     now = arrow.now().float_timestamp
-    if not settings.get_settings().logs_expire_time:
-        return
     for log_file in log_path.rglob("*.log"):  # rglob for recursive globbing
         try:
             if (now - log_file.stat().st_mtime) > settings.get_settings().logs_expire_time:
