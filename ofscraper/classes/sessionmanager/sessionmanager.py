@@ -19,6 +19,8 @@ import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
 import ua_generator
+from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
+
 
 
 TOO_MANY = "too_many"
@@ -241,7 +243,13 @@ class sessionManager:
                         max_connections=self._connect_limit,
                         keepalive_expiry=self._keep_alive_exp,
                     ),
-                )
+                    transport=AsyncCurlTransport(
+  impersonate="chrome",
+  default_headers=True,
+  # required for parallel requests, see curl_cffi issues below
+  curl_options={CurlOpt.FRESH_CONNECT: True}
+
+                ))
         else:
             self._async = False
             if self._backend == "httpx":
