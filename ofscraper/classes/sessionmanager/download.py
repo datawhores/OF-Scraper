@@ -87,14 +87,12 @@ class download_session(sessionManager.sessionManager):
 
 
 class cdm_session(sessionManager.sessionManager):
-    def __init__(self, backend=None, sem_count=None) -> None:
-        backend = backend or "httpx"
+    def __init__(self,  sem_count=None) -> None:
         sem_count = sem_count or common_globals.sem
-        super().__init__(sem_count=sem_count, backend=backend)
+        super().__init__(sem_count=sem_count)
 
 
 class cdm_session_manual(ofsessionmanager.OFSessionManager):
-    def __init__(self, backend=None, sem_count=None) -> None:
-        backend = backend or "httpx"
+    def __init__(self,  sem_count=None) -> None:
         sem_count = sem_count or common_globals.sem
-        super().__init__(sem_count=sem_count, backend=backend)
+        super().__init__(sem_count=sem_count)

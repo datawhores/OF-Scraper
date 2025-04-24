@@ -21,7 +21,7 @@ log = logging.getLogger("shared")
 
 def get_individual_timeline_post(id, session=None):
     with session or manager.Manager.get_ofsession(
-        backend="httpx",
+       
     ) as c:
         with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             log.trace(f"post raw individual {r.json()}")

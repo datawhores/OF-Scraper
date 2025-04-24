@@ -33,7 +33,7 @@ API = "profile"
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
     with manager.Manager.get_ofsession(
-        backend="httpx",
+       
     ) as c:
         return scrape_profile_helper(c, username)
 
@@ -146,7 +146,7 @@ def print_profile_info(info):
 
 def get_id(username, c=None):
     c = c or manager.Manager.get_ofsession(
-        backend="httpx",
+       
     )
     with c as c:
         return get_id_helper(c, username)

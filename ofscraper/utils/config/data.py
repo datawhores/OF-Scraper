@@ -273,18 +273,6 @@ def get_logs_expire(config=None):
         if not any(x == config.get("logs_expire_time") for x in [None, ""])
         else config.get("advanced_options", {}).get("logs_expire_time")
     )
-
-@wrapper.config_reader
-def get_ssl_validation(config=None):
-    val = (
-        config.get("ssl_validation")
-        if not any(x == config.get("ssl_validation") for x in [None, ""])
-        else config.get("advanced_options", {}).get("ssl_validation")
-    )
-    if val==None:
-        return True
-    else:
-        return val
 @wrapper.config_reader
 def get_post_download_script(config=None):
     if config is False:
@@ -669,18 +657,6 @@ def get_part_file_clean(config=None, mediatype=None):
     elif config.get("partfileclean") is not None:
         return config.get("partfileclean") is False
     return constants_attr.getattr("RESUME_DEFAULT")
-
-
-@wrapper.config_reader
-def get_backend(config=None):
-    if config is False:
-        return constants.BACKEND_DEFAULT
-    return (
-        config.get("backend")
-        or config.get("advanced_options", {}).get("backend")
-        or constants_attr.getattr("BACKEND_DEFAULT")
-    )
-
 
 @wrapper.config_reader
 def get_download_semaphores(config=None):

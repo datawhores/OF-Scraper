@@ -247,7 +247,7 @@ async def post_check_retriver():
     user_dict = {}
     links = list(url_helper())
     async with manager.Manager.aget_ofsession(
-        backend="httpx",
+       
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for ele in links:
@@ -446,7 +446,7 @@ async def message_checker_runner():
 async def message_check_retriver():
     links = list(url_helper())
     async with manager.Manager.aget_ofsession(
-        backend="httpx",
+       
     ) as c:
         for item in links:
             num_match = re.search(
@@ -523,7 +523,7 @@ async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
     async with manager.Manager.aget_ofsession(
-        backend="httpx",
+       
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for name in settings.get_settings().check_usernames:
@@ -578,7 +578,7 @@ async def stories_checker_runner():
 async def stories_check_retriver():
     user_dict = {}
     async with manager.Manager.aget_ofsession(
-        backend="httpx",
+       
         sem_count=constants.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for user_name in settings.get_settings().check_usernames:
@@ -662,7 +662,7 @@ async def get_paid_ids(model_id, user_name):
         paid = oldpaid
     else:
         async with manager.Manager.aget_ofsession(
-            backend="httpx", sem_count=constants.getattr("API_REQ_CHECK_MAX")
+            sem_count=constants.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             set_check(paid, model_id, paid_.API)

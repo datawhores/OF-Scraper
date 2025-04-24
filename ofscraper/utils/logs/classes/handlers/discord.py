@@ -16,14 +16,14 @@ class DiscordHandler(logging.Handler):
         logging.Handler.__init__(self)
 
         self.asess = sessionManager.sessionManager(
-            backend="httpx",
+           
             total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
         )
         self.sess = sessionManager.sessionManager(
-            backend="httpx",
+           
             total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
@@ -149,14 +149,14 @@ class DiscordHandlerMulti(logging.Handler):
         self.lock = FileLock(common_paths.getDiscord())
 
         self.asess = sessionManager.sessionManager(
-            backend="httpx",
+           
             total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
         )
         self.sess = sessionManager.sessionManager(
-            backend="httpx",
+           
             total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),

@@ -52,7 +52,6 @@ def get_current_config_schema(config: dict = None) -> dict:
         "advanced_options": {
             "code-execution": data.get_allow_code_execution(config=config),
             "dynamic-mode-default": data.get_dynamic(config=config),
-            "backend": data.get_backend(config=config),
             "downloadbars": data.get_show_downloadprogress(config=config),
             "cache-mode": data.cache_mode_helper(config=config),
             "rotate_logs": data.get_rotate_logs(config=config),
@@ -65,7 +64,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
             "logs_expire_time":data.get_logs_expire(config=config),
-            "ssl_validation":data.get_ssl_validation(config=config)
         },
         "script_options": {
             "post_download_script": data.get_post_download_script(config=config),

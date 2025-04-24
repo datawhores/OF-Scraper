@@ -89,7 +89,7 @@ def get_request_auth_dynamic_rule_manual():
 def get_request_auth_generic():
     logging.getLogger("shared").debug("getting new signature with generic")
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -106,7 +106,7 @@ def get_request_auth_deviint():
     logging.getLogger("shared").debug("getting new signature with deviint")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -123,7 +123,7 @@ def get_request_auth_datawhores():
     logging.getLogger("shared").debug("getting new signature with datawhores")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -140,7 +140,7 @@ def get_request_auth_xagler():
     logging.getLogger("shared").debug("getting new signature with xagler")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -157,7 +157,7 @@ def get_request_auth_rafa():
     logging.getLogger("shared").debug("getting new signature with rafa")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -174,7 +174,7 @@ def get_request_auth_riley():
     logging.getLogger("shared").debug("getting new signature with riley")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
@@ -191,7 +191,7 @@ def get_request_auth_digitalcriminals():
     logging.getLogger("shared").debug("getting new signature with digitalcriminals")
 
     with manager.Manager.get_session(
-        backend="httpx",
+       
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),

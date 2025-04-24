@@ -22,7 +22,7 @@ log = logging.getLogger("shared")
 
 
 def scrape_user():
-    with manager.Manager.get_ofsession(backend="httpx") as c:
+    with manager.Manager.get_ofsession() as c:
         return _scraper_user_helper(c)
 
 
@@ -49,7 +49,7 @@ def _scraper_user_helper(c):
 
 def parse_subscriber_count():
     with manager.Manager.get_ofsession(
-        backend="httpx",
+       
     ) as c:
         try:
             with c.requests(constants.getattr("subscribeCountEP")) as r:

@@ -106,7 +106,7 @@ def _like(model_id, username, ids: list, like_action: bool):
     with progress_utils.setup_like_progress_live():
         with manager.Manager.get_ofsession(
             sem_count=1,
-            backend="httpx",
+           
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []

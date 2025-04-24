@@ -93,7 +93,6 @@ def funct(prompt_):
     [Advanced Options]
     code-execution: allow eval on custom_val
     dynamic-mode-default: source of signed header values
-    backend: which downloader to utilize
     downloadbars: toggle for download-bars
     cache-mode: cache type for Disk Cache
     rotate_logs: toggle for rotating logs
@@ -105,7 +104,6 @@ def funct(prompt_):
     default_user_list: default user list for --action
     default_black_list: default black list for --action
     logs_expire_time: max age for a log before it is autodelete
-    ssl_validation: option for whether to validate ssl certificates
     remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
@@ -538,13 +536,6 @@ def advanced_config() -> dict:
                 "default": data.cache_mode_helper(),
                 "choices": ["sqlite", "json", "disabled", "api_disabled"],
             },
-            {
-                "type": "list",
-                "name": "backend",
-                "choices": [Choice("aio", "aiohttp"), Choice("httpx", "httpx")],
-                "message": "Select Which Backend you want:\n",
-                "default": data.get_backend() or "",
-            },
             # value because of legacy config values
             {
                 "type": "input",
@@ -651,16 +642,6 @@ List are case insensitive\n
                 "option_instruction": """
 Logs will auto delete after the selected amount of time has passed
 If value is 'None' or '0' no logs will be touched
-""",
-            },
-
-             {
-                "type": "input",
-                "name": "ssl_validation",
-                "message": "ssl validation",
-                "default": data.get_ssl_validation(),
-                "option_instruction": """
-Option to disable ssl certificate validation
 """,
             },
             {

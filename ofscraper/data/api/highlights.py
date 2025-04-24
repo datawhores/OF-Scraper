@@ -355,7 +355,7 @@ def get_individual_highlights(id):
 
 def get_individual_stories(id, c=None):
     with manager.Manager.get_ofsession(
-        backend="httpx",
+       
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
             log.trace(f"highlight raw highlight individual; {r.json_()}")

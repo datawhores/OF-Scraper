@@ -11,6 +11,7 @@ import ofscraper.utils.auth.utils.prompt as auth_prompt
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.auth.utils.warning.check import check_auth_warning
 from ofscraper.utils.auth.utils.warning.warning import authwarning
+import ofscraper.utils.settings as settings
 
 
 console = Console()

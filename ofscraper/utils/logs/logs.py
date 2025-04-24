@@ -75,7 +75,7 @@ def print_config():
 
 def print_start_message():
     log = logging.getLogger("shared")
-    with manager.Manager.get_session(backend="httpx") as sess:
+    with manager.Manager.get_session() as sess:
         with sess.requests(
             url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD"
         ) as j:
@@ -87,7 +87,7 @@ def print_start_message():
 
 def print_latest_version():
     log = logging.getLogger("shared")
-    with manager.Manager.get_session(backend="httpx") as sess:
+    with manager.Manager.get_session() as sess:
         with sess.requests(url="https://pypi.org/pypi/ofscraper/json") as j:
             data = j.json()
             if not data:

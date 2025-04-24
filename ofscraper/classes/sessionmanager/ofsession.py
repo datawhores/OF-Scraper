@@ -15,7 +15,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
 class OFSessionManager(sessionManager):
     def __init__(
         self,
-        backend=None,
+        
         connect_timeout=None,
         total_timeout=None,
         read_timeout=None,
@@ -50,7 +50,6 @@ class OFSessionManager(sessionManager):
             wait_max if wait_max is not None else constants.getattr("OF_MAX_WAIT_API")
         )
         super().__init__(
-            backend,
             connect_timeout,
             total_timeout,
             read_timeout,

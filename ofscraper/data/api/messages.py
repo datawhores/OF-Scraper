@@ -370,7 +370,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
 
 def get_individual_messages_post(model_id, postid):
     with manager.Manager.get_ofsession(
-        backend="httpx",
+       
     ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)
