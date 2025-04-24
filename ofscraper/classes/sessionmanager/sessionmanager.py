@@ -13,7 +13,10 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
+# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
+from httpx_aiohttp import AiohttpTransport
+from aiohttp import ClientSession
+import aiohttp
 
 
 
@@ -215,23 +218,22 @@ class sessionManager:
         if async_:
             self._session = httpx.AsyncClient(
                 http2=True,
-                proxies=self._proxy,
+                proxy=self._proxy,
                 limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
                 ),
-                transport=AsyncCurlTransport(
-            impersonate="chrome",
-            default_headers=True,
-            # required for parallel requests, see curl_cffi issues below
-            curl_options={CurlOpt.FRESH_CONNECT: True}
-
-                            ))
+             transport=AiohttpTransport(
+        client=lambda: ClientSession(    proxy=self._proxy,
+        connector=aiohttp.TCPConnector(limit=self._connect_limit)),
+    )
+                            
+                            )
         else:
             self._session = httpx.Client(
                 http2=True,
-                proxies=self._proxy,
+                proxy=self._proxy,
                 limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
