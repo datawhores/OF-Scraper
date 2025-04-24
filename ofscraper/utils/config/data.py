@@ -232,7 +232,7 @@ def get_InfiniteLoop(config=None):
 def get_enable_after(config=None):
     if config is False:
         return constants.ENABLE_AUTO_AFTER_DEFAULT
-    val = config.get("enable_auto_after") if val is None else val
+    val = config.get("enable_auto_after")
     val = (
         config.get("advanced_options", {}).get("enable_auto_after")
         if val is None
