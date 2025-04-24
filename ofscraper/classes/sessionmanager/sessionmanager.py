@@ -1,24 +1,18 @@
 import asyncio
 import contextlib
 import logging
-import ssl
 import threading
 import time
 import traceback
 
-import aiohttp
 import arrow
-import certifi
 import httpx
 import tenacity
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-import ofscraper.utils.settings as settings
-import ua_generator
 from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
 
 
@@ -29,7 +23,6 @@ FORCED_NEW = "get_new_sign"
 SIGN = "get_sign"
 COOKIES = "get_cookies_str"
 HEADERS = "create_header"
-AGENT=str(ua_generator.generate())
 
 
 def is_rate_limited(exception, sleeper):
@@ -56,12 +49,6 @@ def check_400(exception):
 
 def is_provided_exception_number(exception, *numbers):
     return (
-        isinstance(exception, aiohttp.ClientResponseError)
-        and (
-            getattr(exception, "status_code", None)
-            or getattr(exception, "status", None) in numbers
-        )
-    ) or (
         isinstance(exception, httpx.HTTPStatusError)
         and (
             (
@@ -166,7 +153,6 @@ class CustomTenacity(AsyncRetrying):
 class sessionManager:
     def __init__(
         self,
-        backend=None,
         connect_timeout=None,
         total_timeout=None,
         read_timeout=None,
@@ -197,7 +183,6 @@ class sessionManager:
         keep_alive_exp = keep_alive_exp or constants.getattr("KEEP_ALIVE_EXP")
         proxy = proxy or constants.getattr("PROXY")
         proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
-        self._backend = backend or data.get_backend()
         self._connect_timeout = connect_timeout
         self._total_timeout = total_timeout
         self._read_timeout = read_timeout
@@ -228,42 +213,32 @@ class sessionManager:
         if self._session:
             return
         if async_:
-            self._async = True
-            if self._backend == "aio":
-                self._session = aiohttp.ClientSession(
-                    connector=aiohttp.TCPConnector(limit=self._connect_limit),
-                )
+            self._session = httpx.AsyncClient(
+                http2=True,
+                proxies=self._proxy,
+                limits=httpx.Limits(
+                    max_keepalive_connections=self._keep_alive,
+                    max_connections=self._connect_limit,
+                    keepalive_expiry=self._keep_alive_exp,
+                ),
+                transport=AsyncCurlTransport(
+            impersonate="chrome",
+            default_headers=True,
+            # required for parallel requests, see curl_cffi issues below
+            curl_options={CurlOpt.FRESH_CONNECT: True}
 
-            elif self._backend == "httpx":
-                self._session = httpx.AsyncClient(
-                    http2=True,
-                    proxies=self._proxy,
-                    limits=httpx.Limits(
-                        max_keepalive_connections=self._keep_alive,
-                        max_connections=self._connect_limit,
-                        keepalive_expiry=self._keep_alive_exp,
-                    ),
-                    transport=AsyncCurlTransport(
-  impersonate="chrome",
-  default_headers=True,
-  # required for parallel requests, see curl_cffi issues below
-  curl_options={CurlOpt.FRESH_CONNECT: True}
-
-                ))
+                            ))
         else:
-            self._async = False
-            if self._backend == "httpx":
-                self._session = httpx.Client(
-                    http2=True,
-                    proxies=self._proxy,
-                    limits=httpx.Limits(
-                        max_keepalive_connections=self._keep_alive,
-                        max_connections=self._connect_limit,
-                        keepalive_expiry=self._keep_alive_exp,
-                    ),
-                )
-            elif self._backend == "aio":
-                raise Exception("aiohttp is async only")
+            self._session = httpx.Client(
+                http2=True,
+                proxies=self._proxy,
+                limits=httpx.Limits(
+                    max_keepalive_connections=self._keep_alive,
+                    max_connections=self._connect_limit,
+                    keepalive_expiry=self._keep_alive_exp,
+                ),
+            )
+        self._async = async_
         return self._session
 
     # https://github.com/aio-libs/aiohttp/issues/1925
@@ -361,13 +336,7 @@ class sessionManager:
                        ):
                             headers = self._create_headers(
                                     headers, url, SIGN in actions, FORCED_NEW in actions
-                                )
-                    elif not headers or not "user-agent" in headers:
-                        headers=headers or {}
-                        headers.update({"user-agent":AGENT})
-                        
-                        
-                       
+                                )   
                     
                     cookies = self._create_cookies() if COOKIES in actions else None
                     r = self._httpx_funct(
@@ -474,51 +443,27 @@ class sessionManager:
                         )
                        
                     )
-                    elif not headers or not "user-agent" in headers:
-                        headers= headers or {}
-                        headers.update({"user-agent":AGENT})
-                        
+
 
                     cookies = self._create_cookies() if COOKIES in actions else None
                     json = json
                     params = params
-                    if self._backend == "aio":
-                        r = await self._aio_funct(
-                            method,
-                            url,
-                            timeout=aiohttp.ClientTimeout(
-                                total=total_timeout or self._total_timeout,
-                                connect=connect_timeout or self._connect_timeout,
-                                sock_connect=pool_connect_timeout
-                                or self._pool_connect_timeout,
-                                sock_read=read_timeout or self._read_timeout,
-                            ),
-                            headers=headers,
-                            cookies=cookies,
-                            allow_redirects=redirects,
-                            proxy=self._proxy,
-                            params=params,
-                            json=json,
-                            data=data,
-                            ssl=False if not settings.get_settings().ssl_validation else ssl.create_default_context(cafile=certifi.where()),
-                        )
-                    else:
-                        r = await self._httpx_funct_async(
-                            method,
-                            timeout=httpx.Timeout(
-                                total_timeout or self._total_timeout,
-                                connect=connect_timeout or self._connect_timeout,
-                                pool=pool_connect_timeout or self._pool_connect_timeout,
-                                read=read_timeout or self._read_timeout,
-                            ),
-                            follow_redirects=redirects,
-                            url=url,
-                            cookies=cookies,
-                            headers=headers,
-                            json=json,
-                            params=params,
-                            data=data,
-                        )
+                    r = await self._httpx_funct_async(
+                        method,
+                        timeout=httpx.Timeout(
+                            total_timeout or self._total_timeout,
+                            connect=connect_timeout or self._connect_timeout,
+                            pool=pool_connect_timeout or self._pool_connect_timeout,
+                            read=read_timeout or self._read_timeout,
+                        ),
+                        follow_redirects=redirects,
+                        url=url,
+                        cookies=cookies,
+                        headers=headers,
+                        json=json,
+                        params=params,
+                        data=data,
+                    )
                     if r.status_code == 404:
                         pass
                     elif not r.ok:
@@ -571,19 +516,6 @@ class sessionManager:
         t.request = t.request
         t.read_ = t.read
         return t
-
-    async def _aio_funct(self, method, *args, **kwargs):
-        # public function forces context manager use
-        r = await self._session._request(method, *args, **kwargs)
-        r.text_ = r.text
-        r.json_ = r.json
-        r.iter_chunked = r.content.iter_chunked
-        r.iter_chunks = r.content.iter_chunks
-        r.request = r.request_info
-        r.status_code = r.status
-        r.read_ = r.content.read
-        r.eof = r.content.at_eof
-        return r
 
     async def factoryasync(self, input):
         if callable(input):
