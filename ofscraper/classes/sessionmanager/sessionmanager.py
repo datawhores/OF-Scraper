@@ -50,8 +50,15 @@ def check_400(exception):
         time.sleep(8)
 
 
+
 def is_provided_exception_number(exception, *numbers):
     return (
+        isinstance(exception, aiohttp.ClientResponseError)
+        and (
+            getattr(exception, "status_code", None)
+            or getattr(exception, "status", None) in numbers
+        )
+    ) or (
         isinstance(exception, httpx.HTTPStatusError)
         and (
             (
@@ -61,7 +68,6 @@ def is_provided_exception_number(exception, *numbers):
             in numbers
         )
     )
-
 
 class SessionSleep:
     def __init__(self, sleep=None, difmin=None):
