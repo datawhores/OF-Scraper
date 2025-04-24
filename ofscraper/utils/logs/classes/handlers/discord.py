@@ -81,24 +81,42 @@ class DiscordHandler(logging.Handler):
             self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
             self.loop.close()
 
-    def _emit(self, record):
-        url = data.get_discord()
+    def split_text_by_word_chunks(self, text):
+        chunks = []
+        start = 0
+        length = len(text)
+        while start < length:
+            end = min(start + self.chunk_size, length)
+            last_space = text.rfind(' ', start, end)
+            if last_space == -1 or last_space <= start:
+                chunks.append(text[start:end])
+                start = end
+            else:
+                chunks.append(text[start:last_space])
+                start = last_space + 1
+        return chunks
 
+    def _emit(self, record):
         try:
-            sess = self.sess
-            if url is None or url == "":
+            log_message = self.format(record)  # Get the formatted log message
+            session = self.sess
+            target_url = self._url
+            if not target_url:
                 return
-            with sess.requests(
-                self._url,
-                method="post",
-                headers={"Content-type": "application/json"},
-                json={
-                    "content": record,
-                    # "thread_name": self._thread,
-                },
-            ) as r:
-                if not r.status == 204:
-                    raise Exception
+
+            for chunk in self.split_text_by_word_chunks(log_message):
+                try:
+                    with session.requests(
+                        target_url,
+                        method="post",
+                        headers={"Content-type": "application/json"},
+                        json={"content": chunk},
+                    ) as response:
+                        if response.status_code != 204:
+                            print(f"Request failed for log chunk: '{chunk[:50]}...', status: {response.status_code}")
+                except Exception as e:
+                    print(f"Error sending log chunk: '{chunk[:50]}...': {e}")
+                    pass
         except Exception:
             pass
 
