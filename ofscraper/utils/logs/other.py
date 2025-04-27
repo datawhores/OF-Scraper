@@ -78,7 +78,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     log.handlers.clear()
 
 
-# wrapper function for discord and  log, check if threads/process should star
+# wrapper function for discord and  log, check if threads/process should start
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
         if settings.get_settings().discord_level:
@@ -193,49 +193,3 @@ def add_other_handler(log, clear=True):
         log.addHandler(fh2)
     return log
 
-
-def add_other_handler_multi(log, clear=True, other_=None):
-    if clear:
-        log.handlers.clear()
-    format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
-    log.setLevel(1)
-    log_helpers.addtraceback()
-    log_helpers.addtrace()
-    # # #log file
-    # #discord
-    if not other_:
-        cord = DiscordHandlerMulti()
-        cord.setLevel(log_helpers.getLevel(settings.get_settings().discord_level))
-        cord.setFormatter(log_class.DiscordFormatter("%(message)s"))
-        # console
-        log.addHandler(cord)
-        if settings.get_settings().log_level != "OFF":
-            stream = open(
-                common_paths.getlogpath(),
-                encoding="utf-8",
-                mode="a",
-            )
-            fh = StreamHandlerMulti(stream)
-            fh.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
-            fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-            fh.addFilter(log_class.NoTraceBack())
-            log.addHandler(fh)
-        if settings.get_settings().log_level in {"TRACE", "DEBUG"}:
-            fh2 = StreamHandlerMulti(stream)
-            fh2.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
-            fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-            fh2.addFilter(log_class.TraceBackOnly())
-            log.addHandler(fh2)
-    else:
-        # add a handler that uses the shared queue
-        discord_level = log_helpers.getNumber(settings.get_settings().discord_level)
-        file_level = log_helpers.getNumber(settings.get_settings().log_level)
-        if hasattr(other_, "get") and hasattr(other_, "put_nowait"):
-            otherhandle = QueueHandler(other_)
-            otherhandle.name = "other"
-        elif hasattr(other_, "send"):
-            otherhandle = PipeHandler(other_)
-            otherhandle.name = "other"
-        otherhandle.setLevel(min(file_level, discord_level))
-        log.addHandler(otherhandle)
-    return log
