@@ -22,7 +22,6 @@ from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
 from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
-from ofscraper.commands.scraper.actions.utils.buffer import download_log_clear_helper
 
 from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
@@ -71,7 +70,6 @@ async def download_model_deleted_process(
 @run
 async def process_dicts(username, model_id, medialist, posts):
     log_text_array = []
-    download_log_clear_helper()
     log_text_array.append(await textDownloader(posts, username=username))
     logging.getLogger("shared").info("Downloading in single thread mode")
     common_globals.mainProcessVariableInit()
@@ -139,7 +137,6 @@ async def process_dicts(username, model_id, medialist, posts):
             common_globals.thread.shutdown()
 
         setDirectoriesDate()
-        download_log_clear_helper()
         final_log(username, log=logging.getLogger("shared"))
         progress_updater.remove_download_task(task1)
         log_text_array.append(final_log_text(username))

@@ -4,7 +4,6 @@ import threading
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.globals as log_globals
 from ofscraper.utils.logs.stdout import (
-    stop_flush_main_thread,
     stop_stdout_main_logthread,
 )
 
@@ -17,7 +16,6 @@ def gracefulClose():
     )
     # closeOther()
     # closeMain()
-    closeFlush()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -56,12 +54,6 @@ def closeMain():
     elif not log_globals.main_event.is_set():
         stop_stdout_main_logthread()
 
-
-def closeFlush():
-    if log_globals.flush_event.is_set():
-        stop_flush_main_thread(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
-    elif not log_globals.flush_event.is_set():
-        stop_flush_main_thread()
 
 
 def closeOther():

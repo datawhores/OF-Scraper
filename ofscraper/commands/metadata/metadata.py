@@ -48,7 +48,6 @@ import ofscraper.utils.context.exit as exit
 from ofscraper.classes.sessionmanager.download import download_session
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
-from ofscraper.commands.scraper.actions.utils.buffer import download_log_clear_helper
 
 from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
@@ -294,7 +293,6 @@ def metadata():
 
 @run
 async def process_dicts(username, model_id, medialist):
-    download_log_clear_helper()
     task1 = None
     with progress_utils.setup_metadata_progress_live():
         common_globals.mainProcessVariableInit()
@@ -337,7 +335,6 @@ async def process_dicts(username, model_id, medialist):
             common_globals.thread.shutdown()
 
         setDirectoriesDate()
-        download_log_clear_helper()
         progress_updater.remove_metadata_task(task1)
         final_log(username)
         return final_log_text(username)

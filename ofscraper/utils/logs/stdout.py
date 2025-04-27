@@ -6,16 +6,12 @@ import time
 import threading
 import traceback
 from functools import partial
+from rich.logging import RichHandler
 
 from logging.handlers import QueueHandler
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.classes.classes as log_class
-from ofscraper.utils.logs.classes.handlers.rich import (
-    RichHandlerMulti,
-    flush_buffer,
-    set_flush_close_event,
-)
 from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
 from ofscraper.utils.logs.classes.handlers.text import TextHandler
 
@@ -23,6 +19,7 @@ from ofscraper.utils.logs.classes.handlers.text import TextHandler
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.settings as settings
+
 
 
 def logger_process(input_, name=None, stop_count=1, event=None, s=None):
@@ -96,7 +93,7 @@ def add_rich_handler(log, clear=True):
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    sh = RichHandlerMulti(
+    sh = RichHandler(
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
@@ -107,8 +104,8 @@ def add_rich_handler(log, clear=True):
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoTraceBack())
     log.addHandler(sh)
-    if settings.get_settings().output_level in {"TRACE", "DEBUG"}:
-        sh2 = RichHandlerMulti(
+    if settings.get_settings().output_level in { "DEBUG"}:
+        sh2 = RichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
             markup=True,
@@ -130,7 +127,7 @@ def add_stdout_handler(log, clear=True, rich_array=None):
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    sh = RichHandlerMulti(
+    sh = RichHandler(
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
@@ -146,8 +143,8 @@ def add_stdout_handler(log, clear=True, rich_array=None):
     log.addHandler(sh)
     log.addHandler(tx)
 
-    if settings.get_settings().output_level in {"TRACE", "DEBUG"}:
-        sh2 = RichHandlerMulti(
+    if settings.get_settings().output_level in {"DEBUG"}:
+        sh2 = RichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
             markup=True,
@@ -218,60 +215,3 @@ def stop_stdout_logthread_helper(name=None, timeout=None):
     log.log(100, "stop_stdout")
     log_globals.main_log_thread.join(timeout=timeout)
 
-
-def start_flush_main_thread(input_=None, name=None, count=1, event=None, threads=None):
-    if log_globals.flush_thread:
-        return
-    threads = start_flush_main_thread_helper(
-        input_, name, count, event, threads=threads
-    )
-    log_globals.flush_thread = threads
-
-
-def start_flush_main_thread_helper(
-    input_=None, name=None, count=1, event=None, threads=None
-):
-    set_flush_close_event()
-    out = []
-    threads = threads or 3
-    for _ in range(0, threads):
-        flush_thread = threading.Thread(
-            target=flush_buffer,
-            kwargs={"event": event, "split": threads},
-            daemon=True,
-        )
-        flush_thread.start()
-        out.append(flush_thread)
-    return out
-
-
-def stop_flush_main_thread(name=None, timeout=None):
-    name = name or "shared"
-    if not log_globals.flush_thread:
-        return
-    elif isinstance(log_globals.flush_thread, list):
-        log = logging.getLogger(name)
-        log.log(100, "stop_flush")
-        while True:
-            new_flush_threads = list(
-                filter(lambda x: x and x.is_alive(), log_globals.flush_thread)
-            )
-            if len(new_flush_threads) == 0:
-                break
-            log_globals.flush_thread = new_flush_threads
-            for thread in log_globals.flush_thread:
-                thread.join(timeout=0.1)
-            time.sleep(0.5)
-    else:
-        log = logging.getLogger(name)
-        log.log(100, "stop_flush")
-        log_globals.flush_thread.join(timeout=timeout)
-    log_globals.flush_thread = None
-
-
-def restart_flush_main_thread(input_=None, name=None, count=1, threads=None):
-    if not log_globals.flush_thread:
-        start_flush_main_thread(input_=input_, name=name, count=count)
-    else:
-        stop_flush_main_thread()
-        start_flush_main_thread(threads=threads)
