@@ -86,6 +86,8 @@ class DiscordHandler(logging.Handler):
         chunks = []
         start = 0
         length = len(text)
+        if length<=self.chunk_size:
+            return [text]
         while start < length:
             end = min(start + self.chunk_size, length)
             last_space = text.rfind(' ', start, end)
