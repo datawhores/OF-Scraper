@@ -37,6 +37,7 @@ class DiscordHandler(logging.Handler):
         self._url = self._baseurl
         self._appendhelper()
         self._tasks = []
+        self.chunk_size=1000
         try:
             self.loop = asyncio.get_running_loop()
         except Exception:
@@ -96,9 +97,8 @@ class DiscordHandler(logging.Handler):
                 start = last_space + 1
         return chunks
 
-    def _emit(self, record):
+    def _emit(self,log_message):
         try:
-            log_message = self.format(record)  # Get the formatted log message
             session = self.sess
             target_url = self._url
             if not target_url:
