@@ -44,7 +44,7 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
     )
 
     progress_updater.update_activity_task(description=download_str + path_str)
-    logging.getLogger("shared_other").warning(
+    logging.getLogger("shared").warning(
         download_activity_str.format(username=username)
     )
     progress_updater.update_activity_task(description="")

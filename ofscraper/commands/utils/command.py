@@ -48,7 +48,7 @@ class commmandManager:
                                 and avatar
                                 and settings.get_settings().userfirst
                             ):
-                                logging.getLogger("shared_other").warning(
+                                logging.getLogger("shared").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
                             result = await funct(
@@ -122,7 +122,7 @@ class commmandManager:
                         and avatar
                         and settings.get_settings().userfirst
                     ):
-                        logging.getLogger("shared_other").warning(
+                        logging.getLogger("shared").warning(
                             avatar_str.format(avatar=avatar)
                         )
                     try:
@@ -163,18 +163,18 @@ class commmandManager:
         final_post_areas = areas.get_final_posts_area()
         length = manager.Manager.model_manager.get_num_selected()
         count = progress_tasks.get_user_task_obj().completed
-        logging.getLogger("shared_other").warning(
+        logging.getLogger("shared").warning(
             progress_str.format(count=count + 1, length=length)
         )
-        logging.getLogger("shared_other").warning(data_str.format(name=username))
+        logging.getLogger("shared").warning(data_str.format(name=username))
         if constants.getattr("SHOW_AVATAR") and avatar:
-            logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+            logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
         progress_updater.update_activity_task(
             description=area_str.format(
                 areas=",".join(final_post_areas), name=username, active=active
             )
         )
-        logging.getLogger("shared_other").info(
+        logging.getLogger("shared").info(
             area_str.format(
                 areas=",".join(final_post_areas), name=username, active=active
             )

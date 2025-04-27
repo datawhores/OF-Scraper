@@ -36,7 +36,7 @@ unlike_str = "Performing Unlike Action on {name}" + warning_str
 def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=like_str.format(name=username))
-    logging.getLogger("shared_other").warning(like_str.format(name=username))
+    logging.getLogger("shared").warning(like_str.format(name=username))
     unfavorited_posts = get_posts_for_like(posts)
     posts = pre_filter(posts)
     post_ids = get_post_ids(unfavorited_posts)
@@ -47,7 +47,7 @@ def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
 def process_unlike(posts=None, model_id=None, task=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=unlike_str.format(name=username))
-    logging.getLogger("shared_other").warning(unlike_str.format(name=username))
+    logging.getLogger("shared").warning(unlike_str.format(name=username))
     favorited_posts = get_posts_for_unlike(posts)
     posts = pre_filter(posts)
     post_ids = get_post_ids(favorited_posts)

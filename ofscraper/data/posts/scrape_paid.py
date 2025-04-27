@@ -81,7 +81,7 @@ def process_user_info_printer(
             )
         )
     )
-    logging.getLogger("shared_other").warning(
+    logging.getLogger("shared").warning(
         log_progress.format(
             username=username, model_id=model_id, count=count + 1, length=length
         )

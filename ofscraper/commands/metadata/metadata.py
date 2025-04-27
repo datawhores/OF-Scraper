@@ -191,7 +191,7 @@ class metadataCommandManager(commmandManager):
                                 and avatar
                                 and settings.get_settings().userfirst
                             ):
-                                logging.getLogger("shared_other").warning(
+                                logging.getLogger("shared").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
                             data.extend(
