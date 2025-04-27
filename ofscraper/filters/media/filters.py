@@ -189,7 +189,7 @@ def previous_download_filter(medialist, username=None, model_id=None):
         medialist = seperate.seperate_avatars(medialist)
         log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)} ")
-    logging.getLogger().info(f"Final media count for download {len(medialist)}")
+    log.info(f"Final media count for download {len(medialist)}")
     return medialist
 
 
