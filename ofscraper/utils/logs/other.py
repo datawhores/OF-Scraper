@@ -19,12 +19,9 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.utils.logs.classes.handlers.discord import (
     DiscordHandler,
-    DiscordHandlerMulti,
 )
 
 from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
-from ofscraper.utils.logs.classes.handlers.pipe import PipeHandler
-from logging.handlers import QueueHandler
 
 
 # processor for logging discord/log via queues, runnable by any process
