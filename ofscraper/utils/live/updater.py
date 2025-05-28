@@ -131,8 +131,6 @@ def remove_userlist_job_task(task):
         pass
 
 
-downloads_pending = set()
-
 
 def add_download_job_task(*args, **kwargs):
     max_visible = constants.getattr("MAX_PROGRESS_BARS")
@@ -141,9 +139,6 @@ def add_download_job_task(*args, **kwargs):
         and len(download_job_progress.tasks) < max_visible
     )
     task = download_job_progress.add_task(*args, visible=visible, **kwargs)
-
-    if not visible:
-        downloads_pending.add(task)
     return task
 
 
