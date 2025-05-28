@@ -177,7 +177,7 @@ def remove_download_job_task(task):
         hidden=list(filter(lambda x: x.visible is False, download_job_progress.tasks))
         if not hidden:
             return
-        update_download_job_task(hidden,visible=True)
+        update_download_job_task(hidden[0],visible=True)
 
     except KeyError:
         pass
