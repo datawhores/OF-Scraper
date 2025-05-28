@@ -36,7 +36,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size,get_chunk_timeout
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
@@ -242,7 +242,7 @@ class MainDownloadManager(DownloadManager):
                 raise E
 
     async def _download_fileobject_writer_streamer(
-        self, r, ele, tempholderObj, placeholderObj, total
+        self, res, ele, tempholderObj, placeholderObj, total
     ):
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
@@ -251,10 +251,15 @@ class MainDownloadManager(DownloadManager):
             fileobject = await aiofiles.open(
                 tempholderObj.tempfilepath, "ab"
             ).__aenter__()
-            chunk_size = get_chunk_size()
-            async for chunk in r.iter_chunked(chunk_size):
+            chunk_iter = res.iter_chunked( get_chunk_size())
+            while True:
+                chunk = await asyncio.wait_for(chunk_iter.__anext__(), timeout= get_chunk_timeout())
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, tempholderObj)
+        except asyncio.TimeoutError:
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in 5 seconds!")
+            return
+        except StopAsyncIteration:
             pass
         except Exception as E:
             raise E

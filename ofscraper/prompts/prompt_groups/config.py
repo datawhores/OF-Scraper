@@ -103,7 +103,7 @@ def funct(prompt_):
     enable_auto_after: whether to dynamically set --after: default True
     default_user_list: default user list for --action
     default_black_list: default black list for --action
-    logs_expire_time: max age for a log before it is autodelete
+    logs_expire_time: max age in days for a log before it is autodelete
     remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
@@ -635,10 +635,11 @@ List are case insensitive\n
             },
 
                         {
-                "type": "input",
+                "type": "number",
                 "name": "logs_expire_time",
+                "float_allowed":True,
                 "message": "Logs expire Time",
-                "default": data.get_logs_expire(),
+                "default": data.get_logs_expire() or 0,
                 "option_instruction": """
 Logs will auto delete after the selected amount of time has passed
 If value is 'None' or '0' no logs will be touched

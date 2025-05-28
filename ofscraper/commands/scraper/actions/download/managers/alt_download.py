@@ -264,11 +264,17 @@ class AltDownloadManager(DownloadManager):
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
-        chunk_size = get_chunk_size()
         try:
-            async for chunk in res.iter_chunked(chunk_size):
+            chunk_iter = res.iter_chunked(get_chunk_size())
+            while True:
+                chunk = await asyncio.wait_for(chunk_iter.__anext__(), timeout=get_chunk_timeout())
                 await fileobject.write(chunk)
                 send_chunk_msg(ele, total, placeholderObj)
+        except asyncio.TimeoutError:
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in 5 seconds!")
+            return
+        except StopAsyncIteration:
+            pass 
         except Exception as E:
             raise E
         finally:
