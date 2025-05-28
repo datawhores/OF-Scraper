@@ -215,7 +215,7 @@ class sessionManager:
         if async_:
             self._session = httpx.AsyncClient(
                 http2=True,
-                proxies=self._proxy,
+                proxy=self._proxy,
                 limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
@@ -231,7 +231,7 @@ class sessionManager:
         else:
             self._session = httpx.Client(
                 http2=True,
-                proxies=self._proxy,
+                proxy=self._proxy,
                 limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,

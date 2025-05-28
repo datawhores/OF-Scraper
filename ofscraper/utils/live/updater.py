@@ -147,6 +147,7 @@ def add_download_job_task(*args, **kwargs):
     return task
 
 
+
 def add_download_task(*args, **kwargs):
     return download_overall_progress.add_task(*args, start=True, **kwargs)
 
@@ -160,8 +161,6 @@ def update_download_task(*args, **kwargs):
 
 
 def update_download_job_task(*args, **kwargs):
-    if not settings.get_settings().download_bars:
-        return
     download_job_progress.update(*args, **kwargs)
 
 
@@ -172,17 +171,19 @@ def remove_download_job_task(task):
         return
     try:
         download_job_progress.remove_task(task)
-        downloads_pending.discard(task)
+        #whether to try to make hidden bar visible
+        if not settings.get_settings().download_bars:
+            return
         if (
             len(list(filter(lambda x: x.visible, download_job_progress.tasks)))
-            < min_add_visible
+            >= min_add_visible
         ):
-            new_task = None
-            while new_task not in download_job_progress.tasks and downloads_pending:
-                new_task = downloads_pending.pop()
-            if new_task:
-                update_download_job_task(new_task, visible=True)
-                start_download_job_task(new_task)
+            return
+        hidden=list(filter(lambda x: x.visible is False, download_job_progress.tasks))
+        if not hidden:
+            return
+        update_download_job_task(hidden,visible=True)
+
     except KeyError:
         pass
 
