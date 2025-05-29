@@ -264,31 +264,43 @@ class AltDownloadManager(DownloadManager):
     ):
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
+        fileobject = None # Initialize to None for finally block
         try:
-            chunk_iter = res.iter_chunked(get_chunk_size())
-            while True:
-                chunk = await asyncio.wait_for(chunk_iter.__anext__(), timeout=get_chunk_timeout())
-                await fileobject.write(chunk)
-                send_chunk_msg(ele, total, placeholderObj)
+            # Use asyncio.timeout as a context manager for the entire download process
+            async with asyncio.timeout(get_chunk_timeout()):
+                fileobject = await aiofiles.open(
+                    placeholderObj.tempfilepath, "ab"
+                ).__aenter__()
+                chunk_iter = res.iter_chunked(get_chunk_size())
+                while True:
+                    try:
+                        chunk = await chunk_iter.__anext__()
+                        await fileobject.write(chunk)
+                        send_chunk_msg(ele, total, placeholderObj)
+                    except StopAsyncIteration:
+                        break # Exit loop when no more chunks
         except asyncio.TimeoutError:
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in 5 seconds!")
-            return
-        except StopAsyncIteration:
-            pass 
+            # This catches the timeout for the entire async with block
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
+            return # Exit the function on timeout
         except Exception as E:
-            raise E
+            # Catch other potential exceptions during file operations or chunk iteration
+            common_globals.log.debug(f"An error occurred during download for {ele}: {E}")
+            raise E # Re-raise the exception after logging
         finally:
             # Close file if needed
-            try:
-                await fileobject.close()
-            except Exception as E:
-                raise E
-
+            if fileobject: # Ensure fileobject was successfully opened
+                try:
+                    await fileobject.close()
+                except Exception as E:
+                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
+                    raise E # Re-raise if closing fails
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
-                raise E
+                common_globals.log.debug(f"Error removing download job task for {ele}: {E}")
+                raise E # Re-raise if task removal fails
+
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
