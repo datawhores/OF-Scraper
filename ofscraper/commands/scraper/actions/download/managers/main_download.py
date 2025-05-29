@@ -206,14 +206,15 @@ class MainDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
         )
-        if total > constants.getattr("MAX_READ_SIZE"):
-            await self._download_fileobject_writer_streamer(
-                r, ele, tempholderObj, placeholderObj, total
-            )
-        else:
-            await self._download_fileobject_writer_reader(
-                r, ele, tempholderObj, placeholderObj, total
-            )
+        await self._download_fileobject_writer_streamer(
+            r, ele, tempholderObj, placeholderObj, total
+        )
+        # if total > constants.getattr("MAX_READ_SIZE"):
+          
+        # else:
+        #     await self._download_fileobject_writer_reader(
+        #         r, ele, tempholderObj, placeholderObj, total
+        #     )
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
