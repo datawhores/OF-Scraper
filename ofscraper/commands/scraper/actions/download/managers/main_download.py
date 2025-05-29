@@ -25,7 +25,6 @@ from humanfriendly import format_size
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.constants as constants
 from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
 from ofscraper.commands.scraper.actions.utils.general import (
     get_unknown_content_type,
@@ -161,6 +160,7 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
+            await common_globals.sem.acquire()
             async with c.requests_async(
                 url=ele.url,
                 headers=headers,
@@ -199,6 +199,8 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
+        finally:
+            common_globals.sem.release()
 
     async def _download_fileobject_writer(
         self, r, ele, tempholderObj, placeholderObj, total

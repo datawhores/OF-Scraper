@@ -29,10 +29,8 @@ from ofscraper.commands.scraper.actions.download.managers.main_download import (
 )
 
 async def consumer(aws, task1, medialist, lock):
-    sem=asyncio.Semaphore(1)
     while True:
         ele = None
-        await sem.acquire()
         async with lock:
             if not (bool(aws)):
                 break
@@ -100,7 +98,6 @@ async def consumer(aws, task1, medialist, lock):
                 )
                 common_globals.log.traceback_(traceback.format_exc())
 
-    sem.release()
 async def download(c, ele, model_id, username):
     try:
         data = None
