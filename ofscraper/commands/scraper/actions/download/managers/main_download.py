@@ -52,6 +52,7 @@ import ofscraper.utils.cache as cache
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele, username, model_id):
+        await common_globals.sem.acquire()
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with normal downloader"
         )
@@ -160,7 +161,6 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
-            await common_globals.sem.acquire()
             async with c.requests_async(
                 url=ele.url,
                 headers=headers,

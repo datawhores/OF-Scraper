@@ -65,6 +65,7 @@ from ofscraper.commands.scraper.actions.utils.send.message import send_msg
 class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele, username, model_id):
+        await common_globals.sem.acquire()
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with protected media downloader"
         )
@@ -184,7 +185,6 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
             )
-            await common_globals.sem.acquire()
             async with c.requests_async(
                 url=url,
                 headers=headers,
