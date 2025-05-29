@@ -13,6 +13,8 @@ r"""
 
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.leaky import CHUNK_SIZE
+import ofscraper.utils.constants as constants
+
 
 
 def get_chunk_size():
@@ -22,3 +24,5 @@ def get_chunk_size():
     if settings.get_settings().download_limit <= 0:
         return CHUNK_SIZE
     return min(CHUNK_SIZE, settings.get_settings().download_limit)
+def get_chunk_timeout():
+    return constants.getattr("CHUNK_TIMEOUT_SEC")

@@ -2,7 +2,6 @@
 
 import logging
 import queue
-import time
 import threading
 import traceback
 from functools import partial

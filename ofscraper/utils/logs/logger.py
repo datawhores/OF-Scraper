@@ -1,7 +1,6 @@
 import logging
 
 import ofscraper.utils.logs.utils.level as log_helpers
-import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.stdout import add_stdout_handler
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.logs.classes.handlers.text import TextHandler

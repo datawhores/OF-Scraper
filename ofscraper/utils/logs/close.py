@@ -31,7 +31,6 @@ def forcedClose():
     log_globals.flush_event.set()
     # closeOther()
     # closeMain()
-    closeFlush()
     closeQueue()
 
 
@@ -39,7 +38,6 @@ def daemonClose():
     sendCloseMessage()
     # closeOther()
     # closeMain()
-    closeFlush()
     clearHandlers()
 
 

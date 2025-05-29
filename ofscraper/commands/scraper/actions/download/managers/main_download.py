@@ -36,7 +36,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size,get_chunk_timeout
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
@@ -206,14 +206,15 @@ class MainDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
         )
-        if total > constants.getattr("MAX_READ_SIZE"):
-            await self._download_fileobject_writer_streamer(
-                r, ele, tempholderObj, placeholderObj, total
-            )
-        else:
-            await self._download_fileobject_writer_reader(
-                r, ele, tempholderObj, placeholderObj, total
-            )
+        await self._download_fileobject_writer_streamer(
+            r, ele, tempholderObj, placeholderObj, total
+        )
+        # if total > constants.getattr("MAX_READ_SIZE"):
+          
+        # else:
+        #     await self._download_fileobject_writer_reader(
+        #         r, ele, tempholderObj, placeholderObj, total
+        #     )
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
@@ -242,32 +243,48 @@ class MainDownloadManager(DownloadManager):
                 raise E
 
     async def _download_fileobject_writer_streamer(
-        self, r, ele, tempholderObj, placeholderObj, total
+        self, res, ele, tempholderObj, placeholderObj, total
     ):
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
+        fileobject = None # Initialize to None for finally block
         try:
-            fileobject = await aiofiles.open(
-                tempholderObj.tempfilepath, "ab"
-            ).__aenter__()
-            chunk_size = get_chunk_size()
-            async for chunk in r.iter_chunked(chunk_size):
-                await fileobject.write(chunk)
-                send_chunk_msg(ele, total, tempholderObj)
-            pass
+            # Use asyncio.timeout as a context manager for the entire download process
+            async with asyncio.timeout(get_chunk_timeout()):
+                fileobject = await aiofiles.open(
+                    tempholderObj.tempfilepath, "ab"
+                ).__aenter__()
+                chunk_iter = res.iter_chunked(get_chunk_size())
+                while True:
+                    try:
+                        chunk = await chunk_iter.__anext__()
+                        await fileobject.write(chunk)
+                        send_chunk_msg(ele, total, tempholderObj)
+                    except StopAsyncIteration:
+                        break # Exit loop when no more chunks
+        except asyncio.TimeoutError:
+            # This catches the timeout for the entire async with block
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
+            return # Exit the function on timeout
         except Exception as E:
-            raise E
+            # Catch other potential exceptions during file operations or chunk iteration
+            common_globals.log.debug(f"An error occurred during download for {ele}: {E}")
+            raise E # Re-raise the exception after logging
         finally:
             # Close file if needed
-            try:
-                await fileobject.close()
-            except Exception as E:
-                raise E
+            if fileobject: # Ensure fileobject was successfully opened
+                try:
+                    await fileobject.close()
+                except Exception as E:
+                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
+                    raise E # Re-raise if closing fails
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
-                raise E
+                common_globals.log.debug(f"Error removing download job task for {ele}: {E}")
+                raise E # Re-raise if task removal fails
+
 
     async def _handle_results_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result

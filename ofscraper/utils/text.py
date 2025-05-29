@@ -9,6 +9,7 @@ import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 
 
 async def get_text(values):
