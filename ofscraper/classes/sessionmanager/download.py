@@ -20,7 +20,7 @@ class download_session(sessionManager.sessionManager):
     def __init__(
         self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
     ) -> None:
-        sem_count = sem_count or common_globals.sem
+        sem_count=sem_count or settings.get_settings().download_sems
         retries = retries or get_download_req_retries()
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")

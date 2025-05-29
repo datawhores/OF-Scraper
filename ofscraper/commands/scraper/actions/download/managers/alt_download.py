@@ -184,7 +184,6 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
             )
-            await common_globals.sem.acquire()
             async with c.requests_async(
                 url=url,
                 headers=headers,
@@ -223,8 +222,6 @@ class AltDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
         common_globals.log.debug(

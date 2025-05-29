@@ -101,8 +101,7 @@ async def process_dicts(username, model_id, medialist, posts):
         try:
 
             aws = []
-
-            async with download_session() as c:
+            async with download_session(sem_count=settings.get_settings().download_sems) as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_download_task(

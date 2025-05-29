@@ -432,9 +432,9 @@ class sessionManager:
             ),
             reraise=True,
         ):
+            await sem.acquire()
             with _:
                 r = None
-                await sem.acquire()
                 try:
                     await sleeper.async_do_sleep()
                     if (
