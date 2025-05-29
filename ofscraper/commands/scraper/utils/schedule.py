@@ -7,7 +7,7 @@ from functools import partial
 
 import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.logs.logs as logs
-import ofscraper.utils.logs.other as other_logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.main.manager as manager
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 import ofscraper.utils.settings as settings
@@ -34,7 +34,7 @@ def set_schedule(*functs):
 
 
 def schedule_helper(*functs):
-    jobqueue.put(other_logger.updateOtherLoggerStream)
+    jobqueue.put(logger.resetLogger)
     jobqueue.put(logs.printStartValues)
     jobqueue.put(
         partial(manager.Manager.model_manager.getselected_usernames, rescan=True)

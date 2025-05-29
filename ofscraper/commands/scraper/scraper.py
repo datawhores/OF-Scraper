@@ -30,6 +30,8 @@ import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
 import ofscraper.utils.settings as settings
+from ofscraper.utils.logs.logger import flushlogs
+
 
 
 log = logging.getLogger("shared")
@@ -77,7 +79,7 @@ class scraperManager(commmandManager):
         progress_updater.update_user_activity(
             description="Users with Actions completed", completed=0
         )
-
+        flushlogs()
         return await self._get_userfirst_action_execution_function(
             self._execute_user_action
         )(data)
@@ -146,6 +148,7 @@ class scraperManager(commmandManager):
         progress_updater.update_user_activity(
             description="Users with Actions Completed"
         )
+        flushlogs()
         return await self._get_user_action_function(self._execute_user_action)(
             userdata, session
         )

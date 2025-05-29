@@ -6,20 +6,6 @@ from rich.text import Text
 import ofscraper.utils.logs.utils.level as level
 
 
-class DebugOnly(logging.Filter):
-    def filter(self, record):
-        if record.levelno == 10 or record.levelno == 11:
-            return True
-        return False
-
-
-class TraceOnly(logging.Filter):
-    def filter(self, record):
-        if record.levelno <= 11:
-            return True
-        return False
-
-
 class TraceBackOnly(logging.Filter):
     def filter(self, record):
         if record.levelno == 11:

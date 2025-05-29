@@ -3,9 +3,6 @@ import threading
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.globals as log_globals
-from ofscraper.utils.logs.stdout import (
-    stop_stdout_main_logthread,
-)
 
 
 def gracefulClose():
@@ -15,7 +12,6 @@ def gracefulClose():
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
     # closeOther()
-    # closeMain()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -43,14 +39,6 @@ def daemonClose():
 
 def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
-
-
-
-def closeMain():
-    if log_globals.main_event.is_set():
-        stop_stdout_main_logthread(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
-    elif not log_globals.main_event.is_set():
-        stop_stdout_main_logthread()
 
 
 
