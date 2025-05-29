@@ -76,7 +76,3 @@ def getNumber(input_):
         return logging.getLevelName(input_)
     return input_
 
-
-def getNumberOutput():
-    level_name = settings.get_settings().output_level
-    return getNumber(level_name)

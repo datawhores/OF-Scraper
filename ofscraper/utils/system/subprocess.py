@@ -1,14 +1,14 @@
 import subprocess
 import logging
 import ofscraper.utils.constants as constants
-from ofscraper.utils.logs.utils.level import getLevel
+from ofscraper.utils.logs.utils.level import getNumber
 
 
 def run(*args, log=None, **kwargs):
     log = log or logging.getLogger("shared")
     t = subprocess.run(*args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
     level = (
-        getLevel("DEBUG")
+        getNumber("DEBUG")
         if not constants.getattr("LOG_SUBPROCESS")
         else constants.getattr("LOG_SUBPROCESS_LEVEL")
     )
