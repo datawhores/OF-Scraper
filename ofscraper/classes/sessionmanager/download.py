@@ -56,19 +56,6 @@ class download_session(sessionManager.sessionManager):
         t.request = t.request
         return t
 
-    async def _aio_funct(self, method, *args, **kwargs):
-        # public function forces context manager use
-        r = await self._session._request(method, *args, **kwargs)
-        r.text_ = r.text
-        r.json_ = r.json
-        r.iter_chunked = self.chunk_with_limit(r.content.iter_chunked)
-        r.iter_chunks = self.chunk_with_limit(r.content.iter_chunks)
-        r.request = r.request_info
-        r.status_code = r.status
-        r.read_ = r.content.read
-        r.eof = r.content.at_eof
-        return r
-
     async def factoryasync(self, input):
         if callable(input):
             return input()

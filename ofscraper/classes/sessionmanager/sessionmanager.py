@@ -176,7 +176,6 @@ class sessionManager:
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
-        read_timeout = read_timeout or constants.getattr("CHUNK_READ_TIMEOUT")
         pool_timeout = pool_timeout or constants.getattr("POOL_CONNECT_TIMEOUT")
         limit = limit or constants.getattr("MAX_CONNECTIONS")
         keep_alive = keep_alive or constants.getattr("KEEP_ALIVE")
@@ -185,7 +184,6 @@ class sessionManager:
         proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
         self._connect_timeout = connect_timeout
         self._total_timeout = total_timeout
-        self._read_timeout = read_timeout
         self._pool_connect_timeout = pool_timeout
         self._connect_limit = limit
         self._keep_alive = keep_alive
@@ -221,13 +219,15 @@ class sessionManager:
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
                 ),
-                transport=AsyncCurlTransport(
-            impersonate="chrome",
-            default_headers=True,
-            # required for parallel requests, see curl_cffi issues below
-            curl_options={CurlOpt.FRESH_CONNECT: True}
+            #     transport=AsyncCurlTransport(
+            # impersonate="chrome",
+            # default_headers=True,
+            # # required for parallel requests, see curl_cffi issues below
+            # curl_options={CurlOpt.FRESH_CONNECT: True}
 
-                            ))
+            #                 )
+                            
+                            )
         else:
             self._session = httpx.Client(
                 http2=True,
@@ -345,7 +345,6 @@ class sessionManager:
                             total_timeout or self._total_timeout,
                             connect=connect_timeout or self._connect_timeout,
                             pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read=read_timeout or self._read_timeout,
                         ),
                         url=url,
                         follow_redirects=redirects,
@@ -454,7 +453,6 @@ class sessionManager:
                             total_timeout or self._total_timeout,
                             connect=connect_timeout or self._connect_timeout,
                             pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read=read_timeout or self._read_timeout,
                         ),
                         follow_redirects=redirects,
                         url=url,
