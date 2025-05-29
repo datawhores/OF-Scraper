@@ -11,9 +11,10 @@ r"""
                                                                                       
 """
 
-from functools import partial
 import pathlib
+import os
 from humanfriendly import format_size
+import psutil
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.updater as progress_updater
@@ -30,6 +31,7 @@ from ofscraper.db.operations_.media import download_media_update
 class DownloadManager:
     def __init__(self):
         self.total = None
+        self.process= psutil.Process(os.getpid())
 
     async def _add_download_job_task(
         self, ele, total=None, placeholderObj=None, tempholderObj=None

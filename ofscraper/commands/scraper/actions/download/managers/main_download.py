@@ -242,9 +242,13 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(
+    async def _download_fileobject_writer_streamer( # Renamed function as per user's prompt
         self, res, ele, tempholderObj, placeholderObj, total
     ):
+        common_globals.log.info(f"Starting download for {ele}. Tracking memory usage...")
+        initial_memory = self.process.memory_info().rss / (1024 * 1024) # RSS in MB
+        common_globals.log.info(f"Initial memory usage for {ele}: {initial_memory:.2f} MB")
+
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
@@ -256,33 +260,44 @@ class MainDownloadManager(DownloadManager):
                     tempholderObj.tempfilepath, "ab"
                 ).__aenter__()
                 chunk_iter = res.iter_chunked(get_chunk_size())
+                chunk_count = 0 # To track chunks for periodic memory logging
                 while True:
                     try:
                         chunk = await chunk_iter.__anext__()
                         await fileobject.write(chunk)
                         send_chunk_msg(ele, total, tempholderObj)
+                        chunk_count += 1
+                        # Log memory usage periodically, e.g., every 10 chunks
+                        if chunk_count % 10 == 0:
+                            current_memory = self.process.memory_info().rss / (1024 * 1024)
+                            common_globals.log.debug(f"Memory usage for {ele} after {chunk_count} chunks: {current_memory:.2f} MB")
                     except StopAsyncIteration:
                         break # Exit loop when no more chunks
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
+            common_globals.log.warning(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
             return # Exit the function on timeout
         except Exception as E:
             # Catch other potential exceptions during file operations or chunk iteration
-            common_globals.log.debug(f"An error occurred during download for {ele}: {E}")
+            common_globals.log.error(f"An error occurred during download for {ele}: {E}")
             raise E # Re-raise the exception after logging
         finally:
+            # Log final memory usage
+            final_memory = self.process.memory_info().rss / (1024 * 1024)
+            common_globals.log.info(f"Final memory usage for {ele}: {final_memory:.2f} MB")
+            common_globals.log.info(f"Memory change for {ele}: {(final_memory - initial_memory):.2f} MB")
+
             # Close file if needed
             if fileobject: # Ensure fileobject was successfully opened
                 try:
                     await fileobject.close()
                 except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
+                    common_globals.log.error(f"Error closing file for {ele}: {E}")
                     raise E # Re-raise if closing fails
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
-                common_globals.log.debug(f"Error removing download job task for {ele}: {E}")
+                common_globals.log.error(f"Error removing download job task for {ele}: {E}")
                 raise E # Re-raise if task removal fails
 
 
