@@ -69,9 +69,10 @@ def filterMediaFinalDownload(media, username, model_id):
     log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
     media=helpers.previous_download_filter(media, username=username, model_id=model_id)
     count += 1
+    media=helpers.ele_count_filter(media)
     trace_log_media(count, media, "media max post count filter:")
     log.debug(f"filter {count}->  media max post count filter count: {len(media)}")
-    media=helpers.ele_count_filter(media)
+    return media
 
 
 
