@@ -250,7 +250,7 @@ class MainDownloadManager(DownloadManager):
         common_globals.log.info(f"Starting download for {ele}. Tracking memory usage...")
         initial_memory = self.process.memory_info().rss / (1024 * 1024) # RSS in MB
         common_globals.log.info(f"Initial memory usage for {ele}: {initial_memory:.2f} MB")
-
+        return 
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
