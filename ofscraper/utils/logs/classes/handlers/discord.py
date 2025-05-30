@@ -107,7 +107,7 @@ class DiscordHandler(logging.Handler):
 
             for chunk in self.split_text_by_word_chunks(log_message):
                 if not bool(chunk):
-                    return
+                    continue
                 try:
                     with session.requests(
                         target_url,
