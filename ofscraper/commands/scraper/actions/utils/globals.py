@@ -49,7 +49,7 @@ def main_globals():
     global thread
     thread = ThreadPoolExecutor(max_workers=settings.get_settings().download_sems * 2)
     global sem
-    sem=None
+    sem=asyncio.Semaphore(settings.get_settings().download_sems)
     global dirSet
     dirSet = set()
     global lock
