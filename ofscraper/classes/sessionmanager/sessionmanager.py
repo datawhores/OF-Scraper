@@ -489,6 +489,118 @@ class sessionManager:
         yield r
         sem.release()
 
+    @contextlib.asynccontextmanager
+    async def requests_async_stream(
+        self,
+        url=None,
+        wait_min=None,
+        wait_max=None,
+        wait_min_exponential=None,
+        wait_max_exponential=None,
+        retries=None,
+        method="get",
+        headers=None,
+        cookies=None,
+        json=None,
+        params=None,
+        redirects=True,
+        data=None,
+        log=None,
+        sem=None,
+        total_timeout=None,
+        connect_timeout=None,
+        pool_connect_timeout=None,
+        read_timeout=None,
+        sleeper=None,
+        exceptions=[],
+        actions=[],
+        *args,
+        **kwargs,
+    ):
+        wait_min = wait_min or self._wait_min
+        wait_max = wait_max or self._wait_max
+        wait_min_exponential = wait_min_exponential or self._wait_min_exponential
+        wait_max_exponential = wait_max_exponential or self._wait_max_exponential
+        log = log or self._log
+        retries = retries or self._retries
+        sem = sem or self._sem
+        sleeper = sleeper or self._sleeper
+        exceptions = exceptions or []
+        actions = actions or []
+        async for _ in CustomTenacity(
+            wait_exponential=tenacity.wait.wait_exponential(
+                multiplier=2, min=wait_min_exponential, max=wait_max_exponential
+            ),
+            retry=retry_if_not_exception_type((KeyboardInterrupt)),
+            wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
+            stop=tenacity.stop.stop_after_attempt(retries),
+            before=lambda x: (
+                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+                if x.attempt_number > 1
+                else None
+            ),
+            reraise=True,
+        ):
+            with _:
+                r = None
+                try:
+                    await sem.acquire()
+                    await sleeper.async_do_sleep()
+                    if (
+                            SIGN in actions
+                            or FORCED_NEW in actions
+                            or HEADERS in actions
+                    ): 
+                        headers = (
+                        self._create_headers(
+                            headers, url, SIGN in actions, FORCED_NEW in actions
+                        )
+                       
+                    )
+
+
+                    cookies = self._create_cookies() if COOKIES in actions else None
+                    json = json
+                    params = params
+                    r = await self._httpx_funct_async_stream(
+                        method,
+                        timeout=httpx.Timeout(
+                            total_timeout or self._total_timeout,
+                            connect=connect_timeout or self._connect_timeout,
+                            pool=pool_connect_timeout or self._pool_connect_timeout,
+                        ),
+                        follow_redirects=redirects,
+                        url=url,
+                        cookies=cookies,
+                        headers=headers,
+                        json=json,
+                        params=params,
+                        data=data,
+                    )
+                    if r.status_code == 404:
+                        pass
+                    elif not r.ok:
+                        log.debug(f"[bold]failed: [bold] {r.url}")
+                        log.debug(f"[bold]status: [bold] {r.status}")
+                        log.debug(f"[bold]response text [/bold]: {await r.text_()}")
+                        log.debug(f"response headers {dict(r.headers)}")
+                        log.debug(f"requests headers mode{dict(r.request.headers)}")
+                        r.raise_for_status()
+                    yield r
+                except Exception as E:
+                    # only call from sync req like "me"
+                    # check_400(E)
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    if TOO_MANY in exceptions:
+                        await async_is_rate_limited(E, sleeper)
+                    raise E
+                finally:
+                    sem.release()
+                    await r.aclose()
+
+
+
     @property
     def sleep(self):
         return self._sleeper._sleep
@@ -508,6 +620,27 @@ class sessionManager:
         t.read_ = t.aread
         t.request = t.request
         return t
+    
+    async def _httpx_funct_async_stream(self, *args, **kwargs):
+        auth=kwargs.pop("auth",None)
+        follow_redirects=kwargs.pop("follow_redirects",None)
+        req=self._session.build_request(*args, **kwargs)
+        t = await self._session.send(
+            request=req,
+            follow_redirects=follow_redirects,
+            stream=True,
+            auth=auth,
+        )
+        t.ok = not t.is_error
+        t.json_ = lambda: self.factoryasync(t.json)
+        t.text_ = lambda: self.factoryasync(t.text)
+        t.status = t.status_code
+        t.iter_chunked = t.aiter_bytes
+        t.iter_chunks = t.aiter_bytes
+        t.read_ = t.aread
+        t.request = t.request
+        return t
+
 
     def _httpx_funct(self, method, **kwargs):
         t = self._session.request(method.upper(), **kwargs)

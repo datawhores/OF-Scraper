@@ -161,9 +161,9 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
-            return
-            async with c.requests_async(
+            async with c.requests_async_stream(
                 url=ele.url,
+                stream=True,
                 headers=headers,
             ) as r:
                 total = int(r.headers["content-length"])
