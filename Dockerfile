@@ -23,7 +23,7 @@ RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r 
 
 COPY . .
 RUN  pip install dunamai
-RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)")
+RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)")
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
 FROM base as final
