@@ -11,7 +11,7 @@ python = "^3.11,<3.14"
 
 httpx = {extras = ["http2"], version = "^0.28.1"}
 inquirerpy = "^0.3.4"
-setuptools = ">=69.1.1,<71.0.0"
+setuptools = ">=69.1.1,<79.0.0"
 schedule = "^1.2.1"
 browser-cookie3 = "0.19.1"
 requests = "^2.31.0"
