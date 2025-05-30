@@ -257,7 +257,7 @@ class MainDownloadManager(DownloadManager):
         fileobject = None # Initialize to None for finally block
         try:
             # Use asyncio.timeout as a context manager for the entire download process
-            async with asyncio.timeout(timeout=None):
+            async with asyncio.timeout():
                 fileobject = await aiofiles.open(
                     tempholderObj.tempfilepath, "ab"
                 ).__aenter__()
