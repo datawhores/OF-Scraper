@@ -1,5 +1,5 @@
-ARG PYTHON_VERSION="3.11"
-FROM python:$PYTHON_VERSION AS base
+ARG PYTHON_VERSION="3.12"
+FROM python:$PYTHON_VERSION-alpine AS base
 
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
@@ -14,18 +14,24 @@ WORKDIR /app
 
 RUN python -m ensurepip --upgrade
 
-RUN apt-get update && apt-get -y dist-upgrade
+RUN apk update && apk upgrade -U -a
 
 ARG SIZE="minimal"
 
-RUN apt-get update && \
-    if [ "$SIZE" = "full" ]; then \
-        apt-get install ffmpeg -y; \
+RUN if [ "$SIZE" = "full" ]; then \
+    apk add --no-cache ffmpeg; \
     fi
 
-RUN apt-get clean
+RUN apk add --no-cache bash\
+                       git \
+                       curl \
+    && rm -rf /var/cache/apk/*
 
 FROM base AS builder
+
+RUN apk add --no-cache build-base \
+                        linux-headers \
+    && rm -rf /var/cache/apk/*
 
 RUN pip3 install "poetry==$POETRY_VERSION" poetry-plugin-export
 RUN python -m venv /venv
@@ -39,28 +45,7 @@ RUN rm requirements.txt
 
 COPY . .
 RUN  pip install dunamai
-
-RUN \
-    echo "Attempting to get version from dunamai..." && \
-    RAW_DUNAMAI_OUTPUT=$(poetry run dunamai from git --format "{base}" --pattern="(?P<base>\\d+\.\d+(\.((\d+\.\w+)|\w+)|))") && \
-    echo "Raw Dunamai output: '$RAW_DUNAMAI_OUTPUT'" && \
-    # Extract the last line, which should be the version
-    CLEAN_VERSION_FROM_DUNAMAI=$(echo "$RAW_DUNAMAI_OUTPUT" | awk 'NF{line=$0}END{print line}') && \
-    # Alternative using tail, might be simpler if output structure is consistent:
-    # CLEAN_VERSION_FROM_DUNAMAI=$(echo "$RAW_DUNAMAI_OUTPUT" | tail -n 1) && \
-    echo "Cleaned Dunamai version: '$CLEAN_VERSION_FROM_DUNAMAI'" && \
-    \
-    if [ -z "$CLEAN_VERSION_FROM_DUNAMAI" ]; then \
-        echo "Error: Dunamai did not produce a usable version string. Aborting." >&2; \
-        exit 1; \
-    fi && \
-    \
-    # Now, use the cleaned version with poetry
-    echo "Setting poetry version to: '$CLEAN_VERSION_FROM_DUNAMAI'" && \
-    poetry version "$CLEAN_VERSION_FROM_DUNAMAI" && \
-    echo "Successfully set poetry version."
-
-    
+RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)")
 RUN poetry build && /venv/bin/pip install dist/*.whl
 
 FROM base AS final
