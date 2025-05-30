@@ -352,7 +352,7 @@ class sessionManager:
                             total_timeout or self._total_timeout,
                             connect=connect_timeout or self._connect_timeout,
                             pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read_timeout=read_timeout or self._read_timeout
+                            read=read_timeout or self._read_timeout
                         ),
                         url=url,
                         follow_redirects=redirects,
@@ -461,7 +461,7 @@ class sessionManager:
                             total_timeout or self._total_timeout,
                             connect=connect_timeout or self._connect_timeout,
                             pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read_timeout=read_timeout or self._read_timeout
+                            read=read_timeout or self._read_timeout
 
                         ),
                         follow_redirects=redirects,
