@@ -14,6 +14,7 @@ from ofscraper.classes.sessionmanager.sessionmanager import (
 )
 from ofscraper.commands.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 
 
 class download_session(sessionManager.sessionManager):
@@ -23,14 +24,20 @@ class download_session(sessionManager.sessionManager):
         retries = retries or get_download_req_retries()
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
+        read_timeout=get_chunk_timeout()
         log = log or common_globals.log
         self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
+
+
+
+
         super().__init__(
             sem_count=sem_count,
             retries=retries,
             wait_min=wait_min,
             wait_max=wait_max,
             log=log,
+            read_timeout=read_timeout
         )
 
     @contextlib.asynccontextmanager

@@ -35,7 +35,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
     get_url_log,
     path_to_file_logger,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size,get_chunk_timeout
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
@@ -257,7 +257,7 @@ class MainDownloadManager(DownloadManager):
         fileobject = None # Initialize to None for finally block
         try:
             # Use asyncio.timeout as a context manager for the entire download process
-            async with asyncio.timeout(get_chunk_timeout()):
+            async with asyncio.timeout(timeout=None):
                 fileobject = await aiofiles.open(
                     tempholderObj.tempfilepath, "ab"
                 ).__aenter__()
@@ -277,7 +277,7 @@ class MainDownloadManager(DownloadManager):
                         break # Exit loop when no more chunks
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
-            common_globals.log.warning(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
+            common_globals.log.warning(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {()} seconds or download timed out!")
             return # Exit the function on timeout
         except Exception as E:
             # Catch other potential exceptions during file operations or chunk iteration

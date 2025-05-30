@@ -36,7 +36,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
     temp_file_logger,
 )
 from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size,get_chunk_timeout
+    get_chunk_size
 )
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
@@ -272,7 +272,7 @@ class AltDownloadManager(DownloadManager):
         fileobject = None # Initialize to None for finally block
         try:
             # Use asyncio.timeout as a context manager for the entire download process
-            async with asyncio.timeout(get_chunk_timeout()):
+            async with asyncio.timeout(timeout=None):
                 fileobject = await aiofiles.open(
                     placeholderObj.tempfilepath, "ab"
                 ).__aenter__()
