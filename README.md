@@ -11,6 +11,9 @@ As the API has changed older version are no longer viable
 
 https://github.com/datawhores/OF-Scraper/issues/442
 
+# For Issues related to Downloading
+https://github.com/datawhores/OF-Scraper/issues/542
+
 # ReadMe
 
 ## Releases
