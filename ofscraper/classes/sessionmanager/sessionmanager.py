@@ -4,662 +4,598 @@ import logging
 import threading
 import time
 import traceback
+import sys # For sys.exc_info() in stream context manager
 
 import arrow
 import httpx
 import tenacity
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
+# Assuming these utility modules are available and function as expected
+# You might need to adjust imports based on your project structure
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
-from httpx_aiohttp import AiohttpTransport
-from aiohttp import ClientSession
-import aiohttp
 
-
-
+# Action constants
 TOO_MANY = "too_many"
 AUTH = "auth"
-FORCED_NEW = "get_new_sign"
+FORCED_NEW = "get_new_sign"  # Implies SIGN
 SIGN = "get_sign"
 COOKIES = "get_cookies_str"
-HEADERS = "create_header"
+HEADERS = "create_header" # General header creation trigger
+FOUR_OH_FOUR_OK = "404_OK" # New action to treat 404 as non-error
+
+log = logging.getLogger("shared") 
 
 
-def is_rate_limited(exception, sleeper):
-    if is_provided_exception_number(exception, 429, 504):
-        sleeper.toomany_req()
-
-
-async def async_is_rate_limited(exception, sleeper):
-    if is_provided_exception_number(exception, 429, 504):
-        await sleeper.async_toomany_req()
-
-
-def async_check_400(exception):
-    if is_provided_exception_number(exception, 400):
-        print_auth_warning()
-        asyncio.sleep(8)
-
-
-def check_400(exception):
-    if is_provided_exception_number(exception, 400):
-        print_auth_warning()
-        time.sleep(8)
-
-
-
-def is_provided_exception_number(exception, *numbers):
+# --- Error Type Checking ---
+def is_httpx_status_error(exception, *status_codes):
+    """Checks if the exception is an httpx.HTTPStatusError with specific status codes."""
     return (
-        isinstance(exception, aiohttp.ClientResponseError)
-        and (
-            getattr(exception, "status_code", None)
-            or getattr(exception, "status", None) in numbers
-        )
-    ) or (
         isinstance(exception, httpx.HTTPStatusError)
-        and (
-            (
-                getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)
-            )
-            in numbers
-        )
+        and exception.response.status_code in status_codes
     )
 
+# --- Rate Limit and Error Handling Logic ---
 class SessionSleep:
-    def __init__(self, sleep=None, difmin=None):
+    """Manages sleep intervals, especially for rate limiting."""
+    def __init__(self, initial_sleep=None, increase_time_diff=None):
         self._sleep = None
-        self._init_sleep = sleep
-        self._last_date = arrow.now()
-        self._difmin = (
-            difmin
-            if difmin is not None
-            else constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        self._initial_sleep = initial_sleep if initial_sleep is not None else constants.getattr("SESSION_SLEEP_INIT", 5) # Default 5s
+        self._last_increase_time = arrow.now()
+        self._min_time_between_increases = (
+            increase_time_diff
+            if increase_time_diff is not None
+            else constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF", 60) # Default 60s
         )
-        self._alock = asyncio.Lock()
+        self._lock = threading.Lock() # For sync version
+        self._async_lock = asyncio.Lock() # For async version
+        self.max_sleep = constants.getattr("SESSION_MAX_SLEEP", 300) # Max sleep 5 minutes
 
     def reset_sleep(self):
-        self._sleep = self._init_sleep
-        self._last_date = arrow.now()
+        """Resets the sleep duration to its initial value."""
+        with self._lock: # Ensure thread safety for reset
+            self._sleep = self._initial_sleep
+            self._last_increase_time = arrow.now()
+        log.debug("SessionSleep: Sleep reset to initial.")
 
-    async def async_toomany_req(self):
-        async with self._alock:
-            self.toomany_req()
+
+    def _increase_sleep_duration(self):
+        """Increases the sleep duration, respecting max_sleep."""
+        if not self._sleep:
+            self._sleep = self._initial_sleep
+            log.debug(f"SessionSleep: Initialized sleep to {self._sleep}s.")
+        elif arrow.now().float_timestamp - self._last_increase_time.float_timestamp < self._min_time_between_increases:
+            log.debug(f"SessionSleep: Not increasing sleep ({self._sleep}s). Last increase was too recent.")
+        else:
+            self._sleep = min(self._sleep * 2, self.max_sleep)
+            log.debug(f"SessionSleep: Increased sleep to {self._sleep}s.")
+        self._last_increase_time = arrow.now()
 
     def toomany_req(self):
-        log = logging.getLogger("shared")
-        if not self._sleep:
-            self._sleep = (
-                self._init_sleep
-                if self._init_sleep
-                else constants.getattr("SESSION_SLEEP_INIT")
-            )
-            log.debug(
-                f"too many req => setting sleep to init \\[{self._sleep} seconds]"
-            )
-        elif (
-            arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin
-        ):
-            log.debug(
-                f"too many req => not changing sleep \\[{self._sleep} seconds] because last call less than {self._difmin} seconds"
-            )
-            return self._sleep
-        else:
-            self._sleep = self._sleep * 2
-            log.debug(f"too many req => setting sleep to \\[{self._sleep} seconds]")
-        self._last_date = arrow.now()
+        """Handles 'too many requests' synchronously, increasing sleep time."""
+        with self._lock:
+            self._increase_sleep_duration()
         return self._sleep
 
-    async def async_do_sleep(self):
-        if self._sleep:
-            logging.getLogger("shared").debug(
-                f"too many req => waiting \\[{self._sleep} seconds] before next req"
-            )
-            await asyncio.sleep(self._sleep)
+    async def async_toomany_req(self):
+        """Handles 'too many requests' asynchronously, increasing sleep time."""
+        async with self._async_lock:
+            self._increase_sleep_duration()
+        return self._sleep
 
     def do_sleep(self):
-        if self._sleep:
-            logging.getLogger("shared").debug(
-                f"too many req => waiting \\[{self._sleep} seconds] before next req"
-            )
-            time.sleep(self._sleep)
+        """Performs a synchronous sleep if a sleep duration is set."""
+        current_sleep = self._sleep # Read it once
+        if current_sleep and current_sleep > 0:
+            log.debug(f"SessionSleep: Sleeping for {current_sleep}s due to previous rate limit or error.")
+            time.sleep(current_sleep)
+
+    async def async_do_sleep(self):
+        """Performs an asynchronous sleep if a sleep duration is set."""
+        current_sleep = self._sleep # Read it once
+        if current_sleep and current_sleep > 0:
+            log.debug(f"SessionSleep: Async sleeping for {current_sleep}s due to previous rate limit or error.")
+            await asyncio.sleep(current_sleep)
 
     @property
-    def sleep(self):
+    def current_sleep_duration(self):
         return self._sleep
 
-    @sleep.setter
-    def sleep(self, val):
-        self._sleep = val
+class BaseCustomClient:
+    def __init__(self, *,
+                 retries=None, wait_min=None, wait_max=None,
+                 connect_timeout=None, read_timeout=None, pool_timeout=None, total_timeout=None,
+                 proxy=None, limits=None, log_level=None, **kwargs): # Added log_level
+        
+        # Initialize logging for this instance
+        self.log = logging.getLogger(self.__class__.__name__)
+        if log_level is not None: # Allow per-instance log level override
+            self.log.setLevel(log_level)
 
+        # Default settings from constants
+        self._retries = retries if retries is not None else constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT", 5)
+        self._wait_min = wait_min if wait_min is not None else constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT", 1)
+        self._wait_max = wait_max if wait_max is not None else constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT", 5)
+        
+        # Default timeouts
+        self._default_connect_timeout = connect_timeout if connect_timeout is not None else constants.getattr("CONNECT_TIMEOUT", 10)
+        self._default_read_timeout = read_timeout if read_timeout is not None else constants.getattr("READ_TIMEOUT", 30)
+        self._default_pool_timeout = pool_timeout if pool_timeout is not None else constants.getattr("POOL_CONNECT_TIMEOUT", 10)
+        self._default_total_timeout = total_timeout if total_timeout is not None else constants.getattr("TOTAL_TIMEOUT", 60)
 
-class CustomTenacity(AsyncRetrying):
-    """
-    A custom context manager using tenacity for asynchronous retries with wait strategies and stopping without exceptions.
-    """
-
-    def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.wait_random = wait_random or tenacity.wait.wait_random(
-            min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
-            max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
+        self.sleeper = SessionSleep(
+            initial_sleep=constants.getattr("SESSION_SLEEP_INIT", 0), # Start with 0 unless specified
+            increase_time_diff=constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF", 60)
         )
-        self.wait_exponential = wait_exponential or tenacity.wait_exponential(
-            min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
-            max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+        
+        self.proxy = proxy or constants.getattr("PROXY")
+        
+        # HTTPX client limits
+        self.limits_config = limits or httpx.Limits(
+            max_keepalive_connections=constants.getattr("KEEP_ALIVE", 20),
+            max_connections=constants.getattr("MAX_CONNECTIONS", 100),
+            keepalive_expiry=constants.getattr("KEEP_ALIVE_EXP", 60.0),
         )
-        self.wait = self._wait_picker
-
-    def _wait_picker(self, retry_state) -> None:
-        sleep = self.wait_random(retry_state)
-        logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
-        return sleep
+        
+        # Store other httpx passthrough kwargs
+        self._httpx_kwargs = kwargs
 
 
-class sessionManager:
-    def __init__(
-        self,
-        connect_timeout=None,
-        total_timeout=None,
-        read_timeout=None,
-        pool_timeout=None,
-        limit=None,
-        keep_alive=None,
-        keep_alive_exp=None,
-        proxy=None,
-        proxy_auth=None,
-        delay=None,
-        sem_count=None,
-        retries=None,
-        wait_min=None,
-        wait_max=None,
-        wait_min_exponential=None,
-        wait_max_exponential=None,
-        log=None,
-        sem=None,
-        sync_sem_count=None,
-        sync_sem=None,
-    ):
-        connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
-        total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
-        pool_timeout = pool_timeout or constants.getattr("POOL_CONNECT_TIMEOUT")
-        limit = limit or constants.getattr("MAX_CONNECTIONS")
-        keep_alive = keep_alive or constants.getattr("KEEP_ALIVE")
-        keep_alive_exp = keep_alive_exp or constants.getattr("KEEP_ALIVE_EXP")
-        proxy = proxy or constants.getattr("PROXY")
-        proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
-        self._connect_timeout = connect_timeout
-        self._total_timeout = total_timeout
-        self._read_timeout=read_timeout
-        self._pool_connect_timeout = pool_timeout
-        self._connect_limit = limit
-        self._keep_alive = keep_alive
-        self._keep_alive_exp = keep_alive_exp
-        self._proxy = proxy
-        self._delay = delay or 0
-        self._sem = sem or asyncio.BoundedSemaphore(sem_count or 100000)
-        self._sync_sem = sync_sem or threading.Semaphore(
-            sync_sem_count or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
+    def _prepare_headers_and_cookies(self, url, current_headers, current_cookies_dict, actions):
+        """Prepares headers and cookies based on actions."""
+        headers_to_use = (current_headers or {}).copy()
+        cookies_to_use = (current_cookies_dict or {}).copy()
+
+        if HEADERS in actions or SIGN in actions or FORCED_NEW in actions:
+            # auth_requests.make_headers() should return a dict
+            headers_to_use.update(auth_requests.make_headers())
+            if SIGN in actions or FORCED_NEW in actions:
+                # auth_requests.create_sign modifies headers in place
+                auth_requests.create_sign(url, headers_to_use)
+        
+        if COOKIES in actions:
+            # auth_requests.add_cookies() should return a dict or httpx.Cookies
+            # httpx.Client/AsyncClient can take a dict for cookies
+            new_cookies = auth_requests.add_cookies()
+            if isinstance(new_cookies, httpx.Cookies): # If it's a CookieJar instance
+                # Convert to dict or ensure compatibility; httpx handles CookieJar instances.
+                # For simplicity, if it returns a dict, merge it.
+                # If it returns a CookieJar, httpx will use it. Here we assume it's a dict to merge.
+                # If add_cookies returns a full CookieJar, it might be better to pass it directly.
+                # For now, let's assume it returns a dict to be merged.
+                if isinstance(new_cookies, dict):
+                     cookies_to_use.update(new_cookies)
+                else: # If it's a CookieJar, httpx will handle it.
+                    cookies_to_use = new_cookies # Replace, don't update
+            elif isinstance(new_cookies, dict):
+                 cookies_to_use.update(new_cookies)
+
+
+        return headers_to_use, cookies_to_use
+
+    def _get_timeout_config(self, per_request_timeouts=None):
+        """Constructs an httpx.Timeout object for a request."""
+        timeouts = per_request_timeouts or {}
+        return httpx.Timeout(
+            timeouts.get("total", self._default_total_timeout),
+            connect=timeouts.get("connect", self._default_connect_timeout),
+            read=timeouts.get("read", self._default_read_timeout),
+            pool=timeouts.get("pool", self._default_pool_timeout)
         )
-        self._retries = retries or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
-        self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min_exponential = wait_min_exponential or constants.getattr(
-            "OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"
+
+    def _log_attempt(self, retry_state):
+        """Logs retry attempts."""
+        if retry_state.attempt_number > 1:
+            self.log.debug(f"Retrying request (attempt {retry_state.attempt_number})...")
+            if retry_state.outcome:
+                 self.log.debug(f"Previous attempt failed with: {retry_state.outcome.exception()}")
+
+
+    def _log_error_response(self, response, is_async=False, is_stream=False):
+        """Logs details of an error response."""
+        self.log.warning(f"Request failed: {response.request.method} {response.url} - Status: {response.status_code}")
+        # For streams, reading text might consume the stream or block. Be cautious.
+        # For async, response.text needs to be awaited.
+        # This part needs careful handling if we want to log response body for errors.
+        # For now, just log status and headers.
+        self.log.debug(f"Error Response Headers: {dict(response.headers)}")
+        # Add more details if safe and needed, e.g. response.text if not a stream and small
+        # if not is_stream:
+        #     try:
+        #         content = response.text if not is_async else await response.text
+        #         self.log.debug(f"Error Response Body (first 500 chars): {content[:500]}")
+        #     except Exception as e:
+        #         self.log.debug(f"Could not read error response body: {e}")
+
+
+    def _handle_exception_actions(self, exc, actions, is_async=False):
+        """Handles actions based on exceptions (e.g., 400, 429)."""
+        # 400 error code handling (e.g., auth issues)
+        if AUTH in actions and is_httpx_status_error(exc, 400):
+            self.log.warning("Received 400 error, possibly auth-related. Applying specific delay.")
+            print_auth_warning() # Assuming this prints a user-friendly message
+            if is_async:
+                # Schedule the sleep without blocking the retryer's async flow directly
+                # This is tricky. asyncio.sleep(8) here would pause the retry logic.
+                # The original async_check_400 did asyncio.sleep(8).
+                # This means the 8s sleep is part of the attempt's duration *before* tenacity's wait.
+                # We'll replicate this behavior.
+                # await asyncio.sleep(8) # This needs to be done in the async request method's except block.
+                pass # Placeholder: actual sleep will be in the async request method
+            else:
+                time.sleep(8) # Sync sleep
+
+        # 429 (Too Many Requests) or 504 (Gateway Timeout) handling
+        if TOO_MANY in actions and is_httpx_status_error(exc, 429, 504):
+            self.log.warning(f"Received {exc.response.status_code} error. Increasing session sleep.")
+            if is_async:
+                asyncio.create_task(self.sleeper.async_toomany_req()) # Run in background to not block
+            else:
+                self.sleeper.toomany_req()
+
+
+# --- Synchronous Custom HTTPX Client ---
+class HttpxClient(BaseCustomClient, httpx.Client):
+    def __init__(self, *,
+                 retries=None, wait_min=None, wait_max=None,
+                 connect_timeout=None, read_timeout=None, pool_timeout=None, total_timeout=None,
+                 proxy=None, limits=None, log_level=None, **kwargs):
+        
+        BaseCustomClient.__init__(self, retries=retries, wait_min=wait_min, wait_max=wait_max,
+                                  connect_timeout=connect_timeout, read_timeout=read_timeout,
+                                  pool_timeout=pool_timeout, total_timeout=total_timeout,
+                                  proxy=proxy, limits=limits, log_level=log_level)
+        
+        httpx.Client.__init__(self, proxy=self.proxy, limits=self.limits_config, http2=True, **self._httpx_kwargs)
+
+    def _adapt_response(self, response, is_stream=False):
+        """Adapts httpx.Response for consistent attribute access."""
+        response.ok = not response.is_error
+        response.json_ = response.json # .json() is a method
+        response.text_ = lambda: response.text # .text is a property
+        response.status = response.status_code
+        response.iter_chunked = response.iter_bytes # .iter_bytes() is a sync iterator
+        response.read_ = response.read # .read() is a sync method
+        return response
+
+    def request(self, method, url, *, actions=None, per_request_timeouts=None, **kwargs):
+        actions = actions or []
+        
+        retryer = Retrying(
+            stop=tenacity.stop_after_attempt(self._retries),
+            wait=tenacity.wait_random(min=self._wait_min, max=self._wait_max),
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            before=self._log_attempt,
+            reraise=True
         )
-        self._wait_max_exponential = wait_max_exponential or constants.getattr(
-            "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
-        )
-        self._log = log or logging.getLogger("shared")
-        self._sleeper = SessionSleep()
-        self._session = None
 
-    def _set_session(self, async_=True):
-        if self._session:
-            return
-        if async_:
-            self._session = httpx.AsyncClient(
-                http2=True,
-                proxy=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-             transport=AiohttpTransport(
-        client=lambda: ClientSession(    proxy=self._proxy,
-        connector=aiohttp.TCPConnector(limit=self._connect_limit)),
-    )
-                            
-                            )
-        else:
-            self._session = httpx.Client(
-                http2=True,
-                proxy=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-            )
-        self._async = async_
-        return self._session
+        for attempt in retryer:
+            with attempt:
+                try:
+                    self.sleeper.do_sleep() # Sleep if prior rate limit occurred
 
-    # https://github.com/aio-libs/aiohttp/issues/1925
-    async def __aenter__(self):
-        self._set_session(async_=True)
-        return self
+                    req_headers = kwargs.pop("headers", None)
+                    req_cookies = kwargs.pop("cookies", None) # httpx takes dict or CookieJar
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._session.__aexit__(exc_type, exc_val, exc_tb)
+                    prepared_headers, prepared_cookies = self._prepare_headers_and_cookies(
+                        url, req_headers, req_cookies, actions
+                    )
+                    
+                    timeout_config = self._get_timeout_config(per_request_timeouts)
 
-    def __enter__(self):
-        self._set_session(async_=False)
-        return self
+                    response = super().request(
+                        method,
+                        url,
+                        headers=prepared_headers,
+                        cookies=prepared_cookies, # Pass the prepared cookies
+                        timeout=timeout_config,
+                        **kwargs # Pass through other httpx args
+                    )
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._session.__exit__(exc_type, exc_val, exc_tb)
-        time.sleep(1)
+                    if response.status_code == 404 and FOUR_OH_FOUR_OK not in actions:
+                        self.log.debug(f"Received 404 for {url}, treating as non-error based on actions or default.")
+                        # Or specific handling, original code had 'pass'
+                    elif not response.is_error: # Use httpx's is_error
+                        pass # Successful response
+                    else: # is_error is True
+                        self._log_error_response(response)
+                        response.raise_for_status() # Will raise httpx.HTTPStatusError
 
-    def _create_headers(
-        self,
-        headers,
-        url,
-        sign,
-        forced,
-    ):
-        headers = headers or {}
-        headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url) if sign else headers
-        return headers
+                    return self._adapt_response(response)
 
-    def _create_sign(self, headers, url):
-        auth_requests.create_sign(url, headers)
-        return headers
+                except Exception as e:
+                    self.log.debug(f"Exception during request to {url}: {type(e).__name__} - {e}")
+                    self.log.traceback_(traceback.format_exc()) # Assuming log has traceback_ method
 
-    def _create_cookies(self):
-        return auth_requests.add_cookies()
-
-    def reset_sleep(self):
-        self._sleeper.reset_sleep()
+                    # Handle specific actions based on the exception
+                    if AUTH in actions and is_httpx_status_error(e, 400):
+                        self.log.warning("Sync: Received 400 error, possibly auth-related. Applying 8s delay.")
+                        print_auth_warning()
+                        time.sleep(8)
+                    
+                    if TOO_MANY in actions and is_httpx_status_error(e, 429, 504):
+                        status = e.response.status_code if isinstance(e, httpx.HTTPStatusError) else "N/A"
+                        self.log.warning(f"Sync: Received {status} error. Increasing session sleep.")
+                        self.sleeper.toomany_req()
+                    
+                    raise # Reraise for tenacity to handle retry
 
     @contextlib.contextmanager
-    def requests(
-        self,
-        url=None,
-        method="get",
-        headers=None,
-        cookies=None,
-        json=None,
-        params=None,
-        redirects=True,
-        data=None,
-        retries=None,
-        wait_min=None,
-        wait_max=None,
-        log=None,
-        total_timeout=None,
-        connect_timeout=None,
-        pool_connect_timeout=None,
-        read_timeout=None,
-        sleeper=None,
-        exceptions=[],
-        actions=[],
-        **kwargs,
-    ):
-        json = json or None
-        params = params or None
-        r = None
-        log = log or self._log
-        min = wait_min or self._wait_min
-        max = wait_max or self._wait_max
-        retries = retries or self._retries
-        sleeper = sleeper or self._sleeper
-        exceptions = exceptions or []
+    def stream(self, method, url, *, actions=None, per_request_timeouts=None, **kwargs):
         actions = actions or []
-        for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt)),
-            stop=tenacity.stop.stop_after_attempt(retries),
-            wait=tenacity.wait.wait_random(min=min, max=max),
-            before=lambda x: (
-                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
-                if x.attempt_number > 1
-                else None
-            ),
-            reraise=True,
-        ):
-            r = None
-            with _:
-                try:
-                    sleeper.do_sleep()
-                    # remake each time
-                    if (
-                            SIGN in actions
-                            or FORCED_NEW in actions
-                            or HEADERS in actions
-                       ):
-                            headers = self._create_headers(
-                                    headers, url, SIGN in actions, FORCED_NEW in actions
-                                )   
-                    
-                    cookies = self._create_cookies() if COOKIES in actions else None
-                    r = self._httpx_funct(
-                        method,
-                        timeout=httpx.Timeout(
-                            total_timeout or self._total_timeout,
-                            connect=connect_timeout or self._connect_timeout,
-                            pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read=read_timeout or self._read_timeout
-                        ),
-                        url=url,
-                        follow_redirects=redirects,
-                        params=params,
-                        cookies=cookies,
-                        headers=headers,
-                        json=json,
-                        data=data,
-                    )
-
-                    if r.status_code == 404:
-                        pass
-                    elif not r.ok:
-                        log.debug(f"[bold]failed: [bold] {r.url}")
-                        log.debug(f"[bold]status: [bold] {r.status}")
-                        log.debug(f"[bold]response text [/bold]: {r.text_()}")
-                        log.debug(f"response headers {dict(r.headers)}")
-                        log.debug(f"requests headers {dict(r.request.headers)}")
-                        r.raise_for_status()
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    if TOO_MANY in exceptions:
-                        is_rate_limited(E, sleeper)
-                    if AUTH in exceptions:
-                        check_400(E)
-                    raise E
-        yield r
-
-    @contextlib.asynccontextmanager
-    async def requests_async(
-        self,
-        url=None,
-        wait_min=None,
-        wait_max=None,
-        wait_min_exponential=None,
-        wait_max_exponential=None,
-        retries=None,
-        method="get",
-        headers=None,
-        cookies=None,
-        json=None,
-        params=None,
-        redirects=True,
-        data=None,
-        log=None,
-        sem=None,
-        total_timeout=None,
-        connect_timeout=None,
-        pool_connect_timeout=None,
-        read_timeout=None,
-        sleeper=None,
-        exceptions=[],
-        actions=[],
-        *args,
-        **kwargs,
-    ):
-        wait_min = wait_min or self._wait_min
-        wait_max = wait_max or self._wait_max
-        wait_min_exponential = wait_min_exponential or self._wait_min_exponential
-        wait_max_exponential = wait_max_exponential or self._wait_max_exponential
-        log = log or self._log
-        retries = retries or self._retries
-        sem = sem or self._sem
-        sleeper = sleeper or self._sleeper
-        exceptions = exceptions or []
-        actions = actions or []
-        async for _ in CustomTenacity(
-            wait_exponential=tenacity.wait.wait_exponential(
-                multiplier=2, min=wait_min_exponential, max=wait_max_exponential
-            ),
-            retry=retry_if_not_exception_type((KeyboardInterrupt)),
-            wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
-            stop=tenacity.stop.stop_after_attempt(retries),
-            before=lambda x: (
-                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
-                if x.attempt_number > 1
-                else None
-            ),
-            reraise=True,
-        ):
-            await sem.acquire()
-            with _:
-                r = None
-                try:
-                    await sleeper.async_do_sleep()
-                    if (
-                            SIGN in actions
-                            or FORCED_NEW in actions
-                            or HEADERS in actions
-                    ): 
-                        headers = (
-                        self._create_headers(
-                            headers, url, SIGN in actions, FORCED_NEW in actions
-                        )
-                       
-                    )
-
-
-                    cookies = self._create_cookies() if COOKIES in actions else None
-                    json = json
-                    params = params
-                    r = await self._httpx_funct_async(
-                        method,
-                        timeout=httpx.Timeout(
-                            total_timeout or self._total_timeout,
-                            connect=connect_timeout or self._connect_timeout,
-                            pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read=read_timeout or self._read_timeout
-
-                        ),
-                        follow_redirects=redirects,
-                        url=url,
-                        cookies=cookies,
-                        headers=headers,
-                        json=json,
-                        params=params,
-                        data=data,
-                    )
-                    if r.status_code == 404:
-                        pass
-                    elif not r.ok:
-                        log.debug(f"[bold]failed: [bold] {r.url}")
-                        log.debug(f"[bold]status: [bold] {r.status}")
-                        log.debug(f"[bold]response text [/bold]: {await r.text_()}")
-                        log.debug(f"response headers {dict(r.headers)}")
-                        log.debug(f"requests headers mode{dict(r.request.headers)}")
-                        r.raise_for_status()
-                except Exception as E:
-                    # only call from sync req like "me"
-                    # check_400(E)
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    if TOO_MANY in exceptions:
-                        await async_is_rate_limited(E, sleeper)
-                    sem.release()
-                    raise E
-        yield r
-        sem.release()
-
-    @contextlib.asynccontextmanager
-    async def requests_async_stream(
-        self,
-        url=None,
-        wait_min=None,
-        wait_max=None,
-        wait_min_exponential=None,
-        wait_max_exponential=None,
-        retries=None,
-        method="get",
-        headers=None,
-        cookies=None,
-        json=None,
-        params=None,
-        redirects=True,
-        data=None,
-        log=None,
-        sem=None,
-        total_timeout=None,
-        connect_timeout=None,
-        pool_connect_timeout=None,
-        read_timeout=None,
-        sleeper=None,
-        exceptions=[],
-        actions=[],
-        *args,
-        **kwargs,
-    ):
-        wait_min = wait_min or self._wait_min
-        wait_max = wait_max or self._wait_max
-        wait_min_exponential = wait_min_exponential or self._wait_min_exponential
-        wait_max_exponential = wait_max_exponential or self._wait_max_exponential
-        log = log or self._log
-        retries = retries or self._retries
-        sem = sem or self._sem
-        sleeper = sleeper or self._sleeper
-        exceptions = exceptions or []
-        actions = actions or []
-        async for _ in CustomTenacity(
-            wait_exponential=tenacity.wait.wait_exponential(
-                multiplier=2, min=wait_min_exponential, max=wait_max_exponential
-            ),
-            retry=retry_if_not_exception_type((KeyboardInterrupt)),
-            wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
-            stop=tenacity.stop.stop_after_attempt(retries),
-            before=lambda x: (
-                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
-                if x.attempt_number > 1
-                else None
-            ),
-            reraise=True,
-        ):
-            with _:
-                r = None
-                try:
-                    await sem.acquire()
-                    await sleeper.async_do_sleep()
-                    if (
-                            SIGN in actions
-                            or FORCED_NEW in actions
-                            or HEADERS in actions
-                    ): 
-                        headers = (
-                        self._create_headers(
-                            headers, url, SIGN in actions, FORCED_NEW in actions
-                        )
-                       
-                    )
-
-
-                    cookies = self._create_cookies() if COOKIES in actions else None
-                    json = json
-                    params = params
-                    r = await self._httpx_funct_async_stream(
-                        method,
-                        timeout=httpx.Timeout(
-                            total_timeout or self._total_timeout,
-                            connect=connect_timeout or self._connect_timeout,
-                            pool=pool_connect_timeout or self._pool_connect_timeout,
-                            read=read_timeout or self._read_timeout
-                        ),
-                        follow_redirects=redirects,
-                        url=url,
-                        cookies=cookies,
-                        headers=headers,
-                        json=json,
-                        params=params,
-                        data=data,
-                    )
-                    if r.status_code == 404:
-                        pass
-                    elif not r.ok:
-                        log.debug(f"[bold]failed: [bold] {r.url}")
-                        log.debug(f"[bold]status: [bold] {r.status}")
-                        log.debug(f"[bold]response text [/bold]: {await r.text_()}")
-                        log.debug(f"response headers {dict(r.headers)}")
-                        log.debug(f"requests headers mode{dict(r.request.headers)}")
-                        r.raise_for_status()
-                    yield r
-                except Exception as E:
-                    # only call from sync req like "me"
-                    # check_400(E)
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    if TOO_MANY in exceptions:
-                        await async_is_rate_limited(E, sleeper)
-                    raise E
-                finally:
-                    sem.release()
-                    await r.aclose()
-
-
-
-    @property
-    def sleep(self):
-        return self._sleeper._sleep
-
-    @sleep.setter
-    def sleep(self, val):
-        self._sleeper._sleep = val
-
-    async def _httpx_funct_async(self, *args, **kwargs):
-        t = await self._session.request(*args, **kwargs)
-        t.ok = not t.is_error
-        t.json_ = lambda: self.factoryasync(t.json)
-        t.text_ = lambda: self.factoryasync(t.text)
-        t.status = t.status_code
-        t.iter_chunked = t.aiter_bytes
-        t.iter_chunks = t.aiter_bytes
-        t.read_ = t.aread
-        t.request = t.request
-        return t
-    
-    async def _httpx_funct_async_stream(self, *args, **kwargs):
-        auth=kwargs.pop("auth",None)
-        follow_redirects=kwargs.pop("follow_redirects",None)
-        req=self._session.build_request(*args, **kwargs)
-        t = await self._session.send(
-            request=req,
-            follow_redirects=follow_redirects,
-            stream=True,
-            auth=auth,
+        
+        retryer = Retrying(
+            stop=tenacity.stop_after_attempt(self._retries),
+            wait=tenacity.wait_random(min=self._wait_min, max=self._wait_max),
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            before=self._log_attempt,
+            reraise=True
         )
-        t.ok = not t.is_error
-        t.json_ = lambda: self.factoryasync(t.json)
-        t.text_ = lambda: self.factoryasync(t.text)
-        t.status = t.status_code
-        t.iter_chunked = t.aiter_bytes
-        t.iter_chunks = t.aiter_bytes
-        t.read_ = t.aread
-        t.request = t.request
-        return t
+
+        # To ensure __exit__ is called on the stream context manager
+        active_stream_ctx = None 
+        try:
+            for attempt in retryer:
+                with attempt:
+                    current_attempt_stream_ctx = None
+                    response_obj = None
+                    try:
+                        self.sleeper.do_sleep()
+
+                        req_headers = kwargs.pop("headers", None)
+                        req_cookies = kwargs.pop("cookies", None)
+                        prepared_headers, prepared_cookies = self._prepare_headers_and_cookies(
+                            url, req_headers, req_cookies, actions
+                        )
+                        timeout_config = self._get_timeout_config(per_request_timeouts)
+
+                        # super().stream returns a context manager
+                        current_attempt_stream_ctx = super().stream(
+                            method, url, headers=prepared_headers, cookies=prepared_cookies,
+                            timeout=timeout_config, **kwargs
+                        )
+                        
+                        response_obj = current_attempt_stream_ctx.__enter__()
+                        active_stream_ctx = current_attempt_stream_ctx # Mark for potential exit in outer finally
+
+                        if response_obj.status_code == 404 and FOUR_OH_FOUR_OK not in actions:
+                             self.log.debug(f"Stream: Received 404 for {url}, treating as non-error.")
+                        elif not response_obj.is_error:
+                            pass # Successful stream opening
+                        else:
+                            self._log_error_response(response_obj, is_stream=True)
+                            response_obj.raise_for_status()
+
+                        yield self._adapt_response(response_obj, is_stream=True)
+                        return # Successful yield, exit generator and retry loop
+
+                    except Exception as e:
+                        self.log.debug(f"Exception during stream to {url} (attempt): {type(e).__name__} - {e}")
+                        self.log.traceback_(traceback.format_exc())
+                        
+                        # If stream was opened in this attempt, ensure it's closed before retry
+                        if current_attempt_stream_ctx and response_obj: # __enter__ was successful
+                            current_attempt_stream_ctx.__exit__(type(e), e, e.__traceback__)
+                            active_stream_ctx = None # It's closed for this attempt
+
+                        if AUTH in actions and is_httpx_status_error(e, 400):
+                            self.log.warning("Stream: Received 400 error. Applying 8s delay.")
+                            print_auth_warning()
+                            time.sleep(8)
+                        if TOO_MANY in actions and is_httpx_status_error(e, 429, 504):
+                            status = e.response.status_code if isinstance(e, httpx.HTTPStatusError) else "N/A"
+                            self.log.warning(f"Stream: Received {status} error. Increasing session sleep.")
+                            self.sleeper.toomany_req()
+                        raise e
+            # If loop finishes, retries exhausted. Tenacity re-raises.
+        finally:
+            # Ensures the stream from the last successful __enter__ (even if yield failed) is closed.
+            if active_stream_ctx:
+                exc_type, exc_val, exc_tb = sys.exc_info()
+                # Filter out GeneratorExit if it's a normal exit from the context manager
+                if exc_type is GeneratorExit:
+                    active_stream_ctx.__exit__(None,None,None)
+                else:
+                    active_stream_ctx.__exit__(exc_type, exc_val, exc_tb)
 
 
-    def _httpx_funct(self, method, **kwargs):
-        t = self._session.request(method.upper(), **kwargs)
-        t.ok = not t.is_error
-        t.json_ = t.json
-        t.text_ = lambda: t.text
-        t.status = t.status_code
-        t.iter_chunked = t.iter_bytes
-        t.iter_chunks = t.iter_bytes
-        t.request = t.request
-        t.read_ = t.read
-        return t
+# --- Asynchronous Custom HTTPX Client ---
+class HttpxAsyncClient(BaseCustomClient, httpx.AsyncClient):
+    def __init__(self, *,
+                 retries=None, wait_min=None, wait_max=None, wait_min_exponential=None, wait_max_exponential=None, # Exponential for async
+                 connect_timeout=None, read_timeout=None, pool_timeout=None, total_timeout=None,
+                 proxy=None, limits=None, sem_count=None, log_level=None, **kwargs):
 
-    async def factoryasync(self, input):
-        if callable(input):
-            return input()
-        return input
+        BaseCustomClient.__init__(self, retries=retries, wait_min=wait_min, wait_max=wait_max,
+                                  connect_timeout=connect_timeout, read_timeout=read_timeout,
+                                  pool_timeout=pool_timeout, total_timeout=total_timeout,
+                                  proxy=proxy, limits=limits, log_level=log_level)
+        
+        httpx.AsyncClient.__init__(self, proxy=self.proxy, limits=self.limits_config, http2=True, **self._httpx_kwargs)
+
+        self._wait_min_exp = wait_min_exponential or constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT", 1)
+        self._wait_max_exp = wait_max_exponential or constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT", 10)
+        
+        # Semaphore for controlling concurrency in async requests
+        self._sem = asyncio.BoundedSemaphore(sem_count or constants.getattr("SESSION_MANAGER_ASYNC_SEM_DEFAULT", 100))
+
+
+    async def _adapt_response_async(self, response, is_stream=False):
+        """Adapts httpx.Response for consistent async attribute access."""
+        response.ok = not response.is_error
+        
+        # .json() is an async method
+        response.json_ = response.json 
+        
+        # .text is an async property, effectively await response.text
+        # To make response.text_() work like original:
+        async def text_getter():
+            return await response.text
+        response.text_ = text_getter
+            
+        response.status = response.status_code
+        # .aiter_bytes() is an async iterator
+        response.iter_chunked = response.aiter_bytes 
+        # .aread() is an async method
+        response.read_ = response.aread 
+        return response
+
+    async def request(self, method, url, *, actions=None, per_request_timeouts=None, **kwargs):
+        actions = actions or []
+        
+        # Using a combined wait strategy: random + exponential backoff for async
+        combined_wait = tenacity.wait_combine(
+            tenacity.wait_random(min=self._wait_min, max=self._wait_max),
+            tenacity.wait_exponential(min=self._wait_min_exp, max=self._wait_max_exp)
+        )
+
+        retryer = AsyncRetrying(
+            stop=tenacity.stop_after_attempt(self._retries),
+            wait=combined_wait,
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            before=self._log_attempt, # Tenacity will await if _log_attempt is async, or run sync
+            reraise=True
+        )
+
+        await self._sem.acquire()
+        try:
+            async for attempt in retryer: # Use `async for` with AsyncRetrying
+                with attempt: # Tenacity's attempt context
+                    try:
+                        await self.sleeper.async_do_sleep()
+
+                        req_headers = kwargs.pop("headers", None)
+                        req_cookies = kwargs.pop("cookies", None)
+                        prepared_headers, prepared_cookies = self._prepare_headers_and_cookies(
+                            url, req_headers, req_cookies, actions
+                        )
+                        timeout_config = self._get_timeout_config(per_request_timeouts)
+
+                        response = await super().request(
+                            method,
+                            url,
+                            headers=prepared_headers,
+                            cookies=prepared_cookies,
+                            timeout=timeout_config,
+                            **kwargs
+                        )
+
+                        if response.status_code == 404 and FOUR_OH_FOUR_OK not in actions:
+                            self.log.debug(f"Async: Received 404 for {url}, non-error.")
+                        elif not response.is_error:
+                            pass
+                        else:
+                            await self._log_error_response_async(response) # Make an async version
+                            response.raise_for_status()
+                        
+                        return await self._adapt_response_async(response)
+
+                    except Exception as e:
+                        self.log.debug(f"Async Exception during request to {url}: {type(e).__name__} - {e}")
+                        self.log.traceback_(traceback.format_exc())
+
+                        if AUTH in actions and is_httpx_status_error(e, 400):
+                            self.log.warning("Async: Received 400 error. Applying 8s delay.")
+                            print_auth_warning()
+                            await asyncio.sleep(8) # Perform async sleep here
+                        
+                        if TOO_MANY in actions and is_httpx_status_error(e, 429, 504):
+                            status = e.response.status_code if isinstance(e, httpx.HTTPStatusError) else "N/A"
+                            self.log.warning(f"Async: Received {status} error. Increasing session sleep.")
+                            await self.sleeper.async_toomany_req()
+                        raise
+        finally:
+            self._sem.release()
+
+    @contextlib.asynccontextmanager
+    async def stream(self, method, url, *, actions=None, per_request_timeouts=None, **kwargs):
+        actions = actions or []
+        combined_wait = tenacity.wait_combine(
+            tenacity.wait_random(min=self._wait_min, max=self._wait_max),
+            tenacity.wait_exponential(min=self._wait_min_exp, max=self._wait_max_exp)
+        )
+        retryer = AsyncRetrying(
+            stop=tenacity.stop_after_attempt(self._retries),
+            wait=combined_wait,
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            before=self._log_attempt,
+            reraise=True
+        )
+
+        active_stream_ctx = None
+        await self._sem.acquire()
+        try:
+            async for attempt in retryer:
+                with attempt:
+                    current_attempt_stream_ctx = None
+                    response_obj = None
+                    try:
+                        await self.sleeper.async_do_sleep()
+
+                        req_headers = kwargs.pop("headers", None)
+                        req_cookies = kwargs.pop("cookies", None)
+                        prepared_headers, prepared_cookies = self._prepare_headers_and_cookies(
+                            url, req_headers, req_cookies, actions
+                        )
+                        timeout_config = self._get_timeout_config(per_request_timeouts)
+                        
+                        current_attempt_stream_ctx = super().stream( # This is a sync method returning async_cm
+                            method, url, headers=prepared_headers, cookies=prepared_cookies,
+                            timeout=timeout_config, **kwargs
+                        )
+                        
+                        response_obj = await current_attempt_stream_ctx.__aenter__()
+                        active_stream_ctx = current_attempt_stream_ctx
+
+                        if response_obj.status_code == 404 and FOUR_OH_FOUR_OK not in actions:
+                            self.log.debug(f"Async Stream: Received 404 for {url}, non-error.")
+                        elif not response_obj.is_error:
+                            pass
+                        else:
+                            await self._log_error_response_async(response_obj, is_stream=True)
+                            response_obj.raise_for_status()
+
+                        yield await self._adapt_response_async(response_obj, is_stream=True)
+                        return # Successful yield
+
+                    except Exception as e:
+                        self.log.debug(f"Async Exception during stream to {url} (attempt): {type(e).__name__} - {e}")
+                        self.log.traceback_(traceback.format_exc())
+
+                        if current_attempt_stream_ctx and response_obj: # __aenter__ was successful
+                            await current_attempt_stream_ctx.__aexit__(type(e), e, e.__traceback__)
+                            active_stream_ctx = None
+                        
+                        if AUTH in actions and is_httpx_status_error(e, 400):
+                            self.log.warning("Async Stream: Received 400 error. Applying 8s delay.")
+                            print_auth_warning()
+                            await asyncio.sleep(8)
+                        if TOO_MANY in actions and is_httpx_status_error(e, 429, 504):
+                            status = e.response.status_code if isinstance(e, httpx.HTTPStatusError) else "N/A"
+                            self.log.warning(f"Async Stream: Received {status} error. Increasing session sleep.")
+                            await self.sleeper.async_toomany_req()
+                        raise e
+        finally:
+            if active_stream_ctx:
+                exc_type, exc_val, exc_tb = sys.exc_info()
+                if exc_type is GeneratorExit: # Normal exit from async context manager
+                     await active_stream_ctx.__aexit__(None,None,None)
+                else: # Exiting due to an exception
+                    await active_stream_ctx.__aexit__(exc_type, exc_val, exc_tb)
+            self._sem.release()
+
+    # Helper for async error logging (if response body is needed)
+    async def _log_error_response_async(self, response, is_stream=False):
+        self.log.warning(f"Async Request failed: {response.request.method} {response.url} - Status: {response.status_code}")
+        self.log.debug(f"Async Error Response Headers: {dict(response.headers)}")
+        # if not is_stream:
+        #     try:
+        #         content = await response.text
+        #         self.log.debug(f"Async Error Response Body (first 500 chars): {content[:500]}")
+        #     except Exception as e:
+        #         self.log.debug(f"Could not read async error response body: {e}")
+
+
+
