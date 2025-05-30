@@ -11,7 +11,7 @@ As the API has changed older version are no longer viable
 
 https://github.com/datawhores/OF-Scraper/issues/442
 
-# For Issues related to Downloading
+# For Issues related to Downloading/ No Models Retrieved error
 https://github.com/datawhores/OF-Scraper/issues/542
 
 # ReadMe
