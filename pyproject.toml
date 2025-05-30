@@ -6,7 +6,7 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.14"
+python = "^3.11,<3.14"
 
 
 httpx = {extras = ["http2"], version = "^0.28.1"}
@@ -72,7 +72,7 @@ random-emoji = "^1.0.15"
 pytest-mock = "^3.12.0"
 
 [tool.poetry.group.docs.dependencies]
-sphinx-argparse = "^0.4.0"
+sphinx-argparse = "^0.5.2"
 
 
 [tool.poetry.extras]

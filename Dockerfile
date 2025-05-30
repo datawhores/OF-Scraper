@@ -7,7 +7,7 @@ ENV PYTHONFAULTHANDLER=1 \
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=1.7.1
+    POETRY_VERSION=2.1.3
 
 WORKDIR /app
 
@@ -24,26 +24,14 @@ RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r 
 COPY . .
 RUN  pip install dunamai
 
-RUN \
-    echo "Attempting to get version from dunamai..." && \
-    RAW_DUNAMAI_OUTPUT=$(poetry run dunamai from git --format "{base}" --pattern="(?P<base>\\d+\.\d+(\.((\d+\.\w+)|\w+)|))") && \
-    echo "Raw Dunamai output: '$RAW_DUNAMAI_OUTPUT'" && \
-    # Extract the last line, which should be the version
-    CLEAN_VERSION_FROM_DUNAMAI=$(echo "$RAW_DUNAMAI_OUTPUT" | awk 'NF{line=$0}END{print line}') && \
-    # Alternative using tail, might be simpler if output structure is consistent:
-    # CLEAN_VERSION_FROM_DUNAMAI=$(echo "$RAW_DUNAMAI_OUTPUT" | tail -n 1) && \
-    echo "Cleaned Dunamai version: '$CLEAN_VERSION_FROM_DUNAMAI'" && \
-    \
-    if [ -z "$CLEAN_VERSION_FROM_DUNAMAI" ]; then \
-        echo "Error: Dunamai did not produce a usable version string. Aborting." >&2; \
+RUN echo "Attempting to get version from dunamai..." && \
+    VERSION_FROM_DUNAMAI=$(poetry run dunamai from git --format "{base}" --pattern="(?P<base>\\d+\\.\\d+(\\.((\\d+\\.\\w+)|\\w+)|))") && \
+    echo "Dunamai outputted: '$VERSION_FROM_DUNAMAI'" && \
+    if [ -z "$VERSION_FROM_DUNAMAI" ]; then \
+        echo "Error: Dunamai did not produce a version. Aborting." >&2; \
         exit 1; \
     fi && \
-    \
-    # Now, use the cleaned version with poetry
-    echo "Setting poetry version to: '$CLEAN_VERSION_FROM_DUNAMAI'" && \
-    poetry version "$CLEAN_VERSION_FROM_DUNAMAI" && \
-    echo "Successfully set poetry version."
-
+    poetry version "$VERSION_FROM_DUNAMAI"
     
 RUN poetry build && /venv/bin/pip install dist/*.whl
 

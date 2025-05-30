@@ -234,7 +234,7 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 2.1.3
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install ofscraper windows
@@ -309,7 +309,7 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 2.1.3
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install ofscraper windows
@@ -382,7 +382,7 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 2.1.3
       - name: Install package
         run: |
           source .venv/bin/activate
@@ -463,7 +463,7 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1
+          poetry-version: 2.1.3
       - name: Install package
         run: |
           source .venv/bin/activate
