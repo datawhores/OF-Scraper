@@ -17,6 +17,9 @@ def get_after_pre_checks(model_id, api):
     elif read_full_after_scan_check(model_id, api):
         log.debug(f"{api}: full scan has been trigger")
         return 0
-    elif settings.get_settings().action in {"like","unlike"}:
-        log.debug(f"{api}: doing full scan for action like/unlike")
-        return 0
+    #scan action
+    for setting in settings.get_settings().action:
+        if setting in {"like","unlike"}:
+            log.debug(f"{api}: doing full scan for action like/unlike")
+            return 0
+    
