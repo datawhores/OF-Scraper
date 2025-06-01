@@ -97,7 +97,8 @@ def setup_settings(mediatype):
         or config_data.get_post_download_script()
     )
     merged.auto_resume = get_auto_resume(mediatype)
-    merged.cached_disabled = get_auto_after_enabled()
+    merged.auto_after = get_auto_after_enabled()
+    merged.cached_disabled=get_cached_disabled()
     merged.logs_expire_time=config_data.get_logs_expire()
 
     return merged
@@ -120,13 +121,16 @@ def get_ffmpeg():
 
 
 def get_auto_after_enabled():
-    if read_args.retriveArgs().no_cache:
-        return False
-    if read_args.retriveArgs().no_api_cache:
+    if get_cached_disabled():
         return False
     return config_data.get_enable_after()
 
-
+def get_cached_disabled():
+    if read_args.retriveArgs().no_cache:
+        return True
+    if read_args.retriveArgs().no_api_cache:
+        return True
+    return False
 def get_auto_resume(mediatype=None):
     if read_args.retriveArgs().no_auto_resume:
         return False
