@@ -81,7 +81,7 @@ update_profile_option = click.option(
 )
 
 download_script_option = click.option(
-    "-ds",
+    "-dls",
     "--download-script",
     "download_script",
     help="""

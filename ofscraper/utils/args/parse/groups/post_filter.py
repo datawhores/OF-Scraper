@@ -30,7 +30,6 @@ post_filter_options_tuple = (
     label_option,
     mass_msg_option,
     timed_only_option,
-    max_post_count_option,
 )
 # Create the option group
 post_filter_options = click.option_group(

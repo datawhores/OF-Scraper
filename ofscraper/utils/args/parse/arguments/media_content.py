@@ -73,7 +73,7 @@ length_min = click.option(
 
 
 max_media_count_option = click.option(
-    "-xc",
+    "-mxc",
     "--max-media-count",
     "max_count",
     help="Maximum number of media to process",
