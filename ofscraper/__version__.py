@@ -1,9 +1,13 @@
+from __future__ import annotations
+from __hardcoded__ import __hardcoded__
 import importlib.metadata
 
+# The version is now read from the installed package's metadata
 try:
-    # This will read the version from the installed package's metadata
-    __version__ = importlib.metadata.version("ofscraper")
+    # This will read the version from the installed package's metadata.
+    # __name__ is the name of your package (e.g., 'ofscraper')
+    __version__ = __hardcoded__  or importlib.metadata.version("ofscraper")
 except importlib.metadata.PackageNotFoundError:
-    # This is a fallback for when the package is not installed, e.g.,
-    # when running in a development environment without installation.
-    __version__ = "0.0.0"
+    # This is a fallback for cases where the package is not installed at all,
+    # or you are in a situation where metadata is not available.
+    __version__ = "0.0.0" # A sensible fallback

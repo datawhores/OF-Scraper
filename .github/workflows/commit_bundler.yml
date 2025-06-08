@@ -18,48 +18,11 @@ jobs:
           fetch-tags: true
 
       - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: prompt/actions-commit-hash@v3
         id: commit
-  create_version:
-    needs: [get_commit]
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-22.04
-    name: create version doc
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.5
-      - name: install dunamai
-        run: pip install dunamai
-      - name: print version
-        run: dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))"
-      - name: replace_version
-        run: |
-          sed -i -e s/'[^ ]*hardcoded__.*None'/__hardcoded__="\"$(dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))")\""/ ofscraper/__version__.py
-      - name: show file
-        run: cat ofscraper/__version__.py
-      - name: upload release file
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/upload-artifact@v4
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
-            overwrite: true
   linux_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: ubuntu-22.04
     name: create linux release file
     steps:
@@ -73,37 +36,47 @@ jobs:
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
-      - name: create one file
+      - name: Create Linux executable with uv
         uses: addnab/docker-run-action@v3
         with:
           image: datawhores/ubuntu:latest
           options: -v ${{ github.workspace }}:/root/work
           shell: bash
           run: |
+            # Enter the project directory
             cd work
-            rm -rf ./ofscraper/dist
-            rm -rf ./ofscraper/build
-            apt-get install zip libxml2-dev libxslt-dev -y
-            python3.11 -m venv .venv
+
+            # Clean old build artifacts
+            rm -rf ./dist ./build
+
+            # Install system dependencies
+            apt-get update && apt-get install -y curl zip libxml2-dev libxslt-dev
+
+            # Install uv inside the container
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            # Add uv to the PATH for this script session
+            source /root/.cargo/env
+
+            # Create venv and install all dependencies with uv
+            uv venv
             source .venv/bin/activate
-            python3.11 -m pip install pyinstaller==6.10.0
-            /root/.local/bin/poetry install
-            echo "ls files"
-            ls .
-            echo "test ofscraper"
+            # This single command replaces 'poetry install'
+            uv sync --all-extras
+            # This replaces 'pip install pyinstaller'
+            uv pip install pyinstaller==6.10.0
+
+            # Test that the installed command works
+            echo "--- Testing ofscraper command ---"
             ofscraper -h
-            echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" --onefile
-            echo "list files dir"
-            ls dist
+
+            # Build the executable with PyInstaller
+            echo "--- Running PyInstaller ---"
+            # This is simpler and more reliable because 'ofscraper' is on the PATH
+            pyinstaller --onefile --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
+
+            # List the results
+            echo "--- Listing build artifacts ---"
+            ls -l dist
 
       - name: upload file
         uses: Wandalen/wretry.action@master
@@ -117,7 +90,7 @@ jobs:
 
   linux_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: ubuntu-22.04
     name: create linux release zip
     steps:
@@ -176,7 +149,7 @@ jobs:
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: windows-latest
     name: create windows release zip
     steps:
@@ -253,7 +226,7 @@ jobs:
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: windows-latest
     name: create windows release file
     steps:
@@ -323,7 +296,7 @@ jobs:
 
   mac_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: macos-latest
     name: create mac release file
     steps:
@@ -337,60 +310,43 @@ jobs:
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
-
-        with:
-          action: actions/download-artifact@v4
-          attempt_limit: 3
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.5
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: |
-          source .venv/bin/activate
-          pip install . -vvv
-          deactivate
-      - name: Install pyinstaller
-        run: |
-          source .venv/bin/activate
-          pip install pyinstaller==6.10.0
-          deactivate
-      - name: test ofscraper
-        run: |
-          export PATH=$PATH:/usr/local/bin
-          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
-      - name: create-one-file
-        id: create-one-file
-        run: |
-          rm -rf dist
-          rm -rf build
-          source .venv/bin/activate
-          export PATH=$PATH:/usr/local/bin
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.short}}"
-          deactivate
-        continue-on-error: true
-      - name: create-one-file2
-        id: create-one-file2
-        if: steps.create-one-file.outcome != 'success'
-        run: |
-          rm -rf dist
-          rm -rf build
-          source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.short}}"
-          deactivate
+# Step 1: Install uv itself (replaces 'install poetry' action)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
 
+      # Step 2: Create venv and install all dependencies
+      # This single step replaces creating the venv, installing the package, and installing pyinstaller.
+      - name: Install Dependencies and Tools
+        run: |
+          # Create the virtual environment
+          uv venv
+          # Install project dependencies, optional dependencies, and pyinstaller all at once.
+          uv sync --all-extras
+          uv pip install pyinstaller==6.10.0
+        shell: bash
+
+      # Step 3: Test the installed script
+      # We just activate the venv and run the command. The PATH is now set correctly.
+      - name: Test ofscraper command
+        run: |
+          source .venv/bin/activate
+          ofscraper -h
+        shell: bash
+
+      # Step 4: Build the executable with PyInstaller
+      # This is now one robust, clean step.
+      - name: Create Executable with PyInstaller
+        run: |
+          rm -rf dist build
+          source .venv/bin/activate
+          # This simpler command works because the 'ofscraper' script is now
+          # on the PATH inside the activated virtual environment.
+          pyinstaller --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
+        shell: bash
       - name: upload file
         uses: Wandalen/wretry.action@master
 
@@ -404,7 +360,7 @@ jobs:
 
   mac_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version, get_commit]
+    needs: [ get_commit]
     runs-on: macos-latest
     name: create mac release zip
     steps:
