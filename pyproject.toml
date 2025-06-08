@@ -1,104 +1,100 @@
-[tool.poetry]
+[project]
 name = "ofscraper"
 version = "0.0.0"
 description = "automatically scrape onlyfans"
-authors = ["datawhores <datawhores@riseup.net>"]
+authors = [{name = "datawhores", email = "datawhores@riseup.net"}]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.11,<3.14"
-
-
-httpx = {extras = ["http2"], version = "^0.28.1"}
-inquirerpy = "^0.3.4"
-setuptools = ">=69.1.1,<71.0.0"
-schedule = "^1.2.1"
-browser-cookie3 = "0.19.1"
-requests = "^2.31.0"
-bs4 = "^0.0.2"
-rich = "^13.7.1"
-tenacity = "^8.2.3"
-arrow = "^1.3.0"
-win32-setctime = "^1.1.0"
-pathvalidate = "^3.2.0"
-xxhash = "^3.4.1"
-mpegdash = "^0.4.0"
-diskcache = "^5.6.3"
-dunamai = "^1.19.2"
-poetry-dynamic-versioning = "^1.2.0"
-faust-cchardet = "^2.1.19"
-certifi = "^2024.2.2"
-pycryptodome = "^3.20.0"
-pywidevine = "^1.8.0"
-aioprocessing = "^2.0.1"
-more-itertools = "^10.2.0"
-psutil = "^5.9.8"
-humanfriendly = "^10.0"
-filelock = "^3.13.1"
-uvloop = { version = "^0.19.0", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" }
-aiosqlite = "^0.20.0"
-speedtest-cli = "^2.1.3"
-prompt-toolkit = "^3.0.43"
-setproctitle = "^1.3.3"
-lxml = "^5.1.0"
-multiprocess = "^0.70.16"
-dill = "^0.3.8"
-cloup = "^3.0.5"
-pynumparser = "^1.4.1"
-idna = "3.7"
-aiofiles = "^23.2.1"
-tqdm = "^4.66.4"
-async-property = "^0.2.2"
-limiter = "^0.5.0"
-aiolimiter = "^1.1.0"
-textual = "1.0.0"
-httpx-curl-cffi = "^0.1.3"
-httpx-aiohttp = "^0.1.2"
+requires-python = ">=3.11, <3.14"
+dependencies = [
+  "aiofiles~=23.2.1",
+  "aiolimiter~=1.1.0",
+  "aioprocessing~=2.0.1",
+  "aiosqlite~=0.20.0",
+  "arrow~=1.3.0",
+  "async-property~=0.2.2",
+  "browser-cookie3==0.19.1",
+  "bs4~=0.0.2",
+  "certifi~=2024.2.2",
+  "cloup~=3.0.5",
+  "dill~=0.3.8",
+  "diskcache~=5.6.3",
+  "dunamai~=1.19.2",
+  "faust-cchardet~=2.1.19",
+  "filelock~=3.13.1",
+  "humanfriendly~=10.0",
+  "httpx[http2]~=0.28.1",
+  "httpx-aiohttp~=0.1.2",
+  "httpx-curl-cffi~=0.1.3",
+  "idna==3.7",
+  "inquirerpy~=0.3.4",
+  "limiter~=0.5.0",
+  "lxml~=5.1.0",
+  "more-itertools~=10.2.0",
+  "mpegdash~=0.4.0",
+  "multiprocess~=0.70.16",
+  "pathvalidate~=3.2.0",
+  "prompt-toolkit~=3.0.43",
+  "psutil~=5.9.8",
+  "pycryptodome~=3.20.0",
+  "pynumparser~=1.4.1",
+  "pywidevine~=1.8.0",
+  "requests~=2.31.0",
+  "rich~=13.7.1",
+  "schedule~=1.2.1",
+  "setproctitle~=1.3.3",
+  "setuptools>=69.1.1,<71.0.0",
+  "speedtest-cli~=2.1.3",
+  "tenacity~=8.2.3",
+  "textual==1.0.0",
+  "tqdm~=4.66.4",
+  "uvloop~=0.19.0; sys_platform == 'linux' or sys_platform == 'linux2'",
+  "win32-setctime~=1.1.0",
+  "xxhash~=3.4.1",
+]
 
 
-[tool.poetry.group.dev.dependencies]
-autopep8 = "^2.0.2"
+[project.optional-dependencies]
+dev = [
+  "autopep8~=2.0.2",
+]
+test = [
+  "pytest~=7.3.1",
+  "coverage~=7.4.3",
+  "pytest-cov~=4.1.0",
+  "random-unicode-emoji~=2.8",
+  "random-emoji~=1.0.15",
+  "pytest-mock~=3.12.0",
+]
+docs = [
+  "sphinx-argparse~=0.5.2",
+]
 
+pyinstaller = [
+  "pyinstaller",
+]
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.3.1"
-coverage = "^7.4.3"
-pytest-cov = "^4.1.0"
-random-unicode-emoji = "^2.8"
-random-emoji = "^1.0.15"
-pytest-mock = "^3.12.0"
-
-[tool.poetry.group.docs.dependencies]
-sphinx-argparse = "^0.5.2"
-
-
-[tool.poetry.extras]
-pyinstaller = ["pyinstaller"]
+[tool.hatch.version]
+source = "vcs"
+tag-pattern = "(?P<version>\\d+\\.\\d+\\w+|\\d+\\.\\w+)23"
 
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.poetry.scripts]
+[tool.hatch.build.targets.wheel]
+packages = ["ofscraper"]
+
+[project.scripts]
 ofscraper = "ofscraper.__main__:main"
 
 
-[tool.poetry.urls]
+[project.urls]
 "Homepage" = "https://github.com/datawhores/OF-Scraper"
 
-# pyproject.toml
+
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
-
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-metadata = true
-format = "{base}"
-pattern = "(?P<base>\\d+\\.\\d+\\.\\w+|\\d+\\.\\w+)"
