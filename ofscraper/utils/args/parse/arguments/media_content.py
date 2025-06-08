@@ -47,7 +47,7 @@ min_size_option = click.option(
 
 
 media_id_filter = click.option(
-    "-md",
+    "-mid",
     "--media-id",
     help="Filter media based on media id",
     required=False,

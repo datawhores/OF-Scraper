@@ -31,7 +31,6 @@ from ofscraper.utils.args.parse.arguments.metadata_filters import (
     created_before,
     posted_after,
     posted_before,
-    download_type_option,
 )
 
 
@@ -44,6 +43,9 @@ from ofscraper.utils.args.parse.groups.advanced_program import (
     advanced_options_desc,
     advanced_options_help,
     update_profile_option,
+)
+from ofscraper.utils.args.parse.arguments.post_content import (
+    download_type_option,
 )
 
 

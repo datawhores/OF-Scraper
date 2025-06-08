@@ -30,9 +30,10 @@ from ofscraper.utils.args.parse.groups.program import program_options
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
     posted_after,
     posted_before,
-    download_type_option,
 )
-
+from ofscraper.utils.args.parse.arguments.post_content import (
+    download_type_option
+)
 
 def main_check(func):
     @force

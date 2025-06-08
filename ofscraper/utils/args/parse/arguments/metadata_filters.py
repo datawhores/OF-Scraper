@@ -15,7 +15,7 @@ check_post_id_filter_option = click.option(
 
 
 check_media_id_filter_option = click.option(
-    "-md",
+    "-mid",
     "--media-id",
     help="Filter media based on media id",
     required=False,
@@ -23,7 +23,7 @@ check_media_id_filter_option = click.option(
 )
 
 lock_option = click.option(
-    "-ul/-l",
+    "-ucl/-lc",
     "--unlocked/--locked",
     "unlocked",
     help="""
@@ -36,7 +36,7 @@ lock_option = click.option(
 )
 
 downloaded_option = click.option(
-    "-dl/-ndl",
+    "-dwl/-ndw",
     "--downloaded/--not-downloaded",
     "downloaded",
     help="""
@@ -77,7 +77,7 @@ created_before = click.option(
 
 
 preview_option = click.option(
-    "-p/-np",
+    "-pv/-npv",
     "--preview/--no-preview",
     "preview",
     help="""
@@ -87,16 +87,4 @@ preview_option = click.option(
     default=None,
     required=False,
     is_flag=True,
-)
-
-
-download_type_option = preview_option = click.option(
-    "-no/-to",
-    "--normal-only/--protected_only",
-    "download_type_filter",
-    help="""
-        \b
-        Type of downloda to retrict to """,
-    default=None,
-    required=False,
 )
