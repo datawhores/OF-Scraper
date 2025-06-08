@@ -729,6 +729,18 @@ wheels = [
 ]
 
 [[package]]
+name = "importlib-metadata"
+version = "8.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "zipp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/b0/36bd937216ec521246249be3bf9855081de4c5e06a0c9b4219dbeda50373/importlib_metadata-8.7.0-py3-none-any.whl", hash = "sha256:e5dd1551894c77868a30651cef00984d50e1002d06942a7101d34870c5f02afd", size = 27656 },
+]
+
+[[package]]
 name = "iniconfig"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1069,7 +1081,6 @@ wheels = [
 
 [[package]]
 name = "ofscraper"
-version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1092,6 +1103,7 @@ dependencies = [
     { name = "httpx-curl-cffi" },
     { name = "humanfriendly" },
     { name = "idna" },
+    { name = "importlib-metadata" },
     { name = "inquirerpy" },
     { name = "limiter" },
     { name = "lxml" },
@@ -1161,6 +1173,7 @@ requires-dist = [
     { name = "httpx-curl-cffi", specifier = "~=0.1.3" },
     { name = "humanfriendly", specifier = "~=10.0" },
     { name = "idna", specifier = "==3.7" },
+    { name = "importlib-metadata", specifier = ">=7.0.0" },
     { name = "inquirerpy", specifier = "~=0.3.4" },
     { name = "limiter", specifier = "~=0.5.0" },
     { name = "lxml", specifier = "~=5.1.0" },
@@ -1193,7 +1206,7 @@ requires-dist = [
     { name = "win32-setctime", specifier = "~=1.1.0" },
     { name = "xxhash", specifier = "~=3.4.1" },
 ]
-provides-extras = ["dev", "test", "docs", "pyinstaller"]
+provides-extras = ["dev", "docs", "pyinstaller", "test"]
 
 [[package]]
 name = "packaging"
@@ -2178,4 +2191,13 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ed/f7/f0f2500cf0c469beb2050b522c7815c575811627e6d3eb9ec7550ddd0bfe/yarl-1.20.0-cp313-cp313t-win32.whl", hash = "sha256:65a4053580fe88a63e8e4056b427224cd01edfb5f951498bfefca4052f0ce0ac", size = 93816 },
     { url = "https://files.pythonhosted.org/packages/3f/93/f73b61353b2a699d489e782c3f5998b59f974ec3156a2050a52dfd7e8946/yarl-1.20.0-cp313-cp313t-win_amd64.whl", hash = "sha256:53b2da3a6ca0a541c1ae799c349788d480e5144cac47dba0266c7cb6c76151fe", size = 101093 },
     { url = "https://files.pythonhosted.org/packages/ea/1f/70c57b3d7278e94ed22d85e09685d3f0a38ebdd8c5c73b65ba4c0d0fe002/yarl-1.20.0-py3-none-any.whl", hash = "sha256:5d0fe6af927a47a230f31e6004621fd0959eaa915fc62acfafa67ff7229a3124", size = 46124 },
+]
+
+[[package]]
+name = "zipp"
+version = "3.23.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50ede074e376733dca2ae7c6eb617489437771209d4180/zipp-3.23.0.tar.gz", hash = "sha256:a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166", size = 25547 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276 },
 ]
