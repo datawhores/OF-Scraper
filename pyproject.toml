@@ -1,6 +1,6 @@
 [project]
 name = "ofscraper"
-# Remove static version and declare it as dynamic
+# The version is now determined from your Git tags by Hatch
 dynamic = ["version"]
 description = "automatically scrape onlyfans"
 authors = [{name = "datawhores", email = "datawhores@riseup.net"}]
@@ -19,7 +19,6 @@ dependencies = [
   "cloup~=3.0.5",
   "dill~=0.3.8",
   "diskcache~=5.6.3",
-  "dunamai~=1.19.2",
   "faust-cchardet~=2.1.19",
   "filelock~=3.13.1",
   "humanfriendly~=10.0",
@@ -51,7 +50,6 @@ dependencies = [
   "uvloop~=0.19.0; sys_platform == 'linux' or sys_platform == 'linux2'",
   "win32-setctime~=1.1.0",
   "xxhash~=3.4.1",
-  "importlib-metadata>=7.0.0",
 ]
 
 
@@ -74,6 +72,7 @@ pyinstaller = [
   "pyinstaller",
 ]
 
+
 [project.scripts]
 ofscraper = "ofscraper.__main__:main"
 
@@ -81,21 +80,31 @@ ofscraper = "ofscraper.__main__:main"
 [project.urls]
 "Homepage" = "https://github.com/datawhores/OF-Scraper"
 
+
 # --- Build System & Tool Configuration ---
 
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
+# Use the standard, built-in hatch-vcs for versioning
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
 
-[tool.uv-dynamic-versioning]
-style = "pep440"
-# This creates a compliant version with rich local metadata for dev builds
-format-jinja = "{% if distance == 0 %}{{ base }}{% else %}{{ base }}.dev{{ distance }}+g{{ commit_short }}{% endif %}"
+[tool.hatch.version]
+# Set the source to the standard 'vcs'
+source = "vcs"
+
+# This pattern correctly finds your tags like '3.13'
+tag-pattern = "(?P<version>\\d+\\.\\d+\\.\\w+|\\d+\\.\\w+)"
+
+# This adds `.devN` for development builds after a tag
+dev-pattern = "{base}.dev{distance}"
+
+# This adds `+g<hash>` with the short commit hash
+local-pattern = "+g{commit_short}"
+
 
 [tool.hatch.build.targets.wheel]
+# This tells hatch to include your main package folder in the build
 include = ["/ofscraper"]
 
 
