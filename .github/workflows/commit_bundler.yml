@@ -55,7 +55,7 @@ jobs:
             # Install uv inside the container
             curl -LsSf https://astral.sh/uv/install.sh | sh
             #add to path
-            source $HOME/.local/bin/env (sh, bash, zsh)
+            source $HOME/.local/bin/env
 
             # Add uv to the PATH for this script session
             source /root/.cargo/env
