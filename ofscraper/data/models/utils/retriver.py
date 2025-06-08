@@ -23,10 +23,10 @@ async def get_models() -> list:
         return await get_via_list(count)
     elif "ALL" in settings.get_settings().usernames:
         return await get_via_list(count)
-    elif settings.get_settings().individual:
+    elif settings.get_settings().username_search=="indvidual":
         return await get_via_individual()
-    elif settings.get_settings().list:
-        return get_via_list(count)
+    elif settings.get_settings().username_search=="list":
+        return await get_via_list(count)
     elif (sum(count) // 12) >= len(settings.get_settings().usernames):
         return await get_via_individual()
     else:
