@@ -54,6 +54,9 @@ jobs:
 
             # Install uv inside the container
             curl -LsSf https://astral.sh/uv/install.sh | sh
+            #add to path
+            source $HOME/.local/bin/env (sh, bash, zsh)
+
             # Add uv to the PATH for this script session
             source /root/.cargo/env
 
@@ -316,7 +319,7 @@ jobs:
           python-version: 3.11.5
 # Step 1: Install uv itself (replaces 'install poetry' action)
       - name: Install uv
-        uses: astral-sh/setup-uv@v1
+        uses: astral-sh/setup-uv@v6
 
       # Step 2: Create venv and install all dependencies
       # This single step replaces creating the venv, installing the package, and installing pyinstaller.
