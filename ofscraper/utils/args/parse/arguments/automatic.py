@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.args.callbacks.string import (
+from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
 )
 from ofscraper.utils.args.types.choice import MutuallyExclusiveMultichoice

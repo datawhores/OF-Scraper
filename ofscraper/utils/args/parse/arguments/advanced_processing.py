@@ -1,4 +1,6 @@
 import cloup as click
+from ofscraper.utils.args.callbacks.arguments.username import set_search_strategy_flag
+
 
 users_first_option = click.option(
     "-uf",
@@ -12,18 +14,20 @@ users_first_option = click.option(
     is_flag=True,  # Shorthand for action="store_true"
 )
 
-individual_search_option = click.option(
-    "-fi",
-    "--individual",
-    help="Search each username as a separate request when --username is provided",
-    default=False,
-    is_flag=True,
-)
-
-search_entire_list_option = click.option(
-    "-fl",
-    "--list",
-    help="Search entire enabled lists before filtering for usernames when --username is provided",
-    default=False,
-    is_flag=True,
+username_search_option = click.option(
+    "-fi/-fl",
+    "--username-individual-search/--username-list-search",
+    "--user-individual-search/--user-list-search",
+    "username_search", # The new, shared destination
+    help="""
+        \b
+        Set the search strategy when --username is provided.
+        --individual: Search each username as a separate request.
+        --list: Search entire enabled lists before filtering (default).
+    """,
+    # The default from the callback will be used.
+    # We set default=None here so the callback is triggered correctly.
+    default=None,
+    callback=set_search_strategy_flag,
+    is_flag=True
 )

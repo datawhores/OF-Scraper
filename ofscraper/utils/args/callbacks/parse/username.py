@@ -1,5 +1,4 @@
-from ofscraper.utils.args.callbacks.string import StringSplitParse
-
+from ofscraper.utils.args.callbacks.parse.string import StringSplitParse
 
 def UsernameParse(ctx, param, value):
     out = StringSplitParse(ctx, param, value)

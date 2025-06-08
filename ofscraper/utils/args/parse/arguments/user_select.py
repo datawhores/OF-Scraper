@@ -3,7 +3,7 @@ import re
 
 import cloup as click
 
-from ofscraper.utils.args.callbacks.username import UsernameParse
+from ofscraper.utils.args.callbacks.parse.username import UsernameParse
 
 usernames_option = click.option(
     "-u",

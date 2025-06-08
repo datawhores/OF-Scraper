@@ -1,8 +1,8 @@
 # checkmode  args
 import cloup as click
 
-from ofscraper.utils.args.callbacks.file import FileCallback
-from ofscraper.utils.args.callbacks.string import (
+from ofscraper.utils.args.callbacks.parse.file import FileCallback
+from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
     StringSplitParseTitle,
 )

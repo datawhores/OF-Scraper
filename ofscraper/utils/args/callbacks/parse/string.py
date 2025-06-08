@@ -1,6 +1,6 @@
 import re
 
-from ofscraper.utils.args.callbacks.choice import MultiChoiceCallback
+from ofscraper.utils.args.callbacks.parse.choice import MultiChoiceCallback
 
 
 def StringSplitParse(ctx, param, value):

@@ -3,7 +3,7 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
-from ofscraper.utils.args.callbacks.string import (
+from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
     StringSplitParseTitle,
 )
