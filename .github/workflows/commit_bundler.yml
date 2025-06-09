@@ -182,7 +182,7 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          artifactPath: artifacts/*/*
+          artifacts: artifacts/*/*
           tag: "${{ needs.get_commit.outputs.short }}"
           name: "Dev Build ${{ needs.get_commit.outputs.short }}"
           body: "This is an auto-generated development release created from commit hash `${{ needs.get_commit.outputs.hash }}`."
