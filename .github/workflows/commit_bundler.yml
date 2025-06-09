@@ -151,19 +151,29 @@ jobs:
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
 
-      - name: Build Executable (Directory)
+      - name: Build Executable (Dir)
         run: |
+          # Set common variables
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+
+          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
-            VENV_ACTIVATE=".venv/Scripts/activate"
-            OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
+              VENV_ACTIVATE=".venv/Scripts/activate"
+              PYINSTALLER_OPTS="--python-option=utf8"
           else
-            VENV_ACTIVATE=".venv/bin/activate"
-            OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
+              VENV_ACTIVATE=".venv/bin/activate"
+              PYINSTALLER_OPTS="--clean --log DEBUG"
           fi
+          # Activate venv
           source $VENV_ACTIVATE
-          echo "Building executable directory from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" $OFSCRAPER_EXECUTABLE
-        shell: bash # Use bash on all platforms for consistent scripting
+          # Build command
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller\
+            --name "ofscraper_${{ matrix.artifact_suffix }}" \
+            $PYINSTALLER_OPTS \
+            "$OFSCRAPER_EXECUTABLE"
+        shell: bash
+
 
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
