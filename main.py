@@ -1,3 +1,4 @@
+
 def main():
     print("Hello from of-scraper!")
 
