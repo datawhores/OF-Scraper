@@ -2,13 +2,16 @@ name: Build and Package
 
 on:
   push:
-    branches: ['**']
-    tags-ignore: ['**']
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
 
 permissions: read-all
 
 jobs:
   get_commit:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     outputs:
       long: ${{ steps.commit.outputs.long }}
@@ -28,6 +31,14 @@ jobs:
     name: Build on ${{ matrix.os }}
     needs: [get_commit]
     runs-on: ${{ matrix.os }}
+
+    # --- THIS IS THE FIX ---
+    # Set the default shell for all 'run' steps in this job based on the OS
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    # --- END OF FIX ---
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -50,7 +61,6 @@ jobs:
           fetch-tags: true
       - name: Checkout specific commit
         run: git checkout ${{ needs.get_commit.outputs.long }}
-        shell: ${{ matrix.shell }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -69,42 +79,32 @@ jobs:
           uv venv
           uv sync --all-extras
           uv pip install pyinstaller==6.10.0
-        shell: ${{ matrix.shell }}
 
       - name: Build Executable (File)
         run: |
-          source .venv/bin/activate
-          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" .venv/bin/ofscraper
-        if: runner.os != 'Windows'
-        shell: bash
-      - name: Build Executable (File) (Windows)
-        run: |
-          .venv\Scripts\activate
+          # The 'source' command must be adapted for powershell on Windows
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            .venv\Scripts\activate
+          else
+            source .venv/bin/activate
+          fi
           pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" .venv/Scripts/ofscraper.exe
-        if: runner.os == 'Windows'
-        shell: pwsh
 
       - name: Build Executable (Directory)
         run: |
-          source .venv/bin/activate
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" .venv/bin/ofscraper
-        if: runner.os != 'Windows'
-        shell: bash
-      - name: Build Executable (Directory) (Windows)
-        run: |
-          .venv\Scripts\activate
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            .venv\Scripts\activate
+          else
+            source .venv/bin/activate
+          fi
           pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" .venv/Scripts/ofscraper.exe
-        if: runner.os == 'Windows'
-        shell: pwsh
 
       - name: Zip Directory Release
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         if: runner.os != 'Windows'
-        shell: bash
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
       - name: Zip Directory Release (Windows)
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip -Force
         if: runner.os == 'Windows'
-        shell: pwsh
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip -Force
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
