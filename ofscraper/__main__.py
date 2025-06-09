@@ -1,4 +1,5 @@
 #!/root/OF-Scraper/.venv/bin/python
+# -*- coding: utf-8 -*-
 import multiprocessing
 
 import ofscraper.main.open.load as load
