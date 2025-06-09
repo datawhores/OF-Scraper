@@ -2,6 +2,7 @@ on:
   push:
 permissions: read-all
 
+
 jobs:
   get_commit:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
