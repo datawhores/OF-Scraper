@@ -136,7 +136,7 @@ jobs:
               EXE_EXT=".exe"
           else
               VENV_ACTIVATE=".venv/bin/activate"
-              PYINSTALLER_OPTS="--add-data='ofscraper:ofscraper' --clean --log DEBUG"
+              PYINSTALLER_OPTS="--clean --log DEBUG"
               EXE_EXT=""
           fi
           # Activate venv
