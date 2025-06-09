@@ -54,53 +54,53 @@ jobs:
 
     # --- THIS 'steps' BLOCK IS NOW CORRECTLY INDENTED ---
     steps:
-    - name: Checkout Full Git History
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Get all history
-        fetch-tags: true  # Get all tags
-        ref: ${{ github.ref }}
+      - name: Checkout Full Git History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get all history
+          fetch-tags: true  # Get all tags
+          ref: ${{ github.ref }}
 
-    - name: Get latest compatible version tag
-      id: get_version
-      run: |
-        # Get all tags matching your pattern
-        ALL_TAGS=$(git tag --list)
-        echo "All tags: $ALL_TAGS"
-        
-        # Filter tags by pattern and sort by version
-        FILTERED_TAGS=$(echo "$ALL_TAGS" | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | sort -V -r)
-        echo "Filtered tags: $FILTERED_TAGS"
-        
-        # Select the highest version tag
-        SELECTED_TAG=$(echo "$FILTERED_TAGS" | head -n 1)
-        
-        # Fallback to 0.0.0 if no tags found
-        if [ -z "$SELECTED_TAG" ]; then
-          SELECTED_TAG="0.0.0"
-        else
-          # Remove 'v' prefix if present
-          SELECTED_TAG=${SELECTED_TAG#v}
-        fi
-        
-        echo "Using version: $SELECTED_TAG"
-        echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-        echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-      shell: bash
+      - name: Get latest compatible version tag
+        id: get_version
+        run: |
+          # Get all tags matching your pattern
+          ALL_TAGS=$(git tag --list)
+          echo "All tags: $ALL_TAGS"
+          
+          # Filter tags by pattern and sort by version
+          FILTERED_TAGS=$(echo "$ALL_TAGS" | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | sort -V -r)
+          echo "Filtered tags: $FILTERED_TAGS"
+          
+          # Select the highest version tag
+          SELECTED_TAG=$(echo "$FILTERED_TAGS" | head -n 1)
+          
+          # Fallback to 0.0.0 if no tags found
+          if [ -z "$SELECTED_TAG" ]; then
+            SELECTED_TAG="0.0.0"
+          else
+            # Remove 'v' prefix if present
+            SELECTED_TAG=${SELECTED_TAG#v}
+          fi
+          
+          echo "Using version: $SELECTED_TAG"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
+          echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
+        shell: bash
 
-    - name: Install venv and dependencies
-      run: |
-        uv venv
-        source .venv/bin/activate
-        
-        # Install versioning dependencies first
-        uv pip install --upgrade hatch-vcs setuptools-scm
-        
-        # Verify version detection
-        echo "Hatch version: $(hatch version)"
-        
-        # Now run the sync
-        uv sync --verbose
+      - name: Install venv and dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          
+          # Install versioning dependencies first
+          uv pip install --upgrade hatch-vcs setuptools-scm
+          
+          # Verify version detection
+          echo "Hatch version: $(hatch version)"
+          
+          # Now run the sync
+          uv sync --verbose
       - name: Build Executable (File)
         run: |
           # Set the correct path to the venv and the script based on the OS
