@@ -60,7 +60,14 @@ jobs:
           fetch-depth: 0  # Get all history
           fetch-tags: true  # Get all tags
           ref: ${{ github.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.0'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      
       - name: Get latest compatible version tag
         id: get_version
         run: |
