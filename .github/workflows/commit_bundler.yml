@@ -135,7 +135,7 @@ jobs:
             VENV_ACTIVATE=".venv/bin/activate"
             OFSCRAPER_EXECUTABLE="ofscraper/__main__.py "
 
-            PYINSTALLER_OPTS=""
+            PYINSTALLER_OPTS="-p ofscraper --clean --log DEBUG"
       
           source $VENV_ACTIVATE
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
