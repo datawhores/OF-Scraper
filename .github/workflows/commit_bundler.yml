@@ -20,7 +20,7 @@ jobs:
       - name: commit
         uses: prompt/actions-commit-hash@v3
         id: commit
- create_linux_release_file: # I've given the job a valid YAML key name
+  create_linux_release_file: # I've given the job a valid YAML key name
     name: create linux release file
     steps:
       - name: Checkout
