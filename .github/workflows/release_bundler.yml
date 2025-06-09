@@ -189,15 +189,18 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts-${{ matrix.artifact_suffix }}
+          # Use a single, consistent name for all artifacts
+          name: build-artifacts
           path: |
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.exe
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip
           if-no-files-found: ignore
+          
   publish_release:
     name: Publish GitHub Release
-    if: github.event_name == 'push'
+    # FIX 1: Run when files are built, not on push
+    if: ${{ inputs.files }}
     needs: [build_binaries, get_commit]
     runs-on: ubuntu-latest
     permissions:
@@ -206,6 +209,8 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
+          # FIX 2: Download the single, consistently-named artifact
+          name: build-artifacts
           path: artifacts/
 
       - name: List downloaded files for debugging
@@ -214,12 +219,13 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: artifacts/*/*
-          tag: "${{ needs.get_commit.outputs.short }}"
-          name: "Dev Build ${{ needs.get_commit.outputs.short }}"
-          body: "This is an auto-generated development release created from commit hash `${{ needs.get_commit.outputs.hash }}`."
-          commit: "${{ needs.get_commit.outputs.long }}"
+          # FIX 3: Use a simpler glob on the flat directory
+          artifacts: artifacts/*
+          # FIX 4: Use the input version for the release tag and name
+          tag: ${{ inputs.version }}
+          name: "Release ${{ inputs.version }}"
           allowUpdates: true
+          
   pypi:
     needs: [get_commit]
     if: ${{ inputs.pip }}
@@ -253,6 +259,7 @@ jobs:
         run: |
           poetry config pypi-token.pypi $PYPI_TOKEN
           poetry publish
+          
   docker:
     needs: [get_commit]
     if: ${{ inputs.docker }}
