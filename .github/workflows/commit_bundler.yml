@@ -32,32 +32,29 @@ jobs:
     needs: [get_commit]
     runs-on: ${{ matrix.os }}
 
-    # --- THIS IS THE FIX ---
-    # Set the default shell for all 'run' steps in this job based on the OS
     defaults:
       run:
         shell: ${{ matrix.shell }}
-    # --- END OF FIX ---
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
             artifact_suffix: linux
             shell: bash
-          # - os: windows-latest
-          #   artifact_suffix: windows
-          #   shell: pwsh
-          # - os: macos-latest
-          #   artifact_suffix: macos
-          #   shell: bash
+          - os: windows-latest
+            artifact_suffix: windows
+            shell: pwsh
+          - os: macos-latest
+            artifact_suffix: macos
+            shell: bash
 
-      steps:
+    # --- THIS 'steps' BLOCK IS NOW CORRECTLY INDENTED ---
+    steps:
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
-          # Fetches all history and tags, which is critical for dynamic versioning.
           fetch-depth: 0
           fetch-tags: true
 
@@ -70,21 +67,16 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Install Project & Build Dependencies
-        # This step creates the venv and installs everything from your pyproject.toml.
-        # This is where the conflicting 'setuptools' package gets installed as a
-        # dependency of another package.
         run: |
           uv venv
           uv sync --all-extras
-        shell: ${{ matrix.shell }}
+        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
 
       - name: "CRITICAL FIX: Remove Build System Conflicts"
-        # Now that everything is installed, we surgically remove the packages
-        # that cause the versioning conflict before they can interfere.
+        if: runner.os != 'Windows'
         run: |
           source .venv/bin/activate
           uv pip uninstall setuptools setuptools_scm -y
-        if: runner.os != 'Windows'
         shell: bash
       - name: "CRITICAL FIX: Remove Build System Conflicts (Windows)"
         if: runner.os == 'Windows'
@@ -94,12 +86,10 @@ jobs:
         shell: pwsh
 
       - name: "DEBUG: Verify Dynamic Version"
-        # With the conflicts gone, this command will now succeed and show the
-        # correct version derived from your Git tags.
+        if: runner.os != 'Windows'
         run: |
           source .venv/bin/activate
           echo "Hatch sees version: $(hatch version)"
-        if: runner.os != 'Windows'
         shell: bash
       - name: "DEBUG: Verify Dynamic Version (Windows)"
         if: runner.os == 'Windows'
@@ -107,12 +97,12 @@ jobs:
           .venv\Scripts\activate
           echo "Hatch sees version: $(hatch version)"
         shell: pwsh
-      
+
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
-        shell: ${{ matrix.shell }}
+        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
 
-      - name: Build Executable with PyInstaller
+      - name: Build Executable (File)
         run: |
           # Set the correct path to the venv and the script based on the OS
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -130,9 +120,7 @@ jobs:
         shell: bash # Use bash on all platforms for consistent scripting
 
       - name: Build Executable (Directory)
-        # This single step works for all OSes in the matrix
         run: |
-          # Set the correct path to the venv and the script based on the OS
           if [ "${{ runner.os }}" == "Windows" ]; then
             VENV_ACTIVATE=".venv/Scripts/activate"
             OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
@@ -140,26 +128,21 @@ jobs:
             VENV_ACTIVATE=".venv/bin/activate"
             OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
           fi
-
-          # Activate the virtual environment
           source $VENV_ACTIVATE
-
-          # Run PyInstaller with the correct path (no --onefile for a directory build)
           echo "Building executable directory from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" $OFSCRAPER_EXECUTABLE
-        shell: bash # Use bash for all platforms for consistent scripting
+        shell: bash # Use bash on all platforms for consistent scripting
 
       - name: Zip Directory (Unix)
-        # This step runs only on Linux and macOS
         if: runner.os != 'Windows'
         run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
 
       - name: Zip Directory (Windows)
-        # This step runs only on Windows
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip -Force
         shell: pwsh
+        
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
