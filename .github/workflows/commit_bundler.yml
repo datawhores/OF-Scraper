@@ -101,14 +101,7 @@ jobs:
           # Run PyInstaller with the correct path
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $OFSCRAPER_EXECUTABLE
-        shell: bash # Use bash for all platforms for consistent scripting      - name: Build Executable (Directory)
-        run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            .venv\Scripts\activate
-          else
-            source .venv/bin/activate
-          fi
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" .venv/Scripts/ofscraper.exe
+        shell: bash # Use bash for all platforms for consistent scripting
 
       - name: Zip Directory Release
         if: runner.os != 'Windows'
