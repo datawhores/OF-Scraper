@@ -53,7 +53,7 @@ jobs:
           #   artifact_suffix: macos
           #   shell: bash
 
-    steps:
+      steps:
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
