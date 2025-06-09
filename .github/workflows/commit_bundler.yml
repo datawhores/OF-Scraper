@@ -45,9 +45,9 @@ jobs:
           - os: ubuntu-latest
             artifact_suffix: linux
             shell: bash
-          - os: windows-latest
-            artifact_suffix: windows
-            shell: pwsh
+          # - os: windows-latest
+          #   artifact_suffix: windows
+          #   shell: pwsh
           - os: macos-latest
             artifact_suffix: macos
             shell: bash
@@ -126,13 +126,15 @@ jobs:
 
       - name: Build Executable (File)
         run: |
-          OFSCRAPER_EXECUTABLE="./ofscraper/__main__.py "
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py "
           if [ "${{ runner.os }}" == "Windows" ]; then
             VENV_ACTIVATE=".venv/Scripts/activate"
             # Add UTF-8 options for Windows
             PYINSTALLER_OPTS="--python-option=utf8"
           else
             VENV_ACTIVATE=".venv/bin/activate"
+            OFSCRAPER_EXECUTABLE="ofscraper/__main__.py "
+
             PYINSTALLER_OPTS=""
       
           source $VENV_ACTIVATE
