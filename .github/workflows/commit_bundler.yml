@@ -42,15 +42,15 @@ jobs:
         os: [ubuntu-latest]
 
         include:
-          - os: ubuntu-latest
-            artifact_suffix: linux
-            shell: bash
-          # - os: windows-latest
-          #   artifact_suffix: windows
-          #   shell: pwsh
-          - os: macos-latest
-            artifact_suffix: macos
-            shell: bash
+          # - os: ubuntu-latest
+          #   artifact_suffix: linux
+          #   shell: bash
+          - os: windows-latest
+            artifact_suffix: windows
+            shell: pwsh
+          # - os: macos-latest
+          #   artifact_suffix: macos
+          #   shell: bash
 
     steps:
       - name: Checkout Full Git History
