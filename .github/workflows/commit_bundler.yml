@@ -98,17 +98,22 @@ jobs:
         run: |
           uv venv
           
-          # Windows activation
+          # Activate venv based on OS
           if [ "${{ runner.os }}" == "Windows" ]; then
-            .venv\Scripts\activate
+            . .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
           
+          # Install versioning dependencies
           uv pip install --upgrade hatch-vcs setuptools-scm
+          
+          # Verify version detection
           echo "Hatch version: $(hatch version)"
+          
+          # Run the sync
           uv sync --verbose
-      
+        shell: bash
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
         # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
