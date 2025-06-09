@@ -305,7 +305,7 @@ jobs:
         mac_dir,
         windows_dir,
         windows_file,
-        linux_file,
+        create_linux_release_file,
         linux_dir,
         get_commit,
       ]
