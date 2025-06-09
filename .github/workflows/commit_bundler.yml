@@ -62,6 +62,9 @@ jobs:
       - name: Checkout specific commit
         run: git checkout ${{ needs.get_commit.outputs.long }}
 
+      - name: reset to new commit
+        run: git reset --hard HEAD
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,7 +80,7 @@ jobs:
       - name: Install Dependencies and Tools
         run: |
           uv venv
-          uv sync --no-lock --all-extras
+          uv sync --all-extras
           uv pip install pyinstaller==6.10.0
 
       - name: Build Executable (File)
