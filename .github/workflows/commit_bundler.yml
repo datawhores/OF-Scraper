@@ -72,6 +72,7 @@ jobs:
         run: |
           uv venv
       - name: Other stuff
+        run: | 
           source .venv/bin/activate
           uv sync --verbose
         # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
