@@ -88,7 +88,7 @@ jobs:
         # The -v flag gives verbose output about how it finds the version
         run: |
           uv tool install hatch
-          hatch version -v
+          hatch version
 
       # --- END OF NEW DEBUGGING STEPS ---
 
