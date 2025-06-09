@@ -64,6 +64,9 @@ jobs:
           # Fetches all tags. This is also CRITICAL for versioning.
           fetch-tags: true
 
+      - name: Show the branch name
+        run: echo "This workflow was triggered by a push to the branch: ${{ github.ref_name }}"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
