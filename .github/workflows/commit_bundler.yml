@@ -145,7 +145,7 @@ jobs:
           # Build command
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG"}}$EXE_EXT" \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG}}$EXE_EXT" \
             $PYINSTALLER_OPTS \
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
@@ -176,12 +176,12 @@ jobs:
 
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG"}}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG}}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
 
       - name: Zip Directory (Windows)
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG"}}.zip -Force
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG}}.zip -Force
         shell: pwsh
         
       - name: Upload Build Artifacts
@@ -189,9 +189,9 @@ jobs:
         with:
           name: build-artifacts-${{ matrix.artifact_suffix }}
           path: |
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG"}}
-            dist/ofscraper_${{ matrix.artifact_suffix }}._${{SELECTED_TAG"}}.exe
-            dist/ofscraper_${{ matrix.artifact_suffix }}__${{SELECTED_TAG"}}.zip
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{SELECTED_TAG}}
+            dist/ofscraper_${{ matrix.artifact_suffix }}._${{SELECTED_TAG}}.exe
+            dist/ofscraper_${{ matrix.artifact_suffix }}__${{SELECTED_TAG}}.zip
           if-no-files-found: ignore
 
   publish_release:
