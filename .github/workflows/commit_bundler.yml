@@ -66,11 +66,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-
-      - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.10.0
-        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
-      
+  
       - name: Get latest compatible version tag
         id: get_version
         run: |
@@ -111,6 +107,11 @@ jobs:
           
           # Now run the sync
           uv sync --verbose
+
+      
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller==6.10.0
+        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
       - name: Build Executable (File)
         run: |
           # Set the correct path to the venv and the script based on the OS
