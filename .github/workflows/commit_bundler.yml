@@ -88,7 +88,7 @@ jobs:
         # This is the key fix. We forcefully remove the conflicting packages
         # after installation, ensuring only hatch-vcs can handle versioning.
         run: |
-          pip uninstall setuptools setuptools_scm --no-progress
+          uv pip uninstall setuptools setuptools_scm --no-progress
 
       - name: "DEBUG: Manually check the dynamic version with Hatch"
         # The -v flag gives verbose output about how it finds the version
