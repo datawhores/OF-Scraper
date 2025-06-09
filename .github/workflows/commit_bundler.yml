@@ -63,9 +63,7 @@ jobs:
 
           # Fetches all tags. This is also CRITICAL for versioning.
           fetch-tags: true
-
-      - name: Show the branch name
-        run: echo "This workflow was triggered by a push to the branch: ${{ github.ref_name }}"
+          
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -75,15 +73,29 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
-      - name: Install System Dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y zip
+      # --- START OF NEW DEBUGGING STEPS ---
 
-      - name: Install Dependencies and Tools
+      - name: "DEBUG: List all files in the repository"
+        run: ls -laR
+
+      - name: "DEBUG: Display pyproject.toml content"
+        run: cat pyproject.toml
+
+      - name: "DEBUG: Manually check the dynamic version with Hatch"
+        # The -v flag gives verbose output about how it finds the version
+        run: hatch version -v
+        continue-on-error: true
+
+      # --- END OF NEW DEBUGGING STEPS ---
+
+      - name: Create venv and Install Dependencies
+        # We add -vvv for maximum verbosity from uv
         run: |
           uv venv
-          uv sync --all-extras
-          uv pip install pyinstaller==6.10.0
+          uv sync --all-extras -vvv
+        
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller==6.10.0 -vvv
 
       - name: Build Executable (File)
         # This step now works for all OSes in the matrix
