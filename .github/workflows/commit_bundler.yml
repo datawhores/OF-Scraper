@@ -84,6 +84,13 @@ jobs:
       - name: Create venv and Install Dependencies
         run: uv venv
 
+      - name: "CRITICAL: Remove Build System Conflicts"
+        # This is the key fix. We forcefully remove the conflicting packages
+        # after installation, ensuring only hatch-vcs can handle versioning.
+        run: |
+          source .venv/bin/activate
+          uv pip uninstall setuptools setuptools_scm --no-deps -y
+
       - name: "DEBUG: Manually check the dynamic version with Hatch"
         # The -v flag gives verbose output about how it finds the version
         run: |
@@ -95,6 +102,7 @@ jobs:
       - name: Install Dependencies
         # We add -vvv for maximum verbosity from uv
         run: |
+          source .venv/bin/activate
           uv sync --all-extras -vvv
         
       - name: Install PyInstaller
