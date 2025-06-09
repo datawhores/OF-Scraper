@@ -89,7 +89,7 @@ jobs:
         # after installation, ensuring only hatch-vcs can handle versioning.
         run: |
           source .venv/bin/activate
-          uv pip uninstall setuptools setuptools_scm --no-deps -y
+          uv pip uninstall setuptools setuptools_scm --no-progress -y
 
       - name: "DEBUG: Manually check the dynamic version with Hatch"
         # The -v flag gives verbose output about how it finds the version
