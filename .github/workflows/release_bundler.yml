@@ -61,6 +61,7 @@ jobs:
             shell: bash
 
     steps:
+      # ... steps to checkout, setup python, install dependencies, and build ...
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
@@ -71,52 +72,28 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.0'
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-  
       - name: Get version from workflow input
         id: get_version
         run: |
-          # The version is passed directly from the workflow input
           INPUT_VERSION="${{ inputs.version }}"
-          echo "Using version from input: $INPUT_VERSION"
-
-          # Remove 'v' prefix if present for consistency with build tools
           SELECTED_TAG=${INPUT_VERSION#v}
-          echo "Using version for build tools (no 'v' prefix): $SELECTED_TAG"
-
-          # Create a sanitized version for filenames by replacing '.' with '_'
           SANITIZED_TAG="${SELECTED_TAG//./_}"
-          echo "Sanitized version for filenames: $SANITIZED_TAG"
-
-          # Set environment variables for build tools
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
           echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-          
-          # Set step outputs for both versions
           echo "selected_tag=$SELECTED_TAG" >> "$GITHUB_OUTPUT"
           echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
         shell: bash
-
       - name: Install venv and dependencies
         run: |
           uv venv
-          
-          # Activate venv based on OS
           if [ "${{ runner.os }}" == "Windows" ]; then
             . .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          
-          # Install versioning dependencies
           uv pip install --upgrade hatch-vcs setuptools-scm
-          
-          # Verify version detection
-          echo "Hatch version: $(hatch version)"
-          
-          # Run the sync
           uv sync --verbose
         shell: bash
       - name: Install PyInstaller
@@ -127,13 +104,8 @@ jobs:
           echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: pwsh
-
       - name: Build Executable (File)
         run: |
-          # Set common variables
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -143,22 +115,14 @@ jobs:
               PYINSTALLER_OPTS="--clean --log DEBUG"
               EXE_EXT=""
           fi
-          # Activate venv
           source $VENV_ACTIVATE
-          # Build command
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile \
             --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}$EXE_EXT" \
             $PYINSTALLER_OPTS \
-            "$OFSCRAPER_EXECUTABLE"
+            "ofscraper/__main__.py"
         shell: bash
-
       - name: Build Executable (Dir)
         run: |
-          # Set common variables
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -166,31 +130,26 @@ jobs:
               VENV_ACTIVATE=".venv/bin/activate"
               PYINSTALLER_OPTS="--clean --log DEBUG"
           fi
-          # Activate venv
           source $VENV_ACTIVATE
-          # Build command
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller\
             --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
             $PYINSTALLER_OPTS \
-            "$OFSCRAPER_EXECUTABLE"
+            "ofscraper/__main__.py"
         shell: bash
-
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
         run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
-
       - name: Zip Directory (Windows)
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
-        
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # Use a single, consistent name for all artifacts
-          name: build-artifacts
+          # FIX 1: Make artifact name unique for each job in the matrix
+          name: build-artifacts-${{ matrix.os }}
           path: |
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.exe
@@ -199,7 +158,6 @@ jobs:
           
   publish_release:
     name: Publish GitHub Release
-    # FIX 1: Run when files are built, not on push
     if: ${{ inputs.files }}
     needs: [build_binaries, get_commit]
     runs-on: ubuntu-latest
@@ -209,8 +167,8 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          # FIX 2: Download the single, consistently-named artifact
-          name: build-artifacts
+          # FIX 2: Download all artifacts into a parent directory.
+          # This creates subdirectories like artifacts/build-artifacts-windows/
           path: artifacts/
 
       - name: List downloaded files for debugging
@@ -219,13 +177,14 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          # FIX 3: Use a simpler glob on the flat directory
-          artifacts: artifacts/*
-          # FIX 4: Use the input version for the release tag and name
+          # FIX 3: Use a glob that searches inside the subdirectories
+          artifacts: artifacts/*/*
           tag: ${{ inputs.version }}
           name: "Release ${{ inputs.version }}"
+          body: "Release build for version ${{ inputs.version }}, created from commit hash `${{ needs.get_commit.outputs.long }}`."
           allowUpdates: true
           
+  # ... other jobs (pypi, docker, etc.) remain unchanged ...
   pypi:
     needs: [get_commit]
     if: ${{ inputs.pip }}
