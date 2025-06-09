@@ -71,7 +71,7 @@ jobs:
       - name: Install Project & Build Dependencies
         run: |
           uv venv
-          uv sync --all-extras --verbose
+          uv sync --verbose
         # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
 
       - name: "CRITICAL FIX: Remove Build System Conflicts"
