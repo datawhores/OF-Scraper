@@ -4,22 +4,40 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: version
+        description: 'The exact git tag to build (e.g., v8.4.1)'
         required: true
       files:
+        description: 'Build binary files? (true/false)'
         required: true
         type: boolean
       pip:
+        description: 'Publish to PyPI? (true/false)'
         required: true
         type: boolean
       docker:
+        description: 'Publish to Docker Hub & GHCR (latest)? (true/false)'
         required: true
         type: boolean
       docker_old:
+        description: 'Publish to Docker Hub & GHCR (version only)? (true/false)'
         required: true
         type: boolean
 jobs:
+  get_commit:
+    runs-on: ubuntu-latest
+    outputs:
+      long: ${{ steps.commit.outputs.long }}
+    steps:
+      - name: Checkout code at specified version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+      - name: Get commit hash
+        id: commit
+        run: echo "long=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build_binaries:
+    if: ${{ inputs.files }}
     name: Build on ${{ matrix.os }}
     needs: [get_commit]
     runs-on: ${{ matrix.os }}
@@ -31,9 +49,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-   
-
-
         include:
           - os: ubuntu-latest
             artifact_suffix: linux
@@ -49,9 +64,9 @@ jobs:
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Get all history
-          fetch-tags: true  # Get all tags
-          ref: ${{inputs.version}}
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.version }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -60,31 +75,28 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
   
-      - name: Get latest compatible version tag
+      - name: Get version from workflow input
         id: get_version
         run: |
-          # Get all tags matching your pattern
-          ALL_TAGS=$(git tag --list)
-          echo "All tags: $ALL_TAGS"
-          
-          # Filter tags by pattern and sort by version
-          FILTERED_TAGS=$(echo "$ALL_TAGS" | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | sort -V -r)
-          echo "Filtered tags: $FILTERED_TAGS"
-          
-          # Select the highest version tag
-          SELECTED_TAG=$(echo "$FILTERED_TAGS" | head -n 1)
-          
-          # Fallback to 0.0.0 if no tags found
-          if [ -z "$SELECTED_TAG" ]; then
-            SELECTED_TAG="0.0.0"
-          else
-            # Remove 'v' prefix if present
-            SELECTED_TAG=${SELECTED_TAG#v}
-          fi
-          
-          echo "Using version: $SELECTED_TAG"
+          # The version is passed directly from the workflow input
+          INPUT_VERSION="${{ inputs.version }}"
+          echo "Using version from input: $INPUT_VERSION"
+
+          # Remove 'v' prefix if present for consistency with build tools
+          SELECTED_TAG=${INPUT_VERSION#v}
+          echo "Using version for build tools (no 'v' prefix): $SELECTED_TAG"
+
+          # Create a sanitized version for filenames by replacing '.' with '_'
+          SANITIZED_TAG="${SELECTED_TAG//./_}"
+          echo "Sanitized version for filenames: $SANITIZED_TAG"
+
+          # Set environment variables for build tools
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
           echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
+          
+          # Set step outputs for both versions
+          echo "selected_tag=$SELECTED_TAG" >> "$GITHUB_OUTPUT"
+          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Install venv and dependencies
@@ -116,7 +128,6 @@ jobs:
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: pwsh
 
-
       - name: Build Executable (File)
         run: |
           # Set common variables
@@ -137,7 +148,7 @@ jobs:
           # Build command
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}$EXE_EXT" \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}$EXE_EXT" \
             $PYINSTALLER_OPTS \
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
@@ -165,15 +176,14 @@ jobs:
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
 
-
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
 
       - name: Zip Directory (Windows)
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}.zip -Force
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
         
       - name: Upload Build Artifacts
@@ -181,15 +191,14 @@ jobs:
         with:
           name: build-artifacts-${{ matrix.artifact_suffix }}
           path: |
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}.exe
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{inputs.version}}.zip
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.exe
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip
           if-no-files-found: ignore
-
 
   pypi:
     needs: [get_commit]
-    if: ${{ inputs.pip}}
+    if: ${{ inputs.pip }}
     runs-on: ubuntu-latest
     name: create pypi
     steps:
@@ -198,8 +207,8 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}
+          ref: ${{ inputs.version }}
+      - run: git checkout ${{ needs.get_commit.outputs.long }}
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
@@ -222,47 +231,37 @@ jobs:
           poetry publish
   docker:
     needs: [get_commit]
-    if: ${{ inputs.docker}}
+    if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     name: DockerHub Release
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}
+          ref: ${{ inputs.version }}
+      - run: git checkout ${{ needs.get_commit.outputs.long }}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-      #Install the cosign tool except on PR
-      #https://github.com/sigstore/cosign-installer
       - name: Install cosign
-        uses: sigstore/cosign-installer@main #v2.6.0
+        uses: sigstore/cosign-installer@main
         with:
           cosign-release: v1.13.1
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: push image to Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
@@ -271,83 +270,56 @@ jobs:
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
             datawhores/of-scraper:latest
-
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
-
       - name: Write signing key to disk
         run: echo "$KEY" > cosign.key
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
-      #       # Sign the resulting Docker image digest except on PRs.
-      #       # This will only write to the public Rekor transparency log when the Docker
-      #       # repository is public to avoid leaking data.  If you would like to publish
-      #       # transparency data even for private images, pass --force to cosign below.
-      #       # https://github.com/sigstore/cosign
-      #       - name: Sign the published Docker image
-      #         env:
-      #           COSIGN_EXPERIMENTAL: "true"
-      #         # This step uses the identity token to provision an ephemeral certificate
-      #         # against the sigstore community Fulcio instance.
-      #         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
   github_docker:
     needs: [get_commit]
-    if: ${{ inputs.docker}}
+    if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     name: Docker GHCR Release
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}
+          ref: ${{ inputs.version }}
+      - run: git checkout ${{ needs.get_commit.outputs.long }}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-      #Install the cosign tool except on PR
-      #https://github.com/sigstore/cosign-installer
       - name: Install cosign
-        uses: sigstore/cosign-installer@main #v2.6.0
+        uses: sigstore/cosign-installer@main
         with:
           cosign-release: v1.13.1
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: login to ghcr
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
-          # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
         uses: docker/build-push-action@v4
@@ -362,47 +334,37 @@ jobs:
 
   docker_old:
     needs: [get_commit]
-    if: ${{ inputs.docker_old}}
+    if: ${{ inputs.docker_old }}
     runs-on: ubuntu-latest
     name: DockerHub Release Old
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}
+          ref: ${{ inputs.version }}
+      - run: git checkout ${{ needs.get_commit.outputs.long }}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-      #Install the cosign tool except on PR
-      #https://github.com/sigstore/cosign-installer
       - name: Install cosign
-        uses: sigstore/cosign-installer@main #v2.6.0
+        uses: sigstore/cosign-installer@main
         with:
           cosign-release: v1.13.1
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: push image to Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
@@ -410,74 +372,48 @@ jobs:
           context: .
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
-
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
-
       - name: Write signing key to disk
         run: echo "$KEY" > cosign.key
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
-      #       # Sign the resulting Docker image digest except on PRs.
-      #       # This will only write to the public Rekor transparency log when the Docker
-      #       # repository is public to avoid leaking data.  If you would like to publish
-      #       # transparency data even for private images, pass --force to cosign below.
-      #       # https://github.com/sigstore/cosign
-      #       - name: Sign the published Docker image
-      #         env:
-      #           COSIGN_EXPERIMENTAL: "true"
-      #         # This step uses the identity token to provision an ephemeral certificate
-      #         # against the sigstore community Fulcio instance.
-      #         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
-
   docker_old_github:
     needs: [get_commit]
-    if: ${{ inputs.docker_old}}
+    if: ${{ inputs.docker_old }}
     runs-on: ubuntu-latest
     name: GHCR Release Old
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}
+          ref: ${{ inputs.version }}
+      - run: git checkout ${{ needs.get_commit.outputs.long }}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-      #Install the cosign tool except on PR
-      #https://github.com/sigstore/cosign-installer
       - name: Install cosign
-        uses: sigstore/cosign-installer@main #v2.6.0
+        uses: sigstore/cosign-installer@main
         with:
           cosign-release: v1.13.1
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: login to ghcr
@@ -486,7 +422,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
-          # Extract metadata (tags, labels) for Docker
       - name: push image to ghcr
         id: build-and-push2
         uses: docker/build-push-action@v4
