@@ -7,19 +7,19 @@ on:
         description: 'The exact git tag to build (e.g., v8.4.1)'
         required: true
       files:
-        description: 'Build binary files? (t/f)'
+        description: 'Build binary files? (true/false)'
         required: true
         type: boolean
       pip:
-        description: 'Publish to PyPI? (t/f)'
+        description: 'Publish to PyPI? (true/false)'
         required: true
         type: boolean
       docker:
-        description: 'Publish to Docker Hub & GHCR (latest)? (t/f)'
+        description: 'Publish to Docker Hub & GHCR (latest)? (true/false)'
         required: true
         type: boolean
       docker_old:
-        description: 'Publish to Docker Hub & GHCR (version only)? (t/f)'
+        description: 'Publish to Docker Hub & GHCR (version only)? (true/false)'
         required: true
         type: boolean
 jobs:
@@ -61,7 +61,6 @@ jobs:
             shell: bash
 
     steps:
-      # ... steps to checkout, setup python, install dependencies, and build ...
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
@@ -72,28 +71,52 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.0'
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
+  
       - name: Get version from workflow input
         id: get_version
         run: |
+          # The version is passed directly from the workflow input
           INPUT_VERSION="${{ inputs.version }}"
+          echo "Using version from input: $INPUT_VERSION"
+
+          # Remove 'v' prefix if present for consistency with build tools
           SELECTED_TAG=${INPUT_VERSION#v}
+          echo "Using version for build tools (no 'v' prefix): $SELECTED_TAG"
+
+          # Create a sanitized version for filenames by replacing '.' with '_'
           SANITIZED_TAG="${SELECTED_TAG//./_}"
+          echo "Sanitized version for filenames: $SANITIZED_TAG"
+
+          # Set environment variables for build tools
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
           echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
+          
+          # Set step outputs for both versions
           echo "selected_tag=$SELECTED_TAG" >> "$GITHUB_OUTPUT"
           echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
         shell: bash
+
       - name: Install venv and dependencies
         run: |
           uv venv
+          
+          # Activate venv based on OS
           if [ "${{ runner.os }}" == "Windows" ]; then
             . .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
+          
+          # Install versioning dependencies
           uv pip install --upgrade hatch-vcs setuptools-scm
+          
+          # Verify version detection
+          echo "Hatch version: $(hatch version)"
+          
+          # Run the sync
           uv sync --verbose
         shell: bash
       - name: Install PyInstaller
@@ -104,8 +127,13 @@ jobs:
           echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: pwsh
+
       - name: Build Executable (File)
         run: |
+          # Set common variables
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+
+          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -115,14 +143,22 @@ jobs:
               PYINSTALLER_OPTS="--clean --log DEBUG"
               EXE_EXT=""
           fi
+          # Activate venv
           source $VENV_ACTIVATE
+          # Build command
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile \
             --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}$EXE_EXT" \
             $PYINSTALLER_OPTS \
-            "ofscraper/__main__.py"
+            "$OFSCRAPER_EXECUTABLE"
         shell: bash
+
       - name: Build Executable (Dir)
         run: |
+          # Set common variables
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+
+          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -130,25 +166,29 @@ jobs:
               VENV_ACTIVATE=".venv/bin/activate"
               PYINSTALLER_OPTS="--clean --log DEBUG"
           fi
+          # Activate venv
           source $VENV_ACTIVATE
+          # Build command
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller\
             --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
             $PYINSTALLER_OPTS \
-            "ofscraper/__main__.py"
+            "$OFSCRAPER_EXECUTABLE"
         shell: bash
+
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
         run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
+
       - name: Zip Directory (Windows)
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
-
+        
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # FIX 1: Make artifact name unique for each job in the matrix
           name: build-artifacts-${{ matrix.os }}
           path: |
             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
@@ -167,8 +207,6 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          # FIX 2: Download all artifacts into a parent directory.
-          # This creates subdirectories like artifacts/build-artifacts-windows/
           path: artifacts/
 
       - name: List downloaded files for debugging
@@ -177,14 +215,12 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          # FIX 3: Use a glob that searches inside the subdirectories
           artifacts: artifacts/*/*
           tag: ${{ inputs.version }}
           name: "Release ${{ inputs.version }}"
           body: "Release build for version ${{ inputs.version }}, created from commit hash `${{ needs.get_commit.outputs.long }}`."
           allowUpdates: true
           
-  # ... other jobs (pypi, docker, etc.) remain unchanged ...
   pypi:
     needs: [get_commit]
     if: ${{ inputs.pip }}
@@ -198,26 +234,36 @@ jobs:
           fetch-tags: true
           ref: ${{ inputs.version }}
       - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: Set up Python 3.11.5
+
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.5
-      - name: 🐍 Install dependencies
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Build and Publish Tools
+        run: uv pip install hatch twine
+
+      - name: Build Package with Hatch
         run: |
-          pip install poetry-dynamic-versioning
-          pip install dunamai
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-      - name: Build
-        run: |
-          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+(\.((\d+\.\w+)|\w+)|))")
-          poetry build
-      - name: Push to pypi
+          # Get version from input and remove 'v' prefix
+          INPUT_VERSION="${{ inputs.version }}"
+          PACKAGE_VERSION=${INPUT_VERSION#v}
+          echo "Setting package version to $PACKAGE_VERSION for the build."
+
+          # Set the version environment variable for hatch-vcs and build
+          export HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION
+          hatch build
+        shell: bash
+
+      - name: Publish to PyPI with Twine
         env:
-          PYPI_TOKEN: ${{ secrets.pypi }}
-        run: |
-          poetry config pypi-token.pypi $PYPI_TOKEN
-          poetry publish
+          # Twine uses these environment variables for authentication
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi }}
+        run: twine upload "dist/*"
           
   docker:
     needs: [get_commit]
@@ -235,8 +281,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.version }}
       - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
+      - name: Prepare version string
+        id: prep_version
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          PACKAGE_VERSION=${INPUT_VERSION#v}
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -257,6 +307,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
             datawhores/of-scraper:latest
@@ -274,7 +327,7 @@ jobs:
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
+        run: echo "datawhores/of-scraper:${{ steps.prep_version.outputs.package_version }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
   github_docker:
     needs: [get_commit]
@@ -292,8 +345,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.version }}
       - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
+      - name: Prepare version string
+        id: prep_version
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          PACKAGE_VERSION=${INPUT_VERSION#v}
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -315,6 +372,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
           tags: |
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
             ghcr.io/datawhores/of-scraper:latest
@@ -338,8 +398,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.version }}
       - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
+      - name: Prepare version string
+        id: prep_version
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          PACKAGE_VERSION=${INPUT_VERSION#v}
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -360,6 +424,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
@@ -376,7 +443,7 @@ jobs:
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
+        run: echo "datawhores/of-scraper:${{ steps.prep_version.outputs.package_version }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
   docker_old_github:
     needs: [get_commit]
@@ -394,8 +461,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.version }}
       - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
+      - name: Prepare version string
+        id: prep_version
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          PACKAGE_VERSION=${INPUT_VERSION#v}
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -417,6 +488,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
           tags: |
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
