@@ -54,16 +54,15 @@ jobs:
           #   shell: bash
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
+          # Fetches all history. This is CRITICAL for your dynamic
+          # versioning tool to see all past tags.
           fetch-depth: 0
-          fetch-tags: true
-      - name: Checkout specific commit
-        run: git checkout ${{ needs.get_commit.outputs.long }}
 
-      - name: reset to new commit
-        run: git reset --hard HEAD
+          # Fetches all tags. This is also CRITICAL for versioning.
+          fetch-tags: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
