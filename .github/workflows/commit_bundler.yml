@@ -24,10 +24,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
       - name: Get Commit Hash
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: prompt/actions-commit-hash@v3
         id: commit
 
-  build:
+  build_binaries:
     name: Build on ${{ matrix.os }}
     needs: [get_commit]
     runs-on: ${{ matrix.os }}
@@ -158,7 +158,7 @@ jobs:
   publish_release:
     name: Publish GitHub Release
     if: github.event_name == 'push'
-    needs: [build, get_commit]
+    needs: [build_binaries, get_commit]
     runs-on: ubuntu-latest
     permissions:
       contents: write
