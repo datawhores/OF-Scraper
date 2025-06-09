@@ -20,91 +20,91 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
 
-create_linux_release_file:
-    name: Create Linux Release File
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [get_commit]
-    runs-on: ubuntu-latest
+  create_linux_release_file:
+      name: Create Linux Release File
+      if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+      needs: [get_commit]
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          # This is critical - it fetches all history and tags.
-          fetch-depth: 0
-          fetch-tags: true
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+          with:
+            # This is critical - it fetches all history and tags.
+            fetch-depth: 0
+            fetch-tags: true
 
-      - name: Checkout specific commit
-        run: git checkout ${{ needs.get_commit.outputs.long }}
+        - name: Checkout specific commit
+          run: git checkout ${{ needs.get_commit.outputs.long }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.11'
 
-      # --- START OF NEW DEBUGGING STEPS ---
+        # --- START OF NEW DEBUGGING STEPS ---
 
-      - name: "DEBUG: Verify Git Status and Current Location"
-        run: |
-          echo "--- Git Status ---"
-          git status
-          echo
-          echo "--- Current Commit ---"
-          git log -n 1 --oneline --decorate
-        shell: bash
+        - name: "DEBUG: Verify Git Status and Current Location"
+          run: |
+            echo "--- Git Status ---"
+            git status
+            echo
+            echo "--- Current Commit ---"
+            git log -n 1 --oneline --decorate
+          shell: bash
 
-      - name: "DEBUG: List All Available Tags"
-        # This is a crucial test to see if the runner sees ANY tags.
-        run: |
-          echo "--- Git Tags Found ---"
-          git tag -l
-        shell: bash
+        - name: "DEBUG: List All Available Tags"
+          # This is a crucial test to see if the runner sees ANY tags.
+          run: |
+            echo "--- Git Tags Found ---"
+            git tag -l
+          shell: bash
 
-      - name: "DEBUG: Show Recent Git History Graph"
-        # This shows us the commit graph as seen by the runner.
-        run: |
-          echo "--- Git Log Graph ---"
-          git log -n 25 --oneline --decorate --graph
-        shell: bash
+        - name: "DEBUG: Show Recent Git History Graph"
+          # This shows us the commit graph as seen by the runner.
+          run: |
+            echo "--- Git Log Graph ---"
+            git log -n 25 --oneline --decorate --graph
+          shell: bash
 
-      - name: "DEBUG: Run git describe (The Key Command)"
-        # This runs the exact command the versioning tool uses.
-        # We need to see if it succeeds or fails here.
-        run: |
-          echo "--- Git Describe Output ---"
-          git describe --tags --long
-        shell: bash
-        # This next line tells the workflow to continue even if `git describe` fails.
-        continue-on-error: true
+        - name: "DEBUG: Run git describe (The Key Command)"
+          # This runs the exact command the versioning tool uses.
+          # We need to see if it succeeds or fails here.
+          run: |
+            echo "--- Git Describe Output ---"
+            git describe --tags --long
+          shell: bash
+          # This next line tells the workflow to continue even if `git describe` fails.
+          continue-on-error: true
 
-      # --- END OF NEW DEBUGGING STEPS ---
+        # --- END OF NEW DEBUGGING STEPS ---
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v1
+        - name: Install uv
+          uses: astral-sh/setup-uv@v1
 
-      - name: Create venv and Install Project Dependencies
-        # This is the step that is likely failing. The logs above will tell us why.
-        run: |
-          uv venv
-          uv sync --all-extras
-        shell: bash
+        - name: Create venv and Install Project Dependencies
+          # This is the step that is likely failing. The logs above will tell us why.
+          run: |
+            uv venv
+            uv sync --all-extras
+          shell: bash
 
-      - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.10.0
-        shell: bash
+        - name: Install PyInstaller
+          run: uv pip install pyinstaller==6.10.0
+          shell: bash
 
-      - name: Build Executable with PyInstaller
-        run: |
-          source .venv/bin/activate
-          pyinstaller --onefile --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
-        shell: bash
+        - name: Build Executable with PyInstaller
+          run: |
+            source .venv/bin/activate
+            pyinstaller --onefile --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
+          shell: bash
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ofscraper_linux_${{needs.get_commit.outputs.short}}
-          path: dist/ofscraper_linux_${{needs.get_commit.outputs.short}}
-          if-no-files-found: error
+        - name: Upload Artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: ofscraper_linux_${{needs.get_commit.outputs.short}}
+            path: dist/ofscraper_linux_${{needs.get_commit.outputs.short}}
+            if-no-files-found: error
 
   linux_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
