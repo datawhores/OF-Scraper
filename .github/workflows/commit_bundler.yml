@@ -84,16 +84,24 @@ jobs:
           uv pip install pyinstaller==6.10.0
 
       - name: Build Executable (File)
+        # This step now works for all OSes in the matrix
         run: |
-          # The 'source' command must be adapted for powershell on Windows
+          # Set the correct path to the venv and the script based on the OS
           if [ "${{ runner.os }}" == "Windows" ]; then
-            .venv\Scripts\activate
+            VENV_ACTIVATE=".venv/Scripts/activate"
+            OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
           else
-            source .venv/bin/activate
+            VENV_ACTIVATE=".venv/bin/activate"
+            OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
           fi
-          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" .venv/Scripts/ofscraper.exe
 
-      - name: Build Executable (Directory)
+          # Activate the virtual environment
+          source $VENV_ACTIVATE
+
+          # Run PyInstaller with the correct path
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $OFSCRAPER_EXECUTABLE
+        shell: bash # Use bash for all platforms for consistent scripting      - name: Build Executable (Directory)
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
             .venv\Scripts\activate
