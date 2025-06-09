@@ -169,7 +169,7 @@ jobs:
           # Build command
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller\
-            --name "ofscraper_${{ matrix.artifact_suffix }}" \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
             $PYINSTALLER_OPTS \
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
