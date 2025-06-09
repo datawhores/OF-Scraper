@@ -116,23 +116,33 @@ jobs:
         shell: bash
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
-        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
+      - name: Set UTF-8 environment (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+
+
       - name: Build Executable (File)
         run: |
-          # Set the correct path to the venv and the script based on the OS
           if [ "${{ runner.os }}" == "Windows" ]; then
             VENV_ACTIVATE=".venv/Scripts/activate"
             OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
+            # Add UTF-8 options for Windows
+            PYINSTALLER_OPTS="--add-data='./ofscraper;ofscraper' --python-option=utf8"
           else
             VENV_ACTIVATE=".venv/bin/activate"
             OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
+            PYINSTALLER_OPTS=""
           fi
-          # Activate the virtual environment
+          
           source $VENV_ACTIVATE
-          # Run PyInstaller with the correct path
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $OFSCRAPER_EXECUTABLE
-        shell: bash # Use bash on all platforms for consistent scripting
+          
+          # Use the UTF-8 options on Windows
+          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $PYINSTALLER_OPTS $OFSCRAPER_EXECUTABLE
+        shell: bash
 
       - name: Build Executable (Directory)
         run: |
