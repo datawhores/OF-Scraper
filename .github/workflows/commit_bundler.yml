@@ -108,7 +108,6 @@ jobs:
           uv pip install --upgrade hatch-vcs setuptools-scm
           echo "Hatch version: $(hatch version)"
           uv sync --verbose
-        shell: ${{ matrix.shell }}
       
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
