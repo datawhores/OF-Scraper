@@ -7,19 +7,19 @@ on:
         description: 'The exact git tag to build (e.g., v8.4.1)'
         required: true
       files:
-        description: 'Build binary files? (true/false)'
+        description: 'Build binary files? (t/f)'
         required: true
         type: boolean
       pip:
-        description: 'Publish to PyPI? (true/false)'
+        description: 'Publish to PyPI? (t/f)'
         required: true
         type: boolean
       docker:
-        description: 'Publish to Docker Hub & GHCR (latest)? (true/false)'
+        description: 'Publish to Docker Hub & GHCR (latest)? (t/f)'
         required: true
         type: boolean
       docker_old:
-        description: 'Publish to Docker Hub & GHCR (version only)? (true/false)'
+        description: 'Publish to Docker Hub & GHCR (version only)? (t/f)'
         required: true
         type: boolean
 jobs:
