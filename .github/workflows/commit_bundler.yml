@@ -134,7 +134,7 @@ jobs:
           # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
-              PYINSTALLER_OPTS="--python-option=utf8 --add-data='ofscraper;ofscraper'"
+              PYINSTALLER_OPTS="--python-option=utf8"
               EXE_EXT=".exe"
           else
               VENV_ACTIVATE=".venv/bin/activate"
