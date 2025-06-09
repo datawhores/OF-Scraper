@@ -87,7 +87,7 @@ jobs:
       - name: "DEBUG: Manually check the dynamic version with Hatch"
         # The -v flag gives verbose output about how it finds the version
         run: |
-          uv pip install hatch
+          uv tool install hatch
           hatch version -v
 
       # --- END OF NEW DEBUGGING STEPS ---
