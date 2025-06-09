@@ -130,7 +130,7 @@ jobs:
             VENV_ACTIVATE=".venv/Scripts/activate"
             OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
             # Add UTF-8 options for Windows
-            PYINSTALLER_OPTS="--add-data='./ofscraper;ofscraper' --python-option=utf8"
+            PYINSTALLER_OPTS="--python-option=utf8"
           else
             VENV_ACTIVATE=".venv/bin/activate"
             OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
