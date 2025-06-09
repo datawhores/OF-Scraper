@@ -126,31 +126,27 @@ jobs:
 
       - name: Build Executable (File)
         run: |
-        # Set common variables
-        OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+          # Set common variables
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
 
-        # OS-specific settings
-        if [ "${{ runner.os }}" == "Windows" ]; then
-            VENV_ACTIVATE=".venv/Scripts/activate"
-            PYINSTALLER_OPTS="--python-option=utf8 --add-data='ofscraper;ofscraper'"
-            EXE_EXT=".exe"
-        else
-            VENV_ACTIVATE=".venv/bin/activate"
-            PYINSTALLER_OPTS="--add-data='ofscraper:ofscraper' --clean --log DEBUG"
-            EXE_EXT=""
-        fi
-        # Activate venv
-        source $VENV_ACTIVATE
-        echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-
-        pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $PYINSTALLER_OPTS $OFSCRAPER_EXECUTABLE
-
-# Build command
-echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-pyinstaller --onefile \
-    --name "ofscraper_${{ matrix.artifact_suffix }}$EXE_EXT" \
-    $PYINSTALLER_OPTS \
-    "$OFSCRAPER_EXECUTABLE"
+          # OS-specific settings
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              VENV_ACTIVATE=".venv/Scripts/activate"
+              PYINSTALLER_OPTS="--python-option=utf8 --add-data='ofscraper;ofscraper'"
+              EXE_EXT=".exe"
+          else
+              VENV_ACTIVATE=".venv/bin/activate"
+              PYINSTALLER_OPTS="--add-data='ofscraper:ofscraper' --clean --log DEBUG"
+              EXE_EXT=""
+          fi
+          # Activate venv
+          source $VENV_ACTIVATE
+          # Build command
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller --onefile \
+            --name "ofscraper_${{ matrix.artifact_suffix }}$EXE_EXT" \
+            $PYINSTALLER_OPTS \
+            "$OFSCRAPER_EXECUTABLE"
         shell: bash
 
       - name: Build Executable (Directory)
