@@ -77,7 +77,7 @@ jobs:
       - name: Install Dependencies and Tools
         run: |
           uv venv
-          uv sync --all-extras
+          uv sync --no-lock --all-extras
           uv pip install pyinstaller==6.10.0
 
       - name: Build Executable (File)
