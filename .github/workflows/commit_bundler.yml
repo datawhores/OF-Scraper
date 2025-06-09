@@ -52,7 +52,6 @@ jobs:
           #   artifact_suffix: macos
           #   shell: bash
 
-    # --- THIS 'steps' BLOCK IS NOW CORRECTLY INDENTED ---
     steps:
       - name: Checkout Full Git History
         uses: actions/checkout@v4
@@ -67,6 +66,10 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
+
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller==6.10.0
+        # CORRECTED: Removed invalid 'shell: ${{ matrix.shell }}' line
       
       - name: Get latest compatible version tag
         id: get_version
