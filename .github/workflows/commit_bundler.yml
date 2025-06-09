@@ -106,45 +106,64 @@ jobs:
             path: dist/ofscraper_linux_${{needs.get_commit.outputs.short}}
             if-no-files-found: error
 
-  linux_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [get_commit]
-    runs-on: ubuntu-22.04
-    name: create linux release zip
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: create zip
-        uses: addnab/docker-run-action@v3
-        with:
-          image: datawhores/ubuntu:latest
-          options: -v ${{ github.workspace }}:/root/work
-          shell: bash
+  create_linux_release_dir:
+      if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+      needs: [get_commit]
+      runs-on: ubuntu-latest # Using the standard runner
+      name: create linux release zip
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            fetch-tags: true
+        - name: Checkout specific commit
+          run: git checkout ${{needs.get_commit.outputs.long}}
+
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.11'
+
+        - name: Install uv
+          uses: astral-sh/setup-uv@v1
+
+        - name: Install System Dependencies
+          run: sudo apt-get update && sudo apt-get install -y zip
+
+        - name: Install Dependencies and Tools
           run: |
-            cd work
-            rm -rf ./dist ./build
-            apt-get update && apt-get install -y python3.11-venv zip libxml2-dev libxslt-dev
-            python3.11 -m venv .venv
+            uv venv
+            uv sync --all-extras
+            uv pip install pyinstaller==6.10.0
+          shell: bash
+
+        - name: Test ofscraper command
+          run: |
             source .venv/bin/activate
-            pip install poetry==1.4.1 pyinstaller==6.10.0
-            poetry install
             ofscraper -h
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.short}}"
-            zip -r "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip" "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
-      - name: Upload Zip
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: |
-            actions/upload-artifact@v4
-            with:
-              name: "ofscraper_linux_zip_${{needs.get_commit.outputs.short}}"
-              path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip"
-              overwrite: true
+          shell: bash
+
+        - name: Build Executable Directory with PyInstaller
+          run: |
+            source .venv/bin/activate
+            pyinstaller --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
+          shell: bash
+
+        - name: Zip Build Artifact
+          run: zip -r "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip" "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
+          shell: bash
+
+        - name: Upload Zip
+          uses: Wandalen/wretry.action@master
+          with:
+            attempt_limit: 3
+            action: |
+              actions/upload-artifact@v4
+              with:
+                name: "ofscraper_linux_zip_${{needs.get_commit.outputs.short}}"
+                path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip"
+                overwrite: true
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -350,7 +369,7 @@ jobs:
         windows_dir,
         windows_file,
         create_linux_release_file,
-        linux_dir,
+        create_linux_release_dir,
         get_commit,
       ]
     permissions:
