@@ -103,13 +103,37 @@ jobs:
           pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $OFSCRAPER_EXECUTABLE
         shell: bash # Use bash for all platforms for consistent scripting
 
-      - name: Zip Directory Release
+      - name: Build Executable (Directory)
+        # This single step works for all OSes in the matrix
+        run: |
+          # Set the correct path to the venv and the script based on the OS
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            VENV_ACTIVATE=".venv/Scripts/activate"
+            OFSCRAPER_EXECUTABLE=".venv/Scripts/ofscraper.exe"
+          else
+            VENV_ACTIVATE=".venv/bin/activate"
+            OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
+          fi
+
+          # Activate the virtual environment
+          source $VENV_ACTIVATE
+
+          # Run PyInstaller with the correct path (no --onefile for a directory build)
+          echo "Building executable directory from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" $OFSCRAPER_EXECUTABLE
+        shell: bash # Use bash for all platforms for consistent scripting
+
+      - name: Zip Directory (Unix)
+        # This step runs only on Linux and macOS
         if: runner.os != 'Windows'
         run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
-      - name: Zip Directory Release (Windows)
+        shell: bash
+
+      - name: Zip Directory (Windows)
+        # This step runs only on Windows
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip -Force
-
+        shell: pwsh
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
