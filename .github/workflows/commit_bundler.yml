@@ -57,13 +57,9 @@ jobs:
       - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
-          # Fetches all history. This is CRITICAL for your dynamic
-          # versioning tool to see all past tags.
+          # Fetches all history and tags, which is critical for dynamic versioning.
           fetch-depth: 0
-
-          # Fetches all tags. This is also CRITICAL for versioning.
           fetch-tags: true
-          
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -73,42 +69,50 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
-      # --- START OF NEW DEBUGGING STEPS ---
-
-      - name: "DEBUG: List all files in the repository"
-        run: ls -laR
-
-      - name: "DEBUG: Display pyproject.toml content"
-        run: cat pyproject.toml
-
-      - name: Create venv and Install Dependencies
-        run: uv venv
-
-      - name: "CRITICAL: Remove Build System Conflicts"
-        # This is the key fix. We forcefully remove the conflicting packages
-        # after installation, ensuring only hatch-vcs can handle versioning.
+      - name: Install Project & Build Dependencies
+        # This step creates the venv and installs everything from your pyproject.toml.
+        # This is where the conflicting 'setuptools' package gets installed as a
+        # dependency of another package.
         run: |
-          uv pip uninstall setuptools setuptools_scm --no-progress
+          uv venv
+          uv sync --all-extras
+        shell: ${{ matrix.shell }}
 
-      - name: "DEBUG: Manually check the dynamic version with Hatch"
-        # The -v flag gives verbose output about how it finds the version
-        run: |
-          uv tool install hatch
-          hatch version
-
-      # --- END OF NEW DEBUGGING STEPS ---
-
-      - name: Install Dependencies
-        # We add -vvv for maximum verbosity from uv
+      - name: "CRITICAL FIX: Remove Build System Conflicts"
+        # Now that everything is installed, we surgically remove the packages
+        # that cause the versioning conflict before they can interfere.
         run: |
           source .venv/bin/activate
-          uv sync --all-extras -vvv
-        
-      - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.10.0 -vvv
+          uv pip uninstall setuptools setuptools_scm -y
+        if: runner.os != 'Windows'
+        shell: bash
+      - name: "CRITICAL FIX: Remove Build System Conflicts (Windows)"
+        if: runner.os == 'Windows'
+        run: |
+          .venv\Scripts\activate
+          uv pip uninstall setuptools setuptools_scm -y
+        shell: pwsh
 
-      - name: Build Executable (File)
-        # This step now works for all OSes in the matrix
+      - name: "DEBUG: Verify Dynamic Version"
+        # With the conflicts gone, this command will now succeed and show the
+        # correct version derived from your Git tags.
+        run: |
+          source .venv/bin/activate
+          echo "Hatch sees version: $(hatch version)"
+        if: runner.os != 'Windows'
+        shell: bash
+      - name: "DEBUG: Verify Dynamic Version (Windows)"
+        if: runner.os == 'Windows'
+        run: |
+          .venv\Scripts\activate
+          echo "Hatch sees version: $(hatch version)"
+        shell: pwsh
+      
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller==6.10.0
+        shell: ${{ matrix.shell }}
+
+      - name: Build Executable with PyInstaller
         run: |
           # Set the correct path to the venv and the script based on the OS
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -118,14 +122,12 @@ jobs:
             VENV_ACTIVATE=".venv/bin/activate"
             OFSCRAPER_EXECUTABLE=".venv/bin/ofscraper"
           fi
-
           # Activate the virtual environment
           source $VENV_ACTIVATE
-
           # Run PyInstaller with the correct path
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}" $OFSCRAPER_EXECUTABLE
-        shell: bash # Use bash for all platforms for consistent scripting
+        shell: bash # Use bash on all platforms for consistent scripting
 
       - name: Build Executable (Directory)
         # This single step works for all OSes in the matrix
