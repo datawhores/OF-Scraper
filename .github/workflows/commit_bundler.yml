@@ -20,7 +20,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
 
-  create_linux_release_file:
+create_linux_release_file:
     name: Create Linux Release File
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [get_commit]
@@ -30,9 +30,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # fetch-depth: 0 is CRITICAL for versioning tools to see all history and tags.
+          # This is critical - it fetches all history and tags.
           fetch-depth: 0
           fetch-tags: true
+
       - name: Checkout specific commit
         run: git checkout ${{ needs.get_commit.outputs.long }}
 
@@ -41,14 +42,48 @@ jobs:
         with:
           python-version: '3.11'
 
+      # --- START OF NEW DEBUGGING STEPS ---
+
+      - name: "DEBUG: Verify Git Status and Current Location"
+        run: |
+          echo "--- Git Status ---"
+          git status
+          echo
+          echo "--- Current Commit ---"
+          git log -n 1 --oneline --decorate
+        shell: bash
+
+      - name: "DEBUG: List All Available Tags"
+        # This is a crucial test to see if the runner sees ANY tags.
+        run: |
+          echo "--- Git Tags Found ---"
+          git tag -l
+        shell: bash
+
+      - name: "DEBUG: Show Recent Git History Graph"
+        # This shows us the commit graph as seen by the runner.
+        run: |
+          echo "--- Git Log Graph ---"
+          git log -n 25 --oneline --decorate --graph
+        shell: bash
+
+      - name: "DEBUG: Run git describe (The Key Command)"
+        # This runs the exact command the versioning tool uses.
+        # We need to see if it succeeds or fails here.
+        run: |
+          echo "--- Git Describe Output ---"
+          git describe --tags --long
+        shell: bash
+        # This next line tells the workflow to continue even if `git describe` fails.
+        continue-on-error: true
+
+      # --- END OF NEW DEBUGGING STEPS ---
+
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
-      - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y zip libxml2-dev libxslt-dev
-
       - name: Create venv and Install Project Dependencies
-        # This is now a separate step. If it fails, we will see the exact error.
+        # This is the step that is likely failing. The logs above will tell us why.
         run: |
           uv venv
           uv sync --all-extras
@@ -56,13 +91,6 @@ jobs:
 
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
-        shell: bash
-
-      - name: Verify Dynamic Version
-        # This step lets us see what version was actually determined.
-        run: |
-          source .venv/bin/activate
-          echo "The dynamic version detected is: $(ofscraper --version)"
         shell: bash
 
       - name: Build Executable with PyInstaller
@@ -76,7 +104,7 @@ jobs:
         with:
           name: ofscraper_linux_${{needs.get_commit.outputs.short}}
           path: dist/ofscraper_linux_${{needs.get_commit.outputs.short}}
-          if-no-files-found: error # Fail the job if the executable wasn't created
+          if-no-files-found: error
 
   linux_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
