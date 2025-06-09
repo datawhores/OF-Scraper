@@ -81,6 +81,9 @@ jobs:
       - name: "DEBUG: Display pyproject.toml content"
         run: cat pyproject.toml
 
+      - name: Create venv and Install Dependencies
+        run: uv venv
+
       - name: "DEBUG: Manually check the dynamic version with Hatch"
         # The -v flag gives verbose output about how it finds the version
         run: |
@@ -89,10 +92,9 @@ jobs:
 
       # --- END OF NEW DEBUGGING STEPS ---
 
-      - name: Create venv and Install Dependencies
+      - name: Install Dependencies
         # We add -vvv for maximum verbosity from uv
         run: |
-          uv venv
           uv sync --all-extras -vvv
         
       - name: Install PyInstaller
