@@ -20,10 +20,7 @@ jobs:
       - name: commit
         uses: prompt/actions-commit-hash@v3
         id: commit
-  linux_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: ubuntu-22.04
+ create_linux_release_file: # I've given the job a valid YAML key name
     name: create linux release file
     steps:
       - name: Checkout
@@ -54,10 +51,7 @@ jobs:
 
             # Install uv inside the container
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            #add to path
-            source $HOME/.local/bin/env
-
-            # Add uv to the PATH for this script session
+            # This is the correct line to add uv to the PATH for this script session
             source /root/.cargo/env
 
             # Create venv and install all dependencies with uv
@@ -86,7 +80,8 @@ jobs:
         with:
           attempt_limit: 3
           action: actions/upload-artifact@v4
-          with: |
+          # This inner 'with' block is now correctly formatted
+          with:
             name: ofscraper_linux_${{needs.get_commit.outputs.short}}
             path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
             overwrite: true
