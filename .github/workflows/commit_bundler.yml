@@ -97,17 +97,18 @@ jobs:
       - name: Install venv and dependencies
         run: |
           uv venv
-          source .venv/bin/activate
           
-          # Install versioning dependencies first
+          # Windows activation
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            .venv\Scripts\activate
+          else
+            source .venv/bin/activate
+          fi
+          
           uv pip install --upgrade hatch-vcs setuptools-scm
-          
-          # Verify version detection
           echo "Hatch version: $(hatch version)"
-          
-          # Now run the sync
           uv sync --verbose
-
+        shell: ${{ matrix.shell }}
       
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.10.0
