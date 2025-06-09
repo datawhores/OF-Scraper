@@ -429,22 +429,22 @@ toml = [
 
 [[package]]
 name = "curl-cffi"
-version = "0.11.2"
+version = "0.11.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "cffi" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/cb/9c031d0d9cc31c5976c4ae252be028c02d0385d3cb312e947f50fd2436b0/curl_cffi-0.11.2.tar.gz", hash = "sha256:31b623a45ce47a917f25d9099ba8b3b7259b2a9ea151c3237c12b03e22e5c6ae", size = 149204 }
+sdist = { url = "https://files.pythonhosted.org/packages/74/c9/014d52df55ccb1d21645aee6f104fe1031c575eb64ffe4392419b4c7da49/curl_cffi-0.11.3.tar.gz", hash = "sha256:0b21f39980bce3fb5aeea8d64d76bd465825c54a45e2933ca4df5ec0f041ba49", size = 149152 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/89/9ed569c79c7b6ee302268d2f16fa954b995d48107523202c0b17e42a3148/curl_cffi-0.11.2-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:eddd85de355ca11dade9348cd4d6cbb5f840da38bc309aa7cd4b2a73fe78bde2", size = 5663007 },
-    { url = "https://files.pythonhosted.org/packages/f8/ed/0c5b3e64831ecc724324e297c04ff46ab2be57ff44fb5abcec0339e7317f/curl_cffi-0.11.2-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:1c5231974e236f89a63efa80859b2f6bc46ad606244c9e18df135926cd51b223", size = 2977036 },
-    { url = "https://files.pythonhosted.org/packages/84/16/f337e661857fbfdc0b5a5fad06c9fb84851772f671ef7641ad6b1e0e6c97/curl_cffi-0.11.2-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4ae26a58e85b1386095592b1e455b79befc8349bccb29a354f8fe6ed45caf2bd", size = 8095173 },
-    { url = "https://files.pythonhosted.org/packages/ef/fd/b691aebc26501ef62e85a71c2467db1bb6dc9440dd7522563e479f0f0360/curl_cffi-0.11.2-cp39-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e8830d10bfafc29e345b66be352fd3ef3253872aad131ad99e2959e0063c155d", size = 7651019 },
-    { url = "https://files.pythonhosted.org/packages/b4/d1/1655c7d7748e26b4fd8692ec264e5595af0c7c2a278f3c8613c3aa2c62bb/curl_cffi-0.11.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6485b641525d2b292a1be7ea7c3d68139ddc8e2654d54c7723337ca717df2f9", size = 8502565 },
-    { url = "https://files.pythonhosted.org/packages/b2/76/b5de9ec209958aa61d22b329e533b83a552010ccb1506d8ed096567dad28/curl_cffi-0.11.2-cp39-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:61e1e0d628d7af1d4cffb99a017bfbdf1ff0dc85c0b7ae7e2f7f6ed756967766", size = 8899315 },
-    { url = "https://files.pythonhosted.org/packages/5f/52/92e81533673202f6b6805aadb2dc9c6ff1be15f5df62395a800cad67f961/curl_cffi-0.11.2-cp39-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:1b59a88ba8184594fa3a2dca5907cb0a35acaa3604e0961346dbd90f57e91f49", size = 8877311 },
-    { url = "https://files.pythonhosted.org/packages/ea/fb/77dcb3e9fccf368dd58a1fdb8f8ace75dc6579a2701f57af625b00bc781f/curl_cffi-0.11.2-cp39-abi3-win_amd64.whl", hash = "sha256:850a6024ef0e7907ac2de23c070a8f296be116796bec51a753c6e8e9059cf8b7", size = 1417445 },
+    { url = "https://files.pythonhosted.org/packages/fb/f0/ae13948cabf9b8cfc43b746fd2f7f3b522e9d19c0ad7012d6f8618a7b6b7/curl_cffi-0.11.3-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:fb5bdec1a6c3717ab4945bfa95a84d19239ae94cb7e1d1388a7e6eb2fb2e30ee", size = 5663004 },
+    { url = "https://files.pythonhosted.org/packages/a1/0f/a49a9591e9e51e46db145dedeab85c4c4bd230b16d0ba3016b9d50e6f5e1/curl_cffi-0.11.3-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:0ba33cf5486a018ffa10824d4d941f76c7bd90fe280e01c14f156a2ee0ecf8dc", size = 2977021 },
+    { url = "https://files.pythonhosted.org/packages/87/cd/948848b0788cfae0e6e14804fcc8bcdb60f441ea89886d73f45970ef4772/curl_cffi-0.11.3-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e03592a12e28cc43d8180713b26b8fbffe08c9d26ace9daa287a500590d4295b", size = 8095200 },
+    { url = "https://files.pythonhosted.org/packages/36/5a/cf9cccd8042c77984d9fadd1f4f4ed2d5c5274a914587bbcba05ce586366/curl_cffi-0.11.3-cp39-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3852e75fe5e424cfd0fff5dec55a2833a45323c3b90275f6fd44bbf633ada3de", size = 7651070 },
+    { url = "https://files.pythonhosted.org/packages/5e/3c/9bd49505643df7484d36a3b30ed9d63fee8bfa8185283df470cb6127d427/curl_cffi-0.11.3-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e83065bc89b6725a4d72bafaf3cbdddf56bb4f014bc63be73f87f1b3903fd0ae", size = 8502692 },
+    { url = "https://files.pythonhosted.org/packages/29/60/04228ebee0abf6cf8db17664604c59b2cd8f1963d370c8e722485acab17e/curl_cffi-0.11.3-cp39-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:f1368594ff2544088eb7f5f3a534e3067e8086b4afb14815bd0af009d25f4ff4", size = 8899326 },
+    { url = "https://files.pythonhosted.org/packages/6f/9c/c74c021dfc59d995ed405a3ef2b38d6d95afad4a9520717cb6c9599cf2a2/curl_cffi-0.11.3-cp39-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:6ae31e513718e108f37889d28d7dc506102399fc753f91b85bdcbb11e79b2860", size = 8877554 },
+    { url = "https://files.pythonhosted.org/packages/08/be/8816a5cbae6173ada95588ae99ab4e0ed7f99191ba6a88e1f22e80eebeac/curl_cffi-0.11.3-cp39-abi3-win_amd64.whl", hash = "sha256:953d6ef5b964b6bf2f3e6ba11034adc108faf45b2e18d081de84d797a4d9f328", size = 1417498 },
 ]
 
 [[package]]
