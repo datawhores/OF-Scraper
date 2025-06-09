@@ -37,6 +37,7 @@ jobs:
     defaults:
       run:
         shell: ${{ matrix.shell }}
+    # --- END OF FIX ---
 
     strategy:
       matrix:
@@ -125,13 +126,13 @@ jobs:
       - name: Zip Directory (Unix)
         # This step runs only on Linux and macOS
         if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
 
       - name: Zip Directory (Windows)
         # This step runs only on Windows
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}.zip -Force
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip -Force
         shell: pwsh
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -140,7 +141,7 @@ jobs:
           path: |
             dist/ofscraper_${{ matrix.artifact_suffix }}
             dist/ofscraper_${{ matrix.artifact_suffix }}.exe
-            dist/ofscraper_${{ matrix.artifact_suffix }}.zip
+            dist/ofscraper_${{ matrix.artifact_suffix }}_zip.zip
           if-no-files-found: ignore
 
   publish_release:
