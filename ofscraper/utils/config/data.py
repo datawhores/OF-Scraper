@@ -262,6 +262,8 @@ def get_default_userlist(config=None):
 
 @wrapper.config_reader
 def get_logs_expire(config=None):
+   if config==False:
+       return None
    return(
         config.get("logs_expire_time")
         if not any(x == config.get("logs_expire_time") for x in [None, ""])

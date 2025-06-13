@@ -88,6 +88,13 @@ ofscraper = "ofscraper.__main__:main"
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["ofscraper"]
+
+# Part 2: This tells Hatch to also include everything else.
+# The "/" glob means "the project root". This ensures all your
+# other files (README.md, config files, etc.) are included.
+include = ["/"]
 
 [tool.hatch.version]
 source = "vcs"
@@ -115,9 +122,6 @@ git_describe_command = [
 ]
 parentdir_prefix_version = false
 
-[tool.hatch.build.targets.wheel]
-# This tells hatch to include your main package folder in the build
-include = ["/ofscraper"]
 
 
 [tool.pytest.ini_options]
