@@ -1,5 +1,5 @@
 # Stage 1: Build the application artifact
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS builder
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -27,11 +27,14 @@ RUN hatch build
 # ---
 
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
 # Create a non-root user and group
 RUN addgroup --gid 1000 ofscraper && \
     adduser --uid 1000 --ingroup ofscraper --home /home/ofscraper --shell /bin/sh --disabled-password --gecos "" ofscraper
+
+RUN apt-get update && apt-get install -y curl 
+
 
 # Install and configure fixuid to manage permissions
 RUN USER=ofscraper && \
