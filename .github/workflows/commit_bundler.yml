@@ -7,7 +7,10 @@ on:
     tags-ignore:
       - '**'
 
-permissions: read-all
+permissions:
+  contents: read # Required for git checkout and gh CLI to read workflow runs
+  packages: write # Required for pushing Docker images
+  id-token: write # Required for OIDC authentication to registries like GHCR
 
 jobs:
   generate_version:
@@ -20,16 +23,27 @@ jobs:
       long_hash: ${{ steps.version.outputs.LONG_HASH }}
       commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
       base_version: ${{ steps.version.outputs.BASE_VERSION }}
+      sanitized_base_version: ${{ steps.version.outputs.SANITIZED_BASE_VERSION }}
+      push_type: ${{ steps.version.outputs.PUSH_TYPE }}
+      is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Essential for git merge-base to compare full history
           fetch-tags: true
+      
       - name: Make script executable
         run: chmod +x ./scripts/commit_version.sh
-      - name: Generate Version from Git
-        id: version
+      - name: Generate Version and Git Info
+        id: version # This step runs your commit_version.sh script
+        # Pass GitHub Actions context variables as environment variables to the script
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: ./scripts/commit_version.sh
 
   build_binaries:
@@ -38,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
+      fail-fast: false # <-- ADDED: Allows all OS builds to complete even if one fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -92,6 +106,7 @@ jobs:
       - name: Build Executable using Spec Files (One-File)
         id: build_onefile
         shell: bash
+        continue-on-error: true # <-- ADDED: Allows this step to fail without stopping this OS matrix axis
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
@@ -115,12 +130,12 @@ jobs:
         with:
           name: ${{ steps.build_onefile.outputs.one_file_name }}
           path: ${{ steps.build_onefile.outputs.one_file_path }}
-          if-no-files-found: ignore
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
 
       - name: Build and Zip One-Dir Bundle
         id: build_onedir_zip
         shell: bash
-        continue-on-error: true
+        continue-on-error: true # Already present: Allows this step to fail without stopping this OS matrix axis
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
@@ -153,7 +168,7 @@ jobs:
         with:
           name: ${{ steps.build_onedir_zip.outputs.zip_name }}
           path: ${{ steps.build_onedir_zip.outputs.zip_path }}
-          if-no-files-found: ignore
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
 
       - name: Upload One-Dir Folder (if zip failed)
         if: failure() && steps.build_onedir_zip.outcome == 'failure'
@@ -161,20 +176,22 @@ jobs:
         with:
           name: ${{ steps.build_onedir_zip.outputs.dir_name }}
           path: ${{ steps.build_onedir_zip.outputs.dir_path }}
-          if-no-files-found: ignore
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
 
   publish_release:
     name: Publish GitHub Release
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [build_binaries, generate_version]
+    needs: [build_binaries, generate_version] # Waits for version info AND all binary builds to complete (even partially)
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Required to create/update GitHub Releases
     steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
+          # No specific `if-no-files-found` here on download-artifact, it will download what's available
+          # and log warnings for missing ones by default.
 
       - name: List downloaded files for debugging
         run: ls -R artifacts
@@ -182,9 +199,9 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: artifacts/*/*
+          artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
           # Combined tag for uniqueness and chronological sorting
-          tag: "${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
+          tag: "dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
           # Human-readable name with all key details
           name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
           
@@ -192,3 +209,90 @@ jobs:
           commit: "${{ needs.generate_version.outputs.long_hash }}"
           allowUpdates: true
           prerelease: true
+
+  # --- ADDED: Separate Docker Build and Publish Job for Registry Resilience ---
+  build_and_publish_docker:
+    name: Build and Publish Docker to ${{ matrix.registry.name }}
+    needs: [generate_version] # Only depends on version info, runs independently of binary builds
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false # <-- ADDED: Crucial to ensure both GHCR and Docker Hub pushes are attempted even if one fails
+      matrix:
+        registry:
+          - id: ghcr
+            name: GitHub Packages
+            sign: false
+          - id: dockerhub
+            name: Docker Hub
+            sign: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ${{ matrix.registry.name }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ matrix.registry.id == 'ghcr' && 'ghcr.io' || 'docker.io' }}
+          username: ${{ matrix.registry.id == 'ghcr' && github.actor || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ matrix.registry.id == 'ghcr' && secrets.GITHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
+          tags: |
+            # 1. Primary Tag: Branch name (e.g., "3.13-aio")
+            type=ref,event=branch
+
+            # 2. Detailed Dev Tag: Mirrors your GitHub Release tag format
+            type=raw,value=dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
+
+            # 3. Shorter Dev Tag: (e.g., 3-13-dev8-e466a562)
+            type=raw,value=${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}
+            
+            # 4. Conditional 'latest' Tag: Only if current commit is newer than last successful build's commit
+            type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
+
+            # 5. Optional Tag: 'main' tag specifically for the main branch, if distinct from latest
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64 # Build for multiple architectures
+          build-args: |
+            BUILD_VERSION=${{ needs.generate_version.outputs.version }}
+            INSTALL_FFMPEG=true # Pass build arg to Dockerfile if needed
+
+      # Cosign signing steps (remain unchanged)
+      - name: Install Cosign
+        if: matrix.registry.sign == true
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Write signing key to disk
+        if: matrix.registry.sign == true
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+        shell: bash
+
+      - name: Sign the published Docker image
+        if: matrix.registry.sign == true
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}

@@ -78,9 +78,8 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       WORKFLOW_FILE_NAME=$(basename "${GITHUB_WORKFLOW_REF}") 
       WORKFLOW_ID="${WORKFLOW_FILE_NAME}" # Use the file name as the ID for gh api call
 
-      echo "Attempting to query workflow runs for workflow '$WORKFLOW_ID' on branch '$GITHUB_REF'."
-
-      # Query GitHub API for the SHA of the most recent successful workflow run on this branch for this workflow
+      echo "DEBUG: Attempting to query workflow runs for workflow '$WORKFLOW_ID' on branch '$GITHUB_REF'." # Debug output
+      # Suppress gh error output (stderr) by redirecting to /dev/null, so script doesn't abort on "workflow not found"
       LAST_SUCCESSFUL_RUN_SHA=$(gh api \
         --paginate \
         "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs" \
@@ -90,18 +89,18 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         --jq '.workflow_runs[0].head_sha' \
         --header 'Accept: application/vnd.github.v3+json' \
         --header 'X-GitHub-Api-Version: 2022-11-28' \
-        2>/dev/null | head -n 1) # Redirect stderr to /dev/null to suppress "not found" errors, take only the first line
+        2>/dev/null | head -n 1) # Take only the first line/result
 
-      echo "Last successful run SHA found: ${LAST_SUCCESSFUL_RUN_SHA:-None}"
+      echo "Last successful run SHA: ${LAST_SUCCESSFUL_RUN_SHA:-None}" # Show 'None' if variable is empty for clarity
 
       if [ -z "$LAST_SUCCESSFUL_RUN_SHA" ]; then
-        IS_NEWER="true" # No previous successful run, so this is the first one
+        IS_NEWER="true" # No previous successful run, so this is the first one for this branch/workflow
       elif [ "$LONG_HASH" = "$LAST_SUCCESSFUL_RUN_SHA" ]; then
-        IS_NEWER="false" # Same commit as last successful run
+        IS_NEWER="false" # Current commit is the same as the last successful run's commit (e.g., a re-run of the same commit)
       elif git merge-base --is-ancestor "$LAST_SUCCESSFUL_RUN_SHA" "$LONG_HASH" >/dev/null 2>&1; then
-        IS_NEWER="true" # Current commit is a direct descendant (newer)
+        IS_NEWER="true" # Current commit is a direct descendant (came after) the last successful run's commit -> it's genuinely newer
       else
-        IS_NEWER="false" # Current commit is NOT a descendant (e.g., older commit pushed, rebase, or unrelated)
+        IS_NEWER="false" # Current commit is NOT a descendant (e.g., an older commit was pushed, history re-written, or unrelated)
       fi
     else
       echo "Insufficient GitHub Actions environment variables to calculate 'is_newer_than_last_successful_run'."
@@ -135,7 +134,7 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
     echo "HATCH_VCS_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
     
-    # Set outputs for other jobs that depend on this one (e.g., build_and_publish)
+    # Set outputs for other jobs that depend on this one (e.g., build_and_publish, publish_release)
     echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
     echo "SANITIZED_VERSION=${SANITIZED_VERSION}" >> "$GITHUB_OUTPUT"
     echo "SHORT_HASH=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
