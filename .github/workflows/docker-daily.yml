@@ -18,13 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
-      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
       short_hash: ${{ steps.version.outputs.SHORT_HASH }}
-      long_hash: ${{ steps.version.outputs.LONG_HASH }}
       commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
       base_version: ${{ steps.version.outputs.BASE_VERSION }}
-      sanitized_base_version: ${{ steps.version.outputs.SANITIZED_BASE_VERSION }}
-      push_type: ${{ steps.version.outputs.PUSH_TYPE }}
       is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
     steps:
       - name: Checkout Code
@@ -87,7 +83,7 @@ jobs:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
             type=ref,event=branch
-            type=raw,value=dev-${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
+            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}
             type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
             
