@@ -70,13 +70,23 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # --- Calculate is_newer_than_last_successful_run (Requires GH_TOKEN, GITHUB_REPOSITORY, GITHUB_WORKFLOW_REF, GITHUB_REF) ---
     # These variables are passed from workflow as environment variables
     if [ -n "$GH_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_WORKFLOW_REF" ] && [ -n "$GITHUB_REF" ]; then
-      # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
-      # This is the most robust way to identify the workflow for the gh api call
-      echo "this is my test"
-      echo "'$GITHUB_WORKFLOW_REF}"'"
-      WORKFLOW_FILE_NAME=$(basename "${GITHUB_WORKFLOW_REF}") 
-      WORKFLOW_ID="${WORKFLOW_FILE_NAME}" # Use the file name as the ID for gh api call
+    # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
 
+      echo "DEBUG: Raw GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_WORKFLOW_REF}'"
+
+      # Step 1: Remove "owner/repo/.github/workflows/" prefix
+      # Expected result for 'datawhores/OF-Scraper/.github/workflows/docker-daily.yml@refs/heads/dev/3.13-aio'
+      # would be 'docker-daily.yml@refs/heads/dev/3.13-aio'
+      WORKFLOW_PATH_FROM_ROOT="${GITHUB_WORKFLOW_REF#*/.github/workflows/}"
+      echo "DEBUG: 1. After removing prefix: '${WORKFLOW_PATH_FROM_ROOT}'"
+
+      # Step 2: Remove "@ref" part (e.g., "@refs/heads/dev/3.13-aio")
+      # Expected result for 'docker-daily.yml@refs/heads/dev/3.13-aio'
+      # would be 'docker-daily.yml'
+      WORKFLOW_ID="${WORKFLOW_PATH_FROM_ROOT%@*}"
+      echo "DEBUG: 2. After removing @ref suffix: '${WORKFLOW_ID}'" # <-- THIS IS THE CRITICAL LINE TO CHECK
+      echo "DEBUG: Final WORKFLOW_ID for API call: '${WORKFLOW_ID}'"
+    
       echo "DEBUG: Attempting to query workflow runs for workflow '$WORKFLOW_ID' on branch '$GITHUB_REF'." # Debug output
       # Suppress gh error output (stderr) by redirecting to /dev/null, so script doesn't abort on "workflow not found"
       LAST_SUCCESSFUL_RUN_SHA=$(gh api \
