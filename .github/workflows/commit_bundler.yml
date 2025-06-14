@@ -88,12 +88,12 @@ jobs:
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Build Executable using Spec Files
+      - name: Build Executable using Spec Files (One-File)
+        id: build_onefile # Add an ID to this step
         shell: bash
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
-          DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
           
           # Activate venv
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -104,31 +104,62 @@ jobs:
               EXE_EXT=""
           fi
           
-          # --- CHANGE: Point to the spec files in the 'specs/' directory ---
           echo "Building one-file executable from specs/onefile.spec..."
           pyinstaller specs/onefile.spec
           mv dist/ofscraper_file${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
+          echo "one_file_path=dist/${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT # Output the path
 
-          # --- CHANGE: Point to the spec files in the 'specs/' directory ---
+      - name: Upload One-File Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_onefile.outputs.one_file_path }} # Use the output from the previous step
+          path: ${{ steps.build_onefile.outputs.one_file_path }}
+          if-no-files-found: ignore
+
+      - name: Build and Zip One-Dir Bundle
+        id: build_onedir_zip # Add an ID to this step
+        shell: bash
+        # Add `continue-on-error: true` here to ensure subsequent steps run even if this fails
+        continue-on-error: true
+        run: |
+          SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
+          DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
+          ZIP_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip"
+
+          # Activate venv (ensure venv is activated for PyInstaller)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              source .venv/Scripts/activate
+          else
+              source .venv/bin/activate
+          fi
+
           echo "Building one-dir bundle from specs/onedir.spec..."
           pyinstaller specs/onedir.spec
           mv dist/ofscraper_dir dist/${DIR_NAME}
 
-          # Zip the one-dir build
+          echo "Zipping one-dir build..."
           if [ "${{ runner.os }}" == "Windows" ]; then
-            powershell -Command "Compress-Archive -Path dist/${DIR_NAME} -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip -Force"
+            powershell -Command "Compress-Archive -Path dist/${DIR_NAME} -DestinationPath dist/${ZIP_NAME} -Force"
           else
-            zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/${DIR_NAME}"
+            zip -r "dist/${ZIP_NAME}" "dist/${DIR_NAME}"
           fi
+          echo "zip_path=dist/${ZIP_NAME}" >> $GITHUB_OUTPUT # Output the path of the zip
+          echo "dir_path=dist/${DIR_NAME}" >> $GITHUB_OUTPUT # Output the path of the directory
 
-      - name: Upload Build Artifacts
+      - name: Upload Zipped One-Dir Artifact
+        if: success() && steps.build_onedir_zip.outcome == 'success' # Only upload if zipping was successful
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts-${{ matrix.artifact_suffix }}
-          path: |
-            dist/*.exe
-            dist/*.zip
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ needs.generate_version.outputs.sanitized_version }}
+          name: ${{ steps.build_onedir_zip.outputs.zip_path }}
+          path: ${{ steps.build_onedir_zip.outputs.zip_path }}
+          if-no-files-found: ignore
+
+      - name: Upload One-Dir Folder (if zip failed)
+        if: failure() && steps.build_onedir_zip.outcome == 'failure' # Only upload the folder if zipping failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_onedir_zip.outputs.dir_path }}
+          path: ${{ steps.build_onedir_zip.outputs.dir_path }}
           if-no-files-found: ignore
 
   publish_release:
