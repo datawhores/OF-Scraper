@@ -94,7 +94,7 @@ packages = ["ofscraper"]
 # Part 2: This tells Hatch to also include everything else.
 # The "/" glob means "the project root". This ensures all your
 # other files (README.md, config files, etc.) are included.
-include = ["/"]
+include = ["ofscraper"]
 
 [tool.hatch.version]
 source = "vcs"
@@ -120,8 +120,6 @@ git_describe_command = [
     "--match", 
     "[0-9]*.[0-9]*"
 ]
-parentdir_prefix_version = false
-
 
 
 [tool.pytest.ini_options]
