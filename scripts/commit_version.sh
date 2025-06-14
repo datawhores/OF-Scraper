@@ -38,7 +38,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     fi
     
     # Sanitize BASE_VERSION for use in Git tag/Docker tag names (replace . and + with -)
-    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/-/g')
+    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/_/g')
     echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
 
     # Generate the full version string (always with hash for development builds)
