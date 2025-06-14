@@ -4,7 +4,13 @@ FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 ARG BUILD_VERSION
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-dev \
+    # Add any other system-level development libraries if your app needs them, e.g., libffi-dev, libssl-dev
+    && rm -rf /var/lib/apt/lists/* # Clean up apt cache to keep image size down
+
+
 COPY . .
 
 RUN \
