@@ -80,6 +80,8 @@ async def un_encrypt(item, c, ele, input_=None):
             ]
         )
         if not pathlib.Path(newpath).exists():
+            log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
+            log.debug(f"{get_medialog(ele)} ffmpeg {r.stdout.decode()}")
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
