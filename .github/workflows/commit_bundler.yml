@@ -59,7 +59,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.0'
+          python-version: 3.12.0
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
@@ -107,12 +107,12 @@ jobs:
           # --- CHANGE: Point to the spec files in the 'specs/' directory ---
           echo "Building one-file executable from specs/onefile.spec..."
           pyinstaller specs/onefile.spec
-          mv dist/ofscraper${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
+          mv dist/ofscraper_file${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
 
           # --- CHANGE: Point to the spec files in the 'specs/' directory ---
           echo "Building one-dir bundle from specs/onedir.spec..."
           pyinstaller specs/onedir.spec
-          mv dist/ofscraper dist/${DIR_NAME}
+          mv dist/ofscraper_dir dist/${DIR_NAME}
 
           # Zip the one-dir build
           if [ "${{ runner.os }}" == "Windows" ]; then
