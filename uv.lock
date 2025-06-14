@@ -1156,7 +1156,7 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = "~=3.0.43" },
     { name = "psutil", specifier = "~=5.9.8" },
     { name = "pycryptodome", specifier = "~=3.20.0" },
-    { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = ">=2.4.2.20" },
+    { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = "==2.4.2.20" },
     { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pynumparser", specifier = "~=1.4.1" },
     { name = "pytest", marker = "extra == 'test'", specifier = "~=7.3.1" },
