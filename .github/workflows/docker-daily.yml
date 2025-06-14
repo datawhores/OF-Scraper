@@ -90,7 +90,6 @@ jobs:
             type=raw,value=dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
             type=raw,value=${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}
             type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             
 
       - name: Build and push Docker image
