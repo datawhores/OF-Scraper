@@ -36,7 +36,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      # This ensures that if one OS fails to build, the others will still continue.
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -79,7 +78,7 @@ jobs:
           else
             source .venv/bin/activate
           fi
-          # This installs core, ffmpeg, and dev dependencies all at once from pyproject.toml
+          # Install core, ffmpeg, and dev dependencies all at once from pyproject.toml
           uv sync --verbose --extra ffmpeg --extra dev
 
       - name: Set UTF-8 environment (Windows)
@@ -89,30 +88,37 @@ jobs:
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Build Executable using Spec File
+      - name: Build Executable using Spec Files
         shell: bash
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
+          EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
+          DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
           
           # Activate venv
           if [ "${{ runner.os }}" == "Windows" ]; then
               source .venv/Scripts/activate
+              EXE_EXT=".exe"
           else
               source .venv/bin/activate
+              EXE_EXT=""
           fi
           
-          # Build one-file executable using the spec file, overriding the name
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}" --onefile ofscraper.spec
-          
-          # Build one-dir executable using the spec file, overriding the name
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" --onedir ofscraper.spec
+          # --- CHANGE: Point to the spec files in the 'specs/' directory ---
+          echo "Building one-file executable from specs/onefile.spec..."
+          pyinstaller specs/onefile.spec
+          mv dist/ofscraper${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
+
+          # --- CHANGE: Point to the spec files in the 'specs/' directory ---
+          echo "Building one-dir bundle from specs/onedir.spec..."
+          pyinstaller specs/onedir.spec
+          mv dist/ofscraper dist/${DIR_NAME}
 
           # Zip the one-dir build
-          # Using 7z on Windows if available, otherwise fallback. PowerShell's Compress-Archive is better.
           if [ "${{ runner.os }}" == "Windows" ]; then
-            powershell -Command "Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip -Force"
+            powershell -Command "Compress-Archive -Path dist/${DIR_NAME} -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip -Force"
           else
-            zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+            zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/${DIR_NAME}"
           fi
 
       - name: Upload Build Artifacts
