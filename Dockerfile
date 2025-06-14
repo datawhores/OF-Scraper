@@ -1,9 +1,12 @@
-# Stage 1: (Builder stage remains unchanged)
+# Stage 1: Build the application artifact
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
+
 ARG BUILD_VERSION
 WORKDIR /app
+
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY . .
+
 RUN \
     if [ -n "$BUILD_VERSION" ]; then \
       VERSION="$BUILD_VERSION"; \
@@ -22,8 +25,8 @@ FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 ARG INSTALL_FFMPEG=false
 WORKDIR /app
 
-# --- CHANGE: Install 'gosu' instead of 'fixuid' ---
-RUN apt-get update && apt-get install -y curl gosu && rm -rf /var/lib/apt/lists/*
+# Install gosu for user privilege management
+RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
 # Copy and set up the entrypoint script
 COPY ./scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -38,7 +41,6 @@ RUN \
     \
     # Conditionally install pyffmpeg as a separate package
     if [ "$INSTALL_FFMPEG" = "true" ]; then \
-      echo "--- INSTALL_FFMPEG=true. Installing pyffmpeg separately. ---"; \
       uv pip install pyffmpeg; \
     fi && \
     \

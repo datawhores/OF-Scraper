@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
-      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -71,7 +70,7 @@ jobs:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
             # Use the sanitized version from our script for the tag
-            type=raw,value=${{ needs.generate_version.outputs.sanitized_version }}
+            type=raw,value=${{ needs.generate_version.outputs.version }}
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=dev
