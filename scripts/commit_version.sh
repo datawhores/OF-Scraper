@@ -4,10 +4,12 @@
 set -e
 
 # --- Default fallbacks ---
-VERSION="0.0.0+g0000000" # Updated default to always include hash format
-SANITIZED_VERSION="0_0_0_g0000000" # Updated default
+VERSION="0.0.0+g0000000"
+SANITIZED_VERSION="0_0_0_g0000000"
 SHORT_HASH="0000000"
 LONG_HASH=$(printf '%0.s0' {1..40})
+COMMIT_TIMESTAMP="000000000000"
+BASE_VERSION="0.0.0" # Ensure BASE_VERSION is always defined
 
 # --- Check if we are in a git repository ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -15,10 +17,11 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     SHORT_HASH=$(git rev-parse --short HEAD)
     LONG_HASH=$(git rev-parse HEAD)
 
-    # --- Find the highest version tag (Sorted by Committer Date) ---
-    # Find the tag pointing to the most recently committed code.
-    # We sort by committerdate in reverse (-committerdate) to put the newest commit first,
-    # then filter for version-like tags, and take the very first match.
+    # Get the committer date of HEAD for chronological release sorting
+    COMMIT_TIMESTAMP=$(git show -s --format=%ci HEAD | awk '{print $1" "$2}' | sed 's/[-:]//g' | cut -c 1-12)
+    echo "Commit Timestamp: ${COMMIT_TIMESTAMP}"
+
+    # Find the highest version tag (Sorted by Committer Date for base)
     HIGHEST_TAG=$(git tag --sort=-committerdate | \
                   grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
                   head -n 1)
@@ -33,7 +36,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "Base version from newest commit tag: ${BASE_VERSION}"
     fi
     
-    # --- ALWAYS add the short hash for the final version ---
+    # Always add the short hash for the final version
     VERSION="${BASE_VERSION}+g${SHORT_HASH}"
     echo "Generated version (always with hash): ${VERSION}"
 
@@ -50,13 +53,15 @@ echo "Version: ${VERSION}"
 echo "Sanitized Version: ${SANITIZED_VERSION}"
 echo "Short Hash: ${SHORT_HASH}"
 echo "Long Hash: ${LONG_HASH}"
+echo "Commit Timestamp: ${COMMIT_TIMESTAMP}"
+echo "Base Version: ${BASE_VERSION}" # Echo base version for local debugging
 
 
 # --- Environment-Specific Output ---
 
-# Check if we are in a GitHub Action
+# This block now handles both GitHub Actions and local execution
 if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
-    # GitHub Actions: Write to special files
+    # GitHub Actions: Write to special files for other steps and jobs
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
     
     # For subsequent steps in the same job
@@ -68,10 +73,11 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "SANITIZED_VERSION=${SANITIZED_VERSION}" >> "$GITHUB_OUTPUT"
     echo "SHORT_HASH=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
     echo "LONG_HASH=${LONG_HASH}" >> "$GITHUB_OUTPUT"
+    echo "COMMIT_TIMESTAMP=${COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
+    echo "BASE_VERSION=${BASE_VERSION}" >> "$GITHUB_OUTPUT" # <-- ADD THIS LINE
 else
-    # Local Use: Export variables to the current shell.
-    # This only works if the script is run with `source`.
+    # Local Use: Export variables. This only works if the script is run with `source`.
     export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}
     export HATCH_VCS_PRETEND_VERSION=${VERSION}
-    echo "✅ Local environment variables exported. Run 'source ./scripts/commit_version.sh' for them to persist."
+    echo "✅ Local environment variables exported. To use them, run this script with 'source'."
 fi
