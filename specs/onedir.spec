@@ -1,6 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 
-# This Analysis block is identical to the one in onefile.spec
+# --- THIS BLOCK IS NOW CORRECTED using SPECPATH ---
+# SPECPATH is a variable provided by PyInstaller containing the path to the spec file's directory.
+spec_dir = SPECPATH
+# Calculate the project root (one level up from 'specs/')
+project_root = os.path.join(spec_dir, '..')
+# ----------------------------------------------------
+
 try:
     from pyffmpeg import FFmpeg
     ffmpeg_binary_path = FFmpeg().get_ffmpeg_bin()
@@ -11,8 +18,8 @@ except Exception as e:
     ffmpeg_binary_tuple = None
 
 a = Analysis(
-    ['ofscraper/__main__.py'],
-    pathex=['.'],
+    [os.path.join(project_root, 'ofscraper', '__main__.py')],
+    pathex=[project_root],
     binaries=[ffmpeg_binary_tuple] if ffmpeg_binary_tuple else [],
     datas=[],
     hiddenimports=['diskcache'],
@@ -25,18 +32,25 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-# This section creates the executable inside a directory bundle
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
-    name='ofscraper', # The base name of the output file
+    exclude_binaries=True,
+    name='ofscraper',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     console=True,
 )
-# For a one-dir build, there is no final COLLECT step.
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='onescraper_dir' # Changed from 'ofscraper' to 'onescraper_dir'
+)
