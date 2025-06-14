@@ -34,7 +34,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "Base version from newest commit tag: ${BASE_VERSION}"
     fi
     
-    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/-/g')
+    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/_/g')
     echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
 
     VERSION="${BASE_VERSION}+g${SHORT_HASH}"
