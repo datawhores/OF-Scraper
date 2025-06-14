@@ -11,7 +11,6 @@ permissions: read-all
 
 jobs:
   generate_version:
-    # This job correctly runs commit_version.sh. No changes needed here.
     name: Generate Version Info
     runs-on: ubuntu-latest
     outputs:
@@ -37,6 +36,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      # This ensures that if one OS fails to build, the others will still continue.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -54,14 +55,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # This is a subtle but important fix.
-          # The build backends need the full git history to function correctly.
           fetch-depth: 0
           fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12.0
+          python-version: '3.12.0'
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
@@ -72,7 +71,6 @@ jobs:
           echo "HATCH_VCS_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Install Dependencies and Build Tools
-        # This single step now installs everything needed for the build.
         shell: bash
         run: |
           uv venv
@@ -81,10 +79,8 @@ jobs:
           else
             source .venv/bin/activate
           fi
-          # Install core, ffmpeg, and dev dependencies all at once.
+          # This installs core, ffmpeg, and dev dependencies all at once from pyproject.toml
           uv sync --verbose --extra ffmpeg --extra dev
-
-      # The separate PyInstaller install step is no longer needed.
 
       - name: Set UTF-8 environment (Windows)
         if: runner.os == 'Windows'
@@ -112,13 +108,13 @@ jobs:
           pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" --onedir ofscraper.spec
 
           # Zip the one-dir build
+          # Using 7z on Windows if available, otherwise fallback. PowerShell's Compress-Archive is better.
           if [ "${{ runner.os }}" == "Windows" ]; then
-            7z a "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "./dist/ofscraper_${{ matrix.artifact_suffix }}_dir/*"
+            powershell -Command "Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip -Force"
           else
             zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
           fi
 
-      # ... (Upload Artifacts and Publish Release jobs remain the same) ...
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
