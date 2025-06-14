@@ -14,12 +14,15 @@ permissions:
 
 jobs:
   generate_version:
-    # This job is back. It runs once, calculates all version info using our script,
-    # and provides it as an output for the build job.
     name: Generate Version Info
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
+      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
+      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
+      long_hash: ${{ steps.version.outputs.LONG_HASH }}
+      commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
+      base_version: ${{ steps.version.outputs.BASE_VERSION }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -34,7 +37,7 @@ jobs:
 
   build_and_publish:
     name: Build and Publish to ${{ matrix.registry.name }}
-    needs: [generate_version] # This job now depends on the version from the step above
+    needs: [generate_version]
     runs-on: ubuntu-latest
 
     strategy:
@@ -69,11 +72,11 @@ jobs:
         with:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
-            # Use the sanitized version from our script for the tag
-            type=raw,value=${{ needs.generate_version.outputs.version }}
+            # Tag with the branch name (e.g., "3.13-aio")
             type=ref,event=branch
+            type=raw,value=dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}    
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=dev
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         id: build-and-push
@@ -85,12 +88,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # --- This block now passes the auto-generated version AND enables FFMPEG ---
           build-args: |
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
             INSTALL_FFMPEG=true
 
-      # ... (signing steps remain the same) ...
       - name: Install Cosign
         if: matrix.registry.sign == true
         uses: sigstore/cosign-installer@v3.5.0
