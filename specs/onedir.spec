@@ -52,5 +52,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='onescraper_dir' # Changed from 'ofscraper' to 'onescraper_dir'
+    name='ofscraper_dir' # Changed from 'ofscraper' to 'onescraper_dir'
 )
