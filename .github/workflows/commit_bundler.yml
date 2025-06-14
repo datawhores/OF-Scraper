@@ -108,11 +108,13 @@ jobs:
           pyinstaller specs/onefile.spec
           mv dist/ofscraper_file${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
           echo "one_file_path=dist/${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT # Output the path
+          echo "one_file_name=${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT # Output the name
+
 
       - name: Upload One-File Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_onefile.outputs.one_file_path }} # Use the output from the previous step
+          name: ${{ steps.build_onefile.outputs.one_file_name }} # Use the output from the previous step
           path: ${{ steps.build_onefile.outputs.one_file_path }}
           if-no-files-found: ignore
 
@@ -144,13 +146,16 @@ jobs:
             zip -r "dist/${ZIP_NAME}" "dist/${DIR_NAME}"
           fi
           echo "zip_path=dist/${ZIP_NAME}" >> $GITHUB_OUTPUT # Output the path of the zip
+          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT # Output the name of the zip
           echo "dir_path=dist/${DIR_NAME}" >> $GITHUB_OUTPUT # Output the path of the directory
+          echo "dir_name=dist/${DIR_NAME}" >> $GITHUB_OUTPUT # Output the name of the directory
+
 
       - name: Upload Zipped One-Dir Artifact
         if: success() && steps.build_onedir_zip.outcome == 'success' # Only upload if zipping was successful
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_onedir_zip.outputs.zip_path }}
+          name: ${{ steps.build_onedir_zip.outputs.zip_name }}
           path: ${{ steps.build_onedir_zip.outputs.zip_path }}
           if-no-files-found: ignore
 
@@ -158,7 +163,7 @@ jobs:
         if: failure() && steps.build_onedir_zip.outcome == 'failure' # Only upload the folder if zipping failed
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_onedir_zip.outputs.dir_path }}
+          name: ${{ steps.build_onedir_zip.outputs.dir_name }}
           path: ${{ steps.build_onedir_zip.outputs.dir_path }}
           if-no-files-found: ignore
 
