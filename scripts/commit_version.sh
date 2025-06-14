@@ -4,7 +4,6 @@
 set -e
 
 # --- Default fallbacks for all outputs ---
-# These ensure variables always have a value, even outside a Git repo or in partial CI environments.
 VERSION="0.0.0+g0000000"
 SANITIZED_VERSION="0_0_0_g0000000"
 SHORT_HASH="0000000"
@@ -26,8 +25,6 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Commit Timestamp (Unix): ${COMMIT_TIMESTAMP}"
 
     # Find the highest version tag based on newest commit date (committerdate)
-    # Filters tags for valid version patterns (e.g., v1.2.3, 3.13.dev8, 1.0.0-beta)
-    # Takes the most recent commit-based version tag.
     HIGHEST_TAG=$(git tag --sort=-committerdate | \
                   grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
                   head -n 1)
@@ -36,7 +33,6 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         BASE_VERSION="0.0.0"
         echo "No valid version tags found pointing to recent commits. Using fallback base version: ${BASE_VERSION}"
     else
-        # Remove 'v' prefix from the highest tag found
         BASE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//')
         echo "Base version from newest commit tag: ${BASE_VERSION}"
     fi
@@ -75,6 +71,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # These variables are passed from workflow as environment variables
     if [ -n "$GH_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_WORKFLOW_REF" ] && [ -n "$GITHUB_REF" ]; then
       # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
+      # This is the most robust way to identify the workflow for the gh api call
       WORKFLOW_FILE_NAME=$(basename "${GITHUB_WORKFLOW_REF}") 
       WORKFLOW_ID="${WORKFLOW_FILE_NAME}" # Use the file name as the ID for gh api call
 
