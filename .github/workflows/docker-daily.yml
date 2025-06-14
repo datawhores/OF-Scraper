@@ -74,7 +74,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}    
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}    
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || contains(github.ref, 'dev') }}
 
       - name: Build and push Docker image
         id: build-and-push
