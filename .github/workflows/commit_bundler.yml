@@ -27,7 +27,6 @@ jobs:
       long_hash: ${{ steps.version.outputs.LONG_HASH }}
       commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
       base_version: ${{ steps.version.outputs.BASE_VERSION }}
-      sanitized_base_version: ${{ steps.version.outputs.SANITIZED_BASE_VERSION }}
       push_type: ${{ steps.version.outputs.PUSH_TYPE }}
       is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
     steps:
@@ -199,7 +198,7 @@ jobs:
         with:
           artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
           # Combined tag for uniqueness and chronological sorting
-          tag: "dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
+          tag: "${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
           # Human-readable name with all key details
           name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
           
