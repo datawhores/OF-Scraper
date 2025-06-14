@@ -184,7 +184,7 @@ jobs:
         with:
           artifacts: artifacts/*/*
           # Combined tag for uniqueness and chronological sorting
-          tag: "{{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
+          tag: "${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
           # Human-readable name with all key details
           name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
           
