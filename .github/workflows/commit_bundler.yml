@@ -16,6 +16,13 @@ jobs:
   generate_version:
     name: Generate Version Info
     runs-on: ubuntu-latest
+    env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: dddd
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REF22: "ddda"
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
@@ -38,13 +45,6 @@ jobs:
       - name: Generate Version and Git Info
         id: version # This step runs your commit_version.sh script
         # Pass GitHub Actions context variables as environment variables to the script
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_WORKFLOW_REF: dddd
-          GITHUB_REF: ${{ github.ref }}
-          GITHUB_REF22: "ddda"
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: ./scripts/commit_version.sh
 
   build_binaries:
