@@ -1106,16 +1106,13 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "autopep8" },
+    { name = "pyinstaller" },
 ]
 docs = [
     { name = "sphinx-argparse" },
 ]
 ffmpeg = [
     { name = "pyffmpeg" },
-]
-pyinstaller = [
-    { name = "pyinstaller" },
-    { name = "setuptools" },
 ]
 test = [
     { name = "coverage" },
@@ -1160,7 +1157,7 @@ requires-dist = [
     { name = "psutil", specifier = "~=5.9.8" },
     { name = "pycryptodome", specifier = "~=3.20.0" },
     { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = ">=2.4.2.20" },
-    { name = "pyinstaller", marker = "extra == 'pyinstaller'" },
+    { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pynumparser", specifier = "~=1.4.1" },
     { name = "pytest", marker = "extra == 'test'", specifier = "~=7.3.1" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = "~=4.1.0" },
@@ -1172,7 +1169,6 @@ requires-dist = [
     { name = "rich", specifier = "~=13.7.1" },
     { name = "schedule", specifier = "~=1.2.1" },
     { name = "setproctitle", specifier = "~=1.3.3" },
-    { name = "setuptools", marker = "extra == 'pyinstaller'" },
     { name = "speedtest-cli", specifier = "~=2.1.3" },
     { name = "sphinx-argparse", marker = "extra == 'docs'", specifier = "~=0.5.2" },
     { name = "tenacity", specifier = "~=8.2.3" },
@@ -1182,7 +1178,7 @@ requires-dist = [
     { name = "win32-setctime", specifier = "~=1.1.0" },
     { name = "xxhash", specifier = "~=3.4.1" },
 ]
-provides-extras = ["dev", "docs", "ffmpeg", "pyinstaller", "test"]
+provides-extras = ["dev", "docs", "ffmpeg", "test"]
 
 [[package]]
 name = "packaging"

@@ -11,7 +11,7 @@ permissions: read-all
 
 jobs:
   generate_version:
-    # This new job runs once, calculates all version info, and provides it to other jobs.
+    # This job correctly runs commit_version.sh. No changes needed here.
     name: Generate Version Info
     runs-on: ubuntu-latest
     outputs:
@@ -23,15 +23,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Needed for git describe to work correctly
+          fetch-depth: 0
           fetch-tags: true
+      - name: Make script executable
+        run: chmod +x ./scripts/commit_version.sh
       - name: Generate Version from Git
         id: version
         run: ./scripts/commit_version.sh
 
   build_binaries:
     name: Build on ${{ matrix.os }}
-    needs: [generate_version] # Depends on the new version job
+    needs: [generate_version]
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -51,21 +53,26 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          # This is a subtle but important fix.
+          # The build backends need the full git history to function correctly.
+          fetch-depth: 0
+          fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.0'
+          python-version: 3.12.0
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
       - name: Set Version Environment Variables
-        # This single step replaces the huge inline script from before
         shell: bash
         run: |
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
           echo "HATCH_VCS_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
 
-      - name: Install dependencies
+      - name: Install Dependencies and Build Tools
+        # This single step now installs everything needed for the build.
         shell: bash
         run: |
           uv venv
@@ -74,12 +81,10 @@ jobs:
           else
             source .venv/bin/activate
           fi
-          uv pip install --upgrade hatch-vcs setuptools-scm
-          echo "Hatch version: $(hatch version)"
-          uv sync --verbose
+          # Install core, ffmpeg, and dev dependencies all at once.
+          uv sync --verbose --extra ffmpeg --extra dev
 
-      - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.4.0
+      # The separate PyInstaller install step is no longer needed.
 
       - name: Set UTF-8 environment (Windows)
         if: runner.os == 'Windows'
@@ -88,10 +93,9 @@ jobs:
           echo "PYTHONLEGACYWINDOWSSTDIO=utf8" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Build Executable (File & Dir) and Zip
+      - name: Build Executable using Spec File
         shell: bash
         run: |
-          # Use the sanitized version for filenames
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           
           # Activate venv
@@ -101,11 +105,11 @@ jobs:
               source .venv/bin/activate
           fi
           
-          # Build one-file executable
-          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}" ofscraper/__main__.py
+          # Build one-file executable using the spec file, overriding the name
+          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}" --onefile ofscraper.spec
           
-          # Build one-dir executable
-          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" ofscraper/__main__.py
+          # Build one-dir executable using the spec file, overriding the name
+          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" --onedir ofscraper.spec
 
           # Zip the one-dir build
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -114,6 +118,7 @@ jobs:
             zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
           fi
 
+      # ... (Upload Artifacts and Publish Release jobs remain the same) ...
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -127,7 +132,7 @@ jobs:
   publish_release:
     name: Publish GitHub Release
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [build_binaries, generate_version] # Depends on both
+    needs: [build_binaries, generate_version]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -144,7 +149,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: artifacts/*/*
-          tag: "dev-${{ needs.generate_version.outputs.short_hash }}" # Use short hash for tag
+          tag: "dev-${{ needs.generate_version.outputs.short_hash }}"
           name: "Dev Build ${{ needs.generate_version.outputs.short_hash }}"
           body: "This is an auto-generated development release created from commit hash `${{ needs.generate_version.outputs.long_hash }}`. Version: `${{ needs.generate_version.outputs.version }}`"
           commit: "${{ needs.generate_version.outputs.long_hash }}"

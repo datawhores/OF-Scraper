@@ -55,6 +55,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "autopep8~=2.0.2",
+  "pyinstaller"
 ]
 test = [
   "pytest~=7.3.1",
@@ -66,10 +67,6 @@ test = [
 ]
 docs = [
   "sphinx-argparse~=0.5.2",
-]
-pyinstaller = [
-  "pyinstaller",
-  "setuptools",
 ]
 ffmpeg = [
     "pyffmpeg>=2.4.2.20",
