@@ -73,7 +73,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
 
       echo "DEBUG: Raw GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_WORKFLOW_REF}'"
-      echo "DEBUG: Raw22 GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_WORKFLOW_REF2}'"
+      echo "DEBUG: Raw22 GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_REF22}'"
 
 
       # Step 1: Remove "owner/repo/.github/workflows/" prefix
