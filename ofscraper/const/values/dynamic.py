@@ -17,7 +17,7 @@ DYNAMIC_OPTIONS_ALL = DYNAMIC_OPTIONS + [
     "manual",
     "generic",
 ]
-DYNAMIC_RULE_DEFAULT = "datawhores"
+DYNAMIC_RULE_DEFAULT = "rafa"
 XAGLER_URL = "https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json"
 RAFA_URL = "https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json"
 
