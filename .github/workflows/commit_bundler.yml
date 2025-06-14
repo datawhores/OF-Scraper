@@ -43,7 +43,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_WORKFLOW_REF: dddd
           GITHUB_REF: ${{ github.ref }}
-          GITHUB_REF22: ddda
+          GITHUB_REF22: "ddda"
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: ./scripts/commit_version.sh
 
