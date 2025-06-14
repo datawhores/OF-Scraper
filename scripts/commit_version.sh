@@ -38,7 +38,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     fi
     
     # Sanitize BASE_VERSION for use in Git tag/Docker tag names (replace . and + with -)
-    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/_/g')
+    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/-/g')
     echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
 
     # Generate the full version string (always with hash for development builds)
@@ -67,64 +67,47 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     fi
     echo "Push Type: ${PUSH_TYPE}"
 
-    # --- Calculate is_newer_than_last_successful_run (Requires GH_TOKEN, GITHUB_REPOSITORY, GITHUB_WORKFLOW_REF, GITHUB_REF) ---
-    # These variables are passed from workflow as environment variables
-    if [ -n "$GH_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_WORKFLOW_REF" ] && [ -n "$GITHUB_REF" ]; then
-    # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
+    # --- Calculate is_newer_than_last_successful_run ---
+    if [ -n "$GH_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_REF" ] && [ -n "$GITHUB_WORKFLOW_REF" ]; then
+      # --- FINAL WORKFLOW_ID FIX: Dynamically derive workflow file name from GITHUB_WORKFLOW_REF ---
+      # This is the most robust and dynamic way to get the workflow ID for the gh api call
+      WORKFLOW_PATH_FROM_ROOT="${GITHUB_WORKFLOW_REF#*/.github/workflows/}" # Remove leading path part
+      WORKFLOW_ID="${WORKFLOW_PATH_FROM_ROOT%@*}" # Remove "@ref" part
+      echo "DEBUG: Final WORKFLOW_ID for API call: '${WORKFLOW_ID}' (Dynamically derived from GITHUB_WORKFLOW_REF)"
+      # (The previous debug echoes for raw ref and parsing steps are removed for conciseness)
 
-      echo "DEBUG: Raw GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_WORKFLOW_REF}'"
-      echo "DEBUG: Raw22 GITHUB_WORKFLOW_REF (input to parsing): '${GITHUB_REF22}'"
-
-
-      # Step 1: Remove "owner/repo/.github/workflows/" prefix
-      # Expected result for 'datawhores/OF-Scraper/.github/workflows/docker-daily.yml@refs/heads/dev/3.13-aio'
-      # would be 'docker-daily.yml@refs/heads/dev/3.13-aio'
-      WORKFLOW_PATH_FROM_ROOT="${GITHUB_WORKFLOW_REF#*/.github/workflows/}"
-      echo "DEBUG: 1. After removing prefix: '${WORKFLOW_PATH_FROM_ROOT}'"
-
-      # Step 2: Remove "@ref" part (e.g., "@refs/heads/dev/3.13-aio")
-      # Expected result for 'docker-daily.yml@refs/heads/dev/3.13-aio'
-      # would be 'docker-daily.yml'
-      WORKFLOW_ID="${WORKFLOW_PATH_FROM_ROOT%@*}"
-      echo "DEBUG: 2. After removing @ref suffix: '${WORKFLOW_ID}'" # <-- THIS IS THE CRITICAL LINE TO CHECK
-      echo "DEBUG: Final WORKFLOW_ID for API call: '${WORKFLOW_ID}'"
-    
-      echo "DEBUG: Attempting to query workflow runs for workflow '$WORKFLOW_ID' on branch '$GITHUB_REF'." # Debug output
-      # Suppress gh error output (stderr) by redirecting to /dev/null, so script doesn't abort on "workflow not found"
+      echo "DEBUG: Attempting to query workflow runs for workflow ID '$WORKFLOW_ID' on branch '$GITHUB_REF'."
+      # This is the confirmed working gh api call with query parameters in the URL string
       LAST_SUCCESSFUL_RUN_SHA=$(gh api \
         --paginate \
-        "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs" \
-        --field status=success \
-        --field branch="${GITHUB_REF#refs/heads/}" \
-        --field event=push \
+        "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=success&branch=${GITHUB_REF#refs/heads/}&event=push" \
         --jq '.workflow_runs[0].head_sha' \
-        --header 'Accept: application/vnd.github.v3+json' \
+        --header 'Accept: application/vnd.github.com/v3+json' \
         --header 'X-GitHub-Api-Version: 2022-11-28' \
-        2>/dev/null | head -n 1) # Take only the first line/result
+        2>/dev/null | head -n 1) # Suppress stderr, take first line
 
-      echo "Last successful run SHA: ${LAST_SUCCESSFUL_RUN_SHA:-None}" # Show 'None' if variable is empty for clarity
+      echo "Last successful run SHA: ${LAST_SUCCESSFUL_RUN_SHA:-None}"
 
       if [ -z "$LAST_SUCCESSFUL_RUN_SHA" ]; then
-        IS_NEWER="true" # No previous successful run, so this is the first one for this branch/workflow
+        IS_NEWER="true"
       elif [ "$LONG_HASH" = "$LAST_SUCCESSFUL_RUN_SHA" ]; then
-        IS_NEWER="false" # Current commit is the same as the last successful run's commit (e.g., a re-run of the same commit)
+        IS_NEWER="false"
       elif git merge-base --is-ancestor "$LAST_SUCCESSFUL_RUN_SHA" "$LONG_HASH" >/dev/null 2>&1; then
-        IS_NEWER="true" # Current commit is a direct descendant (came after) the last successful run's commit -> it's genuinely newer
+        IS_NEWER="true"
       else
-        IS_NEWER="false" # Current commit is NOT a descendant (e.g., an older commit was pushed, history re-written, or unrelated)
+        IS_NEWER="false"
       fi
     else
-      echo "Insufficient GitHub Actions environment variables to calculate 'is_newer_than_last_successful_run'."
-      echo "Required: GH_TOKEN, GITHUB_REPOSITORY, GITHUB_WORKFLOW_REF, GITHUB_REF."
-      IS_NEWER="false" # Default to false if we can't perform the check
+      echo "Insufficient GitHub Actions environment variables (GH_TOKEN, GITHUB_REPOSITORY, GITHUB_REF, or GITHUB_WORKFLOW_REF missing) to calculate 'is_newer_than_last_successful_run'."
+      IS_NEWER="false"
     fi
     echo "Is Newer Than Last Successful Run: ${IS_NEWER}"
 
-else # Not a git repository (use default fallbacks)
+else # Not a git repository
     echo "Not a git repository. Using fallback versions and status."
 fi
 
-# --- Print final values to console for local execution and easy debugging ---
+# Print final values for local debugging
 echo "--- Final Version Information ---"
 echo "Version: ${VERSION}"
 echo "Sanitized Version: ${SANITIZED_VERSION}"
@@ -137,15 +120,13 @@ echo "Push Type: ${PUSH_TYPE}"
 echo "Is Newer Than Last Successful Run: ${IS_NEWER}"
 
 
-# --- Environment-Specific Output (for GitHub Actions workflow outputs) ---
+# --- Environment-Specific Output ---
 if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
     
-    # Set environment variables for subsequent steps in the same job (e.g., for setuptools_scm)
     echo "SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
     echo "HATCH_VCS_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
     
-    # Set outputs for other jobs that depend on this one (e.g., build_and_publish, publish_release)
     echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
     echo "SANITIZED_VERSION=${SANITIZED_VERSION}" >> "$GITHUB_OUTPUT"
     echo "SHORT_HASH=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
@@ -156,8 +137,6 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "PUSH_TYPE=${PUSH_TYPE}" >> "$GITHUB_OUTPUT"
     echo "IS_NEWER_THAN_LAST_SUCCESSFUL_RUN=${IS_NEWER}" >> "$GITHUB_OUTPUT"
 else
-    # Local Use: Export variables to the current shell.
-    # This only works if the script is run with `source ./scripts/commit_version.sh`.
     export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}
     export HATCH_VCS_PRETEND_VERSION=${VERSION}
     echo "✅ Local environment variables exported. To use them, run this script with 'source'."
