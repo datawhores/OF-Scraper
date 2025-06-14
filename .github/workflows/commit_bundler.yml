@@ -25,6 +25,8 @@ jobs:
         with:
           fetch-depth: 0 # Needed for git describe to work correctly
           fetch-tags: true
+      - name: Make script executable  # <--- ADD THIS STEP
+        run: chmod +x ./scripts/commit_version.sh
       - name: Generate Version from Git
         id: version
         run: ./scripts/commit_version.sh
