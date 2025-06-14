@@ -13,23 +13,27 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # We are in a git repo. Get the full commit hash.
     LONG_HASH=$(git rev-parse HEAD)
 
-    # Find the highest version tag using version-sort logic
-    HIGHEST_TAG=$(git tag --list | \
-                  grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | \
-                  sort -V -r | \
+    # --- SYNCHRONIZED LOGIC for finding the Highest Tag ---
+    # This now matches the other script:
+    # Sort by committerdate in reverse (-committerdate) to put the newest commit first,
+    # then filter for a broader range of version-like tags, and take the very first match.
+    HIGHEST_TAG=$(git tag --sort=-committerdate | \
+                  grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
                   head -n 1)
 
     # Determine the base version
     if [ -z "$HIGHEST_TAG" ]; then
         BASE_VERSION="0.0.0"
-        echo "No valid version tags found. Using fallback base version: ${BASE_VERSION}"
+        echo "No valid version tags found pointing to recent commits. Using fallback base version: ${BASE_VERSION}"
     else
         BASE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//')
-        echo "Highest version tag found: ${BASE_VERSION}"
+        echo "Highest version tag (based on newest commit): ${BASE_VERSION}"
     fi
     
     # The final version is JUST the base version for a clean release.
     VERSION="${BASE_VERSION}"
+    # Sanitize the version for file names. Replacing dots and pluses with underscores.
+    # Note: Hyphens in versions (e.g., 1.0.0-beta) will be preserved.
     SANITIZED_VERSION=$(echo "$VERSION" | sed 's/[.+]/_/g')
 else
     echo "Not a git repository. Using fallback version: ${VERSION}"
