@@ -72,6 +72,8 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     if [ -n "$GH_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_WORKFLOW_REF" ] && [ -n "$GITHUB_REF" ]; then
       # Extract workflow file name (e.g., "docker-daily-build.yml") from GITHUB_WORKFLOW_REF
       # This is the most robust way to identify the workflow for the gh api call
+      echo "this is my test"
+      echo "'$GITHUB_WORKFLOW_REF}"'"
       WORKFLOW_FILE_NAME=$(basename "${GITHUB_WORKFLOW_REF}") 
       WORKFLOW_ID="${WORKFLOW_FILE_NAME}" # Use the file name as the ID for gh api call
 
