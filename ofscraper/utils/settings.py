@@ -115,7 +115,6 @@ def get_download_text():
 def get_ffmpeg():
     return (
         config_data.get_ffmpeg()
-        or shutil.which(constants.getattr("FFMPEG_DECRYPT"))
         or ""
     )
 

@@ -13,8 +13,6 @@ r"""
 
 import logging
 
-import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.binaries as binaries
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.config.utils.context as config_context
@@ -61,13 +59,3 @@ def update_config_full(config_, updated_config):
     log.debug(f"new config: {config}")
     config_file.write_config(config)
     return config
-
-
-def update_ffmpeg():
-    global config
-    config = {"config": read_config()}
-    if prompts.auto_download_ffmpeg() == "Yes":
-        config["config"]["ffmpeg"] = binaries.ffmpeg_download()
-    else:
-        config["config"]["ffmpeg"] = prompts.ffmpeg_prompt()
-    config_file.write_config(config)

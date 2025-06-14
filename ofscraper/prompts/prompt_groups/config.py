@@ -281,11 +281,6 @@ def binary_config():
                 "type": "filepath",
                 "name": "ffmpeg",
                 "message": "ffmpeg path: ",
-                "validate": prompt_validators.MultiValidator(
-                    EmptyInputValidator(),
-                    prompt_validators.ffmpegpathvalidator(),
-                    prompt_validators.ffmpegexecutevalidator(),
-                ),
                 "option_instruction": """
 Certain content requires decryption to process please provide the full path to ffmpeg
 """,

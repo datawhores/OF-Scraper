@@ -66,5 +66,4 @@ def make_folder():
 
 
 def check():
-    checkers.check_config()
     checkers.check_config_key_mode()

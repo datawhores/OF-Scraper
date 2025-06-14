@@ -71,6 +71,9 @@ pyinstaller = [
   "pyinstaller",
   "setuptools",
 ]
+ffmpeg = [
+    "pyffmpeg>=2.4.2.20",
+]
 
 
 [project.scripts]
