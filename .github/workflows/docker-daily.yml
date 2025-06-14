@@ -1,7 +1,131 @@
-build_and_publish:
+name: Docker Daily Build
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+permissions:
+  contents: read # Required for git checkout and gh CLI to read workflow runs
+  packages: write # Required for pushing Docker images
+  id-token: write # Required for OIDC authentication to registries like GHCR
+
+jobs:
+  generate_version:
+    name: Generate Version Info
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
+      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
+      long_hash: ${{ steps.version.outputs.LONG_HASH }}
+      commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
+      base_version: ${{ steps.version.outputs.BASE_VERSION }}
+      sanitized_base_version: ${{ steps.version.outputs.SANITIZED_BASE_VERSION }}
+      push_type: ${{ steps.determine_push_direction.outputs.push_type }}
+      is_newer_than_last_successful_run: ${{ steps.check_newness.outputs.is_newer }} # <-- This output drives the 'latest' tag
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Essential for git merge-base to compare full history
+          fetch-tags: true
+      
+      - name: Determine Push Direction
+        id: determine_push_direction
+        if: github.event_name == 'push' # Only relevant for push events
+        shell: bash
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          CURRENT_SHA="${{ github.sha }}"
+          
+          echo "Push event triggered."
+          echo "Before SHA: $BEFORE_SHA"
+          echo "Current SHA: $CURRENT_SHA"
+
+          # Handle initial push to a new branch/repo (where github.event.before is all zeros)
+          if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "push_type=initial_push" >> "$GITHUB_OUTPUT"
+            echo "Push is an initial push to the branch."
+            exit 0
+          fi
+
+          # Check if current SHA is an ancestor of before_SHA (history rewind/older commit pushed)
+          if git merge-base --is-ancestor "$CURRENT_SHA" "$BEFORE_SHA"; then
+            echo "push_type=rewind_or_older_commit_pushed" >> "$GITHUB_OUTPUT"
+            echo "Push direction: Branch moved backward or an older commit was pushed."
+          
+          # Check if before_SHA is an ancestor of current_SHA (standard fast-forward or merge)
+          elif git merge-base --is-ancestor "$BEFORE_SHA" "$CURRENT_SHA"; then
+            echo "push_type=fast_forward_or_merge" >> "$GITHUB_OUTPUT"
+            echo "Push direction: Standard fast-forward or merge."
+          
+          # Otherwise, it's a non-fast-forward push (e.g., rebase and force push)
+          else
+            echo "push_type=non_linear_force_push" >> "$GITHUB_OUTPUT"
+            echo "Push direction: Non-linear force push (e.g., rebase or unrelated history merge)."
+          fi
+      
+      - name: Check if current commit is newer than last successful run
+        id: check_newness
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }} # Required for gh CLI to query GitHub API
+        run: |
+          WORKFLOW_ID="${{ github.workflow }}" # Name of the current workflow file
+          CURRENT_BRANCH_REF="${{ github.ref }}" # e.g., refs/heads/main
+          CURRENT_SHA="${{ github.sha }}"
+
+          echo "Checking if current commit ($CURRENT_SHA) is newer than the last successful run's commit on $CURRENT_BRANCH_REF for workflow '$WORKFLOW_ID'."
+          
+          # Query GitHub API for the SHA of the most recent successful workflow run on this branch
+          # Filters: status=success, branch=<current_branch>, event=push, limit=1
+          LAST_SUCCESSFUL_RUN_SHA=$(gh api \
+            --paginate \
+            "/repos/${{ github.repository }}/actions/workflows/${WORKFLOW_ID}/runs" \
+            --field status=success \
+            --field branch="${CURRENT_BRANCH_REF#refs/heads/}" \
+            --field event=push \
+            --jq '.workflow_runs[0].head_sha' \
+            --header 'Accept: application/vnd.github.v3+json' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            | head -n 1) # `head -n 1` ensures only the first SHA is captured, in case of null output
+
+          echo "Last successful run SHA found: ${LAST_SUCCESSFUL_RUN_SHA:-None}" # Show 'None' if variable is empty
+
+          IS_NEWER=false
+          if [ -z "$LAST_SUCCESSFUL_RUN_SHA" ]; then
+            # No previous successful run found, so this is the first successful one for this branch/workflow
+            echo "No previous successful run found for this branch. This run is considered 'newer'."
+            IS_NEWER=true
+          elif [ "$CURRENT_SHA" = "$LAST_SUCCESSFUL_RUN_SHA" ]; then
+            # Current commit is the same as the last successful run's commit (e.g., a re-run of the same commit)
+            echo "Current commit is the same as the last successful run's commit. Not considered 'newer'."
+            IS_NEWER=false
+          elif git merge-base --is-ancestor "$LAST_SUCCESSFUL_RUN_SHA" "$CURRENT_SHA"; then
+            # Current commit is a direct descendant (came after) the last successful run's commit -> it's genuinely newer
+            echo "Current commit is a descendant of the last successful run's commit. Considered 'newer'."
+            IS_NEWER=true
+          else
+            # Current commit is NOT a descendant (e.g., an older commit was pushed, history re-written, or unrelated)
+            echo "Current commit is not a descendant of the last successful run's commit (e.g., rewind, rebase, or unrelated history). Not considered 'newer'."
+            IS_NEWER=false
+          fi
+
+          echo "is_newer=$IS_NEWER" >> "$GITHUB_OUTPUT"
+
+      - name: Make version script executable
+        run: chmod +x ./scripts/commit_version.sh
+      - name: Generate Version from Git
+        id: version
+        run: ./scripts/commit_version.sh
+
+  build_and_publish:
     name: Build and Publish to ${{ matrix.registry.name }}
     needs: [generate_version]
-    runs-on: ubuntu-latest # This runner is typically linux/amd64
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -17,13 +141,10 @@ build_and_publish:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU # Essential for cross-platform builds (e.g., building ARM on AMD64 runner)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx # Essential for multi-platform builds
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        # You might want to specify a builder to ensure consistent behavior across runs, e.g.:
-        # with:
-        #   driver-opts: image=moby/buildkit:latest
 
       - name: Log in to ${{ matrix.registry.name }}
         uses: docker/login-action@v3
@@ -38,13 +159,19 @@ build_and_publish:
         with:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
+            # 1. Primary Tag: Branch name (e.g., "3.13-aio")
             type=ref,event=branch
-            # Example tag for build version with short hash and timestamp
-            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}    
-            # Example tag for build version with short hash
-            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}    
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || contains(github.ref, 'dev') }}
 
+            # 2. Detailed Dev Tag: Mirrors your GitHub Release tag (e.g., 3-13-dev8-e466a562-1718305800)
+            type=raw,value=${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
+
+            # 3. Shorter Dev Tag: (e.g., 3-13-dev8-e466a562)
+            type=raw,value=${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}
+            
+            # 4. Conditional 'latest' Tag: Only if current commit is newer than last successful build's commit
+            type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
+
+            
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
@@ -55,11 +182,10 @@ build_and_publish:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # --- IMPORTANT: ADD THIS LINE FOR MULTI-PLATFORM BUILDS ---
-          platforms: linux/amd64,linux/arm64 # Specify the target platforms
+          platforms: linux/amd64,linux/arm64
           build-args: |
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true # This ensures pyffmpeg (and its bundled ffmpeg) is installed
+            INSTALL_FFMPEG=true
 
       - name: Install Cosign
         if: matrix.registry.sign == true

@@ -8,20 +8,23 @@ VERSION="0.0.0+g0000000"
 SANITIZED_VERSION="0_0_0_g0000000"
 SHORT_HASH="0000000"
 LONG_HASH=$(printf '%0.s0' {1..40})
-COMMIT_TIMESTAMP="0000000000" # Default to 10 zeros for Unix timestamp
+COMMIT_TIMESTAMP="0000000000"
 BASE_VERSION="0.0.0"
 SANITIZED_BASE_VERSION="0-0-0"
+# New outputs with defaults
+PUSH_TYPE="unknown"
+IS_NEWER="false"
 
 # --- Check if we are in a git repository ---
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     SHORT_HASH=$(git rev-parse --short HEAD)
     LONG_HASH=$(git rev-parse HEAD)
 
-    # --- CHANGED: Use Unix timestamp for COMMIT_TIMESTAMP ---
-    # This provides a pure numeric, space-free, chronologically sortable timestamp.
+    # Get the committer date of HEAD for chronological release sorting
     COMMIT_TIMESTAMP=$(git show -s --format=%ct HEAD)
     echo "Commit Timestamp (Unix): ${COMMIT_TIMESTAMP}"
 
+    # Find the highest version tag based on newest commit date (committerdate)
     HIGHEST_TAG=$(git tag --sort=-committerdate | \
                   grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
                   head -n 1)
@@ -34,15 +37,74 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "Base version from newest commit tag: ${BASE_VERSION}"
     fi
     
-    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/_/g')
+    SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/-/g')
     echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
 
     VERSION="${BASE_VERSION}+g${SHORT_HASH}"
     echo "Generated version (always with hash): ${VERSION}"
 
     SANITIZED_VERSION=$(echo "$VERSION" | sed 's/[.+-]/_/g')
-else
+
+    # --- ADDED: Determine Push Direction and Newness (Moved from Workflow YAML) ---
+    # These variables depend on GitHub Actions context, so they'll only be accurate there.
+    # We still calculate them to ensure the script's outputs are consistent.
+
+    # Fetch event details from GitHub Actions environment variables
+    # These variables are only populated in a GitHub Actions workflow environment
+    BEFORE_SHA="${GITHUB_EVENT_BEFORE:-0000000000000000000000000000000000000000}" # Default if not set
+    CURRENT_BRANCH_REF="${GITHUB_REF:-}" # Default if not set
+    WORKFLOW_ID="${GITHUB_WORKFLOW:-}" # Default if not set
+    
+    if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+      PUSH_TYPE="initial_push"
+      echo "Push is an initial push to the branch."
+    elif git merge-base --is-ancestor "$LONG_HASH" "$BEFORE_SHA" >/dev/null 2>&1; then # $LONG_HASH is current SHA
+      PUSH_TYPE="rewind_or_older_commit_pushed"
+      echo "Push direction: Branch moved backward or an older commit was pushed."
+    elif git merge-base --is-ancestor "$BEFORE_SHA" "$LONG_HASH" >/dev/null 2>&1; then
+      PUSH_TYPE="fast_forward_or_merge"
+      echo "Push direction: Standard fast-forward or merge."
+    else
+      PUSH_TYPE="non_linear_force_push"
+      echo "Push direction: Non-linear force push (e.g., rebase or unrelated history merge)."
+    fi
+    echo "Push Type: ${PUSH_TYPE}"
+
+    # Calculate is_newer_than_last_successful_run
+    # This part requires GH_TOKEN and gh CLI, so it only works correctly in GH Actions.
+    if [ -n "$GH_TOKEN" ] && [ -n "$WORKFLOW_ID" ] && [ -n "$CURRENT_BRANCH_REF" ]; then
+      echo "Checking if current commit is newer than last successful run's commit..."
+      LAST_SUCCESSFUL_RUN_SHA=$(gh api \
+        --paginate \
+        "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs" \
+        --field status=success \
+        --field branch="${CURRENT_BRANCH_REF#refs/heads/}" \
+        --field event=push \
+        --jq '.workflow_runs[0].head_sha' \
+        --header 'Accept: application/vnd.github.v3+json' \
+        --header 'X-GitHub-Api-Version: 2022-11-28' \
+        2>/dev/null | head -n 1) # Suppress gh error output on non-existent runs, take first line
+
+      echo "Last successful run SHA: ${LAST_SUCCESSFUL_RUN_SHA:-None}"
+
+      if [ -z "$LAST_SUCCESSFUL_RUN_SHA" ]; then
+        IS_NEWER="true" # No previous successful run, so this is the first
+      elif [ "$LONG_HASH" = "$LAST_SUCCESSFUL_RUN_SHA" ]; then
+        IS_NEWER="false" # Same commit as last successful run
+      elif git merge-base --is-ancestor "$LAST_SUCCESSFUL_RUN_SHA" "$LONG_HASH" >/dev/null 2>&1; then
+        IS_NEWER="true" # Current commit is a descendant (newer)
+      else
+        IS_NEWER="false" # Current commit is not a descendant (older, rebase, etc.)
+      fi
+    else
+      echo "Not in a full GitHub Actions environment for 'is_newer' check (GH_TOKEN, WORKFLOW_ID, or GITHUB_REF missing)."
+      IS_NEWER="false" # Default to false if we can't perform the check
+    fi
+    echo "Is Newer Than Last Successful Run: ${IS_NEWER}"
+
+else # Not a git repository
     echo "Not a git repository. Using fallback version: ${VERSION}"
+    # Default push_type and is_newer remain
 fi
 
 # Print final values to console for local execution and easy debugging
@@ -54,11 +116,14 @@ echo "Long Hash: ${LONG_HASH}"
 echo "Commit Timestamp: ${COMMIT_TIMESTAMP}"
 echo "Base Version: ${BASE_VERSION}"
 echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
+echo "Push Type: ${PUSH_TYPE}"
+echo "Is Newer Than Last Successful Run: ${IS_NEWER}"
 
 
 # --- Environment-Specific Output ---
 
 if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
+    # GitHub Actions: Write to special files for other steps and jobs
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
     
     echo "SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
@@ -68,10 +133,13 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "SANITIZED_VERSION=${SANITIZED_VERSION}" >> "$GITHUB_OUTPUT"
     echo "SHORT_HASH=${SHORT_HASH}" >> "$GITHUB_OUTPUT"
     echo "LONG_HASH=${LONG_HASH}" >> "$GITHUB_OUTPUT"
-    echo "COMMIT_TIMESTAMP=${COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT" # Now a Unix timestamp
+    echo "COMMIT_TIMESTAMP=${COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
     echo "BASE_VERSION=${BASE_VERSION}" >> "$GITHUB_OUTPUT"
     echo "SANITIZED_BASE_VERSION=${SANITIZED_BASE_VERSION}" >> "$GITHUB_OUTPUT"
+    echo "PUSH_TYPE=${PUSH_TYPE}" >> "$GITHUB_OUTPUT" # <-- ADD THIS OUTPUT
+    echo "IS_NEWER_THAN_LAST_SUCCESSFUL_RUN=${IS_NEWER}" >> "$GITHUB_OUTPUT" # <-- ADD THIS OUTPUT
 else
+    # Local Use: Export variables. This only works if the script is run with `source`.
     export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}
     export HATCH_VCS_PRETEND_VERSION=${VERSION}
     echo "✅ Local environment variables exported. To use them, run this script with 'source'."
