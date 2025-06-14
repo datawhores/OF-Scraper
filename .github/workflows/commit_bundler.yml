@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read # Required for git checkout and gh CLI to read workflow runs
-  packages: write # Required for pushing Docker images
-  id-token: write # Required for OIDC authentication to registries like GHCR
 
 jobs:
   generate_version:
@@ -21,7 +19,6 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_WORKFLOW_REF: dddd
           GITHUB_REF: ${{ github.ref }}
-          GITHUB_REF22: "ddda"
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -210,90 +207,3 @@ jobs:
           commit: "${{ needs.generate_version.outputs.long_hash }}"
           allowUpdates: true
           prerelease: true
-
-  # --- ADDED: Separate Docker Build and Publish Job for Registry Resilience ---
-  build_and_publish_docker:
-    name: Build and Publish Docker to ${{ matrix.registry.name }}
-    needs: [generate_version] # Only depends on version info, runs independently of binary builds
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false # <-- ADDED: Crucial to ensure both GHCR and Docker Hub pushes are attempted even if one fails
-      matrix:
-        registry:
-          - id: ghcr
-            name: GitHub Packages
-            sign: false
-          - id: dockerhub
-            name: Docker Hub
-            sign: true
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to ${{ matrix.registry.name }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ matrix.registry.id == 'ghcr' && 'ghcr.io' || 'docker.io' }}
-          username: ${{ matrix.registry.id == 'ghcr' && github.actor || secrets.DOCKERHUB_USERNAME }}
-          password: ${{ matrix.registry.id == 'ghcr' && secrets.GITHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
-          tags: |
-            # 1. Primary Tag: Branch name (e.g., "3.13-aio")
-            type=ref,event=branch
-
-            # 2. Detailed Dev Tag: Mirrors your GitHub Release tag format
-            type=raw,value=dev-${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
-
-            # 3. Shorter Dev Tag: (e.g., 3-13-dev8-e466a562)
-            type=raw,value=${{ needs.generate_version.outputs.sanitized_base_version }}-${{ needs.generate_version.outputs.short_hash }}
-            
-            # 4. Conditional 'latest' Tag: Only if current commit is newer than last successful build's commit
-            type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
-
-            # 5. Optional Tag: 'main' tag specifically for the main branch, if distinct from latest
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            
-
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64 # Build for multiple architectures
-          build-args: |
-            BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true # Pass build arg to Dockerfile if needed
-
-      # Cosign signing steps (remain unchanged)
-      - name: Install Cosign
-        if: matrix.registry.sign == true
-        uses: sigstore/cosign-installer@v3.5.0
-
-      - name: Write signing key to disk
-        if: matrix.registry.sign == true
-        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-        shell: bash
-
-      - name: Sign the published Docker image
-        if: matrix.registry.sign == true
-        env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_EXPERIMENTAL: "true"
-        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
