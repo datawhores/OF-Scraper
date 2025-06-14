@@ -10,38 +10,33 @@ on:
 permissions: read-all
 
 jobs:
-  get_commit:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+  generate_version:
+    # This new job runs once, calculates all version info, and provides it to other jobs.
+    name: Generate Version Info
     runs-on: ubuntu-latest
     outputs:
-      long: ${{ steps.commit.outputs.long }}
-      short: ${{ steps.commit.outputs.short }}
-      hash: ${{ steps.commit.outputs.hash }}
+      version: ${{ steps.version.outputs.VERSION }}
+      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
+      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
+      long_hash: ${{ steps.version.outputs.LONG_HASH }}
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Needed for git describe to work correctly
           fetch-tags: true
-      - name: Get Commit Hash
-        uses: prompt/actions-commit-hash@v3
-        id: commit
+      - name: Generate Version from Git
+        id: version
+        run: ./scripts/commit_version.sh
 
   build_binaries:
     name: Build on ${{ matrix.os }}
-    needs: [get_commit]
+    needs: [generate_version] # Depends on the new version job
     runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
 
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-   
-
-
         include:
           - os: ubuntu-latest
             artifact_suffix: linux
@@ -54,157 +49,85 @@ jobs:
             shell: bash
 
     steps:
-      - name: Checkout Full Git History
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Get all history
-          fetch-tags: true  # Get all tags
-          ref: ${{ github.ref }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.0'
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
-  
-      - name: Get latest compatible version tag
-        id: get_version
-        run: |
-          # Get all tags matching your pattern
-          ALL_TAGS=$(git tag --list)
-          echo "All tags: $ALL_TAGS"
-          
-          # Filter tags by pattern and sort by version
-          FILTERED_TAGS=$(echo "$ALL_TAGS" | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | sort -V -r)
-          echo "Filtered tags: $FILTERED_TAGS"
-          
-          # Select the highest version tag
-          SELECTED_TAG=$(echo "$FILTERED_TAGS" | head -n 1)
-          
-          # Fallback to 0.0.0 if no tags found
-          if [ -z "$SELECTED_TAG" ]; then
-            SELECTED_TAG="0.0.0"
-          else
-            # Remove 'v' prefix if present
-            SELECTED_TAG=${SELECTED_TAG#v}
-          fi
-          
-          echo "Using version: $SELECTED_TAG"
+        uses: astral-sh/setup-uv@v1
 
-          # Create a sanitized version for filenames by replacing '.' with '_'
-          SANITIZED_TAG="${SELECTED_TAG//./_}"
-          echo "Sanitized version for filenames: $SANITIZED_TAG"
-          
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-          echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-          
-          # Set step outputs for both original and sanitized versions
-          echo "selected_tag=$SELECTED_TAG" >> "$GITHUB_OUTPUT"
-          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
+      - name: Set Version Environment Variables
+        # This single step replaces the huge inline script from before
         shell: bash
+        run: |
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
+          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
 
-      - name: Install venv and dependencies
+      - name: Install dependencies
+        shell: bash
         run: |
           uv venv
-          
-          # Activate venv based on OS
           if [ "${{ runner.os }}" == "Windows" ]; then
             . .venv/Scripts/activate
           else
-          
-          # Install versioning dependencies
+            source .venv/bin/activate
+          fi
           uv pip install --upgrade hatch-vcs setuptools-scm
-          
-          # Verify version detection
           echo "Hatch version: $(hatch version)"
-          
-          # Run the sync
           uv sync --verbose
-        shell: bash
+
       - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.14.1
+        run: uv pip install pyinstaller==6.4.0
+
       - name: Set UTF-8 environment (Windows)
         if: runner.os == 'Windows'
         run: |
-          echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" >> $env:GITHUB_ENV
         shell: pwsh
 
-
-      - name: Build Executable (File)
+      - name: Build Executable (File & Dir) and Zip
+        shell: bash
         run: |
-          # Set common variables
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          # OS-specific settings
-          if [ "${{ runner.os }}" == "Windows" ]; then
-              VENV_ACTIVATE=".venv/Scripts/activate"
-              PYINSTALLER_OPTS="--python-option=utf8"
-              EXE_EXT=".exe"
-          else
-              VENV_ACTIVATE=".venv/bin/activate"
-              PYINSTALLER_OPTS="--clean --log DEBUG"
-              EXE_EXT=""
-          fi
+          # Use the sanitized version for filenames
+          SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
+          
           # Activate venv
-          source $VENV_ACTIVATE
-          # Build command
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller --onefile \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}$EXE_EXT" \
-            $PYINSTALLER_OPTS \
-            "$OFSCRAPER_EXECUTABLE"
-        shell: bash
-
-      - name: Build Executable (Dir)
-        run: |
-          # Set common variables
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
-              VENV_ACTIVATE=".venv/Scripts/activate"
-              PYINSTALLER_OPTS="--python-option=utf8"
+              source .venv/Scripts/activate
           else
-              VENV_ACTIVATE=".venv/bin/activate"
-              PYINSTALLER_OPTS="--clean --log DEBUG"
+              source .venv/bin/activate
           fi
-          # Activate venv
-          source $VENV_ACTIVATE
-          # Build command
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller\
-            --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
-            $PYINSTALLER_OPTS \
-            "$OFSCRAPER_EXECUTABLE"
-        shell: bash
+          
+          # Build one-file executable
+          pyinstaller --onefile --name "ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}" ofscraper/__main__.py
+          
+          # Build one-dir executable
+          pyinstaller --name "ofscraper_${{ matrix.artifact_suffix }}_dir" ofscraper/__main__.py
 
+          # Zip the one-dir build
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            7z a "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "./dist/ofscraper_${{ matrix.artifact_suffix }}_dir/*"
+          else
+            zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+          fi
 
-      - name: Zip Directory (Unix)
-        if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
-        shell: bash
-
-      - name: Zip Directory (Windows)
-        if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip -Force
-        shell: pwsh
-        
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ matrix.artifact_suffix }}
           path: |
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.exe
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip
+            dist/*.exe
+            dist/*.zip
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ needs.generate_version.outputs.sanitized_version }}
           if-no-files-found: ignore
 
   publish_release:
     name: Publish GitHub Release
-    if: github.event_name == 'push'
-    needs: [build_binaries, get_commit]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [build_binaries, generate_version] # Depends on both
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -221,8 +144,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: artifacts/*/*
-          tag: "${{ needs.get_commit.outputs.short }}"
-          name: "Dev Build ${{ needs.get_commit.outputs.short }}"
-          body: "This is an auto-generated development release created from commit hash `${{ needs.get_commit.outputs.hash }}`."
-          commit: "${{ needs.get_commit.outputs.long }}"
+          tag: "dev-${{ needs.generate_version.outputs.short_hash }}" # Use short hash for tag
+          name: "Dev Build ${{ needs.generate_version.outputs.short_hash }}"
+          body: "This is an auto-generated development release created from commit hash `${{ needs.generate_version.outputs.long_hash }}`. Version: `${{ needs.generate_version.outputs.version }}`"
+          commit: "${{ needs.generate_version.outputs.long_hash }}"
           allowUpdates: true
+          prerelease: true
