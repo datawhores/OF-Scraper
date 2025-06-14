@@ -1,44 +1,7 @@
-name: Docker Daily Build
-
-on:
-  push:
-    branches:
-      - '**'
-    tags-ignore:
-      - '**'
-
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-
-jobs:
-  generate_version:
-    name: Generate Version Info
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
-      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
-      long_hash: ${{ steps.version.outputs.LONG_HASH }}
-      commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
-      base_version: ${{ steps.version.outputs.BASE_VERSION }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - name: Make version script executable
-        run: chmod +x ./scripts/commit_version.sh
-      - name: Generate Version from Git
-        id: version
-        run: ./scripts/commit_version.sh
-
-  build_and_publish:
+build_and_publish:
     name: Build and Publish to ${{ matrix.registry.name }}
     needs: [generate_version]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # This runner is typically linux/amd64
 
     strategy:
       matrix:
@@ -54,10 +17,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
+      - name: Set up QEMU # Essential for cross-platform builds (e.g., building ARM on AMD64 runner)
         uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx # Essential for multi-platform builds
         uses: docker/setup-buildx-action@v3
+        # You might want to specify a builder to ensure consistent behavior across runs, e.g.:
+        # with:
+        #   driver-opts: image=moby/buildkit:latest
 
       - name: Log in to ${{ matrix.registry.name }}
         uses: docker/login-action@v3
@@ -73,7 +39,9 @@ jobs:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
             type=ref,event=branch
+            # Example tag for build version with short hash and timestamp
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}    
+            # Example tag for build version with short hash
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}    
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || contains(github.ref, 'dev') }}
 
@@ -87,9 +55,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # --- IMPORTANT: ADD THIS LINE FOR MULTI-PLATFORM BUILDS ---
+          platforms: linux/amd64,linux/arm64 # Specify the target platforms
           build-args: |
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true
+            INSTALL_FFMPEG=true # This ensures pyffmpeg (and its bundled ffmpeg) is installed
 
       - name: Install Cosign
         if: matrix.registry.sign == true
