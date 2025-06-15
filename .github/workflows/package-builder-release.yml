@@ -195,7 +195,7 @@ jobs:
       - name: Publish to Test PyPI with Twine
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi }}
+          TWINE_PASSWORD: ${{ secrets.pypi2 }}
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
         run: |
           source .venv/bin/activate
