@@ -363,19 +363,14 @@ jobs:
           outputs: |
             type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
 
-      - name: Write Docker Hub signing key to disk
-        if: ${{ inputs.docker }}
-        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-        shell: bash
-        env:
-          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
       - name: Sign the published Docker Hub image
         # Removed bash retry loop as per user request for performance
         if: ${{ inputs.docker }}
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
         run: |
           echo "Signing Docker Hub image..."
           # Sign the exact set of desired tags
@@ -469,6 +464,8 @@ jobs:
         if: ${{ inputs.docker }}
         env:
           COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
           # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
         run: |
           echo "Signing GHCR image..."
