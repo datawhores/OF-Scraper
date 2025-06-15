@@ -372,62 +372,35 @@ jobs:
 
       - name: Sign the published Docker Hub image
         # Removed bash retry loop as per user request for performance
-# Corrected Cosign Signing Loop (Revised Logic)
-# This will execute cosign sign for each individual tag, ensuring it signs the correct digest.
-
         if: ${{ inputs.docker }}
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: |
-          # Install cosign (already done in a preceding step in your workflow)
-          # echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key (already done)
-
-          DIGEST="${{ steps.build-and-push-hub.outputs.digest }}" # Get the digest of the pushed image
-
           echo "Signing Docker Hub image..."
+          # Sign the exact set of desired tags
+          # Construct a space-separated list of image references to sign
+          DOCKER_HUB_IMAGE_REFS=""
+          # The package_version tag is always generated
+          DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+
+          # Conditionally add other tags
+          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
+            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:stable"
+          fi
+          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
+            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:latest"
+          fi
+          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
+            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:dev"
+          fi
           
-          # Prepare array of tags to sign
-          # Each entry in this array will be a full image reference: "repo/image:tag"
-          declare -a TAGS_TO_SIGN
-
-          # Add base tags (inputs.version and package_version)
-          TAGS_TO_SIGN+=( "datawhores/of-scraper:${{ inputs.version }}" )
-          TAGS_TO_SIGN+=( "datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}" )
-
-          # Conditionally add stable, latest, dev tags
-          if [[ "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" == "true" ]]; then
-            TAGS_TO_SIGN+=( "datawhores/of-scraper:stable" )
-          fi
-          if [[ "${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}" == "true" ]]; then
-            TAGS_TO_SIGN+=( "datawhores/of-scraper:latest" )
-          fi
-          if [[ "${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}" == "true" ]]; then
-            TAGS_TO_SIGN+=( "datawhores/of-scraper:dev" )
-          fi
-
-          # Loop through each tag and sign it with the correct digest
-          for TAG_REF in "${TAGS_TO_SIGN[@]}"; do
-            # Only attempt to sign if the tag reference is not empty (handles cases where inputs.version might result in empty string for tag ref)
-            if [ -n "$TAG_REF" ]; then
-              for i in $(seq 1 3); do
-                echo "Attempt $i to sign $TAG_REF@$DIGEST"
-                # The syntax is `cosign sign <image-ref>@<digest> --key ...`
-                cosign sign \
-                  --yes \
-                  --key cosign.key \
-                  "${TAG_REF}"@"${DIGEST}" \
-                  && break # Break retry loop on success
-                if [ $i -lt 3 ]; then
-                  echo "Signing $TAG_REF failed, retrying in 10 seconds..."
-                  sleep 10
-                else
-                  echo "Signing $TAG_REF failed after 3 attempts."
-                  exit 1 # Exit job on final failure
-                fi
-              done
-            fi
-          done
+          # Pass all image references to a single cosign sign command
+          # Each reference will be in the format "repo/image:tag@sha256:digest"
+          cosign sign \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY \
+            ${DOCKER_HUB_IMAGE_REFS}@"${{ steps.build-and-push-hub.outputs.digest }}"
         shell: bash
 
   # New job for GHCR publishing
@@ -500,16 +473,27 @@ jobs:
         run: |
           echo "Signing GHCR image..."
           # Sign the exact set of desired tags
-          ghcr_signed_tags="ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}" # Only package_version tag
+          # Construct a space-separated list of image references to sign
+          GHCR_IMAGE_REFS=""
+          # The package_version tag is always generated
+          GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}"
 
+          # Conditionally add other tags
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
-            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:stable"
+            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:stable"
           fi
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:latest"
+            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:latest"
           fi
           if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:dev"
+            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:dev"
           fi
-          echo "$ghcr_signed_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push-ghcr.outputs.digest }}
+          
+          # Pass all image references to a single cosign sign command
+          # Each reference will be in the format "repo/image:tag@sha256:digest"
+          cosign sign \
+            --yes \
+            "${GHCR_IMAGE_REFS}"@"${{ steps.build-and-push-ghcr.outputs.digest }}"
+          # For OIDC-based signing (GHCR), you typically don't pass '--key' or '--password'.
+          # Cosign uses the OIDC token available in the environment implicitly.
         shell: bash
