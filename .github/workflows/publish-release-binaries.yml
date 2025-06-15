@@ -1,4 +1,4 @@
-# .github/workflows/build-binaries-and-release.yml
+# .github/workflows/publish-release-binaries.yml
 name: Build Binaries and Publish Release
 
 on:
@@ -16,9 +16,11 @@ on:
         description: 'The full commit hash of the version.'
         required: true
         type: string
-    permissions:
-      contents: write # Needed for checkout, creating releases
-      actions: read # Needed for gh CLI to download/upload workflow artifacts
+
+# Permissions moved to top level, and set to the minimum default
+permissions:
+  contents: read # Default: all jobs can read contents (e.g., for checkout)
+  actions: read # Default: can read workflow run status/artifacts (e.g., for artifact download)
 
 jobs:
   build_binaries:
@@ -55,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.0' # Keep specific Python version for consistent builds
+          python-version: '3.12.0'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -63,7 +65,7 @@ jobs:
       - name: Prepare Version for Build Tools
         id: prep_build_version
         run: |
-          PACKAGE_VERSION="${{ inputs.package_version }}" # Use the input package version
+          PACKAGE_VERSION="${{ inputs.package_version }}"
           SANITIZED_TAG="${PACKAGE_VERSION//./_}"
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
@@ -164,10 +166,11 @@ jobs:
 
   publish_release:
     name: Publish GitHub Release
-    needs: [build_binaries] # This job depends on build_binaries within *this* callable workflow
+    needs: [build_binaries]
     runs-on: ubuntu-latest
+    # Specific permissions for this job, overriding the workflow default
     permissions:
-      contents: write # Needed for creating the release
+      contents: write # REQUIRED for creating the GitHub Release
       actions: read # Needed to download artifacts within this job
     steps:
       - name: Download all build artifacts (with retries)
@@ -187,7 +190,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: artifacts/*/*
-          tag: ${{ inputs.input_version }} # Use the input version for the tag
+          tag: ${{ inputs.input_version }}
           name: "Release ${{ inputs.input_version }}"
           body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
           allowUpdates: true

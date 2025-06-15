@@ -1,165 +1,194 @@
-# .github/workflows/package-builder-release.yml
-name: Package Builder Release
+# .github/workflows/publish-release-binaries.yml
+name: Build Binaries and Publish Release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      version:
-        description: The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.
+      input_version:
+        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Used for checkout ref.'
         required: true
         type: string
-      files:
-        description: Build binary files? (t/f)
+      package_version:
+        description: 'The derived package version (e.g., 8.4.1).'
         required: true
-        type: boolean
-      pip:
-        description: Publish to PyPI? (t/f)
+        type: string
+      long_hash:
+        description: 'The full commit hash of the version.'
         required: true
-        type: boolean
-      docker:
-        description: Publish to Docker Hub & GHCR (t/f)
-        required: true
-        type: boolean
-
+        type: string
+# Permissions moved to top level, aligned with 'name:' and 'on:'
 permissions:
   contents: write # Needed for checkout, creating releases
-  packages: write # Needed for pushing to GHCR/Docker Hub
-  id-token: write # For OIDC, used by cosign, and CRUCIAL for GHCR authentication
-  actions: write # Needed for gh CLI to upload/download workflow artifacts (for retries)
+  actions: read # Needed for gh CLI to download/upload workflow artifacts
 
 jobs:
-  determine_tags_and_versions:
-    name: Determine Release Info and Tagging Logic
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read # Needed to list workflow runs and jobs
-      contents: read # For checkout
-    outputs:
-      long_hash: ${{ steps.release_info.outputs.long_hash }}
-      short_hash: ${{ steps.release_info.outputs.short_hash }}
-      package_version: ${{ steps.release_info.outputs.package_version }}
-      is_stable_release: ${{ steps.release_info.outputs.is_stable_release }}
-      is_dev_release: ${{ steps.release_info.outputs.is_dev_release }}
-      commit_timestamp: ${{ steps.release_info.outputs.commit_timestamp }}
+  build_binaries:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+            shell: bash
+          - os: windows-latest
+            artifact_suffix: windows
+            shell: pwsh
+          - os: macos-latest
+            artifact_suffix: macos
+            shell: bash
+
     steps:
-      - name: Checkout Code (Optional Version or Current Branch)
+      - name: Checkout Full Git History
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
-          fetch-depth: 0 # Needed for git log and tag comparisons
+          ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
+          fetch-depth: 0
           fetch-tags: true
-
-      - name: Make release_version.sh executable
-        run: chmod +x ./scripts/release_version.sh
-
-      - name: Get Release Info from Script
-        id: release_info
-        env:
-          INPUT_VERSION: ${{ inputs.version }}
-        run: ./scripts/release_version.sh
-
-  determine_docker_latest_logic:
-    name: Determine Docker Latest Tag Logic
-    needs: [determine_tags_and_versions] # This job needs outputs from the previous one
-    if: ${{ inputs.docker }} # Only run this job if Docker publishing is requested
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read # Needed for the Python script to list workflow runs and jobs
-      contents: read # For checking out the script itself
-    outputs:
-      should_apply_stable_latest: ${{ steps.run_python_logic.outputs.should_apply_stable_latest }}
-      should_apply_dev_latest: ${{ steps.run_python_logic.outputs.should_apply_dev_latest }}
-    steps:
-      - name: Checkout repository for script
-        uses: actions/checkout@v4 # Need to checkout the repo to get the Python script
-        with:
-          ref: ${{ github.sha }} # Use current commit to ensure consistency
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x' # Use a specific Python version, e.g., '3.9' or '3.12'
+          python-version: '3.12.0' # Keep specific Python version for consistent builds
 
-      - name: Install Python dependencies
-        run: pip install requests
-
-      - name: Execute Latest Tag Logic Script
-        id: run_python_logic # Give this step an ID to capture its outputs
-        run: python scripts/determine_docker_stable_dev_tags.py \
-          "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
-          "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
-          "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }} # e.g., owner/repo
-          GITHUB_WORKFLOW: ${{ github.workflow }} # The workflow filename (e.g., package-builder-release.yml)
-
-  pypi:
-    needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip }}
-    runs-on: ubuntu-latest
-    name: Create PyPI Package
-    permissions:
-      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ inputs.version || github.ref }}
-      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.5
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Build and Publish Tools
-        run: uv pip install hatch twine
-      - name: Build Package with Hatch
+      - name: Prepare Version for Build Tools
+        id: prep_build_version
         run: |
-          PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
-          echo "Setting package version to $PACKAGE_VERSION for the build."
-          export HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION
-          hatch build
+          PACKAGE_VERSION="${{ inputs.package_version }}" # Use the input package version
+          SANITIZED_TAG="${PACKAGE_VERSION//./_}"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
         shell: bash
 
-      - name: Publish to PyPI with Twine
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi }}
-        run: twine upload "dist/*"
+      - name: Install venv and dependencies
+        run: |
+          uv venv
+
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            . .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+
+          uv pip install --upgrade hatch-vcs setuptools-scm
+
+          echo "Hatch version: $(hatch version)"
+
+          uv sync --verbose
         shell: bash
 
-  call_binaries_build_and_release:
-    name: Build & Release Binaries
-    needs: [determine_tags_and_versions]
-    if: ${{ inputs.files }}
-    # UPDATED FILENAME HERE
-    uses: ./.github/workflows/publish-release-binaries.yml@${{ github.sha }}
-    with:
-      input_version: ${{ inputs.version }}
-      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
-      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller==6.14.1
 
-  call_docker_publish:
-    name: Publish Docker Images
-    needs: [determine_tags_and_versions, determine_docker_latest_logic]
-    if: ${{ inputs.docker }}
-    # UPDATED FILENAME HERE
-    uses: ./.github/workflows/publish-release-dockers.yml@${{ github.sha }}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-    with:
-      input_version: ${{ inputs.version }} # Pass original input version for checkout
-      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
-      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
-      is_stable_release: ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}
-      is_dev_release: ${{ needs.determine_tags_and_versions.outputs.is_dev_release }}
-      should_apply_stable_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_stable_latest }}
-      should_apply_dev_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_dev_latest }}
+      - name: Set UTF-8 environment (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+
+      - name: Build Executable (File)
+        run: |
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              VENV_ACTIVATE=".venv/Scripts/activate"
+              PYINSTALLER_OPTS="--python-option=utf8"
+              EXE_EXT=".exe"
+          else
+              VENV_ACTIVATE=".venv/bin/activate"
+              PYINSTALLER_OPTS="--clean --log DEBUG"
+              EXE_EXT=""
+          fi
+          source "$VENV_ACTIVATE"
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller --onefile \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}${EXE_EXT}" \
+            ${PYINSTALLER_OPTS} \
+            "$OFSCRAPER_EXECUTABLE"
+        shell: bash
+
+      - name: Build Executable (Dir)
+        run: |
+          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
+
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              VENV_ACTIVATE=".venv/Scripts/activate"
+              PYINSTALLER_OPTS="--python-option=utf8"
+          else
+              VENV_ACTIVATE=".venv/bin/activate"
+              PYINSTALLER_OPTS="--clean --log DEBUG"
+          fi
+          source "$VENV_ACTIVATE"
+          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
+          pyinstaller \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
+            ${PYINSTALLER_OPTS} \
+            "$OFSCRAPER_EXECUTABLE"
+        shell: bash
+
+      - name: Zip Directory (Unix)
+        if: runner.os != 'Windows'
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+        shell: bash
+
+      - name: Zip Directory (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
+        shell: pwsh
+
+      - name: Upload Build Artifacts (with retries)
+        uses: Wandalen/wretry.action@master
+        with:
+          action: |
+            - uses: actions/upload-artifact@v4
+              with:
+                name: build-artifacts-${{ matrix.os }}
+                path: |
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
+                if-no-files-found: ignore
+          attempts: 3
+          timeout_minutes: 5
+
+  publish_release:
+    name: Publish GitHub Release
+    needs: [build_binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating the release
+      actions: read # Needed to download artifacts within this job
+    steps:
+      - name: Download all build artifacts (with retries)
+        uses: Wandalen/wretry.action@master
+        with:
+          action: |
+            - uses: actions/download-artifact@v4
+              with:
+                path: artifacts/
+          attempts: 3
+          timeout_minutes: 5
+
+      - name: List downloaded files for debugging
+        run: ls -R artifacts
+
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: artifacts/*/*
+          tag: ${{ inputs.input_version }}
+          name: "Release ${{ inputs.input_version }}"
+          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
+          allowUpdates: true
