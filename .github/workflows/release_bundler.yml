@@ -340,8 +340,7 @@ jobs:
         with:
           images: datawhores/of-scraper
           tags: |
-            type=raw,value=${{ inputs.version }}
-            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }}
+            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }} # Only package_version (no 'v')
             type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
             type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
             type=raw,value=stable,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release }}
@@ -373,29 +372,62 @@ jobs:
 
       - name: Sign the published Docker Hub image
         # Removed bash retry loop as per user request for performance
+# Corrected Cosign Signing Loop (Revised Logic)
+# This will execute cosign sign for each individual tag, ensuring it signs the correct digest.
+
         if: ${{ inputs.docker }}
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: |
-          echo "Signing Docker Hub image..."
-          # Sign the exact set of desired tags
-          docker_hub_signed_tags=""
-          if [ -n "${{ inputs.version }}" ]; then
-            docker_hub_signed_tags+=" datawhores/of-scraper:${{ inputs.version }}"
-          fi
-          docker_hub_signed_tags+=" datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          # Install cosign (already done in a preceding step in your workflow)
+          # echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key (already done)
 
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
-            docker_hub_signed_tags+=" datawhores/of-scraper:stable"
+          DIGEST="${{ steps.build-and-push-hub.outputs.digest }}" # Get the digest of the pushed image
+
+          echo "Signing Docker Hub image..."
+          
+          # Prepare array of tags to sign
+          # Each entry in this array will be a full image reference: "repo/image:tag"
+          declare -a TAGS_TO_SIGN
+
+          # Add base tags (inputs.version and package_version)
+          TAGS_TO_SIGN+=( "datawhores/of-scraper:${{ inputs.version }}" )
+          TAGS_TO_SIGN+=( "datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}" )
+
+          # Conditionally add stable, latest, dev tags
+          if [[ "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" == "true" ]]; then
+            TAGS_TO_SIGN+=( "datawhores/of-scraper:stable" )
           fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            docker_hub_signed_tags+=" datawhores/of-scraper:latest"
+          if [[ "${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}" == "true" ]]; then
+            TAGS_TO_SIGN+=( "datawhores/of-scraper:latest" )
           fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            docker_hub_signed_tags+=" datawhores/of-scraper:dev"
+          if [[ "${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}" == "true" ]]; then
+            TAGS_TO_SIGN+=( "datawhores/of-scraper:dev" )
           fi
-          echo "$docker_hub_signed_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push-hub.outputs.digest }}
+
+          # Loop through each tag and sign it with the correct digest
+          for TAG_REF in "${TAGS_TO_SIGN[@]}"; do
+            # Only attempt to sign if the tag reference is not empty (handles cases where inputs.version might result in empty string for tag ref)
+            if [ -n "$TAG_REF" ]; then
+              for i in $(seq 1 3); do
+                echo "Attempt $i to sign $TAG_REF@$DIGEST"
+                # The syntax is `cosign sign <image-ref>@<digest> --key ...`
+                cosign sign \
+                  --yes \
+                  --key cosign.key \
+                  "${TAG_REF}"@"${DIGEST}" \
+                  && break # Break retry loop on success
+                if [ $i -lt 3 ]; then
+                  echo "Signing $TAG_REF failed, retrying in 10 seconds..."
+                  sleep 10
+                else
+                  echo "Signing $TAG_REF failed after 3 attempts."
+                  exit 1 # Exit job on final failure
+                fi
+              done
+            fi
+          done
         shell: bash
 
   # New job for GHCR publishing
@@ -436,8 +468,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ inputs.version }}
-            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }}
+            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }} # Only package_version (no 'v')
             type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
             type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
             type=raw,value=stable,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release }}
@@ -469,11 +500,7 @@ jobs:
         run: |
           echo "Signing GHCR image..."
           # Sign the exact set of desired tags
-          ghcr_signed_tags=""
-          if [ -n "${{ inputs.version }}" ]; then
-            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ inputs.version }}"
-          fi
-          ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          ghcr_signed_tags="ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}" # Only package_version tag
 
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
             ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:stable"

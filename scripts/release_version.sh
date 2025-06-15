@@ -134,19 +134,33 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # C
     LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$(echo "$GITHUB_REPOSITORY_SLUG" | cut -d'/' -f2)" "dev")
 
     # --- Determine `should_apply_stable_latest` ---
+    # Apply if current commit is newer than EITHER existing latest tag, OR if neither latest tag exists
     if [[ "$IS_STABLE_RELEASE" == "true" ]]; then
         if (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_HUB_TIMESTAMP )) || \
            (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_GHCR_TIMESTAMP )) || \
            (("$LAST_STABLE_HUB_TIMESTAMP" == "0" && "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then
             SHOULD_APPLY_STABLE_LATEST="true"
         fi
+    else
+        # If not a stable release, but the latest tag doesn't exist, we should still apply it
+        # This handles the case of the *very first* release, or if an old `latest` was manually deleted.
+        if (("$LAST_STABLE_HUB_TIMESTAMP" == "0" && "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then
+            SHOULD_APPLY_STABLE_LATEST="true"
+        fi
     fi
 
     # --- Determine `should_apply_dev_latest` ---
+    # Apply if current commit is newer than EITHER existing dev tag, OR if neither dev tag exists
     if [[ "$IS_DEV_RELEASE" == "true" ]]; then
         if (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_HUB_TIMESTAMP )) || \
            (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_GHCR_TIMESTAMP )) || \
            (("$LAST_DEV_HUB_TIMESTAMP" == "0" && "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then
+            SHOULD_APPLY_DEV_LATEST="true"
+        fi
+    else
+        # If not a dev release (e.g. initial stable release), but the dev tag doesn't exist, we should still apply it
+        # This handles the case of the *very first* dev tag, or if an old `dev` was manually deleted.
+        if (("$LAST_DEV_HUB_TIMESTAMP" == "0" && "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then
             SHOULD_APPLY_DEV_LATEST="true"
         fi
     fi
@@ -187,13 +201,10 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OU
     echo "is_stable_release=${IS_STABLE_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
     
-    # Only output should_apply_* and commit_timestamp if they were actually calculated by registry inspection
-    if [ "$SHOULD_APPLY_STABLE_LATEST" != "false" ] || [ "$SHOULD_APPLY_STABLE_LATEST" != "true" ]; then # Check if default value changed
-        echo "should_apply_stable_latest=${SHOULD_APPLY_STABLE_LATEST}" >> "$GITHUB_OUTPUT"
-    fi
-    if [ "$SHOULD_APPLY_DEV_LATEST" != "false" ] || [ "$SHOULD_APPLY_DEV_LATEST" != "true" ]; then # Check if default value changed
-        echo "should_apply_dev_latest=${SHOULD_APPLY_DEV_LATEST}" >> "$GITHUB_OUTPUT"
-    fi
+    # Always output should_apply_*_latest to ensure they are available to workflow, even if false by default
+    echo "should_apply_stable_latest=${SHOULD_APPLY_STABLE_LATEST}" >> "$GITHUB_OUTPUT"
+    echo "should_apply_dev_latest=${SHOULD_APPLY_DEV_LATEST}" >> "$GITHUB_OUTPUT"
+    
     if [ -n "$CURRENT_COMMIT_TIMESTAMP" ]; then
         echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
     fi
