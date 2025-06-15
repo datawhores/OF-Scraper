@@ -1,5 +1,5 @@
 # .github/workflows/publish-release-binaries.yml
-name: Build Binaries and Publish Release
+name: Publish Binaries for release
 
 on:
   workflow_call:
