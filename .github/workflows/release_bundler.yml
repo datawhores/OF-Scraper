@@ -7,18 +7,18 @@ on:
     inputs:
       version:
         description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.'
-        required: true # Changed to optional
+        required: true
       files:
         description: 'Build binary files? (t/f)'
-        required: false
+        required: true
         type: boolean
       pip:
         description: 'Publish to PyPI? (t/f)'
-        required: false
+        required: true
         type: boolean
       docker:
         description: 'Publish to Docker Hub & GHCR (including latest/dev tags)? (t/f)'
-        required: false
+        required: true
         type: boolean
 
 permissions:
@@ -47,6 +47,10 @@ jobs:
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
+
+      ## Docker Registry Inspection Setup (Pre-script)
+      # These logins are specifically for this job to query registry APIs, not for building/pushing.
+      # They must happen BEFORE the script runs if the script is to inspect registry tags.
       - name: Set up Docker Buildx (for manifest inspection)
         if: ${{ inputs.docker }}
         uses: docker/setup-buildx-action@v3
@@ -76,7 +80,8 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }} # Pass input version (might be empty) to script
           # Pass the GitHub repository name to the script so it can use it for GHCR registry lookups
-          GITHUB_REPOSITORY_SLUG: ${{ github.repository }} # This is `owner/repo-name`
+          # The script will then parse this to get just the 'repo-name' part
+          GITHUB_REPOSITORY_SLUG: ${{ github.repository }}
         run: ./scripts/release_version.sh
         # The script now handles all output to GITHUB_OUTPUT
 

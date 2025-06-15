@@ -96,13 +96,12 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then # Only run this if in G
     }
 
     # --- Get timestamps of existing 'latest' and 'dev' tags from registries ---
-    # These environment variables will be available from the workflow's job context
-    # Needs github.repository to be correctly set via ${{ github.repository }} from the workflow
+    # GITHUB_REPOSITORY_SLUG is now passed as an environment variable from the workflow step
     LAST_STABLE_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "latest")
-    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "${{ env.GITHUB_REPOSITORY_SLUG }}" "latest") # Use env var for repo name
+    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$(echo "$GITHUB_REPOSITORY_SLUG" | cut -d'/' -f2)" "latest") # Use env var
 
     LAST_DEV_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "dev")
-    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "${{ env.GITHUB_REPOSITORY_SLUG }}" "dev") # Use env var for repo name
+    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$(echo "$GITHUB_REPOSITORY_SLUG" | cut -d'/' -f2)" "dev") # Use env var
 
     # --- Determine `should_apply_stable_latest` ---
     # Apply if current commit is newer than EITHER existing latest tag, OR if neither latest tag exists
@@ -147,8 +146,7 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     # For subsequent steps in the same job (e.g., for build arguments)
     echo "SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
     echo "HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
-    # To pass github.repository as an environment variable to the script for skopeo calls
-    echo "GITHUB_REPOSITORY_SLUG=$(echo "${{ github.repository }}" | cut -d'/' -f2)" >> "$GITHUB_ENV" # Added this line
+    # GITHUB_REPOSITORY_SLUG is now passed directly as an env var to the script step in the workflow
 
     # For other jobs that depend on this one
     echo "long_hash=${LONG_HASH}" >> "$GITHUB_OUTPUT"
