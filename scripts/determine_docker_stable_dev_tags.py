@@ -108,6 +108,7 @@ def main():
     last_successful_dev_docker_hub_commit_timestamp = 0
     last_successful_stable_ghcr_commit_timestamp = 0
     last_successful_dev_ghcr_commit_timestamp = 0
+    print(f"Number of successful runs found {len(successful_runs)}")
 
     for run in successful_runs:
         run_id = run['id']

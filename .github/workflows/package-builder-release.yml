@@ -87,7 +87,7 @@ jobs:
       - name: Execute Latest Tag Logic Script
         id: run_python_logic
         run: python scripts/determine_docker_stable_dev_tags.py \
-          "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
+          "${{ needs.ououtputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
         env:
@@ -153,7 +153,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }} # Ensure no hidden characters here
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
     with:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}

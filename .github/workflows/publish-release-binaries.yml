@@ -16,8 +16,6 @@ on:
         description: 'The full commit hash of the version.'
         required: true
         type: string
-
-# Permissions moved to top level, and set to the minimum default
 permissions:
   contents: read # Default: all jobs can read contents (e.g., for checkout)
   actions: read # Default: can read workflow run status/artifacts (e.g., for artifact download)
@@ -57,7 +55,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.0'
+          python-version: '3.12.0' # Keep specific Python version for consistent builds
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -65,7 +63,7 @@ jobs:
       - name: Prepare Version for Build Tools
         id: prep_build_version
         run: |
-          PACKAGE_VERSION="${{ inputs.package_version }}"
+          PACKAGE_VERSION="${{ inputs.package_version }}" # Use the input package version
           SANITIZED_TAG="${PACKAGE_VERSION//./_}"
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
@@ -161,16 +159,16 @@ jobs:
                   dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
                   dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
                 if-no-files-found: ignore
-          attempts: 3
-          timeout_minutes: 5
+          # Corrected inputs for Wandalen/wretry.action
+          attempt_limit: 3 # Changed from 'attempts'
+          time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
   publish_release:
     name: Publish GitHub Release
     needs: [build_binaries]
     runs-on: ubuntu-latest
-    # Specific permissions for this job, overriding the workflow default
     permissions:
-      contents: write # REQUIRED for creating the GitHub Release
+      contents: write # Needed for creating the release
       actions: read # Needed to download artifacts within this job
     steps:
       - name: Download all build artifacts (with retries)
@@ -180,8 +178,9 @@ jobs:
             - uses: actions/download-artifact@v4
               with:
                 path: artifacts/
-          attempts: 3
-          timeout_minutes: 5
+          # Corrected inputs for Wandalen/wretry.action
+          attempt_limit: 3 # Changed from 'attempts'
+          time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
       - name: List downloaded files for debugging
         run: ls -R artifacts
