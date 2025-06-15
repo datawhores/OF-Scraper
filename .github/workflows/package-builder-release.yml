@@ -134,7 +134,10 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install Build and Publish Tools
-        run: uv pip install hatch twine
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install hatch twine
       - name: Build Package with Hatch
         run: |
           PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
