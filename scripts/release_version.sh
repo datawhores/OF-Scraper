@@ -111,18 +111,19 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # C
         local FULL_IMAGE="docker://$REGISTRY/$REPO:$TAG"
         local CREATED_AT_TIMESTAMP=0
 
-        echo "Checking registry tag: $FULL_IMAGE"
+        # Redirect info messages to stderr so they don't interfere with stdout capture
+        echo "Checking registry tag: $FULL_IMAGE" >&2
 
         # skopeo inspect --raw gets the manifest, jq extracts Created field
         CREATED_ISO=$(skopeo inspect --raw "$FULL_IMAGE" 2>/dev/null | jq -r '.Created // ""')
 
         if [ -n "$CREATED_ISO" ] && [ "$CREATED_ISO" != "null" ]; then
             CREATED_AT_TIMESTAMP=$(date -d "$CREATED_ISO" +%s)
-            echo "Found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)"
+            echo "Found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)" >&2 # Redirect to stderr
         else
-            echo "Tag $FULL_IMAGE not found or creation time not available."
+            echo "Tag $FULL_IMAGE not found or creation time not available." >&2 # Redirect to stderr
         fi
-        echo "$CREATED_AT_TIMESTAMP"
+        echo "$CREATED_AT_TIMESTAMP" # This is the ONLY thing sent to stdout
     }
 
     # --- Get timestamps of existing 'latest' and 'dev' tags from registries ---
@@ -137,7 +138,7 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # C
     # Apply `latest` if current commit is newer than EITHER existing latest tag, OR if the latest tag is missing on EITHER registry.
     if (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_HUB_TIMESTAMP )) || \
        (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_GHCR_TIMESTAMP )) || \
-       (("$LAST_STABLE_HUB_TIMESTAMP" == "0" || "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then # Changed from && to || for 0-check
+       (("$LAST_STABLE_HUB_TIMESTAMP" == "0" || "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then
         if [[ "$IS_STABLE_RELEASE" == "true" ]]; then
             SHOULD_APPLY_STABLE_LATEST="true"
         fi
@@ -147,20 +148,20 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # C
     # Apply `dev` if current commit is newer than EITHER existing dev tag, OR if the dev tag is missing on EITHER registry.
     if (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_HUB_TIMESTAMP )) || \
        (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_GHCR_TIMESTAMP )) || \
-       (("$LAST_DEV_HUB_TIMESTAMP" == "0" || "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then # Changed from && to || for 0-check
+       (("$LAST_DEV_HUB_TIMESTAMP" == "0" || "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then
         if [[ "$IS_DEV_RELEASE" == "true" ]]; then
             SHOULD_APPLY_DEV_LATEST="true"
         fi
     fi
 
     # Debug prints for GitHub Actions environment
-    echo "Debug - Current commit timestamp: $CURRENT_COMMIT_TIMESTAMP"
-    echo "Debug - Latest Stable Hub Timestamp: $LAST_STABLE_HUB_TIMESTAMP"
-    echo "Debug - Latest Stable GHCR Timestamp: $LAST_STABLE_GHCR_TIMESTAMP"
-    echo "Debug - Latest Dev Hub Timestamp: $LAST_DEV_HUB_TIMESTAMP"
-    echo "Debug - Latest Dev GHCR Timestamp: $LAST_DEV_GHCR_TIMESTAMP"
+    echo "Debug - Current commit timestamp: $CURRENT_COMMIT_TIMESTAMP" >&2 # Redirect debug to stderr
+    echo "Debug - Latest Stable Hub Timestamp: $LAST_STABLE_HUB_TIMESTAMP" >&2 # Redirect debug to stderr
+    echo "Debug - Latest Stable GHCR Timestamp: $LAST_STABLE_GHCR_TIMESTAMP" >&2 # Redirect debug to stderr
+    echo "Debug - Latest Dev Hub Timestamp: $LAST_DEV_HUB_TIMESTAMP" >&2 # Redirect debug to stderr
+    echo "Debug - Latest Dev GHCR Timestamp: $LAST_DEV_GHCR_TIMESTAMP" >&2 # Redirect debug to stderr
 else
-    echo "Skipping registry inspection (not in GH Actions or skopeo not installed)."
+    echo "Skipping registry inspection (not in GH Actions or skopeo not installed)." >&2 # Redirect warning to stderr
 fi
 
 # --- Print final values to console (for local execution and debugging) ---
