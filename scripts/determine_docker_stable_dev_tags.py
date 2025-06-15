@@ -1,6 +1,7 @@
-
+# scripts/determine_docker_stable_dev_tags.py
 import os
 import sys
+import json
 import requests
 from datetime import datetime
 
@@ -33,6 +34,8 @@ def main():
     # Get environment variables set by GitHub Actions
     github_token = os.getenv('GITHUB_TOKEN')
     github_repository = os.getenv('GITHUB_REPOSITORY') # e.g., "owner/repo"
+    github_workflow_ref = os.getenv('GITHUB_WORKFLOW_REF') # e.g., "owner/repo/.github/workflows/filename.yml@ref"
+
 
     if not github_token:
         print("::error::GITHUB_TOKEN environment variable not set.", file=sys.stderr)
@@ -40,13 +43,30 @@ def main():
     if not github_repository:
         print("::error::GITHUB_REPOSITORY environment variable not set.", file=sys.stderr)
         sys.exit(1)
+    if not github_workflow_ref:
+        print("::error::GITHUB_WORKFLOW_REF environment variable not set. Cannot determine workflow file path.", file=sys.stderr)
+        sys.exit(1)
 
     owner, repo = github_repository.split('/')
-    workflow_id = os.getenv('GITHUB_WORKFLOW') # The workflow filename, e.g., "package-builder-release.yml"
-
-    if not workflow_id:
-        print("::error::GITHUB_WORKFLOW environment variable not set. Cannot determine workflow_id.", file=sys.stderr)
+    
+    # Extract workflow filename from GITHUB_WORKFLOW_REF
+    # Example: "owner/repo/.github/workflows/filename.yml@ref"
+    # We want: "filename.yml" or "subdirectory/filename.yml"
+    
+    # Find the start of the workflow path
+    workflow_path_start_index = github_workflow_ref.find('.github/workflows/')
+    if workflow_path_start_index == -1:
+        print("::error::Could not find '.github/workflows/' in GITHUB_WORKFLOW_REF. Invalid format.", file=sys.stderr)
         sys.exit(1)
+    
+    # Extract the part after '.github/workflows/'
+    workflow_path_with_ref = github_workflow_ref[workflow_path_start_index + len('.github/workflows/'):]
+    
+    # Remove the '@ref' part if it exists
+    workflow_filename = workflow_path_with_ref.split('@')[0]
+    
+    print(f"Derived workflow filename: {workflow_filename}") # For debugging
+
 
     should_apply_stable_latest = False
     should_apply_dev_latest = False
@@ -62,7 +82,8 @@ def main():
     print(f"Is Dev Release: {is_dev_release}")
 
     # Fetch last 100 successful workflow runs of this workflow
-    url_runs = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"
+    # Using workflow_filename directly in the URL
+    url_runs = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_filename}/runs"
     params_runs = {
         "status": "success",
         "per_page": 100
@@ -79,7 +100,8 @@ def main():
         successful_runs_data = response_runs.json()
         successful_runs = successful_runs_data.get('workflow_runs', [])
     except requests.exceptions.RequestException as e:
-        print(f"::error::Failed to list workflow runs: {e}", file=sys.stderr)
+        # Print the full URL for debugging
+        print(f"::error::Failed to list workflow runs: {e}. URL: {url_runs}", file=sys.stderr)
         sys.exit(1)
 
     last_successful_stable_docker_hub_commit_timestamp = 0
