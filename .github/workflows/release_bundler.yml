@@ -17,7 +17,7 @@ on:
         required: true
         type: boolean
       docker:
-        description: 'Publish to Docker Hub & GHCR (including latest/dev tags)? (t/f)'
+        description: 'Publish to Docker Hub & GHCR (t/f)'
         required: true
         type: boolean
 
@@ -287,15 +287,16 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.pypi }}
         run: twine upload "dist/*"
 
-  docker: # Docker Hub & GHCR combined
+  # New job for Docker Hub publishing
+  publish_docker_hub:
     needs: [determine_tags_and_versions]
     if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
-    name: Docker Hub & GHCR Release
+    name: Publish to Docker Hub
     permissions:
       contents: read
       packages: write
-      id-token: write # CRUCIAL for GHCR authentication
+      id-token: write # Required for Cosign signing (if enabled)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -309,13 +310,81 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3.5.0 # Latest stable cosign installer
+        uses: sigstore/cosign-installer@v3.5.0
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Hub Image
+        id: build-and-push-hub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
+          tags: |
+            datawhores/of-scraper:${{ inputs.version }}
+            datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
+            type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
+            type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
+
+      - name: Write Docker Hub signing key to disk
+        if: ${{ inputs.docker }} # Only if Docker Hub image is pushed and signing is enabled
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+        shell: bash
+        env:
+          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      - name: Sign the published Docker Hub image
+        if: ${{ inputs.docker }} # Only if Docker Hub image is pushed and signing is enabled
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          echo "Signing Docker Hub image..."
+          docker_hub_tags="datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
+            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:latest"
+          fi
+          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
+            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:dev"
+          fi
+          echo "$docker_hub_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push-hub.outputs.digest }} # Use build-and-push-hub ID
+
+  # New job for GHCR publishing
+  publish_ghcr:
+    needs: [determine_tags_and_versions]
+    if: ${{ inputs.docker }}
+    runs-on: ubuntu-latest
+    name: Publish to GHCR
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # CRUCIAL for GHCR authentication and signing
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.version || github.ref }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -324,18 +393,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} # Authenticates with GHCR via OIDC due to id-token: write
 
-      - name: Build and Push Docker Images
-        id: build-and-push
+      - name: Build and Push GHCR Image
+        id: build-and-push-ghcr
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 # Multi-arch build
+          platforms: linux/amd64,linux/arm64
           build-args: |
             SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
             HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
           tags: |
-            datawhores/of-scraper:${{ inputs.version }}
-            datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
             ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
             type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
@@ -343,47 +410,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          # Capture output of the digest for signing
           outputs: |
             type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
 
-      - name: Write Docker Hub signing key to disk
-        # Only if Docker Hub image is pushed and signing is enabled
-        if: ${{ inputs.docker }}
-        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-        shell: bash
-        env:
-          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
-      - name: Sign the published Docker Hub image
-        # Only if Docker Hub image is pushed and signing is enabled
-        if: ${{ inputs.docker }}
-        env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_EXPERIMENTAL: "true"
-        run: |
-          echo "Signing Docker Hub image..."
-          # Sign both the versioned tag and dynamically applied tags for Docker Hub
-          docker_hub_tags="datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:latest"
-          fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:dev"
-          fi
-          echo "$docker_hub_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
-
       - name: Sign the published GHCR image (via OIDC/Keyless)
-        # This step is enabled and will attempt keyless signing for GHCR images.
-        # This relies on the 'id-token: write' permission and Sigstore's public services (Fulcio/Rekor).
-        # No private key or password secrets are needed for this signing method.
         if: ${{ inputs.docker }} # Only attempt if docker publishing is enabled
         env:
           COSIGN_EXPERIMENTAL: "true"
           # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
         run: |
           echo "Signing GHCR image via OIDC/Keyless signing..."
-          # Sign both the versioned tag and dynamically applied tags for GHCR
           ghcr_tags="ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
             ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:latest"
@@ -391,6 +427,4 @@ jobs:
           if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
             ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:dev"
           fi
-          # For OIDC-based signing, you typically don't pass '--key' or '--password'.
-          # Cosign uses the OIDC token available in the environment implicitly.
-          echo "$ghcr_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push.outputs.digest }}
+          echo "$ghcr_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push-ghcr.outputs.digest }} # Use build-and-push-ghcr ID
