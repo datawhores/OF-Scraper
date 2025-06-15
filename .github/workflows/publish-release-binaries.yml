@@ -147,49 +147,50 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-      - name: Upload Build Artifacts (with retries)
-        uses: Wandalen/wretry.action@master
-        with:
-          action: |
-            - uses: actions/upload-artifact@v4
-              with:
-                name: build-artifacts-${{ matrix.os }}
-                path: |
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
-                if-no-files-found: ignore
-          # Corrected inputs for Wandalen/wretry.action
-          attempt_limit: 3 # Changed from 'attempts'
-          time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
-  publish_release:
-    name: Publish GitHub Release
-    needs: [build_binaries]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Needed for creating the release
-      actions: read # Needed to download artifacts within this job
-    steps:
-      - name: Download all build artifacts (with retries)
-        uses: Wandalen/wretry.action@master
-        with:
-          action: |
-            - uses: actions/download-artifact@v4
-              with:
-                path: artifacts/
-          # Corrected inputs for Wandalen/wretry.action
-          attempt_limit: 3 # Changed from 'attempts'
-          time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
+      # - name: Upload Build Artifacts (with retries)
+      #   uses: Wandalen/wretry.action@master
+      #   with:
+      #     action: |
+      #       - uses: actions/upload-artifact@v4
+      #         with:
+      #           name: build-artifacts-${{ matrix.os }}
+      #           path: |
+      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
+      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
+      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
+      #           if-no-files-found: ignore
+      #     # Corrected inputs for Wandalen/wretry.action
+      #     attempt_limit: 3 # Changed from 'attempts'
+      #     time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
-      - name: List downloaded files for debugging
-        run: ls -R artifacts
+  # publish_release:
+  #   name: Publish GitHub Release
+  #   needs: [build_binaries]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write # Needed for creating the release
+  #     actions: read # Needed to download artifacts within this job
+  #   steps:
+  #     - name: Download all build artifacts (with retries)
+  #       uses: Wandalen/wretry.action@master
+  #       with:
+  #         action: |
+  #           - uses: actions/download-artifact@v4
+  #             with:
+  #               path: artifacts/
+  #         # Corrected inputs for Wandalen/wretry.action
+  #         attempt_limit: 3 # Changed from 'attempts'
+  #         time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
-      - name: Create or Update Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: artifacts/*/*
-          tag: ${{ inputs.input_version }}
-          name: "Release ${{ inputs.input_version }}"
-          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
-          allowUpdates: true
+  #     - name: List downloaded files for debugging
+  #       run: ls -R artifacts
+
+  #     - name: Create or Update Release
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         artifacts: artifacts/*/*
+  #         tag: ${{ inputs.input_version }}
+  #         name: "Release ${{ inputs.input_version }}"
+  #         body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
+  #         allowUpdates: true
