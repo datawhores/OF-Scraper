@@ -30,6 +30,7 @@ def get_commit_timestamp(owner, repo, sha, github_token):
 
 def main():
     # Get inputs from command line arguments
+    print(sys.argv)
     current_commit_timestamp = int(sys.argv[1])
     is_stable_release = sys.argv[2].lower() == 'true'
     is_dev_release = sys.argv[3].lower() == 'true'
