@@ -1,5 +1,5 @@
-# .github/workflows/publish-release-binaries.yml
-name: Build Binaries and Publish Release
+# .github/workflows/publish-release-dockers.yml
+name: Publish Docker Images
 
 on:
   workflow_call:
@@ -16,179 +16,314 @@ on:
         description: 'The full commit hash of the version.'
         required: true
         type: string
-# Permissions moved to top level, aligned with 'name:' and 'on:'
+      is_stable_release:
+        description: 'Is this a stable release?'
+        required: true
+        type: boolean
+      is_dev_release:
+        description: 'Is this a dev release?'
+        required: true
+        type: boolean
+      should_apply_stable_latest:
+        description: 'Should the stable latest tag be applied?'
+        required: true
+        type: boolean
+      should_apply_dev_latest:
+        description: 'Should the dev latest tag be applied?'
+        required: true
+        type: boolean
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+      COSIGN_PRIVATE_KEY: # Only required for Docker Hub signing, can be false if not always used
+        required: false
+# Permissions are at the top level of the workflow file (aligned with 'name:' and 'on:')
 permissions:
-  contents: write # Needed for checkout, creating releases
-  actions: read # Needed for gh CLI to download/upload workflow artifacts
+  contents: read
+  packages: write
+  id-token: write # CRUCIAL for GHCR authentication and signing
 
 jobs:
-  build_binaries:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        shell: ${{ matrix.shell }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            artifact_suffix: linux
-            shell: bash
-          - os: windows-latest
-            artifact_suffix: windows
-            shell: pwsh
-          - os: macos-latest
-            artifact_suffix: macos
-            shell: bash
-
+  # Docker Hub publishing - Stable
+  publish_docker_hub_stable:
+    name: Publish Stable to Docker Hub
+    if: ${{ inputs.is_stable_release }} # Only run if it's a stable release
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Full Git History
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
           fetch-depth: 0
-          fetch-tags: true
+          ref: ${{ inputs.input_version || github.ref }} # Use the input_version
+      - run: git checkout ${{ inputs.long_hash }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          python-version: '3.12.0' # Keep specific Python version for consistent builds
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Prepare Version for Build Tools
-        id: prep_build_version
-        run: |
-          PACKAGE_VERSION="${{ inputs.package_version }}" # Use the input package version
-          SANITIZED_TAG="${PACKAGE_VERSION//./_}"
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
-          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
-          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
-        shell: bash
-
-      - name: Install venv and dependencies
-        run: |
-          uv venv
-
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            . .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-
-          uv pip install --upgrade hatch-vcs setuptools-scm
-
-          echo "Hatch version: $(hatch version)"
-
-          uv sync --verbose
-        shell: bash
-
-      - name: Install PyInstaller
-        run: uv pip install pyinstaller==6.14.1
-
-      - name: Set UTF-8 environment (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "PYTHONUTF8=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        shell: pwsh
-
-      - name: Build Executable (File)
-        run: |
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          if [ "${{ runner.os }}" == "Windows" ]; then
-              VENV_ACTIVATE=".venv/Scripts/activate"
-              PYINSTALLER_OPTS="--python-option=utf8"
-              EXE_EXT=".exe"
-          else
-              VENV_ACTIVATE=".venv/bin/activate"
-              PYINSTALLER_OPTS="--clean --log DEBUG"
-              EXE_EXT=""
-          fi
-          source "$VENV_ACTIVATE"
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller --onefile \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}${EXE_EXT}" \
-            ${PYINSTALLER_OPTS} \
-            "$OFSCRAPER_EXECUTABLE"
-        shell: bash
-
-      - name: Build Executable (Dir)
-        run: |
-          OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
-
-          if [ "${{ runner.os }}" == "Windows" ]; then
-              VENV_ACTIVATE=".venv/Scripts/activate"
-              PYINSTALLER_OPTS="--python-option=utf8"
-          else
-              VENV_ACTIVATE=".venv/bin/activate"
-              PYINSTALLER_OPTS="--clean --log DEBUG"
-          fi
-          source "$VENV_ACTIVATE"
-          echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
-            ${PYINSTALLER_OPTS} \
-            "$OFSCRAPER_EXECUTABLE"
-        shell: bash
-
-      - name: Zip Directory (Unix)
-        if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
-        shell: bash
-
-      - name: Zip Directory (Windows)
-        if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
-        shell: pwsh
-
-      - name: Upload Build Artifacts (with retries)
-        uses: Wandalen/wretry.action@master
+      - name: Extract Docker metadata for Docker Hub (Stable)
+        id: meta_hub_stable
+        uses: docker/metadata-action@v5
         with:
-          action: |
-            - uses: actions/upload-artifact@v4
-              with:
-                name: build-artifacts-${{ matrix.os }}
-                path: |
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
-                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
-                if-no-files-found: ignore
-          attempts: 3
-          timeout_minutes: 5
+          images: datawhores/of-scraper
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=stable,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_stable_latest }}
+      - name: Build and Push Docker Hub Image (Stable)
+        id: build-and-push-hub-stable
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_hub_stable.outputs.tags }}
+          labels: ${{ steps.meta_hub_stable.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
 
-  publish_release:
-    name: Publish GitHub Release
-    needs: [build_binaries]
+      - name: Sign the published Docker Hub image (Stable)
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          TAGS: ${{ steps.meta_hub_stable.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-hub-stable.outputs.digest }}
+        run: |
+          echo "Signing Docker Hub stable image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY \
+             ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # Docker Hub publishing - Dev
+  publish_docker_hub_dev:
+    name: Publish Dev to Docker Hub
+    if: ${{ inputs.is_dev_release }} # Only run if it's a dev release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Needed for creating the release
-      actions: read # Needed to download artifacts within this job
     steps:
-      - name: Download all build artifacts (with retries)
-        uses: Wandalen/wretry.action@master
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          action: |
-            - uses: actions/download-artifact@v4
-              with:
-                path: artifacts/
-          attempts: 3
-          timeout_minutes: 5
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
 
-      - name: List downloaded files for debugging
-        run: ls -R artifacts
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
 
-      - name: Create or Update Release
-        uses: ncipollo/release-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          artifacts: artifacts/*/*
-          tag: ${{ inputs.input_version }}
-          name: "Release ${{ inputs.input_version }}"
-          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
-          allowUpdates: true
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata for Docker Hub (Dev)
+        id: meta_hub_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: datawhores/of-scraper
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=dev,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_dev_latest }}
+      - name: Build and Push Docker Hub Image (Dev)
+        id: build-and-push-hub-dev
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_hub_dev.outputs.tags }}
+          labels: ${{ steps.meta_hub_dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published Docker Hub image (Dev)
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          TAGS: ${{ steps.meta_hub_dev.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-hub-dev.outputs.digest }}
+        run: |
+          echo "Signing Docker Hub dev image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY \
+             ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # GHCR publishing - Stable
+  publish_ghcr_stable:
+    name: Publish Stable to GHCR
+    if: ${{ inputs.is_stable_release }} # Only run if it's a stable release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata for GHCR (Stable)
+        id: meta_ghcr_stable
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=stable,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_stable_latest }}
+      - name: Build and Push GHCR Image (Stable)
+        id: build-and-push-ghcr-stable
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_ghcr_stable.outputs.tags }}
+          labels: ${{ steps.meta_ghcr_stable.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published GHCR image (via OIDC/Keyless) (Stable)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          TAGS: ${{ steps.meta_ghcr_stable.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-ghcr-stable.outputs.digest }}
+        run: |
+          echo "Signing GHCR stable image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # GHCR publishing - Dev
+  publish_ghcr_dev:
+    name: Publish Dev to GHCR
+    if: ${{ inputs.is_dev_release }} # Only run if it's a dev release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata for GHCR (Dev)
+        id: meta_ghcr_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=dev,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_dev_latest }}
+      - name: Build and Push GHCR Image (Dev)
+        id: build-and-push-ghcr-dev
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_ghcr_dev.outputs.tags }}
+          labels: ${{ steps.meta_ghcr_dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published GHCR image (via OIDC/Keyless) (Dev)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          TAGS: ${{ steps.meta_ghcr_dev.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-ghcr-dev.outputs.digest }}
+        run: |
+          echo "Signing GHCR dev image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            ${IMAGES_TO_SIGN}
+        shell: bash
