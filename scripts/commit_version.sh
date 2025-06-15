@@ -80,9 +80,17 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       # This is the confirmed working gh api call with query parameters in the URL string
       LAST_SUCCESSFUL_RUN_SHA=$(gh api \
         --paginate \
-        "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=success&branch=${GITHUB_REF#refs/heads/}&event=push" \
+        "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=success&event=push" \
         --jq '.workflow_runs[0].head_sha' \
-        --header 'Accept: application/vnd.github.com/v3+json' \
+        --header 'Accept: application/vnd.github.com/v3+okay I have a smilar script called release_version.sh
+
+
+
+I want to incorpate is usage into this script
+
+
+
+I want this script to also handle maybe updating latest if it is newer than the last json' \
         --header 'X-GitHub-Api-Version: 2022-11-28' \
         2>/dev/null | head -n 1) # Suppress stderr, take first line
 

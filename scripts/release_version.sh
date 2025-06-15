@@ -1,68 +1,165 @@
 #!/bin/bash
-
-# A best practice for scripts: exit immediately if any command fails.
 set -e
 
-# --- Default fallbacks ---
-VERSION="0.0.0"
-SANITIZED_VERSION="0_0_0"
-LONG_HASH=$(printf '%0.s0' {1..40})
+# --- Get input version from environment variable ---
+# In GitHub Actions, INPUT_VERSION is passed from the workflow dispatch.
+# Locally, if not set, it defaults to empty, triggering fallback to Git tags.
+INPUT_VERSION="${INPUT_VERSION:-}"
 
-# --- Check if we are in a git repository ---
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    # We are in a git repo. Get the full commit hash.
-    LONG_HASH=$(git rev-parse HEAD)
+# --- Initialize outputs ---
+PACKAGE_VERSION=""
+LONG_HASH=""
+IS_STABLE_RELEASE="false"
+IS_DEV_RELEASE="false"
+SHOULD_APPLY_STABLE_LATEST="false"
+SHOULD_APPLY_DEV_LATEST="false"
 
-    # --- SYNCHRONIZED LOGIC for finding the Highest Tag ---
-    # This now matches the other script:
-    # Sort by committerdate in reverse (-committerdate) to put the newest commit first,
-    # then filter for a broader range of version-like tags, and take the very first match.
-    HIGHEST_TAG=$(git tag --sort=-committerdate | \
-                  grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
-                  head -n 1)
+# --- Determine version and Git info ---
+if [ -n "$INPUT_VERSION" ]; then
+    # Scenario: INPUT_VERSION is provided (e.g., from workflow_dispatch)
+    PACKAGE_VERSION=$(echo "$INPUT_VERSION" | sed 's/^v//')
 
-    # Determine the base version
-    if [ -z "$HIGHEST_TAG" ]; then
-        BASE_VERSION="0.0.0"
-        echo "No valid version tags found pointing to recent commits. Using fallback base version: ${BASE_VERSION}"
-    else
-        BASE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//')
-        echo "Highest version tag (based on newest commit): ${BASE_VERSION}"
+    # Get the commit hash for the input tag/version
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        # Check if INPUT_VERSION is a valid Git ref (tag or branch)
+        if git show-ref --quiet --tags "${INPUT_VERSION}" || git show-ref --quiet --heads "${INPUT_VERSION}"; then
+            LONG_HASH=$(git rev-parse "${INPUT_VERSION}")
+        else
+            # Fallback if INPUT_VERSION is just a string not a ref, use current HEAD
+            LONG_HASH=$(git rev-parse HEAD)
+        fi
     fi
-    
-    # The final version is JUST the base version for a clean release.
-    VERSION="${BASE_VERSION}"
-    # Sanitize the version for file names. Replacing dots and pluses with underscores.
-    # Note: Hyphens in versions (e.g., 1.0.0-beta) will be preserved.
-    SANITIZED_VERSION=$(echo "$VERSION" | sed 's/[.+]/_/g')
+    echo "Using INPUT_VERSION: ${INPUT_VERSION}"
 else
-    echo "Not a git repository. Using fallback version: ${VERSION}"
+    # Scenario: INPUT_VERSION is NOT provided (e.g., local execution without setting INPUT_VERSION)
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        # We are in a git repo. Get the full commit hash of current HEAD.
+        LONG_HASH=$(git rev-parse HEAD)
+
+        # Attempt to find the highest (newest by committer date) version tag in the repo
+        HIGHEST_TAG=$(git tag --sort=-committerdate | \
+                      grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | \
+                      head -n 1)
+
+        if [ -n "$HIGHEST_TAG" ]; then
+            PACKAGE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//')
+            echo "INPUT_VERSION not set. Derived version from Git tag: ${PACKAGE_VERSION}"
+        else
+            PACKAGE_VERSION="0.0.0" # Fallback if no valid tags found
+            echo "INPUT_VERSION not set and no valid Git tags found. Using fallback version: ${PACKAGE_VERSION}"
+        fi
+    else
+        # Not a git repo. Use absolute fallback.
+        PACKAGE_VERSION="0.0.0"
+        echo "Not a git repository. Using fallback version: ${PACKAGE_VERSION}"
+    fi
 fi
 
-# Print final values to console for local execution and easy debugging
-echo "Version: ${VERSION}"
-echo "Sanitized Version: ${SANITIZED_VERSION}"
-echo "Long Hash: ${LONG_HASH}"
+# --- Determine if it's a stable or dev release based on PACKAGE_VERSION ---
+# Stable: pure semantic versioning (e.g., 1.2.3)
+# Dev: contains any letters (e.g., alpha, beta, rc, dev)
+if [[ "$PACKAGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    IS_STABLE_RELEASE="true"
+elif [[ "$PACKAGE_VERSION" =~ [a-zA-Z] ]]; then
+    IS_DEV_RELEASE="true"
+fi
+
+# --- Determine if Latest/Dev Tags Should Be Applied (moved from workflow) ---
+# This logic requires `skopeo` and `jq` to be installed on the runner
+# and Docker/GHCR login to have occurred in a preceding step in the workflow.
+if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then # Only run this if in GitHub Actions context
+    # Get timestamp of the current commit (epoch seconds)
+    CURRENT_COMMIT_TIMESTAMP=$(git log -1 --format=%ct)
+
+    # Function to get tag creation timestamp from registry using skopeo
+    # Returns timestamp (epoch seconds) or 0 if tag not found/error
+    get_registry_tag_timestamp() {
+        local REGISTRY="$1" # e.g., docker.io or ghcr.io
+        local REPO="$2"     # e.g., datawhores/of-scraper or ghcr.io/owner/repo
+        local TAG="$3"      # e.g., latest, dev
+        local FULL_IMAGE="docker://$REGISTRY/$REPO:$TAG"
+        local CREATED_AT_TIMESTAMP=0
+
+        echo "Checking registry tag: $FULL_IMAGE"
+
+        # skopeo inspect --raw gets the manifest, jq extracts Created field
+        CREATED_ISO=$(skopeo inspect --raw "$FULL_IMAGE" 2>/dev/null | jq -r '.Created // ""')
+
+        if [ -n "$CREATED_ISO" ] && [ "$CREATED_ISO" != "null" ]; then
+            # Convert ISO 8601 to epoch seconds
+            CREATED_AT_TIMESTAMP=$(date -d "$CREATED_ISO" +%s)
+            echo "Found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)"
+        else
+            echo "Tag $FULL_IMAGE not found or creation time not available."
+        fi
+        echo "$CREATED_AT_TIMESTAMP"
+    }
+
+    # --- Get timestamps of existing 'latest' and 'dev' tags from registries ---
+    # These environment variables will be available from the workflow's job context
+    # Needs github.repository to be correctly set via ${{ github.repository }} from the workflow
+    LAST_STABLE_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "latest")
+    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "${{ env.GITHUB_REPOSITORY_SLUG }}" "latest") # Use env var for repo name
+
+    LAST_DEV_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "dev")
+    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "${{ env.GITHUB_REPOSITORY_SLUG }}" "dev") # Use env var for repo name
+
+    # --- Determine `should_apply_stable_latest` ---
+    # Apply if current commit is newer than EITHER existing latest tag, OR if neither latest tag exists
+    if [[ "$IS_STABLE_RELEASE" == "true" ]]; then
+        if (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_HUB_TIMESTAMP )) || \
+           (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_GHCR_TIMESTAMP )) || \
+           (("$LAST_STABLE_HUB_TIMESTAMP" == "0" && "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then
+            SHOULD_APPLY_STABLE_LATEST="true"
+        fi
+    fi
+
+    # --- Determine `should_apply_dev_latest` ---
+    # Apply if current commit is newer than EITHER existing dev tag, OR if neither dev tag exists
+    if [[ "$IS_DEV_RELEASE" == "true" ]]; then
+        if (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_HUB_TIMESTAMP )) || \
+           (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_GHCR_TIMESTAMP )) || \
+           (("$LAST_DEV_HUB_TIMESTAMP" == "0" && "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then
+            SHOULD_APPLY_DEV_LATEST="true"
+        fi
+    fi
+
+    echo "Debug - Current commit timestamp: $CURRENT_COMMIT_TIMESTAMP"
+    echo "Debug - Latest Stable Hub Timestamp: $LAST_STABLE_HUB_TIMESTAMP"
+    echo "Debug - Latest Stable GHCR Timestamp: $LAST_STABLE_GHCR_TIMESTAMP"
+    echo "Debug - Latest Dev Hub Timestamp: $LAST_DEV_HUB_TIMESTAMP"
+    echo "Debug - Latest Dev GHCR Timestamp: $LAST_DEV_GHCR_TIMESTAMP"
+fi
+
+# --- Print final values to console (for local execution and debugging) ---
+echo "Final Package Version: ${PACKAGE_VERSION}"
+echo "Long Commit Hash: ${LONG_HASH}"
+echo "Is Stable Release: ${IS_STABLE_RELEASE}"
+echo "Is Dev Release: ${IS_DEV_RELEASE}"
+echo "Should Apply Stable Latest: ${SHOULD_APPLY_STABLE_LATEST}"
+echo "Should Apply Dev Latest: ${SHOULD_APPLY_DEV_LATEST}"
 
 
-# --- Environment-Specific Output ---
-
-# This block now handles both GitHub Actions and local execution
+# --- Environment-Specific Output (for GitHub Actions) ---
 if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
-    # GitHub Actions: Write to special files for other steps and jobs
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
-    
-    # For subsequent steps in the same job
-    echo "SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
-    echo "HATCH_VCS_PRETEND_VERSION=${VERSION}" >> "$GITHUB_ENV"
-    
+
+    # For subsequent steps in the same job (e.g., for build arguments)
+    echo "SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
+    echo "HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
+    # To pass github.repository as an environment variable to the script for skopeo calls
+    echo "GITHUB_REPOSITORY_SLUG=$(echo "${{ github.repository }}" | cut -d'/' -f2)" >> "$GITHUB_ENV" # Added this line
+
     # For other jobs that depend on this one
-    echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
-    echo "SANITIZED_VERSION=${SANITIZED_VERSION}" >> "$GITHUB_OUTPUT"
-    echo "LONG_HASH=${LONG_HASH}" >> "$GITHUB_OUTPUT"
+    echo "long_hash=${LONG_HASH}" >> "$GITHUB_OUTPUT"
+    echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+    echo "is_stable_release=${IS_STABLE_RELEASE}" >> "$GITHUB_OUTPUT"
+    echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
+    echo "should_apply_stable_latest=${SHOULD_APPLY_STABLE_LATEST}" >> "$GITHUB_OUTPUT"
+    echo "should_apply_dev_latest=${SHOULD_APPLY_DEV_LATEST}" >> "$GITHUB_OUTPUT"
 else
     # Local Use: Export variables. This only works if the script is run with `source`.
-    export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}
-    export HATCH_VCS_PRETEND_VERSION=${VERSION}
+    export SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}
+    export HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}
     echo "✅ Local environment variables exported. To use them, run this script with 'source'."
 fi

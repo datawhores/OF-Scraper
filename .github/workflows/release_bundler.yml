@@ -1,45 +1,95 @@
-name: package builder release
-permissions: read-all
+# .github/workflows/package-builder-release.yml
+
+name: Package Builder Release
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The exact git tag to build (e.g., v8.4.1)'
-        required: true
+        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.'
+        required: true # Changed to optional
       files:
-        description: 'Build binary files? (true/false)'
-        required: true
+        description: 'Build binary files? (t/f)'
+        required: false
         type: boolean
       pip:
-        description: 'Publish to PyPI? (true/false)'
-        required: true
+        description: 'Publish to PyPI? (t/f)'
+        required: false
         type: boolean
       docker:
-        description: 'Publish to Docker Hub & GHCR (latest)? (true/false)'
-        required: true
+        description: 'Publish to Docker Hub & GHCR (including latest/dev tags)? (t/f)'
+        required: false
         type: boolean
-      docker_old:
-        description: 'Publish to Docker Hub & GHCR (version only)? (true/false)'
-        required: true
-        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write # For OIDC, used by cosign, and CRUCIAL for GHCR authentication
+
 jobs:
-  get_commit:
+  determine_tags_and_versions:
+    name: Determine Release Info and Tagging Logic
     runs-on: ubuntu-latest
     outputs:
-      long: ${{ steps.commit.outputs.long }}
+      long_hash: ${{ steps.release_info.outputs.long_hash }}
+      package_version: ${{ steps.release_info.outputs.package_version }}
+      is_stable_release: ${{ steps.release_info.outputs.is_stable_release }}
+      is_dev_release: ${{ steps.release_info.outputs.is_dev_release }}
+      should_apply_stable_latest: ${{ steps.release_info.outputs.should_apply_stable_latest }}
+      should_apply_dev_latest: ${{ steps.release_info.outputs.should_apply_dev_latest }}
     steps:
-      - name: Checkout code at specified version
+      - name: Checkout Code (Optional Version or Current Branch)
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.version }}
-      - name: Get commit hash
-        id: commit
-        run: echo "long=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
+          fetch-depth: 0 # Needed for git log and tag comparisons
+          fetch-tags: true
+
+      - name: Make release_version.sh executable
+        run: chmod +x ./scripts/release_version.sh
+
+      ---
+      ## Docker Registry Inspection Setup (Pre-script)
+      ---
+      # These logins are specifically for this job to query registry APIs, not for building/pushing.
+      # They must happen BEFORE the script runs if the script is to inspect registry tags.
+      - name: Set up Docker Buildx (for manifest inspection)
+        if: ${{ inputs.docker }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub (for manifest inspection)
+        if: ${{ inputs.docker }}
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GHCR (for manifest inspection)
+        if: ${{ inputs.docker }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # This implicitly uses OIDC due to id-token: write
+
+      - name: Install Skopeo and JQ
+        if: ${{ inputs.docker }}
+        run: sudo apt-get update && sudo apt-get install -y skopeo jq
+
+      - name: Get Release Info and Tagging Logic from Script
+        id: release_info
+        env:
+          INPUT_VERSION: ${{ inputs.version }} # Pass input version (might be empty) to script
+          # Pass the GitHub repository name to the script so it can use it for GHCR registry lookups
+          GITHUB_REPOSITORY_SLUG: ${{ github.repository }} # This is `owner/repo-name`
+        run: ./scripts/release_version.sh
+        # The script now handles all output to GITHUB_OUTPUT
 
   build_binaries:
     if: ${{ inputs.files }}
     name: Build on ${{ matrix.os }}
-    needs: [get_commit]
+    needs: [determine_tags_and_versions]
     runs-on: ${{ matrix.os }}
 
     defaults:
@@ -47,6 +97,7 @@ jobs:
         shell: ${{ matrix.shell }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -66,61 +117,46 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ inputs.version }}
-      - name: Set up Python
+          ref: ${{ inputs.version || github.ref }} # Ensure correct ref for local build environment
+      - name: Set up Python # This installs Python onto the runner
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.0'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-  
-      - name: Get version from workflow input
-        id: get_version
+
+      - name: Prepare Version for Build Tools
+        id: prep_build_version
         run: |
-          # The version is passed directly from the workflow input
-          INPUT_VERSION="${{ inputs.version }}"
-          echo "Using version from input: $INPUT_VERSION"
-
-          # Remove 'v' prefix if present for consistency with build tools
-          SELECTED_TAG=${INPUT_VERSION#v}
-          echo "Using version for build tools (no 'v' prefix): $SELECTED_TAG"
-
+          PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
           # Create a sanitized version for filenames by replacing '.' with '_'
-          SANITIZED_TAG="${SELECTED_TAG//./_}"
-          echo "Sanitized version for filenames: $SANITIZED_TAG"
-
-          # Set environment variables for build tools
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-          echo "HATCH_VCS_PRETEND_VERSION=$SELECTED_TAG" >> $GITHUB_ENV
-          
-          # Set step outputs for both versions
-          echo "selected_tag=$SELECTED_TAG" >> "$GITHUB_OUTPUT"
-          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
+          SANITIZED_TAG="${PACKAGE_VERSION//./_}"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT" # Output sanitized tag for artifact names
         shell: bash
 
       - name: Install venv and dependencies
         run: |
           uv venv
-          
-          # Activate venv based on OS
+
           if [ "${{ runner.os }}" == "Windows" ]; then
             . .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          
-          # Install versioning dependencies
+
           uv pip install --upgrade hatch-vcs setuptools-scm
-          
-          # Verify version detection
+
           echo "Hatch version: $(hatch version)"
-          
-          # Run the sync
+
           uv sync --verbose
         shell: bash
+
       - name: Install PyInstaller
         run: uv pip install pyinstaller==6.14.1
+
       - name: Set UTF-8 environment (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -130,10 +166,8 @@ jobs:
 
       - name: Build Executable (File)
         run: |
-          # Set common variables
           OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
 
-          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -143,22 +177,18 @@ jobs:
               PYINSTALLER_OPTS="--clean --log DEBUG"
               EXE_EXT=""
           fi
-          # Activate venv
-          source $VENV_ACTIVATE
-          # Build command
+          source "$VENV_ACTIVATE"
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
           pyinstaller --onefile \
-            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}$EXE_EXT" \
-            $PYINSTALLER_OPTS \
+            --name "ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}${EXE_EXT}" \
+            ${PYINSTALLER_OPTS} \
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
 
       - name: Build Executable (Dir)
         run: |
-          # Set common variables
           OFSCRAPER_EXECUTABLE="ofscraper/__main__.py"
 
-          # OS-specific settings
           if [ "${{ runner.os }}" == "Windows" ]; then
               VENV_ACTIVATE=".venv/Scripts/activate"
               PYINSTALLER_OPTS="--python-option=utf8"
@@ -166,40 +196,38 @@ jobs:
               VENV_ACTIVATE=".venv/bin/activate"
               PYINSTALLER_OPTS="--clean --log DEBUG"
           fi
-          # Activate venv
-          source $VENV_ACTIVATE
-          # Build command
+          source "$VENV_ACTIVATE"
           echo "Building executable from: $OFSCRAPER_EXECUTABLE"
-          pyinstaller\
+          pyinstaller \
             --name "ofscraper_${{ matrix.artifact_suffix }}_dir" \
-            $PYINSTALLER_OPTS \
+            ${PYINSTALLER_OPTS} \
             "$OFSCRAPER_EXECUTABLE"
         shell: bash
 
       - name: Zip Directory (Unix)
         if: runner.os != 'Windows'
-        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
+        run: zip -r "dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip" "dist/ofscraper_${{ matrix.artifact_suffix }}_dir"
         shell: bash
 
       - name: Zip Directory (Windows)
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip -Force
+        run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
-        
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ matrix.os }}
           path: |
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.exe
-            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.get_version.outputs.sanitized_tag }}.zip
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
+            dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
           if-no-files-found: ignore
-          
+
   publish_release:
     name: Publish GitHub Release
     if: ${{ inputs.files }}
-    needs: [build_binaries, get_commit]
+    needs: [build_binaries, determine_tags_and_versions]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -218,281 +246,152 @@ jobs:
           artifacts: artifacts/*/*
           tag: ${{ inputs.version }}
           name: "Release ${{ inputs.version }}"
-          body: "Release build for version ${{ inputs.version }}, created from commit hash `${{ needs.get_commit.outputs.long }}`."
+          body: "Release build for version ${{ inputs.version }}, created from commit hash `${{ needs.determine_tags_and_versions.outputs.long_hash }}`."
           allowUpdates: true
-          
+
   pypi:
-    needs: [get_commit]
+    needs: [determine_tags_and_versions]
     if: ${{ inputs.pip }}
     runs-on: ubuntu-latest
     name: create pypi
+    permissions:
+      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ inputs.version }}
-      - run: git checkout ${{ needs.get_commit.outputs.long }}
-
+          ref: ${{ inputs.version || github.ref }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.5
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-
       - name: Install Build and Publish Tools
         run: uv pip install hatch twine
-
       - name: Build Package with Hatch
         run: |
-          # Get version from input and remove 'v' prefix
-          INPUT_VERSION="${{ inputs.version }}"
-          PACKAGE_VERSION=${INPUT_VERSION#v}
+          PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
           echo "Setting package version to $PACKAGE_VERSION for the build."
-
-          # Set the version environment variable for hatch-vcs and build
           export HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION
           hatch build
         shell: bash
 
       - name: Publish to PyPI with Twine
         env:
-          # Twine uses these environment variables for authentication
           TWINE_USERNAME: __token__
+          # If using PyPI trusted publisher, TWINE_PASSWORD is not needed.
+          # Otherwise, ensure this secret is configured.
           TWINE_PASSWORD: ${{ secrets.pypi }}
         run: twine upload "dist/*"
-          
-  docker:
-    needs: [get_commit]
+
+  docker: # Docker Hub & GHCR combined
+    needs: [determine_tags_and_versions]
     if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
-    name: DockerHub Release
+    name: Docker Hub & GHCR Release
     permissions:
       contents: read
       packages: write
-      id-token: write
+      id-token: write # CRUCIAL for GHCR authentication
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.version }}
-      - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: Prepare version string
-        id: prep_version
-        run: |
-          INPUT_VERSION="${{ inputs.version }}"
-          PACKAGE_VERSION=${INPUT_VERSION#v}
-          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+          ref: ${{ inputs.version || github.ref }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Install cosign
-        uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: v1.13.1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: sigstore/cosign-installer@v3.5.0 # Latest stable cosign installer
+
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: push image to Docker Hub
-        id: build-and-push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-          tags: |
-            datawhores/of-scraper:${{ inputs.version }}
-            datawhores/of-scraper:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
-      - name: cosign-installer
-        uses: sigstore/cosign-installer@v3.0.5
-      - name: Write signing key to disk
-        run: echo "$KEY" > cosign.key
-        shell: bash
-        env:
-          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      - name: Sign the published Docker image
-        env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_EXPERIMENTAL: "true"
-        run: echo "datawhores/of-scraper:${{ steps.prep_version.outputs.package_version }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
-  github_docker:
-    needs: [get_commit]
-    if: ${{ inputs.docker }}
-    runs-on: ubuntu-latest
-    name: Docker GHCR Release
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.version }}
-      - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: Prepare version string
-        id: prep_version
-        run: |
-          INPUT_VERSION="${{ inputs.version }}"
-          PACKAGE_VERSION=${INPUT_VERSION#v}
-          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Install cosign
-        uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: v1.13.1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: login to ghcr
-        uses: docker/login-action@v2
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN}}
-      - name: push image to ghcr
-        id: build-and-push2
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-          tags: |
-            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
-            ghcr.io/datawhores/of-scraper:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          password: ${{ secrets.GITHUB_TOKEN }} # Authenticates with GHCR via OIDC due to id-token: write
 
-  docker_old:
-    needs: [get_commit]
-    if: ${{ inputs.docker_old }}
-    runs-on: ubuntu-latest
-    name: DockerHub Release Old
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.version }}
-      - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: Prepare version string
-        id: prep_version
-        run: |
-          INPUT_VERSION="${{ inputs.version }}"
-          PACKAGE_VERSION=${INPUT_VERSION#v}
-          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Install cosign
-        uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: v1.13.1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: push image to Docker Hub
+      - name: Build and Push Docker Images
         id: build-and-push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64 # Multi-arch build
           build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
+            datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
+            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
+            ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
+            type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
+            type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-      - name: cosign-installer
-        uses: sigstore/cosign-installer@v3.0.5
-      - name: Write signing key to disk
-        run: echo "$KEY" > cosign.key
+          # Capture output of the digest for signing
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
+
+      - name: Write Docker Hub signing key to disk
+        # Only if Docker Hub image is pushed and signing is enabled
+        if: ${{ inputs.docker }}
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      - name: Sign the published Docker image
+
+      - name: Sign the published Docker Hub image
+        # Only if Docker Hub image is pushed and signing is enabled
+        if: ${{ inputs.docker }}
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: echo "datawhores/of-scraper:${{ steps.prep_version.outputs.package_version }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
-
-  docker_old_github:
-    needs: [get_commit]
-    if: ${{ inputs.docker_old }}
-    runs-on: ubuntu-latest
-    name: GHCR Release Old
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.version }}
-      - run: git checkout ${{ needs.get_commit.outputs.long }}
-      - name: Prepare version string
-        id: prep_version
         run: |
-          INPUT_VERSION="${{ inputs.version }}"
-          PACKAGE_VERSION=${INPUT_VERSION#v}
-          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Install cosign
-        uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: v1.13.1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: login to ghcr
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN}}
-      - name: push image to ghcr
-        id: build-and-push2
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ steps.prep_version.outputs.package_version }}
-          tags: |
-            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          push: true
+          echo "Signing Docker Hub image..."
+          # Sign both the versioned tag and dynamically applied tags for Docker Hub
+          docker_hub_tags="datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
+            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:latest"
+          fi
+          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
+            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:dev"
+          fi
+          echo "$docker_hub_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
+
+      - name: Sign the published GHCR image (via OIDC/Keyless)
+        # This step is enabled and will attempt keyless signing for GHCR images.
+        # This relies on the 'id-token: write' permission and Sigstore's public services (Fulcio/Rekor).
+        # No private key or password secrets are needed for this signing method.
+        if: ${{ inputs.docker }} # Only attempt if docker publishing is enabled
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
+        run: |
+          echo "Signing GHCR image via OIDC/Keyless signing..."
+          # Sign both the versioned tag and dynamically applied tags for GHCR
+          ghcr_tags="ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
+            ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:latest"
+          fi
+          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
+            ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:dev"
+          fi
+          # For OIDC-based signing, you typically don't pass '--key' or '--password'.
+          # Cosign uses the OIDC token available in the environment implicitly.
+          echo "$ghcr_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push.outputs.digest }}
