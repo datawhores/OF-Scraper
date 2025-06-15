@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The exact git tag to build (e.g., 8.4.1 or 8.4.1.dev8)'
+        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.'
         required: true
       files:
         description: 'Build binary files? (t/f)'
@@ -32,11 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       long_hash: ${{ steps.release_info.outputs.long_hash }}
+      short_hash: ${{ steps.release_info.outputs.short_hash }} # Added output
       package_version: ${{ steps.release_info.outputs.package_version }}
       is_stable_release: ${{ steps.release_info.outputs.is_stable_release }}
       is_dev_release: ${{ steps.release_info.outputs.is_dev_release }}
       should_apply_stable_latest: ${{ steps.release_info.outputs.should_apply_stable_latest }}
       should_apply_dev_latest: ${{ steps.release_info.outputs.should_apply_dev_latest }}
+      commit_timestamp: ${{ steps.release_info.outputs.commit_timestamp }} # Added output
     steps:
       - name: Checkout Code (Optional Version or Current Branch)
         uses: actions/checkout@v4
@@ -80,7 +82,6 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }} # Pass input version (might be empty) to script
           # Pass the GitHub repository name to the script so it can use it for GHCR registry lookups
-          # The script will then parse this to get just the 'repo-name' part
           GITHUB_REPOSITORY_SLUG: ${{ github.repository }}
         run: ./scripts/release_version.sh
         # The script now handles all output to GITHUB_OUTPUT
@@ -318,6 +319,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract Docker metadata for Docker Hub
+        id: meta_hub
+        uses: docker/metadata-action@v5
+        with:
+          images: datawhores/of-scraper
+          tags: |
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }}
+            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}
+            type=raw,value=${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}-${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}
+            type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
+            type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
+
       - name: Build and Push Docker Hub Image
         id: build-and-push-hub
         uses: docker/build-push-action@v5
@@ -327,11 +341,8 @@ jobs:
           build-args: |
             SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
             HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
-          tags: |
-            datawhores/of-scraper:${{ inputs.version }}
-            datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
-            type=raw,value=datawhores/of-scraper:latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
-            type=raw,value=datawhores/of-scraper:dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }},
+          tags: ${{ steps.meta_hub.outputs.tags }} # Use output from metadata action
+          labels: ${{ steps.meta_hub.outputs.labels }} # Use output from metadata action
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
@@ -352,14 +363,23 @@ jobs:
           COSIGN_EXPERIMENTAL: "true"
         run: |
           echo "Signing Docker Hub image..."
-          docker_hub_tags="datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          # Sign both the versioned tag and dynamically applied tags for Docker Hub
+          # Need to reconstruct the list of actual pushed tags for signing
+          docker_hub_signed_tags=""
+          if [ -n "${{ inputs.version }}" ]; then
+            docker_hub_signed_tags+=" datawhores/of-scraper:${{ inputs.version }}"
+          fi
+          docker_hub_signed_tags+=" datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          docker_hub_signed_tags+=" datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}"
+          docker_hub_signed_tags+=" datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}-${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}"
+
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:latest"
+            docker_hub_signed_tags+=" datawhores/of-scraper:latest"
           fi
           if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            docker_hub_tags="${docker_hub_tags} datawhores/of-scraper:dev"
+            docker_hub_signed_tags+=" datawhores/of-scraper:dev"
           fi
-          echo "$docker_hub_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push-hub.outputs.digest }} # Use build-and-push-hub ID
+          echo "$docker_hub_signed_tags" | xargs -n 1 -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push-hub.outputs.digest }}
 
   # New job for GHCR publishing
   publish_ghcr:
@@ -393,6 +413,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} # Authenticates with GHCR via OIDC due to id-token: write
 
+      - name: Extract Docker metadata for GHCR
+        id: meta_ghcr
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
+            type=raw,value=dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}
+
       - name: Build and Push GHCR Image
         id: build-and-push-ghcr
         uses: docker/build-push-action@v5
@@ -402,11 +432,9 @@ jobs:
           build-args: |
             SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
             HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
-          tags: |
-            ghcr.io/datawhores/of-scraper:${{ inputs.version }}
-            ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
-            type=raw,value=ghcr.io/datawhores/of-scraper:latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
-            type=raw,value=ghcr.io/datawhores/of-scraper:dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}          cache-from: type=gha
+          tags: ${{ steps.meta_ghcr.outputs.tags }} # Use output from metadata action
+          labels: ${{ steps.meta_ghcr.outputs.labels }} # Use output from metadata action
+          cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
           outputs: |
@@ -419,11 +447,20 @@ jobs:
           # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
         run: |
           echo "Signing GHCR image via OIDC/Keyless signing..."
-          ghcr_tags="ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          # Sign both the versioned tag and dynamically applied tags for GHCR
+          # Need to reconstruct the list of actual pushed tags for signing
+          ghcr_signed_tags=""
+          if [ -n "${{ inputs.version }}" ]; then
+            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ inputs.version }}"
+          fi
+          ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}"
+          ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}-${{ needs.determine_tags_and_versions.outputs.short_hash }}-${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}"
+
           if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:latest"
+            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:latest"
           fi
           if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            ghcr_tags="${ghcr_tags} ghcr.io/datawhores/of-scraper:dev"
+            ghcr_signed_tags+=" ghcr.io/${{ github.repository }}:dev"
           fi
-          echo "$ghcr_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push-ghcr.outputs.digest }} # Use build-and-push-ghcr ID
+          echo "$ghcr_signed_tags" | xargs -n 1 -I {} cosign sign --yes {}@${{ steps.build-and-push-ghcr.outputs.digest }}

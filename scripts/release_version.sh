@@ -9,10 +9,12 @@ INPUT_VERSION="${INPUT_VERSION:-}"
 # --- Initialize outputs ---
 PACKAGE_VERSION=""
 LONG_HASH=""
+SHORT_HASH="" # Added initialization
 IS_STABLE_RELEASE="false"
 IS_DEV_RELEASE="false"
 SHOULD_APPLY_STABLE_LATEST="false"
 SHOULD_APPLY_DEV_LATEST="false"
+CURRENT_COMMIT_TIMESTAMP="" # Added initialization
 
 # --- Determine version and Git info ---
 if [ -n "$INPUT_VERSION" ]; then
@@ -54,6 +56,9 @@ else
         echo "Not a git repository. Using fallback version: ${PACKAGE_VERSION}"
     fi
 fi
+
+# Derive short hash AFTER LONG_HASH is determined
+SHORT_HASH=$(echo "${LONG_HASH}" | cut -c1-7)
 
 # --- Determine if it's a stable or dev release based on PACKAGE_VERSION ---
 # Stable: pure semantic versioning (e.g., 1.2.3)
@@ -133,10 +138,12 @@ fi
 # --- Print final values to console (for local execution and debugging) ---
 echo "Final Package Version: ${PACKAGE_VERSION}"
 echo "Long Commit Hash: ${LONG_HASH}"
+echo "Short Commit Hash: ${SHORT_HASH}" # Added debug print
 echo "Is Stable Release: ${IS_STABLE_RELEASE}"
 echo "Is Dev Release: ${IS_DEV_RELEASE}"
 echo "Should Apply Stable Latest: ${SHOULD_APPLY_STABLE_LATEST}"
 echo "Should Apply Dev Latest: ${SHOULD_APPLY_DEV_LATEST}"
+echo "Commit Timestamp: ${CURRENT_COMMIT_TIMESTAMP}" # Added debug print
 
 
 # --- Environment-Specific Output (for GitHub Actions) ---
@@ -146,15 +153,17 @@ if [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     # For subsequent steps in the same job (e.g., for build arguments)
     echo "SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
     echo "HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
-    # GITHUB_REPOSITORY_SLUG is now passed directly as an env var to the script step in the workflow
+    # GITHUB_REPOSITORY_SLUG is passed directly as an env var to the script step in the workflow
 
     # For other jobs that depend on this one
     echo "long_hash=${LONG_HASH}" >> "$GITHUB_OUTPUT"
+    echo "short_hash=${SHORT_HASH}" >> "$GITHUB_OUTPUT" # Added output
     echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
     echo "is_stable_release=${IS_STABLE_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "should_apply_stable_latest=${SHOULD_APPLY_STABLE_LATEST}" >> "$GITHUB_OUTPUT"
     echo "should_apply_dev_latest=${SHOULD_APPLY_DEV_LATEST}" >> "$GITHUB_OUTPUT"
+    echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT" # Added output
 else
     # Local Use: Export variables. This only works if the script is run with `source`.
     export SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}
