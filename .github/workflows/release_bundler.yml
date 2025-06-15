@@ -328,10 +328,8 @@ jobs:
             SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
             HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
           tags: |
-            # Base version tags
             datawhores/of-scraper:${{ inputs.version }}
             datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
-            # Conditional latest/dev tags for Docker Hub
             type=raw,value=datawhores/of-scraper:latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
             type=raw,value=datawhores/of-scraper:dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }},
           cache-from: type=gha
@@ -405,10 +403,8 @@ jobs:
             SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
             HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}
           tags: |
-            # Base version tags
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
             ghcr.io/datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}
-            # Conditional latest/dev tags for GHCR
             type=raw,value=ghcr.io/datawhores/of-scraper:latest,enable=${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}
             type=raw,value=ghcr.io/datawhores/of-scraper:dev,enable=${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}          cache-from: type=gha
           cache-to: type=gha,mode=max
