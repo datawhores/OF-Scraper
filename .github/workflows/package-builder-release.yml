@@ -22,6 +22,11 @@ on:
         required: true
         type: boolean
 
+# Enable verbose debugging for the entire workflow
+env:
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
+
 permissions:
   contents: write # Needed for checkout, creating releases
   packages: write # Needed for pushing to GHCR/Docker Hub
@@ -49,6 +54,8 @@ jobs:
           ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
           fetch-depth: 0 # Needed for git log and tag comparisons
           fetch-tags: true
+          repository: ${{ github.repository }} # Explicitly pass the repository name (owner/repo)
+          github-server-url: ${{ github.server_url }} # Explicitly pass the GitHub server URL (https://github.com)
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
@@ -65,8 +72,8 @@ jobs:
     if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
+      actions: read # Needed for the Python script to list workflow runs and jobs
+      contents: read # For checking out the script itself
     outputs:
       should_apply_stable_latest: ${{ steps.run_python_logic.outputs.should_apply_stable_latest }}
       should_apply_dev_latest: ${{ steps.run_python_logic.outputs.should_apply_dev_latest }}
@@ -75,11 +82,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.x'
 
       - name: Install Python dependencies
         run: pip install requests
@@ -87,7 +96,7 @@ jobs:
       - name: Execute Latest Tag Logic Script
         id: run_python_logic
         run: python scripts/determine_docker_stable_dev_tags.py \
-          "${{ needs.outputs.commit_timestamp }}" \
+          "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
         env:
@@ -109,6 +118,8 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           ref: ${{ inputs.version || github.ref }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
       - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -122,8 +133,8 @@ jobs:
       - name: Build Package with Hatch
         run: |
           PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
-          echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV" # Corrected output to GITHUB_ENV for env vars
-          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV" # Corrected output to GITHUB_ENV for env vars
+          echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           hatch build
         shell: bash
 
@@ -138,7 +149,7 @@ jobs:
     name: Build & Release Binaries
     needs: [determine_tags_and_versions]
     if: ${{ inputs.files }}
-    uses: ./.github/workflows/publish-release-binaries.yml
+    uses: ./.github/workflows/publish-release-binaries.yml # No @ref for local callable
     with:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
@@ -148,7 +159,7 @@ jobs:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
     if: ${{ inputs.docker }}
-    uses: ./.github/workflows/publish-release-dockers.yml
+    uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
