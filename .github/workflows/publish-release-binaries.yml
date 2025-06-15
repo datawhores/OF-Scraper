@@ -147,43 +147,17 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-            # --- START DEBUGGING THE PATH STRING ---
-      - name: Debug Generated Artifact Paths
-        run: |
-          SUFFIX="${{ matrix.artifact_suffix }}"
-          TAG_SANITIZED="${{ steps.prep_build_version.outputs.sanitized_tag }}"
-          GENERATED_PATH_ARG="dist/ofscraper_${SUFFIX}_${TAG_SANITIZED}"
-          GENERATED_EXE_PATH_ARG="dist/ofscraper_${SUFFIX}_${TAG_SANITIZED}.exe"
-          GENERATED_ZIP_PATH_ARG="dist/ofscraper_${SUFFIX}_${TAG_SANITIZED}.zip"
-
-          FULL_PATH_STRING="${GENERATED_PATH_ARG},${GENERATED_EXE_PATH_ARG},${GENERATED_ZIP_PATH_ARG}"
-
-          echo "::debug::Sanitized Tag: $TAG_SANITIZED" # Check if this is empty
-          echo "::debug::Artifact Suffix: $SUFFIX"     # Check if this is empty
-          echo "::debug::Constructed Full Path String for Upload: '$FULL_PATH_STRING'"
-          echo "::debug::Length of Constructed Path String: ${#FULL_PATH_STRING}"
-
-          # Optional: Check if files actually exist for these constructed paths
-          echo "::debug::Checking actual file existence before upload:"
-          test -f "$GENERATED_PATH_ARG" && echo "::debug::Found: $GENERATED_PATH_ARG" || echo "::warning::NOT found: $GENERATED_PATH_ARG"
-          test -f "$GENERATED_EXE_PATH_ARG" && echo "::debug::Found: $GENERATED_EXE_PATH_ARG" || echo "::warning::NOT found: $GENERATED_EXE_PATH_ARG"
-          test -f "$GENERATED_ZIP_PATH_ARG" && echo "::debug::Found: $GENERATED_ZIP_PATH_ARG" || echo "::warning::NOT found: $GENERATED_ZIP_PATH_ARG"
-        shell: bash
-      # --- END DEBUGGING THE PATH STRING ---
-
-
-      # - name: Upload Build Artifacts (with retries)
-      #   uses: Wandalen/wretry.action@master
-      #   with:
-      #     action: |
-      #       - uses: actions/upload-artifact@v4
-      #         with:
-      #           name: build-artifacts-${{ matrix.os }}
-      #           path: |
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
-      #           if-no-files-found: ignore
+      - name: Upload Build Artifacts (with retries)
+        uses: Wandalen/wretry.action@master
+        with:
+          action: actions/upload-artifact@v4
+          with: |
+              name: build-artifacts-${{ matrix.os }}
+              path: |
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
+                  dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
+              if-no-files-found: ignore
       #     # Corrected inputs for Wandalen/wretry.action
       #     attempt_limit: 3 # Changed from 'attempts'
       #     time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
