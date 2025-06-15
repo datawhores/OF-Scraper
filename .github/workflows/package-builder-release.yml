@@ -158,7 +158,6 @@ jobs:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
-      # is_stable_release: ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}
-      # is_dev_release: ${{ needs.determine_tags_and_versions.outputs.is_dev_release }}
-      should_apply_stable_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_stable_latest }}
+      is_stable_release: true
+      should_apply_stable_latest: true
       should_apply_dev_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_dev_latest }}
