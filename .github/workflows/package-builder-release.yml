@@ -158,7 +158,7 @@ jobs:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
-      is_stable_release: false
-      is_dev_release: true
+      is_stable_release: "false"
+      is_dev_release: "true"
       should_apply_stable_latest: ""
       should_apply_dev_latest: ""
