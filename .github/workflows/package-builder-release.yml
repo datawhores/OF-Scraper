@@ -21,6 +21,11 @@ on:
         description: 'Publish to Docker Hub & GHCR (t/f)'
         required: true
         type: boolean
+      test_pypi: # NEW INPUT: For testing PyPI upload
+        description: 'Perform a test upload to Test PyPI? (t/f)'
+        required: true
+        type: boolean
+        default: false # Default to false to prevent accidental test uploads
 
 # Enable verbose debugging for the entire workflow
 env:
@@ -104,13 +109,15 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
 
+  # Existing PyPI Publish Job (for REAL PyPI)
   pypi:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip }}
+    # This job runs if 'pip' is true AND 'test_pypi' is false
+    if: ${{ inputs.pip && !inputs.test_pypi }}
     runs-on: ubuntu-latest
-    name: Create PyPI Package
+    name: Publish to PyPI
     permissions:
-      id-token: write
+      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -142,6 +149,51 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi }}
+          # TWINE_REPOSITORY_URL is not set, so it defaults to https://upload.pypi.org/legacy/ (real PyPI)
+        run: twine upload "dist/*"
+        shell: bash
+
+  # NEW PyPI Test Upload Job
+  test_pypi_upload:
+    needs: [determine_tags_and_versions]
+    # This job runs if 'pip' is true AND 'test_pypi' is true
+    if: ${{ inputs.pip && inputs.test_pypi }}
+    runs-on: ubuntu-latest
+    name: Publish to Test PyPI
+    permissions:
+      id-token: write # Needed for OIDC authentication to Test PyPI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.version || github.ref }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Build and Publish Tools
+        run: uv pip install hatch twine
+      - name: Build Package with Hatch
+        run: |
+          PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          hatch build
+        shell: bash
+
+      - name: Publish to Test PyPI with Twine
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi }} # Use the same secret, but it targets test.pypi.org
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ # CRUCIAL: Points to Test PyPI
         run: twine upload "dist/*"
         shell: bash
 
