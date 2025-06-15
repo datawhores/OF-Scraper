@@ -47,12 +47,6 @@ jobs:
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
-
-      ---
-      ## Docker Registry Inspection Setup (Pre-script)
-      ---
-      # These logins are specifically for this job to query registry APIs, not for building/pushing.
-      # They must happen BEFORE the script runs if the script is to inspect registry tags.
       - name: Set up Docker Buildx (for manifest inspection)
         if: ${{ inputs.docker }}
         uses: docker/setup-buildx-action@v3
