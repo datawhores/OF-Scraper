@@ -1,0 +1,183 @@
+{
+    "created": "2025-06-15T08:56:48.069425386Z",
+    "architecture": "amd64",
+    "os": "linux",
+    "config": {
+        "Env": [
+            "PATH=/app/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "LANG=C.UTF-8",
+            "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+            "PYTHON_VERSION=3.11.13",
+            "PYTHON_SHA256=8fb5f9fbc7609fa822cb31549884575db7fd9657cbffb89510b5d7975963a83a"
+        ],
+        "Entrypoint": [
+            "/usr/local/bin/entrypoint.sh"
+        ],
+        "Cmd": [
+            "ofscraper"
+        ],
+        "WorkingDir": "/app",
+        "Labels": {
+            "org.opencontainers.image.created": "2025-06-15T08:56:13.949Z",
+            "org.opencontainers.image.description": "A completely revamped and redesigned fork, reimagined from scratch based on the original onlyfans-scraper",
+            "org.opencontainers.image.licenses": "MIT",
+            "org.opencontainers.image.revision": "6ba77945bd2b9841cc26dc08ec6c08d0ff78d506",
+            "org.opencontainers.image.source": "https://github.com/datawhores/OF-Scraper",
+            "org.opencontainers.image.title": "OF-Scraper",
+            "org.opencontainers.image.url": "https://github.com/datawhores/OF-Scraper",
+            "org.opencontainers.image.version": "dev-3.13-aio"
+        },
+        "ArgsEscaped": true
+    },
+    "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+            "sha256:7fb72a7d1a8e984ccd01277432de660162a547a00de77151518dc9033cfb8cb4",
+            "sha256:905dadf3a0ed88106f48ce02feca63f9b8cbdaf38713c0f090fdff68bc849708",
+            "sha256:d731454f914a582c05b53a9c0ff24018474965a8b77c231c376600b14c9a16af",
+            "sha256:79d7628d5b6b9722f4d4e8a2c9b5f33b778379018a6a24d74846194ca0b41ad1",
+            "sha256:eba25258faa3eed5f5cc7e50b3e6c4ac077afbb560c36ecc942304dcd89c8752",
+            "sha256:a8338c7311536ba18701e7c8cd901121ce066c424cd05ad066519b3c06a6eab5",
+            "sha256:c72e300bded8527687435c46ef5f9c7d4bd7583d1251585ab78f31a040403f54",
+            "sha256:37992b9534d688960b215f428b3e3332a04da370da74e47f84ab6e0a6f0a48ef",
+            "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+            "sha256:e5f73e0adb534ab06a5391162e3ba96235a317f4c6b0747ad54f9114efaf5dc5",
+            "sha256:960fd6e85c7fa5f0f93b91d1fee5db696b23c7bd8c8e29b9c3308c9da5e78625",
+            "sha256:842a354d02096e131606595b409d52a63677e81c21bf375e6860091c55659ca9"
+        ]
+    },
+    "history": [
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1749513600'",
+            "comment": "debuerreotype 0.15"
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "ENV LANG=C.UTF-8",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "RUN /bin/sh -c set -eux; \tapt-get update; \tapt-get install -y --no-install-recommends \t\tca-certificates \t\tnetbase \t\ttzdata \t; \trm -rf /var/lib/apt/lists/* # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "ENV PYTHON_VERSION=3.11.13",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "ENV PYTHON_SHA256=8fb5f9fbc7609fa822cb31549884575db7fd9657cbffb89510b5d7975963a83a",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "RUN /bin/sh -c set -eux; \t\tsavedAptMark=\"$(apt-mark showmanual)\"; \tapt-get update; \tapt-get install -y --no-install-recommends \t\tdpkg-dev \t\tgcc \t\tgnupg \t\tlibbluetooth-dev \t\tlibbz2-dev \t\tlibc6-dev \t\tlibdb-dev \t\tlibffi-dev \t\tlibgdbm-dev \t\tliblzma-dev \t\tlibncursesw5-dev \t\tlibreadline-dev \t\tlibsqlite3-dev \t\tlibssl-dev \t\tmake \t\ttk-dev \t\tuuid-dev \t\twget \t\txz-utils \t\tzlib1g-dev \t; \t\twget -O python.tar.xz \"https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz\"; \techo \"$PYTHON_SHA256 *python.tar.xz\" | sha256sum -c -; \twget -O python.tar.xz.asc \"https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc\"; \tGNUPGHOME=\"$(mktemp -d)\"; export GNUPGHOME; \tgpg --batch --keyserver hkps://keys.openpgp.org --recv-keys \"$GPG_KEY\"; \tgpg --batch --verify python.tar.xz.asc python.tar.xz; \tgpgconf --kill all; \trm -rf \"$GNUPGHOME\" python.tar.xz.asc; \tmkdir -p /usr/src/python; \ttar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz; \trm python.tar.xz; \t\tcd /usr/src/python; \tgnuArch=\"$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)\"; \t./configure \t\t--build=\"$gnuArch\" \t\t--enable-loadable-sqlite-extensions \t\t--enable-optimizations \t\t--enable-option-checking=fatal \t\t--enable-shared \t\t$(test \"$gnuArch\" != 'riscv64-linux-musl' \u0026\u0026 echo '--with-lto') \t\t--with-ensurepip \t; \tnproc=\"$(nproc)\"; \tEXTRA_CFLAGS=\"$(dpkg-buildflags --get CFLAGS)\"; \tLDFLAGS=\"$(dpkg-buildflags --get LDFLAGS)\"; \tLDFLAGS=\"${LDFLAGS:--Wl},--strip-all\"; \tmake -j \"$nproc\" \t\t\"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}\" \t\t\"LDFLAGS=${LDFLAGS:-}\" \t; \trm python; \tmake -j \"$nproc\" \t\t\"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}\" \t\t\"LDFLAGS=${LDFLAGS:--Wl},-rpath='\\$\\$ORIGIN/../lib'\" \t\tpython \t; \tmake install; \t\tcd /; \trm -rf /usr/src/python; \t\tfind /usr/local -depth \t\t\\( \t\t\t\\( -type d -a \\( -name test -o -name tests -o -name idle_test \\) \\) \t\t\t-o \\( -type f -a \\( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \\) \\) \t\t\\) -exec rm -rf '{}' + \t; \t\tldconfig; \t\tapt-mark auto '.*' \u003e /dev/null; \tapt-mark manual $savedAptMark; \tfind /usr/local -type f -executable -not \\( -name '*tkinter*' \\) -exec ldd '{}' ';' \t\t| awk '/=\u003e/ { so = $(NF-1); if (index(so, \"/usr/local/\") == 1) { next }; gsub(\"^/(usr/)?\", \"\", so); printf \"*%s\\n\", so }' \t\t| sort -u \t\t| xargs -r dpkg-query --search \t\t| cut -d: -f1 \t\t| sort -u \t\t| xargs -r apt-mark manual \t; \tapt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \trm -rf /var/lib/apt/lists/*; \t\texport PYTHONDONTWRITEBYTECODE=1; \tpython3 --version; \t\tpip3 install \t\t--disable-pip-version-check \t\t--no-cache-dir \t\t--no-compile \t\t'setuptools==65.5.1' \t\t'wheel\u003c0.46' \t; \tpip3 --version # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "RUN /bin/sh -c set -eux; \tfor src in idle3 pip3 pydoc3 python3 python3-config; do \t\tdst=\"$(echo \"$src\" | tr -d 3)\"; \t\t[ -s \"/usr/local/bin/$src\" ]; \t\t[ ! -e \"/usr/local/bin/$dst\" ]; \t\tln -svT \"$src\" \"/usr/local/bin/$dst\"; \tdone # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-03T23:02:53Z",
+            "created_by": "CMD [\"python3\"]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-12T20:14:20.416169992Z",
+            "created_by": "COPY /uv /uvx /usr/local/bin/ # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-12T20:14:20.416169992Z",
+            "created_by": "ENTRYPOINT []",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-12T20:14:20.416169992Z",
+            "created_by": "CMD [\"/usr/local/bin/uv\"]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-14T12:12:25.316944546Z",
+            "created_by": "ARG INSTALL_FFMPEG=true # This ARG only controls the 'pyffmpeg' Python package installation.",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-14T12:12:25.316944546Z",
+            "created_by": "WORKDIR /app",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:50:16.903996646Z",
+            "created_by": "RUN |11 INSTALL_FFMPEG=true #= This= ARG= only= controls= the= 'pyffmpeg'= Python= package= installation.= /bin/sh -c apt-get update \u0026\u0026 apt-get install -y gosu \u0026\u0026 rm -rf /var/lib/apt/lists/* # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:50:16.957924104Z",
+            "created_by": "COPY ./scripts/entrypoint.sh /usr/local/bin/entrypoint.sh # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:50:17.108663935Z",
+            "created_by": "RUN |11 INSTALL_FFMPEG=true #= This= ARG= only= controls= the= 'pyffmpeg'= Python= package= installation.= /bin/sh -c chmod +x /usr/local/bin/entrypoint.sh # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:50:17.575167858Z",
+            "created_by": "RUN |11 INSTALL_FFMPEG=true #= This= ARG= only= controls= the= 'pyffmpeg'= Python= package= installation.= /bin/sh -c uv venv # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:56:44.23860963Z",
+            "created_by": "COPY /app/dist/*.whl . # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:56:48.069425386Z",
+            "created_by": "RUN |11 INSTALL_FFMPEG=true #= This= ARG= only= controls= the= 'pyffmpeg'= Python= package= installation.= /bin/sh -c uv pip install *.whl -v;         if [ \"$INSTALL_FFMPEG\" = \"true\" ]; then       uv pip install pyffmpeg;     fi \u0026\u0026         rm *.whl # This is the last command in this RUN instruction, so NO '\\' here # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+        },
+        {
+            "created": "2025-06-15T08:56:48.069425386Z",
+            "created_by": "ENV PATH=/app/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-15T08:56:48.069425386Z",
+            "created_by": "ENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        },
+        {
+            "created": "2025-06-15T08:56:48.069425386Z",
+            "created_by": "CMD [\"ofscraper\"]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+        }
+    ]
+}

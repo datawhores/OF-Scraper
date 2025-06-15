@@ -15,15 +15,56 @@ IS_DEV_RELEASE="false"
 SHOULD_APPLY_STABLE_LATEST="false" # Default to false
 SHOULD_APPLY_DEV_LATEST="false"   # Default to false
 CURRENT_COMMIT_TIMESTAMP="" # Initialize; will be populated only if registry inspection runs
+GITHUB_ACTIONS=true
 
 # Determine if running in GitHub Actions CI
-IS_GITHUB_ACTIONS="false"
-if [ -n "$GITHUB_ACTIONS" ]; then
-    IS_GITHUB_ACTIONS="true"
-fi
 
+    # Function to get tag creation timestamp from registry using skopeo
+get_registry_tag_timestamp() {
+    local REGISTRY="$1"
+    local REPO="$2"
+    local TAG="$3"
+    local FULL_IMAGE="docker://$REGISTRY/$REPO:$TAG"
+    local CREATED_AT_TIMESTAMP=0
+    local MAX_RETRIES=1 # Number of times to retry
+    local RETRY_DELAY=5 # Delay in seconds between retries
+    local ATTEMPT=1
+    local CREATED_ISO=""
+
+    # Redirect info messages to stderr so they don't interfere with stdout capture
+    echo "Checking registry tag: $FULL_IMAGE" >&2
+
+    while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
+        echo "Attempt $ATTEMPT of $MAX_RETRIES to get creation date for $FULL_IMAGE..." >&2
+
+        # skopeo inspect --config gets the image configuration, jq extracts Created field
+        # We capture stderr to check skopeo's exit status
+        CREATED_ISO=$(skopeo inspect --config "$FULL_IMAGE" 2>/dev/null | jq -r '.created // ""')
+        SKOPEO_EXIT_CODE=$? # Capture the exit code of the last command (jq)
+
+        # Check if jq successfully extracted a non-empty, non-null date
+        if [ "$SKOPEO_EXIT_CODE" -eq 0 ] && [ -n "$CREATED_ISO" ] && [ "$CREATED_ISO" != "null" ]; then
+            CREATED_AT_TIMESTAMP=$(date -d "$CREATED_ISO" +%s)
+            echo "Successfully found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)" >&2
+            break # Success, exit the loop
+        else
+            echo "Attempt $ATTEMPT failed for $FULL_IMAGE. skopeo exit code: $SKOPEO_EXIT_CODE." >&2
+            if [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; then
+                echo "Retrying in $RETRY_DELAY seconds..." >&2
+                sleep "$RETRY_DELAY"
+            fi
+        fi
+        ATTEMPT=$((ATTEMPT + 1))
+    done
+
+    if [ "$CREATED_AT_TIMESTAMP" -eq 0 ]; then
+        echo "Failed to get creation time for $FULL_IMAGE after $MAX_RETRIES attempts." >&2
+    fi
+
+    echo "$CREATED_AT_TIMESTAMP" # This is the ONLY thing sent to stdout
+}
 # --- Determine version and Git info ---
-if [ "$IS_GITHUB_ACTIONS" = "true" ]; then
+if [  -n "$GITHUB_ACTIONS" ]; then
     # Scenario: Running in GitHub Actions. INPUT_VERSION is REQUIRED by workflow_dispatch.
     if [ -z "$INPUT_VERSION" ]; then
         echo "Error: INPUT_VERSION is required when running in GitHub Actions, but it is empty." >&2
@@ -79,6 +120,7 @@ else
     fi
 fi
 
+
 # Derive short hash AFTER LONG_HASH is determined
 if [ -n "$LONG_HASH" ] && [ "$LONG_HASH" != "unknown" ]; then
     SHORT_HASH=$(echo "${LONG_HASH}" | cut -c1-7)
@@ -99,46 +141,25 @@ fi
 # --- Determine if Latest/Dev Tags Should Be Applied ---
 # This logic requires `skopeo` and `jq` to be installed on the runner.
 # Only attempt registry inspection if running in GitHub Actions AND skopeo is available (due to workflow conditional install).
-if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # Check if skopeo is installed and accessible
+if [  -n "$GITHUB_ACTIONS"  ] && command -v skopeo &> /dev/null; then # Check if skopeo is installed and accessible
     # Get timestamp of the current commit (epoch seconds)
     CURRENT_COMMIT_TIMESTAMP=$(git log -1 --format=%ct)
 
-    # Function to get tag creation timestamp from registry using skopeo
-    get_registry_tag_timestamp() {
-        local REGISTRY="$1"
-        local REPO="$2"
-        local TAG="$3"
-        local FULL_IMAGE="docker://$REGISTRY/$REPO:$TAG"
-        local CREATED_AT_TIMESTAMP=0
 
-        # Redirect info messages to stderr so they don't interfere with stdout capture
-        echo "Checking registry tag: $FULL_IMAGE" >&2
-
-        # skopeo inspect --raw gets the manifest, jq extracts Created field
-        CREATED_ISO=$(skopeo inspect --raw "$FULL_IMAGE" 2>/dev/null | jq -r '.Created // ""')
-
-        if [ -n "$CREATED_ISO" ] && [ "$CREATED_ISO" != "null" ]; then
-            CREATED_AT_TIMESTAMP=$(date -d "$CREATED_ISO" +%s)
-            echo "Found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)" >&2 # Redirect to stderr
-        else
-            echo "Tag $FULL_IMAGE not found or creation time not available." >&2 # Redirect to stderr
-        fi
-        echo "$CREATED_AT_TIMESTAMP" # This is the ONLY thing sent to stdout
-    }
 
     # --- Get timestamps of existing 'latest' and 'dev' tags from registries ---
     # GITHUB_REPOSITORY_SLUG is passed as an environment variable to the script step in the workflow
     LAST_STABLE_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "latest")
-    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$(echo "$GITHUB_REPOSITORY_SLUG" | cut -d'/' -f2)" "latest")
+    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$GITHUB_REPOSITORY_SLUG" "latest")
 
     LAST_DEV_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "dev")
-    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$(echo "$GITHUB_REPOSITORY_SLUG" | cut -d'/' -f2)" "dev")
+    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$GITHUB_REPOSITORY_SLUG" "dev")
 
     # --- Determine `should_apply_stable_latest` ---
     # Apply `latest` if current commit is newer than EITHER existing latest tag, OR if the latest tag is missing on EITHER registry.
     if (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_HUB_TIMESTAMP )) || \
        (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_GHCR_TIMESTAMP )) || \
-       (("$LAST_STABLE_HUB_TIMESTAMP" == "0" || "$LAST_STABLE_GHCR_TIMESTAMP" == "0")); then
+       (("$LAST_STABLE_HUB_TIMESTAMP" == 0|| "$LAST_STABLE_GHCR_TIMESTAMP" == 0)); then
         if [[ "$IS_STABLE_RELEASE" == "true" ]]; then
             SHOULD_APPLY_STABLE_LATEST="true"
         fi
@@ -148,7 +169,7 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && command -v skopeo &> /dev/null; then # C
     # Apply `dev` if current commit is newer than EITHER existing dev tag, OR if the dev tag is missing on EITHER registry.
     if (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_HUB_TIMESTAMP )) || \
        (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_GHCR_TIMESTAMP )) || \
-       (("$LAST_DEV_HUB_TIMESTAMP" == "0" || "$LAST_DEV_GHCR_TIMESTAMP" == "0")); then
+       (("$LAST_DEV_HUB_TIMESTAMP" == 0 || "$LAST_DEV_GHCR_TIMESTAMP" == 0)); then
         if [[ "$IS_DEV_RELEASE" == "true" ]]; then
             SHOULD_APPLY_DEV_LATEST="true"
         fi
