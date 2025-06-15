@@ -87,7 +87,7 @@ jobs:
       - name: Execute Latest Tag Logic Script
         id: run_python_logic
         run: python scripts/determine_docker_stable_dev_tags.py \
-          "${{ needs.ououtputs.commit_timestamp }}" \
+          "${{ needs.outputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
         env:
