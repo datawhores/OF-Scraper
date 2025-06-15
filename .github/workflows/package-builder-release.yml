@@ -1,4 +1,4 @@
-name: Package Builder Release
+name: Stable/Dev Package Releases
 
 on:
   workflow_dispatch:
