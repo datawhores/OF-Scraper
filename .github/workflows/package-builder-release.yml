@@ -180,14 +180,13 @@ jobs:
       - name: create venv and activate
         run: |
             uv venv
-            source .venv/bin/activate
-
-
       - name: Install Build and Publish Tools
         run: |
+            source .venv/bin/activate
             uv pip install hatch twine
       - name: Build Package with Hatch
         run: |
+          source .venv/bin/activate
           PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
           echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV"
           echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
