@@ -387,8 +387,9 @@ jobs:
           # Pass all image references to a single cosign sign command, using the key file
           cosign sign \
             --yes \
-            --key cosign.key \
-            --key env://COSIGN_PRIVATE_KEY 
+            --key env://COSIGN_PRIVATE_KEY \
+             ${IMAGES_TO_SIGN}
+
         shell: bash
 
   # GHCR publishing
