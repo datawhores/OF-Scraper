@@ -363,17 +363,16 @@ jobs:
           outputs: |
             type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
 
+      # Removed 'Write Docker Hub signing key to disk' step
       - name: Sign the published Docker Hub image
         # Removed bash retry loop as per user request for performance
         if: ${{ inputs.docker }}
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }} # Pass key as environment variable
         run: |
           echo "Signing Docker Hub image..."
-          # Sign the exact set of desired tags
           # Construct a space-separated list of image references to sign
           DOCKER_HUB_IMAGE_REFS=""
           # The package_version tag is always generated
@@ -390,8 +389,7 @@ jobs:
             DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:dev"
           fi
           
-          # Pass all image references to a single cosign sign command
-          # Each reference will be in the format "repo/image:tag@sha256:digest"
+          # Pass all image references to a single cosign sign command, using env:// for the key
           cosign sign \
             --yes \
             --key env://COSIGN_PRIVATE_KEY \
@@ -464,12 +462,11 @@ jobs:
         if: ${{ inputs.docker }}
         env:
           COSIGN_EXPERIMENTAL: "true"
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
+          # For GHCR keyless signing, COSIGN_PRIVATE_KEY is not typically used.
+          # The identity is derived from the OIDC token automatically.
           # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
         run: |
           echo "Signing GHCR image..."
-          # Sign the exact set of desired tags
           # Construct a space-separated list of image references to sign
           GHCR_IMAGE_REFS=""
           # The package_version tag is always generated
@@ -487,10 +484,9 @@ jobs:
           fi
           
           # Pass all image references to a single cosign sign command
-          # Each reference will be in the format "repo/image:tag@sha256:digest"
-          cosign sign \
-            --yes \
-            "${GHCR_IMAGE_REFS}"@"${{ steps.build-and-push-ghcr.outputs.digest }}"
           # For OIDC-based signing (GHCR), you typically don't pass '--key' or '--password'.
           # Cosign uses the OIDC token available in the environment implicitly.
+          cosign sign \
+            --yes \
+            ${GHCR_IMAGE_REFS}@"${{ steps.build-and-push-ghcr.outputs.digest }}"
         shell: bash
