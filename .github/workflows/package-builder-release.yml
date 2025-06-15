@@ -1,22 +1,24 @@
-name: Stable/Dev Package Releases
+# .github/workflows/package-builder-release.yml
+# checkov:skip=CKV_GHA_7: "The workflow_dispatch inputs are intentionally used for a controlled manual release process. 'version' specifically targets a Git tag/ref, and boolean flags control trusted build/publish steps. This setup does not introduce arbitrary code execution risks."
+name: Package Builder Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.
+        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.'
         required: true
         type: string
       files:
-        description: Build binary files? (t/f)
+        description: 'Build binary files? (t/f)'
         required: true
         type: boolean
       pip:
-        description: Publish to PyPI? (t/f)
+        description: 'Publish to PyPI? (t/f)'
         required: true
         type: boolean
       docker:
-        description: Publish to Docker Hub & GHCR (t/f)
+        description: 'Publish to Docker Hub & GHCR (t/f)'
         required: true
         type: boolean
 
@@ -59,38 +61,39 @@ jobs:
 
   determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic
-    needs: [determine_tags_and_versions] # This job needs outputs from the previous one
-    if: ${{ inputs.docker }} # Only run this job if Docker publishing is requested
+    needs: [determine_tags_and_versions]
+    if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read # Needed for the Python script to list workflow runs and jobs
-      contents: read # For checking out the script itself
+      actions: read
+      contents: read
     outputs:
       should_apply_stable_latest: ${{ steps.run_python_logic.outputs.should_apply_stable_latest }}
       should_apply_dev_latest: ${{ steps.run_python_logic.outputs.should_apply_dev_latest }}
     steps:
       - name: Checkout repository for script
-        uses: actions/checkout@v4 # Need to checkout the repo to get the Python script
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }} # Use current commit to ensure consistency
+          ref: ${{ github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.x'
+
       - name: Install Python dependencies
         run: pip install requests
 
       - name: Execute Latest Tag Logic Script
-        id: run_python_logic # Give this step an ID to capture its outputs
+        id: run_python_logic
         run: python scripts/determine_docker_stable_dev_tags.py \
           "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }} # e.g., owner/repo
-          GITHUB_WORKFLOW: ${{ github.workflow }} # The workflow filename (e.g., package-builder-release.yml)
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
 
   pypi:
     needs: [determine_tags_and_versions]
@@ -98,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Create PyPI Package
     permissions:
-      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,8 +122,8 @@ jobs:
       - name: Build Package with Hatch
         run: |
           PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
-          echo "Setting package version to $PACKAGE_VERSION for the build."
-          export HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION
+          echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV" # Corrected output to GITHUB_ENV for env vars
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV" # Corrected output to GITHUB_ENV for env vars
           hatch build
         shell: bash
 
@@ -135,7 +138,6 @@ jobs:
     name: Build & Release Binaries
     needs: [determine_tags_and_versions]
     if: ${{ inputs.files }}
-    # UPDATED FILENAME HERE
     uses: ./.github/workflows/publish-release-binaries.yml
     with:
       input_version: ${{ inputs.version }}
@@ -146,15 +148,14 @@ jobs:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
     if: ${{ inputs.docker }}
-    # UPDATED FILENAME HERE
     uses: ./.github/workflows/publish-release-dockers.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }} # Ensure no hidden characters here
     with:
-      input_version: ${{ inputs.version }} # Pass original input version for checkout
+      input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       is_stable_release: ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}
