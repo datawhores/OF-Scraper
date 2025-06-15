@@ -80,8 +80,8 @@ jobs:
       actions: read # Needed for the Python script to list workflow runs and jobs
       contents: read # For checking out the script itself
     outputs:
-      should_apply_stable_latest: ${{ steps.run_python_logic.outputs.should_apply_stable_latest }}
-      should_apply_dev_latest: ${{ steps.run_python_logic.outputs.should_apply_dev_latest }}
+      should_apply_stable_latest: ${{ toJSON(steps.run_python_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ toJSON(steps.run_python_logic.outputs.should_apply_dev_latest) }}
     steps:
       - name: Checkout repository for script
         uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
 
   pypi:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip && !inputs.test_pypi }}
+    if: ${{ inputs.pip }}
     runs-on: ubuntu-latest
     name: Publish to PyPI
     permissions:
@@ -152,7 +152,7 @@ jobs:
 
   test_pypi_upload:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip && inputs.test_pypi }}
+    if: ${{ inputs.test_pypi }}
     runs-on: ubuntu-latest
     name: Publish to Test PyPI
     permissions:
@@ -218,7 +218,5 @@ jobs:
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
       is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
-      # Ensure these multiline expressions have correct and consistent indentation.
-      # Each line of the expression (including the '?': and ':' lines) must be indented.
-      should_apply_stable_latest: ${{ needs.determine_docker_latest_logic.result == 'success' ? fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) : false }}
-      should_apply_dev_latest: ${{ needs.determine_docker_latest_logic.result == 'success' ? fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) : false }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
