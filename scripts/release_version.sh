@@ -12,59 +12,12 @@ LONG_HASH=""
 SHORT_HASH=""
 IS_STABLE_RELEASE="false"
 IS_DEV_RELEASE="false"
-SHOULD_APPLY_STABLE_LATEST="false" # Default to false
-SHOULD_APPLY_DEV_LATEST="false"   # Default to false
-CURRENT_COMMIT_TIMESTAMP="" # Initialize; will be populated only if registry inspection runs
-GITHUB_ACTIONS=true
+CURRENT_COMMIT_TIMESTAMP="" # Will be populated from git log
+# GITHUB_ACTIONS is already set to 'true' in the CI environment, no need to redefine IS_GITHUB_ACTIONS
 
-# Determine if running in GitHub Actions CI
-
-    # Function to get tag creation timestamp from registry using skopeo
-get_registry_tag_timestamp() {
-    local REGISTRY="$1"
-    local REPO="$2"
-    local TAG="$3"
-    local FULL_IMAGE="docker://$REGISTRY/$REPO:$TAG"
-    local CREATED_AT_TIMESTAMP=0
-    local MAX_RETRIES=1 # Number of times to retry
-    local RETRY_DELAY=5 # Delay in seconds between retries
-    local ATTEMPT=1
-    local CREATED_ISO=""
-
-    # Redirect info messages to stderr so they don't interfere with stdout capture
-    echo "Checking registry tag: $FULL_IMAGE" >&2
-
-    while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
-        echo "Attempt $ATTEMPT of $MAX_RETRIES to get creation date for $FULL_IMAGE..." >&2
-
-        # skopeo inspect --config gets the image configuration, jq extracts Created field
-        # We capture stderr to check skopeo's exit status
-        CREATED_ISO=$(skopeo inspect --config "$FULL_IMAGE" 2>/dev/null | jq -r '.created // ""')
-        SKOPEO_EXIT_CODE=$? # Capture the exit code of the last command (jq)
-
-        # Check if jq successfully extracted a non-empty, non-null date
-        if [ "$SKOPEO_EXIT_CODE" -eq 0 ] && [ -n "$CREATED_ISO" ] && [ "$CREATED_ISO" != "null" ]; then
-            CREATED_AT_TIMESTAMP=$(date -d "$CREATED_ISO" +%s)
-            echo "Successfully found tag $FULL_IMAGE created at $CREATED_ISO (Epoch: $CREATED_AT_TIMESTAMP)" >&2
-            break # Success, exit the loop
-        else
-            echo "Attempt $ATTEMPT failed for $FULL_IMAGE. skopeo exit code: $SKOPEO_EXIT_CODE." >&2
-            if [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; then
-                echo "Retrying in $RETRY_DELAY seconds..." >&2
-                sleep "$RETRY_DELAY"
-            fi
-        fi
-        ATTEMPT=$((ATTEMPT + 1))
-    done
-
-    if [ "$CREATED_AT_TIMESTAMP" -eq 0 ]; then
-        echo "Failed to get creation time for $FULL_IMAGE after $MAX_RETRIES attempts." >&2
-    fi
-
-    echo "$CREATED_AT_TIMESTAMP" # This is the ONLY thing sent to stdout
-}
 # --- Determine version and Git info ---
-if [  -n "$GITHUB_ACTIONS" ]; then
+# Directly use $GITHUB_ACTIONS for the check
+if [ "$GITHUB_ACTIONS" = "true" ]; then
     # Scenario: Running in GitHub Actions. INPUT_VERSION is REQUIRED by workflow_dispatch.
     if [ -z "$INPUT_VERSION" ]; then
         echo "Error: INPUT_VERSION is required when running in GitHub Actions, but it is empty." >&2
@@ -120,7 +73,6 @@ else
     fi
 fi
 
-
 # Derive short hash AFTER LONG_HASH is determined
 if [ -n "$LONG_HASH" ] && [ "$LONG_HASH" != "unknown" ]; then
     SHORT_HASH=$(echo "${LONG_HASH}" | cut -c1-7)
@@ -128,6 +80,18 @@ else
     SHORT_HASH="unknown"
 fi
 
+# Get timestamp of the current commit (epoch seconds)
+if [ -n "$LONG_HASH" ] && [ "$LONG_HASH" != "unknown" ]; then
+    # Ensure the exact commit is checked out for consistent timestamp
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        CURRENT_COMMIT_TIMESTAMP=$(git log -1 --format=%ct "${LONG_HASH}")
+    else
+        echo "Warning: Not in a git repository. Cannot determine commit timestamp for HEAD." >&2
+        CURRENT_COMMIT_TIMESTAMP="0"
+    fi
+else
+    CURRENT_COMMIT_TIMESTAMP="0"
+fi
 
 # --- Determine if it's a stable or dev release based on PACKAGE_VERSION ---
 # Stable: pure semantic versioning (e.g., 1.2.3)
@@ -138,66 +102,18 @@ elif [[ "$PACKAGE_VERSION" =~ [a-zA-Z] ]]; then
     IS_DEV_RELEASE="true"
 fi
 
-# --- Determine if Latest/Dev Tags Should Be Applied ---
-# This logic requires `skopeo` and `jq` to be installed on the runner.
-# Only attempt registry inspection if running in GitHub Actions AND skopeo is available (due to workflow conditional install).
-if [  -n "$GITHUB_ACTIONS"  ] && command -v skopeo &> /dev/null; then # Check if skopeo is installed and accessible
-    # Get timestamp of the current commit (epoch seconds)
-    CURRENT_COMMIT_TIMESTAMP=$(git log -1 --format=%ct)
-
-
-
-    # --- Get timestamps of existing 'latest' and 'dev' tags from registries ---
-    # GITHUB_REPOSITORY_SLUG is passed as an environment variable to the script step in the workflow
-    LAST_STABLE_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "latest")
-    LAST_STABLE_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$GITHUB_REPOSITORY_SLUG" "latest")
-
-    LAST_DEV_HUB_TIMESTAMP=$(get_registry_tag_timestamp "docker.io" "datawhores/of-scraper" "dev")
-    LAST_DEV_GHCR_TIMESTAMP=$(get_registry_tag_timestamp "ghcr.io" "$GITHUB_REPOSITORY_SLUG" "dev")
-
-    # --- Determine `should_apply_stable_latest` ---
-    # Apply `latest` if current commit is newer than EITHER existing latest tag, OR if the latest tag is missing on EITHER registry.
-    if (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_HUB_TIMESTAMP )) || \
-       (( CURRENT_COMMIT_TIMESTAMP > LAST_STABLE_GHCR_TIMESTAMP )) || \
-       (("$LAST_STABLE_HUB_TIMESTAMP" == 0|| "$LAST_STABLE_GHCR_TIMESTAMP" == 0)); then
-        if [[ "$IS_STABLE_RELEASE" == "true" ]]; then
-            SHOULD_APPLY_STABLE_LATEST="true"
-        fi
-    fi
-
-    # --- Determine `should_apply_dev_latest` ---
-    # Apply `dev` if current commit is newer than EITHER existing dev tag, OR if the dev tag is missing on EITHER registry.
-    if (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_HUB_TIMESTAMP )) || \
-       (( CURRENT_COMMIT_TIMESTAMP > LAST_DEV_GHCR_TIMESTAMP )) || \
-       (("$LAST_DEV_HUB_TIMESTAMP" == 0 || "$LAST_DEV_GHCR_TIMESTAMP" == 0)); then
-        if [[ "$IS_DEV_RELEASE" == "true" ]]; then
-            SHOULD_APPLY_DEV_LATEST="true"
-        fi
-    fi
-
-    # Debug prints for GitHub Actions environment
-    echo "Debug - Current commit timestamp: $CURRENT_COMMIT_TIMESTAMP" >&2 # Redirect debug to stderr
-    echo "Debug - Latest Stable Hub Timestamp: $LAST_STABLE_HUB_TIMESTAMP" >&2 # Redirect debug to stderr
-    echo "Debug - Latest Stable GHCR Timestamp: $LAST_STABLE_GHCR_TIMESTAMP" >&2 # Redirect debug to stderr
-    echo "Debug - Latest Dev Hub Timestamp: $LAST_DEV_HUB_TIMESTAMP" >&2 # Redirect debug to stderr
-    echo "Debug - Latest Dev GHCR Timestamp: $LAST_DEV_GHCR_TIMESTAMP" >&2 # Redirect debug to stderr
-else
-    echo "Skipping registry inspection (not in GH Actions or skopeo not installed)." >&2 # Redirect warning to stderr
-fi
-
-# --- Print final values to console (for local execution and debugging) ---
+# Debug prints for console (for local execution and debugging)
 echo "Final Package Version: ${PACKAGE_VERSION}"
 echo "Long Commit Hash: ${LONG_HASH}"
 echo "Short Commit Hash: ${SHORT_HASH}"
 echo "Is Stable Release: ${IS_STABLE_RELEASE}"
 echo "Is Dev Release: ${IS_DEV_RELEASE}"
-echo "Should Apply Stable Latest: ${SHOULD_APPLY_STABLE_LATEST}"
-echo "Should Apply Dev Latest: ${SHOULD_APPLY_DEV_LATEST}"
-echo "Commit Timestamp (from HEAD): ${CURRENT_COMMIT_TIMESTAMP}"
+echo "Current Commit Timestamp (from HEAD): ${CURRENT_COMMIT_TIMESTAMP}"
 
 
 # --- Environment-Specific Output (for GitHub Actions) ---
-if [ "$IS_GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
+# Directly use $GITHUB_ACTIONS for the check
+if [ "$GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPUT" ]; then
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
 
     # For subsequent steps in the same job (e.g., for build arguments)
@@ -210,14 +126,7 @@ if [ "$IS_GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OU
     echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
     echo "is_stable_release=${IS_STABLE_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
-    
-    # Always output should_apply_*_latest to ensure they are available to workflow, even if false by default
-    echo "should_apply_stable_latest=${SHOULD_APPLY_STABLE_LATEST}" >> "$GITHUB_OUTPUT"
-    echo "should_apply_dev_latest=${SHOULD_APPLY_DEV_LATEST}" >> "$GITHUB_OUTPUT"
-    
-    if [ -n "$CURRENT_COMMIT_TIMESTAMP" ]; then
-        echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
-    fi
+    echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
 else
     # Local Use: Export variables. This only works if the script is run with `source`.
     export SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}

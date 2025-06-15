@@ -17,7 +17,6 @@ jobs:
     env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_WORKFLOW_REF: dddd
           GITHUB_REF: ${{ github.ref }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
     outputs:

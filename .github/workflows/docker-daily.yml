@@ -36,9 +36,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          # --- ADD THIS LINE ---
-          WORKFLOW_FILE_NAME_FOR_API: docker-daily.yml
-          # --- END ADDITION ---
           GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }} # Still pass for general info, but not for WORKFLOW_ID now
           GITHUB_REF: ${{ github.ref }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
