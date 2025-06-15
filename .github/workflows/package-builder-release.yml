@@ -1,4 +1,3 @@
-# .github/workflows/package-builder-release.yml
 name: Package Builder Release
 
 on:
