@@ -363,13 +363,6 @@ jobs:
           outputs: |
             type=image,annotation=org.opencontainers.image.revision=${{ needs.determine_tags_and_versions.outputs.long_hash }}
 
-      - name: Write Docker Hub signing key to disk
-        if: ${{ inputs.docker }}
-        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-        shell: bash
-        env:
-          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-
       - name: Sign the published Docker Hub image
         # This job is being reverted to its state where it successfully signed for Docker Hub.
         # It maintains the key file and the specific tag string construction that worked previously.
@@ -377,29 +370,25 @@ jobs:
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: |
-          echo "Signing Docker Hub image (using previous successful logic)..."
-          # Construct a space-separated list of image references to sign
-          # This exact tag construction worked for Docker Hub in your previous runs.
-          # It initializes with the first tag directly, NO leading space.
-          DOCKER_HUB_IMAGE_REFS="datawhores/of-scraper:${{ needs.determine_tags_and_versions.outputs.package_version }}"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
-          # Conditionally add other tags, ensuring they START with a leading space.
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
-            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:stable"
-          fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:latest"
-          fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            DOCKER_HUB_IMAGE_REFS+=" datawhores/of-scraper:dev"
-          fi
+          # Pass tags and digest as environment variables to make the run script cleaner
+          TAGS: ${{ steps.meta_hub.outputs.tags }} # Passed output from metadata action
+          DIGEST: ${{ steps.build-and-push-hub.outputs.digest }} # Passed output from build-push action
+        run: |
+          echo "Signing Docker Hub image (using the robust common pattern)..."
+          # Construct a space-separated list of image:tag@digest references
+          IMAGES_TO_SIGN=""
+          # Loop through the newline-separated tags from metadata-action output
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} " # Append each tag@digest followed by a space
+          done
           
-          # This command worked with the above string format and cosign.key
+          # Pass all image references to a single cosign sign command, using the key file
           cosign sign \
             --yes \
             --key cosign.key \
-            ${DOCKER_HUB_IMAGE_REFS}@"${{ steps.build-and-push-hub.outputs.digest }}"
+            --key env://COSIGN_PRIVATE_KEY 
         shell: bash
 
   # GHCR publishing
@@ -467,28 +456,22 @@ jobs:
         if: ${{ inputs.docker }}
         env:
           COSIGN_EXPERIMENTAL: "true"
+          # Pass tags and digest as environment variables to make the run script cleaner
+          TAGS: ${{ steps.meta_ghcr.outputs.tags }} # Passed output from metadata action
+          DIGEST: ${{ steps.build-and-push-ghcr.outputs.digest }} # Passed output from build-push action
           # For GHCR keyless signing, COSIGN_PRIVATE_KEY is not typically used.
           # The identity is derived from the OIDC token automatically.
-          # COSIGN_FULCIO_ENABLED: "true" # Might be needed depending on Cosign version/setup for Fulcio
         run: |
           echo "Signing GHCR image..."
-          # Initialize with the first tag directly, NO leading space
-          GHCR_IMAGE_REFS="ghcr.io/${{ github.repository }}:${{ needs.determine_tags_and_versions.outputs.package_version }}"
-
-          # Conditionally add other tags, ensuring they START with a leading space
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release }}; then
-            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:stable"
-          fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_stable_release && needs.determine_tags_and_versions.outputs.should_apply_stable_latest }}; then
-            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:latest"
-          fi
-          if ${{ needs.determine_tags_and_versions.outputs.is_dev_release && needs.determine_tags_and_versions.outputs.should_apply_dev_latest }}; then
-            GHCR_IMAGE_REFS+=" ghcr.io/${{ github.repository }}:dev"
-          fi
+          # Construct a space-separated list of image:tag@digest references
+          IMAGES_TO_SIGN=""
+          # Loop through the newline-separated tags from metadata-action output
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} " # Append each tag@digest followed by a space
+          done
           
           # Pass all image references to a single cosign sign command
-          # This corrected logic ensures no leading space in the first reference.
           cosign sign \
             --yes \
-            ${GHCR_IMAGE_REFS}@"${{ steps.build-and-push-ghcr.outputs.digest }}"
+            ${IMAGES_TO_SIGN}
         shell: bash
