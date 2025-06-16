@@ -154,9 +154,9 @@ jobs:
           with: |
               name: build-artifacts-${{ matrix.os }}
               path: |
-                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}
-                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
-                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
+                  dist/ofscraper_tesr
+                  dist/ofscraper_test.exe
+                  dist/ofscraper_test.zip
               if-no-files-found: ignore
               overwrite: true
           attempt_limit: 3 
