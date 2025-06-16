@@ -146,6 +146,10 @@ jobs:
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
+      - name: list files
+        run: | 
+          ls .
+          ls scripts
 
       - name: Make retry script executable
         run: chmod +x ./scripts/retry_action.sh
@@ -186,10 +190,6 @@ jobs:
           ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
           fetch-depth: 0
           fetch-tags: true
-      - name: list files
-        run: | 
-          ls .
-          ls scripts
       - name: Make retry script executable (for download)
         run: chmod +x ./scripts/retry_action.sh
 
