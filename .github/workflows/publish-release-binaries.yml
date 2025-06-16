@@ -158,6 +158,7 @@ jobs:
                   dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
                   dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
               if-no-files-found: ignore
+              overwrite: true
           attempt_limit: 3 
           time_out: 300
 
