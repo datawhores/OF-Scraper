@@ -148,7 +148,7 @@ jobs:
         shell: pwsh
 
       - name: Upload Build Artifacts (with retries)
-        uses: Wandalen/wretry.action@master
+        uses: Wandalen/wretry.action@3.8.0
         with:
           action: actions/upload-artifact@v4
           with: |
@@ -170,12 +170,11 @@ jobs:
       actions: read # Needed to download artifacts within this job
     steps:
       - name: Download all build artifacts (with retries)
-        uses: Wandalen/wretry.action@master
+        uses: Wandalen/wretry.action@3.8.0
         with:
           action: actions/download-artifact@v4
           with: |
               path: artifacts/
-          # Corrected inputs for Wandalen/wretry.action
           attempt_limit: 3 # Changed from 'attempts'
           time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
 
