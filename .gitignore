@@ -145,8 +145,7 @@ sphinx
 *.json
 package
 core
-doc*
-out*
+.doc*
 *.txt
 *.log
 # Idea

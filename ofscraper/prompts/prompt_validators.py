@@ -11,7 +11,6 @@ from prompt_toolkit.validation import ValidationError, Validator
 
 import ofscraper.classes.placeholder as placeholders
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.paths.check as paths_check
 import ofscraper.utils.profiles.data as profiles_data
 import ofscraper.utils.profiles.tools as profiles_tools
 
@@ -252,35 +251,6 @@ def datevalidator():
         Date is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens""",
     )
 
-
-def ffmpegpathvalidator():
-    def callable(x):
-        return paths_check.ffmpegpathcheck(x)
-
-    return validatorCallableHelper(
-        callable,
-        inspect.cleandoc(
-            """
-Path to ffmpeg is not valid filepath or does not exists
-"""
-        ).strip(),
-        move_cursor_to_end=True,
-    )
-
-
-def ffmpegexecutevalidator():
-    def callable(x):
-        return paths_check.ffmpegexecutecheck(x)
-
-    return validatorCallableHelper(
-        callable,
-        inspect.cleandoc(
-            """
-Path is valid but the given path could not be verified to be ffmpeg
-"""
-        ).strip(),
-        move_cursor_to_end=True,
-    )
 
 
 def like_area_validator_posts():

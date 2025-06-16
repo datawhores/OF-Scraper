@@ -21,10 +21,10 @@ from ofscraper.commands.scraper.actions.utils.retries import (
 )
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import run
+from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 
 
 log = None
-
 
 def setLog(input_):
     global log
@@ -68,7 +68,7 @@ async def un_encrypt(item, c, ele, input_=None):
         )
         r = run(
             [
-                settings.get_ffmpeg(),
+                get_ffmpeg(),
                 "-decryption_key",
                 ffmpeg_key,
                 "-i",

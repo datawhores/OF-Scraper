@@ -1,0 +1,235 @@
+# .github/workflows/package-builder-release.yml
+name: Package Builder Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag."
+        required: true
+        type: string
+      files:
+        description: "Build binary files? (t/f)"
+        required: true
+        type: boolean
+      pip:
+        description: "Publish to PyPI? (t/f)"
+        required: true
+        type: boolean
+      docker:
+        description: "Publish to Docker Hub & GHCR (t/f)"
+        required: true
+        type: boolean
+      test_pypi: # NEW INPUT: For testing PyPI upload
+        description: "Perform a test upload to Test PyPI? (t/f)"
+        required: true
+        type: boolean
+        default: false # Default to false to prevent accidental test uploads
+
+# Enable verbose debugging for the entire workflow
+env:
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
+
+permissions:
+  contents: write # Needed for checkout, creating releases
+  packages: write # Needed for pushing to GHCR/Docker Hub
+  id-token: write # For OIDC, used by cosign, and CRUCIAL for GHCR authentication
+  actions: write # Needed for gh CLI to upload/download workflow artifacts (for retries)
+
+jobs:
+  determine_tags_and_versions:
+    name: Determine Release Info and Tagging Logic
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # Needed to list workflow runs and jobs
+      contents: read # For checkout
+    outputs:
+      long_hash: ${{ steps.release_info.outputs.long_hash }}
+      short_hash: ${{ steps.release_info.outputs.short_hash }}
+      package_version: ${{ steps.release_info.outputs.package_version }}
+      is_stable_release: ${{ steps.release_info.outputs.is_stable_release }}
+      is_dev_release: ${{ steps.release_info.outputs.is_dev_release }}
+      commit_timestamp: ${{ steps.release_info.outputs.commit_timestamp }}
+    steps:
+      - name: Checkout Code (Optional Version or Current Branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
+          fetch-depth: 0 # Needed for git log and tag comparisons
+          fetch-tags: true
+          repository: ${{ github.repository }} # Explicitly pass the repository name (owner/repo)
+          github-server-url: ${{ github.server_url }} # Explicitly pass the GitHub server URL (https://github.com)
+
+      - name: Make release_version.sh executable
+        run: chmod +x ./scripts/release_version.sh
+
+      - name: Get Release Info from Script
+        id: release_info
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: ./scripts/release_version.sh
+
+  determine_docker_latest_logic:
+    name: Determine Docker Latest Tag Logic
+    needs: [determine_tags_and_versions]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      should_apply_stable_latest: ${{steps.run_python_logic.outputs.should_apply_stable_latest}}
+      should_apply_dev_latest: ${{steps.run_python_logic.outputs.should_apply_dev_latest}}
+    steps:
+      - name: Checkout repository for script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Execute Latest Tag Logic Script
+        id: run_python_logic
+        run: python scripts/determine_docker_stable_dev_tags.py \
+          "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
+          "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
+          "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}" \
+          "${{ inputs.docker }}"
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+
+  pypi:
+    needs: [determine_tags_and_versions]
+    if: ${{ inputs.pip}} # Runs for real PyPI if pip is true and test_pypi is false
+    runs-on: ubuntu-latest
+    name: Publish to PyPI
+    permissions:
+      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.version || github.ref }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Build and Publish Tools
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install hatch twine
+      - name: Build Package with Hatch
+        run: |
+          source .venv/bin/activate
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+
+          hatch build
+        shell: bash
+
+      - name: Publish to PyPI with Twine
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi }} # Using 'pypi' secret for main PyPI
+        run: |
+          source .venv/bin/activate
+          twine upload "dist/*"
+        shell: bash
+
+  test_pypi_upload:
+    needs: [determine_tags_and_versions]
+    if: ${{inputs.test_pypi }} # Runs for Test PyPI if pip is true and test_pypi is true
+    runs-on: ubuntu-latest
+    name: Publish to Test PyPI
+    permissions:
+      id-token: write # Needed for OIDC authentication to Test PyPI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.version || github.ref }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: create venv and activate
+        run: |
+          uv venv
+      - name: Install Build and Publish Tools
+        run: |
+          source .venv/bin/activate
+          uv pip install hatch twine
+      - name: Build Package with Hatch
+        run: |
+          source .venv/bin/activate
+          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          hatch build
+        shell: bash
+
+      - name: Publish to Test PyPI with Twine
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi2 }} # Using 'pypi2' secret for Test PyPI
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ # Points to Test PyPI
+        run: |
+          source .venv/bin/activate
+          twine upload "dist/*"
+        shell: bash
+
+  call_binaries_build_and_release:
+    name: Build & Release Binaries
+    needs: [determine_tags_and_versions]
+    if: ${{ inputs.files }}
+    uses: ./.github/workflows/callable_release/publish-release-binaries.yml # No @ref for local callable
+    with:
+      input_version: ${{ inputs.version }}
+      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+
+  call_docker_publish:
+    name: Publish Docker Images
+    needs: [determine_tags_and_versions, determine_docker_latest_logic]
+    if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
+    uses: ./.github/workflows/callable_release/publish-release-dockers.yml # No @ref for local callable
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+    with:
+      input_version: ${{ inputs.version }}
+      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
+      is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}

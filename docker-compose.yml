@@ -1,26 +1,40 @@
+version: "3.8" # Recommended to use a recent version for new features
 services:
-  ofscraper:
+  of-scraper:
+    stdin_open: true # Keeps STDIN open for interactive processes
+    tty: true # Allocates a pseudo-TTY for a terminal-like interface
     container_name: ofscraper
-    image: datawhores/of-scraper:latest
-    # specify the uid and gid you want to use, if not 1000:1000
-    user: "${UID:-1000}:${GID:-1000}"
+    
+    environment: # Optional environment variables
+      # These are recommended for correct file permissions on mounted volumes.
+      # Default UID/GID is 1000:1000 if not specified via environment variables in your shell.
+      # - USER_NAME=ofscraper   # Defaults to 'ofscraper' in the entrypoint script
+      # - USER_ID=${USER_ID}   # Host user's UID (e.g., set via 'export USER_ID=$(id -u)' on host)
+      # - GROUP_ID=${GROUP_ID} # Host user's GID (e.g., set via 'export GROUP_ID=$(id -g)' on host)
+      # - GROUP_NAME=mygroup # Optional: If you want a custom group name different from USER_NAME
     volumes:
-      # change the host path to wherever your config dir/file is
-      - /home/john/.config/ofscraper:/home/ofscraper/.config/ofscraper
-      # you can use any path for the following, so long as
-      # you update your config file accordingly, and ensure that
-      # permissions are correct
-      - ./bin:/home/ofscraper/bin
-    stdin_open: true # docker run -i
-    tty: true # docker run -t
+      # Mount your configuration directory (replace ./config/ with your host path)
+      - ./config/:/home/ofscraper/.config/ofscraper/
+      # Mount your data storage directory (replace ./data/ with your host path)
+      - ./data/:/home/ofscraper/data/
+      # Optional: Mount pre-installed binaries from host (adjust paths as needed)
+      # - /usr/bin/ffmpeg:/usr/bin/ffmpeg
 
-    # use the following command if you want to interact with the script.
+    image: ghcr.io/datawhores/of-scraper:main 
+    # --- COMMAND OPTIONS ---
+    # Choose one of the following 'command' configurations based on your use case.
+    # Uncomment the desired option and ensure others are commented out.
+
+    # Option 1: For interactive use (recommended if you frequently run commands manually)
+    # This keeps the container running indefinitely in the background.
     command: ["/bin/bash", "-c", "sleep infinity"]
-    # bring the container up with `docker compose up -d` and then
-    # run it with something like:
-    # `docker compose exec -it ofscraper ofscraper`
-    # (optionally, you can specify additional arguments)
+    # To bring the container up: `docker compose up -d`
+    # Then, to run commands inside it: `docker compose exec -it ofscraper ofscraper {args}`
+    # Example: `docker compose exec -it ofscraper ofscraper --username myuser`
 
-    # alternatively, if you want the script to run automatically with a set of arguments,
-    # use something like the following command instead:
+    # Option 2: To run the scraper automatically with specific arguments when the container starts
+    # Uncomment the line below and comment out Option 1 above.
     # command: "ofscraper --username ALL --posts all"
+
+    # Optional: Configure restart policy.
+    # restart: "unless-stopped" # Ensures the container restarts automatically unless explicitly stopped.

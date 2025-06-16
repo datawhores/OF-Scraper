@@ -1,0 +1,329 @@
+# .github/workflows/publish-release-dockers.yml
+name: Publish Docker Images
+
+on:
+  workflow_call:
+    inputs:
+      input_version:
+        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Used for checkout ref.'
+        required: true
+        type: string
+      package_version:
+        description: 'The derived package version (e.g., 8.4.1).'
+        required: true
+        type: string
+      long_hash:
+        description: 'The full commit hash of the version.'
+        required: true
+        type: string
+      is_stable_release:
+        description: 'Is this a stable release?'
+        required: true
+        type: boolean
+      is_dev_release:
+        description: 'Is this a dev release?'
+        required: true
+        type: boolean
+      should_apply_stable_latest:
+        description: 'Should the stable latest tag be applied?'
+        required: true
+        type: boolean
+      should_apply_dev_latest:
+        description: 'Should the dev latest tag be applied?'
+        required: true
+        type: boolean
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+      COSIGN_PRIVATE_KEY: # Only required for Docker Hub signing, can be false if not always used
+        required: false
+# Permissions are at the top level of the workflow file (aligned with 'name:' and 'on:')
+permissions:
+  contents: read
+  packages: write
+  id-token: write # CRUCIAL for GHCR authentication and signing
+
+jobs:
+  # Docker Hub publishing - Stable
+  publish_docker_hub_stable:
+    name: Publish Stable to Docker Hub
+    if: ${{ inputs.is_stable_release }} # Only run if it's a stable release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }} # Use the input_version
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata for Docker Hub (Stable)
+        id: meta_hub_stable
+        uses: docker/metadata-action@v5
+        with:
+          images: datawhores/of-scraper
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=stable,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_stable_latest }}
+      - name: Build and Push Docker Hub Image (Stable)
+        id: build-and-push-hub-stable
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_hub_stable.outputs.tags }}
+          labels: ${{ steps.meta_hub_stable.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published Docker Hub image (Stable)
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          TAGS: ${{ steps.meta_hub_stable.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-hub-stable.outputs.digest }}
+        run: |
+          echo "Signing Docker Hub stable image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY \
+             ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # Docker Hub publishing - Dev
+  publish_docker_hub_dev:
+    name: Publish Dev to Docker Hub
+    if: ${{ inputs.is_dev_release }} # Only run if it's a dev release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata for Docker Hub (Dev)
+        id: meta_hub_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: datawhores/of-scraper
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=dev,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_dev_latest }}
+      - name: Build and Push Docker Hub Image (Dev)
+        id: build-and-push-hub-dev
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_hub_dev.outputs.tags }}
+          labels: ${{ steps.meta_hub_dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published Docker Hub image (Dev)
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          TAGS: ${{ steps.meta_hub_dev.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-hub-dev.outputs.digest }}
+        run: |
+          echo "Signing Docker Hub dev image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY \
+             ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # GHCR publishing - Stable
+  publish_ghcr_stable:
+    name: Publish Stable to GHCR
+    if: ${{ inputs.is_stable_release }} # Only run if it's a stable release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata for GHCR (Stable)
+        id: meta_ghcr_stable
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=stable,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_stable_latest }}
+      - name: Build and Push GHCR Image (Stable)
+        id: build-and-push-ghcr-stable
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_ghcr_stable.outputs.tags }}
+          labels: ${{ steps.meta_ghcr_stable.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published GHCR image (via OIDC/Keyless) (Stable)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          TAGS: ${{ steps.meta_ghcr_stable.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-ghcr-stable.outputs.digest }}
+        run: |
+          echo "Signing GHCR stable image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            ${IMAGES_TO_SIGN}
+        shell: bash
+
+  # GHCR publishing - Dev
+  publish_ghcr_dev:
+    name: Publish Dev to GHCR
+    if: ${{ inputs.is_dev_release }} # Only run if it's a dev release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.input_version || github.ref }}
+      - run: git checkout ${{ inputs.long_hash }}
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata for GHCR (Dev)
+        id: meta_ghcr_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ inputs.package_version }}
+            type=raw,value=dev,enable=true
+            type=raw,value=latest,enable=${{ inputs.should_apply_dev_latest }}
+      - name: Build and Push GHCR Image (Dev)
+        id: build-and-push-ghcr-dev
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
+            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+          tags: ${{ steps.meta_ghcr_dev.outputs.tags }}
+          labels: ${{ steps.meta_ghcr_dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          outputs: |
+            type=image,annotation=org.opencontainers.image.revision=${{ inputs.long_hash }}
+
+      - name: Sign the published GHCR image (via OIDC/Keyless) (Dev)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          TAGS: ${{ steps.meta_ghcr_dev.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push-ghcr-dev.outputs.digest }}
+        run: |
+          echo "Signing GHCR dev image..."
+          IMAGES_TO_SIGN=""
+          for TAG in ${TAGS}; do
+            IMAGES_TO_SIGN+="${TAG}@${DIGEST} "
+          done
+          cosign sign \
+            --yes \
+            ${IMAGES_TO_SIGN}
+        shell: bash

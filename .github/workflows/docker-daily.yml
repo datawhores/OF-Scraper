@@ -1,149 +1,117 @@
-name: Docker Daily
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-permissions: read-all
+name: Docker Daily Build
 
 on:
   push:
-    branches: "*"
-    # Publish semver tags as releases.
-    tags: ["*.*.*"]
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 
 jobs:
-  release_ghcr: 
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+  generate_version:
+    name: Generate Version Info
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
+      commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
+      base_version: ${{ steps.version.outputs.BASE_VERSION }}
+      is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      
+      - name: Make script executable
+        run: chmod +x ./scripts/commit_version.sh
+      - name: Generate Version and Git Info
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }} # Still pass for general info, but not for WORKFLOW_ID now
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: ./scripts/commit_version.sh
+
+  build_and_publish_docker:
+    name: Build and Publish Docker to ${{ matrix.registry.name }}
+    needs: [generate_version]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        registry:
+          - id: ghcr
+            name: GitHub Packages
+            sign: false
+          - id: dockerhub
+            name: Docker Hub
+            sign: true
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+        uses: actions/checkout@v4
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: login to ghcr
-        uses: docker/login-action@v2
+      - name: Log in to ${{ matrix.registry.name }}
+        uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN}}
-          # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata ghrc.io
-        id: meta2
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ghcr.io/datawhores/of-scraper
-          tags: |
-            type=raw,value={{branch}}
-            type=raw,value={{branch}}-{{sha}}
+          registry: ${{ matrix.registry.id == 'ghcr' && 'ghcr.io' || 'docker.io' }}
+          username: ${{ matrix.registry.id == 'ghcr' && github.actor || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ matrix.registry.id == 'ghcr' && secrets.GITHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
 
-      - name: push to image ghrc.io
-        id: build-and-push2
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          tags: ${{ steps.meta2.outputs.tags }}
-          labels: ${{ steps.meta2.outputs.labels }}
-          cache-to: type=gha,mode=max
-          push: true
-
-  release_github:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata for Docker Hub
+      - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
-          images: |
-            datawhores/of-scraper
+          images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
           tags: |
-            type=raw,value={{branch}}
-            type=raw,value={{branch}}-{{sha}}
+            type=ref,event=branch
+            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
+            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}
+            type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
+            
 
-      - name: push to image Docker Hub
+      - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUILD_VERSION=${{ needs.generate_version.outputs.version }}
+            INSTALL_FFMPEG=true
 
-      - name: cosign-installer Docker Hub
-        uses: sigstore/cosign-installer@v3.0.5
+      - name: Install Cosign
+        if: matrix.registry.sign == true
+        uses: sigstore/cosign-installer@v3.5.0
 
-      - name: Write signing key to disk Docker Hub
-        run: 'echo "$KEY" > cosign.key'
+      - name: Write signing key to disk
+        if: matrix.registry.sign == true
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
         shell: bash
-        env:
-          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
-      - name: Sign the published Docker image Docker Hub
+      - name: Sign the published Docker image
+        if: matrix.registry.sign == true
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
-
-      #       # Sign the resulting Docker image digest except on PRs.
-      #       # This will only write to the public Rekor transparency log when the Docker
-      #       # repository is public to avoid leaking data.  If you would like to publish
-      #       # transparency data even for private images, pass --force to cosign below.
-      #       # https://github.com/sigstore/cosign
-      #       - name: Sign the published Docker image
-      #         env:
-      #           COSIGN_EXPERIMENTAL: "true"
-      #         # This step uses the identity token to provision an ephemeral certificate
-      #         # against the sigstore community Fulcio instance.
-      #         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
-      #Login against a Docker registry except on PR
-      #https://github.com/docker/login-action

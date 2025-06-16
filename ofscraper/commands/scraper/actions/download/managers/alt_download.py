@@ -59,7 +59,7 @@ import ofscraper.utils.system.system as system
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache as cache
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.commands.scraper.actions.utils.send.message import send_msg
+from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 
 
 class AltDownloadManager(DownloadManager):
@@ -328,7 +328,7 @@ class AltDownloadManager(DownloadManager):
         temp_path.unlink(missing_ok=True)
         t = run(
             [
-                settings.get_ffmpeg(),
+                get_ffmpeg(),
                 "-i",
                 str(video["path"]),
                 "-i",

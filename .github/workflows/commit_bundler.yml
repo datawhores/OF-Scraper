@@ -1,523 +1,207 @@
+name: Build and Package
+
 on:
   push:
-permissions: read-all
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+permissions:
+  contents: read # Required for git checkout and gh CLI to read workflow runs
+
 jobs:
-  get_commit:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-22.04
+  generate_version:
+    name: Generate Version Info
+    runs-on: ubuntu-latest
+    env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
     outputs:
-      long: ${{ steps.commit.outputs.long}}
-      short: ${{ steps.commit.outputs.short}}
-      hash: ${{ steps.commit.outputs.hash}}
+      version: ${{ steps.version.outputs.VERSION }}
+      sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
+      short_hash: ${{ steps.version.outputs.SHORT_HASH }}
+      long_hash: ${{ steps.version.outputs.LONG_HASH }}
+      commit_timestamp: ${{ steps.version.outputs.COMMIT_TIMESTAMP }}
+      base_version: ${{ steps.version.outputs.BASE_VERSION }}
+      push_type: ${{ steps.version.outputs.PUSH_TYPE }}
+      is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Essential for git merge-base to compare full history
+          fetch-tags: true
+      
+      - name: Make script executable
+        run: chmod +x ./scripts/commit_version.sh
+      - name: Generate Version and Git Info
+        id: version # This step runs your commit_version.sh script
+        # Pass GitHub Actions context variables as environment variables to the script
+        run: ./scripts/commit_version.sh
+
+  build_binaries:
+    name: Build on ${{ matrix.os }}
+    needs: [generate_version]
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false # <-- ADDED: Allows all OS builds to complete even if one fails
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+            shell: bash
+          - os: windows-latest
+            artifact_suffix: windows
+            shell: pwsh
+          - os: macos-latest
+            artifact_suffix: macos
+            shell: bash
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-
-      - name: commit
-        uses: prompt/actions-commit-hash@v3
-        id: commit
-  linux_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: ubuntu-22.04
-    name: create linux release file
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls -d $PWD/*
-      - name: list files2
-        run: ls -d $PWD/ofscraper/*
-      - name: Create Linux executable with uv
-        uses: addnab/docker-run-action@v3
-        with:
-          image: datawhores/ubuntu:latest
-          options: -v ${{ github.workspace }}:/root/work
-          shell: bash
-          run: |
-            # Enter the project directory
-            cd work
-
-            # Clean old build artifacts
-            rm -rf ./dist ./build
-
-            # Install system dependencies
-            apt-get update && apt-get install -y curl zip libxml2-dev libxslt-dev
-
-            # Install uv inside the container
-            curl -LsSf https://astral.sh/uv/install.sh | sh
-            # Add uv to the PATH for this script session
-            source /root/.cargo/env
-
-            # Create venv and install all dependencies with uv
-            uv venv
-            source .venv/bin/activate
-            # This single command replaces 'poetry install'
-            uv sync --all-extras
-            # This replaces 'pip install pyinstaller'
-            uv pip install pyinstaller==6.10.0
-
-            # Test that the installed command works
-            echo "--- Testing ofscraper command ---"
-            ofscraper -h
-
-            # Build the executable with PyInstaller
-            echo "--- Running PyInstaller ---"
-            # This is simpler and more reliable because 'ofscraper' is on the PATH
-            pyinstaller --onefile --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
-
-            # List the results
-            echo "--- Listing build artifacts ---"
-            ls -l dist
-
-      - name: upload file
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/upload-artifact@v4
-          with: |
-            name: ofscraper_linux_${{needs.get_commit.outputs.short}}
-            path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
-            overwrite: true
-
-  linux_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: ubuntu-22.04
-    name: create linux release zip
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls -d $PWD/*
-      - name: list files2
-        run: ls -d $PWD/ofscraper/*
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
-
-      - name: create zip
-        uses: addnab/docker-run-action@v3
-        with:
-          image: datawhores/ubuntu:latest
-          options: -v ${{ github.workspace }}:/root/work
-          shell: bash
-          run: |
-            cd work
-            rm -rf ./ofscraper/dist
-            rm -rf ./ofscraper/build
-            apt-get install zip libxml2-dev libxslt-dev -y
-            python3.11 -m venv .venv
-            source .venv/bin/activate
-            python3.11 -m pip install pyinstaller==6.10.0
-            /root/.local/bin/poetry install
-            echo "ls files"
-            ls .
-            echo "test ofscraper"
-            ofscraper -h
-            echo "run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.short}}"
-            echo "list one dir"
-            ls dist
-            zip -r "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip" "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
-      - name: upload one file
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/upload-artifact@v4
-          with: |
-            name: "ofscraper_linux_zip_${{needs.get_commit.outputs.short}}"
-            path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip"
-            overwrite: true
-
-  windows_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: windows-latest
-    name: create windows release zip
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls .
-      - name: list files2
-        run: ls ofscraper
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
-      - name: Set up Python 3.11.5
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.5
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install ofscraper windows
-        run: |
-          .venv\Scripts\activate.bat
-          pip install .
-          .venv\Scripts\deactivate.bat
-      - name: Install pyinstaller
-        run: |
-          .venv\Scripts\activate.bat
-          pip install pyinstaller==6.10.0
-          .venv\Scripts\deactivate.bat
-      - name: test ofscraper
-        run: |
-          .venv\Scripts\activate.bat
-          ofscraper -h
-      - name: create-dir
-        id: create-dir
-        run: |
-          .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" --paths . --clean --log DEBUG
-        continue-on-error: true
-      - name: create-dir2
-        if: steps.create-dir.outcome != 'success'
-        run: |
-          .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
-      - uses: vimtor/action-zip@v1
-        with:
-          files: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}"
-          dest: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
-      - name: upload one file
-        uses: Wandalen/wretry.action@master
-
-        with:
-          attempt_limit: 3
-          action: actions/upload-artifact@v4
-          with: |
-            name: ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
-            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
-            overwrite: true
-
-  windows_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: windows-latest
-    name: create windows release file
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls .
-      - name: list files2
-        run: ls ofscraper
-
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/download-artifact@v4
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.5
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install ofscraper windows
-        run: |
-          .venv\Scripts\activate.bat
-          pip install .
-          .venv\Scripts\deactivate.bat
-      - name: Install pyinstaller
-        run: |
-          .venv\Scripts\activate.bat
-           pip install pyinstaller==6.10.0
-          .venv\Scripts\deactivate.bat
-      - name: test ofscraper
-        run: ofscraper -h
-      - name: create-one-file
-        id: create-one-file
-        run: |
-          .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" -p ofscraper --clean --log DEBUG
-          .venv\Scripts\deactivate.bat
-        continue-on-error: true
-      - name: create-one-file2
-        if: steps.create-one-file.outcome != 'success'
-        run: |
-          .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" -p ofscraper --clean --log DEBUG
-          .venv\Scripts\deactivate.bat
-      - name: upload one file
-        uses: Wandalen/wretry.action@master
-        with:
-          attempt_limit: 3
-          action: actions/upload-artifact@v4
-          with: |
-            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.exe"
-            name: ofscraper_windows_${{needs.get_commit.outputs.short}}
-            overwrite: true
-
-  mac_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: macos-latest
-    name: create mac release file
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls -d $PWD/*
-      - name: list files2
-        run: ls -d $PWD/ofscraper/*
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.5
-# Step 1: Install uv itself (replaces 'install poetry' action)
+          python-version: 3.12.0
       - name: Install uv
         uses: astral-sh/setup-uv@v1
 
-      # Step 2: Create venv and install all dependencies
-      # This single step replaces creating the venv, installing the package, and installing pyinstaller.
-      - name: Install Dependencies and Tools
+      - name: Set Version Environment Variables
+        shell: bash
         run: |
-          # Create the virtual environment
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
+          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.generate_version.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Install Dependencies and Build Tools
+        shell: bash
+        run: |
           uv venv
-          # Install project dependencies, optional dependencies, and pyinstaller all at once.
-          uv sync --all-extras
-          uv pip install pyinstaller==6.10.0
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            . .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          uv sync --verbose --extra ffmpeg --extra dev
+
+      - name: Set UTF-8 environment (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+          echo "PYTHONLEGACYWINDOWSSTDIO=utf8" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Build Executable using Spec Files (One-File)
+        id: build_onefile
         shell: bash
-
-      # Step 3: Test the installed script
-      # We just activate the venv and run the command. The PATH is now set correctly.
-      - name: Test ofscraper command
+        continue-on-error: true # <-- ADDED: Allows this step to fail without stopping this OS matrix axis
         run: |
-          source .venv/bin/activate
-          ofscraper -h
+          SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
+          EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              source .venv/Scripts/activate
+              EXE_EXT=".exe"
+          else
+              source .venv/bin/activate
+              EXE_EXT=""
+          fi
+          
+          echo "Building one-file executable from specs/onefile.spec..."
+          pyinstaller specs/onefile.spec
+          mv dist/ofscraper_file${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
+          echo "one_file_path=dist/${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
+          echo "one_file_name=${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
+
+      - name: Upload One-File Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_onefile.outputs.one_file_name }}
+          path: ${{ steps.build_onefile.outputs.one_file_path }}
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+
+      - name: Build and Zip One-Dir Bundle
+        id: build_onedir_zip
         shell: bash
-
-      # Step 4: Build the executable with PyInstaller
-      # This is now one robust, clean step.
-      - name: Create Executable with PyInstaller
+        continue-on-error: true # Already present: Allows this step to fail without stopping this OS matrix axis
         run: |
-          rm -rf dist build
-          source .venv/bin/activate
-          # This simpler command works because the 'ofscraper' script is now
-          # on the PATH inside the activated virtual environment.
-          pyinstaller --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.short}}" .venv/bin/ofscraper
-        shell: bash
-      - name: upload file
-        uses: Wandalen/wretry.action@master
+          SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
+          DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
+          ZIP_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip"
 
-        with:
-          action: actions/upload-artifact@v4
-          attempt_limit: 3
-          with: |
-            name: ofscraper_macos_${{needs.get_commit.outputs.short}}
-            path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}"
-            overwrite: true
+          if [ "${{ runner.os }}" == "Windows" ]; then
+              source .venv/Scripts/activate
+          else
+              source .venv/bin/activate
+          fi
 
-  mac_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [ get_commit]
-    runs-on: macos-latest
-    name: create mac release zip
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - run: git checkout ${{needs.get_commit.outputs.long}}
-      - name: list files
-        run: ls -d $PWD/*
-      - name: list files2
-        run: ls -d $PWD/ofscraper/*
-      - name: replace version.py
-        uses: Wandalen/wretry.action@master
+          echo "Building one-dir bundle from specs/onedir.spec..."
+          pyinstaller specs/onedir.spec
+          mv dist/ofscraper_dir dist/${DIR_NAME}
 
-        with:
-          action: actions/download-artifact@v4
-          attempt_limit: 3
-          with: |
-            name: ofscraper_version_${{needs.get_commit.outputs.short}}
-            path: ofscraper
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.5
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: |
-          source .venv/bin/activate
-          pip install . -vvv
-          deactivate
-      - name: Install pyinstaller
-        run: |
-          source .venv/bin/activate
-          pip install pyinstaller==6.10.0
-          deactivate
-      - name: test ofscraper
-        run: |
-          export PATH=$PATH:/usr/local/bin
-          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
-      - name: create-dir
-        id: create-dir
-        run: |
-          rm -rf dist
-          rm -rf build
-          source .venv/bin/activate
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{needs.get_commit.outputs.short}}"
-          deactivate
-        continue-on-error: true
-      - name: create-dir2
-        id: create-dir2
-        if: steps.create-dir.outcome != 'success'
-        run: |
-          rm -rf dist
-          rm -rf build
-          source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{needs.get_commit.outputs.short}}"
-          deactivate
-      - uses: vimtor/action-zip@v1
-        with:
-          files: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}"
-          dest: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}.zip"
+          echo "Zipping one-dir build..."
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            powershell -Command "Compress-Archive -Path dist/${DIR_NAME} -DestinationPath dist/${ZIP_NAME} -Force"
+          else
+            zip -r "dist/${ZIP_NAME}" "dist/${DIR_NAME}"
+          fi
+          echo "zip_path=dist/${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "dir_path=dist/${DIR_NAME}" >> $GITHUB_OUTPUT
+          echo "dir_name=dist/${DIR_NAME}" >> $GITHUB_OUTPUT
 
-      - name: upload zip
-        uses: Wandalen/wretry.action@master
-
+      - name: Upload Zipped One-Dir Artifact
+        if: success() && steps.build_onedir_zip.outcome == 'success'
+        uses: actions/upload-artifact@v4
         with:
-          action: actions/upload-artifact@v4
-          with: |
-            name: ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
-            path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}.zip"
-            overwrite: true
+          name: ${{ steps.build_onedir_zip.outputs.zip_name }}
+          path: ${{ steps.build_onedir_zip.outputs.zip_path }}
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+
+      - name: Upload One-Dir Folder (if zip failed)
+        if: failure() && steps.build_onedir_zip.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_onedir_zip.outputs.dir_name }}
+          path: ${{ steps.build_onedir_zip.outputs.dir_path }}
+          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
 
   publish_release:
+    name: Publish GitHub Release
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [build_binaries, generate_version] # Waits for version info AND all binary builds to complete (even partially)
     runs-on: ubuntu-latest
-    name: publish
-    needs:
-      [
-        mac_file,
-        mac_dir,
-        windows_dir,
-        windows_file,
-        linux_file,
-        linux_dir,
-        get_commit,
-      ]
     permissions:
-      contents: write
+      contents: write # Required to create/update GitHub Releases
     steps:
-      # # - name: download linux
-      # #   uses: Wandalen/wretry.action@master
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          # No specific `if-no-files-found` here on download-artifact, it will download what's available
+          # and log warnings for missing ones by default.
 
-      # #   with:
-      # #     attempt_limit: 3
-      # #     action: actions/download-artifact@v4
-      # #     with: |
-      # #       name:  ofscraper_linux_${{needs.get_commit.outputs.short}}
-      # # - name: download linux zip
-      # #   uses: Wandalen/wretry.action@master
+      - name: List downloaded files for debugging
+        run: ls -R artifacts
 
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_linux_zip_${{needs.get_commit.outputs.short}}
-      # - name: download linx
-      #   uses: Wandalen/wretry.action@master
-
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_macos_${{needs.get_commit.outputs.short}}
-      # - name: download mac zip
-      #   uses: Wandalen/wretry.action@master
-
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
-      # - name: download windows
-      #   uses: Wandalen/wretry.action@master
-
-      #   with:
-      #     attempt_limit: 3
-      #     action: actions/download-artifact@v4
-      #     with: |
-      #       name:  ofscraper_windows_${{needs.get_commit.outputs.short}}
-      # - name: download windows zip
-      #   uses: Wandalen/wretry.action@master
-
-      # with:
-      #   attempt_limit: 3
-      #   action: actions/download-artifact@v4
-      #   with: |
-      #     name:  ofscraper_windows_zip_${{needs.get_commit.outputs.short}}
-
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y.%m.%d')_$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
-
-      - name: create release
+      - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*
-          tag: "${{needs.get_commit.outputs.short}}"
-          name: ${{env.name}}
-          body: ${{env.body}}
-          commit: "${{needs.get_commit.outputs.long}}"
-        env:
-          name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{needs.get_commit.outputs.short}}_package"
-          body: "This is a auto generated release created from commit ${{ needs.get_commit.outputs.hash}}"
+          artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
+          # Combined tag for uniqueness and chronological sorting
+          tag: "${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}"
+          # Human-readable name with all key details
+          name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
+          
+          body: "This is an auto-generated development release created from commit hash `${{ needs.generate_version.outputs.long_hash }}`. Version: `${{ needs.generate_version.outputs.version }}`"
+          commit: "${{ needs.generate_version.outputs.long_hash }}"
+          allowUpdates: true
+          prerelease: true
