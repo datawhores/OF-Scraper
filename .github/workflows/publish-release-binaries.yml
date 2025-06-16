@@ -147,26 +147,32 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
+      - name: Make retry script executable
+        run: chmod +x .github/scripts/retry_action.sh
+
       - name: Upload Build Artifacts (with retries)
-        uses: Wandalen/wretry.action@v3.8.0
-        with:
-          action: actions/upload-artifact@v4
-          # Use placeholders for dynamic values
-          with: |
-              name: {artifact_name}
-              path: |
-                  {exe_file_path}
-                  {zip_file_path}
-              if-no-files-found: ignore
-              overwrite: true
-          # Provide the actual dynamic values for the placeholders
-          format: |
-              artifact_name: build-artifacts-${{ matrix.os }}
-              # Determine the executable path based on OS
-              exe_file_path: ${{ runner.os == 'Windows' && format('dist/ofscraper_{0}_{1}.exe', matrix.artifact_suffix, steps.prep_build_version.outputs.sanitized_tag) || format('dist/ofscraper_{0}_{1}', matrix.artifact_suffix, steps.prep_build_version.outputs.sanitized_tag) }}
-              zip_file_path: dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
-          attempt_limit: 3 
-          time_out: 300
+        run: |
+          # Define the dynamic values for paths and names
+          ARTIFACT_NAME="build-artifacts-${{ matrix.os }}"
+          
+          OS_SUFFIX="${{ matrix.artifact_suffix }}"
+          SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
+          
+          # Determine the executable path based on OS
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
+          else
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
+          fi
+          
+          ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
+
+          UPLOAD_COMMAND="actions/upload-artifact@v4 name:'$ARTIFACT_NAME' path:'$EXE_FILE_PATH
+$ZIP_FILE_PATH' if-no-files-found:ignore overwrite:true"
+
+          # Call the retry script with max attempts, sleep, and the command
+          .github/scripts/retry_action.sh 3 10 "$UPLOAD_COMMAND"
+        shell: bash # Ensure this step runs in bash
 
   publish_release:
     name: Publish GitHub Release
@@ -176,14 +182,17 @@ jobs:
       contents: write # Needed for creating the release
       actions: read # Needed to download artifacts within this job
     steps:
+      - name: Make retry script executable (for download)
+        run: chmod +x .github/scripts/retry_action.sh
+
       - name: Download all build artifacts (with retries)
-        uses: Wandalen/wretry.action@v3.8.0
-        with:
-          action: actions/download-artifact@v4
-          with: |
-              path: artifacts/
-          attempt_limit: 3 # Changed from 'attempts'
-          time_out: 300 # Changed from 'timeout_minutes' and value is in seconds (5 minutes)
+        run: |
+          # Construct the download command
+          DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
+
+          # Call the retry script
+          .github/scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
+        shell: bash
 
       - name: List downloaded files for debugging
         run: ls -R artifacts
