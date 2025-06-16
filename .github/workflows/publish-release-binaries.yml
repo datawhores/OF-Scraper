@@ -167,9 +167,7 @@ jobs:
           
           ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
 
-          UPLOAD_COMMAND="actions/upload-artifact@v4 name:'$ARTIFACT_NAME' path:'$EXE_FILE_PATH
-$ZIP_FILE_PATH' if-no-files-found:ignore overwrite:true"
-
+          UPLOAD_COMMAND="actions/upload-artifact@v4 name:'$ARTIFACT_NAME' path:'$EXE_FILE_PATH $ZIP_FILE_PATH' if-no-files-found:ignore overwrite:true"
           # Call the retry script with max attempts, sleep, and the command
           .github/scripts/retry_action.sh 3 10 "$UPLOAD_COMMAND"
         shell: bash # Ensure this step runs in bash
