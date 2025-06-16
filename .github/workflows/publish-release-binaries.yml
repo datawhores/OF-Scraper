@@ -152,26 +152,13 @@ jobs:
         run: chmod +x ./scripts/retry_action.sh
 
       - name: Upload Build Artifacts (with retries)
-        run: |
-          # Define the dynamic values for paths and names
-          ARTIFACT_NAME="build-artifacts-${{ matrix.os }}"
-          
-          OS_SUFFIX="${{ matrix.artifact_suffix }}"
-          SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
-          
-          # Determine the executable path based on OS
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            EXE_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
-          else
-            EXE_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
-          fi
-          
-          ZIP_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
-
-          UPLOAD_COMMAND="actions/upload-artifact@v4 name:'$ARTIFACT_NAME' path:'$EXE_FILE_PATH $ZIP_FILE_PATH' if-no-files-found:ignore overwrite:true"
-          # Call the retry script with max attempts, sleep, and the command
-          ./scripts/retry_action.sh 3 10 "$UPLOAD_COMMAND"
-        shell: bash # Ensure this step runs in bash
+              uses: ./.github/actions/retry-artifact-operation@v1 # Path to your new composite action
+              with:
+                operation_type: upload
+                name: build-artifacts-${{ matrix.os }}
+                path: ${{ steps.prepare_paths.outputs.artifact_paths }} # Uses the output from the preparation step
+                max_attempts: 3
+                sleep_seconds: 10
 
   publish_release:
     name: Publish GitHub Release

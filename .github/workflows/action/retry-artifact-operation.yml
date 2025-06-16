@@ -1,0 +1,99 @@
+name: 'Retryable Artifact Operation'
+description: 'Uploads or downloads artifacts with retry logic'
+
+inputs:
+  operation_type:
+    description: 'Specify "upload" or "download" for the artifact operation.'
+    required: true
+    type: string
+  
+  # Inputs common to both or used conditionally
+  name:
+    description: 'For upload: Name of the artifact to upload. For download: Name of the artifact to download (use "all" to download all artifacts).'
+    required: true
+    type: string
+  path:
+    description: 'For upload: A file, directory or list of files and directories to upload. For download: The directory to download artifacts to.'
+    required: true
+    type: string
+
+  # Inputs specific to upload-artifact
+  if-no-files-found:
+    description: 'For upload: Action to take if no files are found. Options: "warn", "error", "ignore".'
+    required: false
+    default: 'warn'
+    type: string
+  overwrite:
+    description: 'For upload: Overwrite existing artifacts (true/false).'
+    required: false
+    default: 'true'
+    type: boolean # Note: type 'boolean' for boolean inputs
+
+  # Inputs for retry logic
+  max_attempts:
+    description: 'Maximum number of attempts for the operation.'
+    required: false
+    default: '3'
+    type: string # Using string as composite action inputs are strings
+  sleep_seconds:
+    description: 'Seconds to wait between retries.'
+    required: false
+    default: '10'
+    type: string # Using string as composite action inputs are strings
+
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare Operation Variables
+      run: |
+        echo "OPERATION_TYPE=${{ inputs.operation_type }}" >> "$GITHUB_ENV"
+        echo "ARTIFACT_NAME=${{ inputs.name }}" >> "$GITHUB_ENV"
+        echo "ARTIFACT_PATH=${{ inputs.path }}" >> "$GITHUB_ENV"
+        echo "MAX_ATTEMPTS=${{ inputs.max_attempts }}" >> "$GITHUB_ENV"
+        echo "SLEEP_SECONDS=${{ inputs.sleep_seconds }}" >> "$GITHUB_ENV"
+
+        # Set upload-specific variables if operation is upload
+        if [ "${{ inputs.operation_type }}" == "upload" ]; then
+          echo "IF_NO_FILES_FOUND=${{ inputs.if-no-files-found }}" >> "$GITHUB_ENV"
+          echo "OVERWRITE_ACTION=${{ inputs.overwrite }}" >> "$GITHUB_ENV"
+        fi
+      shell: bash
+
+    - name: Perform Retryable Artifact Operation
+      run: |
+        set -euo pipefail
+
+        echo "Starting retry logic for ${OPERATION_TYPE} artifact: ${ARTIFACT_NAME}" >&2
+        echo "Paths: ${ARTIFACT_PATH}" >&2
+
+        ATTEMPT_NUM=1
+        until \
+          if [ "$OPERATION_TYPE" == "upload" ]; then
+            # Call upload-artifact
+            actions/upload-artifact@v4 \
+              name:"$ARTIFACT_NAME" \
+              path:"$ARTIFACT_PATH" \
+              if-no-files-found:"$IF_NO_FILES_FOUND" \
+              overwrite:"$OVERWRITE_ACTION"
+          elif [ "$OPERATION_TYPE" == "download" ]; then
+            # Call download-artifact
+            actions/download-artifact@v4 \
+              name:"$ARTIFACT_NAME" \
+              path:"$ARTIFACT_PATH"
+          else
+            echo "ERROR: Invalid operation_type specified: ${OPERATION_TYPE}. Must be 'upload' or 'download'." >&2
+            exit 1
+          fi
+        do
+            EXIT_CODE=$?
+            if [ "$ATTEMPT_NUM" -ge "$MAX_ATTEMPTS" ]; then
+                echo "ERROR: Artifact ${OPERATION_TYPE} failed after ${MAX_ATTEMPTS} attempts (last exit code: ${EXIT_CODE})." >&2
+                exit "$EXIT_CODE"
+            fi
+            echo "Artifact ${OPERATION_TYPE} failed (exit code ${EXIT_CODE}). Retrying in ${SLEEP_SECONDS} seconds... (Attempt ${ATTEMPT_NUM} of ${MAX_ATTEMPTS})" >&2
+            sleep "${SLEEP_SECONDS}"
+            ATTEMPT_NUM=$((ATTEMPT_NUM + 1))
+        done
+
+        echo "Artifact ${OPERATION_TYPE} succeeded on attempt ${ATTEMPT_NUM}." >&2
+      shell: bash
