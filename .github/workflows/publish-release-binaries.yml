@@ -186,6 +186,10 @@ jobs:
           ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
           fetch-depth: 0
           fetch-tags: true
+      - name: list files
+        runs: | 
+          ls .
+          ls scripts
       - name: Make retry script executable (for download)
         run: chmod +x ./scripts/retry_action.sh
 
