@@ -71,14 +71,13 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: ./scripts/release_version.sh
 
-  determine_docker_latest_logic:
-    name: Determine Docker Latest Tag Logic
+  determine_docker_latest_logic_true:
+    name: Determine Docker Latest Tag Logic (Dynamic)
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read # Needed for the Python script to list workflow runs and jobs
-      contents: read # For checking out the script itself
+      actions: read
+      contents: read
     outputs:
       should_apply_stable_latest: ${{ toJSON(steps.run_python_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ toJSON(steps.run_python_logic.outputs.should_apply_dev_latest) }}
@@ -103,15 +102,33 @@ jobs:
         run: python scripts/determine_docker_stable_dev_tags.py \
           "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
-          "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}"
+          "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}" \
+          "${{ inputs.docker }}"
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
 
+  determine_docker_latest_logic_false:
+    name: Determine Docker Latest Tag Logic (Static False)
+    needs: [determine_tags_and_versions] # Needs prior info for its own 'if'
+    if: ${{ !inputs.docker }}
+    runs-on: ubuntu-latest
+    outputs:
+      should_apply_stable_latest: 'false' # Always output "false" as a string
+      should_apply_dev_latest: 'false'    # Always output "false" as a string
+    steps:
+      - name: Set Default Outputs
+        run: |
+          echo "::debug::Docker publishing is not requested, setting default 'false' for should_apply_stable_latest and should_apply_dev_latest."
+          echo "should_apply_stable_latest=false" >> "$GITHUB_OUTPUT"
+          echo "should_apply_dev_latest=false" >> "$GITHUB_OUTPUT"
+        shell: bash
+
   pypi:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip }}
+    if: ${{ inputs.pip}} # Runs for real PyPI if pip is true and test_pypi is false
     runs-on: ubuntu-latest
     name: Publish to PyPI
     permissions:
@@ -140,22 +157,23 @@ jobs:
           uv pip install hatch twine
       - name: Build Package with Hatch
         run: |
-          PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
-          echo "Setting package version to $PACKAGE_VERSION" >> "$GITHUB_ENV"
+          source .venv/bin/activate
           echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+
           hatch build
         shell: bash
 
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi }}
+          TWINE_PASSWORD: ${{ secrets.pypi }} # Using 'pypi' secret for main PyPI
         run: twine upload "dist/*"
         shell: bash
 
   test_pypi_upload:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.test_pypi }}
+    if: ${{inputs.test_pypi }} # Runs for Test PyPI if pip is true and test_pypi is true
     runs-on: ubuntu-latest
     name: Publish to Test PyPI
     permissions:
@@ -187,16 +205,16 @@ jobs:
       - name: Build Package with Hatch
         run: |
           source .venv/bin/activate
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
           echo "HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
           hatch build
         shell: bash
 
       - name: Publish to Test PyPI with Twine
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi2 }}
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          TWINE_PASSWORD: ${{ secrets.pypi2 }} # Using 'pypi2' secret for Test PyPI
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ # Points to Test PyPI
         run: |
           source .venv/bin/activate
           twine upload "dist/*"
@@ -214,8 +232,8 @@ jobs:
 
   call_docker_publish:
     name: Publish Docker Images
-    needs: [determine_tags_and_versions, determine_docker_latest_logic]
-    if: ${{ inputs.docker }}
+    needs: [determine_tags_and_versions, determine_docker_latest_logic_true]
+    if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
     uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -228,5 +246,5 @@ jobs:
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
       is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
-      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
-      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic_true.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic_true.outputs.should_apply_dev_latest) }}
