@@ -166,40 +166,40 @@ jobs:
           attempt_limit: 3 
           time_out: 300
 
-  publish_release:
-    name: Publish GitHub Release
-    needs: [build_binaries]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Needed for creating the release
-      actions: read # Needed to download artifacts within this job
-    steps:
-      - name: Checkout Full Git History
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
-          fetch-depth: 0
-          fetch-tags: true
-      - name: Make retry script executable (for download)
-        run: chmod +x ./scripts/retry_action.sh
+  # publish_release:
+  #   name: Publish GitHub Release
+  #   needs: [build_binaries]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write # Needed for creating the release
+  #     actions: read # Needed to download artifacts within this job
+  #   steps:
+  #     - name: Checkout Full Git History
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
+  #         fetch-depth: 0
+  #         fetch-tags: true
+  #     - name: Make retry script executable (for download)
+  #       run: chmod +x ./scripts/retry_action.sh
 
-      - name: Download all build artifacts (with retries)
-        run: |
-          # Construct the download command
-          DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
+  #     - name: Download all build artifacts (with retries)
+  #       run: |
+  #         # Construct the download command
+  #         DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
 
-          # Call the retry script
-          ./scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
-        shell: bash
+  #         # Call the retry script
+  #         ./scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
+  #       shell: bash
 
-      - name: List downloaded files for debugging
-        run: ls -R artifacts
+  #     - name: List downloaded files for debugging
+  #       run: ls -R artifacts
 
-      - name: Create or Update Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: artifacts/*/*
-          tag: ${{ inputs.input_version }}
-          name: "Release ${{ inputs.input_version }}"
-          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
-          allowUpdates: true
+  #     - name: Create or Update Release
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         artifacts: artifacts/*/*
+  #         tag: ${{ inputs.input_version }}
+  #         name: "Release ${{ inputs.input_version }}"
+  #         body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
+  #         allowUpdates: true
