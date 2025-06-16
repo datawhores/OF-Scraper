@@ -1,28 +1,27 @@
 # .github/workflows/package-builder-release.yml
-# checkov:skip=CKV_GHA_7: "The workflow_dispatch inputs are intentionally used for a controlled manual release process. 'version' specifically targets a Git tag/ref, and boolean flags control trusted build/publish steps. This setup does not introduce arbitrary code execution risks."
 name: Package Builder Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.'
+        description: "The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag."
         required: true
         type: string
       files:
-        description: 'Build binary files? (t/f)'
+        description: "Build binary files? (t/f)"
         required: true
         type: boolean
       pip:
-        description: 'Publish to PyPI? (t/f)'
+        description: "Publish to PyPI? (t/f)"
         required: true
         type: boolean
       docker:
-        description: 'Publish to Docker Hub & GHCR (t/f)'
+        description: "Publish to Docker Hub & GHCR (t/f)"
         required: true
         type: boolean
       test_pypi: # NEW INPUT: For testing PyPI upload
-        description: 'Perform a test upload to Test PyPI? (t/f)'
+        description: "Perform a test upload to Test PyPI? (t/f)"
         required: true
         type: boolean
         default: false # Default to false to prevent accidental test uploads
@@ -72,7 +71,7 @@ jobs:
         run: ./scripts/release_version.sh
 
   determine_docker_latest_logic:
-    name: Determine Docker Latest Tag Logic (Dynamic)
+    name: Determine Docker Latest Tag Logic
     needs: [determine_tags_and_versions]
     runs-on: ubuntu-latest
     permissions:
@@ -92,7 +91,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Python dependencies
         run: pip install requests
@@ -152,7 +151,9 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi }} # Using 'pypi' secret for main PyPI
-        run: twine upload "dist/*"
+        run: |
+          source .venv/bin/activate
+          twine upload "dist/*"
         shell: bash
 
   test_pypi_upload:
@@ -181,11 +182,11 @@ jobs:
 
       - name: create venv and activate
         run: |
-            uv venv
+          uv venv
       - name: Install Build and Publish Tools
         run: |
-            source .venv/bin/activate
-            uv pip install hatch twine
+          source .venv/bin/activate
+          uv pip install hatch twine
       - name: Build Package with Hatch
         run: |
           source .venv/bin/activate
