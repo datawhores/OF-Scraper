@@ -148,7 +148,7 @@ jobs:
         shell: pwsh
 
       - name: Upload Build Artifacts (with retries)
-        uses: ./.github/actions/retry-artifact-operation@v1 # Path to your new composite action
+        uses: ./.github/actions/retry-artifact-operation@3.13.dev9 # Path to your new composite action
         with:
           operation_type: upload
           name: build-artifacts-${{ matrix.os }}
