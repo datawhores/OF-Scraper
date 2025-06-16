@@ -180,8 +180,14 @@ jobs:
       contents: write # Needed for creating the release
       actions: read # Needed to download artifacts within this job
     steps:
+      - name: Checkout Full Git History
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
+          fetch-depth: 0
+          fetch-tags: true
       - name: Make retry script executable (for download)
-        run: chmod +x .github/scripts/retry_action.sh
+        run: chmod +x ./scripts/retry_action.sh
 
       - name: Download all build artifacts (with retries)
         run: |
@@ -189,7 +195,7 @@ jobs:
           DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
 
           # Call the retry script
-          .github/scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
+          ./scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
         shell: bash
 
       - name: List downloaded files for debugging
