@@ -79,8 +79,8 @@ jobs:
       actions: read
       contents: read
     outputs:
-      should_apply_stable_latest: steps.run_python_logic.outputs.should_apply_stable_latest
-      should_apply_dev_latest: steps.run_python_logic.outputs.should_apply_dev_latest
+      should_apply_stable_latest: ${{steps.run_python_logic.outputs.should_apply_stable_latest}}
+      should_apply_dev_latest: ${steps.run_python_logic.outputs.should_apply_dev_latest}}
     steps:
       - name: Checkout repository for script
         uses: actions/checkout@v4
