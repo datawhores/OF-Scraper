@@ -71,7 +71,7 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: ./scripts/release_version.sh
 
-  determine_docker_latest_logic_true:
+  determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic (Dynamic)
     needs: [determine_tags_and_versions]
     runs-on: ubuntu-latest
@@ -109,22 +109,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
-
-  determine_docker_latest_logic_false:
-    name: Determine Docker Latest Tag Logic (Static False)
-    needs: [determine_tags_and_versions] # Needs prior info for its own 'if'
-    if: ${{ !inputs.docker }}
-    runs-on: ubuntu-latest
-    outputs:
-      should_apply_stable_latest: 'false' # Always output "false" as a string
-      should_apply_dev_latest: 'false'    # Always output "false" as a string
-    steps:
-      - name: Set Default Outputs
-        run: |
-          echo "::debug::Docker publishing is not requested, setting default 'false' for should_apply_stable_latest and should_apply_dev_latest."
-          echo "should_apply_stable_latest=false" >> "$GITHUB_OUTPUT"
-          echo "should_apply_dev_latest=false" >> "$GITHUB_OUTPUT"
-        shell: bash
 
   pypi:
     needs: [determine_tags_and_versions]
@@ -232,7 +216,7 @@ jobs:
 
   call_docker_publish:
     name: Publish Docker Images
-    needs: [determine_tags_and_versions, determine_docker_latest_logic_true]
+    needs: [determine_tags_and_versions, determine_docker_latest_logic]
     if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
     uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
     secrets:
@@ -246,5 +230,5 @@ jobs:
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
       is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
-      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic_true.outputs.should_apply_stable_latest) }}
-      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic_true.outputs.should_apply_dev_latest) }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
