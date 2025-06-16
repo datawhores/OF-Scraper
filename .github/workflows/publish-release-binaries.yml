@@ -147,20 +147,20 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-      # - name: Upload Build Artifacts (with retries)
-      #   uses: Wandalen/wretry.action@v3.8.0
-      #   with:
-      #     action: actions/upload-artifact@v4
-      #     with: |
-      #         name: build-artifacts-${{ matrix.os }}
-      #         path: |
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
-      #             dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
-      #         if-no-files-found: ignore
-      #         overwrite: true
-      #     attempt_limit: 3 
-      #     time_out: 300
+      - name: Upload Build Artifacts (with retries)
+        uses: Wandalen/wretry.action@v3.8.0
+        with:
+          action: actions/upload-artifact@v4
+          with: |
+              name: build-artifacts-${{ matrix.os }}
+              path: |
+                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}
+                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}.exe
+                  dist/ofscraper_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip
+              if-no-files-found: ignore
+              overwrite: true
+          attempt_limit: 3 
+          time_out: 300
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
