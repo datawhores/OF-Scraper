@@ -152,13 +152,19 @@ jobs:
         run: chmod +x ./scripts/retry_action.sh
 
       - name: Upload Build Artifacts (with retries)
-        uses: ./.github/actions/retry-artifact-operation@v1
-        with:
-          operation_type: upload
-          name: build-artifacts-${{ matrix.os }}
-          path: ${{ steps.prepare_paths.outputs.artifact_paths }}
-          max_attempts: 3
-          sleep_seconds: 10
+        uses: Wandalen/wretry.action@v3.8.0
+        with:  # This 'with' aligns with 'uses'
+          action: actions/upload-artifact@v4
+          with: | # This 'with' is indented under the previous 'with'
+              name: {artifact_name}
+              path: {all_paths} # Single placeholder for the entire path string
+              if-no-files-found: ignore
+              overwrite: true
+          format: | # This 'format' aligns with 'action' and the first 'with'
+              artifact_name: build-artifacts-${{ matrix.os }}
+              all_paths: ${{ steps.prepare_paths.outputs.artifact_paths }}
+          attempt_limit: 3 
+          time_out: 300
 
   publish_release:
     name: Publish GitHub Release
