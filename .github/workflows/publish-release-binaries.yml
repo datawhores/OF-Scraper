@@ -146,10 +146,7 @@ jobs:
         if: runner.os == 'Windows'
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
-      - name: list files
-        run: | 
-          ls .
-          ls scripts
+      
 
       - name: Make retry script executable
         run: chmod +x ./scripts/retry_action.sh
@@ -164,12 +161,12 @@ jobs:
           
           # Determine the executable path based on OS
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
+            EXE_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
           else
-            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
+            EXE_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
           fi
           
-          ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
+          ZIP_FILE_PATH="../dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
 
           UPLOAD_COMMAND="actions/upload-artifact@v4 name:'$ARTIFACT_NAME' path:'$EXE_FILE_PATH $ZIP_FILE_PATH' if-no-files-found:ignore overwrite:true"
           # Call the retry script with max attempts, sleep, and the command
