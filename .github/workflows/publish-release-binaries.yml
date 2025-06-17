@@ -147,66 +147,28 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-
-      - name: Debug Variables
-        run: |
-          echo "Operation Type: ${{ inputs.operation_type }}"
-          echo "Artifact Name: ${{ inputs.name }}"
-          echo "Artifact Path: ${{ inputs.path }}"
-          echo "if_no_files_found: ${{ inputs.if_no_files_found }}"
-          echo "overwrite: ${{ inputs.overwrite }}"
-          echo "Current working directory: $(pwd)"
-          ls -al # List files in the current directory
-          ls -al dist/ # If expecting files in 'dist/'
-        shell: bash # or shell: pwsh for Windows
-
-
       - name: Prepare Artifact Paths
         id: prepare_paths
         run: |
           OS_SUFFIX="${{ matrix.artifact_suffix }}"
           SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
-
+          
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
           else
             EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
           fi
-
+          
           ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
-
-          # --- DEBUGGING LINES START ---
-          echo "DEBUG: OS_SUFFIX is: $OS_SUFFIX"
-          echo "DEBUG: SANITIZED_TAG is: $SANITIZED_TAG"
-          echo "DEBUG: Generated EXE_FILE_PATH: $EXE_FILE_PATH"
-          echo "DEBUG: Generated ZIP_FILE_PATH: $ZIP_FILE_PATH"
-
-          # Verify if the files actually exist before trying to upload them
-          echo "DEBUG: Checking if generated EXE_FILE_PATH exists:"
-          if [ -f "$EXE_FILE_PATH" ]; then
-            echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) exists."
-          else
-            echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) DOES NOT exist."
-            # You might want to fail the step here if the file is critical
-          fi
-
-          echo "DEBUG: Checking if generated ZIP_FILE_PATH exists:"
-          if [ -f "$ZIP_FILE_PATH" ]; then
-            echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) exists."
-          else
-            echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) DOES NOT exist."
-            # You might want to fail the step here
-          fi
-          # --- DEBUGGING LINES END ---
 
           echo "artifact_paths<<EOF" >> "$GITHUB_OUTPUT"
           echo "$EXE_FILE_PATH" >> "$GITHUB_OUTPUT"
           echo "$ZIP_FILE_PATH" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-        shell: bash # Or pwsh for Windows, ensure consistent shell    
+        shell: bash
 
       - name: Upload Build Artifacts (with custom retries)
-        uses: ./.github/actions/retry-artifact-operation # Path to your custom composite action
+        uses: ./.github/actions/retry-artifact-operation
         with:
           operation_type: upload
           name: build-artifacts-${{ matrix.os }}
@@ -214,41 +176,36 @@ jobs:
           if_no_files_found: 'warn'
           overwrite: 'true'
 
+  publish_release:
+    name: Publish GitHub Release
+    needs: [build_binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating the release
+      actions: read # Needed to download artifacts within this job
+    steps:
+      - name: Checkout Full Git History
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
+          fetch-depth: 0
+          fetch-tags: true
 
-  # publish_release:
-  #   name: Publish GitHub Release
-  #   needs: [build_binaries]
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write # Needed for creating the release
-  #     actions: read # Needed to download artifacts within this job
-  #   steps:
-  #     - name: Checkout Full Git History
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
-  #         fetch-depth: 0
-  #         fetch-tags: true
-  #     - name: Make retry script executable (for download)
-  #       run: chmod +x ./scripts/retry_action.sh
+      - name: Download all build artifacts (with custom retries)
+        uses: ./.github/actions/retry-artifact-operation
+        with:
+          operation_type: download
+          name: all # Downloads all artifacts from the workflow run
+          path: artifacts/ # Destination path for downloaded artifacts
 
-  #     - name: Download all build artifacts (with retries)
-  #       run: |
-  #         # Construct the download command
-  #         DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
+      - name: List downloaded files for debugging
+        run: ls -R artifacts
 
-  #         # Call the retry script
-  #         ./scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
-  #       shell: bash
-
-  #     - name: List downloaded files for debugging
-  #       run: ls -R artifacts
-
-  #     - name: Create or Update Release
-  #       uses: ncipollo/release-action@v1
-  #       with:
-  #         artifacts: artifacts/*/*
-  #         tag: ${{ inputs.input_version }}
-  #         name: "Release ${{ inputs.input_version }}"
-  #         body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
-  #         allowUpdates: true
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: artifacts/*/*
+          tag: ${{ inputs.input_version }}
+          name: "Release ${{ inputs.input_version }}"
+          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
+          allowUpdates: true
