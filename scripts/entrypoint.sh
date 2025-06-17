@@ -13,7 +13,5 @@ adduser --uid "$TARGET_UID" --ingroup "$TARGET_GROUP" --home "/home/$TARGET_USER
 
 # Create home directory and ensure correct ownership for mounted volumes
 mkdir -p "/home/$TARGET_USER"
-chown -R "$TARGET_UID:$TARGET_GID" "/home/$TARGET_USER"
-
 # Drop root privileges and execute the main command as the target user
 exec gosu "$TARGET_USER" "$@"
