@@ -1,6 +1,6 @@
-# .github/actions/retry-artifact-operation/action.yml
+# .github/actions/retry-artifact-operation/action.yml (CORRECTED Fixed-Attempts Version)
 name: 'Retryable Artifact Operation (Fixed Attempts)'
-description: 'Uploads or downloads artifacts with a fixed number of retry attempts.'
+description: 'Uploads or downloads artifacts with a fixed number of retries.'
 
 inputs:
   operation_type:
@@ -15,8 +15,7 @@ inputs:
     description: 'Paths for operation.'
     required: true
     type: string
-  # Renamed to if_no_files_found (underscore) to avoid issues with YAML expressions
-  if_no_files_found:
+  if_no_files_found: # Renamed to avoid hyphen issues in variable names for direct access
     description: 'For upload: warn, error, ignore.'
     required: false
     default: 'warn'
@@ -30,83 +29,113 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Attempt 1 (Initial Try)
-    - name: Attempt 1 - ${{ inputs.operation_type }} artifact
-      id: attempt_1 # Unique ID for this step
-      # Dynamically choose upload-artifact or download-artifact
-      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
-      with:
-        name: ${{ inputs.name }}
-        path: ${{ inputs.path }} # The path input
-        # Conditionally add upload-specific inputs if operation_type is 'upload'
-        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
-        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
-      continue-on-error: true # Allow this specific attempt to fail without stopping the composite action
-
-    # --- Retry 1 (Attempt 2) ---
-    - name: Delay before Attempt 2
-      # Only run if the previous attempt failed
-      if: ${{ steps.attempt_1.outcome == 'failure' }}
-      run: |
-        echo "Attempt 1 failed. Retrying in 10 seconds..." >&2
-        sleep 10
-      shell: bash
-    - name: Attempt 2 - ${{ inputs.operation_type }} artifact
-      id: attempt_2
-      if: ${{ steps.attempt_1.outcome == 'failure' }} # Only run if the previous attempt failed
-      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+    # --- ATTEMPT 1 ---
+    # Upload Logic for Attempt 1
+    - name: Attempt 1 - Upload Artifact
+      id: upload_attempt_1 # Unique ID for this step
+      if: ${{ inputs.operation_type == 'upload' }} # Only run if operation_type is upload
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
-        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
-        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
-      continue-on-error: true
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
+      continue-on-error: true # Allow this specific step to fail without failing the job immediately
 
-    # --- Retry 2 (Attempt 3) ---
-    - name: Delay before Attempt 3
-      if: ${{ steps.attempt_2.outcome == 'failure' }}
-      run: |
-        echo "Attempt 2 failed. Retrying in 10 seconds..." >&2
-        sleep 10
-      shell: bash
-    - name: Attempt 3 - ${{ inputs.operation_type }} artifact
-      id: attempt_3
-      if: ${{ steps.attempt_2.outcome == 'failure' }}
-      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+    # Download Logic for Attempt 1
+    - name: Attempt 1 - Download Artifact
+      id: download_attempt_1 # Unique ID for this step
+      if: ${{ inputs.operation_type == 'download' }} # Only run if operation_type is download
+      uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
-        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
-        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
-      continue-on-error: true
+      continue-on-error: true # Allow this specific step to fail without failing the job immediately
 
-    # --- Retry 3 (Attempt 4) ---
-    - name: Delay before Attempt 4
-      if: ${{ steps.attempt_3.outcome == 'failure' }}
+    # --- ATTEMPT 2 ---
+    # Delay for Attempt 2 (only if previous attempt failed for either upload or download)
+    - name: Delay for Attempt 2
+      if: ${{ (inputs.operation_type == 'upload' && steps.upload_attempt_1.outcome == 'failure') || (inputs.operation_type == 'download' && steps.download_attempt_1.outcome == 'failure') }}
       run: |
-        echo "Attempt 3 failed. Retrying in 10 seconds..." >&2
+        echo "Previous attempt failed. Retrying in 10 seconds..." >&2
         sleep 10
       shell: bash
-    - name: Attempt 4 - ${{ inputs.operation_type }} artifact
-      id: attempt_4
-      if: ${{ steps.attempt_3.outcome == 'failure' }}
-      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+
+    # Upload Logic for Attempt 2
+    - name: Attempt 2 - Upload Artifact
+      id: upload_attempt_2
+      if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_1.outcome == 'failure' }}
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
-        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
-        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
       continue-on-error: true
 
-    # --- Final Check: Determine if the overall composite action failed ---
-    - name: Final Status Check
-      # This step will explicitly fail the composite action if all attempts (1 to 4) were unsuccessful.
-      if: |
-        (steps.attempt_1.outcome != 'success') &&
-        (steps.attempt_2.outcome != 'success' || steps.attempt_2.outcome == 'skipped') &&
-        (steps.attempt_3.outcome != 'success' || steps.attempt_3.outcome == 'skipped') &&
-        (steps.attempt_4.outcome != 'success' || steps.attempt_4.outcome == 'skipped')
+    # Download Logic for Attempt 2
+    - name: Attempt 2 - Download Artifact
+      id: download_attempt_2
+      if: ${{ inputs.operation_type == 'download' && steps.download_attempt_1.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # --- ATTEMPT 3 ---
+    # Delay for Attempt 3
+    - name: Delay for Attempt 3
+      if: ${{ (inputs.operation_type == 'upload' && steps.upload_attempt_2.outcome == 'failure') || (inputs.operation_type == 'download' && steps.download_attempt_2.outcome == 'failure') }}
       run: |
-        echo "::error::Artifact operation for '${{ inputs.name }}' failed after all 4 attempts."
-        exit 1
+        echo "Previous attempt failed. Retrying in 10 seconds..." >&2
+        sleep 10
+      shell: bash
+
+    # Upload Logic for Attempt 3
+    - name: Attempt 3 - Upload Artifact
+      id: upload_attempt_3
+      if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_2.outcome == 'failure' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
+      continue-on-error: true
+
+    # Download Logic for Attempt 3
+    - name: Attempt 3 - Download Artifact
+      id: download_attempt_3
+      if: ${{ inputs.operation_type == 'download' && steps.download_attempt_2.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # --- FINAL STATUS CHECK ---
+    # This step will fail the composite action if all attempts for the chosen operation failed
+    - name: Final Check on Operation Status
+      run: |
+        if [ "${{ inputs.operation_type }}" == "upload" ]; then
+          # Check if the last upload attempt also failed
+          if [ "${{ steps.upload_attempt_1.outcome }}" == "failure" ] && \
+             [ "${{ steps.upload_attempt_2.outcome }}" == "failure" ] && \
+             [ "${{ steps.upload_attempt_3.outcome }}" == "failure" ]; then
+            echo "::error::Artifact upload failed after all 3 attempts." >&2
+            exit 1
+          fi
+        elif [ "${{ inputs.operation_type }}" == "download" ]; then
+          # Check if the last download attempt also failed
+          if [ "${{ steps.download_attempt_1.outcome }}" == "failure" ] && \
+             [ "${{ steps.download_attempt_2.outcome }}" == "failure" ] && \
+             [ "${{ steps.download_attempt_3.outcome }}" == "failure" ]; then
+            echo "::error::Artifact download failed after all 3 attempts." >&2
+            exit 1
+          fi
+        else
+          echo "::error::Invalid operation_type specified. Must be 'upload' or 'download'." >&2
+          exit 1
+        fi
       shell: bash
