@@ -148,17 +148,17 @@ jobs:
         shell: pwsh
 
 
-    - name: Debug Variables
-      run: |
-        echo "Operation Type: ${{ inputs.operation_type }}"
-        echo "Artifact Name: ${{ inputs.name }}"
-        echo "Artifact Path: ${{ inputs.path }}"
-        echo "if_no_files_found: ${{ inputs.if_no_files_found }}"
-        echo "overwrite: ${{ inputs.overwrite }}"
-        echo "Current working directory: $(pwd)"
-        ls -al # List files in the current directory
-        ls -al dist/ # If expecting files in 'dist/'
-      shell: bash # or shell: pwsh for Windows
+      - name: Debug Variables
+        run: |
+          echo "Operation Type: ${{ inputs.operation_type }}"
+          echo "Artifact Name: ${{ inputs.name }}"
+          echo "Artifact Path: ${{ inputs.path }}"
+          echo "if_no_files_found: ${{ inputs.if_no_files_found }}"
+          echo "overwrite: ${{ inputs.overwrite }}"
+          echo "Current working directory: $(pwd)"
+          ls -al # List files in the current directory
+          ls -al dist/ # If expecting files in 'dist/'
+        shell: bash # or shell: pwsh for Windows
 
       - name: Upload Build Artifacts (with custom retries)
         uses: ./.github/actions/retry-artifact-operation@v1 # Path to your custom composite action
