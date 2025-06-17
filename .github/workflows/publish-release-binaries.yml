@@ -161,7 +161,7 @@ jobs:
         shell: bash # or shell: pwsh for Windows
 
       - name: Upload Build Artifacts (with custom retries)
-        uses: ./.github/actions/retry-artifact-operation@v1 # Path to your custom composite action
+        uses: ./.github/actions/retry-artifact-operation # Path to your custom composite action
         with:
           operation_type: upload
           name: build-artifacts-${{ matrix.os }}
