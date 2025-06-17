@@ -49,6 +49,7 @@ runs:
           ls .
           ls actions
           echo $ARTIFACT_PATH
+      shell: bash
     - name: Prepare Operation Variables
       run: |
         echo "OPERATION_TYPE=${{ inputs.operation_type }}" >> "$GITHUB_ENV"
