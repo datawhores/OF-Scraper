@@ -2,7 +2,7 @@
 set -e
 
 # Set default values or use environment variables if provided
-TARGET_USER=${USER_NAME:-john}
+TARGET_USER=${USER_NAME:-ofscraper}
 TARGET_GROUP=${GROUP_NAME:-${TARGET_USER}}
 TARGET_UID=${USER_ID:-1000}
 TARGET_GID=${GROUP_ID:-1000}
