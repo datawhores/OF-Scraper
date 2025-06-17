@@ -147,51 +147,67 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-      - name: Upload Build Artifacts (with retries)
-        uses: ./.github/actions/retry-artifact-operation # Path to your new composite action
+      # Prepare Artifact Paths (still needed to get the multi-line path string)
+      - name: Prepare Artifact Paths
+        id: prepare_paths
+        run: |
+          OS_SUFFIX="${{ matrix.artifact_suffix }}"
+          SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
+          else
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
+          fi
+          
+          ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
+
+          echo "artifact_paths<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$EXE_FILE_PATH" >> "$GITHUB_OUTPUT"
+          echo "$ZIP_FILE_PATH" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      # Using Wandalen/wretry.action for artifact upload
+      - name: Upload Build Artifacts (with Wandalen retry)
+        uses: Wandalen/wretry.action@v3.8.0 # Ensure this is the correct version
         with:
-          operation_type: upload
-          name: build-artifacts-${{ matrix.os }}
-          path: ${{ steps.prepare_paths.outputs.artifact_paths }} # Uses the output from the preparation step
-          max_attempts: 3
-          sleep_seconds: 10
-    
+          action: actions/upload-artifact@v4 # The action to retry
+          with: |                           # Pass parameters to upload-artifact using multi-line YAML
+            name: build-artifacts-${{ matrix.os }}
+            path: ${{ steps.prepare_paths.outputs.artifact_paths }} # This should correctly pass the multi-line string
+            if-no-files-found: 'warn'
+            overwrite: 'true'
+          attempt_limit: 3                 # Max retries
+          time_out: 300                    # Timeout per attempt in seconds (e.g., 5 minutes)
 
+  publish_release:
+    name: Publish GitHub Release
+    needs: [build_binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating the release
+      actions: read # Needed to download artifacts within this job
+    steps:
+      # Using Wandalen/wretry.action for artifact download
+      - name: Download all build artifacts (with Wandalen retry)
+        uses: Wandalen/wretry.action@v3.8.0 # Ensure this is the correct version
+        with:
+          action: actions/download-artifact@v4 # The action to retry
+          with: |                            # Pass parameters to download-artifact using multi-line YAML
+            name: all
+            path: artifacts/
+          attempt_limit: 3
+          time_out: 300
 
-  # publish_release:
-  #   name: Publish GitHub Release
-  #   needs: [build_binaries]
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write # Needed for creating the release
-  #     actions: read # Needed to download artifacts within this job
-  #   steps:
-  #     - name: Checkout Full Git History
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ inputs.input_version || github.ref }} # Use the input_version or default branch
-  #         fetch-depth: 0
-  #         fetch-tags: true
-  #     - name: Make retry script executable (for download)
-  #       run: chmod +x ./scripts/retry_action.sh
+      - name: List downloaded files for debugging
+        run: ls -R artifacts
 
-  #     - name: Download all build artifacts (with retries)
-  #       run: |
-  #         # Construct the download command
-  #         DOWNLOAD_COMMAND="actions/download-artifact@v4 path:artifacts/"
-
-  #         # Call the retry script
-  #         ./scripts/retry_action.sh 3 10 "$DOWNLOAD_COMMAND"
-  #       shell: bash
-
-  #     - name: List downloaded files for debugging
-  #       run: ls -R artifacts
-
-  #     - name: Create or Update Release
-  #       uses: ncipollo/release-action@v1
-  #       with:
-  #         artifacts: artifacts/*/*
-  #         tag: ${{ inputs.input_version }}
-  #         name: "Release ${{ inputs.input_version }}"
-  #         body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
-  #         allowUpdates: true
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: artifacts/*/*
+          tag: ${{ inputs.input_version }}
+          name: "Release ${{ inputs.input_version }}"
+          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
+          allowUpdates: true
