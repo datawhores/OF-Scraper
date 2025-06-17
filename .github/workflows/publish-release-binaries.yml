@@ -168,6 +168,13 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
         shell: bash
 
+      - name: Debug Raw Artifact Paths Output
+        run: |
+          echo "--- START of Raw artifact_paths output ---"
+          echo "${{ steps.prepare_paths.outputs.artifact_paths }}" | od -c
+          echo "--- END of Raw artifact_paths output ---"
+        shell: bash
+
       # Using Wandalen/wretry.action for artifact upload
       - name: Upload Build Artifacts (with Wandalen retry)
         uses: Wandalen/wretry.action@v3.8.0 # Ensure this is the correct version
