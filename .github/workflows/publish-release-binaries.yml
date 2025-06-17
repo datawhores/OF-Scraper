@@ -147,15 +147,27 @@ jobs:
         run: Compress-Archive -Path dist/ofscraper_${{ matrix.artifact_suffix }}_dir -DestinationPath dist/ofscraper_${{ matrix.artifact_suffix }}_${{ steps.prep_build_version.outputs.sanitized_tag }}.zip -Force
         shell: pwsh
 
-      - name: Upload Build Artifacts (with retries)
-        uses: ./.github/actions/retry-artifact-operation # Path to your new composite action
+
+    - name: Debug Variables
+      run: |
+        echo "Operation Type: ${{ inputs.operation_type }}"
+        echo "Artifact Name: ${{ inputs.name }}"
+        echo "Artifact Path: ${{ inputs.path }}"
+        echo "if_no_files_found: ${{ inputs.if_no_files_found }}"
+        echo "overwrite: ${{ inputs.overwrite }}"
+        echo "Current working directory: $(pwd)"
+        ls -al # List files in the current directory
+        ls -al dist/ # If expecting files in 'dist/'
+      shell: bash # or shell: pwsh for Windows
+
+      - name: Upload Build Artifacts (with custom retries)
+        uses: ./.github/actions/retry-artifact-operation@v1 # Path to your custom composite action
         with:
           operation_type: upload
           name: build-artifacts-${{ matrix.os }}
-          path: ${{ steps.prepare_paths.outputs.artifact_paths }} # Uses the output from the preparation step
-          max_attempts: 3
-          sleep_seconds: 10
-    
+          path: ${{ steps.prepare_paths.outputs.artifact_paths }}
+          if_no_files_found: 'warn'
+          overwrite: 'true'
 
 
   # publish_release:
