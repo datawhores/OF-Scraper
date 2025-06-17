@@ -38,7 +38,7 @@ jobs:
       - name: Make script executable
         run: chmod +x ./scripts/commit_version.sh
       - name: Generate Version and Git Info
-        id: version # This step runs your commit_version.sh script
+        id: version 
         # Pass GitHub Actions context variables as environment variables to the script
         run: ./scripts/commit_version.sh
 
@@ -48,7 +48,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false # <-- ADDED: Allows all OS builds to complete even if one fails
+      fail-fast: false # Allows all OS builds to complete even if one fails
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -102,7 +102,7 @@ jobs:
       - name: Build Executable using Spec Files (One-File)
         id: build_onefile
         shell: bash
-        continue-on-error: true # <-- ADDED: Allows this step to fail without stopping this OS matrix axis
+        continue-on-error: true # Allows this step to fail without stopping this OS matrix axis
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
@@ -121,17 +121,21 @@ jobs:
           echo "one_file_path=dist/${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
           echo "one_file_name=${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
 
-      - name: Upload One-File Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload One-File Artifact (with custom retries)
+        # Only call the retry action if the build step succeeded
+        if: ${{ steps.build_onefile.outcome == 'success' }}
+        uses: ./.github/actions/retry-artifact-operation
         with:
+          operation_type: upload
           name: ${{ steps.build_onefile.outputs.one_file_name }}
           path: ${{ steps.build_onefile.outputs.one_file_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if_no_files_found: ignore # Ensures upload step doesn't fail if previous build step failed
+          overwrite: true # Always overwrite for new builds
 
       - name: Build and Zip One-Dir Bundle
         id: build_onedir_zip
         shell: bash
-        continue-on-error: true # Already present: Allows this step to fail without stopping this OS matrix axis
+        continue-on-error: true # Allows this step to fail without stopping this OS matrix axis
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
@@ -158,21 +162,27 @@ jobs:
           echo "dir_path=dist/${DIR_NAME}" >> $GITHUB_OUTPUT
           echo "dir_name=dist/${DIR_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Upload Zipped One-Dir Artifact
-        if: success() && steps.build_onedir_zip.outcome == 'success'
-        uses: actions/upload-artifact@v4
+      - name: Upload Zipped One-Dir Artifact (with custom retries)
+        # Only call the retry action if the build and zip step succeeded
+        if: ${{ steps.build_onedir_zip.outcome == 'success' }}
+        uses: ./.github/actions/retry-artifact-operation 
         with:
+          operation_type: upload
           name: ${{ steps.build_onedir_zip.outputs.zip_name }}
           path: ${{ steps.build_onedir_zip.outputs.zip_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if_no_files_found: ignore # Ensures upload step doesn't fail if previous build step failed
+          overwrite: true # Always overwrite for new builds
 
-      - name: Upload One-Dir Folder (if zip failed)
-        if: failure() && steps.build_onedir_zip.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+      - name: Upload One-Dir Folder (if zip failed) (with custom retries)
+        # Only call the retry action if the build step completed but zip failed, indicating the folder might exist
+        if: ${{ steps.build_onedir_zip.outcome == 'failure' }}
+        uses: ./.github/actions/retry-artifact-operation 
         with:
+          operation_type: upload
           name: ${{ steps.build_onedir_zip.outputs.dir_name }}
           path: ${{ steps.build_onedir_zip.outputs.dir_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if_no_files_found: ignore # Ensures upload step doesn't fail if previous build step failed
+          overwrite: true # Always overwrite for new builds
 
   publish_release:
     name: Publish GitHub Release
@@ -182,12 +192,12 @@ jobs:
     permissions:
       contents: write # Required to create/update GitHub Releases
     steps:
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+      - name: Download all build artifacts (with custom retries)
+        uses: ./.github/actions/retry-artifact-operation
         with:
-          path: artifacts/
-          # No specific `if-no-files-found` here on download-artifact, it will download what's available
-          # and log warnings for missing ones by default.
+          operation_type: download
+          # IMPORTANT: OMIT 'name' entirely here to trigger the 'download all' logic
+          path: artifacts/ # Destination path for downloaded artifacts
 
       - name: List downloaded files for debugging
         run: ls -R artifacts
