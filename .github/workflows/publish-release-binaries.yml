@@ -195,7 +195,6 @@ jobs:
         uses: ./.github/actions/retry-artifact-operation
         with:
           operation_type: download
-          name: all # Downloads all artifacts from the workflow run
           path: artifacts/ # Destination path for downloaded artifacts
 
       - name: List downloaded files for debugging
