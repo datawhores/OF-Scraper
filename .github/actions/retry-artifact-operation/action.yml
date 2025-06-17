@@ -1,0 +1,186 @@
+# .github/actions/retry-artifact-operation/action.yml
+name: 'Retryable Artifact Operation (Fixed Attempts)'
+description: 'Uploads or downloads artifacts with a fixed number of retries.'
+
+inputs:
+  operation_type:
+    description: 'Specify "upload", "download-specific", or "download-all".' # Updated description for clarity
+    required: true
+    type: string
+  name:
+    description: 'Artifact name for upload or specific download. Omit/leave empty for "download-all".'
+    required: false # <--- CRITICAL: Set to false to allow omitting for "download-all"
+    type: string
+  path:
+    description: 'Paths for operation.'
+    required: true
+    type: string
+  if_no_files_found:
+    description: 'For upload: warn, error, ignore.'
+    required: false
+    default: 'warn'
+    type: string
+  overwrite:
+    description: 'For upload: true/false.'
+    required: false
+    default: 'true'
+    type: boolean
+
+runs:
+  using: "composite"
+  steps:
+    # --- ATTEMPT 1 ---
+    # Path 1: Upload Logic for Attempt 1
+    - name: Attempt 1 - Upload Artifact
+      id: upload_attempt_1
+      if: ${{ inputs.operation_type == 'upload' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
+      continue-on-error: true
+
+    # Path 2: Download Specific Artifact Logic for Attempt 1
+    - name: Attempt 1 - Download Specific Artifact
+      id: download_specific_attempt_1 # Unique ID for specific download
+      if: ${{ inputs.operation_type == 'download' && inputs.name != '' }} # Run if download AND name is provided
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # Path 3: Download All Artifacts Logic for Attempt 1
+    - name: Attempt 1 - Download All Artifacts
+      id: download_all_attempt_1 # Unique ID for download all
+      if: ${{ inputs.operation_type == 'download' && inputs.name == '' }} # Run if download AND name is empty (implying download all)
+      uses: actions/download-artifact@v4
+      with:
+        # NO 'name' input here to explicitly trigger download all behavior
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # --- ATTEMPT 2 ---
+    # Delay for Attempt 2 (checking outcomes of previous attempt for all 3 paths)
+    - name: Delay for Attempt 2
+      if: | # Multi-line if condition for readability
+        ${{ (inputs.operation_type == 'upload' && steps.upload_attempt_1.outcome == 'failure') ||
+           (inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_1.outcome == 'failure') ||
+           (inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_1.outcome == 'failure') }}
+      run: |
+        echo "Previous attempt failed. Retrying in 10 seconds..." >&2
+        sleep 10
+      shell: bash
+
+    # Path 1: Upload Logic for Attempt 2
+    - name: Attempt 2 - Upload Artifact
+      id: upload_attempt_2
+      if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_1.outcome == 'failure' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
+      continue-on-error: true
+
+    # Path 2: Download Specific Artifact Logic for Attempt 2
+    - name: Attempt 2 - Download Specific Artifact
+      id: download_specific_attempt_2
+      if: ${{ inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_1.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # Path 3: Download All Artifacts Logic for Attempt 2
+    - name: Attempt 2 - Download All Artifacts
+      id: download_all_attempt_2
+      if: ${{ inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_1.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # --- ATTEMPT 3 ---
+    # Delay for Attempt 3
+    - name: Delay for Attempt 3
+      if: |
+        ${{ (inputs.operation_type == 'upload' && steps.upload_attempt_2.outcome == 'failure') ||
+           (inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_2.outcome == 'failure') ||
+           (inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_2.outcome == 'failure') }}
+      run: |
+        echo "Previous attempt failed. Retrying in 10 seconds..." >&2
+        sleep 10
+      shell: bash
+
+    # Path 1: Upload Logic for Attempt 3
+    - name: Attempt 3 - Upload Artifact
+      id: upload_attempt_3
+      if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_2.outcome == 'failure' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: ${{ inputs.if_no_files_found }}
+        overwrite: ${{ inputs.overwrite }}
+      continue-on-error: true
+
+    # Path 2: Download Specific Artifact Logic for Attempt 3
+    - name: Attempt 3 - Download Specific Artifact
+      id: download_specific_attempt_3
+      if: ${{ inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_2.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # Path 3: Download All Artifacts Logic for Attempt 3
+    - name: Attempt 3 - Download All Artifacts
+      id: download_all_attempt_3
+      if: ${{ inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_2.outcome == 'failure' }}
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ inputs.path }}
+      continue-on-error: true
+
+    # --- FINAL STATUS CHECK ---
+    # This step will fail the composite action if all attempts for the chosen operation failed
+    - name: Final Check on Operation Status
+      run: |
+        if [ "${{ inputs.operation_type }}" == "upload" ]; then
+          if [ "${{ steps.upload_attempt_1.outcome }}" == "failure" ] && \
+             [ "${{ steps.upload_attempt_2.outcome }}" == "failure" ] && \
+             [ "${{ steps.upload_attempt_3.outcome }}" == "failure" ]; then
+            echo "::error::Artifact upload failed after all 3 attempts." >&2
+            exit 1
+          fi
+        elif [ "${{ inputs.operation_type }}" == "download" ]; then
+          DOWNLOAD_FAILED="false"
+          if [ "${{ inputs.name }}" != "" ]; then # Check specific download path if name was provided
+            if [ "${{ steps.download_specific_attempt_1.outcome }}" == "failure" ] && \
+               [ "${{ steps.download_specific_attempt_2.outcome }}" == "failure" ] && \
+               [ "${{ steps.download_specific_attempt_3.outcome }}" == "failure" ]; then
+              DOWNLOAD_FAILED="true"
+            fi
+          else # Check download all path if name was NOT provided
+            if [ "${{ steps.download_all_attempt_1.outcome }}" == "failure" ] && \
+               [ "${{ steps.download_all_attempt_2.outcome }}" == "failure" ] && \
+               [ "${{ steps.download_all_attempt_3.outcome }}" == "failure" ]; then
+              DOWNLOAD_FAILED="true"
+            fi
+          fi
+
+          if [ "$DOWNLOAD_FAILED" == "true" ]; then
+            echo "::error::Artifact download failed after all 3 attempts." >&2
+            exit 1
+          fi
+        else
+          echo "::error::Invalid operation_type specified. Must be 'upload' or 'download'." >&2
+          exit 1
+        fi
+      shell: bash

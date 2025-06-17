@@ -209,7 +209,7 @@ jobs:
     name: Build & Release Binaries
     needs: [determine_tags_and_versions]
     if: ${{ inputs.files }}
-    uses: ./.github/workflows/callable_release/publish-release-binaries.yml # No @ref for local callable
+    uses: ./.github/workflows/publish-release-binaries.yml # No @ref for local callable
     with:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
@@ -219,7 +219,7 @@ jobs:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
     if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
-    uses: ./.github/workflows/callable_release/publish-release-dockers.yml # No @ref for local callable
+    uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
