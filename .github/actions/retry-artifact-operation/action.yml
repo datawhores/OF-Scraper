@@ -1,106 +1,112 @@
-name: 'Retryable Artifact Operation'
-description: 'Uploads or downloads artifacts with retry logic'
+# .github/actions/retry-artifact-operation/action.yml
+name: 'Retryable Artifact Operation (Fixed Attempts)'
+description: 'Uploads or downloads artifacts with a fixed number of retry attempts.'
 
 inputs:
   operation_type:
-    description: 'Specify "upload" or "download" for the artifact operation.'
+    description: 'Specify "upload" or "download".'
     required: true
     type: string
-  
-  # Inputs common to both or used conditionally
   name:
-    description: 'For upload: Name of the artifact to upload. For download: Name of the artifact to download (use "all" to download all artifacts).'
+    description: 'Artifact name.'
     required: true
     type: string
   path:
-    description: 'For upload: A file, directory or list of files and directories to upload. For download: The directory to download artifacts to.'
+    description: 'Paths for operation.'
     required: true
     type: string
-
-  # Inputs specific to upload-artifact
-  if-no-files-found:
-    description: 'For upload: Action to take if no files are found. Options: "warn", "error", "ignore".'
+  # Renamed to if_no_files_found (underscore) to avoid issues with YAML expressions
+  if_no_files_found:
+    description: 'For upload: warn, error, ignore.'
     required: false
     default: 'warn'
     type: string
   overwrite:
-    description: 'For upload: Overwrite existing artifacts (true/false).'
+    description: 'For upload: true/false.'
     required: false
     default: 'true'
-    type: boolean # Note: type 'boolean' for boolean inputs
-
-  # Inputs for retry logic
-  max_attempts:
-    description: 'Maximum number of attempts for the operation.'
-    required: false
-    default: '3'
-    type: string # Using string as composite action inputs are strings
-  sleep_seconds:
-    description: 'Seconds to wait between retries.'
-    required: false
-    default: '10'
-    type: string # Using string as composite action inputs are strings
+    type: boolean
 
 runs:
   using: "composite"
   steps:
-    - name: print so files
+    # Attempt 1 (Initial Try)
+    - name: Attempt 1 - ${{ inputs.operation_type }} artifact
+      id: attempt_1 # Unique ID for this step
+      # Dynamically choose upload-artifact or download-artifact
+      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }} # The path input
+        # Conditionally add upload-specific inputs if operation_type is 'upload'
+        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
+        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
+      continue-on-error: true # Allow this specific attempt to fail without stopping the composite action
+
+    # --- Retry 1 (Attempt 2) ---
+    - name: Delay before Attempt 2
+      # Only run if the previous attempt failed
+      if: ${{ steps.attempt_1.outcome == 'failure' }}
       run: |
-          ls .
-          ls actions
-          echo $ARTIFACT_PATH
+        echo "Attempt 1 failed. Retrying in 10 seconds..." >&2
+        sleep 10
       shell: bash
-    - name: Prepare Operation Variables
-      run: |
-        echo "OPERATION_TYPE=${{ inputs.operation_type }}" >> "$GITHUB_ENV"
-        echo "ARTIFACT_NAME=${{ inputs.name }}" >> "$GITHUB_ENV"
-        echo "ARTIFACT_PATH=${{ inputs.path }}" >> "$GITHUB_ENV"
-        echo "MAX_ATTEMPTS=${{ inputs.max_attempts }}" >> "$GITHUB_ENV"
-        echo "SLEEP_SECONDS=${{ inputs.sleep_seconds }}" >> "$GITHUB_ENV"
+    - name: Attempt 2 - ${{ inputs.operation_type }} artifact
+      id: attempt_2
+      if: ${{ steps.attempt_1.outcome == 'failure' }} # Only run if the previous attempt failed
+      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
+        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
+      continue-on-error: true
 
-        # Set upload-specific variables if operation is upload
-        if [ "${{ inputs.operation_type }}" == "upload" ]; then
-          echo "IF_NO_FILES_FOUND=${{ inputs.if-no-files-found }}" >> "$GITHUB_ENV"
-          echo "OVERWRITE_ACTION=${{ inputs.overwrite }}" >> "$GITHUB_ENV"
-        fi
+    # --- Retry 2 (Attempt 3) ---
+    - name: Delay before Attempt 3
+      if: ${{ steps.attempt_2.outcome == 'failure' }}
+      run: |
+        echo "Attempt 2 failed. Retrying in 10 seconds..." >&2
+        sleep 10
       shell: bash
+    - name: Attempt 3 - ${{ inputs.operation_type }} artifact
+      id: attempt_3
+      if: ${{ steps.attempt_2.outcome == 'failure' }}
+      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
+        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
+      continue-on-error: true
 
-    - name: Perform Retryable Artifact Operation
+    # --- Retry 3 (Attempt 4) ---
+    - name: Delay before Attempt 4
+      if: ${{ steps.attempt_3.outcome == 'failure' }}
       run: |
-        set -euo pipefail
+        echo "Attempt 3 failed. Retrying in 10 seconds..." >&2
+        sleep 10
+      shell: bash
+    - name: Attempt 4 - ${{ inputs.operation_type }} artifact
+      id: attempt_4
+      if: ${{ steps.attempt_3.outcome == 'failure' }}
+      uses: ${{ inputs.operation_type == 'upload' && 'actions/upload-artifact@v4' || 'actions/download-artifact@v4' }}
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        ${{ inputs.operation_type == 'upload' && format('if-no-files-found: {0}', inputs.if_no_files_found) || '' }}
+        ${{ inputs.operation_type == 'upload' && format('overwrite: {0}', inputs.overwrite) || '' }}
+      continue-on-error: true
 
-        echo "Starting retry logic for ${OPERATION_TYPE} artifact: ${ARTIFACT_NAME}" >&2
-        echo "Paths: ${ARTIFACT_PATH}" >&2
-
-        ATTEMPT_NUM=1
-        until \
-          if [ "$OPERATION_TYPE" == "upload" ]; then
-            # Call upload-artifact
-            actions/upload-artifact@v4 \
-              name:"$ARTIFACT_NAME" \
-              path:"$ARTIFACT_PATH" \
-              if-no-files-found:"$IF_NO_FILES_FOUND" \
-              overwrite:"$OVERWRITE_ACTION"
-          elif [ "$OPERATION_TYPE" == "download" ]; then
-            # Call download-artifact
-            actions/download-artifact@v4 \
-              name:"$ARTIFACT_NAME" \
-              path:"$ARTIFACT_PATH"
-          else
-            echo "ERROR: Invalid operation_type specified: ${OPERATION_TYPE}. Must be 'upload' or 'download'." >&2
-            exit 1
-          fi
-        do
-            EXIT_CODE=$?
-            echo $ARTIFACT_PATH
-            if [ "$ATTEMPT_NUM" -ge "$MAX_ATTEMPTS" ]; then
-                echo "ERROR: Artifact ${OPERATION_TYPE} failed after ${MAX_ATTEMPTS} attempts (last exit code: ${EXIT_CODE})." >&2
-                exit "$EXIT_CODE"
-            fi
-            echo "Artifact ${OPERATION_TYPE} failed (exit code ${EXIT_CODE}). Retrying in ${SLEEP_SECONDS} seconds... (Attempt ${ATTEMPT_NUM} of ${MAX_ATTEMPTS})" >&2
-            sleep "${SLEEP_SECONDS}"
-            ATTEMPT_NUM=$((ATTEMPT_NUM + 1))
-        done
-
-        echo "Artifact ${OPERATION_TYPE} succeeded on attempt ${ATTEMPT_NUM}." >&2
+    # --- Final Check: Determine if the overall composite action failed ---
+    - name: Final Status Check
+      # This step will explicitly fail the composite action if all attempts (1 to 4) were unsuccessful.
+      if: |
+        (steps.attempt_1.outcome != 'success') &&
+        (steps.attempt_2.outcome != 'success' || steps.attempt_2.outcome == 'skipped') &&
+        (steps.attempt_3.outcome != 'success' || steps.attempt_3.outcome == 'skipped') &&
+        (steps.attempt_4.outcome != 'success' || steps.attempt_4.outcome == 'skipped')
+      run: |
+        echo "::error::Artifact operation for '${{ inputs.name }}' failed after all 4 attempts."
+        exit 1
       shell: bash
