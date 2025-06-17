@@ -175,7 +175,7 @@ jobs:
           action: actions/upload-artifact@v4 # The action to retry
           with: |                           # Pass parameters to upload-artifact using multi-line YAML
             name: build-artifacts-${{ matrix.os }}
-            path: ${{ steps.prepare_paths.outputs.artifact_paths }} # This should correctly pass the multi-line string
+            path: '${{ steps.prepare_paths.outputs.artifact_paths }}' 
             if-no-files-found: 'warn'
             overwrite: 'true'
           attempt_limit: 3                 # Max retries
