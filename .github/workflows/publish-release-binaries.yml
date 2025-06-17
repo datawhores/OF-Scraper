@@ -162,48 +162,48 @@ jobs:
 
 
       - name: Prepare Artifact Paths
-          id: prepare_paths
-          run: |
-            OS_SUFFIX="${{ matrix.artifact_suffix }}"
-            SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
+        id: prepare_paths
+        run: |
+          OS_SUFFIX="${{ matrix.artifact_suffix }}"
+          SANITIZED_TAG="${{ steps.prep_build_version.outputs.sanitized_tag }}"
 
-            if [[ "${{ runner.os }}" == "Windows" ]]; then
-              EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
-            else
-              EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
-            fi
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.exe"
+          else
+            EXE_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}"
+          fi
 
-            ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
+          ZIP_FILE_PATH="dist/ofscraper_${OS_SUFFIX}_${SANITIZED_TAG}.zip"
 
-            # --- DEBUGGING LINES START ---
-            echo "DEBUG: OS_SUFFIX is: $OS_SUFFIX"
-            echo "DEBUG: SANITIZED_TAG is: $SANITIZED_TAG"
-            echo "DEBUG: Generated EXE_FILE_PATH: $EXE_FILE_PATH"
-            echo "DEBUG: Generated ZIP_FILE_PATH: $ZIP_FILE_PATH"
+          # --- DEBUGGING LINES START ---
+          echo "DEBUG: OS_SUFFIX is: $OS_SUFFIX"
+          echo "DEBUG: SANITIZED_TAG is: $SANITIZED_TAG"
+          echo "DEBUG: Generated EXE_FILE_PATH: $EXE_FILE_PATH"
+          echo "DEBUG: Generated ZIP_FILE_PATH: $ZIP_FILE_PATH"
 
-            # Verify if the files actually exist before trying to upload them
-            echo "DEBUG: Checking if generated EXE_FILE_PATH exists:"
-            if [ -f "$EXE_FILE_PATH" ]; then
-              echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) exists."
-            else
-              echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) DOES NOT exist."
-              # You might want to fail the step here if the file is critical
-            fi
+          # Verify if the files actually exist before trying to upload them
+          echo "DEBUG: Checking if generated EXE_FILE_PATH exists:"
+          if [ -f "$EXE_FILE_PATH" ]; then
+            echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) exists."
+          else
+            echo "DEBUG: EXE_FILE_PATH ($EXE_FILE_PATH) DOES NOT exist."
+            # You might want to fail the step here if the file is critical
+          fi
 
-            echo "DEBUG: Checking if generated ZIP_FILE_PATH exists:"
-            if [ -f "$ZIP_FILE_PATH" ]; then
-              echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) exists."
-            else
-              echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) DOES NOT exist."
-              # You might want to fail the step here
-            fi
-            # --- DEBUGGING LINES END ---
+          echo "DEBUG: Checking if generated ZIP_FILE_PATH exists:"
+          if [ -f "$ZIP_FILE_PATH" ]; then
+            echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) exists."
+          else
+            echo "DEBUG: ZIP_FILE_PATH ($ZIP_FILE_PATH) DOES NOT exist."
+            # You might want to fail the step here
+          fi
+          # --- DEBUGGING LINES END ---
 
-            echo "artifact_paths<<EOF" >> "$GITHUB_OUTPUT"
-            echo "$EXE_FILE_PATH" >> "$GITHUB_OUTPUT"
-            echo "$ZIP_FILE_PATH" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-          shell: bash # Or pwsh for Windows, ensure consistent shell    
+          echo "artifact_paths<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$EXE_FILE_PATH" >> "$GITHUB_OUTPUT"
+          echo "$ZIP_FILE_PATH" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        shell: bash # Or pwsh for Windows, ensure consistent shell    
 
       - name: Upload Build Artifacts (with custom retries)
         uses: ./.github/actions/retry-artifact-operation # Path to your custom composite action
