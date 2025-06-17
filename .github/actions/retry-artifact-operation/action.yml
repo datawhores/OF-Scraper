@@ -86,6 +86,7 @@ runs:
           fi
         do
             EXIT_CODE=$?
+            echo $ARTIFACT_PATH
             if [ "$ATTEMPT_NUM" -ge "$MAX_ATTEMPTS" ]; then
                 echo "ERROR: Artifact ${OPERATION_TYPE} failed after ${MAX_ATTEMPTS} attempts (last exit code: ${EXIT_CODE})." >&2
                 exit "$EXIT_CODE"
