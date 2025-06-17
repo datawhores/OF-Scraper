@@ -192,6 +192,11 @@ jobs:
     permissions:
       contents: write # Required to create/update GitHub Releases
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Download all build artifacts (with custom retries)
         uses: ./.github/actions/retry-artifact-operation
         with:
