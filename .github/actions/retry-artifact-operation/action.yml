@@ -1,4 +1,4 @@
-# .github/actions/retry-artifact-operation/action.yml (CORRECTED Fixed-Attempts Version)
+# .github/actions/retry-artifact-operation/action.yml
 name: 'Retryable Artifact Operation (Fixed Attempts)'
 description: 'Uploads or downloads artifacts with a fixed number of retries.'
 
@@ -8,14 +8,14 @@ inputs:
     required: true
     type: string
   name:
-    description: 'Artifact name.'
-    required: true
+    description: 'Artifact name. For download, omit to get all artifacts in the workflow run.'
+    required: false
     type: string
   path:
     description: 'Paths for operation.'
     required: true
     type: string
-  if_no_files_found: # Renamed to avoid hyphen issues in variable names for direct access
+  if_no_files_found:
     description: 'For upload: warn, error, ignore.'
     required: false
     default: 'warn'
@@ -48,7 +48,9 @@ runs:
       if: ${{ inputs.operation_type == 'download' }} # Only run if operation_type is download
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.name }}
+        # Conditionally include 'name' only if inputs.name is provided (not empty)
+        # If inputs.name is empty, the 'name' parameter is entirely omitted, triggering "download all"
+        ${{ format('name: {0}', inputs.name) }}: ${{ inputs.name != '' && inputs.name || null }}
         path: ${{ inputs.path }}
       continue-on-error: true # Allow this specific step to fail without failing the job immediately
 
@@ -79,7 +81,7 @@ runs:
       if: ${{ inputs.operation_type == 'download' && steps.download_attempt_1.outcome == 'failure' }}
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.name }}
+        ${{ format('name: {0}', inputs.name) }}: ${{ inputs.name != '' && inputs.name || null }}
         path: ${{ inputs.path }}
       continue-on-error: true
 
@@ -110,7 +112,7 @@ runs:
       if: ${{ inputs.operation_type == 'download' && steps.download_attempt_2.outcome == 'failure' }}
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.name }}
+        ${{ format('name: {0}', inputs.name) }}: ${{ inputs.name != '' && inputs.name || null }}
         path: ${{ inputs.path }}
       continue-on-error: true
 
@@ -130,7 +132,7 @@ runs:
           # Check if the last download attempt also failed
           if [ "${{ steps.download_attempt_1.outcome }}" == "failure" ] && \
              [ "${{ steps.download_attempt_2.outcome }}" == "failure" ] && \
-             [ "${{ steps.download_attempt_3.outcome }}" == "failure" ]; then
+             [ "${{ steps.download_attempt_3.outcome }}" == "failure" ]; then # Corrected typo here (removed extra ']')
             echo "::error::Artifact download failed after all 3 attempts." >&2
             exit 1
           fi
