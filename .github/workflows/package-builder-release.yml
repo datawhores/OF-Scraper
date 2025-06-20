@@ -233,3 +233,22 @@ jobs:
       is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
       should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
+
+  call_docker_publish_rootless:
+    name: Publish Docker Images
+    needs: [determine_tags_and_versions, determine_docker_latest_logic]
+    if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
+    uses: ./.github/workflows/publish-release-dockers-rootless.yml # No @ref for local callable
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+    with:
+      input_version: ${{ inputs.version }}
+      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
+      is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}

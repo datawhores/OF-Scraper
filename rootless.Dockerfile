@@ -38,18 +38,15 @@ RUN \
     hatch build
 
 
-# Stage 2: Create the final, minimal production image
+# # Stage 2: Create the final, minimal production image
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
-ARG INSTALL_FFMPEG=false # This ARG only controls the 'pyffmpeg' Python package installation.
+ARG INSTALL_FFMPEG=false
 WORKDIR /app
 
-# Install gosu for user privilege management
-RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r ofscraper && useradd -r -g ofscraper -u 1000 -s /usr/sbin/nologin ofscraper
 
-# Copy and set up the entrypoint script
-COPY ./scripts/entry/entrypoint-root.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
+# Create .venv before switching user if uv needs root permissions for that,
+# though `uv venv` typically works as non-root. Let's assume it can be run as the user.
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
 
@@ -61,9 +58,33 @@ RUN \
       uv pip install pyffmpeg==2.4.2.20; \
     fi && \
     \
-    rm *.whl # This is the last command in this RUN instruction, so NO '\' here
+    rm *.whl
 
-ENV PATH="/app/.venv/bin:${PATH}"
+COPY ./scripts/entry/entrypoint-rootless.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+#make required mounts
+RUN mkdir /Data
+RUN mkdir /config
+RUN chown -R ofscraper:ofscraper /config
+RUN chown -R ofscraper:ofscraper /Data
+#make home
+RUN mkdir /home/ofscraper
+RUN chown -R ofscraper:ofscraper /home/ofscraper
 
+
+    
+# Switch to the non-root user for all subsequent instructions and when the container runs
+USER ofscraper
+
+ENV PATH "/app/.venv/bin:${PATH}"
+
+# #copy scripts
+# # Create the 'scripts' directory if it doesn't exist to ensure copy path works
+# This is usually handled by the ENTRYPOINT script or the app itself
+# if we are truly rootless, we don't want the user to need to mkdir /scripts as root
+# Let's assume the entrypoint script is simpler now.
+# We'll copy the single entrypoint file directly
+
+# Use exec form for ENTRYPOINT for proper signal handling
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["ofscraper"]

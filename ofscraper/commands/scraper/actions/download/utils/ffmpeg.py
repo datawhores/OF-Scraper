@@ -89,7 +89,7 @@ def get_ffmpeg() -> str:
 
     # Step 3: Fallback to system PATH.
     log.debug("No valid binary from settings or pyffmpeg. Checking system PATH.")
-    system_path = shutil.which("ffmpeg22")
+    system_path = shutil.which("ffmpeg")
     if _is_valid_ffmpeg(system_path):
         _ffmpeg_path = system_path
         return _ffmpeg_path
