@@ -38,6 +38,7 @@ if [ "$CURRENT_UID" -eq 0 ]; then
     fi
 
     # Ensure the home directory exists and has correct ownership
+    echo "INFO: Giving $APP_USER Permession on $APP_HOME"
     mkdir -p "$APP_HOME"
     chown -R "$APP_USER:$APP_GROUP" "$APP_HOME"
     
