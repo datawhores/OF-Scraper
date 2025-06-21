@@ -230,19 +230,25 @@ Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
     return questions[name]["auth"]
 
 
-def reset_auth_prompt() -> bool:
+def reset_auth_prompt(include_main_menu=False) -> bool:
     name = "input"
+    choices=[
+                    Choice("reset", "Reset Default"),
+                    Choice("manual", "Fix Through Script"),
+                    Choice("again", "File was fixed manually"),
+                    Choice("quit", "Quit"),
+
+                ]
+    if include_main_menu:
+        choices.append(                    Choice("main", "Main Menu"),
+)
     questions = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
                 "message": "How do you want to fix this issue",
-                "choices": [
-                    Choice("reset", "Reset Default"),
-                    Choice("manual", "Fix Through Script"),
-                    Choice("again", "File was fixed manually"),
-                ],
+                "choices": choices,
             }
         ]
     )
