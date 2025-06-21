@@ -51,7 +51,7 @@ RUN mkdir -p /data/
 RUN mkdir -p /config/
 
 # Copy and set up the entrypoint script
-COPY ./scripts/entry/entrypoint-root.sh /usr/local/bin/entrypoint.sh
+COPY ./scripts/entry/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 RUN uv venv

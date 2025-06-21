@@ -212,7 +212,6 @@ main() {
         setup_user
         handle_permissions
         install_python_deps_conditionally 
-        ls -la /home/ofscraper
 
 
         if $_user_setup_for_gosu; then
