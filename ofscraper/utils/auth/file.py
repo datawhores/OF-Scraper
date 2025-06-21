@@ -43,7 +43,7 @@ def edit_auth():
         auth = None
         with auth_context.auth_context():
             auth = auth_dict.get_auth_dict()
-            auth = make.make_auth(auth)
+            auth = make.make_auth(auth,include_main_menu=True)
             console.print("Your `auth.json` file has been edited")
             break
     return auth

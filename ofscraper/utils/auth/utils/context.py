@@ -32,7 +32,9 @@ def auth_context():
         yield
     except FileNotFoundError:
         console.print("You don't seem to have an `auth.json` file")
-        make.make_auth()
+        #special case to quit
+        if make.make_auth()=="quit":
+            quit()
     except json.JSONDecodeError as e:
         while True:
             try:
