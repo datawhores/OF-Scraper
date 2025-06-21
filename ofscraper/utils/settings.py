@@ -52,7 +52,6 @@ def setup_settings(mediatype):
     merged.log_level = read_args.retriveArgs().log_level or constants.getattr(
         "DEFAULT_LOG_LEVEL"
     )
-    merged.keydb_api = read_args.retriveArgs().keydb_api or config_data.get_keydb_api()
     merged.trunicate = get_trunication(mediatype)
     merged.userlist = get_userlist()
     merged.blacklist = get_blacklist()

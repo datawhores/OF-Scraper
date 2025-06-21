@@ -336,13 +336,6 @@ def cdm_config():
                 "choices": constants.getattr("KEY_OPTIONS"),
             },
             {
-                "type": "input",
-                "name": "keydb_api",
-                "message": "keydb api key:\n",
-                "option_instruction": "Required if your using keydb for key-mode",
-                "default": data.get_keydb_api() or "",
-            },
-            {
                 "type": "filepath",
                 "name": "client-id",
                 "message": "Enter path to client id file",

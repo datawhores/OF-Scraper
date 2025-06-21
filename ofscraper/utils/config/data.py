@@ -606,18 +606,6 @@ def get_key_mode(config=None):
         else constants_attr.getattr("KEY_DEFAULT")
     )
 
-
-@wrapper.config_reader
-def get_keydb_api(config=None):
-    if config is False:
-        return constants.KEYDB_DEFAULT
-    return (
-        config.get("keydb_api")
-        or config.get("cdm_options", {}).get("keydb_api")
-        or constants_attr.getattr("KEYDB_DEFAULT")
-    )
-
-
 @wrapper.config_reader
 def get_dynamic(config=None):
     if config is False:

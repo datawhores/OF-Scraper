@@ -36,7 +36,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "private-key": data.get_private_key(config=config),
             "client-id": data.get_client_id(config=config),
             "key-mode-default": data.get_key_mode(config=config),
-            "keydb_api": data.get_keydb_api(config=config),
         },
         "performance_options": {
             "download_sems": data.get_download_semaphores(config=config),

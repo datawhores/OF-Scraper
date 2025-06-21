@@ -22,12 +22,3 @@ def check_auth():
 
 
 
-
-def check_config_key_mode():
-    if (
-        settings.get_settings().key_mode == "keydb"
-        and not settings.get_settings().keydb_api()
-    ):
-        console.shared_console.print(
-            "[red]You must setup keydb API Key\nhttps://keysdb.net[/red]"
-        )

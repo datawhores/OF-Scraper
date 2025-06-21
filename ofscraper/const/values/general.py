@@ -1,5 +1,5 @@
 SUPRESS_OUTPUTS = {"CRITICAL", "ERROR", "WARNING", "OFF", "LOW", "PROMPT"}
-KEY_OPTIONS = ["cdrm", "cdrm2", "manual", "keydb"]
+KEY_OPTIONS = ["cdrm",  "manual"]
 refreshScreen = 50
 NUMBER_REGEX = "[0-9]"
 USERNAME_REGEX = "[^/]"
