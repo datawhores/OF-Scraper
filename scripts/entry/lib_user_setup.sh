@@ -102,8 +102,6 @@ setup_user() {
                 APP_USER="$existing_username_at_uid"
                 APP_GID="$existing_user_gid_at_uid"
                 APP_GROUP="$existing_group_name_at_gid"
-
-                set_up_all_paths
                 _user_setup_for_gosu=true # Mark setup as successful because we've adapted
             else
                 # Desired UID is either free, or taken by APP_USER (which is good),
@@ -145,8 +143,6 @@ setup_user() {
             APP_USER="$existing_username_at_uid"
             APP_GID="$existing_user_gid_at_uid"
             APP_GROUP="$existing_group_name_at_gid"
-
-            set_up_all_paths            
             _user_setup_for_gosu=true # Mark setup as successful because we've adapted
         else
             # User name does not exist, and UID is free. Create the user.
@@ -160,5 +156,6 @@ setup_user() {
                 _user_setup_for_gosu=false
             fi
         fi
-    fi
+    fi    
+
 }

@@ -34,6 +34,7 @@ main() {
         determine_app_ids
         setup_group
         setup_user
+        set_up_all_paths
         handle_permissions
         install_python_deps_conditionally
 
