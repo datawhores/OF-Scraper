@@ -40,7 +40,6 @@ RUN \
 
 # Stage 2: Create the final, minimal production image
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
-ARG INSTALL_FFMPEG=false # This ARG only controls the 'pyffmpeg' Python package installation.
 WORKDIR /app
 
 # Install gosu for user privilege management
@@ -51,8 +50,12 @@ RUN mkdir -p /data/
 RUN mkdir -p /config/
 
 # Copy and set up the entrypoint script
-COPY ./scripts/entry/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN mkdir -p /usr/local/bin/scripts_temp
+COPY ./scripts/entry /usr/local/bin/scripts_temp/
+RUN chmod +x -R /usr/local/bin/scripts_temp
+RUN mv /usr/local/bin/scripts_temp/* /usr/local/bin/
+# Clean up the temporary directory.
+RUN rm -r /usr/local/bin/scripts_temp
 
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
@@ -60,11 +63,6 @@ COPY --from=builder /app/dist/*.whl .
 # This RUN block also needs correct '\' for multi-line commands.
 RUN \
     uv pip install *.whl -v; \
-    \
-    if [ "$INSTALL_FFMPEG" = "true" ]; then \
-      uv pip install pyffmpeg==2.4.2.20; \
-    fi && \
-    \
     rm *.whl # This is the last command in this RUN instruction, so NO '\' here
 
     

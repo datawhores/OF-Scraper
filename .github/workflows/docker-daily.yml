@@ -97,7 +97,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true
 
 
       # This part needs adjustment to sign both images.
