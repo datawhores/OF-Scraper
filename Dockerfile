@@ -27,12 +27,14 @@ RUN \
       VERSION="$BUILD_VERSION"; \
     else \
       SHORT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "0000000"); \
-      HIGHEST_TAG=$(git tag --list | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(\.[a-zA-Z0-9]+)?$' | sort -V -r | head -n 1); \
+      # CORRECTED LINE: Use date sorting to find the most recent tag
+      HIGHEST_TAG=$(git tag --sort=-committerdate | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | head -n 1); \
       if [ -z "$HIGHEST_TAG" ]; then BASE_VERSION="0.0.0"; else BASE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//'); fi; \
       VERSION="${BASE_VERSION}+g${SHORT_HASH}"; \
     fi && \
     export HATCH_VCS_PRETEND_VERSION=$VERSION && \
     export SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION && \
+    echo "Build OF-SCRAPER with ${VERSION}" && \
     python3 -m pip install --no-cache-dir hatch hatch-vcs && \
     uv sync --locked && \
     hatch build
