@@ -46,6 +46,10 @@ WORKDIR /app
 # Install gosu for user privilege management
 RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
+# Create a default data/config directory. Ownership will be set by entrypoint.
+RUN mkdir -p /data/
+RUN mkdir -p /config/
+
 # Copy and set up the entrypoint script
 COPY ./scripts/entry/entrypoint-root.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -63,7 +67,8 @@ RUN \
     \
     rm *.whl # This is the last command in this RUN instruction, so NO '\' here
 
+    
 ENV PATH="/app/.venv/bin:${PATH}"
-
+USER root 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["ofscraper"]

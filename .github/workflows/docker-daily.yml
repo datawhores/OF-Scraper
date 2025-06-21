@@ -99,32 +99,6 @@ jobs:
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
             INSTALL_FFMPEG=true
 
-      - name: Extract Docker metadata (Rootless Image)
-        id: meta_rootless # Unique ID for this step
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }} # *** Use the same base image name ***
-          tags: |
-            type=ref,event=branch,suffix=-rootless
-            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}-rootless
-            type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-rootless
-            type=raw,value=latest-rootless,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
-
-      - name: Build and push Rootless Docker image
-        id: build-and-push-rootless # Unique ID for this step
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./rootless.Dockerfile # Specifies your rootless Dockerfile
-          push: true
-          tags: ${{ steps.meta_rootless.outputs.tags }}
-          labels: ${{ steps.meta_rootless.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true
 
       # This part needs adjustment to sign both images.
       - name: Install Cosign
@@ -147,13 +121,5 @@ jobs:
           # Get the digest of the normal image
           NORMAL_IMAGE_DIGEST="${{ steps.build-and-push-normal.outputs.digest }}"
 
-          # Get all tags for the rootless image
-          ROOTLESS_IMAGE_TAGS="${{ steps.meta_rootless.outputs.tags }}"
-          # Get the digest of the rootless image
-          ROOTLESS_IMAGE_DIGEST="${{ steps.build-and-push-rootless.outputs.digest }}"
-
           echo "Signing Normal Image: ${NORMAL_IMAGE_TAGS} @ ${NORMAL_IMAGE_DIGEST}"
           echo "$NORMAL_IMAGE_TAGS" | xargs -I {} cosign sign --yes --key cosign.key {}@$NORMAL_IMAGE_DIGEST
-
-          echo "Signing Rootless Image: ${ROOTLESS_IMAGE_TAGS} @ ${ROOTLESS_IMAGE_DIGEST}"
-          echo "$ROOTLESS_IMAGE_TAGS" | xargs -I {} cosign sign --yes --key cosign.key {}@$ROOTLESS_IMAGE_DIGEST
