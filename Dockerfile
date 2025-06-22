@@ -61,7 +61,7 @@ COPY --from=builder /app/dist/*.whl .
 RUN \
     uv pip install *.whl -v; \
     \
-    uv pip install pyffmpeg; \
+    uv pip install pyffmpeg==2.4.2.20 && \
   fi && \
   \
     rm *.whl
