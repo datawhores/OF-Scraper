@@ -57,14 +57,13 @@ RUN rm -r /usr/local/bin/scripts_temp
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
 
-# This RUN block also needs correct '\' for multi-line commands.
 RUN \
     uv pip install *.whl -v; \
     \
     uv pip install pyffmpeg==2.4.2.20 && \
-  fi && \
   \
     rm *.whl
+ 
 
 ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
