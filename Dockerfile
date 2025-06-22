@@ -14,7 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* # Clean up apt cache to keep image size down
 
 
-COPY ofscraper pyproject.toml uv.lock README.md .git /app/
+# COPY ofscraper ofscraper
+# COPY pyproject.toml pyproject.toml
+# COPY uv.lock uv.lock
+# COPY README.md README.md
+# COPY .git .git
+# COPY ofscraper/ ofscraper
+COPY ofscraper/ pyproject.toml uv.lock README.md .git .
+
 # This entire RUN block should be kept as a single instruction, with proper '\' for newlines.
 # Every line here (except the last one of the entire RUN block) MUST end with a '\'.
 RUN \
@@ -42,22 +49,25 @@ WORKDIR /app
 # Install gosu for user privilege management
 RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
+# Create a default data/config directory. Ownership will be set by entrypoint.
+RUN mkdir -p /data/
+RUN mkdir -p /config/
+
 # Copy and set up the entrypoint script
 COPY ./scripts/entry /usr/local/bin/scripts_temp/
-RUN chmod +x -R /usr/local/bin/scripts_temp && \
+RUN \
+    chmod +x -R /usr/local/bin/scripts_temp && \
     mv /usr/local/bin/scripts_temp/* /usr/local/bin/ && \
     rm -r /usr/local/bin/scripts_temp
 
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
 
+# This RUN block also needs correct '\' for multi-line commands.
 RUN \
-    uv pip install *.whl -v; \
-    \
-    uv pip install pyffmpeg==2.4.2.20 && \
-  \
+    uv pip install *.whl -v;\
+    uv pip install pyffmpeg==2.4.2.20; \
     rm *.whl
- 
 
 ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
