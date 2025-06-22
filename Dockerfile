@@ -60,8 +60,6 @@ RUN apt-get update && \
     rm *.whl && \
     apt-get purge -y --auto-remove build-essential && \
     rm -rf /var/lib/apt/lists/*
-# -------------------- FIXED SECTION END --------------------
-
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
