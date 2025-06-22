@@ -34,7 +34,7 @@ RUN \
 
 
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 WORKDIR /app
 
 # Configure uv venv location
