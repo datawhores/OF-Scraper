@@ -90,8 +90,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-args: |
-            BUILD_VERSION${{ inputs.package_version }}
-            INSTALL_FFMPEG=true
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_hub_stable.outputs.tags }}
           labels: ${{ steps.meta_hub_stable.outputs.labels }}
           cache-from: type=gha
@@ -163,7 +162,6 @@ jobs:
           #pass enviroment variables as input
           build-args: |
             BUILD_VERSION=${{ inputs.package_version }}
-            INSTALL_FFMPEG=true
           tags: ${{ steps.meta_hub_dev.outputs.tags }}
           labels: ${{ steps.meta_hub_dev.outputs.labels }}
           cache-from: type=gha
@@ -235,7 +233,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             BUILD_VERSION=${{ inputs.package_version }}
-            INSTALL_FFMPEG=true
           tags: ${{ steps.meta_ghcr_stable.outputs.tags }}
           labels: ${{ steps.meta_ghcr_stable.outputs.labels }}
           cache-from: type=gha
@@ -303,8 +300,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-args: |
-            BUILD_VERSION${{ inputs.package_version }}
-            INSTALL_FFMPEG=true
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_ghcr_dev.outputs.tags }}
           labels: ${{ steps.meta_ghcr_dev.outputs.labels }}
           cache-from: type=gha

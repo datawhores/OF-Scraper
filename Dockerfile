@@ -2,8 +2,6 @@
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
 ARG BUILD_VERSION
-ARG INSTALL_FFMPEG=false
-
 WORKDIR /app
 
 # --- This is the ABSOLUTE ONLY essential change to fix the psutil/gcc error ---
@@ -68,7 +66,6 @@ COPY --from=builder /app/dist/*.whl .
 RUN \
     uv pip install *.whl -v; \
     \
-    if [ "$INSTALL_FFMPEG" = "true" ]; then \
     uv pip install pyffmpeg; \
   fi && \
   \
