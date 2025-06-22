@@ -8,6 +8,7 @@ WORKDIR /app
 # It installs the necessary compiler (gcc via build-essential) and Python development headers
 # needed to compile Python packages like psutil, especially for non-AMD64 platforms.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential=12.9 \
     python3-dev=3.11.2-1+b1 \
     git=1:2.39.5-0+deb12u2 \
     && rm -rf /var/lib/apt/lists/*
@@ -45,7 +46,7 @@ RUN uv venv && uv pip install pyffmpeg==2.4.2.20 && \
     find "${VIRTUAL_ENV}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z'
 
 # Install gosu for user privilege management
-RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gosu==1.14-1+b10 && rm -rf /var/lib/apt/lists/*
 
 # Copy and set up the entrypoint scripts
 COPY --chmod=755 ./scripts/entry /usr/local/bin/entry  
