@@ -46,7 +46,7 @@ RUN uv venv && uv pip install pyffmpeg==2.4.2.20 && \
     find "${VIRTUAL_ENV}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z'
 
 # Install gosu for user privilege management
-RUN apt-get update && apt-get install -y gosu==1.14-1+b10 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
 # Copy and set up the entrypoint scripts
 COPY --chmod=755 ./scripts/entry /usr/local/bin/entry  
@@ -60,6 +60,8 @@ RUN apt-get update && \
     rm *.whl && \
     apt-get purge -y --auto-remove build-essential && \
     rm -rf /var/lib/apt/lists/*
+# -------------------- FIXED SECTION END --------------------
+
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
