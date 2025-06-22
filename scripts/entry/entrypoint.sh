@@ -47,12 +47,12 @@ main() {
             exec "$@" # Execute command as current user (root/remapped root)
         fi
     else
+
         # Running as non-root: Use existing user
-        set_up_mount_paths
+        install_python_deps_conditionally
         echo "INFO: Running as non-root (UID: $CURRENT_UID). Executing command as current user: $*"
-        # Ensure the target home, data, and config directories edaxist, but don't change ownership if not root
-        mkdir -p "$APP_HOME" "$DATA_DIR" "$CONFIG_DIR"
         exec "$@"
+
     fi
 }
 

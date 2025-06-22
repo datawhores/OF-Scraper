@@ -9,7 +9,7 @@ set_up_mount_paths() {
 }
 # This function relies on: APP_USER
 set_app_home_path() {
-    if [ -z "${HOME_FOLDER}" ]; then
+    if [ -z "${HOME_FOLDER-}" ]; then
         APP_HOME_FOLDER="$APP_USER"
     fi
     APP_HOME="/home/$APP_HOME_FOLDER" 
