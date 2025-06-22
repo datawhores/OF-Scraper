@@ -41,5 +41,8 @@ handle_permissions() {
         chown -R "$APP_USER:$APP_GROUP" "$APP_HOME" || echo "WARN: Could not chown $APP_HOME to "$APP_USER:$APP_GROUP". Permissions may be incorrect."
         chown -R "$APP_USER:$APP_GROUP" "$CONFIG_DIR" || echo "WARN: Could not chown $CONFIG_DIR to "$APP_USER:$APP_GROUP". Permissions may be incorrect."
         chown -R "$APP_USER:$APP_GROUP" "$DATA_DIR" || echo "WARN: Could not chown $DATA_DIR to "$APP_USER:$APP_GROUP". Permissions may be incorrect."
+        #chown app folder
+        chown -R "$APP_USER:$APP_GROUP" "/app" || echo "WARN: Could not chown /app to "$APP_USER:$APP_GROUP". Permissions may be incorrect."
+
     fi 
 }
