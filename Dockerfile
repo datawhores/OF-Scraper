@@ -37,20 +37,25 @@ RUN \
 FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim
 WORKDIR /app
 
-# STEP 1: Install ALL OS-level dependencies in a single layer.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gosu=1.14-1+b10 \
-    && rm -rf /var/lib/apt/lists/*
+# Configure uv venv location
+ENV VIRTUAL_ENV="/app/.venv"
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# STEP 2: Copy scripts directly to their final destination and make them executable.
-COPY --chmod=755 ./scripts/entry /usr/local/bin/entry 
+# Install pyffmpeg and force static timestamp to avoid unnecessary layer updates
+RUN uv venv && uv pip install pyffmpeg==2.4.2.20 && \
+    find "${VIRTUAL_ENV}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z'
 
-# STEP 3: Set up Python environment and install all packages in one go.
-RUN uv venv
+# Install gosu for user privilege management
+RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
+
+# Copy and set up the entrypoint scripts
+COPY --chmod=755 ./scripts/entry /usr/local/bin/entry  
+
+# Install the custom ofscraper wheels
 COPY --from=builder /app/dist/*.whl .
-RUN uv pip install *.whl pyffmpeg==2.4.2.20 && rm *.whl
+RUN uv pip install *.whl -v && \
+    rm *.whl
 
-ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
