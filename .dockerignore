@@ -1,6 +1,3 @@
-# Ignore the version control directory
-.git
-
 # Ignore Python's virtual environment directory (your 'info' folder)
 info/
 .venv/
