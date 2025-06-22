@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7-labs
 # Stage 1: Build the application artifact
 FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim AS builder
 
@@ -12,8 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
-COPY pyproject.toml uv.lock README.md .git .
-COPY ofscraper ofscraper
+COPY --parents pyproject.toml uv.lock README.md .git ofscraper .
 
 RUN \
     if [ -n "$BUILD_VERSION" ]; then \
