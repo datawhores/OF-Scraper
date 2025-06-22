@@ -64,3 +64,6 @@ ofscraper/__version__.pye
 
 #trunk
 .trunk
+#documentation
+wiki/
+docs/
