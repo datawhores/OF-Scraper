@@ -1,5 +1,5 @@
 # Stage 1: Build the application artifact
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim AS builder
 
 ARG BUILD_VERSION
 WORKDIR /app
@@ -8,15 +8,13 @@ WORKDIR /app
 # It installs the necessary compiler (gcc via build-essential) and Python development headers
 # needed to compile Python packages like psutil, especially for non-AMD64 platforms.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/* # Clean up apt cache to keep image size down
+    build-essential=12.9 \
+    python3-dev=3.11.2-1+b1 \
+    git=1:2.39.5-0+deb12u2 \
+    && rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml uv.lock README.md .git .
+COPY ofscraper ofscraper
 
-COPY ofscraper/ pyproject.toml uv.lock README.md .git .
-
-# This entire RUN block should be kept as a single instruction, with proper '\' for newlines.
-# Every line here (except the last one of the entire RUN block) MUST end with a '\'.
 RUN \
     if [ -n "$BUILD_VERSION" ]; then \
       VERSION="$BUILD_VERSION"; \
@@ -36,33 +34,23 @@ RUN \
 
 
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim
 WORKDIR /app
 
-# Install gosu for user privilege management
-RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
+# STEP 1: Install ALL OS-level dependencies in a single layer.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gosu=1.14-1+b10 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create a default data/config directory. Ownership will be set by entrypoint.
-RUN mkdir -p /data/
-RUN mkdir -p /config/
+# STEP 2: Copy scripts directly to their final destination and make them executable.
+COPY --chmod=755 ./scripts/entry /usr/local/bin/entry 
 
-# Copy and set up the entrypoint script
-COPY ./scripts/entry /usr/local/bin/scripts_temp/
-RUN \
-    chmod +x -R /usr/local/bin/scripts_temp && \
-    mv /usr/local/bin/scripts_temp/* /usr/local/bin/ && \
-    rm -r /usr/local/bin/scripts_temp
-
+# STEP 3: Set up Python environment and install all packages in one go.
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
-
-# This RUN block also needs correct '\' for multi-line commands.
-RUN \
-    uv pip install *.whl -v;\
-    uv pip install pyffmpeg==2.4.2.20; \
-    rm *.whl
+RUN uv pip install *.whl pyffmpeg==2.4.2.20 && rm *.whl
 
 ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]

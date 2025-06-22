@@ -20,9 +20,9 @@ APP_GID=""
 
 # --- Source Libraries ---
 # Ensure these paths are correct relative to where entrypoint.sh runs
-. /usr/local/bin/lib_user_setup.sh      # Contains determine_app_ids, setup_group, setup_user
-. /usr/local/bin/lib_permissions.sh    # Contains handle_permissions
-. /usr/local/bin/lib_paths.sh          # Contains functions to modify mount paths
+. /usr/local/bin/entry/lib_user_setup.sh      # Contains determine_app_ids, setup_group, setup_user
+. /usr/local/bin/entry/lib_permissions.sh    # Contains handle_permissions
+. /usr/local/bin/entry/lib_paths.sh          # Contains functions to modify mount paths
 
 # You might want to place these lib files in a directory like /usr/local/bin
 # within your Docker image.
