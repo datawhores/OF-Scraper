@@ -8,7 +8,6 @@ WORKDIR /app
 # It installs the necessary compiler (gcc via build-essential) and Python development headers
 # needed to compile Python packages like psutil, especially for non-AMD64 platforms.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential=12.9 \
     python3-dev=3.11.2-1+b1 \
     git=1:2.39.5-0+deb12u2 \
     && rm -rf /var/lib/apt/lists/*
@@ -34,7 +33,7 @@ RUN \
 
 
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim
 WORKDIR /app
 
 # Configure uv venv location
@@ -54,8 +53,12 @@ COPY --chmod=755 ./scripts/entry /usr/local/bin/entry
 # Install the custom ofscraper wheels
 COPY --from=builder /app/dist/*.whl .
 
-RUN uv pip install *.whl -v && \
-    rm *.whl
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential=12.9 && \
+    uv pip install *.whl -v && \
+    rm *.whl && \
+    apt-get purge -y --auto-remove build-essential && \
+    rm -rf /var/lib/apt/lists/*
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
