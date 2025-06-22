@@ -13,13 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/* # Clean up apt cache to keep image size down
 
-
-# COPY ofscraper ofscraper
-# COPY pyproject.toml pyproject.toml
-# COPY uv.lock uv.lock
-# COPY README.md README.md
-# COPY .git .git
-# COPY ofscraper/ ofscraper
 COPY ofscraper/ pyproject.toml uv.lock README.md .git .
 
 # This entire RUN block should be kept as a single instruction, with proper '\' for newlines.
