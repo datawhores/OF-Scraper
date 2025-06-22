@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* # Clean up apt cache to keep image size down
 
 
-COPY ofscraper pyproject.toml uv.lock README.md /app/
+COPY ofscraper pyproject.toml uv.lock README.md .git /app/
 # This entire RUN block should be kept as a single instruction, with proper '\' for newlines.
 # Every line here (except the last one of the entire RUN block) MUST end with a '\'.
 RUN \
