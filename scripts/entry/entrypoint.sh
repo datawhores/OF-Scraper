@@ -46,14 +46,10 @@ main() {
             echo "WARNING: This may lead to permission issues if the application expects to run as '$APP_USER' and cannot write to its data or config directories."
             exec "$@" # Execute command as current user (root/remapped root)
         fi
-    else
-
-        # Running as non-root: Use existing user
-        install_python_deps_conditionally
-        echo "INFO: Running as non-root (UID: $CURRENT_UID). Executing command as current user: $*"
-        exec "$@"
-
-    fi
+  else
+    echo "ERROR: Entrypoint running as non-root container user. Exiting..."
+    exit 1
+fi
 }
 
 # Call the main function to start execution

@@ -2,6 +2,8 @@
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
 ARG BUILD_VERSION
+ARG INSTALL_FFMPEG=false
+
 WORKDIR /app
 
 # --- This is the ABSOLUTE ONLY essential change to fix the psutil/gcc error ---
@@ -27,7 +29,6 @@ RUN \
       VERSION="$BUILD_VERSION"; \
     else \
       SHORT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "0000000"); \
-      # CORRECTED LINE: Use date sorting to find the most recent tag
       HIGHEST_TAG=$(git tag --sort=-committerdate | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?$' | head -n 1); \
       if [ -z "$HIGHEST_TAG" ]; then BASE_VERSION="0.0.0"; else BASE_VERSION=$(echo "$HIGHEST_TAG" | sed 's/^v//'); fi; \
       VERSION="${BASE_VERSION}+g${SHORT_HASH}"; \
@@ -35,6 +36,7 @@ RUN \
     export HATCH_VCS_PRETEND_VERSION=$VERSION && \
     export SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION && \
     echo "Build OF-SCRAPER with ${VERSION}" && \
+
     python3 -m pip install --no-cache-dir hatch hatch-vcs && \
     uv sync --locked && \
     hatch build
@@ -65,9 +67,15 @@ COPY --from=builder /app/dist/*.whl .
 # This RUN block also needs correct '\' for multi-line commands.
 RUN \
     uv pip install *.whl -v; \
-    rm *.whl # This is the last command in this RUN instruction, so NO '\' here
+    \
+    if [ "$INSTALL_FFMPEG" = "true" ]; then \
+    uv pip install pyffmpeg; \
+  fi && \
+  \
+    rm *.whl
 
-    
+RUN uv pip install pyffmpeg==2.4.2.20
+
 ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
