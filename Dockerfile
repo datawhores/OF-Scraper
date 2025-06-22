@@ -54,14 +54,8 @@ COPY --chmod=755 ./scripts/entry /usr/local/bin/entry
 # Install the custom ofscraper wheels
 COPY --from=builder /app/dist/*.whl .
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential=12.9 && \
-    uv pip install *.whl -v && \
-    rm *.whl && \
-    apt-get purge -y --auto-remove build-essential && \
-    rm -rf /var/lib/apt/lists/*
-# -------------------- FIXED SECTION END --------------------
-
+RUN uv pip install *.whl -v && \
+    rm *.whl
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
