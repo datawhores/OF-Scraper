@@ -114,13 +114,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         headers["cookie"] = auth_requests.get_cookies_str()
         auth_requests.create_sign(licence_url, headers)
         json_data = {
-            "License URL": licence_url,
-            "Headers": json.dumps(headers),
-            "PSSH": pssh,
-            "JSON": "{}",
-            "Cookies": "{}",
-            "Data": "{}",
-            "Proxy": "",
+            "licurl": licence_url,
+            "headers": json.dumps(headers),
+            "pssh": pssh,
         }
         async with c.requests_async(
             url=constants.getattr("CDRM"),
@@ -133,8 +129,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             skip_expection_check=True,
         ) as r:
             data = await r.json_()
-            log.debug(f"keydb json {data}")
-            key = data["Message"]
+            log.debug(f"cdrm json {data}")
+            key = data["message"]
         return key
     except Exception as E:
         log.traceback_(E)
