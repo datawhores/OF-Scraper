@@ -74,8 +74,6 @@ RUN \
   \
     rm *.whl
 
-RUN uv pip install pyffmpeg==2.4.2.20
-
 ENV PATH="/app/.venv/bin:${PATH}"
 USER root 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
