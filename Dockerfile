@@ -42,10 +42,6 @@ WORKDIR /app
 # Install gosu for user privilege management
 RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
-# Create a default data/config directory. Ownership will be set by entrypoint.
-RUN mkdir -p /data/
-RUN mkdir -p /config/
-
 # Copy and set up the entrypoint script
 RUN mkdir -p /usr/local/bin/scripts_temp
 COPY ./scripts/entry /usr/local/bin/scripts_temp/
