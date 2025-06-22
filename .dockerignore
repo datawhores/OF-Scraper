@@ -1,11 +1,3 @@
-wiki
-
-
-
-
-
-# .dockerignore
-
 # Ignore the version control directory
 .git
 
