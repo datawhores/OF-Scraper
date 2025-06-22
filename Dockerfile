@@ -43,12 +43,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
 # Copy and set up the entrypoint script
-RUN mkdir -p /usr/local/bin/scripts_temp
 COPY ./scripts/entry /usr/local/bin/scripts_temp/
-RUN chmod +x -R /usr/local/bin/scripts_temp
-RUN mv /usr/local/bin/scripts_temp/* /usr/local/bin/
-# Clean up the temporary directory.
-RUN rm -r /usr/local/bin/scripts_temp
+RUN chmod +x -R /usr/local/bin/scripts_temp && \
+    mv /usr/local/bin/scripts_temp/* /usr/local/bin/ && \
+    rm -r /usr/local/bin/scripts_temp
 
 RUN uv venv
 COPY --from=builder /app/dist/*.whl .
