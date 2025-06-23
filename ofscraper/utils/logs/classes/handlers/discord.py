@@ -118,7 +118,7 @@ class DiscordHandler(logging.Handler):
                         if response.status_code != 204:
                             print(f"Request failed for log chunk: '{chunk[:50]}...', status: {response.status_code}")
                 except Exception as e:
-                    print(f"Error sending log chunk: '{chunk[:50]}...': {e}")
+                    print(f"Error sending Discord log chunk: '{chunk[:50]}...': {e}")
                     pass
         except Exception:
             pass
