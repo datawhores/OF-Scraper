@@ -113,7 +113,7 @@ class databasePlaceholder(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        if data.get_allow_code_execution():
+        if settings.get_settings().code_execution():
             if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
