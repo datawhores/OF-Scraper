@@ -8,6 +8,7 @@ import traceback
 import arrow
 import httpx
 import tenacity
+import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
 import ofscraper.utils.auth.request as auth_requests
@@ -16,7 +17,8 @@ from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 # from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
 from httpx_aiohttp import AiohttpTransport
 from aiohttp import ClientSession
-import aiohttp
+from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+
 
 
 
@@ -221,6 +223,7 @@ class sessionManager:
         if self._session:
             return
         if async_:
+            # context=create_custom_ssl_context()
             self._session = httpx.AsyncClient(
                 http2=True,
                 proxy=self._proxy,
