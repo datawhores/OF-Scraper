@@ -31,9 +31,9 @@ def get_commit_timestamp(owner, repo, sha, github_token):
 def main():
     # Get inputs from command line arguments
     current_commit_timestamp = int(sys.argv[1])
-    is_stable_release = sys.argv[2].lower() == 'true'
-    is_dev_release = sys.argv[3].lower() == 'true'
-    run_docker_logic = sys.argv[4].lower() == 'true'
+    is_stable_release = sys.argv[2].lower().strip() == 'true'
+    is_dev_release = sys.argv[3].lower().strip() == 'true'
+    run_docker_logic = sys.argv[4].lower().strip() == 'true'
 
 
     # Get environment variables set by GitHub Actions
@@ -161,7 +161,7 @@ def main():
         
         print(f"DEBUG: Final last_successful_stable_docker_hub_commit_timestamp: {last_successful_stable_docker_hub_commit_timestamp}", file=sys.stderr)
         print(f"DEBUG: Final last_successful_dev_docker_hub_commit_timestamp: {last_successful_dev_docker_hub_commit_timestamp}", file=sys.stderr)
-        print(f"DEBUG: Final last_successful_stable_ghcr_commit_timestamp: {last_successful_stable_ghcr_commit_timestamp}", file=sys.stderr)
+        print(f"DEBUGq: Final last_successful_stable_ghcr_commit_timestamp: {last_successful_stable_ghcr_commit_timestamp}", file=sys.stderr)
         print(f"DEBUG: Final last_successful_dev_ghcr_commit_timestamp: {last_successful_dev_ghcr_commit_timestamp}", file=sys.stderr)
 
 
