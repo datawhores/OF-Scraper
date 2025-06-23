@@ -263,7 +263,7 @@ class Placeholders(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        if data.get_allow_code_execution():
+        if settings.get_settings().code_execution():
             if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
@@ -306,7 +306,7 @@ class Placeholders(basePlaceholder):
         out = None
         if ele.responsetype == "profile":
             out = f"{await ele.final_filename}.{ext}"
-        elif data.get_allow_code_execution():
+        elif settings.get_settings().code_execution():
             if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
@@ -501,7 +501,7 @@ class Textholders(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        if data.get_allow_code_execution():
+        if settings.get_settings().code_execution():
             if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
@@ -546,7 +546,7 @@ class Textholders(basePlaceholder):
             text = ele.file_sanitized_text
             text = re.sub(" ", data.get_spacereplacer(mediatype="Text"), text)
             out = f"{text}.{ext}"
-        elif data.get_allow_code_execution():
+        elif settings.get_settings().code_execution():
             if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
