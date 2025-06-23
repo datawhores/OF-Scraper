@@ -5,7 +5,7 @@ set -euo pipefail
 APP_USER="${USERNAME:-ofscraper}"
 APP_GROUP="${GROUPNAME:-$APP_USER}"
 #home
-APP_HOME="/home/${APP_HOME:-/ofscraper}"
+APP_HOME="${APP_HOME:-/home/ofscraper}"
 
 # ----------------s ---
 CURRENT_UID="$(id -u)"
