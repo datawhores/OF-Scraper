@@ -1,24 +1,25 @@
 import asyncio
-import contextlib
 import logging
 import threading
 import time
-import traceback
+import ssl
+import certifi
+
 
 import arrow
 import httpx
 import tenacity
 import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
+# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
+from httpx_aiohttp import AiohttpTransport
+from aiohttp import ClientSession
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
-from httpx_aiohttp import AiohttpTransport
-from aiohttp import ClientSession
-# from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
 import ofscraper.utils.settings as settings
+# from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
 
 
 
@@ -235,7 +236,7 @@ class sessionManager:
                 ),
              transport=AiohttpTransport(
         client=lambda: ClientSession(    proxy=self._proxy,
-        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=False if not settings.get_settings().ssl_validation)),
+        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=False if not settings.get_settings().ssl_validation else ssl.create_default_context(cafile=certifi.where())),
     )
                             
                             )
