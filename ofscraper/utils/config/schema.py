@@ -45,8 +45,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "block_ads": data.get_block_ads(config=config),
             "file_size_max": data.get_filesize_max(config=config),
             "file_size_min": data.get_filesize_min(config=config),
-            "length_max": data.get_min_length(config=config),
-            "length_min": data.get_max_length(config=config),
+            "length_max": data.get_max_length(config=config),
+            "length_min": data.get_min_length(config=config),
         },
         "advanced_options": {
             "code-execution": data.get_allow_code_execution(config=config),
