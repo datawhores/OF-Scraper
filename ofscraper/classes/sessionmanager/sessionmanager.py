@@ -17,7 +17,8 @@ from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 # from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
 from httpx_aiohttp import AiohttpTransport
 from aiohttp import ClientSession
-from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+# from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+import ofscraper.utils.settings as settings
 
 
 
@@ -234,7 +235,7 @@ class sessionManager:
                 ),
              transport=AiohttpTransport(
         client=lambda: ClientSession(    proxy=self._proxy,
-        connector=aiohttp.TCPConnector(limit=self._connect_limit)),
+        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=False if not settings.get_settings().ssl_validation)),
     )
                             
                             )
