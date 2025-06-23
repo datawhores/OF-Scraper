@@ -127,7 +127,7 @@ jobs:
           github-server-url: ${{ github.server_url }}
       - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11.5
       - name: Install uv
