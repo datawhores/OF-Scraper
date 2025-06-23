@@ -6,7 +6,6 @@ on:
       - '**'
     tags-ignore:
       - '**'
-
 permissions:
   contents: read
   packages: write
@@ -28,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      
+
       - name: Make script executable
         run: chmod +x ./scripts/commit_version.sh
       - name: Generate Version and Git Info
@@ -36,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }} # Still pass for general info, but not for WORKFLOW_ID now
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
           GITHUB_REF: ${{ github.ref }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: ./scripts/commit_version.sh
@@ -59,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -73,8 +72,8 @@ jobs:
           username: ${{ matrix.registry.id == 'ghcr' && github.actor || secrets.DOCKERHUB_USERNAME }}
           password: ${{ matrix.registry.id == 'ghcr' && secrets.GITHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
+      - name: Extract Docker metadata (Normal Image)
+        id: meta_normal
         uses: docker/metadata-action@v5
         with:
           images: ${{ matrix.registry.id == 'ghcr' && format('ghcr.io/{0}', github.repository) || 'datawhores/of-scraper' }}
@@ -83,23 +82,23 @@ jobs:
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}-${{ needs.generate_version.outputs.commit_timestamp }}
             type=raw,value=${{ needs.generate_version.outputs.base_version }}-${{ needs.generate_version.outputs.short_hash }}
             type=raw,value=latest,enable=${{ needs.generate_version.outputs.is_newer_than_last_successful_run }}
-            
 
-      - name: Build and push Docker image
-        id: build-and-push
+      - name: Build and push Normal Docker image
+        id: build-and-push-normal 
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile 
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_normal.outputs.tags }}
+          labels: ${{ steps.meta_normal.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           build-args: |
             BUILD_VERSION=${{ needs.generate_version.outputs.version }}
-            INSTALL_FFMPEG=true
 
+      # This part needs adjustment to sign both images.
       - name: Install Cosign
         if: matrix.registry.sign == true
         uses: sigstore/cosign-installer@v3.5.0
@@ -109,9 +108,16 @@ jobs:
         run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
         shell: bash
 
-      - name: Sign the published Docker image
+      - name: Sign the published Docker images
         if: matrix.registry.sign == true
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
+        run: |
+          # Get all tags for the normal image
+          NORMAL_IMAGE_TAGS="${{ steps.meta_normal.outputs.tags }}"
+          # Get the digest of the normal image
+          NORMAL_IMAGE_DIGEST="${{ steps.build-and-push-normal.outputs.digest }}"
+
+          echo "Signing Normal Image: ${NORMAL_IMAGE_TAGS} @ ${NORMAL_IMAGE_DIGEST}"
+          echo "$NORMAL_IMAGE_TAGS" | xargs -I {} cosign sign --yes --key cosign.key {}@$NORMAL_IMAGE_DIGEST

@@ -23,7 +23,6 @@ def main():
         readConfig()
         setLogger()
         make_folder()
-        check()
         run.main()
     except Exception as E:
         print(E)
@@ -64,6 +63,3 @@ def readConfig():
 def make_folder():
     paths_manage.make_folders()
 
-
-def check():
-    checkers.check_config_key_mode()

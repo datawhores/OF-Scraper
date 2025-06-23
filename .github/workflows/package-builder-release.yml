@@ -1,9 +1,15 @@
+<<<<<<< HEAD
 name: Stable/Dev Package Releases
+=======
+# .github/workflows/package-builder-release.yml
+name: Package Builder Release
+>>>>>>> dev/3.13-aio
 
 on:
   workflow_dispatch:
     inputs:
       version:
+<<<<<<< HEAD
         description: The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.
         required: true
         type: string
@@ -19,6 +25,33 @@ on:
         description: Publish to Docker Hub & GHCR (t/f)
         required: true
         type: boolean
+=======
+        description: "The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag."
+        required: true
+        type: string
+      files:
+        description: "Build binary files? (t/f)"
+        required: true
+        type: boolean
+      pip:
+        description: "Publish to PyPI? (t/f)"
+        required: true
+        type: boolean
+      docker:
+        description: "Publish to Docker Hub & GHCR (t/f)"
+        required: true
+        type: boolean
+      test_pypi: # NEW INPUT: For testing PyPI upload
+        description: "Perform a test upload to Test PyPI? (t/f)"
+        required: true
+        type: boolean
+        default: false # Default to false to prevent accidental test uploads
+
+# Enable verbose debugging for the entire workflow
+env:
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
+>>>>>>> dev/3.13-aio
 
 permissions:
   contents: write # Needed for checkout, creating releases
@@ -47,6 +80,11 @@ jobs:
           ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
           fetch-depth: 0 # Needed for git log and tag comparisons
           fetch-tags: true
+<<<<<<< HEAD
+=======
+          repository: ${{ github.repository }} # Explicitly pass the repository name (owner/repo)
+          github-server-url: ${{ github.server_url }} # Explicitly pass the GitHub server URL (https://github.com)
+>>>>>>> dev/3.13-aio
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
@@ -59,6 +97,7 @@ jobs:
 
   determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic
+<<<<<<< HEAD
     needs: [determine_tags_and_versions] # This job needs outputs from the previous one
     if: ${{ inputs.docker }} # Only run this job if Docker publishing is requested
     runs-on: ubuntu-latest
@@ -73,15 +112,38 @@ jobs:
         uses: actions/checkout@v4 # Need to checkout the repo to get the Python script
         with:
           ref: ${{ github.sha }} # Use current commit to ensure consistency
+=======
+    needs: [determine_tags_and_versions]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      should_apply_stable_latest: ${{steps.run_python_logic.outputs.should_apply_stable_latest}}
+      should_apply_dev_latest: ${{steps.run_python_logic.outputs.should_apply_dev_latest}}
+    steps:
+      - name: Checkout repository for script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+>>>>>>> dev/3.13-aio
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
+<<<<<<< HEAD
           python-version: '3.12'
+=======
+          python-version: "3.12"
+
+>>>>>>> dev/3.13-aio
       - name: Install Python dependencies
         run: pip install requests
 
       - name: Execute Latest Tag Logic Script
+<<<<<<< HEAD
         id: run_python_logic # Give this step an ID to capture its outputs
         run: python scripts/determine_docker_stable_dev_tags.py \
           "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
@@ -97,6 +159,25 @@ jobs:
     if: ${{ inputs.pip }}
     runs-on: ubuntu-latest
     name: Create PyPI Package
+=======
+        id: run_python_logic
+        run: python scripts/determine_docker_stable_dev_tags.py \
+          "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
+          "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
+          "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}" \
+          "${{ inputs.docker }}"
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+
+  pypi:
+    needs: [determine_tags_and_versions]
+    if: ${{ inputs.pip}} # Runs for real PyPI if pip is true and test_pypi is false
+    runs-on: ubuntu-latest
+    name: Publish to PyPI
+>>>>>>> dev/3.13-aio
     permissions:
       id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
     steps:
@@ -106,6 +187,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           ref: ${{ inputs.version || github.ref }}
+<<<<<<< HEAD
+=======
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+>>>>>>> dev/3.13-aio
       - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -115,28 +201,100 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install Build and Publish Tools
+<<<<<<< HEAD
         run: uv pip install hatch twine
       - name: Build Package with Hatch
         run: |
           PACKAGE_VERSION="${{ needs.determine_tags_and_versions.outputs.package_version }}"
           echo "Setting package version to $PACKAGE_VERSION for the build."
           export HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION
+=======
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install hatch twine
+      - name: Build Package with Hatch
+        run: |
+          source .venv/bin/activate
+          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+>>>>>>> dev/3.13-aio
           hatch build
         shell: bash
 
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
+<<<<<<< HEAD
           TWINE_PASSWORD: ${{ secrets.pypi }}
         run: twine upload "dist/*"
+=======
+          TWINE_PASSWORD: ${{ secrets.pypi }} # Using 'pypi' secret for main PyPI
+        run: |
+          source .venv/bin/activate
+          twine upload "dist/*"
+        shell: bash
+
+  test_pypi_upload:
+    needs: [determine_tags_and_versions]
+    if: ${{inputs.test_pypi }} # Runs for Test PyPI if pip is true and test_pypi is true
+    runs-on: ubuntu-latest
+    name: Publish to Test PyPI
+    permissions:
+      id-token: write # Needed for OIDC authentication to Test PyPI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.version || github.ref }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
+      - run: git checkout ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: create venv and activate
+        run: |
+          uv venv
+      - name: Install Build and Publish Tools
+        run: |
+          source .venv/bin/activate
+          uv pip install hatch twine
+      - name: Build Package with Hatch
+        run: |
+          source .venv/bin/activate
+          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          hatch build
+        shell: bash
+
+      - name: Publish to Test PyPI with Twine
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi2 }} # Using 'pypi2' secret for Test PyPI
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ # Points to Test PyPI
+        run: |
+          source .venv/bin/activate
+          twine upload "dist/*"
+>>>>>>> dev/3.13-aio
         shell: bash
 
   call_binaries_build_and_release:
     name: Build & Release Binaries
     needs: [determine_tags_and_versions]
     if: ${{ inputs.files }}
+<<<<<<< HEAD
     # UPDATED FILENAME HERE
     uses: ./.github/workflows/publish-release-binaries.yml
+=======
+    uses: ./.github/workflows/publish-release-binaries.yml # No @ref for local callable
+>>>>>>> dev/3.13-aio
     with:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
@@ -145,15 +303,21 @@ jobs:
   call_docker_publish:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
+<<<<<<< HEAD
     if: ${{ inputs.docker }}
     # UPDATED FILENAME HERE
     uses: ./.github/workflows/publish-release-dockers.yml
+=======
+    if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
+    uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
+>>>>>>> dev/3.13-aio
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
     with:
+<<<<<<< HEAD
       input_version: ${{ inputs.version }} # Pass original input version for checkout
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
       long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
@@ -161,3 +325,12 @@ jobs:
       is_dev_release: ${{ needs.determine_tags_and_versions.outputs.is_dev_release }}
       should_apply_stable_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_stable_latest }}
       should_apply_dev_latest: ${{ needs.determine_docker_latest_logic.outputs.should_apply_dev_latest }}
+=======
+      input_version: ${{ inputs.version }}
+      package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+      long_hash: ${{ needs.determine_tags_and_versions.outputs.long_hash }}
+      is_stable_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_stable_release) }}
+      is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
+      should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
+      should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
+>>>>>>> dev/3.13-aio

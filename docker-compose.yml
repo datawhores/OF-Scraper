@@ -1,10 +1,10 @@
 version: "3.8" # Recommended to use a recent version for new features
 services:
+  #latest
   of-scraper:
     stdin_open: true # Keeps STDIN open for interactive processes
     tty: true # Allocates a pseudo-TTY for a terminal-like interface
     container_name: ofscraper
-    
     environment: # Optional environment variables
       # These are recommended for correct file permissions on mounted volumes.
       # Default UID/GID is 1000:1000 if not specified via environment variables in your shell.
@@ -38,3 +38,14 @@ services:
 
     # Optional: Configure restart policy.
     # restart: "unless-stopped" # Ensures the container restarts automatically unless explicitly stopped.
+
+  #local 
+  #comment out this and comment out the first of-scraper example to run locally
+  #  of-scraper:
+  #   stdin_open: true # Keeps STDIN open for interactive processes
+  #   tty: true # Allocates a pseudo-TTY for a terminal-like interface
+  #   container_name: ofscraper
+
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile

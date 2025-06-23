@@ -36,7 +36,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "private-key": data.get_private_key(config=config),
             "client-id": data.get_client_id(config=config),
             "key-mode-default": data.get_key_mode(config=config),
-            "keydb_api": data.get_keydb_api(config=config),
         },
         "performance_options": {
             "download_sems": data.get_download_semaphores(config=config),
@@ -46,8 +45,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "block_ads": data.get_block_ads(config=config),
             "file_size_max": data.get_filesize_max(config=config),
             "file_size_min": data.get_filesize_min(config=config),
-            "length_max": data.get_min_length(config=config),
-            "length_min": data.get_max_length(config=config),
+            "length_max": data.get_max_length(config=config),
+            "length_min": data.get_min_length(config=config),
         },
         "advanced_options": {
             "code-execution": data.get_allow_code_execution(config=config),
@@ -64,6 +63,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
             "logs_expire_time":data.get_logs_expire(config=config),
+            "ssl_validation": data.get_ssl_validation(config=config)
         },
         "script_options": {
             "post_download_script": data.get_post_download_script(config=config),

@@ -28,15 +28,6 @@ key_mode_option = click.option(
 )
 
 
-key_db_option = click.option(
-    "-kd",
-    "--keydb-api",
-    "--key-db-api",
-    "keydb_api",
-    help="api key for keydb cdrm",
-    default=None,
-)
-
 private_key_option = click.option(
     "-pk",
     "--private-key",

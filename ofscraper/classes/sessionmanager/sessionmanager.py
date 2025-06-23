@@ -1,22 +1,28 @@
 import asyncio
-import contextlib
 import logging
 import threading
 import time
-import traceback
+import ssl
+import certifi
+import contextlib
+
+
 
 import arrow
 import httpx
 import tenacity
+import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
+# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
+from httpx_aiohttp import AiohttpTransport
+from aiohttp import ClientSession
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-# from httpx_curl_cffi import  AsyncCurlTransport, CurlOpt
-from httpx_aiohttp import AiohttpTransport
-from aiohttp import ClientSession
-import aiohttp
+import ofscraper.utils.settings as settings
+# from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+
 
 
 
@@ -221,6 +227,7 @@ class sessionManager:
         if self._session:
             return
         if async_:
+            # context=create_custom_ssl_context()
             self._session = httpx.AsyncClient(
                 http2=True,
                 proxy=self._proxy,
@@ -231,10 +238,8 @@ class sessionManager:
                 ),
              transport=AiohttpTransport(
         client=lambda: ClientSession(    proxy=self._proxy,
-        connector=aiohttp.TCPConnector(limit=self._connect_limit)),
-    )
-                            
-                            )
+        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=False if not settings.get_settings().ssl_validation else ssl.create_default_context(cafile=certifi.where())),
+    )))
         else:
             self._session = httpx.Client(
                 http2=True,
@@ -321,7 +326,7 @@ class sessionManager:
         exceptions = exceptions or []
         actions = actions or []
         for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt)),
+            retry=retry_if_not_exception_type((KeyboardInterrupt,SystemExit)),
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=min, max=max),
             before=lambda x: (
@@ -424,7 +429,7 @@ class sessionManager:
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
-            retry=retry_if_not_exception_type((KeyboardInterrupt)),
+            retry=retry_if_not_exception_type((KeyboardInterrupt,SystemExit)),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
             before=lambda x: (

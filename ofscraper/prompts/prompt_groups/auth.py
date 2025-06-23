@@ -17,7 +17,6 @@ from functools import partial
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator
-from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -112,71 +111,67 @@ def ask_make_auth_prompt() -> bool:
     return questions[name]
 
 
-def browser_prompt() -> str:
-    pythonver = float(f"{sys.version_info[0]}.{sys.version_info[1]}")
-    name = "browser"
-    answer = None
+def prompt_for_browser_auth(include_main_menu: bool = True) -> str:
+    """
+    Prompts the user for an authentication method.
 
-    if pythonver < 3.9:
-        msg = "Auth Menu: Select how to retrive auth information"
-        console.print(
-            "\nNote: Browser Extractions only works with default browser profile\n\n\
-Hint: Select 'Enter Each Field Manually' to edit your current config\n\n\
-            "
-        )
-        answer = promptClasses.batchConverter(
+    This function is completely self-contained and does not rely on
+    any module-level constants.
+
+    Args:
+        include_main_menu (bool): If True, includes an option to return to the main menu.
+
+    Returns:
+        str: The user's selected choice.
+   
+    """
+    extraction_enabled_note = "\nNote: Browser Extractions only work with default browser profile\n\nHint: Select 'Enter Each Field Manually' to edit your current config\n"
+    extraction_disabled_note = "\nNote: To enable automatic extraction, install with Python 3.9 or greater\n\nHint: Select 'Enter Each Field Manually' to edit your current config\n"
+    msg = "Auth Menu: Select how to retrieve auth information"
+
+    supported_browsers = [
+        "Chrome", "Chromium", "Firefox", "Opera", "Opera GX",
+        "Edge", "Brave", "Vivaldi", "Safari",
+    ]
+
+    main_menu_choice = Choice(name="Go to Main Menu", value="main")
+    quit_choice = Choice(name="Quit", value="quit")
+
+    # --- Function Logic ---
+    name = "browser"
+    choices = [
+        "Enter Each Field Manually",
+        "Paste From M-rcus' OnlyFans-Cookie-Helper",
+    ]
+
+    if sys.version_info >= (3, 9):
+        print(extraction_enabled_note)
+        choices.extend([
+            Separator("-----------\nBrowser Extractions"),
+            *supported_browsers,
+        ])
+    else:
+        print(extraction_disabled_note)
+
+    choices.append(Separator("-----------"))
+    if include_main_menu:
+        choices.append(main_menu_choice)
+    choices.append(quit_choice)
+    answer = promptClasses.batchConverter(
             *[
                 {
                     "type": "list",
                     "message": msg,
                     "name": name,
-                    "choices": [
-                        "Enter Each Field Manually",
-                        "Paste From M-rcus' OnlyFans-Cookie-Helper",
-                        Separator(line="-----------\nBrowser Extractions"),
-                        "Chrome",
-                        "Chromium",
-                        "Firefox",
-                        "Opera",
-                        "Opera GX",
-                        "Edge",
-                        "Chromium",
-                        "Brave",
-                        "Vivaldi",
-                        "Safari",
-                        Separator(line="-----------"),
-                        Choice("main", "Go to Main Menu"),
-                        Choice("quit", "Quit"),
-                    ],
+                    "choices": choices,
                     "default": "Enter Each Field Manually",
                 }
             ]
         )
-
-    else:
-        console.print(
-            "\nNote:To enable automatic extraction install ofscraper with python3.9 or greater\n\n\
-Hint: Select 'Enter Each Field Manually' to edit your current config\n\n\
-            "
-        )
-        msg = "Auth Menu: Select how to retrive auth information"
-        answer = promptClasses.batchConverter(
-            *[
-                {
-                    "type": "list",
-                    "message": msg,
-                    "choices": [
-                        "Enter Each Field Manually",
-                        "Paste From Cookie Helper",
-                        Separator(line="-----------"),
-                        Choice("main", "Go to Main Menu"),
-                        Choice("quit", "Quit"),
-                    ],
-                    "default": "Enter Each Field Manually",
-                }
-            ]
-        )
-
+    
+    if not answer:
+        return "quit"
+    
     return answer[name]
 
 
@@ -235,19 +230,25 @@ Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
     return questions[name]["auth"]
 
 
-def reset_auth_prompt() -> bool:
+def reset_auth_prompt(include_main_menu=False) -> bool:
     name = "input"
+    choices=[
+                    Choice("reset", "Reset Default"),
+                    Choice("manual", "Fix Through Script"),
+                    Choice("again", "File was fixed manually"),
+                    Choice("quit", "Quit"),
+
+                ]
+    if include_main_menu:
+        choices.append(                    Choice("main", "Main Menu"),
+)
     questions = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
                 "message": "How do you want to fix this issue",
-                "choices": [
-                    Choice("reset", "Reset Default"),
-                    Choice("manual", "Fix Through Script"),
-                    Choice("again", "File was fixed manually"),
-                ],
+                "choices": choices,
             }
         ]
     )

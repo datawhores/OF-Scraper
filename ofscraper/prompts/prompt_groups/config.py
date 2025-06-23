@@ -336,13 +336,6 @@ def cdm_config():
                 "choices": constants.getattr("KEY_OPTIONS"),
             },
             {
-                "type": "input",
-                "name": "keydb_api",
-                "message": "keydb api key:\n",
-                "option_instruction": "Required if your using keydb for key-mode",
-                "default": data.get_keydb_api() or "",
-            },
-            {
                 "type": "filepath",
                 "name": "client-id",
                 "message": "Enter path to client id file",
@@ -556,7 +549,7 @@ def advanced_config() -> dict:
                 "name": "code-execution",
                 "message": "Enable Code Execution:",
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
-                "default": data.get_allow_code_execution(),
+                "default": data.get_allow_code_execution,
                 "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
             },
             {

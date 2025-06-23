@@ -90,8 +90,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_hub_stable.outputs.tags }}
           labels: ${{ steps.meta_hub_stable.outputs.labels }}
           cache-from: type=gha
@@ -160,9 +159,9 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
+          #pass enviroment variables as input
           build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_hub_dev.outputs.tags }}
           labels: ${{ steps.meta_hub_dev.outputs.labels }}
           cache-from: type=gha
@@ -233,8 +232,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_ghcr_stable.outputs.tags }}
           labels: ${{ steps.meta_ghcr_stable.outputs.labels }}
           cache-from: type=gha
@@ -302,8 +300,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           build-args: |
-            SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.package_version }}
-            HATCH_VCS_PRETEND_VERSION=${{ inputs.package_version }}
+            BUILD_VERSION=${{ inputs.package_version }}
           tags: ${{ steps.meta_ghcr_dev.outputs.tags }}
           labels: ${{ steps.meta_ghcr_dev.outputs.labels }}
           cache-from: type=gha

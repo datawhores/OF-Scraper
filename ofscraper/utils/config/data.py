@@ -262,13 +262,25 @@ def get_default_userlist(config=None):
 
 @wrapper.config_reader
 def get_logs_expire(config=None):
-   if config==False:
+   if not config:
        return None
    return(
         config.get("logs_expire_time")
         if not any(x == config.get("logs_expire_time") for x in [None, ""])
         else config.get("advanced_options", {}).get("logs_expire_time")
     )
+
+@wrapper.config_reader
+def get_ssl_validation(config=None):
+    val = (
+        config.get("ssl_validation")
+        if not any(x == config.get("ssl_validation") for x in [None, ""])
+        else config.get("advanced_options", {}).get("ssl_validation")
+    )
+    if val is None:
+        return False
+    else:
+        return val
 @wrapper.config_reader
 def get_post_download_script(config=None):
     if config is False:
@@ -605,18 +617,6 @@ def get_key_mode(config=None):
         if value and value.lower() in set(constants_attr.getattr("KEY_OPTIONS"))
         else constants_attr.getattr("KEY_DEFAULT")
     )
-
-
-@wrapper.config_reader
-def get_keydb_api(config=None):
-    if config is False:
-        return constants.KEYDB_DEFAULT
-    return (
-        config.get("keydb_api")
-        or config.get("cdm_options", {}).get("keydb_api")
-        or constants_attr.getattr("KEYDB_DEFAULT")
-    )
-
 
 @wrapper.config_reader
 def get_dynamic(config=None):

@@ -52,7 +52,6 @@ def setup_settings(mediatype):
     merged.log_level = read_args.retriveArgs().log_level or constants.getattr(
         "DEFAULT_LOG_LEVEL"
     )
-    merged.keydb_api = read_args.retriveArgs().keydb_api or config_data.get_keydb_api()
     merged.trunicate = get_trunication(mediatype)
     merged.userlist = get_userlist()
     merged.blacklist = get_blacklist()
@@ -100,6 +99,8 @@ def setup_settings(mediatype):
     merged.auto_after = get_auto_after_enabled()
     merged.cached_disabled=get_cached_disabled()
     merged.logs_expire_time=config_data.get_logs_expire()
+    merged.ssl_validation=config_data.get_ssl_validation()
+    merged.code_execution=config_data.get_allow_code_execution
 
     return merged
 

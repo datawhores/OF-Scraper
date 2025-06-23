@@ -1,5 +1,28 @@
-.dockerignore
-Dockerfile
-wiki
-dist
+# Ignore Python's virtual environment directory (your 'info' folder)
+info/
+.venv/
+venv/
+env/
 
+# Ignore Python cache and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+dist/
+build/
+wiki/
+*.egg-info/
+
+# Ignore editor and OS-specific files
+.vscode/
+.idea/
+*.DS_Store
+
+# Ignore test files if they aren't needed in the final image
+test/
+
+# Ignore local secrets or temp files
+.env
+.tempmedia/
+*.log

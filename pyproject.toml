@@ -116,11 +116,7 @@ git_describe_command = [
     "describe", 
     "--dirty", 
     "--tags", 
-    "--long", 
-    "--match", 
-    "[0-9]*.[0-9]*"
 ]
-
 
 [tool.pytest.ini_options]
 minversion = "6.0"
