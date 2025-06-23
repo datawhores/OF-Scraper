@@ -1,4 +1,5 @@
-# scripts/determine_docker_stable_dev_tags.py
+#!/bin/bash
+
 import os
 import sys
 import requests
