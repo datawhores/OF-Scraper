@@ -206,5 +206,4 @@ jobs:
           artifacts: artifacts/*/*
           tag: ${{ inputs.input_version }}
           name: "Release ${{ inputs.input_version }}"
-          body: "Release build for version ${{ inputs.input_version }}, created from commit hash `${{ inputs.long_hash }}`."
           allowUpdates: true
