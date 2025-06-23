@@ -96,10 +96,10 @@ fi
 # --- Determine if it's a stable or dev release based on PACKAGE_VERSION ---
 # Stable: pure semantic versioning (e.g., 1.2.3)
 # Dev: contains any letters (e.g., alpha, beta, rc, dev)
-if [[ "$PACKAGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    IS_STABLE_RELEASE="true"
-elif [[ "$PACKAGE_VERSION" =~ [a-zA-Z] ]]; then
+if [[ "$PACKAGE_VERSION" =~ [a-zA-Z] ]]; then
     IS_DEV_RELEASE="true"
+else
+    IS_STABLE_RELEASE="true"
 fi
 
 # Debug prints for console (for local execution and debugging)

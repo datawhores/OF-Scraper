@@ -102,7 +102,7 @@ jobs:
           "${{ needs.determine_tags_and_versions.outputs.commit_timestamp }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}" \
-          "${{ inputs.docker }}"
+          "${{ inputs.docker}}"
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -217,7 +217,7 @@ jobs:
   call_docker_publish:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
-    if: ${{ inputs.docker }} # This job should ONLY run if Docker publishing is requested.
+    if: ${{inputs.docker}} # This job should ONLY run if Docker publishing is requested.
     uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
