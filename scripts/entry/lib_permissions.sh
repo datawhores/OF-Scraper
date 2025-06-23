@@ -1,3 +1,4 @@
+#!/bin/bash
 
 # Function to handle directory creation and permissions
 handle_permissions() {

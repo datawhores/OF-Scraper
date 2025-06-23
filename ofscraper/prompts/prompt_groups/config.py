@@ -549,7 +549,7 @@ def advanced_config() -> dict:
                 "name": "code-execution",
                 "message": "Enable Code Execution:",
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
-                "default": data.get_allow_code_execution(),
+                "default": data.get_allow_code_execution,
                 "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
             },
             {

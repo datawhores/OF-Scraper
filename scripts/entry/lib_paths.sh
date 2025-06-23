@@ -1,5 +1,6 @@
+#!/bin/bash
+
 set_up_all_paths() {
-    set_app_home_path
     set_up_mount_paths
 }
 
@@ -7,16 +8,6 @@ set_up_mount_paths() {
     set_data_dir_path
     set_config_dir_path
 }
-# This function relies on: APP_USER
-set_app_home_path() {
-    if [ -z "${HOME_FOLDER-}" ]; then
-        APP_HOME_FOLDER="$APP_USER"
-    fi
-    APP_HOME="/home/$APP_HOME_FOLDER" 
-    echo $APP_HOME
-
-}
-
 # Function to set DATA_DIR.
 # This function relies on: APP_HOME
 set_data_dir_path() {

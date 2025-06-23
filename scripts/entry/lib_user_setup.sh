@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Function to determine APP_UID and APP_GID for user/group creation and chown operation
 determine_app_ids() {
     # Use UID and GID environment variables if provided, otherwise default to 1000

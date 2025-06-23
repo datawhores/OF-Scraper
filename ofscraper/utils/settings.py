@@ -100,7 +100,7 @@ def setup_settings(mediatype):
     merged.cached_disabled=get_cached_disabled()
     merged.logs_expire_time=config_data.get_logs_expire()
     merged.ssl_validation=config_data.get_ssl_validation()
-    merged.code_execution=config_data.get_allow_code_execution()
+    merged.code_execution=config_data.get_allow_code_execution
 
     return merged
 
