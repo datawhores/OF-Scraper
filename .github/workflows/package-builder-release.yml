@@ -80,11 +80,8 @@ jobs:
           ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
           fetch-depth: 0 # Needed for git log and tag comparisons
           fetch-tags: true
-<<<<<<< HEAD
-=======
           repository: ${{ github.repository }} # Explicitly pass the repository name (owner/repo)
           github-server-url: ${{ github.server_url }} # Explicitly pass the GitHub server URL (https://github.com)
->>>>>>> dev/3.13-aio
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
