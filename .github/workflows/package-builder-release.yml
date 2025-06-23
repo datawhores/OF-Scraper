@@ -141,7 +141,7 @@ jobs:
       - name: Build Package with Hatch
         run: |
           source .venv/bin/activate
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
+          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
           hatch build
         shell: bash
