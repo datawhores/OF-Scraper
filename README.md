@@ -3,10 +3,6 @@
 1. OF-Scraper can not bypass pay walls
 2. OF-Scraper requires a subscription to the model, models can not be scraped anonymously whether free or paid
 
-# Please Update to 3.11.6
-
-As the API has changed older version are no longer viable
-
 # For auth issues
 
 https://github.com/datawhores/OF-Scraper/issues/442
@@ -34,17 +30,29 @@ Docker and binary releases also available
 </a>
 
 ## Dev
+Dev releases can be found in the project release history
 
-None
+https://pypi.org/project/ofscraper/#history
 
 ## Table-of-contents
 
-- [Description](#description)
-- [Documentation](#documentation)
-- [Feature Requests](#feature-requests)
-- [Migrating from DC script](#migrating-from-dc-script)
-- [Discord](#discord)
-- [Support](#support)
+- [Notice](#notice)
+- [For auth issues](#for-auth-issues)
+- [For Issues related to Downloading/ No Models Retrieved error](#for-issues-related-to-downloading-no-models-retrieved-error)
+- [ReadMe](#readme)
+  - [Releases](#releases)
+  - [Stable](#stable)
+  - [Dev](#dev)
+  - [Table-of-contents](#table-of-contents)
+  - [Description](#description)
+  - [Documentation](#documentation)
+  - [Issues](#issues)
+    - [Private Reports](#private-reports)
+  - [Feature Requests](#feature-requests)
+  - [Migrating from DC script](#migrating-from-dc-script)
+  - [Discord](#discord)
+  - [Support](#support)
+- [](#)
 
 ## Description
 
