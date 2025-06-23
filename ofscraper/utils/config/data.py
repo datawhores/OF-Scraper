@@ -278,7 +278,7 @@ def get_ssl_validation(config=None):
         else config.get("advanced_options", {}).get("ssl_validation")
     )
     if val is None:
-        return True
+        return False
     else:
         return val
 @wrapper.config_reader
