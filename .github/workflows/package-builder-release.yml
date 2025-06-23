@@ -1,31 +1,10 @@
-<<<<<<< HEAD
-name: Stable/Dev Package Releases
-=======
 # .github/workflows/package-builder-release.yml
 name: Package Builder Release
->>>>>>> dev/3.13-aio
 
 on:
   workflow_dispatch:
     inputs:
       version:
-<<<<<<< HEAD
-        description: The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag.
-        required: true
-        type: string
-      files:
-        description: Build binary files? (t/f)
-        required: true
-        type: boolean
-      pip:
-        description: Publish to PyPI? (t/f)
-        required: true
-        type: boolean
-      docker:
-        description: Publish to Docker Hub & GHCR (t/f)
-        required: true
-        type: boolean
-=======
         description: "The exact git tag to build (e.g., v8.4.1 or v8.4.1-alpha.1). Leave empty to auto-derive from latest Git tag."
         required: true
         type: string
@@ -51,7 +30,6 @@ on:
 env:
   ACTIONS_RUNNER_DEBUG: true
   ACTIONS_STEP_DEBUG: true
->>>>>>> dev/3.13-aio
 
 permissions:
   contents: write # Needed for checkout, creating releases
@@ -92,27 +70,29 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: ./scripts/release_version.sh
 
-z  determine_docker_latest_logic:
+  determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic
-    needs: [determine_tags_and_versions] # This job needs outputs from the previous one
-    if: ${{ inputs.docker }} # Only run this job if Docker publishing is requested
+    needs: [determine_tags_and_versions]
     runs-on: ubuntu-latest
     permissions:
-      actions: read # Needed for the Python script to list workflow runs and jobs
-      contents: read # For checking out the script itself
+      actions: read
+      contents: read
     outputs:
-      should_apply_stable_latest: ${{ steps.run_python_logic.outputs.should_apply_stable_latest }}
-      should_apply_dev_latest: ${{ steps.run_python_logic.outputs.should_apply_dev_latest }}
+      should_apply_stable_latest: ${{steps.run_python_logic.outputs.should_apply_stable_latest}}
+      should_apply_dev_latest: ${{steps.run_python_logic.outputs.should_apply_dev_latest}}
     steps:
       - name: Checkout repository for script
-        uses: actions/checkout@v4 # Need to checkout the repo to get the Python script
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }} # Use current commit to ensure consistency
+          ref: ${{ github.sha }}
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+
       - name: Install Python dependencies
         run: pip install requests
 
