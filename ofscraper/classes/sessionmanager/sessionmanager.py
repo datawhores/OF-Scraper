@@ -239,7 +239,7 @@ class sessionManager:
              transport=AiohttpTransport(
         client=lambda: ClientSession(    proxy=self._proxy,
         connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=context)),
-    )))
+    ))
         else:
             self._session = httpx.Client(
                 http2=True,
