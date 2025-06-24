@@ -17,7 +17,7 @@ import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.main.manager as manager
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
@@ -54,7 +54,7 @@ async def scrape_stories(c, user_id) -> list:
     new_tasks = []
     task = None
 
-    url = constants.getattr("highlightsWithAStoryEP").format(user_id)
+    url = env.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         task = progress_utils.add_api_job_task(
             f"[Stories] user id -> {user_id}",
@@ -254,7 +254,7 @@ async def process_task_highlights(tasks):
 async def scrape_highlight_list(c, user_id, offset=0) -> list:
     new_tasks = []
 
-    url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
+    url = env.getattr("highlightsWithStoriesEP").format(user_id, offset)
     task = None
     log.debug(
         f"trying to access {API_H.lower()} lists with url:{url}  user_id:{user_id}"
@@ -296,7 +296,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 async def scrape_highlights_from_list(c, id) -> list:
     new_tasks = []
 
-    url = constants.getattr("storyEP").format(id)
+    url = env.getattr("storyEP").format(id)
     task = None
 
     try:
@@ -357,6 +357,6 @@ def get_individual_stories(id, c=None):
     with manager.Manager.get_ofsession(
        
     ) as c:
-        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
+        with c.requests_async(env.getattr("storiesSPECIFIC").format(id)) as r:
             log.trace(f"highlight raw highlight individual; {r.json_()}")
             return r.json()

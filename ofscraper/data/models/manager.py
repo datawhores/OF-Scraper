@@ -12,7 +12,7 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.user as user_helper
 import ofscraper.utils.args.mutators.write as write_args
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.console as console
@@ -101,7 +101,7 @@ class ModelManager:
             if username not in self._seen_users
             and not self._seen_users.add(username)
             and username not in oldusernames
-            and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
+            and username != env.getattr("DELETED_MODEL_PLACEHOLDER")
         ]
 
         args.usernames = new_names
@@ -124,7 +124,7 @@ class ModelManager:
                     "[bold red]No accounts found during scan[/bold red]"
                 )
                 # give log time to process
-                time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
+                time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT"))
                 if not prompts.retry_user_scan():
                     raise Exception("Could not find any accounts on list")
 
@@ -197,7 +197,7 @@ class ModelManager:
             filterusername = self.filterOnly()
             log.debug(f"final username count with all filters: {len(filterusername)}")
             # give log time to process
-            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
+            time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT"))
             if len(filterusername) != 0:
 
                 return {

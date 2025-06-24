@@ -19,7 +19,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
@@ -48,14 +48,14 @@ sem = None
 async def get_archived_posts(model_id, username, c=None, post_id=None):
     post_id = post_id or []
     after = await get_after(model_id, username)
-    if len(post_id) == 0 or len(post_id) > constants.getattr(
+    if len(post_id) == 0 or len(post_id) > env.getattr(
         "MAX_ARCHIVED_INDIVIDUAL_SEARCH"
     ):
         time_log(username, after)
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks(tasks)
-    elif len(post_id) <= constants.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
+    elif len(post_id) <= env.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, after, API)
     return data
@@ -135,8 +135,8 @@ async def get_split_array(model_id, username, after):
     if len(oldarchived) == 0:
         return []
     min_posts = max(
-        len(oldarchived) // constants.getattr("REASONABLE_MAX_PAGE"),
-        constants.getattr("MIN_PAGE_POST_COUNT"),
+        len(oldarchived) // env.getattr("REASONABLE_MAX_PAGE"),
+        env.getattr("MIN_PAGE_POST_COUNT"),
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
@@ -273,9 +273,9 @@ async def scrape_archived_posts(
         return [], []
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
-        constants.getattr("archivedNextEP").format(model_id, str(timestamp))
+        env.getattr("archivedNextEP").format(model_id, str(timestamp))
         if timestamp
-        else constants.getattr("archivedEP").format(model_id)
+        else env.getattr("archivedEP").format(model_id)
     )
     log.debug(url)
 
@@ -283,7 +283,7 @@ async def scrape_archived_posts(
     posts = []
     try:
         task = progress_utils.add_api_job_task(
-            f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
         log.debug(
@@ -297,7 +297,7 @@ async def scrape_archived_posts(
                 f"successfully accessed {API.lower()} posts with url:{url}  offset:{offset}"
             )
 
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
@@ -352,7 +352,7 @@ async def scrape_archived_posts(
 def time_log(username, after):
     log.info(
         f"""
-Setting archived scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting archived scan range for {username} from {arrow.get(after).format(env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((env.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
 

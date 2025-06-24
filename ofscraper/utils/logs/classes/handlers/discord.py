@@ -5,7 +5,7 @@ from filelock import FileLock
 
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.globals as log_globals
 
@@ -16,17 +16,17 @@ class DiscordHandler(logging.Handler):
 
         self.asess = sessionManager.sessionManager(
            
-            total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
-            retries=constants.getattr("DISCORD_NUM_TRIES"),
-            wait_min=constants.getattr("DISCORD_MIN_WAIT"),
-            wait_max=constants.getattr("DISCORD_MAX_WAIT"),
+            total_timeout=env.getattr("DISCORD_TOTAL_TIMEOUT"),
+            retries=env.getattr("DISCORD_NUM_TRIES"),
+            wait_min=env.getattr("DISCORD_MIN_WAIT"),
+            wait_max=env.getattr("DISCORD_MAX_WAIT"),
         )
         self.sess = sessionManager.sessionManager(
            
-            total_timeout=constants.getattr("DISCORD_TOTAL_TIMEOUT"),
-            retries=constants.getattr("DISCORD_NUM_TRIES"),
-            wait_min=constants.getattr("DISCORD_MIN_WAIT"),
-            wait_max=constants.getattr("DISCORD_MAX_WAIT"),
+            total_timeout=env.getattr("DISCORD_TOTAL_TIMEOUT"),
+            retries=env.getattr("DISCORD_NUM_TRIES"),
+            wait_min=env.getattr("DISCORD_MIN_WAIT"),
+            wait_max=env.getattr("DISCORD_MAX_WAIT"),
         )
         self.asess._set_session(async_=True)
         self.sess._set_session(async_=False)
@@ -44,7 +44,7 @@ class DiscordHandler(logging.Handler):
             asyncio.set_event_loop(self.loop)
 
     def _appendhelper(self, date=None):
-        if constants.getattr("DISCORD_THREAD_OVERRIDE"):
+        if env.getattr("DISCORD_THREAD_OVERRIDE"):
             try:
                 with self.sess.requests(
                     "{url}?wait=true".format(url=self._baseurl),
@@ -71,13 +71,13 @@ class DiscordHandler(logging.Handler):
         log_entry = f"{log_entry}\n\n"
         if log_entry is None or log_entry == "None" or log_entry == "":
             return
-        elif constants.getattr("DISCORD_ASYNC"):
+        elif env.getattr("DISCORD_ASYNC"):
             self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
         self._emit(log_entry)
         pass
 
     def close(self) -> None:
-        if constants.getattr("DISCORD_ASYNC"):
+        if env.getattr("DISCORD_ASYNC"):
             self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
             self.loop.close()
 

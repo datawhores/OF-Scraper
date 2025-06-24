@@ -1,7 +1,7 @@
 import cloup as click
 from click.exceptions import UsageError
 
-from ofscraper.const.constants import METADATA_OPTIONS
+from ofscraper.utils.const import METADATA_OPTIONS
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )

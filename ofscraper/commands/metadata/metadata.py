@@ -6,7 +6,7 @@ import arrow
 import asyncio
 
 import ofscraper.utils.settings as settings
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process_all
@@ -187,7 +187,7 @@ class metadataCommandManager(commmandManager):
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
                             if (
-                                constants.getattr("SHOW_AVATAR")
+                                env.getattr("SHOW_AVATAR")
                                 and avatar
                                 and settings.get_settings().userfirst
                             ):
@@ -370,7 +370,7 @@ def prepare():
     init.print_sign_status()
     userdata = manager.Manager.model_manager.getselected_usernames(rescan=False)
     session = manager.Manager.aget_ofsession(
-        sem_count=constants.getattr("API_REQ_SEM_MAX"),
-        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+        sem_count=env.getattr("API_REQ_SEM_MAX"),
+        total_timeout=env.getattr("API_TIMEOUT_PER_TASK"),
     )
     return userdata, session

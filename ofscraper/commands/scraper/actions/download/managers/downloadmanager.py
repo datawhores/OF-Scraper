@@ -16,7 +16,7 @@ import os
 from humanfriendly import format_size
 import psutil
 
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.scraper.actions.utils.send.message import send_msg
 from ofscraper.commands.scraper.actions.utils.progress.update import update_total
@@ -38,7 +38,7 @@ class DownloadManager:
     ):
         pathstr = str(placeholderObj.trunicated_filepath)
         task1 = progress_updater.add_download_job_task(
-            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+            f"{(pathstr[:env.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > env.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
             file=tempholderObj.tempfilepath,
         )
@@ -107,7 +107,7 @@ class DownloadManager:
     def _downloadspace(self, mediatype=None):
         space_limit = config_data.get_system_freesize(mediatype=mediatype)
         if space_limit > 0 and space_limit > system.get_free():
-            raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
+            raise Exception(env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
     async def _size_checker(self, path, ele, total, name=None):
         name = name or ele.filename

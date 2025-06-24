@@ -1,1 +1,0 @@
-ALT_FORCE_KEY = True

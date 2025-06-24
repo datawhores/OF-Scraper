@@ -2,7 +2,7 @@ import contextlib
 import ofscraper.classes.sessionmanager.ofsession as ofsessionmanager
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 from ofscraper.commands.scraper.actions.utils.retries import get_download_req_retries
 from ofscraper.classes.sessionmanager.sessionmanager import (
     AUTH,
@@ -22,8 +22,8 @@ class download_session(sessionManager.sessionManager):
         self, sem_count=None, retries=None, wait_min=None, wait_max=None, log=None
     ) -> None:
         retries = retries or get_download_req_retries()
-        wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
-        wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
+        wait_min = wait_min or env.getattr("OF_MIN_WAIT_API")
+        wait_max = wait_max or env.getattr("OF_MAX_WAIT_API")
         read_timeout=get_chunk_timeout()
         log = log or common_globals.log
         self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
@@ -44,7 +44,7 @@ class download_session(sessionManager.sessionManager):
     async def requests_async(self, *args, **kwargs):
         if not kwargs.get("actions"):
             actions = [SIGN, COOKIES, HEADERS]
-            actions.append([FORCED_NEW]) if constants.getattr("API_FORCE_KEY") else None
+            actions.append([FORCED_NEW]) if env.getattr("API_FORCE_KEY") else None
             kwargs["actions"] = actions
         kwargs["exceptions"] = [TOO_MANY, AUTH]
         async with super().requests_async(*args, **kwargs) as r:

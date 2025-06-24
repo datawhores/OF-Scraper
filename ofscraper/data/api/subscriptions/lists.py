@@ -17,7 +17,7 @@ import logging
 import traceback
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.utils.live.updater import add_userlist_task
@@ -38,8 +38,8 @@ async def get_otherlist():
         [
             ele
             not in [
-                constants.getattr("OFSCRAPER_RESERVED_LIST"),
-                constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+                env.getattr("OFSCRAPER_RESERVED_LIST"),
+                env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
             ]
             for ele in settings.get_settings().user_list or []
         ]
@@ -88,7 +88,7 @@ async def get_lists():
     tasks = []
     page_count = 0
     async with manager.Manager.aget_ofsession(
-        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks.append(asyncio.create_task(scrape_for_list(c)))
         page_task = add_userlist_task(
@@ -121,7 +121,7 @@ async def get_lists():
 async def scrape_for_list(c, offset=0):
     attempt.set(0)
     new_tasks = []
-    url = constants.getattr("listEP").format(offset)
+    url = env.getattr("listEP").format(offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = progress_updater.add_userlist_job_task(
@@ -162,7 +162,7 @@ async def get_list_users(lists):
     tasks = []
     page_count = 0
     async with manager.Manager.aget_ofsession(
-        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
         page_task = add_userlist_task(
@@ -199,7 +199,7 @@ async def scrape_list_members(c, item, offset=0):
     users = None
     attempt.set(0)
     new_tasks = []
-    url = constants.getattr("listusersEP").format(item.get("id"), offset)
+    url = env.getattr("listusersEP").format(item.get("id"), offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = progress_updater.add_userlist_job_task(

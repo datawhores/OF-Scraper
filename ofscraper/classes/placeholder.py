@@ -10,7 +10,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom_
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as paths
@@ -75,7 +75,7 @@ class tempFilePlaceholder(basePlaceholder):
         dir = await self.gettempDir(self._ele)
         file = self._tempname
         # remove for now
-        # if constants.getattr("ALLOW_DUPE_MEDIA"):
+        # if env.getattr("ALLOW_DUPE_MEDIA"):
         #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
         self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
         return self
@@ -182,7 +182,7 @@ class Placeholders(basePlaceholder):
         self._variables.update(
             {
                 "current_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_current_price == 0 else "Paid"
                 )
@@ -191,7 +191,7 @@ class Placeholders(basePlaceholder):
         self._variables.update(
             {
                 "regular_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_regular_price == 0 else "Paid"
                 )
@@ -200,7 +200,7 @@ class Placeholders(basePlaceholder):
         self._variables.update(
             {
                 "promo_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_promo_price == 0 else "Paid"
                 )
@@ -209,7 +209,7 @@ class Placeholders(basePlaceholder):
         self._variables.update(
             {
                 "renewal_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_renewal_price == 0 else "Paid"
                 )
@@ -328,7 +328,7 @@ class Placeholders(basePlaceholder):
         return out
 
     def _addcount(self, ele, out):
-        if not constants.getattr("FILE_COUNT_PLACEHOLDER"):
+        if not env.getattr("FILE_COUNT_PLACEHOLDER"):
             return out
         elif not self._needs_count(ele):
             return out
@@ -420,7 +420,7 @@ class Textholders(basePlaceholder):
         self._variables.update(
             {
                 "current_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_current_price == 0 else "Paid"
                 )
@@ -429,7 +429,7 @@ class Textholders(basePlaceholder):
         self._variables.update(
             {
                 "regular_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_regular_price == 0 else "Paid"
                 )
@@ -438,7 +438,7 @@ class Textholders(basePlaceholder):
         self._variables.update(
             {
                 "promo_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_promo_price == 0 else "Paid"
                 )
@@ -447,7 +447,7 @@ class Textholders(basePlaceholder):
         self._variables.update(
             {
                 "renewal_price": (
-                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    env.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
                     else "Free" if modelObj.final_renewal_price == 0 else "Paid"
                 )

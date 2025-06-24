@@ -19,7 +19,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
@@ -50,13 +50,13 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     time_log(username, after)
     post_id = post_id or []
-    if len(post_id) == 0 or len(post_id) > constants.getattr(
+    if len(post_id) == 0 or len(post_id) > env.getattr(
         "MAX_STREAMS_INDIVIDUAL_SEARCH"
     ):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
-    elif len(post_id) <= constants.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+    elif len(post_id) <= env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, after, API)
     return data
@@ -138,8 +138,8 @@ async def get_split_array(model_id, username, after):
     if len(oldstreams) == 0:
         return []
     min_posts = max(
-        len(oldstreams) // constants.getattr("REASONABLE_MAX_PAGE"),
-        constants.getattr("MIN_PAGE_POST_COUNT"),
+        len(oldstreams) // env.getattr("REASONABLE_MAX_PAGE"),
+        env.getattr("MIN_PAGE_POST_COUNT"),
     )
     log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
     oldstreams = list(filter(lambda x: x is not None, oldstreams))
@@ -270,18 +270,18 @@ async def scrape_stream_posts(
         return [], []
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
-        constants.getattr("streamsNextEP").format(model_id, str(timestamp))
+        env.getattr("streamsNextEP").format(model_id, str(timestamp))
         if timestamp
-        else constants.getattr("streamsEP").format(model_id)
+        else env.getattr("streamsEP").format(model_id)
     )
-    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
     log.debug(url)
 
     new_tasks = []
     posts = []
     try:
         task = progress_utils.add_api_job_task(
-            f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
         log.debug(
@@ -350,7 +350,7 @@ async def scrape_stream_posts(
 def time_log(username, after):
     log.info(
         f"""
-Setting streams scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting streams scan range for {username} from {arrow.get(after).format(env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((env.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all streams posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all streams posts + download/re-download of all files[/yellow]
 

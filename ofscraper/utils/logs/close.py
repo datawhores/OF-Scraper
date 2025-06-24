@@ -1,7 +1,7 @@
 import logging
 import threading
 
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.logs.globals as log_globals
 
 
@@ -53,11 +53,11 @@ def closeOther():
     elif log_globals.other_event.is_set():
         if isinstance(log_globals.other_log_thread, threading.Thread):
             log_globals.other_log_thread.join(
-                timeout=constants.getattr("FORCED_THREAD_TIMEOUT")
+                timeout=env.getattr("FORCED_THREAD_TIMEOUT")
             )
         else:
             log_globals.other_log_thread.join(
-                timeout=constants.getattr("FORCED_THREAD_TIMEOUT")
+                timeout=env.getattr("FORCED_THREAD_TIMEOUT")
             )
             if log_globals.other_log_thread.is_alive():
                 log_globals.other_log_thread.terminate()

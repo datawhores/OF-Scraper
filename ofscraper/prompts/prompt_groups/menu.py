@@ -15,21 +15,21 @@ from InquirerPy.separator import Separator
 from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 
 
 def main_prompt() -> int:
-    main_prompt_choices = [*constants.getattr("mainPromptChoices")]
+    main_prompt_choices = [*env.getattr("mainPromptChoices")]
     main_prompt_choices.insert(1, Separator())
     main_prompt_choices.insert(6, Separator())
     answer = promptClasses.getChecklistSelection(
         message="Main Menu: What would you like to do?", choices=[*main_prompt_choices]
     )
-    return constants.getattr("mainPromptChoices")[answer]
+    return env.getattr("mainPromptChoices")[answer]
 
 
 def continue_prompt() -> bool:
-    if not constants.getattr("CONTINUE_BOOL"):
+    if not env.getattr("CONTINUE_BOOL"):
         return False
     name = "continue"
     answer = promptClasses.batchConverter(

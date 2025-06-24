@@ -26,10 +26,11 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
+import ofscraper.utils.const as const
 
 console = Console()
 
@@ -76,7 +77,6 @@ def funct(prompt_):
     private-key: for manual cdm
     client-id: for manual cdm
     key-mode-default: which cdm
-    keydb_api: for keydb cdm
     -----------------------------------
     [Performance Options]
     download_sems: number of downloads per processor/worker
@@ -118,7 +118,7 @@ def funct(prompt_):
 
 
 def config_prompt() -> int:
-    config_prompt_choices = [*constants.getattr("configPromptChoices")]
+    config_prompt_choices = [*env.getattr("configPromptChoices")]
     config_prompt_choices.insert(8, Separator())
     config_prompt_choices.insert(11, Separator())
 
@@ -128,7 +128,7 @@ def config_prompt() -> int:
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
     )
-    return constants.getattr("configPromptChoices")[answer]
+    return env.getattr("configPromptChoices")[answer]
 
 
 def download_config():
@@ -333,7 +333,7 @@ def cdm_config():
                 "name": "key-mode-default",
                 "message": "Select default key mode for decryption",
                 "default": data.get_key_mode(),
-                "choices": constants.getattr("KEY_OPTIONS"),
+                "choices": const.KEY_OPTIONS,
             },
             {
                 "type": "filepath",
@@ -491,7 +491,7 @@ Enter 0 for no minimum
                             value=x,
                             enabled=x.capitalize() in set(data.get_filter()),
                         ),
-                        constants.getattr("FILTER_DEFAULT"),
+                        env.getattr("FILTER_DEFAULT"),
                     )
                 ),
                 "validate": prompt_validators.emptyListValidator(),
@@ -515,7 +515,7 @@ def advanced_config() -> dict:
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
-                "choices": constants.DYNAMIC_OPTIONS,
+                "choices": const.DYNAMIC_OPTIONS,
             },
             {
                 "type": "list",

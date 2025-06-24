@@ -13,7 +13,7 @@ from pywidevine.pssh import PSSH
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.download import cdm_session_manual
 from ofscraper.commands.scraper.actions.utils.retries import (
@@ -40,7 +40,7 @@ async def un_encrypt(item, c, ele, input_=None):
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, partial(cache.get, ele.license)
             )
-            if constants.getattr("USE_WIV_CACHE_KEY")
+            if env.getattr("USE_WIV_CACHE_KEY")
             else None
         )
         if past_key:
@@ -81,7 +81,7 @@ async def un_encrypt(item, c, ele, input_=None):
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
-                    cache.set, ele.license, None, expire=constants.getattr("KEY_EXPIRY")
+                    cache.set, ele.license, None, expire=env.getattr("KEY_EXPIRY")
                 ),
             )
             raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
@@ -92,7 +92,7 @@ async def un_encrypt(item, c, ele, input_=None):
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
-                    cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")
+                    cache.set, ele.license, key, expire=env.getattr("KEY_EXPIRY")
                 ),
             )
             return item
@@ -119,13 +119,13 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             "pssh": pssh,
         }
         async with c.requests_async(
-            url=constants.getattr("CDRM"),
+            url=env.getattr("CDRM"),
             method="post",
             json=json_data,
             retries=get_cmd_download_req_retries(),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            total_timeout=constants.getattr("CDM_TIMEOUT"),
+            wait_min=env.getattr("OF_MIN_WAIT_API"),
+            wait_max=env.getattr("OF_MAX_WAIT_API"),
+            total_timeout=env.getattr("CDM_TIMEOUT"),
             skip_expection_check=True,
         ) as r:
             data = await r.json_()
@@ -172,9 +172,9 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 method="post",
                 data=challenge,
                 retries=get_cmd_download_req_retries(),
-                wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                total_timeout=constants.getattr("CDM_TIMEOUT"),
+                wait_min=env.getattr("OF_MIN_WAIT_API"),
+                wait_max=env.getattr("OF_MAX_WAIT_API"),
+                total_timeout=env.getattr("CDM_TIMEOUT"),
             ) as r:
                 cdm.parse_license(session_id, (await r.read_()))
                 keys = cdm.get_keys(session_id)

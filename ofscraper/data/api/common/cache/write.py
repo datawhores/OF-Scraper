@@ -1,5 +1,5 @@
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 
 
@@ -20,5 +20,5 @@ def set_check_mode_posts(model_id, api, all_posts):
     cache.set(
         f"{api}_v2_check_{model_id}",
         list(all_posts),
-        expire=constants.getattr("THREE_DAY_SECONDS"),
+        expire=env.getattr("THREE_DAY_SECONDS"),
     )

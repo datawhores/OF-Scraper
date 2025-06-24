@@ -18,7 +18,7 @@ from functools import partial
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.hash as hash
 from ofscraper.commands.scraper.actions.utils.paths.media import add_path
 
@@ -54,7 +54,7 @@ def is_bad_url(url):
         return False
     elif len(match.groups()) < 1:
         return False
-    for ele in constants.getattr("BAD_URL_HOST"):
+    for ele in env.getattr("BAD_URL_HOST"):
         if re.search(ele, match.group(1)):
             return True
     return False

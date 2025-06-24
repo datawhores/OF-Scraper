@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.const.constants import DYNAMIC_OPTIONS, KEY_OPTIONS
+from ofscraper.utils.const import KEY_OPTIONS,DYNAMIC_OPTIONS
 
 no_cache_option = click.option(
     "-nc",
