@@ -2,14 +2,14 @@ import contextlib
 import os
 import sys
 
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 
 import ofscraper.utils.settings as settings
 
 
 @contextlib.contextmanager
 def lowstdout():
-    if settings.get_settings().output_level in constants.getattr("SUPRESS_OUTPUTS"):
+    if settings.get_settings().output_level in env.getattr("SUPRESS_OUTPUTS"):
         save_stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
         yield

@@ -6,7 +6,7 @@ from rich import print
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.console as console
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.manage as manage
 import ofscraper.utils.profiles.data as profile_data
@@ -23,7 +23,7 @@ currentProfile = None
 def change_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())
-    config_.update_config(constants.getattr("mainProfile"), profile)
+    config_.update_config(env.getattr("mainProfile"), profile)
     args = settings.get_args()
     # remove profile argument
     args.profile = None
@@ -45,7 +45,7 @@ def create_profile():
     name = tools.profile_name_fixer(prompts.create_profiles_prompt())
     manage.create_profile_path(name)
     if prompts.change_default_profile() == "Yes":
-        config_.update_config(constants.getattr("mainProfile"), name)
+        config_.update_config(env.getattr("mainProfile"), name)
     console.print(
         "[green]Successfully created[/green] {dir_name}".format(dir_name=name)
     )
@@ -79,4 +79,4 @@ def change_current_profile(new_profile, old_profile):
         settings.update_args(args)
     # required because name has changed
     if old_profile == profile_data.get_current_config_profile():
-        config_.update_config(constants.getattr("mainProfile"), new_profile)
+        config_.update_config(env.getattr("mainProfile"), new_profile)

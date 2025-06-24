@@ -19,7 +19,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.data.api.common.timeline import process_individual
@@ -35,12 +35,12 @@ API = "pinned"
 @run
 async def get_pinned_posts(model_id, c=None, post_id=None):
     post_id = post_id or []
-    if len(post_id) == 0 or len(post_id) > constants.getattr(
+    if len(post_id) == 0 or len(post_id) > env.getattr(
         "MAX_PINNED_INDIVIDUAL_SEARCH"
     ):
         tasks = get_tasks(c, model_id)
         data = await process_tasks(tasks)
-    elif len(post_id) <= constants.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
+    elif len(post_id) <= env.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
         data = process_individual()
     update_check(data, model_id, None, API)
     return data
@@ -115,7 +115,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
-    url = constants.getattr("timelinePinnedEP").format(model_id, count)
+    url = env.getattr("timelinePinnedEP").format(model_id, count)
     log.debug(url)
 
     new_tasks = []
@@ -123,7 +123,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
     try:
 
         task = progress_utils.add_api_job_task(
-            f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
         log.debug(
@@ -141,7 +141,7 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
                     posts,
                 )
             )
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not posts:
                 posts = []
             if len(posts) == 0:

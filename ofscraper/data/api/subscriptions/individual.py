@@ -17,7 +17,7 @@ import traceback
 
 import ofscraper.data.api.profile as profile
 import ofscraper.main.manager as manager
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.settings as settings
@@ -34,13 +34,13 @@ async def get_subscription(accounts=None):
         f"Getting the following accounts => {accounts} (this may take awhile)..."
     )
     async with manager.Manager.aget_ofsession(
-        sem_count=constants.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         out = await get_subscription_helper(c, accounts)
     progress_utils.remove_userlist_task(task1)
     outdict = {}
     for ele in filter(
-        lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),
+        lambda x: x["username"] != env.getattr("DELETED_MODEL_PLACEHOLDER"),
         out,
     ):
         outdict[ele["id"]] = ele

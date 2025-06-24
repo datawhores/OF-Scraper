@@ -5,7 +5,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 
 import ofscraper.utils.config.data as config_data
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 from ofscraper.utils.args.accessors.areas import get_text_area
 
 settings = {}
@@ -49,7 +49,7 @@ def setup_settings(mediatype):
     merged.discord_level = (
         read_args.retriveArgs().discord_level or config_data.get_discord()
     )
-    merged.log_level = read_args.retriveArgs().log_level or constants.getattr(
+    merged.log_level = read_args.retriveArgs().log_level or env.getattr(
         "DEFAULT_LOG_LEVEL"
     )
     merged.trunicate = get_trunication(mediatype)

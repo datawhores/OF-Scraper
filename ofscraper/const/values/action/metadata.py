@@ -1,3 +1,0 @@
-REMOVE_UNVIEWABLE_METADATA = False
-QUALITY_UNKNOWN_DEFAULT = "source"
-METADATA_OPTIONS = ["complete", "update", "check"]

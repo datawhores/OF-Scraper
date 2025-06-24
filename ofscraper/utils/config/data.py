@@ -14,25 +14,25 @@ r"""
 from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
-import ofscraper.const.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.utils.wrapper as wrapper
-import ofscraper.utils.constants as constants_attr
+import ofscraper.utils.const as const
 
 
 @wrapper.config_reader
 def get_main_profile(config=None):
     if config is False:
-        return constants.PROFILE_DEFAULT
+        return env.getattr("")
     return config.get(
-        constants_attr.getattr("mainProfile"), constants_attr.getattr("PROFILE_DEFAULT")
-    ) or constants_attr.getattr("PROFILE_DEFAULT")
+        env.getattr("mainProfile"), env.getattr("PROFILE_DEFAULT")
+    ) or env.getattr("PROFILE_DEFAULT")
 
 
 @wrapper.config_reader
 def get_filesize_max(config=None, mediatype=None):
     if config is False:
-        return constants.FILE_SIZE_MAX_DEFAULT
+        return env.getattr("FILE_SIZE_MAX_DEFAULT")
     try:
         if config.get("file_size_max") is not None:
             size = config.get("file_size_max")
@@ -58,7 +58,7 @@ def get_filesize_max(config=None, mediatype=None):
             str(
                 size
                 if size is not None
-                else constants_attr.getattr("FILE_SIZE_MAX_DEFAULT")
+                else env.getattr("FILE_SIZE_MAX_DEFAULT")
             )
         )
     except:
@@ -68,7 +68,7 @@ def get_filesize_max(config=None, mediatype=None):
 @wrapper.config_reader
 def get_filesize_min(config=None, mediatype=None):
     if config is False:
-        return constants.FILE_SIZE_MIN_DEFAULT
+        return env.getattr("FILE_SIZE_MIN_DEFAULT")
     try:
         size = None
         if (
@@ -92,7 +92,7 @@ def get_filesize_min(config=None, mediatype=None):
             str(
                 size
                 if size is not None
-                else constants_attr.getattr("FILE_SIZE_MIN_DEFAULT")
+                else env.getattr("FILE_SIZE_MIN_DEFAULT")
             )
         )
     except Exception:
@@ -102,7 +102,7 @@ def get_filesize_min(config=None, mediatype=None):
 @wrapper.config_reader
 def get_min_length(config=None, mediatype=None):
     if config is False:
-        return constants.MIN_LENGTH_DEFAULT
+        return env.getattr("MIN_LENGTH_DEFAULT")
 
     elif (
         config.get("overwrites", {})
@@ -126,7 +126,7 @@ def get_min_length(config=None, mediatype=None):
 @wrapper.config_reader
 def get_max_length(config=None, mediatype=None):
     if config is False:
-        return constants.MAX_LENGTH_DEFAULT
+        return env.getattr("MAX_LENGTH_DEFAULT")
 
     elif (
         config.get("overwrites", {})
@@ -150,7 +150,7 @@ def get_max_length(config=None, mediatype=None):
 @wrapper.config_reader
 def get_system_freesize(config=None, mediatype=None):
     if config is False:
-        return constants.SYSTEM_FREEMIN_DEFAULT
+        return env.getattr("SYSTEM_FREEMIN_DEFAULT")
     try:
         return parse_size(
             str(
@@ -159,7 +159,7 @@ def get_system_freesize(config=None, mediatype=None):
                 .get("system_free_min")
                 or config.get("system_free_min")
                 or config.get("download_options", {}).get("system_free_min")
-                or constants_attr.getattr("SYSTEM_FREEMIN_DEFAULT")
+                or env.getattr("SYSTEM_FREEMIN_DEFAULT")
             )
         )
     except Exception:
@@ -169,69 +169,69 @@ def get_system_freesize(config=None, mediatype=None):
 @wrapper.config_reader
 def get_dirformat(config=None, mediatype=None):
     if config is False:
-        return constants.DIR_FORMAT_DEFAULT
+        return env.getattr("DIR_FORMAT_DEFAULT")
     return (
         config.get("overwrites", {}).get(f"{mediatype}", {}).get("dir_format")
         or config.get("dir_format")
         or config.get("file_options", {}).get("dir_format")
-        or constants_attr.getattr("DIR_FORMAT_DEFAULT")
+        or env.getattr("DIR_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_fileformat(config=None, mediatype=None):
     if config is False:
-        return constants.FILE_FORMAT_DEFAULT
+        return env.getattr("FILE_FORMAT_DEFAULT")
     return (
         config.get("overwrites", {}).get(f"{mediatype}", {}).get("file_format")
         or config.get("file_format")
         or config.get("file_options", {}).get("file_format")
-        or constants_attr.getattr("FILE_FORMAT_DEFAULT")
+        or env.getattr("FILE_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_textlength(config=None, mediatype=None):
     if config is False:
-        return constants.TEXTLENGTH_DEFAULT
+        return env.getattr("TEXTLENGTH_DEFAULT")
     try:
         return int(
             config.get("overwrites", {}).get(f"{mediatype}", {}).get("textlength")
             or config.get("textlength")
             or config.get("file_options", {}).get("textlength")
-        ) or constants_attr.getattr("TEXTLENGTH_DEFAULT")
+        ) or env.getattr("TEXTLENGTH_DEFAULT")
     except:
-        return constants_attr.getattr("TEXTLENGTH_DEFAULT")
+        return env.getattr("TEXTLENGTH_DEFAULT")
 
 
 @wrapper.config_reader
 def get_date(config=None, mediatype=None):
     if config is False:
-        return constants.DATE_DEFAULT
+        return env.getattr("DATE_DEFAULT")
     return (
         config.get("overwrites", {}).get(f"{mediatype}", {}).get("date")
         or config.get("date")
         or config.get("file_options", {}).get("date")
-        or constants_attr.getattr("DATE_DEFAULT")
+        or env.getattr("DATE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_InfiniteLoop(config=None):
     if config is False:
-        return constants.INFINITE_LOOP_DEFAULT
+        return env.getattr("INFINITE_LOOP_DEFAULT")
     val = (
         config.get("infinite_loop_action_mode")
         if config.get("infinite_loop_action_mode") is not None
         else config.get("advanced_options", {}).get("infinite_loop_action_mode")
     )
-    return val if val is not None else constants_attr.getattr("INFINITE_LOOP_DEFAULT")
+    return val if val is not None else env.getattr("INFINITE_LOOP_DEFAULT")
 
 
 @wrapper.config_reader
 def get_enable_after(config=None):
     if config is False:
-        return constants.ENABLE_AUTO_AFTER_DEFAULT
+        return env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
     val = config.get("enable_auto_after")
     val = (
         config.get("advanced_options", {}).get("enable_auto_after")
@@ -240,14 +240,14 @@ def get_enable_after(config=None):
     )
 
     return (
-        val if val is not None else constants_attr.getattr("ENABLE_AUTO_AFTER_DEFAULT")
+        val if val is not None else env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_default_userlist(config=None):
     if config is False:
-        return constants.DEFAULT_USER_LIST
+        return env.getattr("DEFAULT_USER_LIST")
     val = (
         config.get("default_user_list")
         if not any(x == config.get("default_user_list") for x in [None, ""])
@@ -256,7 +256,7 @@ def get_default_userlist(config=None):
     return (
         val
         if not any(x == val for x in [None, ""])
-        else constants_attr.getattr("DEFAULT_USER_LIST")
+        else env.getattr("DEFAULT_USER_LIST")
     )
 
 
@@ -284,7 +284,7 @@ def get_ssl_validation(config=None):
 @wrapper.config_reader
 def get_post_download_script(config=None):
     if config is False:
-        return constants.POST_DOWNLOAD_SCRIPT_DEFAULT
+        return env.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
     val = None
     if config.get("post_download_script") is not None:
         val = config.get("post_download_script")
@@ -295,14 +295,14 @@ def get_post_download_script(config=None):
     return (
         val
         if val is not None
-        else constants_attr.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+        else env.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_post_script(config=None):
     if config is False:
-        return constants.POST_SCRIPT_DEFAULT
+        return env.getattr("POST_SCRIPT_DEFAULT")
     val = None
     if config.get("post_script") is not None:
         val = config.get("post_script")
@@ -312,13 +312,13 @@ def get_post_script(config=None):
         val = config.get("scripts", {}).get("post_script")
     elif config.get("script_options", {}).get("post_script") is not None:
         val = config.get("script_options", {}).get("post_script")
-    return val if val is not None else constants_attr.getattr("POST_SCRIPT_DEFAULT")
+    return val if val is not None else env.getattr("POST_SCRIPT_DEFAULT")
 
 
 @wrapper.config_reader
 def get_default_blacklist(config=None):
     if config is False:
-        return constants.DEFAULT_BLACK_LIST
+        return env.getattr("DEFAULT_BLACK_LIST")
     val = (
         config.get("default_black_list")
         if not any(x == config.get("default_black_list") for x in [None, ""])
@@ -327,33 +327,33 @@ def get_default_blacklist(config=None):
     return (
         val
         if not any(x == val for x in [None, ""])
-        else constants_attr.getattr("DEFAULT_BLACK_LIST")
+        else env.getattr("DEFAULT_BLACK_LIST")
     )
 
 
 @wrapper.config_reader
 def get_allow_code_execution(config=None):
     if config is False:
-        return constants.CODE_EXECUTION_DEFAULT
+        return env.getattr("CODE_EXECUTION_DEFAULT")
     val = (
         config.get("code-execution")
         if config.get("code-execution") is not None
         else config.get("advanced_options", {}).get("code-execution")
     )
-    return val if val is not None else constants_attr.getattr("CODE_EXECUTION_DEFAULT")
+    return val if val is not None else env.getattr("CODE_EXECUTION_DEFAULT")
 
 
 @wrapper.config_reader
 def get_metadata(config=None):
     if config is False:
-        return constants.METADATA_DEFAULT
-    return config.get("metadata", constants_attr.getattr("METADATA_DEFAULT"))
+        return env.getattr("METADATA_DEFAULT")
+    return config.get("metadata", env.getattr("METADATA_DEFAULT"))
 
 
 @wrapper.config_reader
 def get_download_limit(config=None, mediatype=None):
     if config is False:
-        return constants.DOWNLOAD_LIMIT_DEFAULT
+        return env.getattr("DOWNLOAD_LIMIT_DEFAULT")
     try:
         return parse_size(
             str(
@@ -364,7 +364,7 @@ def get_download_limit(config=None, mediatype=None):
                     "download_limit",
                 )
                 or config.get("performance_options", {}).get("download_limit")
-                or constants_attr.getattr("DOWNLOAD_LIMIT_DEFAULT")
+                or env.getattr("DOWNLOAD_LIMIT_DEFAULT")
             )
         )
     except Exception:
@@ -374,30 +374,30 @@ def get_download_limit(config=None, mediatype=None):
 @wrapper.config_reader
 def get_ffmpeg(config=None):
     if config is False:
-        return constants.FFMPEG_DEFAULT
+        return env.getattr("FFMPEG_DEFAULT")
     return (
         config.get("ffmpeg")
         or config.get("binary_options", {}).get("ffmpeg")
-        or constants_attr.getattr("FFMPEG_DEFAULT")
+        or env.getattr("FFMPEG_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_discord(config=None):
     if config is False:
-        return constants.DISCORD_DEFAULT
-    return config.get("discord", constants_attr.getattr("DISCORD_DEFAULT")) or ""
+        return env.getattr("DISCORD_DEFAULT")
+    return config.get("discord", env.getattr("DISCORD_DEFAULT")) or ""
 
 
 @wrapper.config_reader
 def get_filter(config=None):
     if config is False:
-        return constants.FILTER_DEFAULT
+        return env.getattr("FILTER_DEFAULT")
     filter = (
         config.get("filter")
         or config.get("download_options", {}).get("filter")
         or config.get("content_filter_options", {}).get("filter")
-        or constants_attr.getattr("FILTER_DEFAULT")
+        or env.getattr("FILTER_DEFAULT")
     )
     if isinstance(filter, str):
         return list(map(lambda x: x.capitalize().strip(), filter.split(",")))
@@ -408,20 +408,20 @@ def get_filter(config=None):
 @wrapper.config_reader
 def responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT
+        return env.getattr("RESPONSE_TYPE_DEFAULT")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
         .get("responsetype", {})
         or config.get("responsetype", {})
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")
+        or env.getattr("RESPONSE_TYPE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_timeline_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['timeline']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -435,14 +435,14 @@ def get_timeline_responsetype(config=None, mediatype=None):
         or config.get("post")
         or config.get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 @wrapper.config_reader
 def get_post_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['timeline']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -453,14 +453,14 @@ def get_post_responsetype(config=None, mediatype=None):
         or config.get("timeline").get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
         or config.get("responsetype", {}).get("timeline")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 @wrapper.config_reader
 def get_archived_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["archived"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['archived']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -468,14 +468,14 @@ def get_archived_responsetype(config=None, mediatype=None):
         .get("archived")
         or config.get("archived")
         or config.get("responsetype", {}).get("archived")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     )
 
 
 @wrapper.config_reader
 def get_stories_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["stories"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['stories']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -483,14 +483,14 @@ def get_stories_responsetype(config=None, mediatype=None):
         .get("stories")
         or config.get("stories")
         or config.get("responsetype", {}).get("stories")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     )
 
 
 @wrapper.config_reader
 def get_highlights_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["highlights"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['highlights']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -498,14 +498,14 @@ def get_highlights_responsetype(config=None, mediatype=None):
         .get("highlights")
         or config.get("highlights")
         or config.get("responsetype", {}).get("highlights")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     )
 
 
 @wrapper.config_reader
 def get_paid_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["paid"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['paid']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -513,14 +513,14 @@ def get_paid_responsetype(config=None, mediatype=None):
         .get("paid")
         or config.get("paid")
         or config.get("responsetype", {}).get("paid")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     )
 
 
 @wrapper.config_reader
 def get_messages_progress_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["message"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['message']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -528,14 +528,14 @@ def get_messages_progress_responsetype(config=None, mediatype=None):
         .get("message")
         or config.get("message")
         or config.get("responsetype", {}).get("message")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["message"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     )
 
 
 @wrapper.config_reader
 def get_profile_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["profile"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['profile']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -543,14 +543,14 @@ def get_profile_responsetype(config=None, mediatype=None):
         .get("profile")
         or config.get("profile")
         or config.get("responsetype", {}).get("profile")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     )
 
 
 @wrapper.config_reader
 def get_pinned_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["pinned"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['pinned']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -558,14 +558,14 @@ def get_pinned_responsetype(config=None, mediatype=None):
         .get("pinned")
         or config.get("pinned")
         or config.get("responsetype", {}).get("pinned")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
 
 @wrapper.config_reader
 def get_streams_responsetype(config=None, mediatype=None):
     if config is False:
-        return constants.RESPONSE_TYPE_DEFAULT["streams"]
+        return env.getattr("RESPONSE_TYPE_DEFAULT['streams']")
     return (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -573,20 +573,20 @@ def get_streams_responsetype(config=None, mediatype=None):
         .get("streams")
         or config.get("streams")
         or config.get("responsetype", {}).get("streams")
-        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["streams"]
+        or env.getattr("RESPONSE_TYPE_DEFAULT")["streams"]
     )
 
 
 @wrapper.config_reader
 def get_spacereplacer(config=None, mediatype=None):
     if config is False:
-        return constants.SPACE_REPLACER_DEFAULT
+        return env.getattr("SPACE_REPLACER_DEFAULT")
     return (
         config.get("overwrites", {}).get(f"{mediatype}", {}).get("space_replacer")
         or config.get("space_replacer")
         or config.get("file_options", {}).get("space_replacer")
         or config.get("file_options", {}).get("space-replacer")
-        or constants_attr.getattr("SPACE_REPLACER_DEFAULT")
+        or env.getattr("SPACE_REPLACER_DEFAULT")
     )
 
 
@@ -607,35 +607,35 @@ def get_client_id(config=None):
 @wrapper.config_reader
 def get_key_mode(config=None):
     if config is False:
-        return constants.KEY_DEFAULT
+        return env.getattr("KEY_DEFAULT")
     value = config.get("key-mode-default") or config.get("cdm_options", {}).get(
         "key-mode-default"
     )
 
     return (
         value.lower()
-        if value and value.lower() in set(constants_attr.getattr("KEY_OPTIONS"))
-        else constants_attr.getattr("KEY_DEFAULT")
+        if value and value.lower() in set(const.KEY_OPTIONS)
+        else env.getattr("KEY_DEFAULT")
     )
 
 @wrapper.config_reader
 def get_dynamic(config=None):
     if config is False:
-        return constants.DYNAMIC_DEFAULT
+        return env.getattr("DYNAMIC_RULE_DEFAULT")
     value = config.get("dynamic-mode-default") or config.get(
         "advanced_options", {}
     ).get("dynamic-mode-default")
     return (
         value.lower()
-        if value and value.lower() in set(constants_attr.getattr("DYNAMIC_OPTIONS_ALL"))
-        else constants_attr.getattr("DYNAMIC_RULE_DEFAULT")
+        if value and value.lower() in set(env.getattr("DYNAMIC_OPTIONS_ALL"))
+        else env.getattr("DYNAMIC_RULE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_part_file_clean(config=None, mediatype=None):
     if config is False:
-        return constants.RESUME_DEFAULT
+        return env.getattr("RESUME_DEFAULT")
     if (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -652,34 +652,34 @@ def get_part_file_clean(config=None, mediatype=None):
         return config.get("download_options", {}).get("auto_resume")
     elif config.get("partfileclean") is not None:
         return config.get("partfileclean") is False
-    return constants_attr.getattr("RESUME_DEFAULT")
+    return env.getattr("RESUME_DEFAULT")
 
 @wrapper.config_reader
 def get_download_semaphores(config=None):
     if config is False:
-        return constants.DOWNLOAD_SEM_DEFAULT
+        return env.getattr("DOWNLOAD_SEM_DEFAULT")
     sem = (
         config.get("download_sems")
         or config.get("performance_options", {}).get("download_sems")
-        or constants_attr.getattr("DOWNLOAD_SEM_DEFAULT")
+        or env.getattr("DOWNLOAD_SEM_DEFAULT")
     )
     try:
         sem = int(sem)
     except ValueError:
-        sem = int(constants_attr.getattr("DOWNLOAD_SEM_DEFAULT"))
+        sem = int(env.getattr("DOWNLOAD_SEM_DEFAULT"))
     return sem
 
 
 @wrapper.config_reader
 def get_show_downloadprogress(config=None):
     if config is False:
-        return constants.PROGRESS_DEFAULT
+        return env.getattr("PROGRESS_DEFAULT")
     val = (
         config.get("downloadbars")
         if config.get("downloadbars") is not None
         else config.get("advanced_options", {}).get("downloadbars")
     )
-    return val if val is not None else constants_attr.getattr("PROGRESS_DEFAULT")
+    return val if val is not None else env.getattr("PROGRESS_DEFAULT")
 
 
 @wrapper.config_reader
@@ -692,50 +692,50 @@ def get_cache_mode(config=None):
 
 def cache_mode_helper(config=None):
     if config is False:
-        return constants.CACHEDEFAULT
+        return env.getattr("CACHEDEFAULT")
     if config is None:
         config = config_file.open_config()
     data = (
         config.get("cache-mode")
         or config.get("advanced_options", {}).get("cache-mode")
-        or constants_attr.getattr("CACHEDEFAULT")
+        or env.getattr("CACHEDEFAULT")
     )
     if data == "disabled":
         return data
-    if data in [constants_attr.getattr("CACHEDEFAULT"), "json"]:
+    if data in [env.getattr("CACHEDEFAULT"), "json"]:
         return data
     else:
-        return constants_attr.getattr("CACHEDEFAULT")
+        return env.getattr("CACHEDEFAULT")
 
 
 @wrapper.config_reader
 def get_rotate_logs(config=None):
     if config is False:
-        return constants.ROTATE_DEFAULT
+        return env.getattr("ROTATE_DEFAULT")
     value = (
         config.get("rotate_logs")
         if config.get("appendlog") is not None
         else config.get("advanced_options", {}).get("rotate_logs")
     )
-    return value if value is not None else constants_attr.getattr("ROTATE_DEFAULT")
+    return value if value is not None else env.getattr("ROTATE_DEFAULT")
 
 
 @wrapper.config_reader
 def get_sanitizeDB(config=None):
     if config is False:
-        return constants.SANITIZE_DB_DEFAULT
+        return env.getattr("SANITIZE_DB_DEFAULT")
     val = (
         config.get("sanitize_text")
         if config.get("sanitize_text") is not None
         else config.get("advanced_options", {}).get("sanitize_text")
     )
-    return val if val is not None else constants_attr.getattr("SANITIZE_DB_DEFAULT")
+    return val if val is not None else env.getattr("SANITIZE_DB_DEFAULT")
 
 
 @wrapper.config_reader
 def get_textType(config=None, mediatype=None):
     if config is False:
-        return constants.TEXT_TYPE_DEFAULT
+        return env.getattr("TEXT_TYPE_DEFAULT")
     value = (
         config.get("overwrites", {}).get(f"{mediatype}", {}).get("text_type_default")
         or config.get("text_type_default")
@@ -744,19 +744,19 @@ def get_textType(config=None, mediatype=None):
     return (
         value
         if value in ["letter", "word"]
-        else constants_attr.getattr("TEXT_TYPE_DEFAULT")
+        else env.getattr("TEXT_TYPE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_TempDir(config=None, mediatype=None):
     if config is False:
-        return constants.TEMP_FOLDER_DEFAULT
+        return env.getattr("TEMP_FOLDER_DEFAULT")
     return (
         config.get("overwrites", {}).get((mediatype or "").lower(), {}).get("temp_dir")
         or config.get("temp_dir")
         or config.get("advanced_options", {}).get("temp_dir")
-        or constants_attr.getattr("TEMP_FOLDER_DEFAULT")
+        or env.getattr("TEMP_FOLDER_DEFAULT")
     )
 
 
@@ -764,7 +764,7 @@ def get_TempDir(config=None, mediatype=None):
 def get_truncation(config=None, mediatype=None):
     val = None
     if config is False:
-        return constants.TRUNCATION_DEFAULT
+        return env.getattr("TRUNCATION_DEFAULT")
 
     if config.get("overwrites", {}).get(f"{mediatype}", {}).get("truncation_default"):
         val = (
@@ -776,14 +776,14 @@ def get_truncation(config=None, mediatype=None):
         val = config.get("truncation_default")
     elif config.get("file_options", {}).get("truncation_default"):
         val = config.get("file_options", {}).get("truncation_default")
-    return val if val is not None else constants_attr.getattr("TRUNCATION_DEFAULT")
+    return val if val is not None else env.getattr("TRUNCATION_DEFAULT")
 
 
 @wrapper.config_reader
 def get_audios_overwrites(config=None):
     if config is False:
-        return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("overwrites", {}).get("audios") or constants_attr.getattr(
+        return env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("audios") or env.getattr(
         "EMPTY_MEDIA_DEFAULT"
     )
 
@@ -791,8 +791,8 @@ def get_audios_overwrites(config=None):
 @wrapper.config_reader
 def get_videos_overwrites(config=None):
     if config is False:
-        return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("overwrites", {}).get("videos") or constants_attr.getattr(
+        return env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("videos") or env.getattr(
         "EMPTY_MEDIA_DEFAULT"
     )
 
@@ -800,8 +800,8 @@ def get_videos_overwrites(config=None):
 @wrapper.config_reader
 def get_images_overwrites(config=None):
     if config is False:
-        return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("overwrites", {}).get("images") or constants_attr.getattr(
+        return env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("images") or env.getattr(
         "EMPTY_MEDIA_DEFAULT"
     )
 
@@ -809,8 +809,8 @@ def get_images_overwrites(config=None):
 @wrapper.config_reader
 def get_text_overwrites(config=None):
     if config is False:
-        return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("overwrites", {}).get("text") or constants_attr.getattr(
+        return env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("text") or env.getattr(
         "EMPTY_MEDIA_DEFAULT"
     )
 
@@ -818,21 +818,21 @@ def get_text_overwrites(config=None):
 @wrapper.config_reader
 def get_max_post_count(config=None):
     if config is False:
-        return constants.MAX_COUNT_DEFAULT
+        return env.getattr("MAX_COUNT_DEFAULT")
     try:
         if config.get("max_post_count") is not None:
             return int(config.get("max_post_count"))
         elif config.get("download_options", {}).get("max_post_count") is not None:
             return int(config.get("download_options", {}).get("max_post_count"))
-        return int(constants_attr.getattr("MAX_COUNT_DEFAULT"))
+        return int(env.getattr("MAX_COUNT_DEFAULT"))
     except Exception:
-        return constants_attr.getattr("MAX_COUNT_DEFAULT")
+        return env.getattr("MAX_COUNT_DEFAULT")
 
 
 @wrapper.config_reader
 def get_hash(config=None, mediatype=None):
     if config is False:
-        return constants.HASHED_DEFAULT
+        return env.getattr("HASHED_DEFAULT")
     elif (
         config.get("overwrites", {})
         .get((mediatype or "").lower(), {})
@@ -847,13 +847,13 @@ def get_hash(config=None, mediatype=None):
         return config.get("remove_hash_match")
     elif "remove_hash_match" in config.get("advanced_options", {}):
         return config.get("advanced_options", {}).get("remove_hash_match")
-    return constants_attr.getattr("HASHED_DEFAULT")
+    return env.getattr("HASHED_DEFAULT")
 
 
 @wrapper.config_reader
 def get_block_ads(config=None, mediatype=None):
     if config is False:
-        return constants.BLOCKED_ADS_DEFAULT
+        return env.getattr("BLOCKED_ADS_DEFAULT")
     elif (
         config.get("overwrites", {}).get((mediatype or "").lower(), {}).get("block_ads")
     ):
@@ -878,4 +878,4 @@ def get_block_ads(config=None, mediatype=None):
         return config.get("block_ads")
     elif "block_ads" in config.get("content_filter_options", {}):
         return config.get("content_filter_options", {}).get("block_ads")
-    return constants_attr.getattr("BLOCKED_ADS_DEFAULT")
+    return env.getattr("BLOCKED_ADS_DEFAULT")

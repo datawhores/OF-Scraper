@@ -3,13 +3,13 @@ import textwrap
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 
 
 def print_auth_warning(auth=None):
     auth = auth or auth_requests.auth_file.read_auth()
-    auth.update({"app-token": constants.getattr("APP_TOKEN")})
+    auth.update({"app-token": env.getattr("APP_TOKEN")})
 
     console.get_console().print(
         textwrap.dedent(

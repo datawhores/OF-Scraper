@@ -12,7 +12,7 @@ r"""
 """
 
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.me as me_util
 
 
@@ -36,5 +36,5 @@ def seperate_avatar_helper(ele):
 
 def seperate_by_self(data):
     my_id = me_util.get_id()
-    if constants.getattr("FILTER_SELF_MEDIA"):
+    if env.getattr("FILTER_SELF_MEDIA"):
         return list(filter(lambda x: x.post.fromuser != my_id, data))

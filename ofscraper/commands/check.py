@@ -26,7 +26,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console_
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.network as network
@@ -248,13 +248,13 @@ async def post_check_retriver():
     links = list(url_helper())
     async with manager.Manager.aget_ofsession(
        
-        sem_count=constants.getattr("API_REQ_CHECK_MAX"),
+        sem_count=env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for ele in links:
             name_match = re.search(
-                f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
+                f"onlyfans.com/({env.getattr('USERNAME_REGEX')}+$)", ele
             )
-            name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
+            name_match2 = re.search(f"^{env.getattr('USERNAME_REGEX')}+$", ele)
             user_name = None
             model_id = None
             timeline_data = []
@@ -391,14 +391,14 @@ async def post_check_retriver():
         for ele in list(
             filter(
                 lambda x: re.search(
-                    f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
+                    f"onlyfans.com/{env.getattr('NUMBER_REGEX')}+/{env.getattr('USERNAME_REGEX')}+$",
                     x,
                 ),
                 links,
             )
         ):
-            name_match = re.search(f"/({constants.getattr('USERNAME_REGEX')}+$)", ele)
-            num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
+            name_match = re.search(f"/({env.getattr('USERNAME_REGEX')}+$)", ele)
+            num_match = re.search(f"/({env.getattr('NUMBER_REGEX')}+)", ele)
             if name_match and num_match:
                 user_name = name_match.group(1)
                 model_id = profile.get_id(user_name)
@@ -450,9 +450,9 @@ async def message_check_retriver():
     ) as c:
         for item in links:
             num_match = re.search(
-                f"({constants.getattr('NUMBER_REGEX')}+)", item
-            ) or re.search(f"^({constants.getattr('NUMBER_REGEX')}+)$", item)
-            name_match = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", item)
+                f"({env.getattr('NUMBER_REGEX')}+)", item
+            ) or re.search(f"^({env.getattr('NUMBER_REGEX')}+)$", item)
+            name_match = re.search(f"^{env.getattr('USERNAME_REGEX')}+$", item)
             if num_match:
                 model_id = num_match.group(1)
                 user_name = profile.scrape_profile(model_id)["username"]
@@ -524,7 +524,7 @@ async def purchase_check_retriver():
     auth_requests.make_headers()
     async with manager.Manager.aget_ofsession(
        
-        sem_count=constants.getattr("API_REQ_CHECK_MAX"),
+        sem_count=env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for name in settings.get_settings().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
@@ -538,7 +538,7 @@ async def purchase_check_retriver():
 
             if len(oldpaid) > 0 and not settings.get_settings().force:
                 paid = oldpaid
-            elif user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
+            elif user_name == env.getattr("DELETED_MODEL_PLACEHOLDER"):
                 paid_user_dict = await paid_.get_all_paid_posts()
                 seen = set()
                 paid = [
@@ -579,7 +579,7 @@ async def stories_check_retriver():
     user_dict = {}
     async with manager.Manager.aget_ofsession(
        
-        sem_count=constants.getattr("API_REQ_CHECK_MAX"),
+        sem_count=env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for user_name in settings.get_settings().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
@@ -662,7 +662,7 @@ async def get_paid_ids(model_id, user_name):
         paid = oldpaid
     else:
         async with manager.Manager.aget_ofsession(
-            sem_count=constants.getattr("API_REQ_CHECK_MAX")
+            sem_count=env.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             set_check(paid, model_id, paid_.API)
@@ -694,8 +694,8 @@ def texthelper(text):
     text = re.sub("<[^>]*>", "", text)
     text = (
         text
-        if len(text) < constants.getattr("TABLE_STR_MAX")
-        else f"{text[:constants.getattr('TABLE_STR_MAX')]}..."
+        if len(text) < env.getattr("TABLE_STR_MAX")
+        else f"{text[:env.getattr('TABLE_STR_MAX')]}..."
     )
     return text
 

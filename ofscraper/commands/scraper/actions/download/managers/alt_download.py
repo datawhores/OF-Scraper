@@ -25,7 +25,7 @@ from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
 
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
@@ -190,7 +190,7 @@ class AltDownloadManager(DownloadManager):
                 stream=True,
                 headers=headers,
                 params=params,
-                # action=[FORCED_NEW,SIGN] if constants.getattr("ALT_FORCE_KEY") else None
+                # action=[FORCED_NEW,SIGN] if env.getattr("ALT_FORCE_KEY") else None
             ) as l:
                 item["total"] = int(l.headers.get("content-length"))
                 total = item["total"]
@@ -234,7 +234,7 @@ class AltDownloadManager(DownloadManager):
         await self._download_fileobject_writer_streamer(
             ele, total, l, placeholderObj
         )
-        # if total > constants.getattr("MAX_READ_SIZE"):
+        # if total > env.getattr("MAX_READ_SIZE"):
         
         # else:
         #     await self._download_fileobject_writer_reader(ele, total, l, placeholderObj)
@@ -478,7 +478,7 @@ class AltDownloadManager(DownloadManager):
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
         task1 = progress_updater.add_download_job_task(
-            f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+            f"{(pathstr[:env.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > env.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
         )
         return task1

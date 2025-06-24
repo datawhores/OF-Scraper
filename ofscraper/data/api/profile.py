@@ -20,7 +20,7 @@ from xxhash import xxh128
 
 import ofscraper.main.manager as manager
 import ofscraper.utils.cache as cache
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 
 from ...utils import encoding
@@ -44,14 +44,14 @@ def scrape_profile_helper(c, username: Union[int, str]):
     if data and not settings.get_settings().update_profile:
         return data
     try:
-        with c.requests(constants.getattr("profileEP").format(username)) as r:
+        with c.requests(env.getattr("profileEP").format(username)) as r:
             if r.status == 404:
-                return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
+                return {"username": env.getattr("DELETED_MODEL_PLACEHOLDER")}
 
             cache.set(
                 f"username_{username}",
                 r.json(),
-                int(constants.getattr("PROFILE_DATA_EXPIRY")),
+                int(env.getattr("PROFILE_DATA_EXPIRY")),
             )
 
             log.trace(f"username date: {r.json()}")
@@ -65,7 +65,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
 async def scrape_profile_helper_async(c, username: Union[int, str]):
     data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
-    url = constants.getattr("profileEP").format(username)
+    url = env.getattr("profileEP").format(username)
     if data and not settings.get_settings().update_profile:
         return data
     try:
@@ -73,11 +73,11 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
         log.info(f"getting {username} with {url}")
         async with c.requests_async(url) as r:
             if r.status == 404:
-                return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
+                return {"username": env.getattr("DELETED_MODEL_PLACEHOLDER")}
             cache.set(
                 f"username_{username}",
                 await r.json_(),
-                int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
+                int(env.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
             )
 
             log.trace(f"username date: {await r.json_()}")
@@ -155,7 +155,7 @@ def get_id(username, c=None):
 def get_id_helper(c, username):
     if username.isnumeric():
         return username
-    if username == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
+    if username == env.getattr("DELETED_MODEL_PLACEHOLDER"):
         raise Exception("could not get ID")
     id = cache.get(f"model_id_{username}")
     if id:
@@ -164,9 +164,9 @@ def get_id_helper(c, username):
 
         log.info(f"to get id {username}")
 
-        with c.requests(constants.getattr("profileEP").format(username)) as r:
+        with c.requests(env.getattr("profileEP").format(username)) as r:
             id = r.json()["id"]
-            cache.set(f"model_id_{username}", id, constants.getattr("DAY_SECONDS"))
+            cache.set(f"model_id_{username}", id, env.getattr("DAY_SECONDS"))
 
             return id
 

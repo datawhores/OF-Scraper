@@ -13,7 +13,7 @@ import logging
 import traceback
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
@@ -23,7 +23,7 @@ def get_individual_timeline_post(id, session=None):
     with session or manager.Manager.get_ofsession(
        
     ) as c:
-        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
+        with c.requests(env.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             log.trace(f"post raw individual {r.json()}")
             return r.json()
 

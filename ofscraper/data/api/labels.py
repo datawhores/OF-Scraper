@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
@@ -115,7 +115,7 @@ async def scrape_labels(c, model_id, offset=0):
     labels = None
     new_tasks = []
 
-    url = constants.getattr("labelsEP").format(model_id, offset)
+    url = env.getattr("labelsEP").format(model_id, offset)
     task = None
     log.debug(f"trying to access label names with url:{url}  offset:{offset}")
 
@@ -231,7 +231,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
 async def scrape_posts_labels(c, label, model_id, offset=0):
     posts = None
     new_tasks = []
-    url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
+    url = env.getattr("labelledPostsEP").format(model_id, offset, label["id"])
 
     try:
 

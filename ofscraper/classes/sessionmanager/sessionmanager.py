@@ -18,7 +18,7 @@ from httpx_aiohttp import AiohttpTransport
 from aiohttp import ClientSession
 
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
@@ -83,7 +83,7 @@ class SessionSleep:
         self._difmin = (
             difmin
             if difmin is not None
-            else constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+            else env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
         )
         self._alock = asyncio.Lock()
 
@@ -101,7 +101,7 @@ class SessionSleep:
             self._sleep = (
                 self._init_sleep
                 if self._init_sleep
-                else constants.getattr("SESSION_SLEEP_INIT")
+                else env.getattr("SESSION_SLEEP_INIT")
             )
             log.debug(
                 f"too many req => setting sleep to init \\[{self._sleep} seconds]"
@@ -150,12 +150,12 @@ class CustomTenacity(AsyncRetrying):
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
-            min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
-            max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
+            min=env.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
+            max=env.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
         )
         self.wait_exponential = wait_exponential or tenacity.wait_exponential(
-            min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
-            max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+            min=env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+            max=env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
         )
         self.wait = self._wait_picker
 
@@ -189,14 +189,14 @@ class sessionManager:
         sync_sem_count=None,
         sync_sem=None,
     ):
-        connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
-        total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
-        pool_timeout = pool_timeout or constants.getattr("POOL_CONNECT_TIMEOUT")
-        limit = limit or constants.getattr("MAX_CONNECTIONS")
-        keep_alive = keep_alive or constants.getattr("KEEP_ALIVE")
-        keep_alive_exp = keep_alive_exp or constants.getattr("KEEP_ALIVE_EXP")
-        proxy = proxy or constants.getattr("PROXY")
-        proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
+        connect_timeout = connect_timeout or env.getattr("CONNECT_TIMEOUT")
+        total_timeout = total_timeout or env.getattr("TOTAL_TIMEOUT")
+        pool_timeout = pool_timeout or env.getattr("POOL_CONNECT_TIMEOUT")
+        limit = limit or env.getattr("MAX_CONNECTIONS")
+        keep_alive = keep_alive or env.getattr("KEEP_ALIVE")
+        keep_alive_exp = keep_alive_exp or env.getattr("KEEP_ALIVE_EXP")
+        proxy = proxy or env.getattr("PROXY")
+        proxy_auth = proxy_auth or env.getattr("PROXY_AUTH")
         self._connect_timeout = connect_timeout
         self._total_timeout = total_timeout
         self._read_timeout=read_timeout
@@ -208,15 +208,15 @@ class sessionManager:
         self._delay = delay or 0
         self._sem = sem or asyncio.BoundedSemaphore(sem_count or 100000)
         self._sync_sem = sync_sem or threading.Semaphore(
-            sync_sem_count or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
+            sync_sem_count or env.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
         )
-        self._retries = retries or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
-        self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min_exponential = wait_min_exponential or constants.getattr(
+        self._retries = retries or env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
+        self._wait_min = wait_min or env.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
+        self._wait_max = wait_max or env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
+        self._wait_min_exponential = wait_min_exponential or env.getattr(
             "OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
-        self._wait_max_exponential = wait_max_exponential or constants.getattr(
+        self._wait_max_exponential = wait_max_exponential or env.getattr(
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")

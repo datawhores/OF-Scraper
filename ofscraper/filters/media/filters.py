@@ -11,7 +11,7 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
-import ofscraper.utils.constants as constants
+import ofscraper.utils.env.env as env
 
 
 log = logging.getLogger("shared")
@@ -36,7 +36,7 @@ def dupefilter(media):
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
-    if constants.getattr("ALLOW_DUPE_MEDIA"):
+    if env.getattr("ALLOW_DUPE_MEDIA"):
         for item in media:
             if not output[(item.id, item.postid)]:
                 output[(item.id, item.postid)] = item

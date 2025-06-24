@@ -212,7 +212,7 @@ class MainDownloadManager(DownloadManager):
         await self._download_fileobject_writer_streamer(
             r, ele, tempholderObj, placeholderObj, total
         )
-        # if total > constants.getattr("MAX_READ_SIZE"):
+        # if total > env.getattr("MAX_READ_SIZE"):
           
         # else:
         #     await self._download_fileobject_writer_reader(
