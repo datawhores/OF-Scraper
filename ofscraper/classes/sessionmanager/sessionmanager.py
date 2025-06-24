@@ -227,7 +227,7 @@ class sessionManager:
         if self._session:
             return
         if async_:
-            # context=create_custom_ssl_context()
+            context=create_custom_ssl_context()
             self._session = httpx.AsyncClient(
                 http2=True,
                 proxy=self._proxy,
@@ -238,7 +238,7 @@ class sessionManager:
                 ),
              transport=AiohttpTransport(
         client=lambda: ClientSession(    proxy=self._proxy,
-        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=False if not settings.get_settings().ssl_validation else ssl.create_default_context(cafile=certifi.where())),
+        connector=aiohttp.TCPConnector(limit=self._connect_limit,ssl=context)),
     )))
         else:
             self._session = httpx.Client(
