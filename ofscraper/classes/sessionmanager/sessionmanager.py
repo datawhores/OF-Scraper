@@ -21,7 +21,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.constants as constants
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
-# from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
 
 
 
