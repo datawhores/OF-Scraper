@@ -4,6 +4,7 @@ from ofscraper.utils.args.parse.arguments.program import (
     config_location_option,
     profile_option,
     version_option,
+    env_file_option
 )
 
 program_options_desc = "Program Options"
@@ -12,6 +13,7 @@ program_options_tuple = (
     version_option,
     config_location_option,
     profile_option,
+    env_file_option
 )
 # Create the option group
 program_options = click.option_group(
