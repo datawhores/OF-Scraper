@@ -1,8 +1,6 @@
 import cloup as click
 
 from ofscraper.utils.args.parse.arguments.advanced_program import (
-    download_script_option,
-    post_script_option,
     dynamic_rules_option,
     key_mode_option,
     private_key_option,
@@ -24,8 +22,6 @@ advanced_options_tuple = (
     dynamic_rules_option,
     update_profile_option,
     auth_fail,
-    download_script_option,
-    post_script_option,
 )
 # Create the option group
 advanced_options = click.option_group(
