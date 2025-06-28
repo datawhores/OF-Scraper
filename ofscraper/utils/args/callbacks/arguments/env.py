@@ -10,6 +10,7 @@ def _load_env_file_callback(ctx, param, values): # 'value' is now 'values' (a tu
     Supports .env, .yaml/.yml, and .json formats.
     Later files in the command line argument list will override earlier ones for conflicting keys.
     """
+
     if not values: # If no paths were provided, do nothing
         return
 

@@ -1,5 +1,5 @@
-import shutil
-
+import threading
+from dotenv import load_dotenv
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -8,25 +8,52 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.env.env as env
 from ofscraper.utils.args.accessors.areas import get_text_area
 
-settings = {}
 
+# --- Globals for one-time initialization ---
+_env_loaded = False
+_init_lock = threading.Lock()
+
+
+def _load_env_once():
+    """
+    Loads all environment-based configurations once.
+    This function is thread-safe and ensures that config files are read
+    and processed only one time during the application's lifecycle.
+    """
+    global _env_loaded
+    # Quick check to avoid locking if already loaded
+    if _env_loaded:
+        return
+
+    with _init_lock:
+        # Double-check inside the lock to handle race conditions
+        if _env_loaded:
+            return
+        # Load .env file if it exists
+        load_dotenv()
+        _env_loaded = True
+
+
+# --- Main Settings Logic ---
+settings = {}
 
 def get_args():
     return read_args.retriveArgs()
 
-
 def update_args(args):
     global settings
     write_args.setArgs(args)
-    settings= setup_settings()
-
+    settings = setup_settings()
 
 def get_settings():
     global settings
+    _load_env_once()  # Ensures env is populated before settings are first calculated.
     if not settings:
-        settings= setup_settings()
+        with _init_lock:
+            # Check again inside lock for thread safety
+            if not settings:
+                settings = setup_settings()
     return settings
-
 
 def setup_settings():
     merged = read_args.retriveArgs()
@@ -109,7 +136,6 @@ def setup_settings():
 
     return merged
 
-
 def get_download_text():
     return (
         get_text_area()
@@ -117,13 +143,11 @@ def get_download_text():
         or read_args.retriveArgs().text_only
     )
 
-
 def get_ffmpeg():
     return (
         config_data.get_ffmpeg()
         or ""
     )
-
 
 def get_auto_after_enabled():
     if get_cached_disabled():
@@ -141,43 +165,36 @@ def get_auto_resume():
         return False
     return config_data.get_part_file_clean()
 
-
 def get_neg_filter():
     neg = read_args.retriveArgs().neg_filter or []
     if read_args.retriveArgs().block_ads or config_data.get_block_ads():
         neg.append(ads.get_ad_key_words())
     return neg
 
-
 def get_min_length():
     if read_args.retriveArgs().length_min is not None:
         return read_args.retriveArgs().length_min
     return config_data.get_min_length()
-
 
 def get_max_length():
     if read_args.retriveArgs().length_max is not None:
         return read_args.retriveArgs().length_max
     return config_data.get_max_length()
 
-
 def get_download_limit():
     out = read_args.retriveArgs().download_limit or config_data.get_download_limit()
     return max(out, 1024) if out else out
-
 
 def get_trunication():
     if read_args.retriveArgs().original:
         return False
     return config_data.get_truncation()
 
-
 def get_userlist():
     out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
     if isinstance(out, str):
         out = out.split(",")
     return out
-
 
 def get_blacklist():
     out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
