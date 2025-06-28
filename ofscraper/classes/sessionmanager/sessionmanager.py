@@ -221,7 +221,7 @@ class sessionManager:
         self._last_auth_warn_date = arrow.now()
 
     def print_auth_warning(self, E: Exception):
-        if (arrow.now() - self._last_auth_warn_date).total_seconds() > env.getattr("auth_warning_timeout"):
+        if (arrow.now() - self._last_auth_warn_date).total_seconds() > env.getattr("AUTH_WARNING_TIMEOUT"):
             print_auth_warning(E)
             self._last_auth_warn_date = arrow.now()
 

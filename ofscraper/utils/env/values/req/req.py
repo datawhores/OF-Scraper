@@ -230,7 +230,7 @@ def load_network_config():
     config['SESSION_403_SLEEP_DECAY_FACTOR'] = float(os.getenv('OFSC_SESSION_403_SLEEP_DECAY_FACTOR', '1.5'))
     
     
-    config['403_WARNING_TIMEOUT'] = float(os.getenv('OFSC_403_WARNING_TIMEOUT', '18000'))
+    config['AUTH_WARNING_TIMEOUT'] = float(os.getenv('OFSC_AUTH_WARNING_TIMEOUT', '18000'))
 
     
     
