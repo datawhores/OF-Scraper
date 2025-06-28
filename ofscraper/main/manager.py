@@ -129,9 +129,9 @@ class mainManager:
         async with OFsessionManager.cdm_session(*args, **kwargs) as c:
             yield c
 
-    @asynccontextmanager
-    async def get_like_session(self, *args, **kwargs):
+    @contextmanager
+    def get_like_session(self, *args, **kwargs):
         import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
-        async with OFsessionManager.like_session(*args, **kwargs) as c:
+        with OFsessionManager.like_session(*args, **kwargs) as c:
             yield c

@@ -63,13 +63,13 @@ class PostCollection:
         # Return a new list containing only media of the matching types
         return [media for media in all_media if media.mediatype.lower() in target_types]
 
-    def get_all_media_filtered(self) -> list:
+    def get_all_unique_media(self) -> list:
         """
         Takes ALL media from the collection and applies a specific, short
         sequence of download-related filters.
 
         Returns:
-            list: A filtered list of Media objects.
+            list: A list of unique Media objects.
         """
         log.info("Filtering all media with specific download filter sequence...")
 
@@ -78,12 +78,6 @@ class PostCollection:
 
         # Apply the exact filter sequence you requested
         filtered_media = helpers.dupefiltermedia(media_to_filter)
-        filtered_media = helpers.previous_download_filter(
-            filtered_media, username=self.username, model_id=self.model_id
-        )
-        filtered_media = helpers.ele_count_filter(filtered_media)
-        filtered_media = helpers.final_media_sort(filtered_media)
-
         log.info(f"Returning {len(filtered_media)} items after specific filtering.")
         return filtered_media
 
@@ -202,10 +196,28 @@ class PostCollection:
 
     def get_posts_to_like(self) -> list[Post]:
         """
-        Collects all posts that have been marked as actionable for liking
-        after the prepare_like_actions method has been run.
+        Gets the final, filtered list of posts to be liked. This method is now
+        self-contained and includes the full preparation and filtering pipeline.
         """
-        return [post for post in self.posts if post.is_actionable_like]
+        if "like" not in settings.get_settings().action:
+            return []
+
+        like_candidates = [post for post in self.posts if post.is_like_candidate]
+        log.info(f"Found {len(like_candidates)} posts in areas eligible for liking.")
+        
+        for post in like_candidates:
+            post.prepare_post_for_like(like_action=True)
+            
+        actionable_posts = [post for post in like_candidates if post.is_actionable_like]
+        log.debug(f"{len(actionable_posts)} posts are actionable for liking.")
+        
+        final_posts_to_like = helpers.sort_by_date(actionable_posts)
+        final_posts_to_like=helpers.temp_post_filter(final_posts_to_like)
+        final_posts_to_like = helpers.dupefilterPost(final_posts_to_like)
+        final_posts_to_like = helpers.final_post_sort(final_posts_to_like)
+
+        log.info(f"Returning {len(final_posts_to_like)} final posts to be liked.")
+        return final_posts_to_like
 
     def get_posts_for_text_download(self) -> list[Post]:
         """
@@ -214,7 +226,8 @@ class PostCollection:
         """
         if "download" not in settings.get_settings().action:
             return []
-        # if not settings.get_download_text(): return []
+        if not settings.get_download_text():
+            return []
 
         text_candidates = [post for post in self.posts if post.is_text_candidate]
         log.info(

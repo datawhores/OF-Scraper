@@ -87,6 +87,11 @@ class Post(base.base):
         else:
             self.is_actionable_like = False
 
+        if like_action:
+            self.is_actionable_like = True
+        else:
+            self.is_actionable_like = False
+
     def mark_media_downloaded(self, media_item, success):
         """
         Updates the status of a media item after a download attempt.
@@ -159,11 +164,11 @@ class Post(base.base):
 
     @property
     def favorited(self):
-        return (
-            self.post.get("canToggleFavorite") is False
-            if self.post.get("canToggleFavorite") is not None
-            else self.post.get("isFavorite")
-        )
+        if self.post.get("isFavorite"):
+            return True
+        else:
+            return False
+
 
     @property
     def opened(self):

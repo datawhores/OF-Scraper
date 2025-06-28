@@ -36,9 +36,7 @@ def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared").warning(like_str.format(name=username))
-    unfavorited_posts = get_posts_for_like(posts)
-    posts = pre_filter(posts)
-    post_ids = get_post_ids(unfavorited_posts)
+    post_ids = get_post_ids(posts)
     return like(model_id, username, post_ids)
 
 
@@ -47,9 +45,7 @@ def process_unlike(posts=None, model_id=None, task=None, username=None, **kwargs
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared").warning(unlike_str.format(name=username))
-    favorited_posts = get_posts_for_unlike(posts)
-    posts = pre_filter(posts)
-    post_ids = get_post_ids(favorited_posts)
+    post_ids = get_post_ids(posts)
     return unlike(model_id, username, post_ids)
 
 
@@ -76,10 +72,6 @@ def filter_for_favorited(posts: list) -> list:
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
-
-def pre_filter(posts):
-    seen = set()
-    return [post for post in posts if post.id not in seen and not seen.add(post.id)]
 
 
 def get_post_ids(posts: list) -> list:
