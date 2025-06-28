@@ -59,6 +59,7 @@ import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelper
 import ofscraper.utils.cache as cache
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 
 
 class AltDownloadManager(DownloadManager):
@@ -263,9 +264,6 @@ class AltDownloadManager(DownloadManager):
                 raise E
 
     async def _download_fileobject_writer_streamer(self, ele, total, res, placeholderObj):
-        common_globals.log.info(f"Starting download for {ele}. Tracking memory usage...")
-        initial_memory = self.process.memory_info().rss / (1024 * 1024) # RSS in MB
-        common_globals.log.info(f"Initial memory usage for {ele}: {initial_memory:.2f} MB")
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = None # Initialize to None for finally block
@@ -275,7 +273,6 @@ class AltDownloadManager(DownloadManager):
                 fileobject = await aiofiles.open(
                     placeholderObj.tempfilepath, "ab"
                 ).__aenter__()
-                chunk_count = 0
                 chunk_iter = res.iter_chunked(get_chunk_size())
 
                 while True:
@@ -283,11 +280,6 @@ class AltDownloadManager(DownloadManager):
                         chunk = await chunk_iter.__anext__()
                         await fileobject.write(chunk)
                         send_chunk_msg(ele, total, placeholderObj)
-                        chunk_count += 1
-                        # Log memory usage periodically, e.g., every 10 chunks
-                        if chunk_count % 10 == 0:
-                            current_memory = self.process.memory_info().rss / (1024 * 1024)
-                            common_globals.log.debug(f"Memory usage for {ele} after {chunk_count} chunks: {current_memory:.2f} MB")
                     except StopAsyncIteration:
                         break # Exit loop when no more chunks
         except asyncio.TimeoutError:
@@ -299,11 +291,6 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.error(f"An error occurred during download for {ele}: {E}")
             raise E # Re-raise the exception after logging
         finally:
-            # Log final memory usage
-            final_memory = self.process.memory_info().rss / (1024 * 1024)
-            common_globals.log.info(f"Final memory usage for {ele}: {final_memory:.2f} MB")
-            common_globals.log.info(f"Memory change for {ele}: {(final_memory - initial_memory):.2f} MB")
-
             # Close file if needed
             if fileobject: # Ensure fileobject was successfully opened
                 try:
