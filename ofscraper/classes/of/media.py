@@ -39,7 +39,9 @@ class Media(base.base):
 
         # ==> STATE TRACKING ATTRIBUTES <==
         self.download_attempted = False
-        self.download_succeeded = None  # Using tri-state: None (not attempted), True, False
+        self.download_succeeded = (
+            None  # Using tri-state: None (not attempted), True, False
+        )
         self.like_attempted = False
         self.like_succeeded = None  # Using tri-state: None (not attempted), True, False
 
@@ -79,7 +81,7 @@ class Media(base.base):
         """Marks a like as failed."""
         self.like_attempted = True
         self.like_succeeded = False
-        
+
     # --- Start of your original properties and methods ---
 
     @property
@@ -146,7 +148,7 @@ class Media(base.base):
         out = None
         if quality_val != "source":
             out = self._media.get("videoSources", {}).get(quality_val)
-        
+
         if out is None:
             out = self.files_source.get("full")
 
@@ -170,7 +172,11 @@ class Media(base.base):
     def canview(self):
         if self.responsetype.lower() == "profile":
             return True
-        return self._media.get("canView", False) if (self.url or self.mpd) is not None else False
+        return (
+            self._media.get("canView", False)
+            if (self.url or self.mpd) is not None
+            else False
+        )
 
     @property
     def label(self):
@@ -186,10 +192,7 @@ class Media(base.base):
 
     @property
     def modified_responsetype(self):
-        return (
-            self._post.modified_response_helper()
-            or self._post.modified_responsetype
-        )
+        return self._post.modified_response_helper() or self._post.modified_responsetype
 
     @property
     def responsetype(self):
@@ -234,7 +237,9 @@ class Media(base.base):
             return self._mpd
         if self.protected is False:
             return None
-        return self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
+        return (
+            self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
+        )
 
     @property
     def hls(self):
@@ -242,7 +247,9 @@ class Media(base.base):
             return self._hls
         if self.protected is False:
             return None
-        return self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("hls")
+        return (
+            self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("hls")
+        )
 
     @property
     def policy(self):
@@ -348,12 +355,14 @@ class Media(base.base):
     def filename(self):
         if not self.url and not self.mpd:
             return None
-        
-        base_url = (self.url or self.mpd)
+
+        base_url = self.url or self.mpd
         if not base_url:
             return None
-            
-        filename_part = base_url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+
+        filename_part = (
+            base_url.split(".")[-2].split("/")[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+        )
         filename = re.sub(r"\.mpd$", "", filename_part)
 
         if self.responsetype.lower() == "profile":
@@ -370,13 +379,13 @@ class Media(base.base):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", "", filename)
-        
+
         try:
             filename = self.file_cleanup(filename)
             filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
             log.error(f"Error cleaning filename: {e}")
-            
+
         return filename
 
     @property
@@ -407,7 +416,7 @@ class Media(base.base):
             "Signature": self.signature,
         }
         async with self._lock:
-            if self._cached_mpd: # double check lock
+            if self._cached_mpd:  # double check lock
                 return self._cached_mpd
             async with manager.Manager.aget_ofsession(
                 retries=of_env.getattr("MPD_NUM_TRIES"),
@@ -516,17 +525,21 @@ class Media(base.base):
             return None
         allowed = quality.get_allowed_qualities()
         for period in mpd.periods:
-            for adapt_set in filter(lambda x: x.mime_type == "video/mp4", period.adaptation_sets):
+            for adapt_set in filter(
+                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
+            ):
                 kId = None
                 for prot in adapt_set.content_protections:
                     if prot.value is None:
                         kId = prot.pssh[0].pssh
                         break
 
-                representations = sorted(adapt_set.representations, key=lambda x: x.height, reverse=True)
+                representations = sorted(
+                    adapt_set.representations, key=lambda x: x.height, reverse=True
+                )
                 selected_repr = None
                 for quality_val in allowed:
-                    if quality_val.lower() == 'source':
+                    if quality_val.lower() == "source":
                         selected_repr = representations[0]
                         break
                     for r in representations:
@@ -535,8 +548,10 @@ class Media(base.base):
                             break
                     if selected_repr:
                         break
-                
-                selected_repr = selected_repr or representations[0] # Fallback to highest
+
+                selected_repr = (
+                    selected_repr or representations[0]
+                )  # Fallback to highest
 
                 origname = f"{selected_repr.base_urls[0].base_url_value}"
                 return {
@@ -552,14 +567,16 @@ class Media(base.base):
         if not mpd:
             return None
         for period in mpd.periods:
-            for adapt_set in filter(lambda x: x.mime_type == "audio/mp4", period.adaptation_sets):
+            for adapt_set in filter(
+                lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
+            ):
                 kId = None
                 for prot in adapt_set.content_protections:
                     if prot.value is None:
                         kId = prot.pssh[0].pssh
                         log_helpers.updateSenstiveDict(kId, "pssh_code")
                         break
-                
+
                 # Typically there's only one audio representation
                 repr = adapt_set.representations[0]
                 origname = f"{repr.base_urls[0].base_url_value}"
@@ -574,34 +591,38 @@ class Media(base.base):
     def normal_quality_helper(self):
         if self.mediatype != "videos":
             return "source"
-            
+
         allowed = quality.get_allowed_qualities()
         available = self._media.get("videoSources", {})
-        
+
         # Check from highest to lowest preferred quality
         for qual in allowed:
-            if qual.lower() == "source": # "source" is an alias for the best available
+            if qual.lower() == "source":  # "source" is an alias for the best available
                 return "source"
             if available.get(qual):
                 return qual
-        return "source" # Fallback
+        return "source"  # Fallback
 
     async def alt_quality_helper(self, mpd_obj=None):
         mpd = mpd_obj or await self.parse_mpd
         if not mpd:
             return None
-            
+
         allowed = quality.get_allowed_qualities()
         for period in mpd.periods:
-            for adapt_set in filter(lambda x: x.mime_type == "video/mp4", period.adaptation_sets):
-                representations = sorted(adapt_set.representations, key=lambda x: x.height, reverse=True)
+            for adapt_set in filter(
+                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
+            ):
+                representations = sorted(
+                    adapt_set.representations, key=lambda x: x.height, reverse=True
+                )
                 for qual in allowed:
-                    if qual.lower() == 'source':
+                    if qual.lower() == "source":
                         return str(representations[0].height)
                     for r in representations:
                         if str(r.height) == qual:
                             return str(r.height)
-                return str(representations[0].height) # Fallback to best
+                return str(representations[0].height)  # Fallback to best
 
     async def _get_final_filename_async(self):
         filename = self.filename or str(self.id)
@@ -609,7 +630,7 @@ class Media(base.base):
             filename = re.sub("_[a-z0-9]+$", "", filename)
             quality_placeholder = await self.selected_quality_placeholder
             filename = f"{filename}_{quality_placeholder}"
-        
+
         try:
             filename = self.file_cleanup(filename)
             filename = re.sub(" ", data.get_spacereplacer(), filename)

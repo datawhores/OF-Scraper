@@ -47,6 +47,8 @@ def check_uniquename():
     elif re.search("custom", format):
         return True
     return False
+
+
 def unique_name_warning():
     if not check_uniquename():
         log.warning(

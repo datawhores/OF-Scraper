@@ -15,7 +15,9 @@ log = logging.getLogger("shared")
 fileHashes = {}
 
 
-def get_hash(file_data, ):
+def get_hash(
+    file_data,
+):
     global fileHashes
     hash = None
     if settings.get_settings().hash is None:
@@ -44,7 +46,9 @@ def _calc_hash(file_data):
 def remove_dupes_hash(username, model_id, mediatype=None):
     if not settings.get_settings().hash:
         return
-    hashes = get_dupe_media_hashes(username=username, model_id=model_id, mediatype=mediatype)
+    hashes = get_dupe_media_hashes(
+        username=username, model_id=model_id, mediatype=mediatype
+    )
     for hash in hashes:
         files = get_dupe_media_files(username=username, model_id=model_id, hash=hash)
         filter_files = list(filter(lambda x: pathlib.Path(x).is_file(), files))

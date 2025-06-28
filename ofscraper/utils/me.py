@@ -5,6 +5,7 @@ import ofscraper.utils.profiles.data as profile_data
 
 import ofscraper.utils.settings as settings
 
+
 def parse_user():
     if settings.get_settings().anon:
         return ("anon", "anon")
@@ -16,7 +17,7 @@ def parse_user():
 
 def get_id():
     profile = me.scrape_user()
-    return profile.get("id","id_unknown")
+    return profile.get("id", "id_unknown")
 
 
 def print_user(name, username):

@@ -15,14 +15,12 @@ class DiscordHandler(logging.Handler):
         logging.Handler.__init__(self)
 
         self.asess = sessionManager.sessionManager(
-           
             total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=of_env.getattr("DISCORD_NUM_TRIES"),
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
             wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
         )
         self.sess = sessionManager.sessionManager(
-           
             total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=of_env.getattr("DISCORD_NUM_TRIES"),
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
@@ -36,7 +34,7 @@ class DiscordHandler(logging.Handler):
         self._url = self._baseurl
         self._appendhelper()
         self._tasks = []
-        self.chunk_size=1000
+        self.chunk_size = 1000
         try:
             self.loop = asyncio.get_running_loop()
         except Exception:
@@ -95,11 +93,11 @@ class DiscordHandler(logging.Handler):
         chunks = []
         start = 0
         length = len(text)
-        if length<=self.chunk_size:
+        if length <= self.chunk_size:
             return [text]
         while start < length:
             end = min(start + self.chunk_size, length)
-            last_space = text.rfind(' ', start, end)
+            last_space = text.rfind(" ", start, end)
             if last_space == -1 or last_space <= start:
                 chunks.append(text[start:end])
                 start = end
@@ -108,7 +106,7 @@ class DiscordHandler(logging.Handler):
                 start = last_space + 1
         return chunks
 
-    def _emit(self,log_message):
+    def _emit(self, log_message):
         try:
             session = self.sess
             target_url = self._url
@@ -126,7 +124,9 @@ class DiscordHandler(logging.Handler):
                         json={"content": chunk},
                     ) as response:
                         if response.status_code != 204:
-                            print(f"Request failed for log chunk: '{chunk[:50]}...', status: {response.status_code}")
+                            print(
+                                f"Request failed for log chunk: '{chunk[:50]}...', status: {response.status_code}"
+                            )
                 except Exception as e:
                     print(f"Error sending Discord log chunk: '{chunk[:50]}...': {e}")
                     pass

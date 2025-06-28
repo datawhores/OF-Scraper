@@ -23,14 +23,16 @@ from ofscraper.utils.live.classes.transfercol import (
 
 # activity
 activity_progress = Progress(
-    TextColumn("[white]{task.description}[/white]"), refresh_per_second=2,transient=True
+    TextColumn("[white]{task.description}[/white]"),
+    refresh_per_second=2,
+    transient=True,
 )
 activity_counter = Progress(
     TextColumn("[white]{task.description}[/white]"),
     BarColumn(table_column=Column(ratio=3), bar_width=100),
     MofNCompleteColumn(),
     refresh_per_second=2,
-    transient=True
+    transient=True,
 )
 
 # download progress
@@ -43,7 +45,7 @@ download_job_progress = FileProgress(
     console=console_.get_shared_console(),
     refresh_per_second=1.5,
     auto_refresh=True,
-    transient=True
+    transient=True,
 )
 download_overall_progress = OverallFileProgress(
     TextColumn("[white]{task.description}[/white]"),
@@ -53,7 +55,7 @@ download_overall_progress = OverallFileProgress(
     TimeElapsedColumn(),
     refresh_per_second=3,
     auto_refresh=True,
-    transient=True
+    transient=True,
 )
 
 
@@ -64,7 +66,7 @@ metadata_overall_progress = OverallFileProgress(
     TimeElapsedColumn(),
     refresh_per_second=3,
     auto_refresh=True,
-    transient=True
+    transient=True,
 )
 
 
@@ -73,7 +75,7 @@ userlist_overall_progress = Progress(
     SpinnerColumn(style=Style(color="blue")),
     TextColumn("[white]{task.description}[/white]"),
     refresh_per_second=5,
-    transient=True
+    transient=True,
 )
 userlist_job_progress = Progress("[white]{task.description}[/white]")
 
@@ -86,19 +88,19 @@ like_overall_progress = Progress(
     BarColumn(table_column=Column(ratio=2)),
     MofNCompleteColumn(),
     refresh_per_second=5,
-    transient=True
+    transient=True,
 )
 # api
 api_job_progress = Progress(
     "[white]{task.description}[/white]",
     console=console_.get_shared_console(),
     refresh_per_second=5,
-    transient=True
+    transient=True,
 )
 api_overall_progress = Progress(
     SpinnerColumn(style=Style(color="blue")),
     TextColumn("[white]{task.description}[/white]"),
     console=console_.get_shared_console(),
     refresh_per_second=5,
-    transient=True
+    transient=True,
 )

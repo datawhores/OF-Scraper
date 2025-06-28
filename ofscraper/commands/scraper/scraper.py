@@ -33,7 +33,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.logger import flushlogs
 
 
-
 log = logging.getLogger("shared")
 
 

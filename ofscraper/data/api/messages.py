@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import asyncio
@@ -285,9 +285,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after):
 async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
     messages = None
     ep = (
-        of_env.getattr("messagesNextEP")
-        if message_id
-        else of_env.getattr("messagesEP")
+        of_env.getattr("messagesNextEP") if message_id else of_env.getattr("messagesEP")
     )
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
@@ -367,9 +365,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
 
 
 def get_individual_messages_post(model_id, postid):
-    with manager.Manager.get_ofsession(
-       
-    ) as c:
+    with manager.Manager.get_ofsession() as c:
         with c.requests(
             url=of_env.getattr("messageSPECIFIC").format(model_id, postid)
         ) as r:
@@ -433,5 +429,3 @@ Setting Message scan range for {username} from {arrow.get(after).format(of_env.g
 
         """
     )
-
-

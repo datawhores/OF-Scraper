@@ -42,7 +42,7 @@ def temp_cleanup():
         return
     if not settings.get_settings().auto_resume:
         log.info("Cleaning up temp files\n\n")
-        root =  data.get_TempDir()
+        root = data.get_TempDir()
         if root is None:
             return
         for file in filter(
@@ -66,9 +66,7 @@ def truncate(path):
 
 def _windows_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if get_string_byte_size_windows(path) <= of_env.getattr(
-        "WINDOWS_MAX_PATH_BYTES"
-    ):
+    if get_string_byte_size_windows(path) <= of_env.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
     path = pathlib.Path(path)
     dir = path.parent
@@ -129,9 +127,9 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = of_env.getattr(
-        "LINUX_MAX_FILE_NAME_BYTES"
-    ) - get_string_byte_size_unix(ext)
+    max_bytes = of_env.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size_unix(
+        ext
+    )
     low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2

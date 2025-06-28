@@ -1,4 +1,4 @@
-KEY_OPTIONS=["cdrm", "manual"]
+KEY_OPTIONS = ["cdrm", "manual"]
 DYNAMIC_OPTIONS = [
     "digitalcriminals",
     "manual",
@@ -7,4 +7,4 @@ DYNAMIC_OPTIONS = [
     "xagler",
     "rafa",
 ]
-METADATA_OPTIONS=["complete", "update", "check"]
+METADATA_OPTIONS = ["complete", "update", "check"]

@@ -14,7 +14,7 @@ download_script_option = click.option(
     - posts: A list of dictionaries, each representing a post associated with the media.
     - userdata: A dictionary containing the model's user data.
     The script can then perform custom actions.
-    """
+    """,
 )
 
 
@@ -30,7 +30,7 @@ post_script_option = click.option(
     - unprocess_users: A dictionary of unprocessed users where keys are usernames (strings) and values are the corresponding model's user data dictionaries.
 
     The script can use this aggregated data for custom reporting, archiving, or other tasks.
-    """
+    """,
 )
 
 naming_script_option = click.option(
@@ -46,5 +46,5 @@ naming_script_option = click.option(
     - file_format: The current file format string (string).
     - metadata: The current metadata format setting (string).
     The script is expected to output the desired final filename or full path via standard output (stdout).
-    """
+    """,
 )

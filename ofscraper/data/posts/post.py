@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import asyncio
@@ -59,7 +59,7 @@ async def post_media_process(ele, c=None) -> PostCollection:
     username = ele.name
     model_id = ele.id
     await operations.table_init_create(model_id=model_id, username=username)
-    postcollection= await process_areas(ele, model_id, username, c=c)
+    postcollection = await process_areas(ele, model_id, username, c=c)
     return postcollection
 
 
@@ -98,7 +98,7 @@ async def process_paid_post(model_id, username, c):
             model_id=model_id,
             username=username,
         )
-        return ( paid_content, paid.API)
+        return (paid_content, paid.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -122,7 +122,7 @@ async def process_stories(model_id, username, c):
             username=username,
         )
 
-        return  stories, highlights.API_S
+        return stories, highlights.API_S
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -146,7 +146,7 @@ async def process_highlights(model_id, username, c):
             username=username,
         )
 
-        return ( highlights_, highlights.API_H)
+        return (highlights_, highlights.API_H)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -173,7 +173,7 @@ async def process_timeline_posts(model_id, username, c):
             username=username,
         )
         set_after_checks(model_id, timeline.API)
-        return ( timeline_only_posts, timeline.API)
+        return (timeline_only_posts, timeline.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -199,7 +199,7 @@ async def process_archived_posts(model_id, username, c):
         )
 
         set_after_checks(model_id, archive.API)
-        return ( archived_posts, archive.API)
+        return (archived_posts, archive.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -225,7 +225,7 @@ async def process_streamed_posts(model_id, username, c):
         )
 
         set_after_checks(model_id, streams.API)
-        return ( streams_posts, streams.API)
+        return (streams_posts, streams.API)
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -246,7 +246,6 @@ async def process_pinned_posts(model_id, username, c):
             username=username,
         )
 
-
         return (pinned_posts, pinned.API)
     except Exception as E:
         log.traceback_(E)
@@ -263,7 +262,7 @@ async def process_profile(username) -> list:
         for count, data in enumerate(urls):
             post = posts_.Post(data, info[2], username, responsetype=profile.API)
             posts.append(post)
-        return  posts, profile.API
+        return posts, profile.API
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -279,7 +278,7 @@ async def process_all_paid():
         progress_updater.update_activity_task(
             description="Processsing Paid content data"
         )
-        actions=["download"]
+        actions = ["download"]
         if get_text_area():
             actions.append("text")
         for model_id, value in paid_content.items():
@@ -303,15 +302,15 @@ async def process_all_paid():
             log.info(f"Processing {username}_{model_id}")
             await operations.table_init_create(model_id=model_id, username=username)
             log.debug(f"Created table for {username}_{model_id}")
-            temp_postcollection=PostCollection(username=username,model_id=model_id)
-            
+            temp_postcollection = PostCollection(username=username, model_id=model_id)
+
             all_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
                     value,
                 )
             )
-            temp_postcollection.add_posts(all_posts,actions=actions)
+            temp_postcollection.add_posts(all_posts, actions=actions)
             await operations.make_post_table_changes(
                 temp_postcollection.posts,
                 model_id=model_id,
@@ -438,7 +437,7 @@ async def process_tasks(model_id, username, ele, c=None):
     )
 
     sem = asyncio.Semaphore(max_count)
-    postcollection=PostCollection(username=username,model_id=model_id)
+    postcollection = PostCollection(username=username, model_id=model_id)
 
     with progress_utils.setup_api_split_progress_live():
         if "Profile" in final_post_areas:
@@ -530,19 +529,21 @@ async def process_tasks(model_id, username, ele, c=None):
             posts, area = await result
             area_title = area.title()
             actions_for_this_batch = []
-            
+
             if area_title in like_area:
-                actions_for_this_batch.append('like')
+                actions_for_this_batch.append("like")
             if area_title in download_area:
-                actions_for_this_batch.append('download')
+                actions_for_this_batch.append("download")
             if area_title in text_area:
-                actions_for_this_batch.append('text')
+                actions_for_this_batch.append("text")
 
             if actions_for_this_batch:
                 postcollection.add_posts(posts, actions=actions_for_this_batch)
             else:
                 # Optional: Log if a post area didn't match any action
-                log.debug(f"Posts from area '{area_title}' did not match any action criteria.")
+                log.debug(
+                    f"Posts from area '{area_title}' did not match any action criteria."
+                )
 
         except Exception as E:
             log.debug(E)

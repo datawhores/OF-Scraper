@@ -32,7 +32,6 @@ import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
 
 
-
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
     download_str = download_activity_str.format(username=username)
     path_str = format_safe(
@@ -45,9 +44,7 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
     )
 
     progress_updater.update_activity_task(description=download_str + path_str)
-    logging.getLogger("shared").warning(
-        download_activity_str.format(username=username)
-    )
+    logging.getLogger("shared").warning(download_activity_str.format(username=username))
     progress_updater.update_activity_task(description="")
     data, values = await download_process(username, model_id, media, posts=posts)
     return data, values
@@ -102,7 +99,7 @@ async def process_dicts(username, model_id, medialist, posts):
         try:
 
             aws = []
-            async with manager.Manager.get_download_session()  as c:
+            async with manager.Manager.get_download_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_download_task(

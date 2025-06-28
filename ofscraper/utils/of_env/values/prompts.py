@@ -9,7 +9,7 @@ def load_prompts_config():
     config = {}
 
     # --- Main Prompt Choices ---
-    config['mainPromptChoices'] = {
+    config["mainPromptChoices"] = {
         "Perform Action(s)": "action",
         "Edit auth.json file": "auth",
         "Edit config.json file": "config",
@@ -19,7 +19,7 @@ def load_prompts_config():
     }
 
     # --- Config Prompt Choices ---
-    config['configPromptChoices'] = {
+    config["configPromptChoices"] = {
         "General Options": "general",
         "File Options": "file",
         "Download Options": "download",
@@ -35,7 +35,7 @@ def load_prompts_config():
     }
 
     # --- Action Prompt Choices ---
-    config['actionPromptChoices'] = {
+    config["actionPromptChoices"] = {
         "Download content from a user": {"download"},
         "Like a selection of a user's posts": {"like"},
         "Unlike a selection of a user's posts": {"unlike"},
@@ -52,14 +52,14 @@ def load_prompts_config():
     }
 
     # --- Username or List Choices ---
-    config['usernameOrListChoices'] = {
+    config["usernameOrListChoices"] = {
         "Select from accounts on profile": "select",
         "Enter a username": "enter",
         "Scrape all users that I'm subscribed to": "sub",
     }
 
     # --- Profiles Prompt Choices ---
-    config['profilesPromptChoices'] = {
+    config["profilesPromptChoices"] = {
         "Change default profile": "default",
         "Edit a profile name": "name",
         "Create a profile": "create",
@@ -70,7 +70,7 @@ def load_prompts_config():
     }
 
     # --- Model Prompt Choices ---
-    config['modelPrompt'] = {
+    config["modelPrompt"] = {
         "Filter model list by subscription properties": "subtype",
         "Filter model list by account activity": "active",
         "Filter model list based on promotion status": "promo",

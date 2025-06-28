@@ -26,20 +26,11 @@ def filterMediaFinalMetadata(media, username, model_id):
         count += 1
         trace_log_media(count, media, "filtered viewable media")
         log.debug(f"filter {count}-> viewable media filter count: {len(media)}")
-    media=helpers.previous_download_filter(media, username=username, model_id=model_id)
+    media = helpers.previous_download_filter(
+        media, username=username, model_id=model_id
+    )
     media = helpers.ele_count_filter(media)
     count += 1
     trace_log_media(count, media, "media max post count filter:")
     log.debug(f"filter {count}->  media max post count filter count: {len(media)}")
     return media
-
-
-
-
-
-
-
-
-
-
-

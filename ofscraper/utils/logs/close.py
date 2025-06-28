@@ -41,7 +41,6 @@ def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
 
 
-
 def closeOther():
     if not log_globals.other_log_thread:
         return

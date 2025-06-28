@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import pathlib
@@ -31,7 +31,7 @@ from ofscraper.scripts.skip_download_script import skip_download_script
 class DownloadManager:
     def __init__(self):
         self.total = None
-        self.process= psutil.Process(os.getpid())
+        self.process = psutil.Process(os.getpid())
 
     async def _add_download_job_task(
         self, ele, total=None, placeholderObj=None, tempholderObj=None
@@ -65,7 +65,10 @@ class DownloadManager:
             else {"Range": f"bytes={resume_size}-{total}"}
         )
 
-    def _get_resume_size(self, tempholderObj, ):
+    def _get_resume_size(
+        self,
+        tempholderObj,
+    ):
         if not settings.get_settings().auto_resume:
             pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
             return 0
@@ -89,7 +92,7 @@ class DownloadManager:
         total = int(total)
         if total == 0:
             return 0
-        skip_download_script(total,ele)
+        skip_download_script(total, ele)
         file_size_max = settings.get_settings().size_max
         file_size_min = settings.get_settings().size_min
         if int(file_size_max) > 0 and (int(total) > int(file_size_max)):

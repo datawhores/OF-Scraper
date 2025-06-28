@@ -8,13 +8,17 @@ import ofscraper.filters.media.filters as helpers
 
 log = logging.getLogger("shared")
 
+
 class Post(base.base):
     """
     Represents a single post from OnlyFans.
     This class holds its own data and the logic to perform detailed filtering on its media.
     Its eligibility for actions is determined externally and stored in boolean flags.
     """
-    def __init__(self, post, model_id, username, responsetype=None, label=None, mode='download'):
+
+    def __init__(
+        self, post, model_id, username, responsetype=None, label=None, mode="download"
+    ):
         super().__init__()
         self._post = post
         self._model_id = int(model_id)
@@ -32,8 +36,6 @@ class Post(base.base):
         self.is_actionable_like = False
         self.like_attempted = False
         self.like_success = None
-    
-    
 
     # --------------------------------------------------------------------------------
     # --- Action Preparation & Marking Methods ---
@@ -68,11 +70,16 @@ class Post(base.base):
         Determines if this post is specifically actionable for a like/unlike,
         assuming this post has already been marked as a like candidate.
         """
-        is_candidate = self.opened and self.responsetype.capitalize() in {"Timeline", "Archived", "Pinned", "Streams"}
+        is_candidate = self.opened and self.responsetype.capitalize() in {
+            "Timeline",
+            "Archived",
+            "Pinned",
+            "Streams",
+        }
         if not is_candidate:
             self.is_actionable_like = False
             return
-            
+
         if like_action and not self.favorited:
             self.is_actionable_like = True
         elif not like_action and self.favorited:
@@ -86,12 +93,12 @@ class Post(base.base):
         """
         media_item.download_attempted = True
         media_item.download_success = success
-        
+
         if success:
             self.downloaded_media.append(media_item)
         else:
             self.failed_downloads.append(media_item)
-        
+
         if media_item in self.media_to_download:
             self.media_to_download.remove(media_item)
 
@@ -102,7 +109,7 @@ class Post(base.base):
         self.like_attempted = True
         self.like_success = success
         if success:
-            self._post['isFavorite'] = True
+            self._post["isFavorite"] = True
             self.is_actionable_like = False
 
     @property
@@ -145,7 +152,7 @@ class Post(base.base):
     @property
     def pinned(self):
         return 1 if self.post.get("isPinned") else 0
-        
+
     @property
     def stream(self):
         return 1 if self.post.get("streamId") else 0

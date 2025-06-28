@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import json
@@ -306,7 +306,7 @@ def script_config():
     out = {}
     answer = promptClasses.batchConverter(
         *[
-           {
+            {
                 "type": "input",
                 "name": "post_download_script",
                 "message": "Script to run after each model action completes",
@@ -320,16 +320,14 @@ def script_config():
                 "default": data.get_post_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
             },
-
-             {
+            {
                 "type": "input",
                 "name": "naming_script",
                 "message": "Script to determine final filename before download",
                 "default": data.get_naming_script() or "",
                 "option_instruction": "Leave empty to skip the naming script",
             },
-
-              {
+            {
                 "type": "input",
                 "name": "skip_download_script",
                 "message": "Script to decide whether to skip a file download",
@@ -565,7 +563,6 @@ def advanced_config() -> dict:
                 "default": data.get_show_downloadprogress(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
-
             {
                 "type": "filepath",
                 "name": "temp_dir",
@@ -635,11 +632,10 @@ Expired user list can be called expired or ofscraper.expired
 List are case insensitive\n
 """,
             },
-
-                        {
+            {
                 "type": "number",
                 "name": "logs_expire_time",
-                "float_allowed":True,
+                "float_allowed": True,
                 "message": "Logs expire Time",
                 "default": data.get_logs_expire() or 0,
                 "option_instruction": """

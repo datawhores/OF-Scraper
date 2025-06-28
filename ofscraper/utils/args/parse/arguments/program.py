@@ -17,12 +17,12 @@ config_location_option = click.option(
     default=None,
 )
 
-enviroment_vars_option=click.option(
-    '--env-file',
+enviroment_vars_option = click.option(
+    "--env-file",
     type=click.Path(exists=True, dir_okay=False, readable=True),
-    help='Path to a custom environment variables file (.env).',
-    default=None, # No default path here, it will be handled in the function
-    callback=_load_env_file_callback
+    help="Path to a custom environment variables file (.env).",
+    default=None,  # No default path here, it will be handled in the function
+    callback=_load_env_file_callback,
 )
 
 
@@ -39,11 +39,11 @@ Profiles are always within the config.json file parent directory
         f"{re.sub('_profile','', value)}_profile" if value else None
     ),
 )
-env_file_option=click.option(
-    '--env-file',
+env_file_option = click.option(
+    "--env-file",
     type=click.Path(exists=True, dir_okay=False, readable=True),
-    help='Path to a custom environment variables file (.env).',
+    help="Path to a custom environment variables file (.env).",
     default=None,
     callback=_load_env_file_callback,
-    multiple=True
+    multiple=True,
 )

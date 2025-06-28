@@ -25,7 +25,6 @@ def check_cdm():
         url = of_env.getattr("CDRM")
     try:
         with sessionManager.sessionManager(
-           
             total_timeout=of_env.getattr("CDM_TEST_TIMEOUT"),
             retries=of_env.getattr("CDM_TEST_NUM_TRIES"),
             wait_min=of_env.getattr("CDM_MIN_WAIT"),

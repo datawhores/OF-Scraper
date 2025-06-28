@@ -3,7 +3,7 @@ name = "ofscraper"
 # The version is now determined from your Git tags by Hatch
 dynamic = ["version"]
 description = "automatically scrape onlyfans"
-authors = [{name = "datawhores", email = "datawhores@riseup.net"}]
+authors = [{ name = "datawhores", email = "datawhores@riseup.net" }]
 readme = "README.md"
 requires-python = ">=3.11, <3.14"
 dependencies = [
@@ -55,10 +55,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = [
-  "autopep8~=2.0.2",
-  "pyinstaller"
-]
+dev = ["autopep8~=2.0.2", "pyinstaller"]
 test = [
   "pytest~=7.3.1",
   "coverage~=7.4.3",
@@ -67,12 +64,8 @@ test = [
   "random-emoji~=1.0.15",
   "pytest-mock~=3.12.0",
 ]
-docs = [
-  "sphinx-argparse~=0.5.2",
-]
-ffmpeg = [
-    "pyffmpeg==2.4.2.20",
-]
+docs = ["sphinx-argparse~=0.5.2"]
+ffmpeg = ["pyffmpeg==2.4.2.20"]
 
 
 [project.scripts]
@@ -113,12 +106,7 @@ local-pattern = "+{node}"
 
 # setuptools-scm configuration
 [tool.setuptools_scm]
-git_describe_command = [
-    "git", 
-    "describe", 
-    "--dirty", 
-    "--tags", 
-]
+git_describe_command = ["git", "describe", "--dirty", "--tags"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

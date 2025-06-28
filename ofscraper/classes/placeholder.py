@@ -19,7 +19,6 @@ import ofscraper.main.manager as manager
 from ofscraper.scripts.naming_script import naming_script
 
 
-
 log = logging.getLogger("shared")
 
 
@@ -76,7 +75,7 @@ class tempFilePlaceholder(basePlaceholder):
         # remove for now
         # if env.getattr("ALLOW_DUPE_MEDIA"):
         #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
-        script_name=naming_script(dir,file,self._ele)
+        script_name = naming_script(dir, file, self._ele)
         if not script_name:
             self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
         else:
@@ -161,7 +160,7 @@ class Placeholders(basePlaceholder):
     async def init(self, create=True):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name=naming_script(dir,file,self._ele)
+        script_name = naming_script(dir, file, self._ele)
         if not script_name:
             self._filepath = paths.truncate(pathlib.Path(dir, file))
         else:
@@ -221,11 +220,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"media_type": ele.mediatype.capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
         self._variables.update(
-            {
-                "date": arrow.get(ele.postdate).format(
-                    data.get_date()
-                )
-            }
+            {"date": arrow.get(ele.postdate).format(data.get_date())}
         )
         self._variables.update({"model_username": username})
         self._variables.update({"response_type": ele.modified_responsetype})
@@ -254,9 +249,7 @@ class Placeholders(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        downloadDir = pathlib.Path(
-            data.get_dirformat().format(**self._variables)
-        )
+        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -281,7 +274,7 @@ class Placeholders(basePlaceholder):
         if ele.responsetype == "profile":
             out = f"{await ele.final_filename}.{ext}"
         else:
-                out = data.get_fileformat().format(**self._variables)
+            out = data.get_fileformat().format(**self._variables)
         out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
@@ -370,13 +363,13 @@ class Textholders(basePlaceholder):
         self._ext = ext
 
     async def init(self, create=True):
-        dir = await self.getmediadir(create=create)     
+        dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name=naming_script(dir,file,self._ele)
+        script_name = naming_script(dir, file, self._ele)
         if not script_name:
             self._filepath = paths.truncate(pathlib.Path(dir, file))
         else:
-            self._filepath= paths.truncate(pathlib.Path(script_name))
+            self._filepath = paths.truncate(pathlib.Path(script_name))
         return self
 
     def add_price_variables(self, username):
@@ -429,9 +422,7 @@ class Textholders(basePlaceholder):
         self._variables.update({"post_id": ele.id})
         self._variables.update({"first_letter": username[0].capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
-        self._variables.update(
-            {"date": arrow.get(ele.date).format(data.get_date())}
-        )
+        self._variables.update({"date": arrow.get(ele.date).format(data.get_date())})
         self._variables.update({"model_username": username})
         self._variables.update({"media_type": "Text"})
         self._variables.update({"response_type": ele.modified_responsetype})
@@ -466,9 +457,7 @@ class Textholders(basePlaceholder):
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
 
-        downloadDir = pathlib.Path(
-                data.get_dirformat().format(**self._variables)
-            )
+        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )

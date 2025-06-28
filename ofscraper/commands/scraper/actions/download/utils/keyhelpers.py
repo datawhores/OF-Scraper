@@ -23,8 +23,8 @@ from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 import ofscraper.main.manager as manager
 
 
-
 log = None
+
 
 def setLog(input_):
     global log
@@ -136,6 +136,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
+
 
 async def key_helper_manual(c, pssh, licence_url, id):
     key = None

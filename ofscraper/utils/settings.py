@@ -37,13 +37,16 @@ def _load_env_once():
 # --- Main Settings Logic ---
 settings = {}
 
+
 def get_args():
     return read_args.retriveArgs()
+
 
 def update_args(args):
     global settings
     write_args.setArgs(args)
     settings = setup_settings()
+
 
 def get_settings():
     global settings
@@ -54,6 +57,7 @@ def get_settings():
             if not settings:
                 settings = setup_settings()
     return settings
+
 
 def setup_settings():
     merged = read_args.retriveArgs()
@@ -81,22 +85,15 @@ def setup_settings():
     merged.trunicate = get_trunication()
     merged.userlist = get_userlist()
     merged.blacklist = get_blacklist()
-    merged.text_type = read_args.retriveArgs().text_type or config_data.get_textType(
-      
-    )
+    merged.text_type = read_args.retriveArgs().text_type or config_data.get_textType()
     merged.space_replacer = (
-        read_args.retriveArgs().space_replacer
-        or config_data.get_spacereplacer()
+        read_args.retriveArgs().space_replacer or config_data.get_spacereplacer()
     )
     merged.text_length = (
-        read_args.retriveArgs().text_length
-        or config_data.get_textlength()
+        read_args.retriveArgs().text_length or config_data.get_textlength()
     )
-    merged.size_max = read_args.retriveArgs().size_max or config_data.get_filesize_max(
-    )
-    merged.size_min = read_args.retriveArgs().size_min or config_data.get_filesize_min(
-        
-    )
+    merged.size_max = read_args.retriveArgs().size_max or config_data.get_filesize_max()
+    merged.size_min = read_args.retriveArgs().size_min or config_data.get_filesize_min()
     merged.download_sems = (
         read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
     )
@@ -120,21 +117,21 @@ def setup_settings():
         read_args.retriveArgs().download_script
         or config_data.get_post_download_script()
     )
-    merged.naming_script= (
-        read_args.retriveArgs().naming_script
-        or config_data.get_naming_script()
+    merged.naming_script = (
+        read_args.retriveArgs().naming_script or config_data.get_naming_script()
     )
-    merged.download_skip_script=(
+    merged.download_skip_script = (
         read_args.retriveArgs().download_skip_script
         or config_data.get_skip_download_script()
     )
     merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()
-    merged.cached_disabled=get_cached_disabled()
-    merged.logs_expire_time=config_data.get_logs_expire()
-    merged.ssl_validation=config_data.get_ssl_validation()
+    merged.cached_disabled = get_cached_disabled()
+    merged.logs_expire_time = config_data.get_logs_expire()
+    merged.ssl_validation = config_data.get_ssl_validation()
 
     return merged
+
 
 def get_download_text():
     return (
@@ -143,16 +140,16 @@ def get_download_text():
         or read_args.retriveArgs().text_only
     )
 
+
 def get_ffmpeg():
-    return (
-        config_data.get_ffmpeg()
-        or ""
-    )
+    return config_data.get_ffmpeg() or ""
+
 
 def get_auto_after_enabled():
     if get_cached_disabled():
         return False
     return config_data.get_enable_after()
+
 
 def get_cached_disabled():
     if read_args.retriveArgs().no_cache:
@@ -160,10 +157,13 @@ def get_cached_disabled():
     if read_args.retriveArgs().no_api_cache:
         return True
     return False
+
+
 def get_auto_resume():
     if read_args.retriveArgs().no_auto_resume:
         return False
     return config_data.get_part_file_clean()
+
 
 def get_neg_filter():
     neg = read_args.retriveArgs().neg_filter or []
@@ -171,30 +171,36 @@ def get_neg_filter():
         neg.append(ads.get_ad_key_words())
     return neg
 
+
 def get_min_length():
     if read_args.retriveArgs().length_min is not None:
         return read_args.retriveArgs().length_min
     return config_data.get_min_length()
+
 
 def get_max_length():
     if read_args.retriveArgs().length_max is not None:
         return read_args.retriveArgs().length_max
     return config_data.get_max_length()
 
+
 def get_download_limit():
     out = read_args.retriveArgs().download_limit or config_data.get_download_limit()
     return max(out, 1024) if out else out
+
 
 def get_trunication():
     if read_args.retriveArgs().original:
         return False
     return config_data.get_truncation()
 
+
 def get_userlist():
     out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
     if isinstance(out, str):
         out = out.split(",")
     return out
+
 
 def get_blacklist():
     out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()

@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 from diskcache import Disk, JSONDisk
@@ -37,7 +37,9 @@ def get_filesize_max(config=None):
         size = (
             config.get("file_size_max")
             or config.get("download_options", {}).get("file_size_max")
-            or config.get("download_options", {}).get("file_size_limit") # Legacy support
+            or config.get("download_options", {}).get(
+                "file_size_limit"
+            )  # Legacy support
             or config.get("content_filter_options", {}).get("file_size_max")
             or of_env.getattr("FILE_SIZE_MAX_DEFAULT")
         )
@@ -151,10 +153,9 @@ def get_date(config=None):
 def get_InfiniteLoop(config=None):
     if config is False:
         return of_env.getattr("INFINITE_LOOP_DEFAULT")
-    val = (
-        config.get("infinite_loop_action_mode")
-        or config.get("advanced_options", {}).get("infinite_loop_action_mode")
-    )
+    val = config.get("infinite_loop_action_mode") or config.get(
+        "advanced_options", {}
+    ).get("infinite_loop_action_mode")
     return val if val is not None else of_env.getattr("INFINITE_LOOP_DEFAULT")
 
 
@@ -162,9 +163,8 @@ def get_InfiniteLoop(config=None):
 def get_enable_after(config=None):
     if config is False:
         return of_env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
-    val = (
-        config.get("enable_auto_after")
-        or config.get("advanced_options", {}).get("enable_auto_after")
+    val = config.get("enable_auto_after") or config.get("advanced_options", {}).get(
+        "enable_auto_after"
     )
     return val if val is not None else of_env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
 
@@ -173,9 +173,8 @@ def get_enable_after(config=None):
 def get_default_userlist(config=None):
     if config is False:
         return of_env.getattr("DEFAULT_USER_LIST")
-    val = (
-        config.get("default_user_list")
-        or config.get("advanced_options", {}).get("default_user_list")
+    val = config.get("default_user_list") or config.get("advanced_options", {}).get(
+        "default_user_list"
     )
     return val or of_env.getattr("DEFAULT_USER_LIST")
 
@@ -184,17 +183,15 @@ def get_default_userlist(config=None):
 def get_logs_expire(config=None):
     if not config:
         return None
-    return (
-        config.get("logs_expire_time")
-        or config.get("advanced_options", {}).get("logs_expire_time")
+    return config.get("logs_expire_time") or config.get("advanced_options", {}).get(
+        "logs_expire_time"
     )
 
 
 @wrapper.config_reader
 def get_ssl_validation(config=None):
-    val = (
-        config.get("ssl_validation")
-        or config.get("advanced_options", {}).get("ssl_validation")
+    val = config.get("ssl_validation") or config.get("advanced_options", {}).get(
+        "ssl_validation"
     )
     # Return False if val is None, otherwise return the boolean value of val
     return bool(val)
@@ -447,7 +444,7 @@ def get_spacereplacer(config=None):
     return (
         config.get("space_replacer")
         or config.get("file_options", {}).get("space_replacer")
-        or config.get("file_options", {}).get("space-replacer") # Legacy support
+        or config.get("file_options", {}).get("space-replacer")  # Legacy support
         or of_env.getattr("SPACE_REPLACER_DEFAULT")
     )
 
@@ -475,7 +472,11 @@ def get_key_mode(config=None):
         or config.get("cdm_options", {}).get("key-mode-default")
         or of_env.getattr("KEY_DEFAULT")
     )
-    return value.lower() if value and value.lower() in const.KEY_OPTIONS else of_env.getattr("KEY_DEFAULT")
+    return (
+        value.lower()
+        if value and value.lower() in const.KEY_OPTIONS
+        else of_env.getattr("KEY_DEFAULT")
+    )
 
 
 @wrapper.config_reader
@@ -487,16 +488,19 @@ def get_dynamic(config=None):
         or config.get("advanced_options", {}).get("dynamic-mode-default")
         or of_env.getattr("DYNAMIC_RULE_DEFAULT")
     )
-    return value.lower() if value and value.lower() in of_env.getattr("DYNAMIC_OPTIONS_ALL") else of_env.getattr("DYNAMIC_RULE_DEFAULT")
+    return (
+        value.lower()
+        if value and value.lower() in of_env.getattr("DYNAMIC_OPTIONS_ALL")
+        else of_env.getattr("DYNAMIC_RULE_DEFAULT")
+    )
 
 
 @wrapper.config_reader
 def get_part_file_clean(config=None):
     if config is False:
         return of_env.getattr("RESUME_DEFAULT")
-    val = (
-        config.get("auto_resume")
-        or config.get("download_options", {}).get("auto_resume")
+    val = config.get("auto_resume") or config.get("download_options", {}).get(
+        "auto_resume"
     )
     if val is not None:
         return val
@@ -525,9 +529,8 @@ def get_download_semaphores(config=None):
 def get_show_downloadprogress(config=None):
     if config is False:
         return of_env.getattr("PROGRESS_DEFAULT")
-    val = (
-        config.get("downloadbars")
-        or config.get("advanced_options", {}).get("downloadbars")
+    val = config.get("downloadbars") or config.get("advanced_options", {}).get(
+        "downloadbars"
     )
     return val if val is not None else of_env.getattr("PROGRESS_DEFAULT")
 
@@ -562,9 +565,8 @@ def cache_mode_helper(config=None):
 def get_rotate_logs(config=None):
     if config is False:
         return of_env.getattr("ROTATE_DEFAULT")
-    value = (
-        config.get("rotate_logs")
-        or config.get("advanced_options", {}).get("rotate_logs")
+    value = config.get("rotate_logs") or config.get("advanced_options", {}).get(
+        "rotate_logs"
     )
     return value if value is not None else of_env.getattr("ROTATE_DEFAULT")
 
@@ -573,9 +575,8 @@ def get_rotate_logs(config=None):
 def get_sanitizeDB(config=None):
     if config is False:
         return of_env.getattr("SANITIZE_DB_DEFAULT")
-    val = (
-        config.get("sanitize_text")
-        or config.get("advanced_options", {}).get("sanitize_text")
+    val = config.get("sanitize_text") or config.get("advanced_options", {}).get(
+        "sanitize_text"
     )
     return val if val is not None else of_env.getattr("SANITIZE_DB_DEFAULT")
 
@@ -607,9 +608,8 @@ def get_TempDir(config=None):
 def get_truncation(config=None):
     if config is False:
         return of_env.getattr("TRUNCATION_DEFAULT")
-    val = (
-        config.get("truncation_default")
-        or config.get("file_options", {}).get("truncation_default")
+    val = config.get("truncation_default") or config.get("file_options", {}).get(
+        "truncation_default"
     )
     return val if val is not None else of_env.getattr("TRUNCATION_DEFAULT")
 
@@ -618,28 +618,36 @@ def get_truncation(config=None):
 def get_audios_overwrites(config=None):
     if config is False:
         return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("audios") or of_env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("audios") or of_env.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
 def get_videos_overwrites(config=None):
     if config is False:
         return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("videos") or of_env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("videos") or of_env.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
 def get_images_overwrites(config=None):
     if config is False:
         return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("images") or of_env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("images") or of_env.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
 def get_text_overwrites(config=None):
     if config is False:
         return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("text") or of_env.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("text") or of_env.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
@@ -664,7 +672,9 @@ def get_hash(config=None):
     val = config.get("remove_hash_match")
     if val is not None:
         return val
-    return config.get("advanced_options", {}).get("remove_hash_match", of_env.getattr("HASHED_DEFAULT"))
+    return config.get("advanced_options", {}).get(
+        "remove_hash_match", of_env.getattr("HASHED_DEFAULT")
+    )
 
 
 @wrapper.config_reader
@@ -674,4 +684,6 @@ def get_block_ads(config=None):
     val = config.get("block_ads")
     if val is not None:
         return val
-    return config.get("content_filter_options", {}).get("block_ads", of_env.getattr("BLOCKED_ADS_DEFAULT"))
+    return config.get("content_filter_options", {}).get(
+        "block_ads", of_env.getattr("BLOCKED_ADS_DEFAULT")
+    )

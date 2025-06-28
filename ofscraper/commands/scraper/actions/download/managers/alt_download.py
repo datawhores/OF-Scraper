@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import asyncio
@@ -35,9 +35,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
     path_to_file_logger,
     temp_file_logger,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size
-)
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.classes.sessionmanager.sessionmanager import (
@@ -231,11 +229,9 @@ class AltDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
         )
-        await self._download_fileobject_writer_streamer(
-            ele, total, l, placeholderObj
-        )
+        await self._download_fileobject_writer_streamer(ele, total, l, placeholderObj)
         # if total > env.getattr("MAX_READ_SIZE"):
-        
+
         # else:
         #     await self._download_fileobject_writer_reader(ele, total, l, placeholderObj)
         common_globals.log.debug(
@@ -263,10 +259,12 @@ class AltDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(self, ele, total, res, placeholderObj):
+    async def _download_fileobject_writer_streamer(
+        self, ele, total, res, placeholderObj
+    ):
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None # Initialize to None for finally block
+        fileobject = None  # Initialize to None for finally block
         try:
             # Use asyncio.timeout as a context manager for the entire download process
             async with asyncio.timeout(None):
@@ -281,28 +279,34 @@ class AltDownloadManager(DownloadManager):
                         await fileobject.write(chunk)
                         send_chunk_msg(ele, total, placeholderObj)
                     except StopAsyncIteration:
-                        break # Exit loop when no more chunks
+                        break  # Exit loop when no more chunks
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
-            common_globals.log.warning(f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!")
-            return # Exit the function on timeout
+            common_globals.log.warning(
+                f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!"
+            )
+            return  # Exit the function on timeout
         except Exception as E:
             # Catch other potential exceptions during file operations or chunk iteration
-            common_globals.log.error(f"An error occurred during download for {ele}: {E}")
-            raise E # Re-raise the exception after logging
+            common_globals.log.error(
+                f"An error occurred during download for {ele}: {E}"
+            )
+            raise E  # Re-raise the exception after logging
         finally:
             # Close file if needed
-            if fileobject: # Ensure fileobject was successfully opened
+            if fileobject:  # Ensure fileobject was successfully opened
                 try:
                     await fileobject.close()
                 except Exception as E:
                     common_globals.log.error(f"Error closing file for {ele}: {E}")
-                    raise E # Re-raise if closing fails
+                    raise E  # Re-raise if closing fails
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
-                common_globals.log.error(f"Error removing download job task for {ele}: {E}")
-                raise E # Re-raise if task removal fails
+                common_globals.log.error(
+                    f"Error removing download job task for {ele}: {E}"
+                )
+                raise E  # Re-raise if task removal fails
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
@@ -365,9 +369,7 @@ class AltDownloadManager(DownloadManager):
                 model_id=model_id,
                 username=username,
                 downloaded=True,
-                hashdata=await common.get_hash(
-                    sharedPlaceholderObj
-                ),
+                hashdata=await common.get_hash(sharedPlaceholderObj),
                 size=sharedPlaceholderObj.size,
             )
         common.add_additional_data(sharedPlaceholderObj, ele)

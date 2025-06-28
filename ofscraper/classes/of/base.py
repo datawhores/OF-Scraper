@@ -37,9 +37,7 @@ class base:
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
-        text = re.sub(
-            " ", settings.get_settings().space_replacer, text
-        )
+        text = re.sub(" ", settings.get_settings().space_replacer, text)
         return text
 
     def db_cleanup(self, string):

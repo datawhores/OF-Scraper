@@ -54,7 +54,11 @@ def get_config_home():
 
 def get_config_path():
     configPath = settings.get_args().config
-    defaultPath = pathlib.Path.home() / of_env.getattr("configPath")/of_env.getattr("configFile")
+    defaultPath = (
+        pathlib.Path.home()
+        / of_env.getattr("configPath")
+        / of_env.getattr("configFile")
+    )
     ofscraperHome = pathlib.Path.home() / of_env.getattr("configPath")
 
     if configPath is None or configPath == "":
@@ -84,7 +88,7 @@ def getlogpath():
         )
     else:
         path = (
-           get_log_folder()
+            get_log_folder()
             / f'ofscraper_{data.get_main_profile()}_{dates_manager.getLogDate().get("day")}.log'
         )
     path = pathlib.Path(path).resolve()
@@ -93,9 +97,8 @@ def getlogpath():
 
 
 def get_log_folder():
-    return (
-            get_config_home()
-            / "logging")
+    return get_config_home() / "logging"
+
 
 def get_profile_path(name=None):
     if name:

@@ -84,7 +84,6 @@ def manual_download(urls=None):
                 results.append(result)
                 manager.Manager.model_manager.mark_as_processed(username)
 
-
         final_action(results)
 
     except Exception as e:
@@ -241,7 +240,6 @@ async def paid_failback(post_id, model_id, username):
     )
     post_id = str(post_id)
     async with manager.Manager.aget_ofsession(
-       
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         data = await paid.get_paid_posts(username, model_id, c=c) or []
@@ -264,12 +262,8 @@ def get_info(url):
         f"chats/chat/({of_env.getattr('NUMBER_REGEX')}+)/.*?({of_env.getattr('NUMBER_REGEX')}+)",
         url,
     )
-    search2 = re.search(
-        f"/({of_env.getattr('NUMBER_REGEX')}+)/stories/highlights", url
-    )
-    search3 = re.search(
-        f"/stories/highlights/({of_env.getattr('NUMBER_REGEX')}+)", url
-    )
+    search2 = re.search(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories/highlights", url)
+    search3 = re.search(f"/stories/highlights/({of_env.getattr('NUMBER_REGEX')}+)", url)
 
     search4 = re.search(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories", url)
     search5 = re.search(

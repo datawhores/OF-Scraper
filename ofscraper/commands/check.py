@@ -250,7 +250,6 @@ async def post_check_retriver():
     user_dict = {}
     links = list(url_helper())
     async with manager.Manager.aget_ofsession(
-       
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for ele in links:
@@ -448,9 +447,7 @@ async def message_checker_runner():
 
 async def message_check_retriver():
     links = list(url_helper())
-    async with manager.Manager.aget_ofsession(
-       
-    ) as c:
+    async with manager.Manager.aget_ofsession() as c:
         for item in links:
             num_match = re.search(
                 f"({of_env.getattr('NUMBER_REGEX')}+)", item
@@ -526,7 +523,6 @@ async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
     async with manager.Manager.aget_ofsession(
-       
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for name in settings.get_settings().check_usernames:
@@ -581,7 +577,6 @@ async def stories_checker_runner():
 async def stories_check_retriver():
     user_dict = {}
     async with manager.Manager.aget_ofsession(
-       
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for user_name in settings.get_settings().check_usernames:

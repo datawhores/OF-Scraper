@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import logging
@@ -32,9 +32,7 @@ API = "profile"
 
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
-    with manager.Manager.get_ofsession(
-       
-    ) as c:
+    with manager.Manager.get_ofsession() as c:
         return scrape_profile_helper(c, username)
 
 
@@ -145,9 +143,7 @@ def print_profile_info(info):
 
 
 def get_id(username, c=None):
-    c = c or manager.Manager.get_ofsession(
-       
-    )
+    c = c or manager.Manager.get_ofsession()
     with c as c:
         return get_id_helper(c, username)
 

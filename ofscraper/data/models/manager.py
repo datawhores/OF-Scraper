@@ -27,6 +27,7 @@ class ModelManager:
     Manages fetching, filtering, and selecting user models (subscriptions).
     Includes state management for tracking processed models.
     """
+
     def __init__(self) -> None:
         """Initializes the ModelManager."""
         self._all_subs_dict: Dict[str, Model] = {}
@@ -48,15 +49,14 @@ class ModelManager:
     @property
     def parsed_subs(self) -> List[Model]:
         return list(self._parsed_subs_dict.values())
-    
-    @property
-    def num_models(self)->int:
-        return len(self.all_subs)
-    
-    @property
-    def num_models_selected(self)->int:
-        return len(self.parsed_subs)
 
+    @property
+    def num_models(self) -> int:
+        return len(self.all_subs)
+
+    @property
+    def num_models_selected(self) -> int:
+        return len(self.parsed_subs)
 
     def update_all_subs(self, models: List[Model] | Dict[str, Model]) -> None:
         if isinstance(models, dict):
@@ -65,7 +65,9 @@ class ModelManager:
             for ele in models:
                 self._all_subs_dict[ele.name] = ele
 
-    def get_selected_models(self, rescan: bool = False, reset: bool = False) -> List[Model]:
+    def get_selected_models(
+        self, rescan: bool = False, reset: bool = False
+    ) -> List[Model]:
         if rescan:
             self._fetch_all_subs()
 
@@ -97,7 +99,9 @@ class ModelManager:
             if models:
                 self.update_all_subs(models)
                 break
-            console.get_console().print("[bold red]No accounts found during scan[/bold red]")
+            console.get_console().print(
+                "[bold red]No accounts found during scan[/bold red]"
+            )
             time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT", 0))
             if not prompts.retry_user_scan():
                 raise SystemExit("Could not find any accounts on list.")
@@ -119,14 +123,16 @@ class ModelManager:
         else:
             username_set = set(args.usernames)
             self._parsed_subs_dict = {
-                name: model for name, model in self._all_subs_dict.items() if name in username_set
+                name: model
+                for name, model in self._all_subs_dict.items()
+                if name in username_set
             }
 
     def _filter_and_sort_models(self) -> Dict[str, Model]:
         filtered_models = self._apply_filters()
         sorted_models = sort.sort_models_helper(filtered_models)
         return {model.name: self._all_subs_dict[model.name] for model in sorted_models}
-    
+
     def _apply_filters(self) -> List[Model]:
         models = self.all_subs
         models = subtype.subType(models)
@@ -140,7 +146,9 @@ class ModelManager:
         if username in self._parsed_subs_dict:
             self._processed_usernames.add(username)
         else:
-            logging.warning(f"Attempted to mark non-selected user '{username}' as processed.")
+            logging.warning(
+                f"Attempted to mark non-selected user '{username}' as processed."
+            )
 
     def is_processed(self, username: str) -> bool:
         return username in self._processed_usernames

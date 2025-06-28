@@ -28,6 +28,7 @@ def get_count():
 
 def main_menu_action():
     from ofscraper.commands.scraper.scraper import scraperManager
+
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     scapingManager = scraperManager()

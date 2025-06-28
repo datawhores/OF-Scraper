@@ -179,9 +179,7 @@ class metadataCommandManager(commmandManager):
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
-                            postcollection = await post_media_process(
-                                ele, c=c
-                            )
+                            postcollection = await post_media_process(ele, c=c)
 
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
@@ -241,14 +239,14 @@ class metadataCommandManager(commmandManager):
             model_id = ele.id
             username = ele.name
             await operations.table_init_create(model_id=model_id, username=username)
-            postcollection= await process_areas(ele, model_id, username, c=session)
+            postcollection = await process_areas(ele, model_id, username, c=session)
             return {
                 model_id: {
                     "username": username,
                     "media": postcollection.get_media_for_metadata(),
                     "avatar": avatar,
                     "ele": ele,
-                    "posts":postcollection.get_posts_for_text_download(),
+                    "posts": postcollection.get_posts_for_text_download(),
                     "like_posts": postcollection.get_posts_to_like(),
                 }
             }

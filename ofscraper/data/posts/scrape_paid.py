@@ -26,7 +26,7 @@ async def scrape_paid_all():
     out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
     await manager.Manager.model_manager._fetch_all_subs_async()
     async for count, value, length in process_scrape_paid():
-        if count>150:
+        if count > 150:
             continue
         process_user_info_printer(
             value,
