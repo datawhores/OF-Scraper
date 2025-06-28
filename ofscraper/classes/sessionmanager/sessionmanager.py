@@ -501,7 +501,8 @@ class sessionManager:
                     yield r
                     return
             except Exception as E:
-                if r: await r.aclose()
+                if r:
+                    await r.aclose()
                 await self._async_handle_error(E, exceptions)
                 raise E
             finally:
