@@ -4,7 +4,6 @@ import cloup as click
 from ofscraper.utils.args.callbacks.arguments.env import _load_env_file_callback
 
 from ofscraper.__version__ import __version__
-from ofscraper.utils.args.callbacks.arguments.env import _load_env_file_callback
 
 version_option = click.version_option(
     __version__, "-v", "--version", package_name="OF-Scraper"
