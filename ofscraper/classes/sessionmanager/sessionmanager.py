@@ -72,34 +72,34 @@ class SessionSleep:
             new_sleep = self._sleep / self._decay_factor
             self._sleep = max(self._init_sleep, new_sleep)
             self._last_date = arrow.now()
-            logging.getLogger("shared").debug(f"Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
+            logging.getLogger("shared").debug(f"SessionSleep: Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
 
     async def async_do_sleep(self):
         async with self._alock:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(f"Waiting [{self._sleep:.2f} seconds] due to recent errors")
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent errors")
             await asyncio.sleep(self._sleep)
 
     def do_sleep(self):
         with self._lock:
              self._maybe_decay_sleep()
         if self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(f"Waiting [{self._sleep:.2f} seconds] due to recent errors")
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent errors")
             time.sleep(self._sleep)
 
     def toomany_req(self):
         log = logging.getLogger("shared")
         if not self._sleep: 
             self._sleep = self._init_sleep if self._init_sleep > 0 else 1
-            log.debug(f"Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds]")
+            log.debug(f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds]")
         elif (arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin):
-            log.debug(f"Backoff => not changing sleep [{self._sleep:.2f} seconds], last error was less than {self._difmin}s ago")
+            log.debug(f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last error was less than {self._difmin}s ago")
             return
         else:
             new_sleep = self._sleep * self._increase_factor
             self._sleep = min(new_sleep, self._max_sleep)
-            log.debug(f"Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds]")
+            log.debug(f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds]")
         self._last_date = arrow.now()
 
     def reset_sleep(self):
