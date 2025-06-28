@@ -1,4 +1,4 @@
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.live.progress import (
     activity_counter,
@@ -273,11 +273,6 @@ def _clear_tasks_from_progress(progress_instance):
         pass  # Failsafe for any potential race conditions or errors
 
 
-def clear_activity_tasks():
-    _clear_tasks_from_progress(activity_counter)
-    _clear_tasks_from_progress(activity_progress)
-
-
 def clear_api_tasks():
     _clear_tasks_from_progress(api_job_progress)
     _clear_tasks_from_progress(api_overall_progress)
@@ -303,7 +298,6 @@ def clear_userlist_tasks():
 
 def clear_all_tasks():
     """Clears all tasks from all progress managers."""
-    clear_activity_tasks()
     clear_api_tasks()
     clear_download_tasks()
     clear_metadata_tasks()

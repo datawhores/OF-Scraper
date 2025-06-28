@@ -12,7 +12,6 @@ import ofscraper.commands.scraper.scraper as actions
 import ofscraper.commands.manual as manual
 import ofscraper.commands.check as check
 import ofscraper.utils.settings as settings
-from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 
 
 Manager = None

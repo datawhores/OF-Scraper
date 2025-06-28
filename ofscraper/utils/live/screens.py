@@ -13,7 +13,6 @@ from ofscraper.utils.live.groups import (
     metadata_group,
     single_panel,
     userlist_group,
-    download_overall_progress_group,
 )
 from ofscraper.utils.live.live import get_live, stop_live
 from ofscraper.utils.live.progress import (
@@ -22,6 +21,15 @@ from ofscraper.utils.live.progress import (
 )
 from ofscraper.utils.live.tasks import (
     reset_activity_tasks,
+)
+
+from ofscraper.utils.live.updater import (
+    clear_api_tasks,
+    clear_download_tasks,
+    clear_like_tasks,
+    clear_metadata_tasks,
+    clear_userlist_tasks,
+    clear_all_tasks
 )
 
 
@@ -62,19 +70,8 @@ def setup_download_progress_live(setup=False, revert=True, stop=False):
         live = get_live()
         live.update(get_download_group(), refresh=True)
         yield
+        clear_download_tasks()
 
-
-@contextlib.contextmanager
-def setup_download_overall_progress(setup=False, revert=True, stop=False):
-    with live_progress_context(setup=setup, revert=revert, stop=stop):
-        height = max(15, console_.get_shared_console().size[-1] - 2)
-        single_panel.height = height
-        console_.get_shared_console().quiet = get_quiet_toggle_helper(
-            "SUPRESS_DOWNLOAD_DISPLAY"
-        )
-        live = get_live()
-        live.update(download_overall_progress_group, refresh=True)
-        yield
 
 
 @contextlib.contextmanager
@@ -85,6 +82,7 @@ def setup_metadata_progress_live(setup=False, revert=True, stop=False):
         )
         get_live().update(metadata_group, refresh=True)
         yield
+        clear_metadata_tasks()
 
 
 @contextlib.contextmanager
@@ -95,6 +93,7 @@ def setup_api_split_progress_live(setup=False, revert=True, stop=False):
         )
         get_live().update(api_progress_group, refresh=True)
         yield
+        clear_api_tasks()
 
 
 @contextlib.contextmanager
@@ -105,6 +104,7 @@ def setup_subscription_progress_live(setup=False, revert=True, stop=False):
         )
         get_live().update(userlist_group, refresh=True)
         yield
+        clear_userlist_tasks()
 
 
 @contextlib.contextmanager
@@ -115,6 +115,7 @@ def setup_like_progress_live(setup=False, revert=True, stop=False):
         )
         get_live().update(like_progress_group, refresh=True)
         yield
+        clear_like_tasks()
 
 
 def switch_api_progress():
@@ -154,6 +155,7 @@ def setup_activity_group_live(setup=False, revert=True, stop=False):
         )
         get_live().update(activity_group, refresh=True)
         yield
+        clear_all_tasks()
 
 
 @contextlib.contextmanager
