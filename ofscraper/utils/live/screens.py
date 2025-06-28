@@ -2,7 +2,7 @@ import contextlib
 import time
 
 import ofscraper.utils.console as console_
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.live.groups import (
     activity_counter_group,
     activity_group,
@@ -168,7 +168,7 @@ def setup_activity_counter_live(setup=False, revert=True, stop=False):
 
 def get_quiet_toggle_helper(key):
     return (
-        env.getattr(key)
-        if env.getattr(key) is not None
+        of_env.getattr(key)
+        if of_env.getattr(key) is not None
         else console_.get_shared_console().quiet
     )

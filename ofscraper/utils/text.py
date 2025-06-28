@@ -8,7 +8,7 @@ import traceback
 import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 
@@ -42,7 +42,7 @@ async def get_text_process(ele, dupe=None):
         if pathlib.Path(placeholderObj.filepath).exists() and not dupe:
             return "exists"
         wrapped_text = textwrap.wrap(
-            new_ele.text, width=env.getattr("MAX_TEXT_LENGTH")
+            new_ele.text, width=of_env.getattr("MAX_TEXT_LENGTH")
         )
         async with aiofiles.open(placeholderObj.filepath, "w") as p:
             await p.writelines(wrapped_text)

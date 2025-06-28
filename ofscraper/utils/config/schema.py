@@ -1,6 +1,6 @@
 import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.data as data
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 
 
@@ -9,7 +9,7 @@ def get_current_config_schema(config: dict = None) -> dict:
         config = config["config"]
     new_config = {
         (
-            "main_profile" if config is False else env.getattr("mainProfile")
+            "main_profile" if config is False else of_env.getattr("mainProfile")
         ): data.get_main_profile(config=config),
         "metadata": data.get_metadata(config=config),
         "discord": data.get_discord(config=config),

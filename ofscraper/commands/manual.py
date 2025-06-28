@@ -12,7 +12,7 @@ import ofscraper.db.operations as operations
 import ofscraper.commands.scraper.actions.download.download as download
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
@@ -242,7 +242,7 @@ async def paid_failback(post_id, model_id, username):
     post_id = str(post_id)
     async with manager.Manager.aget_ofsession(
        
-        sem_count=env.getattr("API_REQ_CHECK_MAX"),
+        sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         data = await paid.get_paid_posts(username, model_id, c=c) or []
         posts = list(
@@ -261,26 +261,26 @@ async def paid_failback(post_id, model_id, username):
 
 def get_info(url):
     search1 = re.search(
-        f"chats/chat/({env.getattr('NUMBER_REGEX')}+)/.*?({env.getattr('NUMBER_REGEX')}+)",
+        f"chats/chat/({of_env.getattr('NUMBER_REGEX')}+)/.*?({of_env.getattr('NUMBER_REGEX')}+)",
         url,
     )
     search2 = re.search(
-        f"/({env.getattr('NUMBER_REGEX')}+)/stories/highlights", url
+        f"/({of_env.getattr('NUMBER_REGEX')}+)/stories/highlights", url
     )
     search3 = re.search(
-        f"/stories/highlights/({env.getattr('NUMBER_REGEX')}+)", url
+        f"/stories/highlights/({of_env.getattr('NUMBER_REGEX')}+)", url
     )
 
-    search4 = re.search(f"/({env.getattr('NUMBER_REGEX')}+)/stories", url)
+    search4 = re.search(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories", url)
     search5 = re.search(
-        f"chats/({env.getattr('USERNAME_REGEX')}+)/.*?(id|firstId)=({env.getattr('NUMBER_REGEX')}+)",
+        f"chats/({of_env.getattr('USERNAME_REGEX')}+)/.*?(id|firstId)=({of_env.getattr('NUMBER_REGEX')}+)",
         url,
     )
     search6 = re.search(
-        f"/({env.getattr('NUMBER_REGEX')}+)/({env.getattr('USERNAME_REGEX')}+)",
+        f"/({of_env.getattr('NUMBER_REGEX')}+)/({of_env.getattr('USERNAME_REGEX')}+)",
         url,
     )
-    search7 = re.search(f"^{env.getattr('NUMBER_REGEX')}+$", url)
+    search7 = re.search(f"^{of_env.getattr('NUMBER_REGEX')}+$", url)
     # model,postid,type
 
     if search1:

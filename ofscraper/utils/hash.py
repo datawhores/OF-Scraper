@@ -5,7 +5,7 @@ import pathlib
 import xxhash
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import get_dupe_media_files, get_dupe_media_hashes
 
@@ -32,7 +32,7 @@ def get_hash(file_data, ):
 
 def _calc_hash(file_data):
     hasher = xxhash.xxh128()
-    BUF_SIZE = env.getattr("BUF_SIZE")
+    BUF_SIZE = of_env.getattr("BUF_SIZE")
     with open(file_data, "rb") as f:
         buffered_f = io.BufferedReader(f, buffer_size=BUF_SIZE)
         for block in iter(lambda: buffered_f.read(BUF_SIZE), b""):

@@ -19,7 +19,7 @@ from rich.console import Console
 
 import ofscraper.data.api.subscriptions.common as common
 import ofscraper.main.manager as manager
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.live.updater import add_userlist_task, remove_userlist_task
@@ -36,7 +36,7 @@ async def get_subscriptions(subscribe_count, account="active"):
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
     async with manager.Manager.aget_ofsession(
-        sem_count=env.getattr("SUBSCRIPTION_SEMS"),
+        sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         if account == "active":
             out = await activeHelper(subscribe_count, c)
@@ -51,28 +51,28 @@ async def activeHelper(subscribe_count, c):
     if any(
         x in common.get_black_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_RESERVED_LIST"),
-            env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
         x in common.get_black_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
         ]
     ):
         return []
     if all(
         x not in common.get_user_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_RESERVED_LIST"),
-            env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
         x not in common.get_user_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
         ]
     ):
         return []
@@ -90,28 +90,28 @@ async def expiredHelper(subscribe_count, c):
     if any(
         x in common.get_black_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_RESERVED_LIST"),
-            env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
         x in common.get_black_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
         ]
     ):
         return []
     if all(
         x not in common.get_user_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_RESERVED_LIST"),
-            env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
         x not in common.get_user_list_helper()
         for x in [
-            env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
         ]
     ):
         return []
@@ -152,7 +152,7 @@ async def process_task(tasks):
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
     with progress_utils.setup_subscription_progress_live():
         new_tasks = []
-        url = env.getattr("subscriptionsActiveEP").format(offset)
+        url = of_env.getattr("subscriptionsActiveEP").format(offset)
         try:
             log.debug(f"usernames active offset {offset}")
             async with c.requests_async(url=url) as r:
@@ -187,7 +187,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
     with progress_utils.setup_subscription_progress_live():
         new_tasks = []
-        url = env.getattr("subscriptionsExpiredEP").format(offset)
+        url = of_env.getattr("subscriptionsExpiredEP").format(offset)
         try:
             log.debug(f"usernames offset expired {offset}")
             async with c.requests_async(url=url) as r:

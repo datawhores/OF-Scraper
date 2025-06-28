@@ -4,7 +4,7 @@ import asyncio
 import threading
 from typing import Optional, Dict, List, Any, AsyncGenerator, Generator
 
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.classes.sessionmanager.sessionmanager import (
     AUTH,
     COOKIES,
@@ -59,11 +59,11 @@ class OFSessionManager(sessionManager):
         forbidden_sleeper: Optional[float] =forbidden_session_sleeper,
     ):
         # --- Apply specialized defaults for this subclass ---
-        limit = limit if limit is not None else env.getattr("API_MAX_CONNECTION")
+        limit = limit if limit is not None else of_env.getattr("API_MAX_CONNECTION")
         # Assuming API_INDVIDIUAL_NUM_TRIES is a valid key in your config
-        retries = retries if retries is not None else env.getattr("API_INDVIDIUAL_NUM_TRIES")
-        wait_min = wait_min if wait_min is not None else env.getattr("OF_MIN_WAIT_API")
-        wait_max = wait_max if wait_max is not None else env.getattr("OF_MAX_WAIT_API")
+        retries = retries if retries is not None else of_env.getattr("API_INDVIDIUAL_NUM_TRIES")
+        wait_min = wait_min if wait_min is not None else of_env.getattr("OF_MIN_WAIT_API")
+        wait_max = wait_max if wait_max is not None else of_env.getattr("OF_MAX_WAIT_API")
 
         super().__init__(
             connect_timeout=connect_timeout,
@@ -97,7 +97,7 @@ class OFSessionManager(sessionManager):
         actions: List[str] = [SIGN, COOKIES, HEADERS]
         # Add FORBIDDEN to the default exceptions for this specific session type
         exceptions: List[str] = [TOO_MANY, AUTH, FORBIDDEN]
-        if env.getattr("API_FORCE_KEY"):
+        if of_env.getattr("API_FORCE_KEY"):
             actions.append(FORCED_NEW)
         
         # Allow kwargs to override the defaults
@@ -115,7 +115,7 @@ class OFSessionManager(sessionManager):
         actions: List[str] = [SIGN, COOKIES, HEADERS]
         # Add FORBIDDEN to the default exceptions for this specific session type
         exceptions: List[str] = [TOO_MANY, AUTH, FORBIDDEN]
-        if env.getattr("API_FORCE_KEY"):
+        if of_env.getattr("API_FORCE_KEY"):
             actions.append(FORCED_NEW)
 
         # Allow kwargs to override the defaults
@@ -142,8 +142,8 @@ class download_session(sessionManager):
     ) -> None:
         # --- Apply specialized defaults for download sessions ---
         retries = kwargs.pop("retries", None) or get_download_req_retries()
-        wait_min = kwargs.pop("wait_min", None) or env.getattr("OF_MIN_WAIT_API")
-        wait_max = kwargs.pop("wait_max", None) or env.getattr("OF_MAX_WAIT_API")
+        wait_min = kwargs.pop("wait_min", None) or of_env.getattr("OF_MIN_WAIT_API")
+        wait_max = kwargs.pop("wait_max", None) or of_env.getattr("OF_MAX_WAIT_API")
         read_timeout = kwargs.pop("read_timeout", None) or get_chunk_timeout()
         log = kwargs.pop("log", None) or common_globals.log  
         self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
@@ -163,7 +163,7 @@ class download_session(sessionManager):
         # Set default actions and exceptions for downloads
         if not kwargs.get("actions"):
             actions = [SIGN, COOKIES, HEADERS]
-            if env.getattr("API_FORCE_KEY"):
+            if of_env.getattr("API_FORCE_KEY"):
                 actions.append(FORCED_NEW)
             kwargs["actions"] = actions
         kwargs["exceptions"] = [TOO_MANY, AUTH]

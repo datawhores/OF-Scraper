@@ -1,4 +1,4 @@
-from ofscraper.utils.env import  get_all_configs
+from ofscraper.utils.of_env import  get_all_configs
 import os
 def getattr(val):
     """

@@ -29,7 +29,7 @@ import ofscraper.classes.labels as labels
 import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.free as free
@@ -288,7 +288,7 @@ async def process_all_paid():
             )
 
             username = profile.scrape_profile(model_id).get("username")
-            if username == env.getattr(
+            if username == of_env.getattr(
                 "DELETED_MODEL_PLACEHOLDER"
             ) and await check_profile_table_exists(
                 model_id=model_id, username=username
@@ -431,7 +431,7 @@ async def process_tasks(model_id, username, ele, c=None):
     final_post_areas = get_final_posts_area()
     max_count = max(
         min(
-            env.getattr("API_MAX_AREAS"),
+            of_env.getattr("API_MAX_AREAS"),
             len(final_post_areas),
         ),
         1,

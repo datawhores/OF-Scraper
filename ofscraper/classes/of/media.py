@@ -15,13 +15,13 @@ import ofscraper.main.manager as manager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.dates as dates
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.logs.utils.level as log_helpers
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 log = logging.getLogger("shared")
-semaphore = asyncio.BoundedSemaphore(env.getattr("MPD_MAX_SEMS"))
+semaphore = asyncio.BoundedSemaphore(of_env.getattr("MPD_MAX_SEMS"))
 
 
 class Media(base.base):
@@ -410,13 +410,13 @@ class Media(base.base):
             if self._cached_mpd: # double check lock
                 return self._cached_mpd
             async with manager.Manager.aget_ofsession(
-                retries=env.getattr("MPD_NUM_TRIES"),
-                wait_min=env.getattr("OF_MIN_WAIT_API"),
-                wait_max=env.getattr("OF_MAX_WAIT_API"),
-                connect_timeout=env.getattr("MPD_CONNECT_TIMEOUT"),
-                total_timeout=env.getattr("MPD_TOTAL_TIMEOUT"),
-                read_timeout=env.getattr("MPD_READ_TIMEOUT"),
-                pool_timeout=env.getattr("MPD_POOL_CONNECT_TIMEOUT"),
+                retries=of_env.getattr("MPD_NUM_TRIES"),
+                wait_min=of_env.getattr("OF_MIN_WAIT_API"),
+                wait_max=of_env.getattr("OF_MAX_WAIT_API"),
+                connect_timeout=of_env.getattr("MPD_CONNECT_TIMEOUT"),
+                total_timeout=of_env.getattr("MPD_TOTAL_TIMEOUT"),
+                read_timeout=of_env.getattr("MPD_READ_TIMEOUT"),
+                pool_timeout=of_env.getattr("MPD_POOL_CONNECT_TIMEOUT"),
                 sem=semaphore,
                 log=self._log,
             ) as c:
@@ -443,7 +443,7 @@ class Media(base.base):
         responsetype = self.post.responsetype
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
-        return env.getattr("LICENCE_URL").format(self.id, responsetype, self.postid)
+        return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.postid)
 
     @property
     def mass(self):
@@ -469,7 +469,7 @@ class Media(base.base):
 
     @async_cached_property
     async def selected_quality_placeholder(self):
-        return await self.selected_quality or env.getattr("QUALITY_UNKNOWN_DEFAULT")
+        return await self.selected_quality or of_env.getattr("QUALITY_UNKNOWN_DEFAULT")
 
     @property
     def protected(self):

@@ -5,7 +5,7 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 
 import ofscraper.utils.config.data as config_data
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.args.accessors.areas import get_text_area
 
 
@@ -30,7 +30,7 @@ def _load_env_once():
         if _env_loaded:
             return
         # Load .env file if it exists
-        load_dotenv(overide=True)
+        load_dotenv(override=True)
         _env_loaded = True
 
 
@@ -75,7 +75,7 @@ def setup_settings():
     merged.discord_level = (
         read_args.retriveArgs().discord_level or config_data.get_discord()
     )
-    merged.log_level = read_args.retriveArgs().log_level or env.getattr(
+    merged.log_level = read_args.retriveArgs().log_level or of_env.getattr(
         "DEFAULT_LOG_LEVEL"
     )
     merged.trunicate = get_trunication()

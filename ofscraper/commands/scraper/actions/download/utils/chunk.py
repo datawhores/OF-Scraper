@@ -13,7 +13,7 @@ r"""
 
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.leaky import CHUNK_SIZE
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 
 
 
@@ -25,4 +25,4 @@ def get_chunk_size():
         return CHUNK_SIZE
     return min(CHUNK_SIZE, settings.get_settings().download_limit)
 def get_chunk_timeout():
-    return env.getattr("CHUNK_TIMEOUT_SEC")
+    return of_env.getattr("CHUNK_TIMEOUT_SEC")

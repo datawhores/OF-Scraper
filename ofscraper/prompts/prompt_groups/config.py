@@ -26,7 +26,7 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
@@ -123,7 +123,7 @@ def funct(prompt_):
 
 
 def config_prompt() -> int:
-    config_prompt_choices = [*env.getattr("configPromptChoices")]
+    config_prompt_choices = [*of_env.getattr("configPromptChoices")]
     config_prompt_choices.insert(8, Separator())
     config_prompt_choices.insert(11, Separator())
 
@@ -133,7 +133,7 @@ def config_prompt() -> int:
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
     )
-    return env.getattr("configPromptChoices")[answer]
+    return of_env.getattr("configPromptChoices")[answer]
 
 
 def download_config():
@@ -512,7 +512,7 @@ Enter 0 for no minimum
                             value=x,
                             enabled=x.capitalize() in set(data.get_filter()),
                         ),
-                        env.getattr("FILTER_DEFAULT"),
+                        of_env.getattr("FILTER_DEFAULT"),
                     )
                 ),
                 "validate": prompt_validators.emptyListValidator(),

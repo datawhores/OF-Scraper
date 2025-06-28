@@ -1,11 +1,11 @@
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 
 def get_like_area():
     post = None
     all_choices = ["Archived", "Timeline", "Pinned", "Streams"]
-    all_choices.append("Label") if env.getattr("INCLUDE_LABELS_ALL") else None
+    all_choices.append("Label") if of_env.getattr("INCLUDE_LABELS_ALL") else None
     if len(settings.get_settings().like_area or []) == 0:
         post = set(settings.get_settings().posts or [])
     else:
@@ -28,7 +28,7 @@ def get_download_area():
         "Profile",
         "Streams",
     ]
-    all_choices.append("Label") if env.getattr("INCLUDE_LABELS_ALL") else None
+    all_choices.append("Label") if of_env.getattr("INCLUDE_LABELS_ALL") else None
     if len(settings.get_settings().download_area or []) == 0:
         post = set(settings.get_settings().posts or [])
     else:
@@ -51,7 +51,7 @@ def get_text_area():
         "Profile",
         "Streams",
     ]
-    all_choices.append("Label") if env.getattr("INCLUDE_LABELS_ALL") else None
+    all_choices.append("Label") if of_env.getattr("INCLUDE_LABELS_ALL") else None
     post = set(settings.get_settings().download_text or [])
     if "All" in post:
         post.update(set(all_choices))

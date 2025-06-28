@@ -3,7 +3,7 @@ import time
 import logging
 
 
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process
@@ -41,7 +41,7 @@ class commmandManager:
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
                             if (
-                                env.getattr("SHOW_AVATAR")
+                                of_env.getattr("SHOW_AVATAR")
                                 and avatar
                                 and settings.get_settings().userfirst
                             ):
@@ -115,7 +115,7 @@ class commmandManager:
                     ele = val["ele"]
                     avatar = ele.avatar
                     if (
-                        env.getattr("SHOW_AVATAR")
+                        of_env.getattr("SHOW_AVATAR")
                         and avatar
                         and settings.get_settings().userfirst
                     ):
@@ -164,7 +164,7 @@ class commmandManager:
             progress_str.format(count=count + 1, length=length)
         )
         logging.getLogger("shared").warning(data_str.format(name=username))
-        if env.getattr("SHOW_AVATAR") and avatar:
+        if of_env.getattr("SHOW_AVATAR") and avatar:
             logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
         progress_updater.update_activity_task(
             description=area_str.format(

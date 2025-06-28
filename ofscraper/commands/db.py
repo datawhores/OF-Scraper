@@ -24,7 +24,7 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
 import ofscraper.utils.actions as actions
@@ -257,10 +257,10 @@ class DBManager:
         for i, dictionary in enumerate(dictionaries):
             dictionary = OrderedDict(dictionary)
             dictionary["posted_at"] = arrow.get(dictionary["posted_at"]).format(
-                env.getattr("API_DATE_FORMAT")
+                of_env.getattr("API_DATE_FORMAT")
             )
             dictionary["created_at"] = arrow.get(dictionary["created_at"]).format(
-                env.getattr("API_DATE_FORMAT")
+                of_env.getattr("API_DATE_FORMAT")
             )
             size = dictionary.pop("size", None)
             dictionary["size"] = size

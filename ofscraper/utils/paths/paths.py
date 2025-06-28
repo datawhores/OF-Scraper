@@ -8,7 +8,7 @@ from pathlib import Path
 
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 
@@ -38,7 +38,7 @@ def set_directory(path: Path):
 
 
 def temp_cleanup():
-    if not env.getattr("BATCH_TEMPFILE_CLEANUP"):
+    if not of_env.getattr("BATCH_TEMPFILE_CLEANUP"):
         return
     if not settings.get_settings().auto_resume:
         log.info("Cleaning up temp files\n\n")
@@ -66,7 +66,7 @@ def truncate(path):
 
 def _windows_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if get_string_byte_size_windows(path) <= env.getattr(
+    if get_string_byte_size_windows(path) <= of_env.getattr(
         "WINDOWS_MAX_PATH_BYTES"
     ):
         return path
@@ -82,7 +82,7 @@ def _windows_truncateHelper(path):
         ext = ""
     file = re.sub(ext, "", path.name)
     max_bytes = (
-        env.getattr("WINDOWS_MAX_PATH_BYTES")
+        of_env.getattr("WINDOWS_MAX_PATH_BYTES")
         - get_string_byte_size_windows(ext)
         - get_string_byte_size_windows(dir)
     )
@@ -105,7 +105,7 @@ def _windows_truncateHelper(path):
 
 def _mac_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path)) <= env.getattr("MAC_MAX_PATH"):
+    if len(str(path)) <= of_env.getattr("MAC_MAX_PATH"):
         return path
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
@@ -113,7 +113,7 @@ def _mac_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    maxlength = env.getattr("MAC_MAX_PATH") - len(ext)
+    maxlength = of_env.getattr("MAC_MAX_PATH") - len(ext)
     newFile = f"{file[:maxlength]}{ext}"
     final = pathlib.Path(dir, newFile)
     log.debug(f"path: {final} path size: {len(str(final))}")
@@ -129,7 +129,7 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = env.getattr(
+    max_bytes = of_env.getattr(
         "LINUX_MAX_FILE_NAME_BYTES"
     ) - get_string_byte_size_unix(ext)
     low, high = 0, len(file)
@@ -156,9 +156,9 @@ def get_string_byte_size_unix(text):
     """
     total_size = 0
     text = str(text)
-    normal_char_size = env.getattr("NORMAL_CHAR_SIZE_UNIX")
-    special_char_size = env.getattr("SPECIAL_CHAR_SIZE_UNIX")
-    utf = env.getattr("UTF")
+    normal_char_size = of_env.getattr("NORMAL_CHAR_SIZE_UNIX")
+    special_char_size = of_env.getattr("SPECIAL_CHAR_SIZE_UNIX")
+    utf = of_env.getattr("UTF")
 
     if utf:
         return len(text.encode(utf))
@@ -187,9 +187,9 @@ def get_string_byte_size_windows(text):
     """
     total_size = 0
     text = str(text)
-    normal_char_size = env.getattr("NORMAL_CHAR_SIZE_WINDOWS")
-    special_char_size = env.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
-    utf = env.getattr("UTF")
+    normal_char_size = of_env.getattr("NORMAL_CHAR_SIZE_WINDOWS")
+    special_char_size = of_env.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
+    utf = of_env.getattr("UTF")
     if utf:
         return len(text.encode(utf))
     for char in text:

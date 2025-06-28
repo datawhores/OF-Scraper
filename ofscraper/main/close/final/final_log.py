@@ -15,12 +15,12 @@ import logging
 import time
 import itertools
 
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 
 
 def final_log(data):
     log = logging.getLogger("shared")
-    if env.getattr("SHOW_RESULTS_LOG"):
+    if of_env.getattr("SHOW_RESULTS_LOG"):
         # give time for last long to show
         time.sleep(2)
         log.warning("\n\n\n")

@@ -17,12 +17,12 @@ from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 
 
 def profiles_prompt() -> int:
     name = "profile"
-    profile_prompt_choices = [*env.getattr("profilesPromptChoices")]
+    profile_prompt_choices = [*of_env.getattr("profilesPromptChoices")]
     profile_prompt_choices.insert(5, Separator())
 
     questions = promptClasses.batchConverter(
@@ -36,7 +36,7 @@ def profiles_prompt() -> int:
         ]
     )
 
-    return env.getattr("profilesPromptChoices").get(questions[name])
+    return of_env.getattr("profilesPromptChoices").get(questions[name])
 
 
 def edit_profiles_prompt(profiles) -> str:

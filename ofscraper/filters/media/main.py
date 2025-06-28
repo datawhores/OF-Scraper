@@ -1,7 +1,7 @@
 import logging
 
 import ofscraper.filters.media.filters as helpers
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.utils.trace import is_trace
 
@@ -21,7 +21,7 @@ def filterMediaFinalMetadata(media, username, model_id):
     trace_log_media(count, media, "sorted by date initial")
     log.debug(f"filter {count}-> sorted media count: {len(media)}")
 
-    if env.getattr("REMOVE_UNVIEWABLE_METADATA"):
+    if of_env.getattr("REMOVE_UNVIEWABLE_METADATA"):
         media = helpers.unviewable_media_filter(media)
         count += 1
         trace_log_media(count, media, "filtered viewable media")

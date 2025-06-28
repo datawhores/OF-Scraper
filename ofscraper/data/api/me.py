@@ -15,7 +15,7 @@ import logging
 import traceback
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.logs.utils.level as log_helpers
 
 log = logging.getLogger("shared")
@@ -28,7 +28,7 @@ def scrape_user():
 
 def _scraper_user_helper(c):
     try:
-        with c.requests(env.getattr("meEP")) as r:
+        with c.requests(of_env.getattr("meEP")) as r:
             data = r.json_()
             if data['isAuth']:
                 log_helpers.updateSenstiveDict(data["id"], "userid")
@@ -53,7 +53,7 @@ def parse_subscriber_count():
        
     ) as c:
         try:
-            with c.requests(env.getattr("subscribeCountEP")) as r:
+            with c.requests(of_env.getattr("subscribeCountEP")) as r:
                 data = r.json_()
                 return (
                     data["subscriptions"]["active"],

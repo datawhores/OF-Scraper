@@ -4,7 +4,7 @@ import os
 from humanfriendly import format_size
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 
@@ -17,20 +17,20 @@ def get_medialog(ele):
 def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{env.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.filename}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{env.getattr('API_NUM_TRIES')}] full path from config {placeholderObj.filepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path from config {placeholderObj.filepath}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{env.getattr('API_NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
     )
 
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{env.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
+        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
     )
 
 

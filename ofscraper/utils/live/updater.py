@@ -1,4 +1,4 @@
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.live.progress import (
     activity_counter,
@@ -133,7 +133,7 @@ def remove_userlist_job_task(task):
 
 
 def add_download_job_task(*args, **kwargs):
-    max_visible = env.getattr("MAX_PROGRESS_BARS")
+    max_visible = of_env.getattr("MAX_PROGRESS_BARS")
     visible = (
         settings.get_settings().download_bars
         and len(download_job_progress.tasks) < max_visible
@@ -160,7 +160,7 @@ def update_download_job_task(*args, **kwargs):
 
 
 def remove_download_job_task(task):
-    min_add_visible = env.getattr("MIN_ADD_PROGRESS_BARS")
+    min_add_visible = of_env.getattr("MIN_ADD_PROGRESS_BARS")
 
     if task is None:
         return

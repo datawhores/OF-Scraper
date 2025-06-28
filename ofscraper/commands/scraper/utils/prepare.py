@@ -5,7 +5,7 @@ import re
 import ofscraper.data.api.init as init
 import ofscraper.main.manager as manager
 import ofscraper.utils.actions as actions
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.config.data as data
 
@@ -15,8 +15,8 @@ log = logging.getLogger("shared")
 
 def prepare(menu=False):
     session = manager.Manager.aget_ofsession(
-        sem_count=env.getattr("API_REQ_SEM_MAX"),
-        total_timeout=env.getattr("API_TIMEOUT_PER_TASK"),
+        sem_count=of_env.getattr("API_REQ_SEM_MAX"),
+        total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),
     )
 
     unique_name_warning()
@@ -54,4 +54,4 @@ def unique_name_warning():
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
             "
         )
-        time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT") * 3)
+        time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT") * 3)

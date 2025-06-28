@@ -24,7 +24,7 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.prompts.utils.prompt_helpers as prompt_helpers
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 console = Console()
@@ -61,7 +61,7 @@ def model_selector(models_) -> bool:
 
 def decide_filters_menu() -> int:
     name = "modelList"
-    modelChoice = [*env.getattr("modelPrompt")]
+    modelChoice = [*of_env.getattr("modelPrompt")]
     modelChoice.insert(4, Separator())
     modelChoice.insert(7, Separator())
     modelChoice.insert(9, Separator())
@@ -78,7 +78,7 @@ def decide_filters_menu() -> int:
         more_instructions=prompt_strings.FILTER_DETAILS,
     )
 
-    return env.getattr("modelPrompt").get(questions[name])
+    return of_env.getattr("modelPrompt").get(questions[name])
 
 
 def modify_subtype_prompt(args):
@@ -147,7 +147,7 @@ def modify_active_prompt(args):
                 "filter": lambda x: arrow.get(x or 0),
                 "default": (
                     arrow.get(settings.get_settings().last_seen_after).format(
-                        env.getattr("PROMPT_DATE_FORMAT")
+                        of_env.getattr("PROMPT_DATE_FORMAT")
                     )
                     if settings.get_settings().last_seen_after
                     else ""
@@ -163,7 +163,7 @@ def modify_active_prompt(args):
                 "filter": lambda x: arrow.get(x or 0),
                 "default": (
                     arrow.get(settings.get_settings().last_seen_before).format(
-                        env.getattr("PROMPT_DATE_FORMAT")
+                        of_env.getattr("PROMPT_DATE_FORMAT")
                     )
                     if settings.get_settings().last_seen_before
                     else ""

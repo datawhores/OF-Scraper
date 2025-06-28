@@ -5,7 +5,7 @@ from filelock import FileLock
 
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.logs.globals as log_globals
 
@@ -16,17 +16,17 @@ class DiscordHandler(logging.Handler):
 
         self.asess = sessionManager.sessionManager(
            
-            total_timeout=env.getattr("DISCORD_TOTAL_TIMEOUT"),
-            retries=env.getattr("DISCORD_NUM_TRIES"),
-            wait_min=env.getattr("DISCORD_MIN_WAIT"),
-            wait_max=env.getattr("DISCORD_MAX_WAIT"),
+            total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
+            retries=of_env.getattr("DISCORD_NUM_TRIES"),
+            wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
+            wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
         )
         self.sess = sessionManager.sessionManager(
            
-            total_timeout=env.getattr("DISCORD_TOTAL_TIMEOUT"),
-            retries=env.getattr("DISCORD_NUM_TRIES"),
-            wait_min=env.getattr("DISCORD_MIN_WAIT"),
-            wait_max=env.getattr("DISCORD_MAX_WAIT"),
+            total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
+            retries=of_env.getattr("DISCORD_NUM_TRIES"),
+            wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
+            wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
         )
         self.asess._set_session(async_=True)
         self.sess._set_session(async_=False)
@@ -44,7 +44,7 @@ class DiscordHandler(logging.Handler):
             asyncio.set_event_loop(self.loop)
 
     def _appendhelper(self, date=None):
-        if env.getattr("DISCORD_THREAD_OVERRIDE"):
+        if of_env.getattr("DISCORD_THREAD_OVERRIDE"):
             try:
                 with self.sess.requests(
                     "{url}?wait=true".format(url=self._baseurl),
@@ -77,7 +77,7 @@ class DiscordHandler(logging.Handler):
         # Add newlines for Discord formatting *after* we know we have valid content.
         log_entry_with_newlines = f"{log_entry}\n\n"
 
-        if env.getattr("DISCORD_ASYNC"):
+        if of_env.getattr("DISCORD_ASYNC"):
             self._tasks.append(
                 self.loop.create_task(self._async_emit(log_entry_with_newlines))
             )
@@ -87,7 +87,7 @@ class DiscordHandler(logging.Handler):
         # The 'pass' is unnecessary here.
 
     def close(self) -> None:
-        if env.getattr("DISCORD_ASYNC"):
+        if of_env.getattr("DISCORD_ASYNC"):
             self.loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(self.loop)))
             self.loop.close()
 

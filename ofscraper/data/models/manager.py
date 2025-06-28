@@ -13,8 +13,8 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.console as console
-import ofscraper.utils.env.env as env
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.models.models import Model
@@ -98,7 +98,7 @@ class ModelManager:
                 self.update_all_subs(models)
                 break
             console.get_console().print("[bold red]No accounts found during scan[/bold red]")
-            time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT", 0))
+            time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT", 0))
             if not prompts.retry_user_scan():
                 raise SystemExit("Could not find any accounts on list.")
 

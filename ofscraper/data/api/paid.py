@@ -18,7 +18,7 @@ import traceback
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.main.manager as manager
 import ofscraper.utils.cache as cache
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
@@ -92,7 +92,7 @@ async def scrape_paid(c, username, offset=0):
     media = None
 
     new_tasks = []
-    url = env.getattr("purchased_contentEP").format(offset, username)
+    url = of_env.getattr("purchased_contentEP").format(offset, username)
     try:
 
         task = progress_utils.add_api_job_task(
@@ -140,7 +140,7 @@ async def scrape_paid(c, username, offset=0):
 @run
 async def get_all_paid_posts():
     async with manager.Manager.aget_ofsession(
-        sem_count=env.getattr("SCRAPE_PAID_SEMS"),
+        sem_count=of_env.getattr("SCRAPE_PAID_SEMS"),
     ) as c:
         tasks = await create_tasks_scrape_paid(c)
         data = await process_tasks_all_paid(tasks)
@@ -214,7 +214,7 @@ async def process_tasks_all_paid(tasks):
     cache.set(
         "purchased_all",
         list(map(lambda x: x.get("id"), list(output))),
-        expire=env.getattr("RESPONSE_EXPIRY"),
+        expire=of_env.getattr("RESPONSE_EXPIRY"),
     )
     # filter at user level
     return output
@@ -236,7 +236,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     media = None
 
     new_tasks = []
-    url = env.getattr("purchased_contentALL").format(offset)
+    url = of_env.getattr("purchased_contentALL").format(offset)
     try:
 
         task = progress_utils.add_api_job_task(

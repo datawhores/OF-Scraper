@@ -25,7 +25,7 @@ from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
 
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
@@ -477,7 +477,7 @@ class AltDownloadManager(DownloadManager):
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
         task1 = progress_updater.add_download_job_task(
-            f"{(pathstr[:env.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > env.getattr('PATH_STR_MAX') else pathstr}\n",
+            f"{(pathstr[:of_env.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > of_env.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
         )
         return task1

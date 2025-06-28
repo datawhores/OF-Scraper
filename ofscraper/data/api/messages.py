@@ -19,7 +19,7 @@ import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.main.manager as manager
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
@@ -46,7 +46,7 @@ sleeper = None
 async def get_messages(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     post_id = post_id or []
-    if len(post_id) == 0 or len(post_id) > env.getattr(
+    if len(post_id) == 0 or len(post_id) > of_env.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
     ):
         oldmessages = await get_old_messages(model_id, username)
@@ -56,7 +56,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         splitArrays = get_split_array(filteredArray)
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after)
         data = await process_tasks(tasks)
-    elif len(settings.get_settings().post_id or []) <= env.getattr(
+    elif len(settings.get_settings().post_id or []) <= of_env.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
     ):
         data = process_individual(model_id)
@@ -201,8 +201,8 @@ def get_j(oldmessages, after):
 
 def get_split_array(filteredArray):
     min_posts = max(
-        len(filteredArray) // env.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
-        env.getattr("MIN_PAGE_POST_COUNT"),
+        len(filteredArray) // of_env.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
+        of_env.getattr("MIN_PAGE_POST_COUNT"),
     )
 
     return [
@@ -285,9 +285,9 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after):
 async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
     messages = None
     ep = (
-        env.getattr("messagesNextEP")
+        of_env.getattr("messagesNextEP")
         if message_id
-        else env.getattr("messagesEP")
+        else of_env.getattr("messagesEP")
     )
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
@@ -313,10 +313,10 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
                 return [], []
             log.debug(f"{log_id} -> number of messages found {len(messages)}")
             log.debug(
-                f"{log_id} -> first date {arrow.get(messages[0].get('createdAt') or messages[0].get('postedAt')).format(env.getattr('API_DATE_FORMAT'))}"
+                f"{log_id} -> first date {arrow.get(messages[0].get('createdAt') or messages[0].get('postedAt')).format(of_env.getattr('API_DATE_FORMAT'))}"
             )
             log.debug(
-                f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(env.getattr('API_DATE_FORMAT'))}"
+                f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(of_env.getattr('API_DATE_FORMAT'))}"
             )
             log.debug(
                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
@@ -371,7 +371,7 @@ def get_individual_messages_post(model_id, postid):
        
     ) as c:
         with c.requests(
-            url=env.getattr("messageSPECIFIC").format(model_id, postid)
+            url=of_env.getattr("messageSPECIFIC").format(model_id, postid)
         ) as r:
             log.trace(f"message raw individual {r.json()}")
             return r.json()["list"][0]
@@ -426,7 +426,7 @@ def log_after_before(after, before, username):
 
     log.info(
         f"""
-Setting Message scan range for {username} from {arrow.get(after).format(env.getattr('API_DATE_FORMAT'))} to {arrow.get(before).format(env.getattr('API_DATE_FORMAT'))}
+Setting Message scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(before).format(of_env.getattr('API_DATE_FORMAT'))}
 
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]

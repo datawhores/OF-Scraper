@@ -17,7 +17,7 @@ import traceback
 
 from rich.console import Console
 
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
@@ -33,7 +33,7 @@ def get_black_list_helper():
 
 
 async def sort_list(c) -> list:
-    url = env.getattr("sortSubscriptions")
+    url = of_env.getattr("sortSubscriptions")
     try:
         async with c.requests_async(
             method="post",

@@ -17,7 +17,7 @@ from httpx_aiohttp import AiohttpTransport
 from aiohttp import ClientSession
 
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
 
@@ -59,12 +59,12 @@ class SessionSleep:
         self._last_date = arrow.now()
         self._alock = asyncio.Lock()
         self._lock=threading.Lock()
-        self._init_sleep = sleep if sleep is not None else env.getattr("SESSION_SLEEP_INIT")
-        self._difmin = difmin if difmin is not None else env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
-        self._max_sleep = max_sleep if max_sleep is not None else env.getattr("SESSION_SLEEP_MAX")
-        self._increase_factor = increase_factor if increase_factor is not None else env.getattr("SESSION_SLEEP_INCREASE_FACTOR")
-        self._decay_threshold = decay_threshold if decay_threshold is not None else env.getattr("SESSION_SLEEP_DECAY_THRESHOLD")
-        self._decay_factor = decay_factor if decay_factor is not None else env.getattr("SESSION_SLEEP_DECAY_FACTOR")
+        self._init_sleep = sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
+        self._difmin = difmin if difmin is not None else of_env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        self._max_sleep = max_sleep if max_sleep is not None else of_env.getattr("SESSION_SLEEP_MAX")
+        self._increase_factor = increase_factor if increase_factor is not None else of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR")
+        self._decay_threshold = decay_threshold if decay_threshold is not None else of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD")
+        self._decay_factor = decay_factor if decay_factor is not None else of_env.getattr("SESSION_SLEEP_DECAY_FACTOR")
         self.error_name=error_name or ""
 
     def _maybe_decay_sleep(self):
@@ -127,12 +127,12 @@ class CustomTenacity(AsyncRetrying):
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
-            min=env.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
-            max=env.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
+            min=of_env.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
+            max=of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
         )
         self.wait_exponential = wait_exponential or tenacity.wait_exponential(
-            min=env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
-            max=env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+            min=of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+            max=of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
         )
         self.wait = self._wait_picker
 
@@ -189,23 +189,23 @@ class sessionManager:
         forbidden_decay_factor: Optional[float] = None,
         forbidden_increase_factor: Optional[float] = None,
     ):
-        self._connect_timeout = connect_timeout if connect_timeout is not None else env.getattr("CONNECT_TIMEOUT")
-        self._total_timeout = total_timeout if total_timeout is not None else env.getattr("TOTAL_TIMEOUT")
-        self._read_timeout = read_timeout if read_timeout is not None else env.getattr("OF_READ_TIMEOUT")
-        self._pool_connect_timeout = pool_timeout if pool_timeout is not None else env.getattr("POOL_CONNECT_TIMEOUT")
-        self._connect_limit = limit if limit is not None else env.getattr("MAX_CONNECTIONS")
-        self._keep_alive = keep_alive if keep_alive is not None else env.getattr("KEEP_ALIVE")
-        self._keep_alive_exp = keep_alive_exp if keep_alive_exp is not None else env.getattr("KEEP_ALIVE_EXP")
-        self._proxy = proxy if proxy is not None else env.getattr("PROXY")
+        self._connect_timeout = connect_timeout if connect_timeout is not None else of_env.getattr("CONNECT_TIMEOUT")
+        self._total_timeout = total_timeout if total_timeout is not None else of_env.getattr("TOTAL_TIMEOUT")
+        self._read_timeout = read_timeout if read_timeout is not None else of_env.getattr("OF_READ_TIMEOUT")
+        self._pool_connect_timeout = pool_timeout if pool_timeout is not None else of_env.getattr("POOL_CONNECT_TIMEOUT")
+        self._connect_limit = limit if limit is not None else of_env.getattr("MAX_CONNECTIONS")
+        self._keep_alive = keep_alive if keep_alive is not None else of_env.getattr("KEEP_ALIVE")
+        self._keep_alive_exp = keep_alive_exp if keep_alive_exp is not None else of_env.getattr("KEEP_ALIVE_EXP")
+        self._proxy = proxy if proxy is not None else of_env.getattr("PROXY")
         
-        self._sem = sem or asyncio.BoundedSemaphore(sem_count if sem_count is not None else env.getattr("SESSION_MANAGER_SEM_DEFAULT"))
-        self._sync_sem = sync_sem or threading.Semaphore(sync_sem_count if sync_sem_count is not None else env.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
+        self._sem = sem or asyncio.BoundedSemaphore(sem_count if sem_count is not None else of_env.getattr("SESSION_MANAGER_SEM_DEFAULT"))
+        self._sync_sem = sync_sem or threading.Semaphore(sync_sem_count if sync_sem_count is not None else of_env.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
         
-        self._retries = retries if retries is not None else env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min = wait_min if wait_min is not None else env.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
-        self._wait_max = wait_max if wait_max is not None else env.getattr("OF_MAX_WAIT_SESSION_DEFAULT")
-        self._wait_min_exponential = wait_min_exponential if wait_min_exponential is not None else env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
-        self._wait_max_exponential = wait_max_exponential if wait_max_exponential is not None else env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
+        self._retries = retries if retries is not None else of_env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
+        self._wait_min = wait_min if wait_min is not None else of_env.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
+        self._wait_max = wait_max if wait_max is not None else of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT")
+        self._wait_min_exponential = wait_min_exponential if wait_min_exponential is not None else of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
+        self._wait_max_exponential = wait_max_exponential if wait_max_exponential is not None else of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
 
         self._log = log or logging.getLogger("shared")
         
@@ -222,19 +222,19 @@ class sessionManager:
             self._forbidden_sleeper = forbidden_sleeper
         else:
             self._forbidden_sleeper = SessionSleep(
-                sleep=forbidden_sleep if forbidden_sleep is not None else env.getattr("SESSION_403_SLEEP_INIT"),
-                difmin=forbidden_difmin if forbidden_difmin is not None else env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-                max_sleep=forbidden_max_sleep if forbidden_max_sleep is not None else env.getattr("SESSION_403_SLEEP_MAX"),
-                decay_threshold=forbidden_decay_threshold if forbidden_decay_threshold is not None else env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
-                decay_factor=forbidden_decay_factor if forbidden_decay_factor is not None else env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
-                increase_factor=forbidden_increase_factor if forbidden_increase_factor is not None else env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
+                sleep=forbidden_sleep if forbidden_sleep is not None else of_env.getattr("SESSION_403_SLEEP_INIT"),
+                difmin=forbidden_difmin if forbidden_difmin is not None else of_env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+                max_sleep=forbidden_max_sleep if forbidden_max_sleep is not None else of_env.getattr("SESSION_403_SLEEP_MAX"),
+                decay_threshold=forbidden_decay_threshold if forbidden_decay_threshold is not None else of_env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
+                decay_factor=forbidden_decay_factor if forbidden_decay_factor is not None else of_env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
+                increase_factor=forbidden_increase_factor if forbidden_increase_factor is not None else of_env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
             )
         self._session: Union[httpx.AsyncClient, httpx.Client, None] = None
         self._async: bool = True
         self._last_auth_warn_date = arrow.now()
 
     def print_auth_warning(self, E: Exception):
-        if (arrow.now() - self._last_auth_warn_date).total_seconds() > env.getattr("AUTH_WARNING_TIMEOUT"):
+        if (arrow.now() - self._last_auth_warn_date).total_seconds() > of_env.getattr("AUTH_WARNING_TIMEOUT"):
             print_auth_warning(E)
             self._last_auth_warn_date = arrow.now()
 

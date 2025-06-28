@@ -6,7 +6,7 @@ import httpx
 
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.console as console_
-import ofscraper.utils.env.env as env
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 
@@ -22,14 +22,14 @@ def check_cdm():
         )
         return True
     elif keymode == "cdrm":
-        url = env.getattr("CDRM")
+        url = of_env.getattr("CDRM")
     try:
         with sessionManager.sessionManager(
            
-            total_timeout=env.getattr("CDM_TEST_TIMEOUT"),
-            retries=env.getattr("CDM_TEST_NUM_TRIES"),
-            wait_min=env.getattr("CDM_MIN_WAIT"),
-            wait_max=env.getattr("CDM_MAX_WAIT"),
+            total_timeout=of_env.getattr("CDM_TEST_TIMEOUT"),
+            retries=of_env.getattr("CDM_TEST_NUM_TRIES"),
+            wait_min=of_env.getattr("CDM_MIN_WAIT"),
+            wait_max=of_env.getattr("CDM_MAX_WAIT"),
         ) as c:
             with c.requests(url=url, headers={}) as r:
                 if r.ok:
