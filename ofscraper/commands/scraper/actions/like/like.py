@@ -103,10 +103,8 @@ def _like(model_id, username, ids: list, like_action: bool):
 
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_like_progress_live():
-        with manager.Manager.get_ofsession(
+        with manager.Manager.get_like_session(
             sem_count=1,
-            rate_limit_sleep=env.getattr("SESSION_429_LIKE_SLEEP_STARTER_VAL"),
-            rate_limit_difmin=env.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
             retries=env.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []

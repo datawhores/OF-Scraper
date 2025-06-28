@@ -418,7 +418,6 @@ class Media(base.base):
                 read_timeout=env.getattr("MPD_READ_TIMEOUT"),
                 pool_timeout=env.getattr("MPD_POOL_CONNECT_TIMEOUT"),
                 sem=semaphore,
-                rate_limit_sleep=env.getattr("MPD_SESSION_SLEEP_INIT"),
                 log=self._log,
             ) as c:
                 async with c.requests_async(url=self.mpd, params=params) as r:

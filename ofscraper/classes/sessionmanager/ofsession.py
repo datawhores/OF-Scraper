@@ -22,7 +22,7 @@ from ofscraper.commands.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 from ofscraper.classes.sessionmanager.sleepers import rate_limit_session_sleeper,forbidden_session_sleeper,download_forbidden_session_sleeper,download_rate_limit_session_sleeper
-from ofscraper.classes.sessionmanager.sleepers import cdm_rate_limit_session_sleeper,cdm_forbidden_session_sleeper
+from ofscraper.classes.sessionmanager.sleepers import cdm_rate_limit_session_sleeper,cdm_forbidden_session_sleeper,like_rate_limit_session_sleeper,like_forbidden_session_sleeper
 
 
 class OFSessionManager(sessionManager):
@@ -205,4 +205,12 @@ class cdm_session_manual(OFSessionManager):
     def __init__(self, sem_count: Optional[int] = None,        #---rate limit sleepers
         rate_limit_sleeper: Optional[float] = cdm_rate_limit_session_sleeper,
         forbidden_sleeper: Optional[float] =cdm_forbidden_session_sleeper,**kwargs: Any) -> None:
+        super().__init__(sem_count=sem_count,rate_limit_sleeper=rate_limit_sleeper,forbidden_sleeper=forbidden_sleeper **kwargs)
+
+
+class like_session(OFSessionManager):
+    """A session manager for manual CDM operations, using OFSessionManager presets."""
+    def __init__(self, sem_count: Optional[int] = None,        #---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = like_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] =like_forbidden_session_sleeper,**kwargs: Any) -> None:
         super().__init__(sem_count=sem_count,rate_limit_sleeper=rate_limit_sleeper,forbidden_sleeper=forbidden_sleeper **kwargs)

@@ -98,7 +98,7 @@ def get_all_configs():
     all_settings.update(load_git_config())
     all_settings.update(load_mpd_config())
     all_settings.update(load_network_config())
-    all_settings.update(load_ratelimit_config)
+    all_settings.update(load_ratelimit_config())
 
     # Nested 'url' directory
     all_settings.update(load_other_urls_config())
