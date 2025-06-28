@@ -67,14 +67,24 @@ class DiscordHandler(logging.Handler):
             return
         elif record in log_globals.stop_codes or record == "":
             return
+
+        # Format the log record.
         log_entry = self.format(record)
-        log_entry = f"{log_entry}\n\n"
-        if log_entry is None or log_entry == "None" or log_entry == "":
+
+        if not log_entry or not log_entry.strip():
             return
-        elif env.getattr("DISCORD_ASYNC"):
-            self._tasks.append(self.loop.create_task(self._async_emit(log_entry)))
-        self._emit(log_entry)
-        pass
+
+        # Add newlines for Discord formatting *after* we know we have valid content.
+        log_entry_with_newlines = f"{log_entry}\n\n"
+
+        if env.getattr("DISCORD_ASYNC"):
+            self._tasks.append(
+                self.loop.create_task(self._async_emit(log_entry_with_newlines))
+            )
+        else:
+            self._emit(log_entry_with_newlines)
+
+        # The 'pass' is unnecessary here.
 
     def close(self) -> None:
         if env.getattr("DISCORD_ASYNC"):

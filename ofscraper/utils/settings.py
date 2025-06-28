@@ -30,7 +30,7 @@ def _load_env_once():
         if _env_loaded:
             return
         # Load .env file if it exists
-        load_dotenv()
+        load_dotenv(overide=True)
         _env_loaded = True
 
 
