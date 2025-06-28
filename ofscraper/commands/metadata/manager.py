@@ -126,7 +126,7 @@ class MetaDataManager:
         return str(placeholderObj.trunicated_filedir)
 
     def _metadata_hash_helper(self, placeholderObj, prevData, ele):
-        if not settings.get_hash(mediatype=ele.mediatype):
+        if not settings.get_settings().hash:
             return prevData.get("hash")
         elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
             return hash.get_hash(

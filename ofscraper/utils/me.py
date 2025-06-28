@@ -16,7 +16,7 @@ def parse_user():
 
 def get_id():
     profile = me.scrape_user()
-    return profile["id"]
+    return profile.get("id","id_unknown")
 
 
 def print_user(name, username):

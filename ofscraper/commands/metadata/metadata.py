@@ -9,7 +9,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.env.env as env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.data.posts.post import post_media_process_all
+from ofscraper.data.posts.post import post_media_process
 from ofscraper.commands.utils.strings import (
     avatar_str,
     all_paid_metadata_str,
@@ -39,7 +39,7 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.main.close.final.final import final
 from ofscraper.utils.checkers import check_auth
 import ofscraper.main.manager as manager
-from ofscraper.main.close.final.final_user import post_user_script
+from ofscraper.scripts.final_user_script import post_user_script
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -99,7 +99,7 @@ class metadataCommandManager(commmandManager):
                 log_progress=all_paid_progress_metadata_str,
             )
             out.append(await process_user(value, length))
-        settings.update_settings(old_args)
+        settings.update_args(old_args)
         return out
 
     def _force_change_metadata(self):
@@ -180,7 +180,7 @@ class metadataCommandManager(commmandManager):
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
-                            all_media, posts, like_posts = await post_media_process_all(
+                            postcollection = await post_media_process(
                                 ele, c=c
                             )
 
@@ -196,9 +196,9 @@ class metadataCommandManager(commmandManager):
                                 )
                             data.extend(
                                 await funct(
-                                    media=all_media,
-                                    posts=posts,
-                                    like_posts=like_posts,
+                                    media=postcollection.get_media_for_metadata(),
+                                    posts=postcollection.get_posts_for_text_download(),
+                                    like_posts=postcollection.get_posts_to_like(),
                                     ele=ele,
                                 )
                             )
@@ -242,15 +242,15 @@ class metadataCommandManager(commmandManager):
             model_id = ele.id
             username = ele.name
             await operations.table_init_create(model_id=model_id, username=username)
-            media, _, _ = await process_areas(ele, model_id, username, c=session)
+            postcollection= await process_areas(ele, model_id, username, c=session)
             return {
                 model_id: {
                     "username": username,
-                    "media": media,
+                    "media": postcollection.get_media_for_metadata(),
                     "avatar": avatar,
                     "ele": ele,
-                    "posts": [],
-                    "like_posts": [],
+                    "posts":postcollection.get_posts_for_text_download(),
+                    "like_posts": postcollection.get_posts_to_like(),
                 }
             }
         except Exception as e:
@@ -288,7 +288,7 @@ def metadata():
         else:
             userdata, session = prepare()
             userfirst_data = metaCommandManager.metadata_user_first(userdata, session)
-    final(normal_data, scrape_paid_data, userfirst_data, userdata)
+    final(normal_data, scrape_paid_data, userfirst_data)
 
 
 @run
@@ -368,7 +368,7 @@ def prepare():
     profile_tools.print_current_profile()
     actions.select_areas()
     init.print_sign_status()
-    userdata = manager.Manager.model_manager.getselected_usernames(rescan=False)
+    userdata = manager.Manager.model_manager.get_selected_models(rescan=False)
     session = manager.Manager.aget_ofsession(
         sem_count=env.getattr("API_REQ_SEM_MAX"),
         total_timeout=env.getattr("API_TIMEOUT_PER_TASK"),

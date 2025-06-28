@@ -92,14 +92,14 @@ class scraperManager(commmandManager):
         username = ele.name
         avatar = ele.avatar
         await operations.table_init_create(model_id=model_id, username=username)
-        media, posts, like_posts = await post_media_process(ele, session)
+        postcollection = await post_media_process(ele, session)
         return {
             model_id: {
                 "username": username,
-                "posts": posts,
-                "media": media,
+                "posts": postcollection.get_posts_for_text_download(),
+                "media": postcollection.get_media_to_download(),
                 "avatar": avatar,
-                "like_posts": like_posts,
+                "like_posts": postcollection.get_posts_to_like(),
                 "ele": ele,
             }
         }
@@ -140,6 +140,7 @@ class scraperManager(commmandManager):
                         username=username,
                     )
                 )
+            manager.Manager.model_manager.mark_as_processed(username)
         return out
 
     @exit.exit_wrapper
@@ -194,7 +195,7 @@ def daemon_process():
     if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
-    manager.Manager.model_manager.getselected_usernames()
+    manager.Manager.model_manager.get_selected_models()
     actions.select_areas()
     try:
         worker_thread = threading.Thread(

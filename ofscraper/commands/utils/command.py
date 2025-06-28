@@ -34,12 +34,9 @@ class commmandManager:
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
-                            all_media, posts, like_posts = await post_media_process(
+                            postcollection = await post_media_process(
                                 ele, c=c
                             )
-
-                            text_posts = filters.filterPostFinalText(posts)
-                            like_posts = filters.post_filter_for_like(like_posts)
 
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
@@ -52,9 +49,9 @@ class commmandManager:
                                     avatar_str.format(avatar=avatar)
                                 )
                             result = await funct(
-                                media=all_media,
-                                posts=text_posts,
-                                like_posts=like_posts,
+                                media=postcollection.get_media_to_download(),
+                                posts=postcollection.get_posts_for_text_download(),
+                                like_posts=postcollection.get_posts_to_like(),
                                 ele=ele,
                             )
                             data.extend(result)
@@ -161,7 +158,7 @@ class commmandManager:
         username = user.name
         active = user.active
         final_post_areas = areas.get_final_posts_area()
-        length = manager.Manager.model_manager.get_num_selected()
+        length = manager.Manager.model_manager.num_models_selected
         count = progress_tasks.get_user_task_obj().completed
         logging.getLogger("shared").warning(
             progress_str.format(count=count + 1, length=length)

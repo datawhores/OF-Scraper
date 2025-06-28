@@ -14,7 +14,7 @@ from ofscraper.commands.utils.strings import (
     all_paid_progress_download_str,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.main.close.final.final_user import post_user_script
+from ofscraper.scripts.final_user_script import post_user_script
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 
@@ -24,8 +24,10 @@ log = logging.getLogger("shared")
 @run
 async def scrape_paid_all():
     out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-    await manager.Manager.model_manager.all_subs_retriver()
+    await manager.Manager.model_manager._fetch_all_subs_async()
     async for count, value, length in process_scrape_paid():
+        if count>150:
+            continue
         process_user_info_printer(
             value,
             length,

@@ -18,7 +18,6 @@ import psutil
 
 import ofscraper.utils.env.env as env
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.commands.scraper.actions.utils.send.message import send_msg
 from ofscraper.commands.scraper.actions.utils.progress.update import update_total
 import ofscraper.utils.settings as settings
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -26,6 +25,7 @@ from ofscraper.commands.scraper.actions.utils.log import get_medialog
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import download_media_update
+from ofscraper.scripts.skip_download_script import skip_download_script
 
 
 class DownloadManager:
@@ -65,8 +65,8 @@ class DownloadManager:
             else {"Range": f"bytes={resume_size}-{total}"}
         )
 
-    def _get_resume_size(self, tempholderObj, mediatype=None):
-        if not settings.get_settings(mediatype=mediatype).auto_resume:
+    def _get_resume_size(self, tempholderObj, ):
+        if not settings.get_settings().auto_resume:
             pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
             return 0
         return (
@@ -89,8 +89,9 @@ class DownloadManager:
         total = int(total)
         if total == 0:
             return 0
-        file_size_max = settings.get_settings(mediatype=ele.mediatype).size_max
-        file_size_min = settings.get_settings(mediatype=ele.mediatype).size_min
+        skip_download_script(total,ele)
+        file_size_max = settings.get_settings().size_max
+        file_size_min = settings.get_settings().size_min
         if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
             ele.mediatype = "forced_skipped"
             common_globals.log.debug(
@@ -104,8 +105,8 @@ class DownloadManager:
             )
             return 0
 
-    def _downloadspace(self, mediatype=None):
-        space_limit = config_data.get_system_freesize(mediatype=mediatype)
+    def _downloadspace(self):
+        space_limit = config_data.get_system_freesize()
         if space_limit > 0 and space_limit > system.get_free():
             raise Exception(env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 

@@ -4,7 +4,7 @@ import asyncio
 
 import ofscraper.utils.hash as hash
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.main.close.final.final_user import post_user_script
+from ofscraper.scripts.final_user_script import post_user_script
 from ofscraper.commands.utils.strings import (
     download_activity_str,
 )

@@ -12,7 +12,7 @@ r"""
 """
 
 from ofscraper.main.close.final.final_log import final_log
-from ofscraper.main.close.final.final_script import final_script
+from ofscraper.scripts.final_script import final_script
 from ofscraper.utils.logs.logs import printEndValues
 
 

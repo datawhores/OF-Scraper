@@ -21,7 +21,7 @@ def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 
 
-# protect db from dupe inserts
+# protect db from dupe insertsd
 def dupefilter(media):
     ids = set()
     output = []
@@ -68,7 +68,7 @@ def ele_count_filter(media):
 
 
 def mediatype_type_filter(media):
-    filtersettings = settings.get_settings().mediatypes
+    filtersettings=settings.get_settings().mediatype
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):
@@ -76,7 +76,6 @@ def mediatype_type_filter(media):
         filtersettings = list(filter(lambda x: x != "", filtersettings))
         if len(filtersettings) == 0:
             return media
-        log.info(f"filtering Media to {','.join(filtersettings)}")
         media = list(filter(lambda x: x.mediatype.lower() in filtersettings, media))
     else:
         log.info("The settings you picked for the filter are not valid\nNot Filtering")

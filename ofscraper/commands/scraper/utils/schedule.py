@@ -37,7 +37,7 @@ def schedule_helper(*functs):
     jobqueue.put(logger.resetLogger)
     jobqueue.put(logs.printStartValues)
     jobqueue.put(
-        partial(manager.Manager.model_manager.getselected_usernames, rescan=True)
+        partial(manager.Manager.model_manager.get_selected_models, rescan=True)
     )
     jobqueue.put(before_arg.update_before)
     for funct in functs:

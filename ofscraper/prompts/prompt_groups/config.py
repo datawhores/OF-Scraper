@@ -70,8 +70,17 @@ def funct(prompt_):
     ffmeg: path to ffmpeg binary
     -----------------------------------
     [Script Options]
-    post_download_script: script to run after each model
-    post_script: script to run after all models are processed
+    post_download_script: A script that runs after an action for each model has completed.
+    skip_download_script: A script that determines whether to skip or continue a download. 
+    It executes before the download process begins.
+
+    post_script: A script that runs after all actions for all models have completed.
+    naming_script: A script that provides custom logic for generating the final filename. 
+    It outputs the desired filename or path.
+
+    skip_download_script: A script that determines whether to skip or continue a download. 
+    It executes before the download process begins, and should return "False" or an empty string via stdout to 
+    signal that the download should be skipped.
     -----------------------------------
     [CDM Options]
     private-key: for manual cdm
@@ -85,10 +94,6 @@ def funct(prompt_):
     -----------------------------------
     [Content Filter Options]
     block_ads: use common key words to block ads
-    --------------------------------------------------
-    [Scripts Options]
-    post_download_script: script to run after actions on each model
-    post_script: script to run after all models are processed
     --------------------------------------------------
     [Advanced Options]
     code-execution: allow eval on custom_val
@@ -301,19 +306,35 @@ def script_config():
     out = {}
     answer = promptClasses.batchConverter(
         *[
-            {
+           {
                 "type": "input",
                 "name": "post_download_script",
-                "message": "Script to run after each model is processed",
+                "message": "Script to run after each model action completes",
                 "default": data.get_post_download_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
             },
             {
                 "type": "input",
                 "name": "post_script",
-                "message": "Script to run after all models have processed",
+                "message": "Script to run after all model actions complete",
                 "default": data.get_post_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
+            },
+
+             {
+                "type": "input",
+                "name": "naming_script",
+                "message": "Script to determine final filename before download",
+                "default": data.get_naming_script() or "",
+                "option_instruction": "Leave empty to skip the naming script",
+            },
+
+              {
+                "type": "input",
+                "name": "skip_download_script",
+                "message": "Script to decide whether to skip a file download",
+                "default": data.get_skip_download_script() or "",
+                "option_instruction": "Leave empty to skip the download skip script",
             },
         ],
     )
@@ -544,14 +565,7 @@ def advanced_config() -> dict:
                 "default": data.get_show_downloadprogress(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
-            {
-                "type": "list",
-                "name": "code-execution",
-                "message": "Enable Code Execution:",
-                "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
-                "default": data.get_allow_code_execution,
-                "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
-            },
+
             {
                 "type": "filepath",
                 "name": "temp_dir",

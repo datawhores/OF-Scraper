@@ -78,7 +78,7 @@ class MainDownloadManager(DownloadManager):
         return await self._handle_results_main(result, ele, username, model_id)
 
     async def _main_download_downloader(self, c, ele):
-        self._downloadspace(mediatype=ele.mediatype)
+        self._downloadspace()
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.postid}.part"
         ).init()
@@ -154,7 +154,7 @@ class MainDownloadManager(DownloadManager):
         self, c, ele, tempholderObj, placeholderObj=None, total=None
     ):
         try:
-            resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+            resume_size = self._get_resume_size(tempholderObj)
             headers = self._get_resume_header(resume_size, total)
             # reset total
             total = None
@@ -336,7 +336,7 @@ class MainDownloadManager(DownloadManager):
                 model_id=model_id,
                 username=username,
                 downloaded=True,
-                hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+                hashdata=await common.get_hash(path_to_file),
                 size=placeholderObj.size,
             )
         await common.set_profile_cache_helper(ele)
@@ -363,7 +363,7 @@ class MainDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
         )
-        resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+        resume_size = self._get_resume_size(tempholderObj)
         common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
 
     async def _resume_data_handler_main(self, data, ele, tempholderObj):
@@ -377,7 +377,7 @@ class MainDownloadManager(DownloadManager):
 
         content_type = data.get("content-type").split("/")[-1]
         total = int(data.get("content-total")) if data.get("content-total") else None
-        resume_size = self._get_resume_size(tempholderObj, mediatype=ele.mediatype)
+        resume_size = self._get_resume_size(tempholderObj)
         resume_size = self._resume_cleaner(
             resume_size, total, tempholderObj.tempfilepath
         )

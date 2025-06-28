@@ -1,236 +1,168 @@
 import logging
 import time
+from typing import Any, Dict, List, Optional, Set
 
+import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.filters.models.date as date_
 import ofscraper.filters.models.flags as flags
 import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
-import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.user as user_helper
 import ofscraper.utils.args.mutators.write as write_args
+import ofscraper.utils.console as console
+import ofscraper.utils.env.env as env
 import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.console as console
-
+from ofscraper.data.models.models import Model
 
 log = logging.getLogger("shared")
 
 
 class ModelManager:
+    """
+    Manages fetching, filtering, and selecting user models (subscriptions).
+    Includes state management for tracking processed models.
+    """
     def __init__(self) -> None:
-        self._all_subs_dict = {}
-        self._parsed_subs_dict = {}
-        self._seen_users = set()
-
-    def get_num_selected(self):
-        return len(self.parsed_subs)
-
-    def get_model(self, name):
-        return self._all_subs_dict.get(name)
+        """Initializes the ModelManager."""
+        self._all_subs_dict: Dict[str, Model] = {}
+        self._parsed_subs_dict: Dict[str, Model] = {}
+        self._seen_users: Set[str] = set()
+        self._processed_usernames: Set[str] = set()
 
     @property
-    def all_subs(self):
-        return list(self._all_subs_dict.keys())
+    def num_selected(self) -> int:
+        return len(self._parsed_subs_dict)
+
+    def get_model(self, username: str) -> Optional[Model]:
+        return self._all_subs_dict.get(username)
 
     @property
-    def all_subs_obj(self):
+    def all_subs(self) -> List[Model]:
         return list(self._all_subs_dict.values())
 
     @property
-    def all_subs_dict(self):
-        return self._all_subs_dict
-
-    @all_subs_dict.setter
-    def all_subs_dict(self, value):
-        if value and isinstance(value, dict):
-            self._all_subs_dict.update(value)
-        else:
-            [self._all_subs_dict.update({ele.name: ele}) for ele in value]
-
-    @property
-    def parsed_subs_dict(self):
-        return self._parsed_subs_dict
-
-    @property
-    def parsed_subs(self):
-        return list(self._parsed_subs_dict.keys())
-
-    @property
-    def parsed_subs_obj(self):
+    def parsed_subs(self) -> List[Model]:
         return list(self._parsed_subs_dict.values())
+    
+    @property
+    def num_models(self)->int:
+        return len(self.all_subs)
+    
+    @property
+    def num_models_selected(self)->int:
+        return len(self.parsed_subs)
 
-    def getselected_usernames(self, rescan=False, reset=False):
-        # username list will be retrived every time resFet==True
-        if reset is True and rescan is True:
-            self.all_subs_retriver()
-            self.parsed_subscriptions_helper(reset=True)
-        elif reset is True and self.parsed_subs:
-            prompt = prompts.reset_username_prompt()
-            if prompt == "Selection":
-                self.all_subs_retriver()
-                self.parsed_subscriptions_helper(reset=True)
-            elif prompt == "Data":
-                self.all_subs_retriver()
-                self.parsed_subscriptions_helper()
-            elif prompt == "Selection_Strict":
-                self.parsed_subscriptions_helper(reset=True)
-        elif rescan is True:
-            self.all_subs_retriver()
-            self.parsed_subscriptions_helper()
-        else:
-            self.all_subs_retriver(refetch=False)
-            self.parsed_subscriptions_helper()
-        return self.parsed_subs_obj
 
-    @run
-    async def set_data_all_subs_dict(self, username):
-        args = read_args.retriveArgs()
-        oldusernames = args.usernames or set()
-        all_usernames = set()
-        all_usernames.update([username] if not isinstance(username, list) else username)
-        all_usernames.update(oldusernames)
+    def update_all_subs(self, models: List[Model] | Dict[str, Model]) -> None:
+        if isinstance(models, dict):
+            self._all_subs_dict.update(models)
+        elif isinstance(models, list):
+            for ele in models:
+                self._all_subs_dict[ele.name] = ele
 
-        new_names = [
-            username
-            for username in all_usernames
-            if username not in self._seen_users
-            and not self._seen_users.add(username)
-            and username not in oldusernames
-            and username != env.getattr("DELETED_MODEL_PLACEHOLDER")
-        ]
+    def get_selected_models(self, rescan: bool = False, reset: bool = False) -> List[Model]:
+        if rescan:
+            self._fetch_all_subs()
 
-        args.usernames = new_names
-        write_args.setArgs(args)
-        await self.all_subs_retriver() if len(new_names) > 0 else None
-        args.usernames = set(all_usernames)
-        write_args.setArgs(args)
+        should_reset_selection = reset
+        if reset and self.parsed_subs:
+            prompt_choice = prompts.reset_username_prompt()
+            if prompt_choice == "Data":
+                should_reset_selection = False
+            if prompt_choice in {"Selection", "Data"}:
+                self._fetch_all_subs()
+
+        self._load_all_subs_if_needed()
+        self._process_parsed_subscriptions(reset=should_reset_selection)
+        return self.parsed_subs
 
     @run
-    async def all_subs_retriver(self, refetch=True):
-        if bool(self.all_subs_dict) and not refetch:
+    async def _fetch_all_subs(self, force_refetch: bool = True) -> None:
+        if self._all_subs_dict and not force_refetch:
             return
-        while True:
-            data = await retriver.get_models()
-            self.all_subs_dict = data
-            if len(self.all_subs_dict) > 0:
-                break
-            elif len(self.all_subs_dict) == 0:
-                console.get_console().print(
-                    "[bold red]No accounts found during scan[/bold red]"
-                )
-                # give log time to process
-                time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT"))
-                if not prompts.retry_user_scan():
-                    raise Exception("Could not find any accounts on list")
+        await self._fetch_all_subs_async()
 
-    def parsed_subscriptions_helper(self, reset=False):
+    def _load_all_subs_if_needed(self) -> None:
+        if not self._all_subs_dict:
+            self._fetch_all_subs(force_refetch=True)
+
+    async def _fetch_all_subs_async(self) -> None:
+        while True:
+            models = await retriver.get_models()
+            if models:
+                self.update_all_subs(models)
+                break
+            console.get_console().print("[bold red]No accounts found during scan[/bold red]")
+            time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT", 0))
+            if not prompts.retry_user_scan():
+                raise SystemExit("Could not find any accounts on list.")
+
+    def _process_parsed_subscriptions(self, reset: bool = False) -> None:
         args = read_args.retriveArgs()
-        if reset is True:
+        if reset:
             args.usernames = None
             write_args.setArgs(args)
-        if not bool(args.usernames):
-            selectedusers = retriver.get_selected_model(self.filterNSort())
-            settings.get_settings().usernames = list(
-                map(lambda x: x.name, selectedusers)
-            )
-            self._parsed_subs_dict = {ele.name: ele for ele in selectedusers}
+
+        if not args.usernames:
+            filtered_sorted_models = self._filter_and_sort_models()
+            selected_users = retriver.get_selected_model(filtered_sorted_models)
+            self._parsed_subs_dict = {model.name: model for model in selected_users}
+            settings.get_settings().usernames = list(self._parsed_subs_dict.keys())
             write_args.setArgs(args)
         elif "ALL" in args.usernames:
-            self._parsed_subs_dict = self.filterNSort()
-        elif args.usernames:
-            usernameset = set(args.usernames)
+            self._parsed_subs_dict = self._filter_and_sort_models()
+        else:
+            username_set = set(args.usernames)
             self._parsed_subs_dict = {
-                ele.name: ele for ele in self.all_subs_obj if ele.name in usernameset
+                name: model for name, model in self._all_subs_dict.items() if name in username_set
             }
 
-    def setfilter(self):
-        global args
-        while True:
-            choice = prompts.decide_filters_menu()
-            if choice == "modelList":
-                break
-            elif choice == "sort":
-                args = prompts.modify_sort_prompt(read_args.retriveArgs())
-            elif choice == "subtype":
-                args = prompts.modify_subtype_prompt(read_args.retriveArgs())
-            elif choice == "promo":
-                args = prompts.modify_promo_prompt(read_args.retriveArgs())
-            elif choice == "active":
-                args = prompts.modify_active_prompt(read_args.retriveArgs())
-            elif choice == "price":
-                args = prompts.modify_prices_prompt(read_args.retriveArgs())
-            elif choice == "reset":
-                old_args = read_args.retriveArgs()
-                old_blacklist = old_args.black_list
-                old_list = old_args.user_list
-                args = user_helper.resetUserFilters()
-                if not list(sorted(old_blacklist)) == list(
-                    sorted(args.black_list)
-                ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                    console.get_console().print("Updating Models")
-                    self.all_subs_retriver(rescan=True)
-            elif choice == "list":
-                old_args = read_args.retriveArgs()
-                old_blacklist = old_args.black_list
-                old_list = old_args.user_list
-                args = prompts.modify_list_prompt(old_args)
-                if not list(sorted(old_blacklist)) == list(
-                    sorted(args.black_list)
-                ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
-                    console.get_console().print("Updating Models")
-                    self.all_subs_retriver(rescan=True)
-            elif choice == "select":
-                old_args = read_args.retriveArgs()
-                args = prompts.modify_list_prompt(old_args)
-            write_args.setArgs(args)
+    def _filter_and_sort_models(self) -> Dict[str, Model]:
+        filtered_models = self._apply_filters()
+        sorted_models = sort.sort_models_helper(filtered_models)
+        return {model.name: self._all_subs_dict[model.name] for model in sorted_models}
+    
+    def _apply_filters(self) -> List[Model]:
+        models = self.all_subs
+        models = subtype.subType(models)
+        models = price.pricePaidFreeFilterHelper(models)
+        models = flags.promoFilterHelper(models)
+        models = date_.dateFilters(models)
+        models = other.otherFilters(models)
+        return models
 
-    def filterNSort(self):
-        while True:
-            # paid/free
+    def mark_as_processed(self, username: str) -> None:
+        if username in self._parsed_subs_dict:
+            self._processed_usernames.add(username)
+        else:
+            logging.warning(f"Attempted to mark non-selected user '{username}' as processed.")
 
-            log.debug(f"username count no filters: {len(self.all_subs)}")
-            filterusername = self.filterOnly()
-            log.debug(f"final username count with all filters: {len(filterusername)}")
-            # give log time to process
-            time.sleep(env.getattr("LOG_DISPLAY_TIMEOUT"))
-            if len(filterusername) != 0:
+    def is_processed(self, username: str) -> bool:
+        return username in self._processed_usernames
 
-                return {
-                    ele.name: self._all_subs_dict[ele.name]
-                    for ele in sort.sort_models_helper(filterusername)
-                }
-            console.get_console().print(
-                f"""[bold red]You have filtered the user list to zero[/bold red]
-    Change the filter settings to continue
+    def reset_processed_status(self) -> None:
+        logging.info("Resetting processing status for all users.")
+        self._processed_usernames.clear()
 
-    Active userlist : {settings.get_settings().userlist or 'no userlist'}
-    Active blacklist : {settings.get_settings().blacklist or 'no blacklist'}
+    @property
+    def processed_dict(self) -> Dict[str, Model]:
+        """Returns a dictionary of {username: model} for processed models."""
+        return {
+            username: self._parsed_subs_dict[username]
+            for username in self._processed_usernames
+            if username in self._parsed_subs_dict
+        }
 
-    Sub Status: {settings.get_settings().sub_status or 'No Filter'}
-    Renewal Status: {settings.get_settings().renewal or 'No Filter'}
-
-    Promo Price Filter: {settings.get_settings().promo_price or 'No Filter'}
-    Current Price Filter: {settings.get_settings().current_price or 'No Filter'}
-    Current Price Filter: {settings.get_settings().current_price or 'No Filter'}
-    Renewal Price Filter: {settings.get_settings().renewal_price or 'No Filter'}
-
-    [ALT+D] More Filters
-gi
-    """
-            )
-
-            self.setfilter()
-
-    def filterOnly(self, usernames=None):
-        usernames = self.all_subs_obj
-        filterusername = subtype.subType(usernames)
-        filterusername = price.pricePaidFreeFilterHelper(filterusername)
-        filterusername = flags.promoFilterHelper(filterusername)
-        filterusername = date_.dateFilters(filterusername)
-        filterusername = other.otherFilters(filterusername)
-        return filterusername
+    @property
+    def unprocessed_dict(self) -> Dict[str, Model]:
+        """Returns a dictionary of {username: model} for unprocessed models."""
+        return {
+            username: model
+            for username, model in self._parsed_subs_dict.items()
+            if username not in self._processed_usernames
+        }

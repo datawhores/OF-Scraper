@@ -30,15 +30,16 @@ def _scraper_user_helper(c):
     try:
         with c.requests(env.getattr("meEP")) as r:
             data = r.json_()
-            log_helpers.updateSenstiveDict(data["id"], "userid")
-            log_helpers.updateSenstiveDict(
-                f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
-                "username",
-            )
-            log_helpers.updateSenstiveDict(
-                f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
-                "name",
-            )
+            if data['isAuth']:
+                log_helpers.updateSenstiveDict(data["id"], "userid")
+                log_helpers.updateSenstiveDict(
+                    f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
+                    "username",
+                )
+                log_helpers.updateSenstiveDict(
+                    f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
+                    "name",
+                )
 
     except Exception as E:
         log.traceback_(E)

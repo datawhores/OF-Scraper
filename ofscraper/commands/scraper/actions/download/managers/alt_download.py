@@ -54,7 +54,6 @@ from ofscraper.db.operations_.media import download_media_update
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess import run
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache as cache
@@ -100,7 +99,7 @@ class AltDownloadManager(DownloadManager):
         )
 
     async def _alt_download_downloader(self, item, c, ele):
-        self._downloadspace(mediatype=ele.mediatype)
+        self._downloadspace()
         placeholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{item['name']}.part"
         ).init()
@@ -173,7 +172,7 @@ class AltDownloadManager(DownloadManager):
         total = None
         try:
 
-            resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+            resume_size = self._get_resume_size(placeholderObj)
             headers = self._get_resume_header(resume_size, item["total"])
             # reset total
             total = None
@@ -380,7 +379,7 @@ class AltDownloadManager(DownloadManager):
                 username=username,
                 downloaded=True,
                 hashdata=await common.get_hash(
-                    sharedPlaceholderObj, mediatype=ele.mediatype
+                    sharedPlaceholderObj
                 ),
                 size=sharedPlaceholderObj.size,
             )
@@ -397,7 +396,7 @@ class AltDownloadManager(DownloadManager):
         )
         total = int(data.get("content-total")) if data.get("content-total") else None
         item["total"] = total
-        resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+        resume_size = self._get_resume_size(placeholderObj)
         resume_size = self._resume_cleaner(
             resume_size, total, placeholderObj.tempfilepath
         )
@@ -424,7 +423,7 @@ class AltDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
         )
-        resume_size = self._get_resume_size(placeholderObj, mediatype=ele.mediatype)
+        resume_size = self._get_resume_size(placeholderObj)
         common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
         return item, False
 

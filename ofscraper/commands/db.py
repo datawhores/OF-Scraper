@@ -375,6 +375,6 @@ class DBManager:
 
 def db():
     actions.select_areas()
-    for model in manager.Manager.model_manager.getselected_usernames(rescan=False):
+    for model in manager.Manager.model_manager.get_selected_models(rescan=False):
         db_manager = DBManager(model.name, model.id)
         db_manager.print_media()

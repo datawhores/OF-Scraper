@@ -26,7 +26,7 @@ def update_activity_task(**kwargs):
 
 def increment_activity_count(total=None, visible=True, advance=1, **kwargs):
     total = (
-        total if total is not None else manager.Manager.model_manager.get_num_selected()
+        total if total is not None else manager.Manager.model_manager.num_models_selected
     )
     activity_counter.update(
         get_activity_counter_task(),
@@ -41,7 +41,7 @@ def update_activity_count(visible=True, total=False, **kwargs):
     total = (
         total
         if total is not False
-        else manager.Manager.model_manager.get_num_selected()
+        else manager.Manager.model_manager.num_models_selected
     )
     activity_counter.update(
         get_activity_counter_task(), visible=visible, total=total, **kwargs
@@ -50,7 +50,7 @@ def update_activity_count(visible=True, total=False, **kwargs):
 
 def increment_user_activity(total=None, visible=True, advance=1, **kwargs):
     total = (
-        total if total is not None else manager.Manager.model_manager.get_num_selected()
+        total if total is not None else manager.Manager.model_manager.num_models_selected
     )
     activity_counter.update(
         get_user_first_task(), total=total, visible=visible, advance=advance, **kwargs
@@ -59,7 +59,7 @@ def increment_user_activity(total=None, visible=True, advance=1, **kwargs):
 
 def update_user_activity(visible=True, total=None, **kwargs):
     total = (
-        total if total is not None else manager.Manager.model_manager.get_num_selected()
+        total if total is not None else manager.Manager.model_manager.num_models_selected
     )
     activity_counter.update(
         get_user_first_task(), visible=visible, total=total, **kwargs

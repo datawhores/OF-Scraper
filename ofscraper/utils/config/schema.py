@@ -49,7 +49,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "length_min": data.get_min_length(config=config),
         },
         "advanced_options": {
-            "code-execution": data.get_allow_code_execution(config=config),
             "dynamic-mode-default": data.get_dynamic(config=config),
             "downloadbars": data.get_show_downloadprogress(config=config),
             "cache-mode": data.cache_mode_helper(config=config),
@@ -68,6 +67,8 @@ def get_current_config_schema(config: dict = None) -> dict:
         "script_options": {
             "post_download_script": data.get_post_download_script(config=config),
             "post_script": data.get_post_script(config=config),
+            "naming_script": data.get_naming_script(config=config),
+
         },
         "responsetype": {
             "timeline": data.get_timeline_responsetype(config=config),

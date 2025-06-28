@@ -34,9 +34,9 @@ async def set_profile_cache_helper(ele):
         )
 
 
-async def get_hash(file_data, mediatype=None):
+async def get_hash(file_data):
     return await asyncio.get_event_loop().run_in_executor(
-        common_globals.thread, partial(hash.get_hash, file_data, mediatype=mediatype)
+        common_globals.thread, partial(hash.get_hash, file_data, )
     )
 
 

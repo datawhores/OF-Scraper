@@ -82,6 +82,8 @@ def manual_download(urls=None):
                         username, model_id, medialist, posts=None
                     )
                 results.append(result)
+                manager.Manager.model_manager.mark_as_processed(username)
+
 
         final_action(results)
 
@@ -108,7 +110,7 @@ def allow_manual_dupes():
 
 
 def set_user_data(url_dicts):
-    manager.Manager.model_manager.set_data_all_subs_dict(
+    manager.Manager.model_manager.set_data_all_subs_model_dict(
         [nested_dict.get("username") for nested_dict in url_dicts.values()]
     )
 

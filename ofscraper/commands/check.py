@@ -40,12 +40,13 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.main.close.final.final_user import post_user_script
+from ofscraper.scripts.final_user_script import post_user_script
 from ofscraper.main.close.final.final import final
 import ofscraper.main.manager as manager
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.scraper.actions.download.download import process_dicts
 from rich.text import Text
+import ofscraper.main.manager as manager
 
 
 log = logging.getLogger("shared")
@@ -97,7 +98,7 @@ def process_item():
     except Exception as E:
         log.debug(f"Error getting item from queue: {E}")
         return
-    for count, _ in enumerate(range(0, 2)):
+    for count in range(0, 2):
         try:
             username = row["username"]
             post_id = int(row["post_id"])
@@ -109,7 +110,7 @@ def process_item():
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
-            manager.Manager.model_manager.set_data_all_subs_dict(username)
+            manager.Manager.model_manager.set_data_all_subs_model_dict(username)
             post = media.post
             model_id = media.post.model_id
             username = media.post.username
@@ -120,6 +121,7 @@ def process_item():
             operations.table_init_create(model_id=model_id, username=username)
 
             output, values = process_dicts(username, model_id, [media], [post])
+
             if values is None or values[-1] == 1:
                 raise Exception("Download is marked as failed")
             elif values[-2] == 1:
@@ -134,6 +136,7 @@ def process_item():
                 app.app.table.update_cell_at_key(
                     key, "download_cart", Text("[downloaded]", style="bold green")
                 )
+                manager.Manager.model_manager.mark_as_processed(username)
                 break
         except Exception as E:
             if count == 1:

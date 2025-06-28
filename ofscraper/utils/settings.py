@@ -16,20 +16,19 @@ def get_args():
 
 
 def update_args(args):
-    write_args.setArgs(args)
-    for key in settings.keys():
-        settings[key] = setup_settings(key)
-
-
-def get_settings(mediatype=None):
     global settings
-    key = mediatype if mediatype is not None else "main"
-    if not settings.get(key):
-        settings[key] = setup_settings(mediatype)
-    return settings[key]
+    write_args.setArgs(args)
+    settings= setup_settings()
 
 
-def setup_settings(mediatype):
+def get_settings():
+    global settings
+    if not settings:
+        settings= setup_settings()
+    return settings
+
+
+def setup_settings():
     merged = read_args.retriveArgs()
     merged.key_mode = read_args.retriveArgs().key_mode or config_data.get_key_mode()
     merged.cache_disabled = (
@@ -52,25 +51,24 @@ def setup_settings(mediatype):
     merged.log_level = read_args.retriveArgs().log_level or env.getattr(
         "DEFAULT_LOG_LEVEL"
     )
-    merged.trunicate = get_trunication(mediatype)
+    merged.trunicate = get_trunication()
     merged.userlist = get_userlist()
     merged.blacklist = get_blacklist()
     merged.text_type = read_args.retriveArgs().text_type or config_data.get_textType(
-        mediatype=mediatype
+      
     )
     merged.space_replacer = (
         read_args.retriveArgs().space_replacer
-        or config_data.get_spacereplacer(mediatype=mediatype)
+        or config_data.get_spacereplacer()
     )
     merged.text_length = (
         read_args.retriveArgs().text_length
-        or config_data.get_textlength(mediatype=mediatype)
+        or config_data.get_textlength()
     )
     merged.size_max = read_args.retriveArgs().size_max or config_data.get_filesize_max(
-        mediatype=mediatype
     )
     merged.size_min = read_args.retriveArgs().size_min or config_data.get_filesize_min(
-        mediatype=mediatype
+        
     )
     merged.download_sems = (
         read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
@@ -84,10 +82,10 @@ def setup_settings(mediatype):
     )
     merged.client_id = read_args.retriveArgs().client_id or config_data.get_client_id()
     merged.download_limit = get_download_limit()
-    merged.length_max = get_max_length(mediatype)
-    merged.length_min = get_min_length(mediatype)
+    merged.length_max = get_max_length()
+    merged.length_min = get_min_length()
     merged.neg_filter = get_neg_filter()
-    merged.hash = config_data.get_hash(mediatype=mediatype)
+    merged.hash = config_data.get_hash()
     merged.post_script = (
         read_args.retriveArgs().post_script or config_data.get_post_script()
     )
@@ -95,12 +93,19 @@ def setup_settings(mediatype):
         read_args.retriveArgs().download_script
         or config_data.get_post_download_script()
     )
-    merged.auto_resume = get_auto_resume(mediatype)
+    merged.naming_script= (
+        read_args.retriveArgs().naming_script
+        or config_data.get_naming_script()
+    )
+    merged.download_skip_script=(
+        read_args.retriveArgs().download_skip_script
+        or config_data.get_skip_download_script()
+    )
+    merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()
     merged.cached_disabled=get_cached_disabled()
     merged.logs_expire_time=config_data.get_logs_expire()
     merged.ssl_validation=config_data.get_ssl_validation()
-    merged.code_execution=config_data.get_allow_code_execution
 
     return merged
 
@@ -131,10 +136,10 @@ def get_cached_disabled():
     if read_args.retriveArgs().no_api_cache:
         return True
     return False
-def get_auto_resume(mediatype=None):
+def get_auto_resume():
     if read_args.retriveArgs().no_auto_resume:
         return False
-    return config_data.get_part_file_clean(mediatype=mediatype)
+    return config_data.get_part_file_clean()
 
 
 def get_neg_filter():
@@ -144,16 +149,16 @@ def get_neg_filter():
     return neg
 
 
-def get_min_length(mediatype=None):
+def get_min_length():
     if read_args.retriveArgs().length_min is not None:
         return read_args.retriveArgs().length_min
-    return config_data.get_min_length(mediatype=mediatype)
+    return config_data.get_min_length()
 
 
-def get_max_length(mediatype=None):
+def get_max_length():
     if read_args.retriveArgs().length_max is not None:
         return read_args.retriveArgs().length_max
-    return config_data.get_max_length(mediatype=mediatype)
+    return config_data.get_max_length()
 
 
 def get_download_limit():
@@ -161,10 +166,10 @@ def get_download_limit():
     return max(out, 1024) if out else out
 
 
-def get_trunication(mediatype=None):
+def get_trunication():
     if read_args.retriveArgs().original:
         return False
-    return config_data.get_truncation(mediatype=mediatype)
+    return config_data.get_truncation()
 
 
 def get_userlist():

@@ -42,24 +42,14 @@ def temp_cleanup():
         return
     if not settings.get_settings().auto_resume:
         log.info("Cleaning up temp files\n\n")
-        roots = set(
-            [
-                data.get_TempDir(mediatype="audios")
-                or common_paths.get_save_location(mediatype="audios"),
-                data.get_TempDir(mediatype="videos")
-                or common_paths.get_save_location(mediatype="videos"),
-                data.get_TempDir(mediatype="images")
-                or common_paths.get_save_location(mediatype="imaegs"),
-            ]
-        )
-        for ele in roots:
-            if ele is None:
-                continue
-            for file in filter(
-                lambda x: re.search("\.part$|^temp_", str(x)) is not None,
-                pathlib.Path(ele).glob("**/*"),
-            ):
-                file.unlink(missing_ok=True)
+        root =  data.get_TempDir()
+        if root is None:
+            return
+        for file in filter(
+            lambda x: re.search("\.part$|^temp_", str(x)) is not None,
+            pathlib.Path(root).glob("**/*"),
+        ):
+            file.unlink(missing_ok=True)
 
 
 def truncate(path):

@@ -26,7 +26,7 @@ def prepare(menu=False):
     if menu is True:
         actions.set_scrape_paid()
 
-    userdata = manager.Manager.model_manager.getselected_usernames(rescan=False)
+    userdata = manager.Manager.model_manager.get_selected_models(rescan=False)
     return userdata, session
 
 

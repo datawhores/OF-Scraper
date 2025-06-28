@@ -136,4 +136,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    manager.Manager.model_manager.getselected_usernames(reset=True)
+    manager.Manager.model_manager.get_selected_models(reset=True)
