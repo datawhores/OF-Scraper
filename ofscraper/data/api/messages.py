@@ -54,8 +54,6 @@ async def get_messages(model_id, username, c=None, post_id=None):
         log_after_before(after, before, username)
         filteredArray = get_filterArray(after, before, oldmessages)
         splitArrays = get_split_array(filteredArray)
-        # Set charged sleeper
-        get_sleeper(reset=True)
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after)
         data = await process_tasks(tasks)
     elif len(settings.get_settings().post_id or []) <= env.getattr(
@@ -301,7 +299,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
     )
 
     try:
-        async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
+        async with c.requests_async(url=url) as r:
             task = progress_utils.add_api_job_task(
                 f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
@@ -437,10 +435,3 @@ Setting Message scan range for {username} from {arrow.get(after).format(env.geta
     )
 
 
-def get_sleeper(reset=False):
-    global sleeper
-    if not sleeper:
-        sleeper = SessionSleep(sleep=None)
-    if reset:
-        sleeper.reset_sleep()
-    return sleeper

@@ -45,7 +45,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 
 
-from ofscraper.classes.sessionmanager.download import download_session
+from ofscraper.classes.sessionmanager.ofsession import download_session
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
 

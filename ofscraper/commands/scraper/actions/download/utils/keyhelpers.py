@@ -15,7 +15,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
-from ofscraper.classes.sessionmanager.download import cdm_session_manual
+from ofscraper.classes.sessionmanager.ofsession import cdm_session_manual
 from ofscraper.commands.scraper.actions.utils.retries import (
     get_cmd_download_req_retries,
 )

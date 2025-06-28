@@ -23,7 +23,6 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 
-from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
@@ -106,7 +105,8 @@ def _like(model_id, username, ids: list, like_action: bool):
     with progress_utils.setup_like_progress_live():
         with manager.Manager.get_ofsession(
             sem_count=1,
-           
+            rate_limit_sleep=env.getattr("SESSION_429_LIKE_SLEEP_STARTER_VAL"),
+            rate_limit_difmin=env.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
             retries=env.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []
@@ -172,11 +172,6 @@ def get_final_like_log(like_action, username, failed, post, liked):
 
 
 def _toggle_like_requests(c, id, model_id):
-
-    sleeper = SessionSleep(
-        sleep=env.getattr("SESSION_429_SLEEP_STARTER_VAL"),
-        difmin=env.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
-    )
     if not settings.get_settings().force_like and cache.get(f"liked_status_{id}", None):
         log.debug(f"ID: {id} marked as liked in cache")
         return 0
@@ -184,7 +179,7 @@ def _toggle_like_requests(c, id, model_id):
     min_duration = env.getattr("MIN_SLEEP_DURATION_LIKE")
 
     sleep_duration = random.uniform(min_duration, max_duration)
-    favorited, id = _like_request(c, id, model_id, sleeper)
+    favorited, id = _like_request(c, id, model_id)
     if favorited is None:
         return 3
     elif favorited:
@@ -193,17 +188,13 @@ def _toggle_like_requests(c, id, model_id):
     else:
         log.debug(f"ID: {id} restored to liked")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id, sleeper)
+        _like_request(c, id, model_id)
         out = 2
     cache.set(f"liked_status_{id}", True)
     return out
 
 
 def _toggle_unlike_requests(c, id, model_id):
-    sleeper = SessionSleep(
-        sleep=env.getattr("SESSION_429_SLEEP_STARTER_VAL"),
-        difmin=env.getattr("SESSION_429_LIKE_INCREASE_SLEEP_TIME_DIF"),
-    )
     if (
         not settings.get_settings().force_like
         and cache.get(f"liked_status_{id}", None) is False
@@ -211,7 +202,7 @@ def _toggle_unlike_requests(c, id, model_id):
         log.debug(f"ID: {id} marked as unliked in cache")
         return 0
     sleep_duration = env.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
-    favorited, id = _like_request(c, id, model_id, sleeper)
+    favorited, id = _like_request(c, id, model_id)
     if favorited is None:
         return 3
     elif favorited is False:
@@ -220,18 +211,17 @@ def _toggle_unlike_requests(c, id, model_id):
     else:
         log.debug(f"ID: {id} restored to unlike")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id, sleeper)
+        _like_request(c, id, model_id)
         out = 2
     cache.set(f"liked_status_{id}", False)
     return out
 
 
-def _like_request(c, id, model_id, sleeper):
+def _like_request(c, id, model_id):
 
     with c.requests(
         env.getattr("favoriteEP").format(id, model_id),
         method="post",
-        sleeper=sleeper,
         retries=env.getattr("LIKE_MAX_RETRIES"),
     ) as r:
         try:
