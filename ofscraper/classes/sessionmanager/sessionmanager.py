@@ -53,6 +53,7 @@ class SessionSleep:
         decay_threshold: Optional[float] = None,
         decay_factor: Optional[float] = None,
         increase_factor: Optional[float] = None,
+        error_name: Optional[float]=None
     ):
         self._sleep = None
         self._last_date = arrow.now()
@@ -64,6 +65,7 @@ class SessionSleep:
         self._increase_factor = increase_factor if increase_factor is not None else env.getattr("SESSION_SLEEP_INCREASE_FACTOR")
         self._decay_threshold = decay_threshold if decay_threshold is not None else env.getattr("SESSION_SLEEP_DECAY_THRESHOLD")
         self._decay_factor = decay_factor if decay_factor is not None else env.getattr("SESSION_SLEEP_DECAY_FACTOR")
+        self.error_name=error_name or ""
 
     def _maybe_decay_sleep(self):
         if not self._sleep or self._sleep <= self._init_sleep:
@@ -78,28 +80,28 @@ class SessionSleep:
         async with self._alock:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent errors")
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors")
             await asyncio.sleep(self._sleep)
 
     def do_sleep(self):
         with self._lock:
              self._maybe_decay_sleep()
         if self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent errors")
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} recent errors")
             time.sleep(self._sleep)
 
     def toomany_req(self):
         log = logging.getLogger("shared")
         if not self._sleep: 
             self._sleep = self._init_sleep if self._init_sleep > 0 else 1
-            log.debug(f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds]")
+            log.debug(f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error")
         elif (arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin):
-            log.debug(f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last error was less than {self._difmin}s ago")
+            log.debug(f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last {self.error_name} error was less than {self._difmin}s ago")
             return
         else:
             new_sleep = self._sleep * self._increase_factor
             self._sleep = min(new_sleep, self._max_sleep)
-            log.debug(f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds]")
+            log.debug(f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds] due to {self.error_name} error")
         self._last_date = arrow.now()
 
     def reset_sleep(self):
@@ -206,6 +208,7 @@ class sessionManager:
             sleep=rate_limit_sleep, difmin=rate_limit_difmin, max_sleep=rate_limit_max_sleep,
             decay_threshold=rate_limit_decay_threshold, decay_factor=rate_limit_decay_factor,
             increase_factor=rate_limit_increase_factor,
+            error_name="RATE_LIMIT_ERROR"
         )
         
         self._forbidden_sleeper = SessionSleep(
@@ -215,6 +218,7 @@ class sessionManager:
             decay_threshold=forbidden_decay_threshold if forbidden_decay_threshold is not None else env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
             decay_factor=forbidden_decay_factor if forbidden_decay_factor is not None else env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
             increase_factor=forbidden_increase_factor if forbidden_increase_factor is not None else env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
+            error_name="ACCESS_ERROR"
         )
         self._session: Union[httpx.AsyncClient, httpx.Client, None] = None
         self._async: bool = True
