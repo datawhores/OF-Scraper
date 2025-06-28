@@ -45,7 +45,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 
 
-from ofscraper.classes.sessionmanager.ofsession import download_session
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
 
@@ -300,7 +299,7 @@ async def process_dicts(username, model_id, medialist):
 
             aws = []
 
-            async with download_session() as c:
+            async with manager.Manager.get_download_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_metadata_task(

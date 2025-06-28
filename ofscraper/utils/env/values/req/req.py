@@ -177,61 +177,6 @@ def load_network_config():
 
 
 
-    # --- Dynamic Session Sleep Configuration (For 429/504 Rate Limiting) ---
-    # SESSION_SLEEP_INIT: Initial sleep duration on first 429/504 error (seconds).
-    # Default: 0
-    config['SESSION_SLEEP_INIT'] = int(os.getenv('OFSC_SESSION_SLEEP_INIT', '0'))
-
-    # SESSION_SLEEP_INCREASE_TIME_DIFF: Min time between 429/504 errors to trigger a sleep increase (seconds).
-    # Default: 30
-    config['SESSION_SLEEP_INCREASE_TIME_DIFF'] = int(os.getenv('OFSC_SESSION_SLEEP_INCREASE_TIME_DIFF', '30'))
-    
-    # SESSION_SLEEP_MAX: Maximum backoff sleep time for 429/504 errors (seconds).
-    # Default: 180
-    config['SESSION_SLEEP_MAX'] = int(os.getenv('OFSC_SESSION_SLEEP_MAX', '180'))
-
-    # SESSION_SLEEP_INCREASE_FACTOR: The multiplier for increasing sleep time on repeated 429/504s.
-    # Default: 2.0
-    config['SESSION_SLEEP_INCREASE_FACTOR'] = float(os.getenv('OFSC_SESSION_SLEEP_INCREASE_FACTOR', '2.0'))
-
-    # SESSION_SLEEP_DECAY_THRESHOLD: Time of no 429/504 errors before sleep starts to decrease (seconds).
-    # Default: 120
-    config['SESSION_SLEEP_DECAY_THRESHOLD'] = int(os.getenv('OFSC_SESSION_SLEEP_DECAY_THRESHOLD', '120'))
-
-    # SESSION_SLEEP_DECAY_FACTOR: The divisor for reducing sleep time during cool-down.
-    # Default: 1.5
-    config['SESSION_SLEEP_DECAY_FACTOR'] = float(os.getenv('OFSC_SESSION_SLEEP_DECAY_FACTOR', '1.5'))
-    
-    
-    
-    # --- Dynamic Session Sleep Configuration (For 403 Forbidden Errors) ---
-    # SESSION_403_SLEEP_INIT: Initial sleep duration on first 403 error (seconds).
-    # Default: 8
-    config['SESSION_403_SLEEP_INIT'] = int(os.getenv('OFSC_SESSION_403_SLEEP_INIT', '8'))
-
-    # SESSION_403_SLEEP_INCREASE_TIME_DIFF: Min time between 403 errors to trigger a sleep increase (seconds).
-    # Default: 60
-    config['SESSION_403_SLEEP_INCREASE_TIME_DIFF'] = int(os.getenv('OFSC_SESSION_403_SLEEP_INCREASE_TIME_DIFF', '60'))
-    
-    # SESSION_403_SLEEP_MAX: Maximum backoff sleep time for 403 errors (seconds).
-    # Default: 180
-    config['SESSION_403_SLEEP_MAX'] = int(os.getenv('OFSC_SESSION_403_SLEEP_MAX', '180'))
-
-    # SESSION_403_SLEEP_INCREASE_FACTOR: The multiplier for increasing sleep time on repeated 403s.
-    # Default: 1.5
-    config['SESSION_403_SLEEP_INCREASE_FACTOR'] = float(os.getenv('OFSC_SESSION_403_SLEEP_INCREASE_FACTOR', '1.5'))
-
-    # SESSION_403_SLEEP_DECAY_THRESHOLD: Time of no 403 errors before sleep starts to decrease (seconds).
-    # Default: 65
-    config['SESSION_403_SLEEP_DECAY_THRESHOLD'] = int(os.getenv('OFSC_SESSION_403_SLEEP_DECAY_THRESHOLD', '65'))
-
-    # SESSION_403_SLEEP_DECAY_FACTOR: The divisor for reducing sleep time for 403s during cool-down.
-    # Default: 1.5
-    config['SESSION_403_SLEEP_DECAY_FACTOR'] = float(os.getenv('OFSC_SESSION_403_SLEEP_DECAY_FACTOR', '1.5'))
-    
-    
-    config['AUTH_WARNING_TIMEOUT'] = float(os.getenv('OFSC_AUTH_WARNING_TIMEOUT', '18000'))
-
     
     
     # --- Miscellaneous ---

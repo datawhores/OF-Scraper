@@ -18,7 +18,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 
-from ofscraper.classes.sessionmanager.ofsession import download_session
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
 from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
@@ -30,6 +29,8 @@ from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 from ofscraper.utils.args.accessors.areas import get_download_area
 import ofscraper.utils.settings as settings
+import ofscraper.main.manager as manager
+
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
@@ -101,7 +102,7 @@ async def process_dicts(username, model_id, medialist, posts):
         try:
 
             aws = []
-            async with download_session() as c:
+            async with manager.Manager.get_download_session()  as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_download_task(

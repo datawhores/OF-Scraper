@@ -168,6 +168,11 @@ class sessionManager:
         sync_sem_count: Optional[int] = None,
         sync_sem: Optional[threading.Semaphore] = None,
 
+        # --- Parameters for SessionSleep objects---
+        forbidden_sleeper: Optional[SessionSleep] = None,
+        rate_limit_sleeper: Optional[SessionSleep] = None,
+
+
         # --- Parameters for the 429/504 Rate Limit Sleeper ---
         rate_limit_sleep: Optional[float] = None,
         rate_limit_difmin: Optional[int] = None,
@@ -204,22 +209,26 @@ class sessionManager:
 
         self._log = log or logging.getLogger("shared")
         
-        self._rate_limit_sleeper = SessionSleep(
-            sleep=rate_limit_sleep, difmin=rate_limit_difmin, max_sleep=rate_limit_max_sleep,
-            decay_threshold=rate_limit_decay_threshold, decay_factor=rate_limit_decay_factor,
-            increase_factor=rate_limit_increase_factor,
-            error_name="RATE_LIMIT_ERROR"
-        )
+        if rate_limit_sleeper:
+            self._rate_limit_sleeper = rate_limit_sleeper
+        else:
+            self._rate_limit_sleeper = SessionSleep(
+                sleep=rate_limit_sleep, difmin=rate_limit_difmin, max_sleep=rate_limit_max_sleep,
+                decay_threshold=rate_limit_decay_threshold, decay_factor=rate_limit_decay_factor,
+                increase_factor=rate_limit_increase_factor,
+            )
         
-        self._forbidden_sleeper = SessionSleep(
-            sleep=forbidden_sleep if forbidden_sleep is not None else env.getattr("SESSION_403_SLEEP_INIT"),
-            difmin=forbidden_difmin if forbidden_difmin is not None else env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-            max_sleep=forbidden_max_sleep if forbidden_max_sleep is not None else env.getattr("SESSION_403_SLEEP_MAX"),
-            decay_threshold=forbidden_decay_threshold if forbidden_decay_threshold is not None else env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
-            decay_factor=forbidden_decay_factor if forbidden_decay_factor is not None else env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
-            increase_factor=forbidden_increase_factor if forbidden_increase_factor is not None else env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
-            error_name="ACCESS_ERROR"
-        )
+        if forbidden_sleeper:
+            self._forbidden_sleeper = forbidden_sleeper
+        else:
+            self._forbidden_sleeper = SessionSleep(
+                sleep=forbidden_sleep if forbidden_sleep is not None else env.getattr("SESSION_403_SLEEP_INIT"),
+                difmin=forbidden_difmin if forbidden_difmin is not None else env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+                max_sleep=forbidden_max_sleep if forbidden_max_sleep is not None else env.getattr("SESSION_403_SLEEP_MAX"),
+                decay_threshold=forbidden_decay_threshold if forbidden_decay_threshold is not None else env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
+                decay_factor=forbidden_decay_factor if forbidden_decay_factor is not None else env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
+                increase_factor=forbidden_increase_factor if forbidden_increase_factor is not None else env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
+            )
         self._session: Union[httpx.AsyncClient, httpx.Client, None] = None
         self._async: bool = True
         self._last_auth_warn_date = arrow.now()

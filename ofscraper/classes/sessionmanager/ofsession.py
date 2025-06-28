@@ -21,6 +21,8 @@ from ofscraper.commands.scraper.actions.utils.retries import get_download_req_re
 from ofscraper.commands.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
+from ofscraper.classes.sessionmanager.sleepers import rate_limit_session_sleeper,forbidden_session_sleeper,download_forbidden_session_sleeper,download_rate_limit_session_sleeper
+from ofscraper.classes.sessionmanager.sleepers import cdm_rate_limit_session_sleeper,cdm_forbidden_session_sleeper
 
 
 class OFSessionManager(sessionManager):
@@ -51,22 +53,10 @@ class OFSessionManager(sessionManager):
         sem: Optional[asyncio.Semaphore] = None,
         sync_sem_count: Optional[int] = None,
         sync_sem: Optional[threading.Semaphore] = None,
-
-        # --- Parameters for the 429/504 Rate Limit Sleeper ---
-        rate_limit_sleep: Optional[float] = None,
-        rate_limit_difmin: Optional[int] = None,
-        rate_limit_max_sleep: Optional[float] = None,
-        rate_limit_decay_threshold: Optional[float] = None,
-        rate_limit_decay_factor: Optional[float] = None,
-        rate_limit_increase_factor: Optional[float] = None,
         
-        # --- Parameters for the 403 Forbidden Sleeper ---
-        forbidden_sleep: Optional[float] = None,
-        forbidden_difmin: Optional[int] = None,
-        forbidden_max_sleep: Optional[float] = None,
-        forbidden_decay_threshold: Optional[float] = None,
-        forbidden_decay_factor: Optional[float] = None,
-        forbidden_increase_factor: Optional[float] = None,
+        #---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] =forbidden_session_sleeper,
     ):
         # --- Apply specialized defaults for this subclass ---
         limit = limit if limit is not None else env.getattr("API_MAX_CONNECTION")
@@ -74,6 +64,7 @@ class OFSessionManager(sessionManager):
         retries = retries if retries is not None else env.getattr("API_INDVIDIUAL_NUM_TRIES")
         wait_min = wait_min if wait_min is not None else env.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max if wait_max is not None else env.getattr("OF_MAX_WAIT_API")
+
         super().__init__(
             connect_timeout=connect_timeout,
             total_timeout=total_timeout,
@@ -94,19 +85,8 @@ class OFSessionManager(sessionManager):
             sem=sem,
             sync_sem_count=sync_sem_count,
             sync_sem=sync_sem,
-            # Pass all SessionSleep parameters through to the parent
-            rate_limit_sleep=rate_limit_sleep,
-            rate_limit_difmin=rate_limit_difmin,
-            rate_limit_max_sleep=rate_limit_max_sleep,
-            rate_limit_decay_threshold=rate_limit_decay_threshold,
-            rate_limit_decay_factor=rate_limit_decay_factor,
-            rate_limit_increase_factor=rate_limit_increase_factor,
-            forbidden_sleep=forbidden_sleep,
-            forbidden_difmin=forbidden_difmin,
-            forbidden_max_sleep=forbidden_max_sleep,
-            forbidden_decay_threshold=forbidden_decay_threshold,
-            forbidden_decay_factor=forbidden_decay_factor,
-            forbidden_increase_factor=forbidden_increase_factor,
+            rate_limit_sleeper=rate_limit_sleeper,
+            forbidden_sleeper=forbidden_sleeper
         )
 
     @contextlib.asynccontextmanager
@@ -154,15 +134,18 @@ class download_session(sessionManager):
     and specific retry/timeout settings.
     """
     def __init__(
-        self, sem_count=None, **kwargs: Any
+        self, sem_count=None,
+        #---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = download_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] =download_forbidden_session_sleeper,
+        **kwargs: Any,
     ) -> None:
         # --- Apply specialized defaults for download sessions ---
         retries = kwargs.pop("retries", None) or get_download_req_retries()
         wait_min = kwargs.pop("wait_min", None) or env.getattr("OF_MIN_WAIT_API")
         wait_max = kwargs.pop("wait_max", None) or env.getattr("OF_MAX_WAIT_API")
         read_timeout = kwargs.pop("read_timeout", None) or get_chunk_timeout()
-        log = kwargs.pop("log", None) or common_globals.log
-        
+        log = kwargs.pop("log", None) or common_globals.log  
         self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
 
         super().__init__(
@@ -218,5 +201,8 @@ class cdm_session(sessionManager):
 
 class cdm_session_manual(OFSessionManager):
     """A session manager for manual CDM operations, using OFSessionManager presets."""
-    def __init__(self, sem_count: Optional[int] = None, **kwargs: Any) -> None:
-        super().__init__(sem_count=sem_count, **kwargs)
+    
+    def __init__(self, sem_count: Optional[int] = None,        #---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = cdm_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] =cdm_forbidden_session_sleeper,**kwargs: Any) -> None:
+        super().__init__(sem_count=sem_count,rate_limit_sleeper=rate_limit_sleeper,forbidden_sleeper=forbidden_sleeper **kwargs)

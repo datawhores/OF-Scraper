@@ -5,7 +5,6 @@ import re
 import traceback
 from functools import partial
 
-from bs4 import BeautifulSoup
 from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
@@ -15,13 +14,14 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.env.env as env
 import ofscraper.utils.settings as settings
-from ofscraper.classes.sessionmanager.ofsession import cdm_session_manual
 from ofscraper.commands.scraper.actions.utils.retries import (
     get_cmd_download_req_retries,
 )
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import run
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
+import ofscraper.main.manager as manager
+
 
 
 log = None
@@ -166,7 +166,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with cdm_session_manual() as c:
+        async with manager.Manager.get_download_session_manual() as c:
             async with c.requests_async(
                 url=licence_url,
                 method="post",
