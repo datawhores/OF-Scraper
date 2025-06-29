@@ -26,6 +26,8 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import download_media_update
 from ofscraper.scripts.skip_download_script import skip_download_script
+from ofscraper.scripts.after_download_script import after_download_script
+
 
 
 class DownloadManager:
@@ -113,6 +115,9 @@ class DownloadManager:
         if space_limit > 0 and space_limit > system.get_free():
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
+    def _after_download_script(sel,filepath):
+        after_download_script(filepath)
+    
     async def _size_checker(self, path, ele, total, name=None):
         name = name or ele.filename
         if total == 0:

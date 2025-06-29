@@ -70,7 +70,7 @@ def funct(prompt_):
     ffmeg: path to ffmpeg binary
     -----------------------------------
     [Script Options]
-    post_download_script: A script that runs after an action for each model has completed.
+    after_action_script: A script that runs after an action for each model has completed.
     skip_download_script: A script that determines whether to skip or continue a download. 
     It executes before the download process begins.
 
@@ -81,6 +81,10 @@ def funct(prompt_):
     skip_download_script: A script that determines whether to skip or continue a download. 
     It executes before the download process begins, and should return "False" or an empty string via stdout to 
     signal that the download should be skipped.
+
+    naming_script: A script to dynamically generate the final filename and path for a media item before download
+    after_download_script: A script that executes after each individual media download is complete
+
     -----------------------------------
     [CDM Options]
     private-key: for manual cdm
@@ -308,9 +312,9 @@ def script_config():
         *[
             {
                 "type": "input",
-                "name": "post_download_script",
+                "name": "after_action_script",
                 "message": "Script to run after each model action completes",
-                "default": data.get_post_download_script() or "",
+                "default": data.get_after_action_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
             },
             {
@@ -332,6 +336,14 @@ def script_config():
                 "name": "skip_download_script",
                 "message": "Script to decide whether to skip a file download",
                 "default": data.get_skip_download_script() or "",
+                "option_instruction": "Leave empty to skip the download skip script",
+            },
+
+             {
+                "type": "input",
+                "name": "after_download_script",
+                "message": "Script that runs after download complete",
+                "default": data.get_after_download_script() or "",
                 "option_instruction": "Leave empty to skip the download skip script",
             },
         ],

@@ -198,17 +198,17 @@ def load_main_config():
         "OFSC_USE_WIV_CACHE_KEY", "True"
     ).lower() in ("true", "1")
 
-    # POST_DOWNLOAD_SCRIPT_DEFAULT: Default path for a script to run after download. Defaults to None.
-    config["POST_DOWNLOAD_SCRIPT_DEFAULT"] = os.getenv(
-        "OFSC_POST_DOWNLOAD_SCRIPT_DEFAULT", None
+    # AFTER_ACTION_SCRIPT_DEFAULT: Default path for a script to run after download. Defaults to None.
+    config["AFTER_ACTION_SCRIPT_DEFAULT"] = os.getenv(
+        "OFSC_AFTER_ACTION_SCRIPT_DEFAULT", None
     )
 
     # POST_SCRIPT_DEFAULT: Default path for a general post-processing script. Defaults to None.
     config["POST_SCRIPT_DEFAULT"] = os.getenv("OFSC_POST_SCRIPT_DEFAULT", None)
 
-    # skip_download_script_DEFAULT: Default path for a general download-skipping script. Defaults to None.
-    config["skip_download_script_DEFAULT"] = os.getenv(
-        "OFSC_skip_download_script_DEFAULT", None
+    # SKIP_DOWNLOAD_SCRIPT_DEFAULT: Default path for a general download-skipping script. Defaults to None.
+    config["SKIP_DOWNLOAD_SCRIPT_DEFAULT"] = os.getenv(
+        "OFSC_SKIP_DOWNLOAD_SCRIPT_DEFAULT", None
     )
 
     # NAMING_SCRIPT_DEFAULT: Default path for a general naming-processing script. Defaults to None.

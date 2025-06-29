@@ -39,7 +39,7 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.main.close.final.final import final
 from ofscraper.utils.checkers import check_auth
 import ofscraper.main.manager as manager
-from ofscraper.scripts.final_user_script import post_user_script
+from ofscraper.scripts.after_action_script import after_action_script
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -340,7 +340,7 @@ async def process_dicts(username, model_id, medialist):
 @run_async
 async def metadata_process(username, model_id, medialist, posts=None):
     data = await metadata_picker(username, model_id, medialist)
-    post_user_script(username, medialist, posts)
+    after_action_script(username, medialist, posts)
     return data
 
 

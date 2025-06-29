@@ -373,6 +373,7 @@ class AltDownloadManager(DownloadManager):
                 size=sharedPlaceholderObj.size,
             )
         common.add_additional_data(sharedPlaceholderObj, ele)
+        self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
         return ele.mediatype, video["total"] + audio["total"]
 
     async def _resume_data_handler_alt(self, data, item, ele, placeholderObj):

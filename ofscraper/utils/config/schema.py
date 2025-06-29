@@ -65,9 +65,10 @@ def get_current_config_schema(config: dict = None) -> dict:
             "ssl_verify": data.get_ssl_verify(config=config),
         },
         "script_options": {
-            "post_download_script": data.get_post_download_script(config=config),
+            "after_action_script": data.get_after_action_script(config=config),
             "post_script": data.get_post_script(config=config),
             "naming_script": data.get_naming_script(config=config),
+            "after_download_script":data.get_after_download_script(config=config)
         },
         "responsetype": {
             "timeline": data.get_timeline_responsetype(config=config),

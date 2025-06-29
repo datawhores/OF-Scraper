@@ -200,14 +200,14 @@ def get_ssl_verify(config=None):
 
 
 @wrapper.config_reader
-def get_post_download_script(config=None):
+def get_after_action_script(config=None):
     if config is False:
-        return of_env.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+        return of_env.getattr("AFTER_ACTION_SCRIPT_DEFAULT")
     return (
-        config.get("post_download_script")
-        or config.get("advanced_options", {}).get("post_download_script")
-        or config.get("script_options", {}).get("post_download_script")
-        or of_env.getattr("POST_DOWNLOAD_SCRIPT_DEFAULT")
+        config.get("after_action_script")
+        or config.get("advanced_options", {}).get("after_action_script")
+        or config.get("script_options", {}).get("after_action_script")
+        or of_env.getattr("AFTER_ACTION_SCRIPT_DEFAULT")
     )
 
 
@@ -240,16 +240,28 @@ def get_naming_script(config=None):
 @wrapper.config_reader
 def get_skip_download_script(config=None):
     if config is False:
-        return of_env.getattr("skip_download_script_DEFAULT")
+        return of_env.getattr("SKIP_DOWNLOAD_SCRIPT_DEFAULT")
     return (
         config.get("skip_download_script")
         or config.get("advanced_options", {}).get("skip_download_script")
         or config.get("scripts", {}).get("skip_download_script")
         or config.get("script_options", {}).get("skip_download_script")
-        or of_env.getattr("skip_download_script_DEFAULT")
+        or of_env.getattr("SKIP_DOWNLOAD_SCRIPT_DEFAULT")
     )
 
 
+
+@wrapper.config_reader
+def get_after_download_script(config=None):
+    if config is False:
+        return of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
+    return (
+        config.get("after_download_script")
+        or config.get("advanced_options", {}).get("after_download_script")
+        or config.get("scripts", {}).get("after_download_script")
+        or config.get("script_options", {}).get("after_download_script")
+        or of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
+    )
 @wrapper.config_reader
 def get_default_blacklist(config=None):
     if config is False:

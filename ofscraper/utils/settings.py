@@ -113,9 +113,9 @@ def setup_settings():
     merged.post_script = (
         read_args.retriveArgs().post_script or config_data.get_post_script()
     )
-    merged.download_script = (
-        read_args.retriveArgs().download_script
-        or config_data.get_post_download_script()
+    merged.after_action_script = (
+        read_args.retriveArgs().after_action_script
+        or config_data.get_after_action_script()
     )
     merged.naming_script = (
         read_args.retriveArgs().naming_script or config_data.get_naming_script()
@@ -124,6 +124,11 @@ def setup_settings():
         read_args.retriveArgs().download_skip_script
         or config_data.get_skip_download_script()
     )
+
+    merged.after_download_script = (
+        read_args.retriveArgs().after_download_script
+        or config_data.get_after_download_script())
+
     merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()
     merged.cached_disabled = get_cached_disabled()

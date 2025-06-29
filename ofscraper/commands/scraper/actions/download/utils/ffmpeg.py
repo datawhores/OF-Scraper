@@ -1,9 +1,9 @@
-import sys
 import shutil
 import subprocess
 import re
 import logging
 import ofscraper.utils.settings as settings
+from ofscraper.utils.system.subprocess import run
 
 log = logging.getLogger("shared")
 
@@ -22,7 +22,7 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
 
     log.debug(f"Running validation check on candidate path: {path}")
     try:
-        result = subprocess.run(
+        result = run(
             [path, "-version"],
             capture_output=True,
             text=True,

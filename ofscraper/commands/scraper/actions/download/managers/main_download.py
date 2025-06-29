@@ -333,6 +333,7 @@ class MainDownloadManager(DownloadManager):
             )
         await common.set_profile_cache_helper(ele)
         common.add_additional_data(placeholderObj, ele)
+        self._after_download_script(path_to_file)
 
         return ele.mediatype, total
 

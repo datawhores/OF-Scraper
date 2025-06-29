@@ -4,7 +4,7 @@ import asyncio
 
 import ofscraper.utils.hash as hash
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.scripts.final_user_script import post_user_script
+from ofscraper.scripts.after_action_script import after_action_script
 from ofscraper.commands.utils.strings import (
     download_activity_str,
 )
@@ -53,7 +53,7 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
 @run_async
 async def download_process(username, model_id, medialist=None, posts=None):
     data, values = await process_dicts(username, model_id, medialist, posts)
-    post_user_script(username, medialist, posts=None)
+    after_action_script(username, medialist, posts=None)
     return data, values
 
 

@@ -1,8 +1,6 @@
 import json
-import re
 import logging
 import traceback
-import tempfile
 
 
 import ofscraper.utils.settings as settings
@@ -12,20 +10,17 @@ import ofscraper.main.manager as manager
 import logging
 import json
 import subprocess
-import traceback  # Keep this for detailed traceback if needed by log.traceback_
-import sys  # For printing warnings/errors to stderr
+import traceback  
 import os  # For checking script path existence
 
-# Assuming these are accessible from your modules (adjust import paths as needed)
-# import ofscraper.utils.config.settings as settings
-# import ofscraper.classes.manager as manager
 
 
-def post_user_script(username, media=None, posts=None):
+
+def after_action_script(username, media=None, posts=None):
     log = logging.getLogger("shared")
-    if not settings.get_settings().download_script:
+    if not settings.get_settings().after_action_script:
         return
-    script_path = settings.get_settings().download_script
+    script_path = settings.get_settings().after_action_script
     if not script_path or not os.path.exists(script_path):
         log.error(
             f"Download script path is invalid or not configured: '{script_path}'. Aborting post user script."
