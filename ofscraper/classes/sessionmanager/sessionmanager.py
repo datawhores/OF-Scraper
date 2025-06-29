@@ -13,14 +13,14 @@ import httpx
 import tenacity
 import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
-from httpx_aiohttp import AiohttpTransport
-from aiohttp import ClientSession
+# from httpx_aiohttp import AiohttpTransport
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
-
+from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+ 
 # Constants for request actions
 TOO_MANY = "too_many"
 AUTH = "auth"
@@ -398,27 +398,36 @@ class sessionManager:
         if self._session:
             return
         if async_:
-            self._session = httpx.AsyncClient(
-                http2=True,
-                transport=AiohttpTransport(
-                    proxy=self._proxy,
-                    limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-                    client=lambda: ClientSession(
+            # self._session = httpx.AsyncClient(
+            #     http2=True,
+            #     transport=AiohttpTransport(
+            #         proxy=self._proxy,
+            #         limits=httpx.Limits(
+            #         max_keepalive_connections=self._keep_alive,
+            #         max_connections=self._connect_limit,
+            #         keepalive_expiry=self._keep_alive_exp,
+            #     ),
+                    
+            #     ),
+            # )
+
+            self._session=aiohttp.ClientSession(
                         connector=aiohttp.TCPConnector(
                             limit=self._connect_limit,
                             ssl=(
                                 False
                                 if not settings.get_settings().ssl_validation
-                                else ssl.create_default_context(cafile=certifi.where())
+                                else create_custom_ssl_context()
                             ),
                         ),
-                    )
+                          timeout=aiohttp.ClientTimeout(
+                                total= self._total_timeout,
+                                connect= self._connect_timeout,
+                                sock_connect=self._pool_connect_timeout,
+                                sock_read= self._read_timeout,
                 ),
             )
+            
         else:
             self._session = httpx.Client(
                 http2=True,

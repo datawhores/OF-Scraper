@@ -26,7 +26,7 @@ class DiscordHandler(logging.Handler):
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
             wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
         )
-        self.asess._set_session(async_=True)
+        # self.asess._set_session(async_=True)
         self.sess._set_session(async_=False)
 
         self._thread = None
