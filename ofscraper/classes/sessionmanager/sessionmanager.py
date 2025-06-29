@@ -400,15 +400,14 @@ class sessionManager:
         if async_:
             self._session = httpx.AsyncClient(
                 http2=True,
-                # proxy=self._proxy,
-                limits=httpx.Limits(
+                transport=AiohttpTransport(
+                    proxy=self._proxy,
+                    limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
                 ),
-                transport=AiohttpTransport(
                     client=lambda: ClientSession(
-                        proxy=self._proxy,
                         connector=aiohttp.TCPConnector(
                             limit=self._connect_limit,
                             ssl=(
