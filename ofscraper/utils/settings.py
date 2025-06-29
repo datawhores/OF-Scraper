@@ -128,7 +128,7 @@ def setup_settings():
     merged.auto_after = get_auto_after_enabled()
     merged.cached_disabled = get_cached_disabled()
     merged.logs_expire_time = config_data.get_logs_expire()
-    merged.ssl_validation = config_data.get_ssl_validation()
+    merged.ssl_verify = config_data.get_ssl_verify()
 
     return merged
 

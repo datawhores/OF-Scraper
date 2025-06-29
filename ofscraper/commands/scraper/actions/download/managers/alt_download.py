@@ -183,7 +183,7 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
             )
-            async with c.requests_async_stream(
+            async with c.requests_async(
                 url=url,
                 stream=True,
                 headers=headers,

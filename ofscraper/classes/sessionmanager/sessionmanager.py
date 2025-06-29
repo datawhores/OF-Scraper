@@ -176,27 +176,7 @@ class SessionSleep:
         self._sleep = val
 
 
-class CustomTenacity(AsyncRetrying):
-    """
-    A custom context manager using tenacity for asynchronous retries.
-    """
 
-    def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.wait_random = wait_random or tenacity.wait.wait_random(
-            min=of_env.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
-            max=of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
-        )
-        self.wait_exponential = wait_exponential or tenacity.wait_exponential(
-            min=of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
-            max=of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
-        )
-        self.wait = self._wait_picker
-
-    def _wait_picker(self, retry_state: "tenacity.RetryCallState") -> None:
-        sleep = self.wait_random(retry_state)
-        logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
-        return sleep
 
 
 class sessionManager:
@@ -416,7 +396,7 @@ class sessionManager:
                             limit=self._connect_limit,
                             ssl=(
                                 False
-                                if not settings.get_settings().ssl_validation
+                                if not settings.get_settings().ssl_verify
                                 else create_custom_ssl_context()
                             ),
                         ),
@@ -483,6 +463,14 @@ class sessionManager:
         params=None,
         redirects=True,
         data=None,
+        retries=None,
+        wait_min=None,
+        wait_max=None,
+        log=None,
+        total_timeout=None,
+        connect_timeout=None,
+        pool_connect_timeout=None,
+        read_timeout=None,
         actions: Optional[list] = None,
         exceptions: Optional[list] = None,
         **kwargs: Any,
@@ -536,12 +524,11 @@ class sessionManager:
                             json=json,
                             data=data,
                             timeout=httpx.Timeout(
-                                kwargs.get("total_timeout") or self._total_timeout,
-                                connect=kwargs.get("connect_timeout")
-                                or self._connect_timeout,
-                                pool=kwargs.get("pool_connect_timeout")
+                                total_timeout or self._total_timeout,
+                                connect=connect_timeout,
+                                pool=pool_connect_timeout
                                 or self._pool_connect_timeout,
-                                read=kwargs.get("read_timeout") or self._read_timeout,
+                                read=read_timeout or self._read_timeout,
                             ),
                         )
 
@@ -570,6 +557,14 @@ class sessionManager:
         json: dict = None,
         params: dict = None,
         data: dict = None,
+        wait_min:float=None,
+        wait_max:float=None,
+        retries:bool=None,
+        redirects:bool=True,
+        total_timeout:bool=None,
+        connect_timeout:float=None,
+        pool_connect_timeout:float=None,
+        read_timeout:float=None,
         actions: Optional[list] = None,
         exceptions: Optional[list] = None,
         **kwargs,
@@ -578,14 +573,14 @@ class sessionManager:
         exceptions = exceptions or []
         retries = kwargs.get("retries") or self._retries
         wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max_exponential = (
+        wait_max = (
             kwargs.get("wait_max_exponential") or self._wait_max_exponential
         )
 
-        async for _ in CustomTenacity(
+        async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
-            wait=tenacity.wait.wait_random_exponential(
-                multiplier=wait_min, max=wait_max_exponential
+            wait=tenacity.wait_random(
+                min=wait_min, max=wait_max
             ),
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
             reraise=True,
@@ -609,24 +604,25 @@ class sessionManager:
                     if COOKIES in actions:
                         cookies = self._create_cookies()
 
-                    r = await self._httpx_funct_async(
-                        method,
-                        url=url,
-                        cookies=cookies,
-                        headers=headers,
-                        json=json,
-                        params=params,
-                        data=data,
-                        timeout=httpx.Timeout(
-                            kwargs.get("total_timeout") or self._total_timeout,
-                            connect=kwargs.get("connect_timeout")
-                            or self._connect_timeout,
-                            pool=kwargs.get("pool_connect_timeout")
-                            or self._pool_connect_timeout,
-                            read=kwargs.get("read_timeout") or self._read_timeout,
-                        ),
-                        follow_redirects=kwargs.get("redirects", True),
-                    )
+                    r = await self._aio_funct(
+                            method,
+                            url,
+                            timeout=aiohttp.ClientTimeout(
+                                total=total_timeout or self._total_timeout,
+                                connect=connect_timeout or self._connect_timeout,
+                                sock_connect=pool_connect_timeout
+                                or self._pool_connect_timeout,
+                                sock_read=read_timeout or self._read_timeout,
+                            ),
+                            headers=headers,
+                            cookies=cookies,
+                            allow_redirects=redirects,
+                            proxy=self._proxy,
+                            params=params,
+                            json=json,
+                            data=data,
+                            ssl=ssl.create_default_context(cafile=certifi.where()),
+                        )
 
                     if not r.ok and r.status_code != 404:
                         self._log.debug(f"[bold]failed: [bold] {r.url}")
@@ -645,90 +641,90 @@ class sessionManager:
                     self._sem.release()
                     raise E
 
-    @contextlib.asynccontextmanager
-    async def requests_async_stream(
-        self,
-        url: str = None,
-        method: str = "get",
-        headers: dict = None,
-        cookies: dict = None,
-        json: dict = None,
-        params: dict = None,
-        data: dict = None,
-        actions: Optional[list] = None,
-        exceptions: Optional[list] = None,
-        **kwargs,
-    ) -> AsyncGenerator[httpx.Response, None]:
-        actions = actions or []
-        exceptions = exceptions or []
-        retries = kwargs.get("retries") or self._retries
-        wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max_exponential = (
-            kwargs.get("wait_max_exponential") or self._wait_max_exponential
-        )
-        r = None
+    # @contextlib.asynccontextmanager
+    # async def requests_async_stream(
+    #     self,
+    #     url: str = None,
+    #     method: str = "get",
+    #     headers: dict = None,
+    #     cookies: dict = None,
+    #     json: dict = None,
+    #     params: dict = None,
+    #     data: dict = None,
+    #     actions: Optional[list] = None,
+    #     exceptions: Optional[list] = None,
+    #     **kwargs,
+    # ) -> AsyncGenerator[httpx.Response, None]:
+    #     actions = actions or []
+    #     exceptions = exceptions or []
+    #     retries = kwargs.get("retries") or self._retries
+    #     wait_min = kwargs.get("wait_min") or self._wait_min
+    #     wait_max_exponential = (
+    #         kwargs.get("wait_max_exponential") or self._wait_max_exponential
+    #     )
+    #     r = None
 
-        async for _ in CustomTenacity(
-            stop=tenacity.stop.stop_after_attempt(retries),
-            wait=tenacity.wait.wait_random_exponential(
-                multiplier=wait_min, max=wait_max_exponential
-            ),
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
-            reraise=True,
-            before=lambda x: (
-                self._log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
-                if x.attempt_number > 1
-                else None
-            ),
-        ):
-            await self._sem.acquire()
-            try:
-                with _:
-                    await self._rate_limit_sleeper.async_do_sleep()
-                    await self._forbidden_sleeper.async_do_sleep()
+    #     async for _ in CustomTenacity(
+    #         stop=tenacity.stop.stop_after_attempt(retries),
+    #         wait=tenacity.wait.wait_random_exponential(
+    #             multiplier=wait_min, max=wait_max_exponential
+    #         ),
+    #         retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
+    #         reraise=True,
+    #         before=lambda x: (
+    #             self._log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+    #             if x.attempt_number > 1
+    #             else None
+    #         ),
+    #     ):
+    #         await self._sem.acquire()
+    #         try:
+    #             with _:
+    #                 await self._rate_limit_sleeper.async_do_sleep()
+    #                 await self._forbidden_sleeper.async_do_sleep()
 
-                    if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
-                        headers = self._create_headers(
-                            headers, url, SIGN in actions, FORCED_NEW in actions
-                        )
-                    if COOKIES in actions:
-                        cookies = self._create_cookies()
+    #                 if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
+    #                     headers = self._create_headers(
+    #                         headers, url, SIGN in actions, FORCED_NEW in actions
+    #                     )
+    #                 if COOKIES in actions:
+    #                     cookies = self._create_cookies()
 
-                    r = await self._httpx_funct_async_stream(
-                        method,
-                        url=url,
-                        cookies=cookies,
-                        headers=headers,
-                        json=json,
-                        params=params,
-                        data=data,
-                        timeout=httpx.Timeout(
-                            kwargs.get("total_timeout") or self._total_timeout,
-                            connect=kwargs.get("connect_timeout")
-                            or self._connect_timeout,
-                            pool=kwargs.get("pool_connect_timeout")
-                            or self._pool_connect_timeout,
-                            read=kwargs.get("read_timeout") or self._read_timeout,
-                        ),
-                        follow_redirects=kwargs.get("redirects", True),
-                    )
+    #                 r = await self._httpx_funct_async_stream(
+    #                     method,
+    #                     url=url,
+    #                     cookies=cookies,
+    #                     headers=headers,
+    #                     json=json,
+    #                     params=params,
+    #                     data=data,
+    #                     timeout=httpx.Timeout(
+    #                         kwargs.get("total_timeout") or self._total_timeout,
+    #                         connect=kwargs.get("connect_timeout")
+    #                         or self._connect_timeout,
+    #                         pool=kwargs.get("pool_connect_timeout")
+    #                         or self._pool_connect_timeout,
+    #                         read=kwargs.get("read_timeout") or self._read_timeout,
+    #                     ),
+    #                     follow_redirects=kwargs.get("redirects", True),
+    #                 )
 
-                    if not r.ok and r.status_code != 404:
-                        self._log.debug(f"[bold]failed: [bold] {r.url}")
-                        self._log.debug(f"[bold]status: [bold] {r.status_code}")
-                        self._log.debug(f"response headers {dict(r.headers)}")
-                        r.raise_for_status()
-                        raise Exception("ddda")
+    #                 if not r.ok and r.status_code != 404:
+    #                     self._log.debug(f"[bold]failed: [bold] {r.url}")
+    #                     self._log.debug(f"[bold]status: [bold] {r.status_code}")
+    #                     self._log.debug(f"response headers {dict(r.headers)}")
+    #                     r.raise_for_status()
+    #                     raise Exception("ddda")
 
-                    yield r
-                    return
-            except Exception as E:
-                if r:
-                    await r.aclose()
-                await self._async_handle_error(E, exceptions)
-                raise E
-            finally:
-                self._sem.release()
+    #                 yield r
+    #                 return
+    #         except Exception as E:
+    #             if r:
+    #                 await r.aclose()
+    #             await self._async_handle_error(E, exceptions)
+    #             raise E
+    #         finally:
+    #             self._sem.release()
 
     @property
     def sleep(self):
@@ -738,51 +734,51 @@ class sessionManager:
     def sleep(self, val):
         self._rate_limit_sleeper.sleep = val
 
-    async def _httpx_funct_async(self, *args, **kwargs):
-        t = await self._session.request(*args, **kwargs)
-        t.ok = not t.is_error
+    # async def _httpx_funct_async(self, *args, **kwargs):
+    #     t = await self._session.request(*args, **kwargs)
+    #     t.ok = not t.is_error
 
-        async def json_wrapper():
-            return t.json()
+    #     async def json_wrapper():
+    #         return t.json()
 
-        t.json_ = json_wrapper
+    #     t.json_ = json_wrapper
 
-        async def text_wrapper():
-            return t.text
+    #     async def text_wrapper():
+    #         return t.text
 
-        t.text_ = text_wrapper
-        t.status = t.status_code
-        t.iter_chunked = t.aiter_bytes
-        t.read_ = t.aread
-        return t
+    #     t.text_ = text_wrapper
+    #     t.status = t.status_code
+    #     t.iter_chunked = t.aiter_bytes
+    #     t.read_ = t.aread
+    #     return t
 
-    async def _httpx_funct_async_stream(self, *args, **kwargs):
-        auth = kwargs.pop("auth", None)
-        follow_redirects = kwargs.pop("follow_redirects", None)
-        req = self._session.build_request(*args, **kwargs)
-        t = await self._session.send(
-            request=req,
-            follow_redirects=follow_redirects,
-            stream=True,
-            auth=auth,
-        )
-        t.ok = not t.is_error
+    # async def _httpx_funct_async_stream(self, *args, **kwargs):
+    #     auth = kwargs.pop("auth", None)
+    #     follow_redirects = kwargs.pop("follow_redirects", None)
+    #     req = self._session.build_request(*args, **kwargs)
+    #     t = await self._session.send(
+    #         request=req,
+    #         follow_redirects=follow_redirects,
+    #         stream=True,
+    #         auth=auth,
+    #     )
+    #     t.ok = not t.is_error
 
-        async def json_wrapper():
-            await t.aread()
-            return t.json()
+    #     async def json_wrapper():
+    #         await t.aread()
+    #         return t.json()
 
-        t.json_ = json_wrapper
+    #     t.json_ = json_wrapper
 
-        async def text_wrapper():
-            await t.aread()
-            return t.text
+    #     async def text_wrapper():
+    #         await t.aread()
+    #         return t.text
 
-        t.text_ = text_wrapper
-        t.status = t.status_code
-        t.iter_chunked = t.aiter_bytes
-        t.read_ = t.aread
-        return t
+    #     t.text_ = text_wrapper
+    #     t.status = t.status_code
+    #     t.iter_chunked = t.aiter_bytes
+    #     t.read_ = t.aread
+    #     return t
 
     def _httpx_funct(self, method, **kwargs):
         t = self._session.request(method.upper(), **kwargs)
@@ -793,3 +789,15 @@ class sessionManager:
         t.iter_chunked = t.iter_bytes
         t.read_ = t.read
         return t
+    async def _aio_funct(self, method, *args, **kwargs):
+        # public function forces context manager use
+        r = await self._session._request(method, *args, **kwargs)
+        r.text_ = r.text
+        r.json_ = r.json
+        r.iter_chunked = r.content.iter_chunked
+        r.iter_chunks = r.content.iter_chunks
+        r.request = r.request_info
+        r.status_code = r.status
+        r.read_ = r.content.read
+        r.eof = r.content.at_eof
+        return r

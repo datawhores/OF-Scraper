@@ -162,7 +162,7 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
-            async with c.requests_async_stream(
+            async with c.requests_async(
                 url=ele.url,
                 stream=True,
                 headers=headers,

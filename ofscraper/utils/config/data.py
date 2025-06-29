@@ -189,11 +189,11 @@ def get_logs_expire(config=None):
 
 
 @wrapper.config_reader
-def get_ssl_validation(config=None):
+def get_ssl_verify(config=None):
     if not config:
         return of_env.getattr("SSL_VALIDATION_DEFAULT")
-    val = config.get("ssl_validation") or config.get("advanced_options", {}).get(
-        "ssl_validation"
+    val = config.get("ssl_verify") or config.get("advanced_options", {}).get(
+        "ssl_verify"
     )
     # Return False if val is None, otherwise return the boolean value of val
     return bool(val)

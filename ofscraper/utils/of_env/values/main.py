@@ -301,7 +301,7 @@ def load_main_config():
     else:
         config["FILTER_DEFAULT"] = ["Images", "Audios", "Videos"]
 
-    ssl_validation = os.getenv("OFSC_SSL_VALIDATION_DEFAULT",False)
-    config["SSL_VALIDATION_DEFAULT"]=ssl_validation
+    ssl_verify = os.getenv("OFSC_SSL_VALIDATION_DEFAULT",True)
+    config["SSL_VALIDATION_DEFAULT"]=ssl_verify
 
     return config
