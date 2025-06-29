@@ -138,14 +138,11 @@ jobs:
           uv venv
           source .venv/bin/activate
           uv pip install hatch twine
-      - name: Build Package with Hatch
+      - name: Setup env for Hatch
         run: |
           source .venv/bin/activate
           echo "HATCH_VCS_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
-          # chmod +x ./scripts/release_version.sh
-          # source ./scripts/release_version.sh
-          # hatch build
         shell: bash
 
       - name: Build Package with Hatch
@@ -194,13 +191,17 @@ jobs:
         run: |
           source .venv/bin/activate
           uv pip install hatch twine
+      - name: Setup env for Hatch
+        run: |
+          source .venv/bin/activate
+          echo "HATCH_VCS_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Build Package with Hatch
         run: |
           source .venv/bin/activate
-          echo "HATCH_VCS_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ needs.determine_tags_and_versions.outputs.package_version }}" >> $GITHUB_ENV
           hatch build
-        shell: bash
 
       - name: Publish to Test PyPI with Twine
         env:

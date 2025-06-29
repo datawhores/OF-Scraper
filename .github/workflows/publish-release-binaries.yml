@@ -66,7 +66,7 @@ jobs:
           PACKAGE_VERSION="${{ inputs.package_version }}" # Use the input package version
           SANITIZED_TAG="${PACKAGE_VERSION//./_}"
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
-          echo "HATCH_VCS_PRETEND_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+          echo "s=$PACKAGE_VERSION" >> "$GITHUB_ENV"
           echo "sanitized_tag=$SANITIZED_TAG" >> "$GITHUB_OUTPUT"
         shell: bash
 
