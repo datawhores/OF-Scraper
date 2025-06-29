@@ -208,3 +208,4 @@ jobs:
           tag: ${{ inputs.input_version }}
           name: "Release ${{ inputs.input_version }}"
           allowUpdates: true
+          omitBodyDuringUpdate: true

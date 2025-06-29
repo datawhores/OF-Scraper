@@ -710,6 +710,7 @@ class sessionManager:
                         self._log.debug(f"[bold]status: [bold] {r.status_code}")
                         self._log.debug(f"response headers {dict(r.headers)}")
                         r.raise_for_status()
+                        raise Exception("ddda")
 
                     yield r
                     return
