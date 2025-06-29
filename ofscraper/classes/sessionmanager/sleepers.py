@@ -1,91 +1,92 @@
-import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.of_env.of_env as env
 from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
 
 
 rate_limit_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("SESSION_SLEEP_INIT"),
-    difmin=of_env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("SESSION_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
-    error_name="SESSION_RATE_LIMIT",
+    sleep=env.getattr("SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("SESSION_MIN_SLEEP"),
+    difmin=env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="SESSION",
 )
 
 forbidden_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("SESSION_403_SLEEP_INIT"),
-    difmin=of_env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("SESSION_403_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
-    error_name="SESSION_FORBIDDEN",
+    sleep=env.getattr("SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="SESSION_403",
 )
 
-
 download_rate_limit_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("DOWNLOAD_SESSION_SLEEP_INIT"),
-    difmin=of_env.getattr("DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("DOWNLOAD_SESSION_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
-    error_name="DOWNLOAD_RATE_LIMIT",
-
+    sleep=env.getattr("DOWNLOAD_SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("DOWNLOAD_SESSION_MIN_SLEEP"),
+    difmin=env.getattr("DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("DOWNLOAD_SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("DOWNLOAD_SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("DOWNLOAD_SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="DOWNLOAD_SESSION",
 )
 
 download_forbidden_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_INIT"),
-    difmin=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_INCREASE_FACTOR"),
-    error_name="DOWNLOAD_FORBIDDEN"
+    sleep=env.getattr("DOWNLOAD_SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("DOWNLOAD_SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("DOWNLOAD_SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("DOWNLOAD_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="DOWNLOAD_SESSION_403",
 )
 
-
 cdm_rate_limit_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("CDM_SESSION_SLEEP_INIT"),
-    difmin=of_env.getattr("CDM_SESSION_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("CDM_SESSION_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
-    error_name="CDM_RATE_LIMIT",
+    sleep=env.getattr("CDM_SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("CDM_SESSION_MIN_SLEEP"),
+    difmin=env.getattr("CDM_SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("CDM_SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("CDM_SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("CDM_SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("CDM_SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="CDM_SESSION",
 )
 
 cdm_forbidden_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("CDM_SESSION_403_SLEEP_INIT"),
-    difmin=of_env.getattr("CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("CDM_SESSION_403_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("CDM_SESSION_403_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("CDM_SESSION_403_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("CDM_SESSION_403_SLEEP_INCREASE_FACTOR"),
-    error_name="CDM_FORBIDDEN",
-
+    sleep=env.getattr("CDM_SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("CDM_SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("CDM_SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("CDM_SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("CDM_SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("CDM_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="CDM_SESSION_403",
 )
 
-
 like_rate_limit_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("LIKE_SESSION_SLEEP_INIT"),
-    difmin=of_env.getattr("LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("LIKE_SESSION_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
-    error_name="LIKE_RATE_LIMIT",
-
-    
+    sleep=env.getattr("LIKE_SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("LIKE_SESSION_MIN_SLEEP"),
+    difmin=env.getattr("LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("LIKE_SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("LIKE_SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("LIKE_SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("LIKE_SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="LIKE_SESSION",
 )
 
 like_forbidden_session_sleeper = SessionSleep(
-    sleep=of_env.getattr("LIKE_SESSION_403_SLEEP_INIT"),
-    difmin=of_env.getattr("LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
-    max_sleep=of_env.getattr("LIKE_SESSION_403_SLEEP_MAX"),
-    decay_threshold=of_env.getattr("LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD"),
-    decay_factor=of_env.getattr("LIKE_SESSION_403_SLEEP_DECAY_FACTOR"),
-    increase_factor=of_env.getattr("LIKE_SESSION_403_SLEEP_INCREASE_FACTOR"),
-    error_name="LIKE_FORBIDDEN",
-
+    sleep=env.getattr("LIKE_SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("LIKE_SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("LIKE_SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("LIKE_SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("LIKE_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="LIKE_SESSION_403",
 )
+

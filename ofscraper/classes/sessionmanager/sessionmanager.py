@@ -51,6 +51,7 @@ class SessionSleep:
     def __init__(
         self,
         sleep: Optional[float] = None,
+        min_sleep: Optional[int] = None,
         difmin: Optional[int] = None,
         max_sleep: Optional[float] = None,
         decay_threshold: Optional[float] = None,
@@ -58,13 +59,18 @@ class SessionSleep:
         increase_factor: Optional[float] = None,
         error_name: Optional[float] = None,
     ):
-        self._sleep = None
         self._last_date = arrow.now()
         self._alock = asyncio.Lock()
         self._lock = threading.Lock()
         self._init_sleep = (
             sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
         )
+        self._min_sleep=(
+            min_sleep if min_sleep is not None else of_env.getattr("SESSION_SLEEP_MIN")
+        )
+        #set sleep to min sleep always
+        self._sleep = self._min_sleep
+
         self._difmin = (
             difmin
             if difmin is not None
@@ -91,15 +97,15 @@ class SessionSleep:
         self.error_name = error_name or ""
 
     def _maybe_decay_sleep(self):
-        if not self._sleep or self._sleep <= self._init_sleep:
+        if not self._sleep or self._sleep <= self._min_sleep:
             return
         if (arrow.now() - self._last_date).total_seconds() > self._decay_threshold:
             new_sleep = self._sleep / self._decay_factor
-            self._sleep = max(self._init_sleep, new_sleep)
+            self._sleep = max(self._min_sleep, new_sleep)
             self._last_date = arrow.now()
-            logging.getLogger("shared").debug(
-                f"SessionSleep: Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]"
-            )
+            logging.getLogger("shared").debug(f"[{self._error_name}] Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
+
+
 
     async def async_do_sleep(self):
         async with self._alock:
@@ -142,7 +148,7 @@ class SessionSleep:
         self._last_date = arrow.now()
 
     def reset_sleep(self):
-        self._sleep = self._init_sleep
+        self._sleep = self._min_sleep
         self._last_date = arrow.now()
 
     async def async_toomany_req(self):

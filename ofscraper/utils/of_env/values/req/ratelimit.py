@@ -27,6 +27,8 @@ def load_ratelimit_config():
     config["SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_SESSION_MIN_SLEEP', '4'))
+
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 403 Forbidden Errors) ---
     config["SESSION_403_SLEEP_INIT"] = int(
@@ -47,6 +49,8 @@ def load_ratelimit_config():
     config["SESSION_403_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_SESSION_403_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_SESSION_403_MIN_SLEEP', '0'))
+
 
     # --- Dynamic Session Sleep Configuration (For Downloads: 429/504 Rate Limiting) ---
     config["DOWNLOAD_SESSION_SLEEP_INIT"] = int(
@@ -67,6 +71,8 @@ def load_ratelimit_config():
     config["DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['DOWNLOAD_SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_DOWNLOAD_SESSION_MIN_SLEEP', '0'))
+
 
     # --- Dynamic Session Sleep Configuration (For Downloads: 403 Forbidden Errors) ---
     config["DOWNLOAD_SESSION_403_SLEEP_INIT"] = int(
@@ -87,6 +93,8 @@ def load_ratelimit_config():
     config["DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['DOWNLOAD_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_DOWNLOAD_SESSION_403_MIN_SLEEP', '0'))
+
 
     # --- Dynamic Session Sleep Configuration (For CDM: 429/504 Rate Limiting) ---
     config["CDM_SESSION_SLEEP_INIT"] = int(
@@ -107,6 +115,8 @@ def load_ratelimit_config():
     config["CDM_SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_CDM_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['CDM_SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_CDM_SESSION_MIN_SLEEP', '4'))
+
 
     # --- Dynamic Session Sleep Configuration (For CDM: 403 Forbidden Errors) ---
     config["CDM_SESSION_403_SLEEP_INIT"] = int(
@@ -127,6 +137,8 @@ def load_ratelimit_config():
     config["CDM_SESSION_403_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_CDM_SESSION_403_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['CDM_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_CDM_SESSION_403_MIN_SLEEP', '0'))
+
 
     # --- Dynamic Session Sleep Configuration (For Like Operations: 429/504 Rate Limiting) ---
     config["LIKE_SESSION_SLEEP_INIT"] = int(
@@ -147,6 +159,8 @@ def load_ratelimit_config():
     config["LIKE_SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_LIKE_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['LIKE_SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_LIKE_SESSION_MIN_SLEEP', '0'))
+
 
     # --- Dynamic Session Sleep Configuration (For Like Operations: 403 Forbidden Errors) ---
     config["LIKE_SESSION_403_SLEEP_INIT"] = int(
@@ -167,6 +181,9 @@ def load_ratelimit_config():
     config["LIKE_SESSION_403_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_LIKE_SESSION_403_SLEEP_DECAY_FACTOR", "1.5")
     )
+    config['LIKE_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_LIKE_SESSION_403_MIN_SLEEP', '0'))
+
+    
 
     # --- Miscellaneous ---
     # AUTH_WARNING_TIMEOUT: Time to wait between printing auth warnings (seconds).)
