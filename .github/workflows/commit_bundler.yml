@@ -193,7 +193,8 @@ jobs:
         run: ls -R artifacts
 
       - name: Create or Update Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.17.0
+
         with:
           artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
           # Combined tag for uniqueness and chronological sorting

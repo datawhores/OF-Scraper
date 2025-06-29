@@ -201,7 +201,8 @@ jobs:
         run: ls -R artifacts
 
       - name: Create or Update Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.17.0
+
         with:
           artifacts: artifacts/*/*
           tag: ${{ inputs.input_version }}
