@@ -265,7 +265,6 @@ class MainDownloadManager(DownloadManager):
                         chunk = await chunk_iter.__anext__()
                         await fileobject.write(chunk)
                         send_chunk_msg(ele, total, tempholderObj)
-                        chunk_count += 1
                     except StopAsyncIteration:
                         break  # Exit loop when no more chunks
         except asyncio.TimeoutError:
