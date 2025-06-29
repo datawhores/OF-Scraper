@@ -110,7 +110,11 @@ class SessionSleep:
     async def async_do_sleep(self):
         async with self._alock:
             self._maybe_decay_sleep()
-        if self._sleep and self._sleep > 0:
+        if self._sleep and self._sleep<=self._min_sleep:
+             logging.getLogger("shared").debug(
+                f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} min sleep value"
+            )
+        elif self._sleep and self._sleep > 0:
             logging.getLogger("shared").debug(
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors"
             )
@@ -586,7 +590,6 @@ class sessionManager:
                         pass
                     else:
                         self._forbidden_sleeper.async_do_sleep()
-              
                     if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
                         headers = self._create_headers(
                             headers, url, SIGN in actions, FORCED_NEW in actions
