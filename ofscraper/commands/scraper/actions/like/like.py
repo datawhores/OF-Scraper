@@ -17,7 +17,7 @@ import random
 import time
 
 import ofscraper.main.manager as manager
-import ofscraper.utils.cache as cache
+# import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
@@ -160,9 +160,9 @@ def get_final_like_log(like_action, username, failed, post, liked):
 
 
 def _toggle_like_requests(c, id, model_id):
-    if not settings.get_settings().force_like and cache.get(f"liked_status_{id}", None):
-        log.debug(f"ID: {id} marked as liked in cache")
-        return 0
+    # # if not settings.get_settings().force_like and cache.get(f"liked_status_{id}", None):
+    #     log.debug(f"ID: {id} marked as liked in cache")
+    #     return 0
     max_duration = of_env.getattr("MAX_SLEEP_DURATION_LIKE")
     min_duration = of_env.getattr("MIN_SLEEP_DURATION_LIKE")
 
@@ -178,17 +178,17 @@ def _toggle_like_requests(c, id, model_id):
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
         out = 2
-    cache.set(f"liked_status_{id}", True)
+    # cache.set(f"liked_status_{id}", True)
     return out
 
 
 def _toggle_unlike_requests(c, id, model_id):
-    if (
-        not settings.get_settings().force_like
-        and cache.get(f"liked_status_{id}", None) is False
-    ):
-        log.debug(f"ID: {id} marked as unliked in cache")
-        return 0
+    # if (
+    #     not settings.get_settings().force_like
+    #     and cache.get(f"liked_status_{id}", None) is False
+    # ):
+    #     log.debug(f"ID: {id} marked as unliked in cache")
+    #     return 0
     sleep_duration = of_env.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
     favorited, id = _like_request(c, id, model_id)
     if favorited is None:
@@ -201,7 +201,7 @@ def _toggle_unlike_requests(c, id, model_id):
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
         out = 2
-    cache.set(f"liked_status_{id}", False)
+    # cache.set(f"liked_status_{id}", False)
     return out
 
 
