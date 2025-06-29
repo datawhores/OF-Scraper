@@ -110,7 +110,7 @@ def process_item():
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
-            manager.Manager.model_manager.set_data_all_subs_model_dict(username)
+            manager.Manager.model_manager.add_model(username)
             post = media.post
             model_id = media.post.model_id
             username = media.post.username

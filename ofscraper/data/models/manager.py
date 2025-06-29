@@ -14,10 +14,10 @@ import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.console as console
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.models.models import Model
+import ofscraper.utils.settings as settings
+
 
 log = logging.getLogger("shared")
 
@@ -32,6 +32,7 @@ class ModelManager:
         """Initializes the ModelManager."""
         self._all_subs_dict: Dict[str, Model] = {}
         self._parsed_subs_dict: Dict[str, Model] = {}
+        # _seen_users is no longer used in the provided snippet, but kept for context if needed elsewhere
         self._seen_users: Set[str] = set()
         self._processed_usernames: Set[str] = set()
 
@@ -64,6 +65,64 @@ class ModelManager:
         elif isinstance(models, list):
             for ele in models:
                 self._all_subs_dict[ele.name] = ele
+
+    async def add_model(self, usernames: str | List[str]) -> None:
+        """
+        Manually fetches model data for specific usernames if not already present,
+        and ensures they are included in the arguments for processing.
+
+        Args:
+            usernames (str | List[str]): A single username or a list of usernames to add.
+        """
+        if isinstance(usernames, str):
+            username_set = {usernames}
+        else:
+            username_set = set(usernames)
+
+        # Determine which usernames we actually need to fetch data for
+        new_usernames_to_fetch = {
+            name for name in username_set if name not in self._all_subs_dict
+        }
+
+        if new_usernames_to_fetch:
+            log.info(f"Attempting to fetch new model data for: {', '.join(new_usernames_to_fetch)}")
+            args = read_args.retriveArgs()
+            original_usernames = args.usernames or []
+            
+            # Temporarily set args for a targeted fetch
+            args.usernames = list(new_usernames_to_fetch)
+            write_args.setArgs(args)
+
+            # Fetch models and update our central dictionary
+            fetched_models = await retriver.get_models()
+            if fetched_models:
+                self.update_all_subs(fetched_models)
+            
+            # Restore original args to prevent side-effects
+            args.usernames = original_usernames
+            write_args.setArgs(args)
+
+            # Log a warning for any models that couldn't be found
+            for name in new_usernames_to_fetch:
+                if name not in self._all_subs_dict:
+                    log.warning(f"Failed to fetch and add model: {name}")
+
+        # Now, update the main args to include the successfully added models
+        args = read_args.retriveArgs()
+        current_arg_usernames = set(args.usernames or [])
+        
+        # We only want to add usernames that we know are valid (i.e., exist in our dict)
+        verified_usernames = {name for name in username_set if name in self._all_subs_dict}
+        
+        if not verified_usernames:
+            log.warning(f"Could not add any of the provided usernames: {', '.join(username_set)}")
+            return
+
+        current_arg_usernames.update(verified_usernames)
+        args.usernames = list(current_arg_usernames)
+        write_args.setArgs(args)
+        log.info(f"Usernames for processing now include: {', '.join(verified_usernames)}")
+
 
     def get_selected_models(
         self, rescan: bool = False, reset: bool = False
@@ -119,14 +178,18 @@ class ModelManager:
             settings.get_settings().usernames = list(self._parsed_subs_dict.keys())
             write_args.setArgs(args)
         elif "ALL" in args.usernames:
+            # Re-filter and sort all models if "ALL" is specified
             self._parsed_subs_dict = self._filter_and_sort_models()
         else:
             username_set = set(args.usernames)
+            # Filter the already-fetched models based on the provided usernames
+            all_filtered_and_sorted = self._filter_and_sort_models()
             self._parsed_subs_dict = {
                 name: model
-                for name, model in self._all_subs_dict.items()
+                for name, model in all_filtered_and_sorted.items()
                 if name in username_set
             }
+
 
     def _filter_and_sort_models(self) -> Dict[str, Model]:
         filtered_models = self._apply_filters()

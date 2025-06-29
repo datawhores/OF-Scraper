@@ -595,7 +595,7 @@ class sessionManager:
                     if await self._rate_limit_sleeper.async_do_sleep():
                         pass
                     else:
-                        self._forbidden_sleeper.async_do_sleep()
+                        await self._forbidden_sleeper.async_do_sleep()
                     if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
                         headers = self._create_headers(
                             headers, url, SIGN in actions, FORCED_NEW in actions
