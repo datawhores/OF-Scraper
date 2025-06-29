@@ -5,7 +5,7 @@ import traceback
 import arrow
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
-import ofscraper.main.open.run as run
+from ofscraper.utils.system.subprocess import run
 
 
 def naming_script(dir, file, ele):
