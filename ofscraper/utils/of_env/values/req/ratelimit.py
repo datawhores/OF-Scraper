@@ -13,7 +13,7 @@ def load_ratelimit_config():
     config = {}
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 429/504 Rate Limiting) ---
-    config["SESSION_SLEEP_INIT"] = int(os.getenv("OFSC_SESSION_SLEEP_INIT", "0"))
+    config["SESSION_SLEEP_INIT"] = int(os.getenv("OFSC_SESSION_SLEEP_INIT", "8"))
     config["SESSION_SLEEP_INCREASE_TIME_DIFF"] = int(
         os.getenv("OFSC_SESSION_SLEEP_INCREASE_TIME_DIFF", "30")
     )

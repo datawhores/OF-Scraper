@@ -119,7 +119,7 @@ def _like(model_id, username, ids: list, like_action: bool):
                     sleep_duration = random.uniform(min_duration, max_duration)
                 # if toggled once
                 if out == 1:
-                    liked = +1
+                    liked += 1
                     progress_updater.increment_like_task(task2)
                 # if failed
                 elif out == 3:
