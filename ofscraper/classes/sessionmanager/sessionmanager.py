@@ -115,6 +115,8 @@ class SessionSleep:
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors"
             )
             await asyncio.sleep(self._sleep)
+            return True
+        return False
 
     def do_sleep(self):
         with self._lock:
@@ -124,6 +126,8 @@ class SessionSleep:
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} recent errors"
             )
             time.sleep(self._sleep)
+            return True
+        return False
 
     def toomany_req(self):
         log = logging.getLogger("shared")
@@ -489,8 +493,11 @@ class sessionManager:
             with self._sync_sem:
                 with _:
                     try:
-                        self._rate_limit_sleeper.do_sleep()
-                        self._forbidden_sleeper.do_sleep()
+                        if self._rate_limit_sleeper.do_sleep():
+                            pass
+                        else:
+                            self._forbidden_sleeper.do_sleep()
+              
 
                         if (
                             SIGN in actions
@@ -575,9 +582,11 @@ class sessionManager:
             with _:
                 await self._sem.acquire()
                 try:
-                    await self._rate_limit_sleeper.async_do_sleep()
-                    await self._forbidden_sleeper.async_do_sleep()
-
+                    if await self._rate_limit_sleeper.async_do_sleep():
+                        pass
+                    else:
+                        self._forbidden_sleeper.async_do_sleep()
+              
                     if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
                         headers = self._create_headers(
                             headers, url, SIGN in actions, FORCED_NEW in actions
