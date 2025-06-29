@@ -143,6 +143,7 @@ jobs:
           source .venv/bin/activate
           echo "HATCH_VCS_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{needs.determine_tags_and_versions.outputs.package_version}}" >> $GITHUB_ENV
+          source ./scripts/release_version.sh
           hatch build
         shell: bash
 
