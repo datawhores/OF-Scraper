@@ -9,6 +9,7 @@ rate_limit_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="SESSION_RATE_LIMIT",
 )
 
 forbidden_session_sleeper = SessionSleep(
@@ -18,6 +19,7 @@ forbidden_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("SESSION_403_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="SESSION_FORBIDDEN",
 )
 
 
@@ -28,6 +30,8 @@ download_rate_limit_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="DOWNLOAD_RATE_LIMIT",
+
 )
 
 download_forbidden_session_sleeper = SessionSleep(
@@ -37,6 +41,7 @@ download_forbidden_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("DOWNLOAD_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="DOWNLOAD_FORBIDDEN"
 )
 
 
@@ -47,6 +52,7 @@ cdm_rate_limit_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="CDM_RATE_LIMIT",
 )
 
 cdm_forbidden_session_sleeper = SessionSleep(
@@ -56,6 +62,8 @@ cdm_forbidden_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("CDM_SESSION_403_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("CDM_SESSION_403_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("CDM_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="CDM_FORBIDDEN",
+
 )
 
 
@@ -66,6 +74,9 @@ like_rate_limit_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("SESSION_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="LIKE_RATE_LIMIT",
+
+    
 )
 
 like_forbidden_session_sleeper = SessionSleep(
@@ -75,4 +86,6 @@ like_forbidden_session_sleeper = SessionSleep(
     decay_threshold=of_env.getattr("LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD"),
     decay_factor=of_env.getattr("LIKE_SESSION_403_SLEEP_DECAY_FACTOR"),
     increase_factor=of_env.getattr("LIKE_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="LIKE_FORBIDDEN",
+
 )
