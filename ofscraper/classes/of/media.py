@@ -37,23 +37,16 @@ class Media(base.base):
         self._lock = asyncio.Lock()
         self._cached_mpd = None
 
-        # ==> STATE TRACKING ATTRIBUTES <==
         self.download_attempted = False
         self.download_succeeded = (
             None  # Using tri-state: None (not attempted), True, False
         )
-        self.like_attempted = False
-        self.like_succeeded = None  # Using tri-state: None (not attempted), True, False
 
-    # ==> RECOMMENDED CHANGE for __eq__ <==
-    # Two different media items can have the same postid.
-    # It's safer to check for media id equality.
     def __eq__(self, other):
         if not isinstance(other, Media):
             return NotImplemented
         return self.id == other.id
 
-    # ==> STATE MANAGEMENT METHODS (New Additions) <==
     def mark_download_attempt(self):
         """Marks that a download has been attempted."""
         self.download_attempted = True
@@ -68,21 +61,6 @@ class Media(base.base):
         self.download_attempted = True
         self.download_succeeded = False
 
-    def mark_like_attempt(self):
-        """Marks that a like has been attempted."""
-        self.like_attempted = True
-
-    def mark_like_success(self):
-        """Marks a like as successful."""
-        self.like_attempted = True
-        self.like_succeeded = True
-
-    def mark_like_failure(self):
-        """Marks a like as failed."""
-        self.like_attempted = True
-        self.like_succeeded = False
-
-    # --- Start of your original properties and methods ---
 
     @property
     def expires(self):

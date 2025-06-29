@@ -49,9 +49,7 @@ def naming_script(dir, file, ele):
 
         result = run(
             [script_path],
-            input=input_json_str.encode(
-                "utf-8"
-            ),  # Pass the JSON string as stdin (encoded to bytes)
+            input=input_json_str,  # Pass the JSON string as stdin
             capture_output=True,
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes

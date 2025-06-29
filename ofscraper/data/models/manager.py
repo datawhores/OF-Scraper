@@ -66,6 +66,19 @@ class ModelManager:
             for ele in models:
                 self._all_subs_dict[ele.name] = ele
 
+    
+    def update_parsed_subs(self, models: List[Model] | Dict[str, Model]) -> None:
+        if isinstance(models, dict):
+            self._parsed_subs_dict.update(models)
+        elif isinstance(models, list):
+            for ele in models:
+                self._parsed_subs_dict[ele.name] = ele
+
+    def update_subs(self,models: List[Model] | Dict[str, Model]):
+        self.update_all_subs(models)
+        self.update_parsed_subs(models)
+    
+    @run
     async def add_model(self, usernames: str | List[str]) -> None:
         """
         Manually fetches model data for specific usernames if not already present,
@@ -96,7 +109,7 @@ class ModelManager:
             # Fetch models and update our central dictionary
             fetched_models = await retriver.get_models()
             if fetched_models:
-                self.update_all_subs(fetched_models)
+                self.update_subs(fetched_models)
             
             # Restore original args to prevent side-effects
             args.usernames = original_usernames

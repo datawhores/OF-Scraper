@@ -5,8 +5,9 @@ import os
 import traceback
 
 import ofscraper.utils.settings as settings
-import ofscraper.main.open.run as run
 import ofscraper.main.manager as manager
+from ofscraper.utils.system.subprocess import run
+
 
 
 def final_script():
@@ -33,12 +34,9 @@ def final_script():
         # Dump JSON to a string, no indent for efficiency, ensure_ascii=False for non-ASCII chars
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
 
-        # 3. Execute the script via subprocess.run, passing JSON via stdin
         result = run(
             [script_path],
-            input=input_json_str.encode(
-                "utf-8"
-            ),  # Pass the JSON string as stdin (encoded to bytes)
+            input=input_json_str,  # Pass the JSON string as stdin
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
