@@ -71,9 +71,7 @@ def funct(prompt_):
     -----------------------------------
     [Script Options]
     after_action_script: A script that runs after an action for each model has completed.
-    skip_download_script: A script that determines whether to skip or continue a download. 
-    It executes before the download process begins.
-
+   
     post_script: A script that runs after all actions for all models have completed.
     naming_script: A script that provides custom logic for generating the final filename. 
     It outputs the desired filename or path.

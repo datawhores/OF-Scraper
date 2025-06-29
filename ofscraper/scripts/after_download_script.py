@@ -39,8 +39,9 @@ def after_download_script(final_path: Union[str, pathlib.Path]):
 
     try:
         result = run(
-            [script_path, final_path],  # Pass final_path as a command-line argument
+            [script_path],  # Pass final_path as a command-line argument
             capture_output=True,
+            input=final_path,
             text=True,
             check=True,  # Will raise CalledProcessError for non-zero exit codes
         )

@@ -94,7 +94,8 @@ class DownloadManager:
         total = int(total)
         if total == 0:
             return 0
-        skip_download_script(total, ele)
+        if skip_download_script(total, ele):
+            return 0
         file_size_max = settings.get_settings().size_max
         file_size_min = settings.get_settings().size_min
         if int(file_size_max) > 0 and (int(total) > int(file_size_max)):

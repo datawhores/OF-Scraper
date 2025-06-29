@@ -120,8 +120,8 @@ def setup_settings():
     merged.naming_script = (
         read_args.retriveArgs().naming_script or config_data.get_naming_script()
     )
-    merged.download_skip_script = (
-        read_args.retriveArgs().download_skip_script
+    merged.skip_download_script = (
+        read_args.retriveArgs().skip_download_script
         or config_data.get_skip_download_script()
     )
 

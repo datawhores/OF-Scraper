@@ -13,11 +13,11 @@ from ofscraper.utils.system.subprocess import run
 def skip_download_script(total, ele):
     log = logging.getLogger("shared")
 
-    if not settings.get_settings().download_skip_script:
+    if not settings.get_settings().skip_download_script:
         log.debug("Download skip script is disabled via settings. Skipping execution.")
         return False
 
-    script_path = settings.get_settings().download_skip_script
+    script_path = settings.get_settings().skip_download_script
     if not script_path or not os.path.exists(script_path):
         log.error(
             f"Download skip script path is invalid or not configured: '{script_path}'. Aborting script execution."
@@ -48,7 +48,7 @@ def skip_download_script(total, ele):
 
         result = run(
             [script_path],
-            input=input_json_str.encode("utf-8"),  # Input must be bytes
+            input=input_json_str,  # Input must be bytes
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes

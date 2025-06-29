@@ -1,8 +1,8 @@
 import cloup as click
 
 after_action_script_option = click.option(
-    "-dls",
-    "--downloads-finish-script",
+    "-aas",
+    "--after-action-script",
     "after_action_script",
     help="""
     \b
@@ -34,7 +34,7 @@ naming_script_option = click.option(
 after_download_option = click.option(
     "-adl",
     "--after-download-script",
-    "ater_download_script",
+    "after_download_script",
     help="""
     \b
     Runs script after download has completed
@@ -42,10 +42,10 @@ after_download_option = click.option(
 )
 
 
-download_skip_script = click.option(
-    "-dlt",
-    "--download-skip-script",
-    "download_skip_script",
+skip_download_script = click.option(
+    "-sdl",
+    "--skip-download-script",
+    "skip_download_script",
     help="""
     \b
     Runs a script to dynamically skip a download
