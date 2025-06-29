@@ -102,7 +102,7 @@ class ModelManager:
             console.get_console().print(
                 "[bold red]No accounts found during scan[/bold red]"
             )
-            time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT", 0))
+            time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT"))
             if not prompts.retry_user_scan():
                 raise SystemExit("Could not find any accounts on list.")
 
