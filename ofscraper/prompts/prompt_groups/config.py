@@ -779,8 +779,8 @@ def manual_config_prompt(configText) -> str:
     return questions[name]
 
 
-def retry_user_scan():
-    answer = promptClasses.getChecklistSelection(
+async def retry_user_scan():
+    answer = await promptClasses.getChecklistSelection(
         message="Rescan account for users",
         choices=[Choice(True, "Yes"), Choice(False, "No")],
     )
