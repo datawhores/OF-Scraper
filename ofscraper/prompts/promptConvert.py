@@ -1,6 +1,5 @@
 import functools
 import inspect
-import asyncio
 
 from InquirerPy import get_style, inquirer
 from InquirerPy.separator import Separator
@@ -10,26 +9,16 @@ import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
 from ofscraper.utils.live.empty import prompt_live
 from ofscraper.utils.live.clear import clear
-import ofscraper.utils.console as console_
-from ofscraper.utils.context.run_async import run
-
-console=console_.get_shared_console()
-
 
 
 def wrapper(prompt_funct):
-    # The outer wrapper remains a regular synchronous functio
-    @run
-    async def inner(*args, **kwargs):
-        # Setup remains mostly the same
+    def inner(*args, **kwargs):
+        # setup
         long_message = functools.partial(
             handle_skip_helper,
             kwargs.pop("long_message", None) or get_default_instructions(prompt_funct),
         )
-        # Check if the passed 'call' function is async
         funct = kwargs.pop("call", None)
-        is_async_funct = asyncio.iscoroutinefunction(funct)
-
         kwargs["long_instruction"] = "\n".join(
             list(
                 filter(
@@ -62,38 +51,27 @@ def wrapper(prompt_funct):
             register_keys(prompt_, altx_action, altd_action, additional_keys, action)
 
             while True:
-                try:
-                    # Await the function if it's a coroutine
-                    if funct:
-                        if is_async_funct:
-                            await funct()
-                        else:
-                            funct()
-
-                    # The key change is here: use .execute_async()
-                    out = await prompt_.execute_async()
-                    prompt_._default = get_default(prompt_funct, prompt_)
-                    select = action[0]
-                    action[0] = None
-                    if select == "altx":
-                        prompt_ = altx_action(prompt_)
-                    elif select == "altv":
-                        altv_action()
-                    elif select == "altd":
-                        altd_action(prompt_)
-                    elif additional_keys.get(select):
-                        prompt_ = additional_keys.get(select)(prompt_)
-                    else:
-                        break
-                except Exception as e:
-                    console.print(e)
-                    # It's good practice to have a small sleep in an error loop
-                    await asyncio.sleep(0.1)
-
+                funct() if funct else None
+                clear()
+                out = prompt_.execute()
+                prompt_._default = get_default(prompt_funct, prompt_)
+                select = action[0]
+                action[0] = None
+                if select == "altx":
+                    prompt_ = altx_action(prompt_)
+                elif select == "altv":
+                    altv_action()
+                elif select == "altd":
+                    altd_action(prompt_)
+                elif additional_keys.get(select):
+                    prompt_ = additional_keys.get(select)(prompt_)
+                else:
+                    break
 
         return out
 
     return inner
+
 
 def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
     for key in (additional_keys).keys():

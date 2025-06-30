@@ -30,6 +30,7 @@ from ofscraper.commands.scraper.actions.download.utils.text import textDownloade
 from ofscraper.utils.args.accessors.areas import get_download_area
 import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
+from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):

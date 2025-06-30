@@ -236,7 +236,7 @@ class ModelManager:
                 "[bold red]No accounts found during scan[/bold red]"
             )
             time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT"))
-            if not await prompts.retry_user_scan():
+            if not prompts.retry_user_scan():
                 raise SystemExit("Could not find any accounts on list.")
 
     def _process_parsed_subscriptions(self, reset: bool = False) -> None:
