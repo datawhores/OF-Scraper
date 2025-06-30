@@ -53,15 +53,11 @@ class Media(base.base):
         """Marks that a download has been attempted."""
         self.download_attempted = True
 
-    def mark_download_success(self):
-        """Marks a download as successful."""
+    def mark_download_finished(self,success=True):
+        """Marks a download as successful/failed."""
         self.download_attempted = True
-        self.download_succeeded = True
-
-    def mark_download_failure(self):
-        """Marks a download as failed."""
-        self.download_attempted = True
-        self.download_succeeded = False
+        self.download_succeeded =(success==True)
+        self.update_status()
 
     def update_status(self):
         self.media["download_status"] = "skipped"
