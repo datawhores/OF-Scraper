@@ -37,7 +37,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
 )
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
-from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
+from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 import ofscraper.utils.auth.request as auth_requests
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
