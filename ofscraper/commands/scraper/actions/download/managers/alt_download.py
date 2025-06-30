@@ -42,7 +42,7 @@ import ofscraper.utils.auth.request as auth_requests
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
 )
-import ofscraper.commands.scraper.actions.utils.paths.paths as common_paths
+import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
 import ofscraper.commands.scraper.actions.utils.general as common
@@ -372,7 +372,8 @@ class AltDownloadManager(DownloadManager):
                 hashdata=await common.get_hash(sharedPlaceholderObj),
                 size=sharedPlaceholderObj.size,
             )
-        common.add_additional_data(sharedPlaceholderObj, ele)
+        ele.add_filepath(sharedPlaceholderObj.trunicated_filepath)
+
         self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
         return ele.mediatype, video["total"] + audio["total"]
 

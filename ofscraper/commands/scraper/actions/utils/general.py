@@ -20,11 +20,7 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.hash as hash
-from ofscraper.commands.scraper.actions.utils.paths.media import add_path
 
-
-def add_additional_data(placeholderObj, ele):
-    add_path(placeholderObj, ele)
 
 
 async def set_profile_cache_helper(ele):

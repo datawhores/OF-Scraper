@@ -41,7 +41,7 @@ from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
 )
-import ofscraper.commands.scraper.actions.utils.paths.paths as common_paths
+import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.dates as dates
@@ -333,7 +333,7 @@ class MainDownloadManager(DownloadManager):
                 size=placeholderObj.size,
             )
         await common.set_profile_cache_helper(ele)
-        common.add_additional_data(placeholderObj, ele)
+        ele.add_filepath(placeholderObj.trunicated_filepath)
         self._after_download_script(path_to_file)
 
         return ele.mediatype, total

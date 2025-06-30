@@ -17,8 +17,6 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.commands.scraper.actions.utils.general as common
-import ofscraper.commands.scraper.actions.utils.paths.media as media
 import ofscraper.utils.cache as cache
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
@@ -53,7 +51,7 @@ class MetaDataManager:
         )
         placeholderObj = placeholderObj or await self._placeholderObjHelper(c, ele)
         await placeholderObj.init(create=False)
-        common.add_additional_data(placeholderObj, ele)
+        ele.add_filepath(placeholderObj.trunicated_filepath)
         effected = None
         if ele.id:
             prevData = (
@@ -162,7 +160,7 @@ class MetaDataManager:
         placeholderObj = None
         if not ele.url and not ele.mpd:
             placeholderObj = placeholder.Placeholders(
-                ele, ext=media.content_type_missing(ele)
+                ele, ext=ele.content_type
             )
             return placeholderObj
         else:
@@ -183,7 +181,7 @@ class MetaDataManager:
                 headers = r.headers
                 content_type = headers.get("content-type").split("/")[
                     -1
-                ] or media.content_type_missing(ele)
+                ] or ele.content_type
                 # request fail if not read
                 async for _ in r.iter_chunked(1024 * 1024 * 30):
                     pass
@@ -197,7 +195,7 @@ class MetaDataManager:
         if download_data:
             content_type = download_data.get("content-type").split("/")[
                 -1
-            ] or media.content_type_missing(ele)
+            ] or ele.content_type
             return placeholder.Placeholders(ele, content_type)
         # final fallback
         return await self._metadata_helper(c, ele)

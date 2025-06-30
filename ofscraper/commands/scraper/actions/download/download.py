@@ -20,7 +20,7 @@ import ofscraper.utils.live.screens as progress_utils
 
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
-from ofscraper.commands.scraper.actions.utils.paths.paths import setDirectoriesDate
+from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
 
 from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run

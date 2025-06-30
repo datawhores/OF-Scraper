@@ -4,6 +4,8 @@ import asyncio
 import logging
 import re
 import warnings
+from typing import Union
+from pathlib import Path
 
 import arrow
 from async_property import async_cached_property
@@ -70,8 +72,20 @@ class Media(base.base):
         elif self.download_attempted==True and self.download_succeeded==True:
             self.media["download_status"]="succeed"
 
+    def add_filepath(self,path:Union[str|Path]):
+        path=str(path)
+        self.media["filepath"]=path
 
-
+    #only use if content type can't be found from request
+    @property
+    def content_type(self):
+        if self.mediatype.lower() == "videos":
+            return "mp4"
+        elif self.mediatype.lower() == "images":
+            return "jpg"
+        elif self.mediatype.lower() == "audios":
+            return "mp3"
+        
     @property
     def expires(self):
         return self._post.expires
