@@ -127,7 +127,8 @@ def setup_settings():
 
     merged.after_download_script = (
         read_args.retriveArgs().after_download_script
-        or config_data.get_after_download_script())
+        or config_data.get_after_download_script()
+    )
 
     merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()

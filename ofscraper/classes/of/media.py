@@ -43,9 +43,6 @@ class Media(base.base):
         self.download_succeeded = (
             None  # Using tri-state: None (not attempted), True, False
         )
-        
-
-
 
     def __eq__(self, other):
         if not isinstance(other, Media):
@@ -65,18 +62,19 @@ class Media(base.base):
         """Marks a download as failed."""
         self.download_attempted = True
         self.download_succeeded = False
+
     def update_status(self):
-        self.media["download_status"]="skipped"
-        if self.download_attempted==True and self.download_succeeded==False:
-            self.media["download_status"]="failed"
-        elif self.download_attempted==True and self.download_succeeded==True:
-            self.media["download_status"]="succeed"
+        self.media["download_status"] = "skipped"
+        if self.download_attempted == True and self.download_succeeded == False:
+            self.media["download_status"] = "failed"
+        elif self.download_attempted == True and self.download_succeeded == True:
+            self.media["download_status"] = "succeed"
 
-    def add_filepath(self,path:Union[str|Path]):
-        path=str(path)
-        self.media["filepath"]=path
+    def add_filepath(self, path: Union[str | Path]):
+        path = str(path)
+        self.media["filepath"] = path
 
-    #only use if content type can't be found from request
+    # only use if content type can't be found from request
     @property
     def content_type(self):
         if self.mediatype.lower() == "videos":
@@ -85,7 +83,7 @@ class Media(base.base):
             return "jpg"
         elif self.mediatype.lower() == "audios":
             return "mp3"
-        
+
     @property
     def expires(self):
         return self._post.expires

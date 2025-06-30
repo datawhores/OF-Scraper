@@ -9,7 +9,6 @@ from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 
 
-
 def naming_script(dir, file, ele):
     log = logging.getLogger("shared")
 
@@ -58,11 +57,11 @@ def naming_script(dir, file, ele):
             quiet=True,
         )
         stdout = result.stdout
-        stderr=result.stderr
+        stderr = result.stderr
         if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            log.log(100,f"Naming script stdout: {stdout.strip()}")
+            log.log(100, f"Naming script stdout: {stdout.strip()}")
             if stderr:
-                log.log(100,f"Naming script stderr: {stderr.strip()}")
+                log.log(100, f"Naming script stderr: {stderr.strip()}")
         log.debug("Naming script ran successfully via stdin.")
         return stdout.strip()
 

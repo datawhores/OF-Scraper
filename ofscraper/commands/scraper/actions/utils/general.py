@@ -22,7 +22,6 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.hash as hash
 
 
-
 async def set_profile_cache_helper(ele):
     if ele.postid and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(

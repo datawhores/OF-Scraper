@@ -10,7 +10,6 @@ from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 
 
-
 def final_script():
     log = logging.getLogger("shared")
     if not settings.get_settings().post_script:
@@ -41,14 +40,14 @@ def final_script():
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
-            quiet=True
+            quiet=True,
         )
-        
+
         if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
             if result.stdout:
-                log.log(100,f"Final script stdout:\n{result.stdout.strip()}")
+                log.log(100, f"Final script stdout:\n{result.stdout.strip()}")
             if result.stderr:
-                log.log(100,f"Final script stderr:\n{result.stderr.strip()}")
+                log.log(100, f"Final script stderr:\n{result.stderr.strip()}")
         log.debug("Final script ran successfully via stdin.")
 
     # 4. Add comprehensive error handling

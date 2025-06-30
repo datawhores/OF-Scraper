@@ -3,17 +3,12 @@ import logging
 import traceback
 import os  # For checking script path existence
 import subprocess
- 
+
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
 import ofscraper.main.manager as manager
 import ofscraper.utils.of_env.of_env as env
-
-
-
-
-
 
 
 def after_download_action_script(username, media=None, posts=None):
@@ -66,22 +61,24 @@ def after_download_action_script(username, media=None, posts=None):
 
         result = run(
             [script_path],
-            input=input_json_str, # Pass the JSON string as stdin 
+            input=input_json_str,  # Pass the JSON string as stdin
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
-            quiet=True
+            quiet=True,
         )
         if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
             log.log(
-                100,f"Post user script stdout for {processed_username}:\n{result.stdout.strip()}"
+                100,
+                f"Post user script stdout for {processed_username}:\n{result.stdout.strip()}",
             )
             if result.stderr:
                 log.warning(
-                    100,f"Post user script stderr for {processed_username}:\n{result.stderr.strip()}"
+                    100,
+                    f"Post user script stderr for {processed_username}:\n{result.stderr.strip()}",
                 )
         log.debug(
-                f"Post user script ran successfully for {processed_username} via stdin."
+            f"Post user script ran successfully for {processed_username} via stdin."
         )
 
     except FileNotFoundError:

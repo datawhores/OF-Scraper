@@ -250,7 +250,6 @@ def get_skip_download_script(config=None):
     )
 
 
-
 @wrapper.config_reader
 def get_after_download_script(config=None):
     if config is False:
@@ -262,6 +261,8 @@ def get_after_download_script(config=None):
         or config.get("script_options", {}).get("after_download_script")
         or of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
     )
+
+
 @wrapper.config_reader
 def get_default_blacklist(config=None):
     if config is False:

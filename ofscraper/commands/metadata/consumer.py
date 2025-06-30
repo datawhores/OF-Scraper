@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import asyncio
@@ -26,7 +26,6 @@ from ofscraper.commands.metadata.desc import desc
 from ofscraper.classes.of.media import Media
 
 
-
 async def consumer(aws, task1, medialist, lock):
     while True:
         ele = None
@@ -38,7 +37,7 @@ async def consumer(aws, task1, medialist, lock):
             break
         else:
             try:
-                ele:Media = data[1]
+                ele: Media = data[1]
                 media_type = await MetaDataManager().metadata(*data)
             except Exception as e:
                 common_globals.log.info(
@@ -71,7 +70,7 @@ async def consumer(aws, task1, medialist, lock):
                     + common_globals.forced_skipped
                 )
                 log_download_progress(media_type)
-                
+
                 progress_updater.update_metadata_task(
                     task1,
                     description=desc.format(

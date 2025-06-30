@@ -11,7 +11,6 @@ from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 
 
-
 def skip_download_script(total, ele):
     log = logging.getLogger("shared")
 
@@ -60,10 +59,13 @@ def skip_download_script(total, ele):
         stdout_output = result.stdout.strip()
         stderr_output = result.stderr.strip()
         if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            log.log(100,f"Download skip script stdout for {ele.username}:\n{stdout_output}")
+            log.log(
+                100, f"Download skip script stdout for {ele.username}:\n{stdout_output}"
+            )
             if stderr_output:
                 log.log(
-                    100,f"Download skip script stderr for {ele.username}:\n{stderr_output}"
+                    100,
+                    f"Download skip script stderr for {ele.username}:\n{stderr_output}",
                 )
         should_skip = (stdout_output.lower() == "false") or (stdout_output == "")
         if should_skip:

@@ -66,7 +66,6 @@ class ModelManager:
             for ele in models:
                 self._all_subs_dict[ele.name] = ele
 
-    
     def update_parsed_subs(self, models: List[Model] | Dict[str, Model]) -> None:
         if isinstance(models, dict):
             self._parsed_subs_dict.update(models)
@@ -74,10 +73,10 @@ class ModelManager:
             for ele in models:
                 self._parsed_subs_dict[ele.name] = ele
 
-    def update_subs(self,models: List[Model] | Dict[str, Model]):
+    def update_subs(self, models: List[Model] | Dict[str, Model]):
         self.update_all_subs(models)
         self.update_parsed_subs(models)
-    
+
     @run
     async def add_model(self, usernames: str | List[str]) -> None:
         """
@@ -98,10 +97,12 @@ class ModelManager:
         }
 
         if new_usernames_to_fetch:
-            log.info(f"Attempting to fetch new model data for: {', '.join(new_usernames_to_fetch)}")
+            log.info(
+                f"Attempting to fetch new model data for: {', '.join(new_usernames_to_fetch)}"
+            )
             args = read_args.retriveArgs()
             original_usernames = args.usernames or []
-            
+
             # Temporarily set args for a targeted fetch
             args.usernames = list(new_usernames_to_fetch)
             write_args.setArgs(args)
@@ -110,7 +111,7 @@ class ModelManager:
             fetched_models = await retriver.get_models()
             if fetched_models:
                 self.update_subs(fetched_models)
-            
+
             # Restore original args to prevent side-effects
             args.usernames = original_usernames
             write_args.setArgs(args)
@@ -123,19 +124,24 @@ class ModelManager:
         # Now, update the main args to include the successfully added models
         args = read_args.retriveArgs()
         current_arg_usernames = set(args.usernames or [])
-        
+
         # We only want to add usernames that we know are valid (i.e., exist in our dict)
-        verified_usernames = {name for name in username_set if name in self._all_subs_dict}
-        
+        verified_usernames = {
+            name for name in username_set if name in self._all_subs_dict
+        }
+
         if not verified_usernames:
-            log.warning(f"Could not add any of the provided usernames: {', '.join(username_set)}")
+            log.warning(
+                f"Could not add any of the provided usernames: {', '.join(username_set)}"
+            )
             return
 
         current_arg_usernames.update(verified_usernames)
         args.usernames = list(current_arg_usernames)
         write_args.setArgs(args)
-        log.info(f"Usernames for processing now include: {', '.join(verified_usernames)}")
-
+        log.info(
+            f"Usernames for processing now include: {', '.join(verified_usernames)}"
+        )
 
     def get_selected_models(
         self, rescan: bool = False, reset: bool = False
@@ -202,7 +208,6 @@ class ModelManager:
                 for name, model in all_filtered_and_sorted.items()
                 if name in username_set
             }
-
 
     def _filter_and_sort_models(self) -> Dict[str, Model]:
         filtered_models = self._apply_filters()

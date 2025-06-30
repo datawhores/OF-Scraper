@@ -24,7 +24,6 @@ import ofscraper.main.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
 
-
 log = None
 
 
@@ -76,7 +75,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 str(newpath),
                 "-y",
             ],
-             quiet= not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS")
+            quiet=not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS"),
         )
         if not pathlib.Path(newpath).exists():
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")

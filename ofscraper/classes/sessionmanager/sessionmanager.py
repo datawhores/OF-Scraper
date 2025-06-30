@@ -19,7 +19,7 @@ import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
 from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
- 
+
 # Constants for request actions
 TOO_MANY = "too_many"
 AUTH = "auth"
@@ -64,10 +64,10 @@ class SessionSleep:
         self._init_sleep = (
             sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
         )
-        self._min_sleep=(
+        self._min_sleep = (
             min_sleep if min_sleep is not None else of_env.getattr("SESSION_SLEEP_MIN")
         )
-        #set sleep to min sleep always
+        # set sleep to min sleep always
         self._sleep = self._min_sleep
 
         self._difmin = (
@@ -102,15 +102,15 @@ class SessionSleep:
             new_sleep = self._sleep / self._decay_factor
             self._sleep = max(self._min_sleep, new_sleep)
             self._last_date = arrow.now()
-            logging.getLogger("shared").debug(f"[{self.error_name}] Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
-
-
+            logging.getLogger("shared").debug(
+                f"[{self.error_name}] Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]"
+            )
 
     async def async_do_sleep(self):
         async with self._alock:
             self._maybe_decay_sleep()
-        if self._sleep and self._sleep<=self._min_sleep:
-             logging.getLogger("shared").debug(
+        if self._sleep and self._sleep <= self._min_sleep:
+            logging.getLogger("shared").debug(
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} min sleep value"
             )
         elif self._sleep and self._sleep > 0:
@@ -124,7 +124,7 @@ class SessionSleep:
     def do_sleep(self):
         with self._lock:
             self._maybe_decay_sleep()
-        if self._sleep and self._sleep<=self._min_sleep:
+        if self._sleep and self._sleep <= self._min_sleep:
             logging.getLogger("shared").debug(
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} min sleep value"
             )
@@ -173,9 +173,6 @@ class SessionSleep:
     @sleep.setter
     def sleep(self, val: float) -> None:
         self._sleep = val
-
-
-
 
 
 class sessionManager:
@@ -386,27 +383,27 @@ class sessionManager:
             #         max_connections=self._connect_limit,
             #         keepalive_expiry=self._keep_alive_exp,
             #     ),
-                    
+
             #     ),
             # )
 
-            self._session=aiohttp.ClientSession(
-                        connector=aiohttp.TCPConnector(
-                            limit=self._connect_limit,
-                            ssl=(
-                                False
-                                if not settings.get_settings().ssl_verify
-                                else create_custom_ssl_context()
-                            ),
-                        ),
-                          timeout=aiohttp.ClientTimeout(
-                                total= self._total_timeout,
-                                connect= self._connect_timeout,
-                                sock_connect=self._pool_connect_timeout,
-                                sock_read= self._read_timeout,
+            self._session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(
+                    limit=self._connect_limit,
+                    ssl=(
+                        False
+                        if not settings.get_settings().ssl_verify
+                        else create_custom_ssl_context()
+                    ),
+                ),
+                timeout=aiohttp.ClientTimeout(
+                    total=self._total_timeout,
+                    connect=self._connect_timeout,
+                    sock_connect=self._pool_connect_timeout,
+                    sock_read=self._read_timeout,
                 ),
             )
-            
+
         else:
             self._session = httpx.Client(
                 http2=True,
@@ -500,7 +497,6 @@ class sessionManager:
                             pass
                         else:
                             self._forbidden_sleeper.do_sleep()
-              
 
                         if (
                             SIGN in actions
@@ -525,8 +521,7 @@ class sessionManager:
                             timeout=httpx.Timeout(
                                 total_timeout or self._total_timeout,
                                 connect=connect_timeout,
-                                pool=pool_connect_timeout
-                                or self._pool_connect_timeout,
+                                pool=pool_connect_timeout or self._pool_connect_timeout,
                                 read=read_timeout or self._read_timeout,
                             ),
                         )
@@ -556,14 +551,14 @@ class sessionManager:
         json: dict = None,
         params: dict = None,
         data: dict = None,
-        wait_min:float=None,
-        wait_max:float=None,
-        retries:bool=None,
-        redirects:bool=True,
-        total_timeout:bool=None,
-        connect_timeout:float=None,
-        pool_connect_timeout:float=None,
-        read_timeout:float=None,
+        wait_min: float = None,
+        wait_max: float = None,
+        retries: bool = None,
+        redirects: bool = True,
+        total_timeout: bool = None,
+        connect_timeout: float = None,
+        pool_connect_timeout: float = None,
+        read_timeout: float = None,
         actions: Optional[list] = None,
         exceptions: Optional[list] = None,
         **kwargs,
@@ -572,15 +567,11 @@ class sessionManager:
         exceptions = exceptions or []
         retries = kwargs.get("retries") or self._retries
         wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max = (
-            kwargs.get("wait_max_exponential") or self._wait_max_exponential
-        )
+        wait_max = kwargs.get("wait_max_exponential") or self._wait_max_exponential
 
         async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
-            wait=tenacity.wait_random(
-                min=wait_min, max=wait_max
-            ),
+            wait=tenacity.wait_random(min=wait_min, max=wait_max),
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
             reraise=True,
             before=lambda x: (
@@ -604,24 +595,24 @@ class sessionManager:
                         cookies = self._create_cookies()
 
                     r = await self._aio_funct(
-                            method,
-                            url,
-                            timeout=aiohttp.ClientTimeout(
-                                total=total_timeout or self._total_timeout,
-                                connect=connect_timeout or self._connect_timeout,
-                                sock_connect=pool_connect_timeout
-                                or self._pool_connect_timeout,
-                                sock_read=read_timeout or self._read_timeout,
-                            ),
-                            headers=headers,
-                            cookies=cookies,
-                            allow_redirects=redirects,
-                            proxy=self._proxy,
-                            params=params,
-                            json=json,
-                            data=data,
-                            ssl=ssl.create_default_context(cafile=certifi.where()),
-                        )
+                        method,
+                        url,
+                        timeout=aiohttp.ClientTimeout(
+                            total=total_timeout or self._total_timeout,
+                            connect=connect_timeout or self._connect_timeout,
+                            sock_connect=pool_connect_timeout
+                            or self._pool_connect_timeout,
+                            sock_read=read_timeout or self._read_timeout,
+                        ),
+                        headers=headers,
+                        cookies=cookies,
+                        allow_redirects=redirects,
+                        proxy=self._proxy,
+                        params=params,
+                        json=json,
+                        data=data,
+                        ssl=ssl.create_default_context(cafile=certifi.where()),
+                    )
 
                     if not r.ok and r.status_code != 404:
                         self._log.debug(f"[bold]failed: [bold] {r.url}")
@@ -640,7 +631,6 @@ class sessionManager:
                     self._sem.release()
                     raise E
 
-
     @property
     def sleep(self):
         return self._rate_limit_sleeper.sleep
@@ -648,7 +638,6 @@ class sessionManager:
     @sleep.setter
     def sleep(self, val):
         self._rate_limit_sleeper.sleep = val
-
 
     def _httpx_funct(self, method, **kwargs):
         t = self._session.request(method.upper(), **kwargs)
@@ -659,6 +648,7 @@ class sessionManager:
         t.iter_chunked = t.iter_bytes
         t.read_ = t.read
         return t
+
     async def _aio_funct(self, method, *args, **kwargs):
         # public function forces context manager use
         r = await self._session._request(method, *args, **kwargs)

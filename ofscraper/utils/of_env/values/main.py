@@ -290,7 +290,6 @@ def load_main_config():
             config["EMPTY_MEDIA_DEFAULT"] = {}
     else:
         config["EMPTY_MEDIA_DEFAULT"] = {}
-        
 
     # FILTER_DEFAULT: Default filter list.
     # Default: ["Images", "Audios", "Videos"] (list of strings)
@@ -301,7 +300,7 @@ def load_main_config():
     else:
         config["FILTER_DEFAULT"] = ["Images", "Audios", "Videos"]
 
-    ssl_verify = os.getenv("OFSC_SSL_VALIDATION_DEFAULT",True)
-    config["SSL_VALIDATION_DEFAULT"]=ssl_verify
+    ssl_verify = os.getenv("OFSC_SSL_VALIDATION_DEFAULT", True)
+    config["SSL_VALIDATION_DEFAULT"] = ssl_verify
 
     return config

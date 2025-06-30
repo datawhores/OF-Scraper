@@ -50,9 +50,10 @@ import ofscraper.utils.cache as cache
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 from ofscraper.classes.of.media import Media
 
+
 class MainDownloadManager(DownloadManager):
 
-    async def main_download(self, c, ele:Media, username, model_id):
+    async def main_download(self, c, ele: Media, username, model_id):
         ele.mark_download_attempt()
         await common_globals.sem.acquire()
         common_globals.log.debug(

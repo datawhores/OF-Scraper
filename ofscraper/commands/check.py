@@ -73,7 +73,9 @@ def process_download_cart():
                     None
             if len(cart_dict.keys()) > 0:
                 for val in cart_dict.values():
-                    after_download_action_script(val["userdata"], val["media"], val["post"])
+                    after_download_action_script(
+                        val["userdata"], val["media"], val["post"]
+                    )
                 results = ["check cart results"] + list(
                     map(lambda x: x["results"], cart_dict.values())
                 )

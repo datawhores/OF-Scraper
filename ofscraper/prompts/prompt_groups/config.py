@@ -32,6 +32,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
 
+
 console = Console()
 
 
@@ -336,8 +337,7 @@ def script_config():
                 "default": data.get_skip_download_script() or "",
                 "option_instruction": "Leave empty to skip the download skip script",
             },
-
-             {
+            {
                 "type": "input",
                 "name": "after_download_script",
                 "message": "Script that runs after download complete",

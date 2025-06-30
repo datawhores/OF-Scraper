@@ -33,8 +33,6 @@ import ofscraper.main.manager as manager
 from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
 
-
-
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
     download_str = download_activity_str.format(username=username)
     path_str = format_safe(

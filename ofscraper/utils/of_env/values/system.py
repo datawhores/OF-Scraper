@@ -19,17 +19,20 @@ def load_system_config():
         "1",
     )
 
-    
     # FFMPEG_OUTPUT_SUBPROCCESS: Whether to log ffmpeg messages.
     # Default: None
-    config["FFMPEG_OUTPUT_SUBPROCCESS"]=os.getenv("OFSC_FFMPEG_OUTPUT_SUBPROCCESS", "False").lower() in (
+    config["FFMPEG_OUTPUT_SUBPROCCESS"] = os.getenv(
+        "OFSC_FFMPEG_OUTPUT_SUBPROCCESS", "False"
+    ).lower() in (
         "true",
         "1",
     )
 
     # "SCRIPT_OUTPUT_SUBPROCCESS: Whether to log general script messages.
     # Default: None
-    config["SCRIPT_OUTPUT_SUBPROCCESS"]=os.getenv("OFSC_SCRIPT_OUTPUT_SUBPROCCESS", "True").lower() in (
+    config["SCRIPT_OUTPUT_SUBPROCCESS"] = os.getenv(
+        "OFSC_SCRIPT_OUTPUT_SUBPROCCESS", "True"
+    ).lower() in (
         "true",
         "1",
     )

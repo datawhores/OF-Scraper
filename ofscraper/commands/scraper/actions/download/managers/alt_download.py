@@ -58,10 +58,9 @@ import ofscraper.utils.of_env.of_env as env
 from ofscraper.classes.of.media import Media
 
 
-
 class AltDownloadManager(DownloadManager):
 
-    async def alt_download(self, c, ele:Media, username, model_id):
+    async def alt_download(self, c, ele: Media, username, model_id):
         await common_globals.sem.acquire()
         ele.mark_download_attempt()
         common_globals.log.debug(
@@ -328,7 +327,7 @@ class AltDownloadManager(DownloadManager):
                 "use_metadata_tags",
                 str(temp_path),
             ],
-            quiet= not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS")
+            quiet=not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS"),
         )
         if t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")

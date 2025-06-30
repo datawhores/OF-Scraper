@@ -159,9 +159,7 @@ class MetaDataManager:
     async def _metadata_helper(self, c, ele):
         placeholderObj = None
         if not ele.url and not ele.mpd:
-            placeholderObj = placeholder.Placeholders(
-                ele, ext=ele.content_type
-            )
+            placeholderObj = placeholder.Placeholders(ele, ext=ele.content_type)
             return placeholderObj
         else:
             url = ele.url or ele.mpd
@@ -179,9 +177,9 @@ class MetaDataManager:
                 url=url, headers=None, params=params, actions=actions
             ) as r:
                 headers = r.headers
-                content_type = headers.get("content-type").split("/")[
-                    -1
-                ] or ele.content_type
+                content_type = (
+                    headers.get("content-type").split("/")[-1] or ele.content_type
+                )
                 # request fail if not read
                 async for _ in r.iter_chunked(1024 * 1024 * 30):
                     pass
@@ -193,9 +191,9 @@ class MetaDataManager:
             common_globals.thread, partial(cache.get, f"{ele.id}_headers")
         )
         if download_data:
-            content_type = download_data.get("content-type").split("/")[
-                -1
-            ] or ele.content_type
+            content_type = (
+                download_data.get("content-type").split("/")[-1] or ele.content_type
+            )
             return placeholder.Placeholders(ele, content_type)
         # final fallback
         return await self._metadata_helper(c, ele)
