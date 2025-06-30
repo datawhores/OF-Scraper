@@ -10,10 +10,6 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
 
 """
-
-import json
-import math
-
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
@@ -23,7 +19,6 @@ from rich.console import Console
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.of_env.of_env as of_env
@@ -651,6 +646,13 @@ If value is 'None' or '0' no logs will be touched
                     Choice(False, "Hash Files, but do not remove"),
                     Choice(None, "Don't Hash Files"),
                 ],
+            },
+
+             {
+                "type": "input",
+                "name": "env_files",
+                "message": "Files used to import env variables",
+                "default": data.get_env_files(),
             },
         ],
         altx=funct,

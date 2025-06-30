@@ -1,7 +1,6 @@
 import re
 
 import cloup as click
-from ofscraper.utils.args.callbacks.arguments.env import _load_env_file_callback
 
 from ofscraper.__version__ import __version__
 
@@ -15,14 +14,6 @@ config_location_option = click.option(
     help="Change location of config folder/file",
     # type=click.Path(exists=False, dir_okay=True, readable=True),
     default=None,
-)
-
-enviroment_vars_option = click.option(
-    "--env-file",
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    help="Path to a custom environment variables file (.env).",
-    default=None,  # No default path here, it will be handled in the function
-    callback=_load_env_file_callback,
 )
 
 
@@ -40,10 +31,9 @@ Profiles are always within the config.json file parent directory
     ),
 )
 env_file_option = click.option(
-    "--env-file",
+    "--env-files",
     type=click.Path(exists=True, dir_okay=False, readable=True),
     help="Path to a custom environment variables file (.env).",
     default=None,
-    callback=_load_env_file_callback,
     multiple=True,
 )

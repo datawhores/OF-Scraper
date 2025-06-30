@@ -1,4 +1,5 @@
 import threading
+import re
 from dotenv import load_dotenv
 from copy import deepcopy
 import ofscraper.utils.ads as ads
@@ -8,6 +9,7 @@ import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.args.accessors.areas import get_text_area
+from ofscraper.utils.of_env.load import load_env_files
 
 
 # --- Globals for one-time initialization ---
@@ -66,6 +68,14 @@ def get_settings():
 
 
 def setup_settings():
+    merged=merged_settings()
+    load_env_files(merged.env_files)
+    return merged
+
+    
+
+
+def merged_settings():
     merged = deepcopy(read_args.retriveArgs())
     merged.key_mode = read_args.retriveArgs().key_mode or config_data.get_key_mode()
     merged.cache_disabled = (
@@ -142,7 +152,6 @@ def setup_settings():
     merged.cached_disabled = get_cached_disabled()
     merged.logs_expire_time = config_data.get_logs_expire()
     merged.ssl_verify = config_data.get_ssl_verify()
-
     return merged
 
 
@@ -211,12 +220,19 @@ def get_trunication():
 def get_userlist():
     out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
     if isinstance(out, str):
-        out = out.split(",")
+        out =re.split(r',| ', out)
     return out
 
 
 def get_blacklist():
     out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
     if isinstance(out, str):
-        out = out.split(",")
+        out = re.split(r',| ', out)
+    return out
+
+
+def get_env_files():
+    out = read_args.retriveArgs().env_files or config_data.get_env_files()
+    if isinstance(out, str):
+        out = re.split(r',| ', out)
     return out

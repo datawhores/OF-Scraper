@@ -176,7 +176,7 @@ def get_default_userlist(config=None):
     val = config.get("default_user_list") or config.get("advanced_options", {}).get(
         "default_user_list"
     )
-    return val or of_env.getattr("DEFAULT_USER_LIST")
+    return val or of_env.getattr("DEFAULT_USER_LIST") or ""
 
 
 @wrapper.config_reader
@@ -262,6 +262,18 @@ def get_after_download_script(config=None):
         or of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
     )
 
+@wrapper.config_reader
+def get_env_files(config=None):
+    if config is False:
+        return of_env.getattr("ENV_FILES_DEFAULT")
+    return (
+        config.get("env_files")
+        or config.get("advanced_options", {}).get("env_files")
+        or config.get("scripts", {}).get("env_files")
+        or config.get("script_options", {}).get("env_files")
+        or of_env.getattr("ENV_FILES_DEFAULT")
+    ) or ""
+
 
 @wrapper.config_reader
 def get_default_blacklist(config=None):
@@ -271,7 +283,7 @@ def get_default_blacklist(config=None):
         config.get("default_black_list")
         or config.get("advanced_options", {}).get("default_black_list")
         or of_env.getattr("DEFAULT_BLACK_LIST")
-    )
+    ) or ""
 
 
 @wrapper.config_reader
