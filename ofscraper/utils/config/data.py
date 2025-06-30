@@ -629,41 +629,6 @@ def get_truncation(config=None):
     return val if val is not None else of_env.getattr("TRUNCATION_DEFAULT")
 
 
-@wrapper.config_reader
-def get_audios_overwrites(config=None):
-    if config is False:
-        return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("audios") or of_env.getattr(
-        "EMPTY_MEDIA_DEFAULT"
-    )
-
-
-@wrapper.config_reader
-def get_videos_overwrites(config=None):
-    if config is False:
-        return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("videos") or of_env.getattr(
-        "EMPTY_MEDIA_DEFAULT"
-    )
-
-
-@wrapper.config_reader
-def get_images_overwrites(config=None):
-    if config is False:
-        return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("images") or of_env.getattr(
-        "EMPTY_MEDIA_DEFAULT"
-    )
-
-
-@wrapper.config_reader
-def get_text_overwrites(config=None):
-    if config is False:
-        return of_env.getattr("EMPTY_MEDIA_DEFAULT")
-    return config.get("overwrites", {}).get("text") or of_env.getattr(
-        "EMPTY_MEDIA_DEFAULT"
-    )
-
 
 @wrapper.config_reader
 def get_max_post_count(config=None):

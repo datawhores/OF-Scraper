@@ -53,7 +53,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "downloadbars": data.get_show_downloadprogress(config=config),
             "cache-mode": data.cache_mode_helper(config=config),
             "rotate_logs": data.get_rotate_logs(config=config),
-            "custom_values": custom.get_custom(config=config),
             "sanitize_text": data.get_sanitizeDB(config=config),
             "temp_dir": data.get_TempDir(config=config),
             "remove_hash_match": data.get_hash(config=config),
@@ -81,12 +80,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "profile": data.get_profile_responsetype(config=config),
             "pinned": data.get_pinned_responsetype(config=config),
             "streams": data.get_streams_responsetype(config=config),
-        },
-        "overwrites": {
-            "audios": data.get_audios_overwrites(config=config),
-            "videos": data.get_videos_overwrites(config=config),
-            "images": data.get_images_overwrites(config=config),
-            "text": data.get_text_overwrites(config=config),
         },
     }
     return new_config

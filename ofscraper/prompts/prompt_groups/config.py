@@ -56,9 +56,6 @@ def funct(prompt_):
     date: date format for placeholders
     text_type_default: toggle for word count type
     trunication_default: toggle for trunicating filenames
-    audio: optional overwrites for audio
-    videos: optional overwrites for video
-    images: optional overwrties from images
     -----------------------------------
     [Download Options]
     file_size_max: max size allowed for download
@@ -556,19 +553,6 @@ def advanced_config() -> dict:
                 "message": "sqlite should be fine unless your using a network drive\nSee https://grantjenks.com/docs/diskcache/tutorial.html#caveats ",
                 "default": data.cache_mode_helper(),
                 "choices": ["sqlite", "json", "disabled", "api_disabled"],
-            },
-            # value because of legacy config values
-            {
-                "type": "input",
-                "name": "custom",
-                "multiline": True,
-                "message": "edit custom value:\n",
-                "option_instruction": "This is a helper value for remapping placeholder values",
-                "default": (
-                    json.dumps(custom.get_custom())
-                    if not isinstance(custom.get_custom(), str)
-                    else custom.get_custom() or ""
-                ),
             },
             {
                 "type": "list",

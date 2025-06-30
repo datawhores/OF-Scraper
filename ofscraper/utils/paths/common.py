@@ -115,8 +115,7 @@ def get_save_location(config=None, mediatype=None):
         return of_env.getattr("SAVE_PATH_DEFAULT")
     config = config or config_file.open_config()
     return (
-        config.get("overwrites", {}).get(f"{mediatype}", {}).get("save_location")
-        or config.get("save_location")
+        config.get("save_location")
         or config.get("file_options", {}).get("save_location")
         or of_env.getattr("SAVE_PATH_DEFAULT")
     )
