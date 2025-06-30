@@ -102,7 +102,7 @@ class SessionSleep:
             new_sleep = self._sleep / self._decay_factor
             self._sleep = max(self._min_sleep, new_sleep)
             self._last_date = arrow.now()
-            logging.getLogger("shared").debug(f"[{self._error_name}] Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
+            logging.getLogger("shared").debug(f"[{self.error_name}] Sleep decay => Reducing sleep to [{self._sleep:.2f} seconds]")
 
 
 
