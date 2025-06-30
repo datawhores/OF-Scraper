@@ -11,7 +11,6 @@ import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.console as console
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.context.run_async import run
@@ -105,7 +104,7 @@ class ModelManager:
 
             # Temporarily set args for a targeted fetch
             args.usernames = list(new_usernames_to_fetch)
-            write_args.setArgs(args)
+            settings.update_args(args)
 
             # Fetch models and update our central dictionary
             fetched_models = await retriver.get_models()
@@ -114,7 +113,7 @@ class ModelManager:
 
             # Restore original args to prevent side-effects
             args.usernames = original_usernames
-            write_args.setArgs(args)
+            settings.update_args(args)
 
             # Log a warning for any models that couldn't be found
             for name in new_usernames_to_fetch:
@@ -138,7 +137,7 @@ class ModelManager:
 
         current_arg_usernames.update(verified_usernames)
         args.usernames = list(current_arg_usernames)
-        write_args.setArgs(args)
+        settings.update_args(args)
         log.info(
             f"Usernames for processing now include: {', '.join(verified_usernames)}"
         )
@@ -188,14 +187,14 @@ class ModelManager:
         args = read_args.retriveArgs()
         if reset:
             args.usernames = None
-            write_args.setArgs(args)
+            settings.update_args(args)
 
         if not args.usernames:
             filtered_sorted_models = self._filter_and_sort_models()
             selected_users = retriver.get_selected_model(filtered_sorted_models)
             self._parsed_subs_dict = {model.name: model for model in selected_users}
             settings.get_settings().usernames = list(self._parsed_subs_dict.keys())
-            write_args.setArgs(args)
+            settings.update_args(args)
         elif "ALL" in args.usernames:
             # Re-filter and sort all models if "ALL" is specified
             self._parsed_subs_dict = self._filter_and_sort_models()

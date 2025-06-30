@@ -11,7 +11,6 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.commands.scraper.actions.download.download as download
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -105,7 +104,7 @@ def final_action(results):
 def allow_manual_dupes():
     args = read_args.retriveArgs()
     args.force_all = True
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 def set_user_data(url_dicts):

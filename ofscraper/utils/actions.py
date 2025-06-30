@@ -14,7 +14,6 @@ r"""
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.system.free as free
 import ofscraper.utils.settings as settings
 
@@ -41,7 +40,7 @@ def select_areas(actions=None, reset=False):
         reset_download()
     elif ("like" or "unlike") in actions and reset:
         reset_like()
-    write_args.setArgs(args)
+    settings.update_args(args)
     set_post_area(actions)
     set_download_area(actions)
     set_like_area(actions)
@@ -51,20 +50,20 @@ def select_areas(actions=None, reset=False):
 def remove_like_area():
     args = read_args.retriveArgs()
     args.like_area = {}
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 def remove_download_area():
     args = read_args.retriveArgs()
     args.download_area = {}
     args.scrape_paid = None
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 def remove_post_area():
     args = read_args.retriveArgs()
     args.posts = {}
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 @free.space_checker
@@ -85,7 +84,7 @@ def set_post_area(action=None):
     elif len(args.posts) > 0:
         return
     args.posts = prompts.areas_prompt()
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 # set download area area based primarly on posts,secondary on  prompt
@@ -107,7 +106,7 @@ def set_download_area(action=None):
     elif len(selected) == 0 and "download" in action:
         selected = prompts.download_areas_prompt()
     args.download_area = selected
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 # set like area based primarly on posts,secondary on from prompt
@@ -121,7 +120,7 @@ def set_like_area(action=None):
         if len(areas.get_like_area()) > 0
         else prompts.like_areas_prompt()
     )
-    write_args.setArgs(args)
+    settings.update_args(args)
 
 
 def set_scrape_paid(action=None):
@@ -132,4 +131,4 @@ def set_scrape_paid(action=None):
     args.scrape_paid = (
         prompts.scrape_paid_prompt() if not args.scrape_paid else args.scrape_paid
     )
-    write_args.setArgs(args)
+    settings.update_args(args)
