@@ -68,7 +68,7 @@ class Media(base.base):
         if self.download_attempted==True and self.download_succeeded==False:
             self.media["download_status"]="failed"
         elif self.download_attempted==True and self.download_succeeded==True:
-            self.media["download_status"]="successed"
+            self.media["download_status"]="succeed"
 
 
 

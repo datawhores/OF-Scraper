@@ -20,10 +20,6 @@ def after_download_action_script(username, media=None, posts=None):
     log = logging.getLogger("shared")
     if not settings.get_settings().after_action_script:
         return
-    if not posts and media:
-        posts = list({ele.post.id: media.post for ele in media}.values())
-
-
     script_path = settings.get_settings().after_action_script
     if not script_path or not os.path.exists(script_path):
         log.error(
@@ -37,7 +33,8 @@ def after_download_action_script(username, media=None, posts=None):
             f"Could not retrieve user data for {username}. Aborting post user script."
         )
         return
-
+    if not posts and media:
+        posts = list({media.post.id: media.post for ele in media}.values())
     try:
         processed_username = (
             userdata["username"] if isinstance(userdata, dict) else userdata.name

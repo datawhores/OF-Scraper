@@ -27,6 +27,8 @@ from ofscraper.commands.scraper.actions.download.managers.alt_download import Al
 from ofscraper.commands.scraper.actions.download.managers.main_download import (
     MainDownloadManager,
 )
+from ofscraper.classes.of.media import Media
+
 
 async def consumer(aws, task1, medialist, lock):
     while True:
@@ -39,7 +41,7 @@ async def consumer(aws, task1, medialist, lock):
             break
         else:
             try:
-                ele = data[1]
+                ele :Media= data[1]
                 pack = await download(*data)
                 common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
@@ -56,15 +58,20 @@ async def consumer(aws, task1, medialist, lock):
                 )
                 if media_type == "images":
                     common_globals.photo_count += 1
+                    ele.mark_download_success()
 
                 elif media_type == "videos":
                     common_globals.video_count += 1
+                    ele.mark_download_success()
                 elif media_type == "audios":
                     common_globals.audio_count += 1
+                    ele.mark_download_success()
                 elif media_type == "skipped":
                     common_globals.skipped += 1
+                    ele.mark_download_failure()
                 elif media_type == "forced_skipped":
                     common_globals.forced_skipped += 1
+                ele.update_status()
                 sum_count = (
                     common_globals.photo_count
                     + common_globals.video_count
