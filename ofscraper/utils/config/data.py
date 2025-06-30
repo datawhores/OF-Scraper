@@ -19,6 +19,15 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.utils.wrapper as wrapper
 import ofscraper.utils.const as const
 
+def _to_comma_separated_string(value: any) -> str | None:
+    """
+    Helper function to convert a list into a comma-separated string.
+    If the value is not a list, it's returned as is.
+    """
+    if isinstance(value, list):
+        # Use map(str, ...) to ensure all items in the list are strings before joining
+        return ",".join(map(str, value))
+    return value
 
 @wrapper.config_reader
 def get_main_profile(config=None):
@@ -171,12 +180,54 @@ def get_enable_after(config=None):
 
 @wrapper.config_reader
 def get_default_userlist(config=None):
+    """
+    Retrieves the default user list.
+    It checks the config first, and only uses the environment variable as a fallback.
+    Converts list values to a comma-separated string.
+    """
     if config is False:
-        return of_env.getattr("DEFAULT_USER_LIST")
-    val = config.get("default_user_list") or config.get("advanced_options", {}).get(
-        "default_user_list"
-    )
-    return val or of_env.getattr("DEFAULT_USER_LIST") or ""
+        raw_value = of_env.getattr("DEFAULT_USER_LIST")
+    else:
+        # First, attempt to get the value from any of the config locations.
+        config_value = (
+            config.get("default_user_list")
+            or config.get("advanced_options", {}).get("default_user_list")
+        )
+
+        # Fallback to the environment variable only if no value was found in the config.
+        raw_value = config_value if config_value is not None else of_env.getattr("DEFAULT_USER_LIST")
+
+    # Format the found value
+    formatted_value = _to_comma_separated_string(raw_value)
+
+    # Ensure a string is always returned
+    return formatted_value or ""
+
+@wrapper.config_reader
+def get_default_blacklist(config=None):
+    """
+    Retrieves the default blacklist.
+    It checks the config first, and only uses the environment variable as a fallback.
+    Converts list values to a comma-separated string.
+    """
+    if config is False:
+        raw_value = of_env.getattr("DEFAULT_BLACK_LIST")
+    else:
+        # First, attempt to get the value from any of the config locations.
+        config_value = (
+            config.get("default_black_list")
+            or config.get("advanced_options", {}).get("default_black_list")
+        )
+
+        # Use the config value if it exists (even if it's "" or []),
+        # otherwise, fall back to the environment variable.
+        raw_value = config_value if config_value is not None else of_env.getattr("DEFAULT_BLACK_LIST")
+
+    # Format the found value (which could be a list, str, or None)
+    formatted_value = _to_comma_separated_string(raw_value)
+
+    # Ensure we always return a string, defaulting to ""
+    return formatted_value or ""
 
 
 @wrapper.config_reader
@@ -261,29 +312,33 @@ def get_after_download_script(config=None):
         or config.get("script_options", {}).get("after_download_script")
         or of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
     )
-
 @wrapper.config_reader
 def get_env_files(config=None):
+    """
+    Retrieves the list of environment files to load.
+    It checks multiple config locations first, and only uses the environment variable as a fallback.
+    Converts list values to a comma-separated string.
+    """
     if config is False:
-        return of_env.getattr("ENV_FILES_DEFAULT")
-    return (
-        config.get("env_files")
-        or config.get("advanced_options", {}).get("env_files")
-        or config.get("scripts", {}).get("env_files")
-        or config.get("script_options", {}).get("env_files")
-        or of_env.getattr("ENV_FILES_DEFAULT")
-    ) or ""
+        raw_value = of_env.getattr("ENV_FILES_DEFAULT")
+    else:
+        # Exhaust all possible config locations first.
+        config_value = (
+            config.get("env_files")
+            or config.get("advanced_options", {}).get("env_files")
+            or config.get("scripts", {}).get("env_files")
+            or config.get("script_options", {}).get("env_files")
+        )
 
+        # Only if the config value is None, use the environment variable.
+        raw_value = config_value if config_value is not None else of_env.getattr("ENV_FILES_DEFAULT")
 
-@wrapper.config_reader
-def get_default_blacklist(config=None):
-    if config is False:
-        return of_env.getattr("DEFAULT_BLACK_LIST")
-    return (
-        config.get("default_black_list")
-        or config.get("advanced_options", {}).get("default_black_list")
-        or of_env.getattr("DEFAULT_BLACK_LIST")
-    ) or ""
+    # Format the final value.
+    formatted_value = _to_comma_separated_string(raw_value)
+
+    # Ensure a string is always returned.
+    return formatted_value or ""
+
 
 
 @wrapper.config_reader

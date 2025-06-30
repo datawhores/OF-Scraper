@@ -152,6 +152,7 @@ def merged_settings():
     merged.cached_disabled = get_cached_disabled()
     merged.logs_expire_time = config_data.get_logs_expire()
     merged.ssl_verify = config_data.get_ssl_verify()
+    merged.env_files=get_env_files()
     return merged
 
 
