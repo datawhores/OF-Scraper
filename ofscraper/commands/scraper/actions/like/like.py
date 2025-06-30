@@ -17,13 +17,12 @@ import random
 import time
 
 import ofscraper.main.manager as manager
-# import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-
-
+from ofscraper.scripts.after_like_action_script import after_like_action_script
+from ofscraper.classes.of.posts import Post
 log = logging.getLogger("shared")
 warning_str = "\n[red]Current Like rate can eat through the ~1000 like limit in ~1 hour\nIncreasing the rate could lead to getting logged out[/red]"
 like_str = "Performing Like Action on {name}" + warning_str
@@ -31,21 +30,26 @@ unlike_str = "Performing Unlike Action on {name}" + warning_str
 
 
 @exit.exit_wrapper
-def process_like(posts=None, model_id=None, task=None, username=None, **kwargs):
+def process_like(posts=None, model_id=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared").warning(like_str.format(name=username))
-    post_ids = get_post_ids(posts)
-    return like(model_id, username, post_ids)
+    like_result=like(model_id, username, posts)
+    after_like_action_script(username,posts,action="like")
+    return like_result
+
+
 
 
 @exit.exit_wrapper
-def process_unlike(posts=None, model_id=None, task=None, username=None, **kwargs):
+def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared").warning(unlike_str.format(name=username))
-    post_ids = get_post_ids(posts)
-    return unlike(model_id, username, post_ids)
+    unlike_result=unlike(model_id, username, posts)
+    after_like_action_script(username,posts,action="unlike")
+    return unlike_result
+
 
 
 def get_posts_for_unlike(post):
@@ -71,19 +75,15 @@ def filter_for_favorited(posts: list) -> list:
 
 
 
-def get_post_ids(posts: list) -> list:
-    return list(map(lambda x: x.id, posts))
+def like(model_id, username, posts: list[Post]):
+    return _like(model_id, username, posts, True)
 
 
-def like(model_id, username, ids: list):
-    return _like(model_id, username, ids, True)
+def unlike(model_id, username, posts: list):
+    return _like(model_id, username, posts, False)
 
 
-def unlike(model_id, username, ids: list):
-    return _like(model_id, username, ids, False)
-
-
-def _like(model_id, username, ids: list, like_action: bool):
+def _like(model_id, username, posts: list, like_action: bool):
     like_str = (
         "Posts toggled from unlike to like...\n"
         if like_action
@@ -97,10 +97,10 @@ def _like(model_id, username, ids: list, like_action: bool):
             retries=of_env.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []
-            task = progress_updater.add_like_task("checked posts...\n", total=len(ids))
+            task = progress_updater.add_like_task("checked posts...\n", total=len(posts))
             task2 = progress_updater.add_like_task(like_str, total=None)
 
-            [tasks.append(functools.partial(like_func, c, id, model_id)) for id in ids]
+            [tasks.append(functools.partial(like_func, c, post, model_id)) for post in posts]
             max_duration = of_env.getattr("MAX_SLEEP_DURATION_LIKE")
             min_duration = of_env.getattr("MIN_SLEEP_DURATION_LIKE")
             failed = 0
@@ -158,49 +158,47 @@ def get_final_like_log(like_action, username, failed, post, liked):
     return text_out
 
 
-def _toggle_like_requests(c, id, model_id):
-    # # if not settings.get_settings().force_like and cache.get(f"liked_status_{id}", None):
-    #     log.debug(f"ID: {id} marked as liked in cache")
-    #     return 0
+def _toggle_like_requests(c, post:Post, model_id):
     max_duration = of_env.getattr("MAX_SLEEP_DURATION_LIKE")
     min_duration = of_env.getattr("MIN_SLEEP_DURATION_LIKE")
+    post.mark_like_attempt()
 
     sleep_duration = random.uniform(min_duration, max_duration)
-    favorited, id = _like_request(c, id, model_id)
+    favorited, id = _like_request(c, post.id, model_id)
     if favorited is None:
-        return 3
+        post.mark_post_liked(success=False)
+        out=3
     elif favorited:
         log.debug(f"ID: {id} changed to liked")
         out = 1
+        post.mark_post_liked()
     else:
         log.debug(f"ID: {id} restored to liked")
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
         out = 2
-    # cache.set(f"liked_status_{id}", True)
+        post.mark_post_liked()
     return out
 
 
-def _toggle_unlike_requests(c, id, model_id):
-    # if (
-    #     not settings.get_settings().force_like
-    #     and cache.get(f"liked_status_{id}", None) is False
-    # ):
-    #     log.debug(f"ID: {id} marked as unliked in cache")
-    #     return 0
+def _toggle_unlike_requests(c, post:Post, model_id):
     sleep_duration = of_env.getattr("DOUBLE_TOGGLE_SLEEP_DURATION_LIKE")
-    favorited, id = _like_request(c, id, model_id)
+    post.mark_like_attempt()
+
+    favorited, id = _like_request(c, post.id, model_id)
     if favorited is None:
-        return 3
+        post.mark_post_unliked(success=False)
+        out=3
     elif favorited is False:
         log.debug(f"ID: {id} changed to unliked")
         out = 1
+        post.mark_post_unliked()
     else:
         log.debug(f"ID: {id} restored to unlike")
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
         out = 2
-    # cache.set(f"liked_status_{id}", False)
+        post.mark_post_unliked()
     return out
 
 

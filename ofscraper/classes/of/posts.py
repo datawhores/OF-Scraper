@@ -102,16 +102,35 @@ class Post(base.base):
         if media_item in self.media_to_download:
             self.media_to_download.remove(media_item)
 
-    def mark_post_liked(self, success):
+    def mark_post_liked(self, success=True):
         """
-        Updates the status of the post after a like/unlike attempt.
+        Updates the success status of the post after a like/unlike attempt.
         """
         self.like_attempted = True
-        self.like_success = success
+        self.like_success =(success==True)
         if success:
             self._post["isFavorite"] = True
             self.is_actionable_like = False
 
+    def mark_post_unliked(self, success=True):
+        """
+        Updates the success status of the post after a like/unlike attempt.
+        """
+        self.like_attempted = True
+        self.like_success = (success==True)
+        if success:
+            self._post["isFavorite"] = False
+            self.is_actionable_like = False
+    
+
+    def mark_like_attempt(self):
+        """
+        Updates the status of the post before a like/unlike attempt.
+        """
+        self.like_attempted = True
+
+    
+    
     @property
     def missed_downloads(self):
         """Convenience property to see what failed to download."""
