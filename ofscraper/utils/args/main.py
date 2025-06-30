@@ -57,7 +57,6 @@ def parse_args():
         args, command = result
         args["command"] = command
         d = AutoDotDict(args)
-
         write_args.setArgs(d)
         return d
     except SystemExit as e:

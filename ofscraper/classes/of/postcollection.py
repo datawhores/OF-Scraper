@@ -26,7 +26,7 @@ class PostCollection:
         self.mode = mode
         # Internal dictionary to store posts, using post_id as the key for de-duplication
         self._posts_map = {}
-        log.info(f"Initialized PostCollection for {username} in '{self.mode}' mode.")
+        log.info(f"Initialized PostCollection for {username}")
 
     @property
     def posts(self) -> list[Post]:
