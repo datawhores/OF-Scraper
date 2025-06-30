@@ -31,6 +31,8 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
+from humanfriendly import parse_size
+
 
 
 console = Console()
@@ -155,7 +157,7 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_system_freesize()),
-                "filter": lambda x: int(x) if x != "None" else 0,
+                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
             },
             {
                 "type": "input",
@@ -495,6 +497,7 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_filesize_max()),
+                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
             },
             {
                 "type": "input",
@@ -508,6 +511,7 @@ or human readable such as 10mb
 Enter 0 for no minimum
 """,
                 "default": str(data.get_filesize_min()),
+                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
             },
             {
                 "type": "checkbox",

@@ -1,5 +1,6 @@
 import threading
 from dotenv import load_dotenv
+from copy import deepcopy
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -47,6 +48,11 @@ def update_args(args):
     write_args.setArgs(args)
     settings = setup_settings()
 
+def update_settings():
+    global settings
+    settings = setup_settings()
+
+
 
 def get_settings():
     global settings
@@ -60,7 +66,7 @@ def get_settings():
 
 
 def setup_settings():
-    merged = read_args.retriveArgs()
+    merged = deepcopy(read_args.retriveArgs())
     merged.key_mode = read_args.retriveArgs().key_mode or config_data.get_key_mode()
     merged.cache_disabled = (
         read_args.retriveArgs().no_cache or config_data.get_cache_mode() == "disabled"
@@ -97,6 +103,7 @@ def setup_settings():
     merged.download_sems = (
         read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
     )
+    merged.system_free_min=read_args.retriveArgs().system_free_min or config_data.get_system_freesize()
     merged.max_post_count = (
         read_args.retriveArgs().max_count or config_data.get_max_post_count()
     )
