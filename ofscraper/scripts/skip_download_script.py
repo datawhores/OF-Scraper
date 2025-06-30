@@ -48,9 +48,11 @@ def skip_download_script(total, ele):
 
         result = run(
             [script_path],
-            input=input_json_str.encode("utf-8"),  # Input must be bytes
+            input=input_json_str.encode(
+                "utf-8"
+            ),  # Input must be str in text mode (run converts to utf-8 str in text mode)
             capture_output=True,  # Capture stdout and stderr
-            text=True,  # Decode stdout/stderr as text
+            text=True,  # Decode stdout/stderr as text (requires input as str)
             check=True,  # Raise CalledProcessError for non-zero exit codes
         )
 

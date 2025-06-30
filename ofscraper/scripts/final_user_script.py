@@ -72,9 +72,9 @@ def post_user_script(username, media=None, posts=None):
             [script_path],
             input=input_json_str.encode(
                 "utf-8"
-            ),  # Pass the JSON string as stdin (encoded to bytes)
+            ),  # Pass the JSON string as stdin (run converts to utf-8 str in text mode)
             capture_output=True,  # Capture stdout and stderr
-            text=True,  # Decode stdout/stderr as text
+            text=True,  # Decode stdout/stderr as text (requires input as str)
             check=True,  # Raise CalledProcessError if script exits with non-zero status
         )
 
