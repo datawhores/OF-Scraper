@@ -41,6 +41,9 @@ class Media(base.base):
         self.download_succeeded = (
             None  # Using tri-state: None (not attempted), True, False
         )
+        
+
+
 
     def __eq__(self, other):
         if not isinstance(other, Media):
@@ -60,6 +63,13 @@ class Media(base.base):
         """Marks a download as failed."""
         self.download_attempted = True
         self.download_succeeded = False
+    def update_status(self):
+        self.media["download_status"]="skipped"
+        if self.download_attempted==True and self.download_succeeded==False:
+            self.media["download_status"]="failed"
+        elif self.download_attempted==True and self.download_succeeded==True:
+            self.media["download_status"]="successed"
+
 
 
     @property

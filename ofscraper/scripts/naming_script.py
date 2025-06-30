@@ -6,6 +6,8 @@ import arrow
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.of_env.of_env as env
+
 
 
 def naming_script(dir, file, ele):
@@ -53,14 +55,16 @@ def naming_script(dir, file, ele):
             capture_output=True,
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes
+            quiet=True,
         )
-        final_result = result.stdout.strip()
-
-        log.debug(f"Naming script stdout: {final_result}")
-        if result.stderr:
-            log.warning(f"Naming script stderr: {result.stderr.strip()}")
+        stdout = result.stdout
+        stderr=result.stderr
+        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+            log.log(100,f"Naming script stdout: {stdout.strip()}")
+            if stderr:
+                log.log(100,f"Naming script stderr: {stderr.strip()}")
         log.debug("Naming script ran successfully via stdin.")
-        return final_result
+        return stdout.strip()
 
     except FileNotFoundError:
         log.error(

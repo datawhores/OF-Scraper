@@ -14,7 +14,7 @@ from ofscraper.commands.utils.strings import (
     all_paid_progress_download_str,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.scripts.after_action_script import after_action_script
+from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 
@@ -102,5 +102,5 @@ async def process_user(value, length):
             username, model_id, medias, posts=posts
         )
     progress_updater.increment_activity_count(total=length)
-    after_action_script(value, medias, posts)
+    after_download_action_script(value, medias, posts)
     return data

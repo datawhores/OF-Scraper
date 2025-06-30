@@ -4,8 +4,10 @@ import re
 import logging
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.of_env.of_env as env
 
 log = logging.getLogger("shared")
+
 
 
 # --- "Cached" path to the validated FFmpeg binary ---
@@ -28,6 +30,7 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             text=True,
             check=False,
             encoding='utf-8',
+            quiet= not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS")
         )
         output = result.stdout + result.stderr
 

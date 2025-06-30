@@ -1,25 +1,29 @@
 import json
 import logging
 import traceback
-
+import os  # For checking script path existence
+import subprocess
+ 
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
 import ofscraper.main.manager as manager
-
-import logging
-import json
-import subprocess
-import traceback  
-import os  # For checking script path existence
+import ofscraper.utils.of_env.of_env as env
 
 
 
 
-def after_action_script(username, media=None, posts=None):
+
+
+
+def after_download_action_script(username, media=None, posts=None):
     log = logging.getLogger("shared")
     if not settings.get_settings().after_action_script:
         return
+    if not posts and media:
+        posts = list({ele.post.id: media.post for ele in media}.values())
+
+
     script_path = settings.get_settings().after_action_script
     if not script_path or not os.path.exists(script_path):
         log.error(
@@ -69,17 +73,18 @@ def after_action_script(username, media=None, posts=None):
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
+            quiet=True
         )
-
-        log.debug(
-            f"Post user script stdout for {processed_username}:\n{result.stdout.strip()}"
-        )
-        if result.stderr:
-            log.warning(
-                f"Post user script stderr for {processed_username}:\n{result.stderr.strip()}"
+        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+            log.log(
+                100,f"Post user script stdout for {processed_username}:\n{result.stdout.strip()}"
             )
+            if result.stderr:
+                log.warning(
+                    100,f"Post user script stderr for {processed_username}:\n{result.stderr.strip()}"
+                )
         log.debug(
-            f"Post user script ran successfully for {processed_username} via stdin."
+                f"Post user script ran successfully for {processed_username} via stdin."
         )
 
     except FileNotFoundError:

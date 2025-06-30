@@ -4,7 +4,7 @@ import asyncio
 
 import ofscraper.utils.hash as hash
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.scripts.after_action_script import after_action_script
+from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.commands.utils.strings import (
     download_activity_str,
 )
@@ -30,6 +30,9 @@ from ofscraper.commands.scraper.actions.download.utils.text import textDownloade
 from ofscraper.utils.args.accessors.areas import get_download_area
 import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
+from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
+
+
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
@@ -51,9 +54,9 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
 
 
 @run_async
-async def download_process(username, model_id, medialist=None, posts=None):
+async def download_process(username, model_id, medialist, posts):
     data, values = await process_dicts(username, model_id, medialist, posts)
-    after_action_script(username, medialist, posts=None)
+    after_download_action_script(username, medialist)
     return data, values
 
 

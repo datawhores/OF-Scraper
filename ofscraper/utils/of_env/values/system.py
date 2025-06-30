@@ -12,14 +12,26 @@ def load_system_config():
 
     # --- Subprocess Logging Configuration ---
     # LOG_SUBPROCESS: Whether to log subprocess activity.
+    # Takes precidence over all other output changes
     # Default: False
-    config["LOG_SUBPROCESS"] = os.getenv("OFSC_LOG_SUBPROCESS", "False").lower() in (
+    config["LOG_SUBPROCESS"] = os.getenv("OFSC_LOG_SUBPROCESS", "True").lower() in (
         "true",
         "1",
     )
 
-    # LOG_SUBPROCESS_LEVEL: Log level for subprocess messages.
-    # Default: 100 (likely a custom level indicating very high verbosity or a specific type of message)
-    config["LOG_SUBPROCESS_LEVEL"] = int(os.getenv("OFSC_LOG_SUBPROCESS_LEVEL", "100"))
+    
+    # FFMPEG_OUTPUT_SUBPROCCESS: Whether to log ffmpeg messages.
+    # Default: None
+    config["FFMPEG_OUTPUT_SUBPROCCESS"]=os.getenv("OFSC_FFMPEG_OUTPUT_SUBPROCCESS", "False").lower() in (
+        "true",
+        "1",
+    )
+
+    # "SCRIPT_OUTPUT_SUBPROCCESS: Whether to log general script messages.
+    # Default: None
+    config["SCRIPT_OUTPUT_SUBPROCCESS"]=os.getenv("OFSC_SCRIPT_OUTPUT_SUBPROCCESS", "True").lower() in (
+        "true",
+        "1",
+    )
 
     return config

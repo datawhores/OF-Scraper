@@ -8,6 +8,8 @@ from typing import Union
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.of_env.of_env as env
+
 def after_download_script(final_path: Union[str, pathlib.Path]):
     """
     Executes a user-defined script after a download is complete, passing the final file path.
@@ -44,19 +46,22 @@ def after_download_script(final_path: Union[str, pathlib.Path]):
             input=final_path,
             text=True,
             check=True,  # Will raise CalledProcessError for non-zero exit codes
+            quiet=True
         )
 
         stdout = result.stdout.strip()
-        if stdout:
-            log.debug(
-                f"After download script stdout for '{final_path}':\n{stdout}"
-            )
-
         stderr = result.stderr.strip()
-        if stderr:
-            log.warning(
-                f"After download script stderr for '{final_path}':\n{stderr}"
-            )
+
+        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+            if stdout:
+                log.log(
+                    100,f"After download script stdout for '{final_path}':\n{stdout}"
+                )
+
+            if stderr:
+                log.log(
+                    100,f"After download script stderr for '{final_path}':\n{stderr}"
+                )
 
         log.info(
             f"Successfully ran after download script for '{final_path}'."

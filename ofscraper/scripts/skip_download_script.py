@@ -8,6 +8,8 @@ import subprocess
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.of_env.of_env as env
+
 
 
 def skip_download_script(total, ele):
@@ -52,19 +54,20 @@ def skip_download_script(total, ele):
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes
+            quiet=True,
         )
 
         stdout_output = result.stdout.strip()
         stderr_output = result.stderr.strip()
-
-        log.debug(f"Download skip script stdout for {ele.username}:\n{stdout_output}")
-        if stderr_output:
-            log.warning(
-                f"Download skip script stderr for {ele.username}:\n{stderr_output}"
-            )
+        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+            log.log(100,f"Download skip script stdout for {ele.username}:\n{stdout_output}")
+            if stderr_output:
+                log.log(
+                    100,f"Download skip script stderr for {ele.username}:\n{stderr_output}"
+                )
         should_skip = (stdout_output.lower() == "false") or (stdout_output == "")
         if should_skip:
-            log.info(
+            log.debug(
                 f"Download skip script instructed to SKIP download for {ele.username} (media_id: {ele.id})."
             )
         else:

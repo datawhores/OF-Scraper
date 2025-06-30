@@ -40,7 +40,7 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.scripts.after_action_script import after_action_script
+from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.main.close.final.final import final
 import ofscraper.main.manager as manager
 import ofscraper.filters.media.main as filters
@@ -73,7 +73,7 @@ def process_download_cart():
                     None
             if len(cart_dict.keys()) > 0:
                 for val in cart_dict.values():
-                    after_action_script(val["userdata"], val["media"], val["post"])
+                    after_download_action_script(val["userdata"], val["media"], val["post"])
                 results = ["check cart results"] + list(
                     map(lambda x: x["results"], cart_dict.values())
                 )

@@ -38,10 +38,6 @@ from ofscraper.commands.scraper.actions.utils.log import (
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.send.chunk import send_chunk_msg
-from ofscraper.classes.sessionmanager.sessionmanager import (
-    FORCED_NEW,
-    SIGN,
-)
 import ofscraper.utils.auth.request as auth_requests
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
@@ -58,12 +54,16 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
+import ofscraper.utils.of_env.of_env as env
+from ofscraper.classes.of.media import Media
+
 
 
 class AltDownloadManager(DownloadManager):
 
-    async def alt_download(self, c, ele, username, model_id):
+    async def alt_download(self, c, ele:Media, username, model_id):
         await common_globals.sem.acquire()
+        ele.mark_download_attempt()
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with protected media downloader"
         )
@@ -78,7 +78,6 @@ class AltDownloadManager(DownloadManager):
                     )
                 except Exception as e:
                     raise e
-
         audio = await ele.mpd_audio
         video = await ele.mpd_video
         path_to_file_logger(sharedPlaceholderObj, ele)
@@ -329,6 +328,7 @@ class AltDownloadManager(DownloadManager):
                 "use_metadata_tags",
                 str(temp_path),
             ],
+            quiet= not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS")
         )
         if t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")

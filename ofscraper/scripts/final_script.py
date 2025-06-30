@@ -7,6 +7,7 @@ import traceback
 import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
 from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.of_env.of_env as env
 
 
 
@@ -40,11 +41,14 @@ def final_script():
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
+            quiet=True
         )
-
-        log.debug(f"Final script stdout:\n{result.stdout.strip()}")
-        if result.stderr:
-            log.warning(f"Final script stderr:\n{result.stderr.strip()}")
+        
+        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+            if result.stdout:
+                log.log(100,f"Final script stdout:\n{result.stdout.strip()}")
+            if result.stderr:
+                log.log(100,f"Final script stderr:\n{result.stderr.strip()}")
         log.debug("Final script ran successfully via stdin.")
 
     # 4. Add comprehensive error handling
