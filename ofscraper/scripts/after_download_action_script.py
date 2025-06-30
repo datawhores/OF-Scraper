@@ -11,8 +11,9 @@ import ofscraper.main.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
 
-def after_download_action_script(username, media=None, posts=None):
+def after_download_action_script(username, media=None, posts=None,action=None):
     log = logging.getLogger("shared")
+    action=action or "download"
     if not settings.get_settings().after_action_script:
         return
     script_path = settings.get_settings().after_action_script
@@ -49,6 +50,7 @@ def after_download_action_script(username, media=None, posts=None):
 
         master_dump_payload = {
             "username": processed_username,
+            "action":"download",
             "model_id": model_id,
             "media": processed_media,
             "posts": processed_posts,

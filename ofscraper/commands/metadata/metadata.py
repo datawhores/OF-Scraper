@@ -340,7 +340,7 @@ async def process_dicts(username, model_id, medialist):
 @run_async
 async def metadata_process(username, model_id, medialist):
     data = await metadata_picker(username, model_id, medialist)
-    after_download_action_script(username, medialist)
+    after_download_action_script(username, medialist,action="metadata")
     return data
 
 
