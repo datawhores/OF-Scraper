@@ -5,11 +5,12 @@ from copy import deepcopy
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
-
+from ofscraper.utils.args.mutators.user import resetUserFilters as resetUserFiltersArgs
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.args.accessors.areas import get_text_area
 from ofscraper.utils.of_env.load import load_env_files
+
 
 
 # --- Globals for one-time initialization ---
@@ -72,7 +73,12 @@ def setup_settings():
     load_env_files(merged.env_files)
     return merged
 
-    
+def resetUserFilters():
+    global settings
+    args=resetUserFiltersArgs()
+    write_args.setArgs(args)
+    settings = setup_settings()
+
 
 
 def merged_settings():

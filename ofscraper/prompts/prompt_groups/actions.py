@@ -35,6 +35,7 @@ def redownload_prompt() -> int:
     answer = promptClasses.getChecklistSelection(
         message="Would you like to redownload all files",
         choices=[Choice(True, "Yes"), Choice(False, "No")],
+        default=False
     )
     if answer:
         args.force_all = True

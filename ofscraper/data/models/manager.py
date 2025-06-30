@@ -18,6 +18,7 @@ from ofscraper.data.models.models import Model
 import ofscraper.utils.settings as settings
 
 
+
 log = logging.getLogger("shared")
 
 
@@ -160,6 +161,61 @@ class ModelManager:
         self._process_parsed_subscriptions(reset=should_reset_selection)
         return self.parsed_subs
 
+    @run
+    async def setfilter(self):
+        """
+        Presents a menu to the user to interactively change model filters and updates
+        the application settings accordingly.
+        """
+        while True:
+            console.get_console().print("\n")
+            choice = await prompts.decide_filters_menu()
+            
+            # Exit loop to proceed to model selection
+            if choice == "modelList":
+                break
+                
+            current_args = read_args.retriveArgs()
+            
+            # Single-filter modification prompts
+            if choice == "sort":
+                new_args = await prompts.modify_sort_prompt(current_args)
+            elif choice == "subtype":
+                new_args = await prompts.modify_subtype_prompt(current_args)
+            elif choice == "promo":
+                new_args = await prompts.modify_promo_prompt(current_args)
+            elif choice == "active":
+                new_args = await prompts.modify_active_prompt(current_args)
+            elif choice == "price":
+                new_args = await prompts.modify_prices_prompt(current_args)
+            elif choice == "select":
+                # Note: 'select' uses the 'list' prompt internally
+                new_args = await prompts.modify_list_prompt(current_args, "select")
+
+            # Filter reset
+            elif choice == "reset":
+                new_args = settings.resetUserFilters()
+                # Check if user lists changed to decide on refetching
+                if (
+                    set(current_args.black_list or []) != set(new_args.black_list or [])
+                    or set(current_args.user_list or []) != set(new_args.user_list or [])
+                ):
+                    console.get_console().print("Lists changed, re-fetching models...")
+                    await self._fetch_all_subs(force_refetch=True)
+            
+            # Blacklist/Whitelist modification
+            elif choice == "list":
+                new_args = await prompts.modify_list_prompt(current_args, "list")
+                # Check if user lists changed to decide on refetching
+                if (
+                    set(current_args.black_list or []) != set(new_args.black_list or [])
+                    or set(current_args.user_list or []) != set(new_args.user_list or [])
+                ):
+                    console.get_console().print("Lists changed, re-fetching models...")
+                    await self._fetch_all_subs(force_refetch=True)
+            
+            settings.update_args(new_args)
+        
     @run
     async def _fetch_all_subs(self, force_refetch: bool = True) -> None:
         if self._all_subs_dict and not force_refetch:
