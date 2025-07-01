@@ -63,14 +63,14 @@ class ModelManager:
             self._all_subs_dict.update(models)
         elif isinstance(models, list):
             for ele in models:
-                self._all_subs_dict[ele.id] = ele
+                self._all_subs_dict[ele.name] = ele
 
     def update_parsed_subs(self, models: List[Model] | Dict[str, Model]) -> None:
         if isinstance(models, dict):
             self._parsed_subs_dict.update(models)
         elif isinstance(models, list):
             for ele in models:
-                self._parsed_subs_dict[ele.id] = ele
+                self._parsed_subs_dict[ele.name] = ele
 
     def update_subs(self, models: List[Model] | Dict[str, Model]):
         self.update_all_subs(models)
@@ -154,7 +154,7 @@ class ModelManager:
             choice = prompts.decide_filters_menu()
             if choice == "modelList":
                 break
-            current_args = settings.retriveArgs(copy=True)
+            current_args = settings.get_args(copy=True)
             if choice == "sort":
                 new_args = prompts.modify_sort_prompt(current_args)
             elif choice == "subtype":
@@ -217,7 +217,7 @@ class ModelManager:
             filtered_models = self._apply_filters()
             sorted_models = sort.sort_models_helper(filtered_models)       
             if sorted_models:
-                return {model.id: self._all_subs_dict[model.id] for model in sorted_models}
+                return {model.name: self._all_subs_dict[model.name] for model in sorted_models}
 
             console.get_console().print(
                 "[bold red]You have filtered the user list to zero.[/bold red]\n"
@@ -234,7 +234,7 @@ class ModelManager:
         if not args.usernames:
             filtered_sorted_models = self._filter_and_prompt_for_selection()
             selected_users = retriver.get_selected_model(list(filtered_sorted_models.values()))
-            self._parsed_subs_dict = {model.id: model for model in selected_users}
+            self._parsed_subs_dict = {model.name: model for model in selected_users}
             args.usernames = list(self._parsed_subs_dict.keys())
             settings.update_args(args)
         elif "ALL" in args.usernames:
