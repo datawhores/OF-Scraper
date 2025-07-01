@@ -129,13 +129,13 @@ class ModelManager:
     def get_selected_models(
         self, rescan: bool = False, reset: bool = False
     ) -> List[Model]:
+        #rescan + reset being true might lead to double scan
         if rescan:
             self._fetch_all_subs()
-
         should_reset_selection = reset
         if reset and self.parsed_subs:
             prompt_choice = prompts.reset_username_prompt()
-            if prompt_choice == "Data":
+            if prompt_choice == "No":
                 should_reset_selection = False
             #reset username to force rescan
             if prompt_choice in {"Selection","Selection_Strict"}:
