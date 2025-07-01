@@ -16,8 +16,7 @@ import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.models.models import Model
 import ofscraper.utils.settings as settings
-
-
+from ofscraper.utils.args.mutators.user import resetUserFilters
 
 log = logging.getLogger("shared")
 
@@ -32,9 +31,10 @@ class ModelManager:
         """Initializes the ModelManager."""
         self._all_subs_dict: Dict[str, Model] = {}
         self._parsed_subs_dict: Dict[str, Model] = {}
-        # _seen_users is no longer used in the provided snippet, but kept for context if needed elsewhere
         self._seen_users: Set[str] = set()
         self._processed_usernames: Set[str] = set()
+        self._last_fetched=None
+        
 
     @property
     def num_selected(self) -> int:
@@ -64,34 +64,29 @@ class ModelManager:
             self._all_subs_dict.update(models)
         elif isinstance(models, list):
             for ele in models:
-                self._all_subs_dict[ele.name] = ele
+                self._all_subs_dict[ele.id] = ele
 
     def update_parsed_subs(self, models: List[Model] | Dict[str, Model]) -> None:
         if isinstance(models, dict):
             self._parsed_subs_dict.update(models)
         elif isinstance(models, list):
             for ele in models:
-                self._parsed_subs_dict[ele.name] = ele
+                self._parsed_subs_dict[ele.id] = ele
 
     def update_subs(self, models: List[Model] | Dict[str, Model]):
         self.update_all_subs(models)
         self.update_parsed_subs(models)
 
-    @run
-    async def add_model(self, usernames: str | List[str]) -> None:
-        """
-        Manually fetches model data for specific usernames if not already present,
-        and ensures they are included in the arguments for processing.
+    def add_model(self, usernames: str | List[str]) -> None:
+        # This wrapper ensures the async method is run and waited for.
+        run(self._add_model_async(usernames))()
 
-        Args:
-            usernames (str | List[str]): A single username or a list of usernames to add.
-        """
+    async def _add_model_async(self, usernames: str | List[str]) -> None:
         if isinstance(usernames, str):
             username_set = {usernames}
         else:
             username_set = set(usernames)
 
-        # Determine which usernames we actually need to fetch data for
         new_usernames_to_fetch = {
             name for name in username_set if name not in self._all_subs_dict
         }
@@ -102,34 +97,22 @@ class ModelManager:
             )
             args = read_args.retriveArgs()
             original_usernames = args.usernames or []
-
-            # Temporarily set args for a targeted fetch
             args.usernames = list(new_usernames_to_fetch)
             settings.update_args(args)
-
-            # Fetch models and update our central dictionary
             fetched_models = await retriver.get_models()
             if fetched_models:
                 self.update_subs(fetched_models)
-
-            # Restore original args to prevent side-effects
             args.usernames = original_usernames
             settings.update_args(args)
-
-            # Log a warning for any models that couldn't be found
             for name in new_usernames_to_fetch:
                 if name not in self._all_subs_dict:
                     log.warning(f"Failed to fetch and add model: {name}")
 
-        # Now, update the main args to include the successfully added models
         args = read_args.retriveArgs()
         current_arg_usernames = set(args.usernames or [])
-
-        # We only want to add usernames that we know are valid (i.e., exist in our dict)
         verified_usernames = {
             name for name in username_set if name in self._all_subs_dict
         }
-
         if not verified_usernames:
             log.warning(
                 f"Could not add any of the provided usernames: {', '.join(username_set)}"
@@ -154,91 +137,95 @@ class ModelManager:
             prompt_choice = prompts.reset_username_prompt()
             if prompt_choice == "Data":
                 should_reset_selection = False
-            if prompt_choice in {"Selection", "Data"}:
-                self._fetch_all_subs()
-
+            #reset username to force rescan
+            if prompt_choice in {"Selection","Selection_Strict"}:
+                settings.resetUserSelect()
+            if prompt_choice=="Selection":
+                  self._fetch_all_subs(force_refetch=True)
+        #should not scan if fetch_all_subs called above previously
         self._load_all_subs_if_needed()
         self._process_parsed_subscriptions(reset=should_reset_selection)
-        return self.parsed_subs
 
-    @run
-    async def setfilter(self):
-        """
-        Presents a menu to the user to interactively change model filters and updates
-        the application settings accordingly.
-        """
+        return self.parsed_subs
+    
+
+    def setfilter(self):
         while True:
             console.get_console().print("\n")
-            choice = await prompts.decide_filters_menu()
-            
-            # Exit loop to proceed to model selection
+            choice = prompts.decide_filters_menu()
             if choice == "modelList":
                 break
-                
             current_args = read_args.retriveArgs()
-            
-            # Single-filter modification prompts
             if choice == "sort":
-                new_args = await prompts.modify_sort_prompt(current_args)
+                new_args = prompts.modify_sort_prompt(current_args)
             elif choice == "subtype":
-                new_args = await prompts.modify_subtype_prompt(current_args)
+                new_args = prompts.modify_subtype_prompt(current_args)
             elif choice == "promo":
-                new_args = await prompts.modify_promo_prompt(current_args)
+                new_args = prompts.modify_promo_prompt(current_args)
             elif choice == "active":
-                new_args = await prompts.modify_active_prompt(current_args)
+                new_args = prompts.modify_active_prompt(current_args)
             elif choice == "price":
-                new_args = await prompts.modify_prices_prompt(current_args)
+                new_args = prompts.modify_prices_prompt(current_args)
             elif choice == "select":
-                # Note: 'select' uses the 'list' prompt internally
-                new_args = await prompts.modify_list_prompt(current_args, "select")
-
-            # Filter reset
+                new_args = prompts.modify_list_prompt(current_args, "select")
+            elif choice == "reset_filters":
+                new_args = resetUserFilters()
             elif choice == "reset":
-                new_args = settings.resetUserFilters()
-                # Check if user lists changed to decide on refetching
-                if (
-                    set(current_args.black_list or []) != set(new_args.black_list or [])
-                    or set(current_args.user_list or []) != set(new_args.user_list or [])
-                ):
-                    console.get_console().print("Lists changed, re-fetching models...")
-                    await self._fetch_all_subs(force_refetch=True)
-            
-            # Blacklist/Whitelist modification
+                self._fetch_all_subs(force_refetch=True,reset=True)
+            elif choice == "rescan":
+                self._fetch_all_subs(force_refetch=True,reset=True)
             elif choice == "list":
-                new_args = await prompts.modify_list_prompt(current_args, "list")
-                # Check if user lists changed to decide on refetching
-                if (
-                    set(current_args.black_list or []) != set(new_args.black_list or [])
-                    or set(current_args.user_list or []) != set(new_args.user_list or [])
-                ):
+                new_args = prompts.modify_list_prompt(current_args, "list")
+                if (set(current_args.black_list or []) != set(new_args.black_list or [])) or \
+                   (set(current_args.user_list or []) != set(new_args.user_list or [])):
                     console.get_console().print("Lists changed, re-fetching models...")
-                    await self._fetch_all_subs(force_refetch=True)
-            
+                    self._fetch_all_subs(force_refetch=True)
             settings.update_args(new_args)
-        
-    @run
-    async def _fetch_all_subs(self, force_refetch: bool = True) -> None:
-        if self._all_subs_dict and not force_refetch:
+
+    def _fetch_all_subs(self, force_refetch: bool = False,reset:bool=False) -> None:
+        if self._all_subs_dict and not force_refetch and not reset:
             return
-        await self._fetch_all_subs_async()
+        #reset last fetched
+        self._last_fetched=None
+        if reset:
+            self.all_models=[]
+        while True:
+        # Use run to execute the async fetching logic and block until it's done
+            self._fetch_all_subs_async()
+            if self._last_fetched:
+                self.update_all_subs(self._last_fetched)
+                return
+            console.get_console().print(
+                f"[bold red]No accounts found during last scan[/bold red]\nNumber of Models Stored: {self.num_models}"
+
+            )
+            # Use synchronous sleep and prompts
+            time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT"))
+            if self.num_models>0 and not prompts.retry_user_scan():
+                return
+            elif self.num_models==0 and not prompts.retry_user_scan(no_models=True):
+                quit()
 
     def _load_all_subs_if_needed(self) -> None:
         if not self._all_subs_dict:
             self._fetch_all_subs(force_refetch=True)
-
+    @run
     async def _fetch_all_subs_async(self) -> None:
+        self._last_fetched = await retriver.get_models()
+            
+    def _filter_and_prompt_for_selection(self):
         while True:
-            models = await retriver.get_models()
-            if models:
-                self.update_all_subs(models)
-                break
-            console.get_console().print(
-                "[bold red]No accounts found during scan[/bold red]"
-            )
-            time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT"))
-            if not prompts.retry_user_scan():
-                raise SystemExit("Could not find any accounts on list.")
+            filtered_models = self._apply_filters()
+            sorted_models = sort.sort_models_helper(filtered_models)       
+            if sorted_models:
+                return {model.id: self._all_subs_dict[model.id] for model in sorted_models}
 
+            console.get_console().print(
+                "[bold red]You have filtered the user list to zero.[/bold red]\n"
+                "Change the filter settings to continue."
+            )
+            self.setfilter()
+    
     def _process_parsed_subscriptions(self, reset: bool = False) -> None:
         args = read_args.retriveArgs()
         if reset:
@@ -246,28 +233,21 @@ class ModelManager:
             settings.update_args(args)
 
         if not args.usernames:
-            filtered_sorted_models = self._filter_and_sort_models()
-            selected_users = retriver.get_selected_model(filtered_sorted_models)
-            self._parsed_subs_dict = {model.name: model for model in selected_users}
-            settings.get_settings().usernames = list(self._parsed_subs_dict.keys())
+            filtered_sorted_models = self._filter_and_prompt_for_selection()
+            selected_users = retriver.get_selected_model(list(filtered_sorted_models.values()))
+            self._parsed_subs_dict = {model.id: model for model in selected_users}
+            args.usernames = list(self._parsed_subs_dict.keys())
             settings.update_args(args)
         elif "ALL" in args.usernames:
-            # Re-filter and sort all models if "ALL" is specified
-            self._parsed_subs_dict = self._filter_and_sort_models()
+            self._parsed_subs_dict = self._filter_and_prompt_for_selection()
         else:
             username_set = set(args.usernames)
-            # Filter the already-fetched models based on the provided usernames
-            all_filtered_and_sorted = self._filter_and_sort_models()
+            all_filtered_and_sorted = self._filter_and_prompt_for_selection()
             self._parsed_subs_dict = {
                 name: model
                 for name, model in all_filtered_and_sorted.items()
                 if name in username_set
             }
-
-    def _filter_and_sort_models(self) -> Dict[str, Model]:
-        filtered_models = self._apply_filters()
-        sorted_models = sort.sort_models_helper(filtered_models)
-        return {model.name: self._all_subs_dict[model.name] for model in sorted_models}
 
     def _apply_filters(self) -> List[Model]:
         models = self.all_subs
@@ -295,7 +275,6 @@ class ModelManager:
 
     @property
     def processed_dict(self) -> Dict[str, Model]:
-        """Returns a dictionary of {username: model} for processed models."""
         return {
             username: self._parsed_subs_dict[username]
             for username in self._processed_usernames
@@ -304,7 +283,6 @@ class ModelManager:
 
     @property
     def unprocessed_dict(self) -> Dict[str, Model]:
-        """Returns a dictionary of {username: model} for unprocessed models."""
         return {
             username: model
             for username, model in self._parsed_subs_dict.items()

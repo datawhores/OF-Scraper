@@ -12,6 +12,7 @@ r"""
 """
 
 import inspect
+from typing import Union
 
 import arrow
 from InquirerPy.base import Choice
@@ -31,13 +32,15 @@ console = Console()
 models = None
 
 
-def model_selector(models_) -> bool:
+def model_selector(models_:Union[dict|list]) -> bool:
     global models
+    if isinstance(models_,dict):
+        models_=list(models.values())
     models = models_
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models.values()),
+            enumerate(models),
         )
     )
 
@@ -58,13 +61,12 @@ def model_selector(models_) -> bool:
 
     return p
 
-
 def decide_filters_menu() -> int:
     name = "modelList"
     modelChoice = [*of_env.getattr("modelPrompt")]
     modelChoice.insert(4, Separator())
     modelChoice.insert(7, Separator())
-    modelChoice.insert(9, Separator())
+    modelChoice.insert(10, Separator())
     questions = promptClasses.batchConverter(
         *[
             {
@@ -443,7 +445,6 @@ def reset_username_prompt() -> bool:
                 "message": "Do you want to reset username info",
                 "choices": [
                     Choice("Selection", "Yes Update Selection"),
-                    Choice("Data", "Yes Refetch Data Only"),
                     Choice("Selection_Strict", "Yes Update Selection (No Data Fetch)"),
                     "No",
                 ],

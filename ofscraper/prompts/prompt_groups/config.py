@@ -779,10 +779,13 @@ def manual_config_prompt(configText) -> str:
     return questions[name]
 
 
-def retry_user_scan():
+def retry_user_scan(no_models=False):
+    choices=[Choice(True, "Yes"), Choice(False, "No")]
+    if no_models:
+        choices=[Choice(True, "Yes"), Choice(False, "Quit")]
     answer = promptClasses.getChecklistSelection(
         message="Rescan account for users",
-        choices=[Choice(True, "Yes"), Choice(False, "No")],
+        choices=choices,
     )
 
     return answer

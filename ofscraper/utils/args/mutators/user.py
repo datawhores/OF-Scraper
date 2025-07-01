@@ -19,3 +19,7 @@ def resetUserFilters():
     args.sort = "name"
     args.desc = False
     return args
+def resetUserSelect():
+    args = read_args.retriveArgs()
+    args.usernames=None
+    return args

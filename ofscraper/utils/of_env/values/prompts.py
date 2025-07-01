@@ -77,7 +77,9 @@ def load_prompts_config():
         "Filter model list based on status of prices": "price",
         "Change sorting of model list": "sort",
         "Change to a different list [May require rescan]": "list",
-        "Remove all model list filters": "reset",
+        "Remove all model list filters": "reset_filters",
+        "Reset Model List": "reset",
+        "Rescan List": "rescan",
         "Go Back to Model Lists": "modelList",
     }
 

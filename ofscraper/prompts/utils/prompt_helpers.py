@@ -200,7 +200,7 @@ def _select_helper(prompt, toggle=True):
 
 
 def _get_choices():
-    models = manager.Manager.model_manager.filterOnly()
+    models = manager.Manager.model_manager.get_selected_models()
     models = sort.sort_models_helper(models)
     return list(
         map(

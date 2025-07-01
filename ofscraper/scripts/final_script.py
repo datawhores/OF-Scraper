@@ -28,7 +28,8 @@ def final_script():
     try:
 
         payload_data = {
-            "processed_users": list(manager.Manager.model_manager.processed_dict.keys())
+            "processed_users": list(manager.Manager.model_manager.processed_dict.keys()),
+            "unprocessed_users": list(manager.Manager.model_manager.unprocessed_dict.keys())
         }
 
         # Dump JSON to a string, no indent for efficiency, ensure_ascii=False for non-ASCII chars
