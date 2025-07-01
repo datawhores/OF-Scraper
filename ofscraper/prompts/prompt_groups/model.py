@@ -66,13 +66,13 @@ def decide_filters_menu() -> int:
     modelChoice = [*of_env.getattr("modelPrompt")]
     modelChoice.insert(4, Separator())
     modelChoice.insert(7, Separator())
-    modelChoice.insert(10, Separator())
+    modelChoice.insert(11, Separator())
     questions = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
-                "message": "Make changes to model list",
+                "message": "Make changes to model list Filters/Sorting",
                 "choices": modelChoice,
             }
         ],

@@ -167,7 +167,7 @@ class ModelManager:
             elif choice == "price":
                 new_args = prompts.modify_prices_prompt(current_args)
             elif choice == "select":
-                new_args = prompts.modify_list_prompt(current_args, "select")
+                new_args = prompts.modify_list_prompt(current_args)
             elif choice == "reset_filters":
                 new_args = resetUserFilters()
             elif choice == "reset":
@@ -175,7 +175,7 @@ class ModelManager:
             elif choice == "rescan":
                 self._fetch_all_subs(force_refetch=True,reset=True)
             elif choice == "list":
-                new_args = prompts.modify_list_prompt(current_args, "list")
+                new_args = prompts.modify_list_prompt(current_args)
                 if (set(current_args.black_list or []) != set(new_args.black_list or [])) or \
                    (set(current_args.user_list or []) != set(new_args.user_list or [])):
                     console.get_console().print("Lists changed, re-fetching models...")
