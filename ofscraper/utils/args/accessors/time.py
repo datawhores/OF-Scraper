@@ -1,12 +1,11 @@
 import arrow
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 
 now = None
 
 
 def get_before():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     if not args.download_before and not args.like_before:
         return get_now()
     elif not args.download_before:
@@ -18,7 +17,7 @@ def get_before():
 
 
 def get_after():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     if not args.download_after or not args.lke_after:
         return 0
     elif not args.download_after:
@@ -30,17 +29,17 @@ def get_after():
 
 
 def get_download_before():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     return arrow.get(args.download_before or get_now())
 
 
 def get_download_after():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     arrow.get(args.download_after or 2000)
 
 
 def get_like_before():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     return arrow.get(args.like_before or get_now())
 
 

@@ -10,7 +10,6 @@ import ofscraper.classes.of.media as media_
 import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.commands.scraper.actions.download.download as download
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -102,7 +101,7 @@ def final_action(results):
 
 
 def allow_manual_dupes():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.force_all = True
     settings.update_args(args)
 
@@ -296,7 +295,7 @@ def get_info(url):
 
 
 def url_helper(urls):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     out = []
     out.extend(args.get("file", []) or [])
     out.extend(args.get("url", []) or [])

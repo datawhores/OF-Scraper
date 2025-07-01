@@ -8,7 +8,6 @@ import sys
 
 import certifi
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.utils.level as log_helpers
@@ -62,7 +61,7 @@ def print_system_log():
 
 
 def print_args():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     log = logging.getLogger("shared")
     log.debug(args)
     log.debug(f"sys argv:{sys.argv[1:]}") if len(sys.argv) > 1 else None

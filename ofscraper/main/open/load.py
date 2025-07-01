@@ -4,8 +4,6 @@ import platform
 import traceback
 
 import ofscraper.main.open.run as run
-import ofscraper.utils.args.accessors.read as read_args
-import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.globals as log_globals
@@ -13,12 +11,14 @@ import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.paths.manage as paths_manage
 import ofscraper.utils.system.system as system
+import ofscraper.utils.settings as settings
+
 
 
 def main():
     try:
         systemSet()
-        args_loader()
+        settings_loader()
         setdate()
         readConfig()
         setLogger()
@@ -35,8 +35,8 @@ def main():
             print(traceback.format_exc())
 
 
-def args_loader():
-    read_args.retriveArgs()
+def settings_loader():
+    settings.get_settings()
 
 
 def setdate():

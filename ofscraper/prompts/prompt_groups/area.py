@@ -18,12 +18,11 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args.accessors.areas as areas
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 
 
 def areas_prompt() -> list:
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     name = "value"
     message = None
     print(args.command)

@@ -10,7 +10,6 @@ import ofscraper.filters.models.price as price
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.context.run_async import run
@@ -95,7 +94,7 @@ class ModelManager:
             log.info(
                 f"Attempting to fetch new model data for: {', '.join(new_usernames_to_fetch)}"
             )
-            args = read_args.retriveArgs()
+            args = settings.get_args()
             original_usernames = args.usernames or []
             args.usernames = list(new_usernames_to_fetch)
             settings.update_args(args)
@@ -108,7 +107,7 @@ class ModelManager:
                 if name not in self._all_subs_dict:
                     log.warning(f"Failed to fetch and add model: {name}")
 
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         current_arg_usernames = set(args.usernames or [])
         verified_usernames = {
             name for name in username_set if name in self._all_subs_dict
@@ -155,7 +154,7 @@ class ModelManager:
             choice = prompts.decide_filters_menu()
             if choice == "modelList":
                 break
-            current_args = read_args.retriveArgs()
+            current_args = settings.retriveArgs(copy=True)
             if choice == "sort":
                 new_args = prompts.modify_sort_prompt(current_args)
             elif choice == "subtype":
@@ -227,7 +226,7 @@ class ModelManager:
             self.setfilter()
     
     def _process_parsed_subscriptions(self, reset: bool = False) -> None:
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         if reset:
             args.usernames = None
             settings.update_args(args)

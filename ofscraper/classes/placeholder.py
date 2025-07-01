@@ -4,7 +4,6 @@ import pathlib
 import re
 import arrow
 
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
@@ -236,7 +235,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"only_filename": ele.no_quality_final_filename})
         self._variables.update({"text": ele.file_text})
         self._variables.update({"config": config_file.open_config()})
-        self._variables.update({"args": read_args.retriveArgs()})
+        self._variables.update({"args": settings.get_args()})
 
     @basePlaceholder.async_wrapper
     async def getmediadir(self, root=None, create=True):
@@ -432,7 +431,7 @@ class Textholders(basePlaceholder):
         )
         self._variables.update({"text": ele.text_trunicate(ele.file_sanitized_text)})
         self._variables.update({"config": config_file.open_config()})
-        self._variables.update({"args": read_args.retriveArgs()})
+        self._variables.update({"args": settings.get_args()})
 
         self._variables.update({"quality": "source"})
         self._variables.update(

@@ -2,7 +2,6 @@ import logging
 import traceback
 import threading
 import schedule
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
@@ -262,7 +261,7 @@ def process_selected_areas():
 def scrapper():
     global selectedusers
     selectedusers = None
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     if args.daemon:
         if len(args.action) == 0 and not args.scrape_paid:
             prompts.action_prompt()

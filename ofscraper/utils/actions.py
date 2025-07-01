@@ -13,13 +13,12 @@ r"""
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.areas as areas
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.system.free as free
 import ofscraper.utils.settings as settings
 
 
 def reset_download():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
 
     if bool(args.download_area) and prompts.reset_download_areas_prompt() == "Yes":
         args.scrape_paid = None
@@ -27,14 +26,14 @@ def reset_download():
 
 
 def reset_like():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     if bool(args.like_area) and prompts.reset_like_areas_prompt() == "Yes":
         args.like_area = {}
 
 
 @free.space_checker
 def select_areas(actions=None, reset=False):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     actions = actions or args.action or {}
     if "download" in actions and reset:
         reset_download()
@@ -48,20 +47,20 @@ def select_areas(actions=None, reset=False):
 
 
 def remove_like_area():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.like_area = {}
     settings.update_args(args)
 
 
 def remove_download_area():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.download_area = {}
     args.scrape_paid = None
     settings.update_args(args)
 
 
 def remove_post_area():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.posts = {}
     settings.update_args(args)
 
@@ -69,7 +68,7 @@ def remove_post_area():
 @free.space_checker
 # set post for primarily for download-area, secondary for like/unlike
 def set_post_area(action=None):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     action = action or args.action or {}
     if "download" not in action:
         return
@@ -89,7 +88,7 @@ def set_post_area(action=None):
 
 # set download area area based primarly on posts,secondary on  prompt
 def set_download_area(action=None):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     action = action or args.action or {}
     selected = None
     not_anon_safe = ["Messages", "Purchases", "Highlights", "Stories"]
@@ -111,7 +110,7 @@ def set_download_area(action=None):
 
 # set like area based primarly on posts,secondary on from prompt
 def set_like_area(action=None):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     action = action or args.action or {}
     if "like" not in action and "unlike" not in action:
         return
@@ -124,7 +123,7 @@ def set_like_area(action=None):
 
 
 def set_scrape_paid(action=None):
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     action = action or args.action or {}
     if "download" not in action:
         return

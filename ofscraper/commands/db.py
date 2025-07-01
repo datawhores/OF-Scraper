@@ -11,7 +11,6 @@ from humanfriendly import format_size
 
 import ofscraper.utils.console as console
 
-import ofscraper.utils.args.accessors.read as read_args
 from ofscraper.db.operations_.media import (
     get_timeline_media,
     get_archived_media,
@@ -54,7 +53,7 @@ class DBManager:
 
     @run_async
     async def get_all_media(self):
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         timeline = []
         archived = []
         messages = []
@@ -108,7 +107,7 @@ class DBManager:
 
     def filter_media(self):
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         medias = self.media
         # downloaded
         if args.downloaded:

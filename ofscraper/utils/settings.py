@@ -42,8 +42,12 @@ def _load_env_once():
 settings = {}
 
 
-def get_args():
-    return read_args.retriveArgs()
+def get_args(copy=False):
+    if copy:
+        args=read_args.retriveArgs()
+        return deepcopy(args)
+    else:
+        return read_args.retriveArgs()
 
 
 def update_args(args):

@@ -1,5 +1,4 @@
 from ofscraper.classes.table.fields.numfield import PostiveNumField
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 
 
@@ -13,7 +12,7 @@ class SizeMaxField(PostiveNumField):
 
     def on_input_changed(self, event):
         value = event.value if event.value else "0"
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         args.size_max = int(value)
         settings.update_args(args)
 
@@ -28,6 +27,6 @@ class SizeMinField(PostiveNumField):
 
     def on_input_changed(self, event):
         value = event.value if event.value else "0"
-        args = read_args.retriveArgs()
+        args = settings.get_args()
         args.size_min = int(value)
         settings.update_args(args)

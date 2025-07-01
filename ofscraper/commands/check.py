@@ -22,7 +22,6 @@ import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.of.posts as posts_
 import ofscraper.classes.table.app as app
 import ofscraper.db.operations as operations
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.settings as settings
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console_
@@ -192,7 +191,7 @@ async def data_refill(media_id, post_id, target_name, model_id):
 
 
 def allow_check_dupes():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.force_all = True
     settings.update_args(args)
 
@@ -221,7 +220,7 @@ def checker():
 
 
 def set_after_check_mode():
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     args.after = 0
     settings.update_args(args)
 
@@ -415,7 +414,7 @@ async def post_check_retriver():
 
 def reset_data():
     # clean up args once check modes are ready to launch
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     if args.username:
         args.username = settings.get_settings().usernames = None
     settings.update_args(args)

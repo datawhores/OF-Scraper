@@ -3,7 +3,6 @@ import arrow
 from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.of_env.of_env as of_env
 from InquirerPy.base import Choice
 import ofscraper.utils.settings as settings
@@ -20,7 +19,7 @@ def action_prompt() -> int:
         message="Action Menu: What action(s) would you like to take?",
         choices=[*action_prompt_choices],
     )
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     action = of_env.getattr("actionPromptChoices")[answer]
     if "download" in action and not args.redownload:
         args = redownload_prompt()
@@ -31,7 +30,7 @@ def action_prompt() -> int:
 
 
 def redownload_prompt() -> int:
-    args = read_args.retriveArgs()
+    args = settings.get_args()
     answer = promptClasses.getChecklistSelection(
         message="Would you like to redownload all files",
         choices=[Choice(True, "Yes"), Choice(False, "No")],
