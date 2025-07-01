@@ -27,6 +27,8 @@ def get_shared_logger(name=None):
     add_stdout_handler(logger, clear=False)
     add_other_handler(logger, clear=False)
     logger.setLevel(1)
+    #don't propate to root
+    logger.propagate=False
     return logger
 
 def clearHandlers(name=None):
@@ -38,6 +40,8 @@ def clearHandlers(name=None):
         except Exception as e:
             # Basic error handling (optional)
             print(f"Error closing handler: {str(e)}")
+    log=log.parent
+
 
 def resetLogger():
     dates.resetLogDateVManager()
