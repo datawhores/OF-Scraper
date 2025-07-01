@@ -212,7 +212,6 @@ def _get_choices():
 
 def user_list(model_str):
     model_list = re.split("(,|\n)", model_str)
-    model_list = map(lambda x: re.sub("[^a-zA-Z0-9 ]", "", x), model_list)
     model_list = filter(lambda x: len(x) != 0, model_list)
     return model_list
 
