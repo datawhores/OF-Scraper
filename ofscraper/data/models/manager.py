@@ -216,7 +216,7 @@ class ModelManager:
         "current_price", "renewal_price", "regular_price", "promo_price",
         # Flag-based Filters
         "last_seen",
-        "free_trial"
+        "free_trial",
         "promo",
         "all_promo",
         "sub_status",
@@ -233,9 +233,18 @@ class ModelManager:
             # Use getattr() to get the value of the attribute from the settings object
             value = getattr(s, attr, None)
 
-            # Only print the setting if it has been set (is not None)
-            if value:
-                # Format the attribute name for display (e.g., "promo_price_min" -> "Promo Price Min")
+           # --- Start of Improved Logic ---
+            is_empty = not value  # This is False for None, "", [], False
+
+            # Special check for userlist/blacklist: treat a list of only empty strings as empty
+            if attr in {"blacklist", "userlist"} and isinstance(value, list):
+                # any(value) checks if there is at least one non-empty string in the list.
+                # If all items are empty strings, any() is False, so we set is_empty to True.
+                if not any(value):
+                    is_empty = True
+
+            # Only print if the value is not considered empty
+            if not is_empty:
                 display_name = attr.replace('_', ' ').title()
                 print(f"{display_name}: {value}")
                 found_active_filter = True
