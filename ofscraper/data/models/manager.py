@@ -154,7 +154,7 @@ class ModelManager:
             choice = prompts.decide_filters_menu()
             if choice == "modelList":
                 break
-            current_args = settings.get_args(copy=True)
+            current_args = settings.get_args()
             if choice == "sort":
                 new_args = prompts.modify_sort_prompt(current_args)
             elif choice == "subtype":
@@ -174,11 +174,13 @@ class ModelManager:
             elif choice == "rescan":
                 self._fetch_all_subs(force_refetch=True,reset=True)
             elif choice == "list":
+                old_args=settings.get_args(copy=True)
                 new_args = prompts.modify_list_prompt(current_args)
-                if (set(current_args.black_list or []) != set(new_args.black_list or [])) or \
-                   (set(current_args.user_list or []) != set(new_args.user_list or [])):
+                if (set(old_args.black_list or []) != set(new_args.black_list or [])) or \
+                   (set(old_args.user_list or []) != set(new_args.user_list or [])):
                     console.get_console().print("Lists changed, re-fetching models...")
-                    self._fetch_all_subs(force_refetch=True)
+                    settings.update_args(new_args)
+                    self._fetch_all_subs(force_refetch=True,reset=True)
             settings.update_args(new_args)
 
     def _fetch_all_subs(self, force_refetch: bool = False,reset:bool=False) -> None:

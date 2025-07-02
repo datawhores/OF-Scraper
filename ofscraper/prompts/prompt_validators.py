@@ -249,7 +249,7 @@ def datevalidator():
     return validatorCallableHelper(
         callable,
         """
-        Date is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens""",
+        Date is invalid -> Supported Formats: YYYY-MM-DD, YYYY-M-DD, YYYY-M-D, YYYY/MM/DD, YYYY/M/DD, YYYY/M/D, YYYY.MM.DD, YYYY.M.DD, YYYY.M.D, YYYYMMDD, YYYY-DDDD, YYYYDDDD, YYYY-MM, YYYY/MM, YYYY.MM, YYYY, W.""",
     )
 
 

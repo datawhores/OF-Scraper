@@ -146,7 +146,7 @@ def modify_active_prompt(args):
                 Otherwise must be in date format
                 """,
                 "validate": prompt_validators.datevalidator(),
-                "filter": lambda x: arrow.get(x or 0),
+                "filter": lambda x: arrow.get(x or 0).float_timestamp,
                 "default": (
                     arrow.get(settings.get_settings().last_seen_after).format(
                         of_env.getattr("PROMPT_DATE_FORMAT")
@@ -162,7 +162,7 @@ def modify_active_prompt(args):
                 "option_instruction": """enter 0 to disable this filter
                 Otherwise must be in date format""",
                 "validate": prompt_validators.datevalidator(),
-                "filter": lambda x: arrow.get(x or 0),
+                "filter": lambda x: arrow.get(x or 0).float_timestamp,
                 "default": (
                     arrow.get(settings.get_settings().last_seen_before).format(
                         of_env.getattr("PROMPT_DATE_FORMAT")
@@ -181,11 +181,11 @@ def modify_active_prompt(args):
 
     args.last_seen = answer["last-seen"]
     args.last_seen_after = (
-        answer["last-seen-after"] if answer["last-seen-after"] != arrow.get(0) else None
+        answer["last-seen-after"] if answer["last-seen-after"] != 0 else None
     )
     args.last_seen_before = (
         answer["last-seen-before"]
-        if answer["last-seen-before"] != arrow.get(0)
+        if answer["last-seen-before"] != 0
         else None
     )
     return args
