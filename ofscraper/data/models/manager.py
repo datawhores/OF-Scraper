@@ -150,7 +150,7 @@ class ModelManager:
 
     def setfilter(self):
         while True:
-            console.get_console().print("\n")
+            self._print_filter_settings()
             choice = prompts.decide_filters_menu()
             try:
                 if choice == "modelList":
@@ -183,9 +183,70 @@ class ModelManager:
                         settings.update_args(new_args)
                         self._fetch_all_subs(force_refetch=True,reset=True)
             except Exception as e:
-                log.debug(f"Exception in menu: {e}")
+                console.get_console().print(f"Exception in menu: {e}")
             settings.update_args(new_args)
 
+    def _print_filter_settings(self):
+        """
+        Retrieves and prints all active filter settings.
+
+        This function iterates through a predefined list of filter attributes,
+        checks if they have a non-None value in the settings, and prints
+        each active filter in a readable format.
+        """
+        # Get the settings object once to avoid repeated calls
+        s = settings.get_settings()
+
+        # A list of all attribute names corresponding to the filter options
+        filter_attributes = [
+        # Price Range Filters
+        "promo_price_min", "promo_price_max",
+        "regular_price_min", "regular_price_max",
+        "current_price_min", "current_price_max",
+        "renewal_price_min", "renewal_price_max",
+        # Date Filters
+        "last_seen_before", "last_seen_after",
+        "expired_before", "expired_after",
+        "subscribed_before", "subscribed_after",
+        # Sorting
+        "sort", "desc",
+        # User Lists
+        "userlist", "blacklist",
+        # Paid/Free Choice Filters
+        "current_price", "renewal_price", "regular_price", "promo_price",
+        # Flag-based Filters
+        "last_seen",
+        "free_trial"
+        "promo",
+        "all_promo",
+        "sub_status",
+        "renewal",
+    ]
+
+        print("\n--- Active Filter Settings ---")
+        
+        # A flag to check if any filters were printed
+        found_active_filter = False
+
+        # Loop through each attribute name
+        for attr in filter_attributes:
+            # Use getattr() to get the value of the attribute from the settings object
+            value = getattr(s, attr, None)
+
+            # Only print the setting if it has been set (is not None)
+            if value is not None:
+                # Format the attribute name for display (e.g., "promo_price_min" -> "Promo Price Min")
+                display_name = attr.replace('_', ' ').title()
+                print(f"{display_name}: {value}")
+                found_active_filter = True
+
+        # If no filters were active, print a message
+        if not found_active_filter:
+            print("No active filters set.")
+        
+        print("----------------------------\n")    
+    
+    
     def _fetch_all_subs(self, force_refetch: bool = False,reset:bool=False) -> None:
         if self._all_subs_dict and not force_refetch and not reset:
             return
