@@ -152,35 +152,38 @@ class ModelManager:
         while True:
             console.get_console().print("\n")
             choice = prompts.decide_filters_menu()
-            if choice == "modelList":
-                break
-            current_args = settings.get_args()
-            if choice == "sort":
-                new_args = prompts.modify_sort_prompt(current_args)
-            elif choice == "subtype":
-                new_args = prompts.modify_subtype_prompt(current_args)
-            elif choice == "promo":
-                new_args = prompts.modify_promo_prompt(current_args)
-            elif choice == "active":
-                new_args = prompts.modify_active_prompt(current_args)
-            elif choice == "price":
-                new_args = prompts.modify_prices_prompt(current_args)
-            elif choice == "select":
-                new_args = prompts.modify_list_prompt(current_args)
-            elif choice == "reset_filters":
-                new_args = resetUserFilters()
-            elif choice == "reset":
-                self._fetch_all_subs(force_refetch=True,reset=True)
-            elif choice == "rescan":
-                self._fetch_all_subs(force_refetch=True,reset=True)
-            elif choice == "list":
-                old_args=settings.get_args(copy=True)
-                new_args = prompts.modify_list_prompt(current_args)
-                if (set(old_args.black_list or []) != set(new_args.black_list or [])) or \
-                   (set(old_args.user_list or []) != set(new_args.user_list or [])):
-                    console.get_console().print("Lists changed, re-fetching models...")
-                    settings.update_args(new_args)
+            try:
+                if choice == "modelList":
+                    break
+                current_args = settings.get_args()
+                if choice == "sort":
+                    new_args = prompts.modify_sort_prompt(current_args)
+                elif choice == "subtype":
+                    new_args = prompts.modify_subtype_prompt(current_args)
+                elif choice == "promo":
+                    new_args = prompts.modify_promo_prompt(current_args)
+                elif choice == "active":
+                    new_args = prompts.modify_active_prompt(current_args)
+                elif choice == "price":
+                    new_args = prompts.modify_prices_prompt(current_args)
+                elif choice == "select":
+                    new_args = prompts.modify_list_prompt(current_args)
+                elif choice == "reset_filters":
+                    new_args = resetUserFilters()
+                elif choice == "reset":
                     self._fetch_all_subs(force_refetch=True,reset=True)
+                elif choice == "rescan":
+                    self._fetch_all_subs(force_refetch=True,reset=True)
+                elif choice == "list":
+                    old_args=settings.get_args(copy=True)
+                    new_args = prompts.modify_list_prompt(current_args)
+                    if (set(old_args.black_list or []) != set(new_args.black_list or [])) or \
+                    (set(old_args.user_list or []) != set(new_args.user_list or [])):
+                        console.get_console().print("Lists changed, re-fetching models...")
+                        settings.update_args(new_args)
+                        self._fetch_all_subs(force_refetch=True,reset=True)
+            except Exception as e:
+                log.debug(f"Exception in menu: {e}")
             settings.update_args(new_args)
 
     def _fetch_all_subs(self, force_refetch: bool = False,reset:bool=False) -> None:

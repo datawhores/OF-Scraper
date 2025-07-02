@@ -130,7 +130,8 @@ def modify_active_prompt(args):
             {
                 "type": "list",
                 "name": "last-seen",
-                "default": None,
+                "default":settings.get_settings().last_seen,
+
                 "message": "Filter Accounts By whether the account by the visability of last seen",
                 "choices": [
                     Choice(True, "Last seen is present"),
