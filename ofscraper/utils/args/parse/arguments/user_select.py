@@ -27,11 +27,12 @@ excluded_username_option = click.option(
 
 user_list_option = click.option(
     "-ul",
-    "user_list",
+    "--user_list",
     "--user-list",
     "--userlist",
     "--userlists",
     "--user-lists",
+    "userlist",
     help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
     default=None,
     multiple=True,
@@ -51,11 +52,12 @@ user_list_option = click.option(
 
 black_list_option = click.option(
     "-bl",
-    "black_list",
+    "--black_list",
     "--black-lists",
     "--blacklist",
     "--blacklists",
     "--black-list",
+    "blacklist",
     help="Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
     default=None,
     multiple=True,

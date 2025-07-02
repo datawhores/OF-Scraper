@@ -56,7 +56,7 @@ last_seen_option = click.option(
 free_trial_option = click.option(
     "-fo/-fs",
     "--free-trial-only/--free-trial-skip",
-    "free_trail",  # Positional argument for destination attribute
+    "free_trial",  # Positional argument for destination attribute
     help="""
     \b
     Flag for enabling/disabling accounts with free trial

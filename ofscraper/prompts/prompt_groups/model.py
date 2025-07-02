@@ -207,7 +207,7 @@ def modify_promo_prompt(args):
             )
         )
 
-    free_trail = promptClasses.batchConverter(
+    free_trial = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
@@ -226,7 +226,7 @@ def modify_promo_prompt(args):
             },
         ]
     )
-    if free_trail["free-trial"]:
+    if free_trial["free-trial"]:
         console.print(
             inspect.cleandoc(
                 """
@@ -298,7 +298,7 @@ def modify_promo_prompt(args):
             ]
         )
 
-    answer.update(free_trail)
+    answer.update(free_trial)
     args.free_trial = answer["free-trial"]
     args.update(promo)
 
