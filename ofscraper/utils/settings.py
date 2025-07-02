@@ -235,20 +235,23 @@ def get_trunication():
 
 def get_userlist():
     out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
-    if isinstance(out, str):
-        out =re.split(r',| ', out)
-    return out
+    return _listhelper(out)
 
 
 def get_blacklist():
     out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
-    if isinstance(out, str):
-        out = re.split(r',| ', out)
-    return out
+    return _listhelper(out)
+
 
 
 def get_env_files():
     out = read_args.retriveArgs().env_files or config_data.get_env_files()
     if isinstance(out, str):
         out = re.split(r',| ', out)
+    return out
+
+def _listhelper(out):
+    if isinstance(out, str):
+        out=re.sub(r'[\t\n\r]', '', out)
+        out = list(filter(lambda x:bool(x),re.split(r',| ', out)))
     return out
