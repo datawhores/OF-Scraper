@@ -234,12 +234,12 @@ def get_trunication():
 
 
 def get_userlist():
-    out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
+    out = read_args.retriveArgs().userlist or config_data.get_default_userlist()
     return _listhelper(out)
 
 
 def get_blacklist():
-    out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
+    out = read_args.retriveArgs().blacklist or config_data.get_default_blacklist()
     return _listhelper(out)
 
 

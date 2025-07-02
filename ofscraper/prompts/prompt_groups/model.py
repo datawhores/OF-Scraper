@@ -415,7 +415,7 @@ def modify_list_prompt(args):
                 "type": "input",
                 "name": "user_list",
                 "message": "Change User List",
-                "default": ",".join(args.user_list or []),
+                "default": ",".join(args.userlist or []),
                 "multiline": True,
                 "filter": lambda x: prompt_helpers.user_list(x),
                 "option_instruction": prompt_helpers.get_list_details(True),
@@ -424,15 +424,15 @@ def modify_list_prompt(args):
                 "type": "input",
                 "name": "black_list",
                 "message": "Change Black List",
-                "default": ",".join(args.black_list or []),
+                "default": ",".join(args.blacklist or []),
                 "multiline": True,
                 "filter": lambda x: prompt_helpers.user_list(x),
                 "option_instruction": prompt_helpers.get_list_details(False),
             },
         ],
     )
-    args.user_list = list(answer["user_list"])
-    args.black_list = list(answer["black_list"])
+    args.userlist = list(answer["user_list"])
+    args.blacklist = list(answer["black_list"])
     return args
 
 

@@ -176,7 +176,6 @@ class ModelManager:
                 elif choice == "reset_filters":
                     new_args = resetUserFilters()
                 elif choice == "reset_list":
-                    new_args = original_args  # Start with a copy
                     new_args.userlist = ["main"]
                     new_args.blacklist = [""] # Clears the blacklist
                 elif choice == "rescan":
@@ -185,8 +184,8 @@ class ModelManager:
                 # 2. If any action generated new arguments, process the changes
                 if new_args:
                     # Use sets to compare lists, safely handling None with 'or []'
-                    user_list_changed = set(original_args.user_list or []) != set(new_args.user_list or [])
-                    black_list_changed = set(original_args.black_list or []) != set(new_args.black_list or [])
+                    user_list_changed = set(original_args.userlist or []) != set(new_args.userlist or [])
+                    black_list_changed = set(original_args.blacklist or []) != set(new_args.blacklist or [])
 
                     # Always update the arguments in the settings
                     settings.update_args(new_args)

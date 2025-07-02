@@ -41,7 +41,7 @@ async def get_otherlist():
                 of_env.getattr("OFSCRAPER_RESERVED_LIST"),
                 of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
             ]
-            for ele in settings.get_settings().user_list or []
+            for ele in settings.get_settings().userlist or []
         ]
     ):
         return []
@@ -49,7 +49,7 @@ async def get_otherlist():
         out.extend(await get_lists())
         out = list(
             filter(
-                lambda x: x.get("name").lower() in settings.get_settings().user_list
+                lambda x: x.get("name").lower() in settings.get_settings().userlist
                 or [],
                 out,
             )
@@ -63,14 +63,14 @@ async def get_otherlist():
 @run
 async def get_blacklist():
     out = []
-    if not settings.get_settings().black_list:
+    if not settings.get_settings().blacklist:
         return []
     with progress_utils.setup_subscription_progress_live():
-        if len(settings.get_settings().black_list or []) >= 1:
+        if len(settings.get_settings().blacklist or []) >= 1:
             out.extend(await get_lists())
         out = list(
             filter(
-                lambda x: x.get("name").lower() in settings.get_settings().black_list
+                lambda x: x.get("name").lower() in settings.get_settings().blacklist
                 or [],
                 out,
             )

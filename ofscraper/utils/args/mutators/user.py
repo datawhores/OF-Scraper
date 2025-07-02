@@ -2,8 +2,8 @@ import ofscraper.utils.args.accessors.read as read_args
 
 def resetUserFilters():
     args = read_args.retriveArgs()
-    args.user_list = []
-    args.black_list = []
+    args.userlist = []
+    args.blacklist = []
     args.renewal = None
     args.sub_status = None
     args.last_seen = None
