@@ -77,8 +77,8 @@ def load_prompts_config():
         "Filter model list based on status of prices": "price",
         "Change sorting of model list": "sort",
         "Change to a different list [May require rescan]": "list",
-        "Remove all model list filters": "reset_filters",
-        "Clear blacklist and switch to the 'main' user list": "reset_list",
+        "Reset all filters": "reset_filters",
+        "Clear blacklist and switch to the 'main' user list [May require rescan]": "reset_list",
         "Rescan List": "rescan",
         "Go Back to Model Lists": "model_list",
     }
