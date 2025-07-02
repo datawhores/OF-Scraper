@@ -46,7 +46,7 @@ async def un_encrypt(item, c, ele, input_=None):
         )
         if past_key:
             key = past_key
-            log.debug(f"{get_medialog(ele)} got key from cache")
+            log.debug(f"{get_medialog(ele)} got key rom cache: {key}")
         elif keymode == "manual":
             key = await key_helper_manual(c, item["pssh"], ele.license, ele.id)
         elif keymode == "cdrm":
@@ -54,7 +54,7 @@ async def un_encrypt(item, c, ele, input_=None):
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
         key = key.strip()
-        log.debug(f"{get_medialog(ele)} got key {key}")
+        log.debug(f"{get_medialog(ele)} retrive new key: {key}")
         newpath = pathlib.Path(
             re.sub("\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
         )
@@ -142,7 +142,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
 
 async def key_helper_manual(c, pssh, licence_url, id):
     key = None
-    log.debug(f"ID:{id}  manual key helper")
+    log.debug(f"ID:{id} using manual key helper")
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
