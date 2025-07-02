@@ -253,5 +253,5 @@ def get_env_files():
 def _listhelper(out):
     if isinstance(out, str):
         out=re.sub(r'[\t\n\r]', '', out)
-        out = list(filter(lambda x:bool(x),re.split(r',| ', out)))
+        out = list(filter(lambda x:bool(x) and x not in {"\t","\n","\r"},re.split(r',| ', out)))
     return out

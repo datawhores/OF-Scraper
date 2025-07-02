@@ -167,12 +167,12 @@ class ModelManager:
                     break
 
                 # Get a copy of the arguments before any modifications
-                original_args = settings.get_args(copy=True)
-                new_args = None  # Initialize to None
+                original_args = settings.get_args()
+                new_args = settings.get_args(copy=True)
 
                 # 1. Determine the new arguments based on the user's choice
                 if choice in prompt_actions:
-                    new_args = prompt_actions[choice](original_args)
+                    new_args = prompt_actions[choice](new_args)
                 elif choice == "reset_filters":
                     new_args = resetUserFilters()
                 elif choice == "reset_list":
@@ -194,10 +194,13 @@ class ModelManager:
                     if user_list_changed or black_list_changed:
                         console.get_console().print("[yellow]Lists changed, re-fetching models from API...[/yellow]")
                         self._fetch_all_subs(force_refetch=True, reset=True)
+                        original_args=new_args
+                        new_args=settings.get_args(copy=True)
 
             except Exception as e:
                 console.get_console().print(f"Exception in menu: {e}")
             settings.update_args(new_args)
+            
 
     def _print_filter_settings(self):
         """
@@ -276,7 +279,7 @@ class ModelManager:
         #reset last fetched
         self._last_fetched=None
         if reset:
-            self.all_models=[]
+            self._all_subs_dict={}
         while True:
         # Use run to execute the async fetching logic and block until it's done
             self._fetch_all_subs_async()
