@@ -235,7 +235,8 @@ class ModelManager:
 
            # --- Start of Improved Logic ---
             is_empty = not value  # This is False for None, "", [], False
-
+            if attr=="desc":
+                is_empty=False
             # Special check for userlist/blacklist: treat a list of only empty strings as empty
             if attr in {"blacklist", "userlist"} and isinstance(value, list):
                 # any(value) checks if there is at least one non-empty string in the list.
