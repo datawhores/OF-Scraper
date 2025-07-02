@@ -40,7 +40,7 @@ from ofscraper.db.operations_.media import (
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
-from ofscraper.main.close.final.final import final
+from ofscraper.main.close.final.final import final_action
 import ofscraper.main.manager as manager
 import ofscraper.filters.media.main as filters
 from ofscraper.commands.scraper.actions.download.download import process_dicts
@@ -78,7 +78,7 @@ def process_download_cart():
                 results = ["check cart results"] + list(
                     map(lambda x: x["results"], cart_dict.values())
                 )
-                final(normal_data=results)
+                final_action(normal_data=results)
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
@@ -137,6 +137,7 @@ def process_item():
                 app.app.table.update_cell_at_key(
                     key, "download_cart", Text("[downloaded]", style="bold green")
                 )
+                #might not be needed because of lack of final_script
                 manager.Manager.model_manager.mark_as_processed(username)
                 break
         except Exception as E:

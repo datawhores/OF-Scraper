@@ -45,6 +45,8 @@ def main_menu_action():
                 else:
                     count > 0 and reset_menu_helper()
                     scapingManager.runner(menu=True)
+                    #reset models for menu only
+                    manager.Manager.model_manager.reset_processed_status()
                     count = count + 1
 
             elif result_main_prompt == "auth":

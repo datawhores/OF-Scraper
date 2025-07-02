@@ -21,7 +21,7 @@ from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.main.close.final.final import final
+from ofscraper.main.close.final.final import final_action
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
@@ -93,7 +93,7 @@ def manual_download(urls=None):
 def final_action(results):
     normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
-    final(
+    final_action(
         normal_data=normal_data,
         scrape_paid_data=None,
         user_first_data=None,

@@ -16,8 +16,8 @@ from ofscraper.scripts.final_script import final_script
 from ofscraper.utils.logs.logs import printEndValues
 
 
-def final(normal_data=None, scrape_paid_data=None, user_first_data=None):
-
+def final_action(normal_data=None, scrape_paid_data=None, user_first_data=None):
     final_script()
-    final_log(normal_data or [] + scrape_paid_data or [] + user_first_data or [])
+    final_log(normal_data or [] + scrape_paid_data or [] + user_first_data or [])  
     printEndValues()
+  

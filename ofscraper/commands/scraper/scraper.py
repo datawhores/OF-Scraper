@@ -6,7 +6,7 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth
-from ofscraper.main.close.final.final import final
+from ofscraper.main.close.final.final import final_action
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.commands.scraper.actions.download.download import downloader
 import ofscraper.commands.scraper.actions.like.like as like_action
@@ -65,7 +65,7 @@ class scraperManager(commmandManager):
                 else:
                     userdata, session = prepare()
                     normal_data = self._process_users_actions_normal(userdata, session)
-            final(normal_data, scrape_paid_data, user_first_data)
+            final_action(normal_data, scrape_paid_data, user_first_data)
 
     @exit.exit_wrapper
     @run_async

@@ -36,7 +36,7 @@ import ofscraper.data.api.init as init
 import ofscraper.utils.actions as actions
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
-from ofscraper.main.close.final.final import final
+from ofscraper.main.close.final.final import final_action
 from ofscraper.utils.checkers import check_auth
 import ofscraper.main.manager as manager
 from ofscraper.scripts.after_download_action_script import after_download_action_script
@@ -285,7 +285,7 @@ def metadata():
         else:
             userdata, session = prepare()
             userfirst_data = metaCommandManager.metadata_user_first(userdata, session)
-    final(normal_data, scrape_paid_data, userfirst_data)
+    final_action(normal_data, scrape_paid_data, userfirst_data)
 
 
 @run

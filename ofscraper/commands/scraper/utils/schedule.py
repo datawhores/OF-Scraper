@@ -42,4 +42,5 @@ def schedule_helper(*functs):
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)
+    jobqueue.put(manager.Manager.model_manager.reset_processed_status)
     return schedule.CancelJob
