@@ -251,7 +251,17 @@ def get_env_files():
     return out
 
 def _listhelper(out):
-    if isinstance(out, str):
-        out=re.sub(r'[\t\n\r]', '', out)
-        out = list(filter(lambda x:bool(x) and x not in {"\t","\n","\r"},re.split(r',| ', out)))
-    return out
+    """
+    Cleans and splits a string or cleans an existing list.
+    - For strings, it splits by commas.
+    - It trims whitespace from each item and removes any empty items.
+    """
+    if isinstance(out, list):
+        # If it's already a list, just clean each item.
+        return [str(item).strip() for item in out if str(item).strip()]
+    elif isinstance(out, str):
+        # If it's a string, split it by commas and then clean each item.
+        split_list = out.split(',')
+        return [item.strip() for item in split_list if item.strip()]
+    # Return an empty list for any other input type (like None, int, etc.)
+    return []
