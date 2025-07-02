@@ -234,7 +234,7 @@ class ModelManager:
             value = getattr(s, attr, None)
 
             # Only print the setting if it has been set (is not None)
-            if value is not None:
+            if value:
                 # Format the attribute name for display (e.g., "promo_price_min" -> "Promo Price Min")
                 display_name = attr.replace('_', ' ').title()
                 print(f"{display_name}: {value}")
