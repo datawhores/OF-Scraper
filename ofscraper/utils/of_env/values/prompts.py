@@ -78,7 +78,7 @@ def load_prompts_config():
         "Change sorting of model list": "sort",
         "Change to a different list [May require rescan]": "list",
         "Remove all model list filters": "reset_filters",
-        "Reset Model List": "reset_list",
+        "Clear blacklist and switch to the 'main' user list": "reset_list",
         "Rescan List": "rescan",
         "Go Back to Model Lists": "model_list",
     }

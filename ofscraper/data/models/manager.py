@@ -153,35 +153,48 @@ class ModelManager:
             self._print_filter_settings()
             choice = prompts.decide_filters_menu()
             try:
+                # --- Place this dictionary outside your main loop for efficiency ---
+                prompt_actions = {
+                    "sort": prompts.modify_sort_prompt,
+                    "subtype": prompts.modify_subtype_prompt,
+                    "promo": prompts.modify_promo_prompt,
+                    "active": prompts.modify_active_prompt,
+                    "price": prompts.modify_prices_prompt,
+                    "list": prompts.modify_list_prompt,
+                }
+
                 if choice == "model_list":
                     break
-                current_args = settings.get_args()
-                if choice == "sort":
-                    new_args = prompts.modify_sort_prompt(current_args)
-                elif choice == "subtype":
-                    new_args = prompts.modify_subtype_prompt(current_args)
-                elif choice == "promo":
-                    new_args = prompts.modify_promo_prompt(current_args)
-                elif choice == "active":
-                    new_args = prompts.modify_active_prompt(current_args)
-                elif choice == "price":
-                    new_args = prompts.modify_prices_prompt(current_args)
-                elif choice == "select":
-                    new_args = prompts.modify_list_prompt(current_args)
+
+                # Get a copy of the arguments before any modifications
+                original_args = settings.get_args(copy=True)
+                new_args = None  # Initialize to None
+
+                # 1. Determine the new arguments based on the user's choice
+                if choice in prompt_actions:
+                    new_args = prompt_actions[choice](original_args)
                 elif choice == "reset_filters":
                     new_args = resetUserFilters()
                 elif choice == "reset_list":
-                    self._fetch_all_subs(force_refetch=True,reset=True)
+                    new_args = original_args  # Start with a copy
+                    new_args.userlist = ["main"]
+                    new_args.blacklist = [""] # Clears the blacklist
                 elif choice == "rescan":
-                    self._fetch_all_subs(force_refetch=True,reset=True)
-                elif choice == "list":
-                    old_args=settings.get_args(copy=True)
-                    new_args = prompts.modify_list_prompt(current_args)
-                    if (set(old_args.black_list or []) != set(new_args.black_list or [])) or \
-                    (set(old_args.user_list or []) != set(new_args.user_list or [])):
-                        console.get_console().print("Lists changed, re-fetching models...")
-                        settings.update_args(new_args)
-                        self._fetch_all_subs(force_refetch=True,reset=True)
+                    self._fetch_all_subs(force_refetch=True, reset=True)
+
+                # 2. If any action generated new arguments, process the changes
+                if new_args:
+                    # Use sets to compare lists, safely handling None with 'or []'
+                    user_list_changed = set(original_args.user_list or []) != set(new_args.user_list or [])
+                    black_list_changed = set(original_args.black_list or []) != set(new_args.black_list or [])
+
+                    # Always update the arguments in the settings
+                    settings.update_args(new_args)
+                    # If a list changed, it requires re-fetching all the models
+                    if user_list_changed or black_list_changed:
+                        console.get_console().print("[yellow]Lists changed, re-fetching models from API...[/yellow]")
+                        self._fetch_all_subs(force_refetch=True, reset=True)
+
             except Exception as e:
                 console.get_console().print(f"Exception in menu: {e}")
             settings.update_args(new_args)
