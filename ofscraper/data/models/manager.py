@@ -153,7 +153,7 @@ class ModelManager:
             self._print_filter_settings()
             choice = prompts.decide_filters_menu()
             try:
-                if choice == "modelList":
+                if choice == "model_list":
                     break
                 current_args = settings.get_args()
                 if choice == "sort":
@@ -170,7 +170,7 @@ class ModelManager:
                     new_args = prompts.modify_list_prompt(current_args)
                 elif choice == "reset_filters":
                     new_args = resetUserFilters()
-                elif choice == "reset":
+                elif choice == "reset_list":
                     self._fetch_all_subs(force_refetch=True,reset=True)
                 elif choice == "rescan":
                     self._fetch_all_subs(force_refetch=True,reset=True)
