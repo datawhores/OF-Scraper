@@ -78,8 +78,9 @@ class ModelManager:
 
     def add_model(self, usernames: str | List[str]) -> None:
         # This wrapper ensures the async method is run and waited for.
-        run(self._add_model_async(usernames))()
+        self._add_model_async(usernames)
 
+    @run
     async def _add_model_async(self, usernames: str | List[str]) -> None:
         if isinstance(usernames, str):
             username_set = {usernames}

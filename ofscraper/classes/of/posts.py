@@ -107,7 +107,7 @@ class Post(base.base):
         Updates the success status of the post after a like/unlike attempt.
         """
         self.like_attempted = True
-        self.like_success =(success==True)
+        self.like_success =(success)
         if success:
             self._post["isFavorite"] = True
             self.is_actionable_like = False
@@ -117,7 +117,7 @@ class Post(base.base):
         Updates the success status of the post after a like/unlike attempt.
         """
         self.like_attempted = True
-        self.like_success = (success==True)
+        self.like_success = (success)
         if success:
             self._post["isFavorite"] = False
             self.is_actionable_like = False
@@ -267,7 +267,7 @@ class Post(base.base):
         return self._post.get("preview")
 
     @property
-    def media(self) -> list[Media]:
+    def media(self) -> list[Media.Media]:
         """Returns a list of all viewable media objects for this post."""
         if int(self.fromuser) != int(self.model_id):
             return []
@@ -277,7 +277,7 @@ class Post(base.base):
         return list(filter(lambda x: x.canview is True, media_items))
 
     @property
-    def all_media(self) -> list[Media]:
+    def all_media(self) -> list[Media.Media]:
         """Returns a list of all media objects for this post, regardless of view status."""
         return list(
             map(lambda x: Media.Media(x[1], x[0], self), enumerate(self.post_media))

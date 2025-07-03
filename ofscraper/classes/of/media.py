@@ -56,14 +56,14 @@ class Media(base.base):
     def mark_download_finished(self,success=True):
         """Marks a download as successful/failed."""
         self.download_attempted = True
-        self.download_succeeded =(success==True)
+        self.download_succeeded =(success)
         self.update_status()
 
     def update_status(self):
         self.media["download_status"] = "skipped"
-        if self.download_attempted == True and self.download_succeeded == False:
+        if self.download_attempted and not self.download_succeeded:
             self.media["download_status"] = "failed"
-        elif self.download_attempted == True and self.download_succeeded == True:
+        elif self.download_attempted and self.download_succeeded:
             self.media["download_status"] = "succeed"
 
     def add_filepath(self, path: Union[str | Path]):
