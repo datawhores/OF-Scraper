@@ -10,6 +10,20 @@ def load_general_paths_config():
     """
     config = {}
 
+    # SKIP_FILENAME_RETRIVAL: Flag to skip basefilename retrieval 
+    # during filename generation
+    # Default: False
+    config["SKIP_FILENAME_RETRIVAL"] = os.getenv(
+        "OFSC_SKIP_FILENAME_RETRIVAL", "False"
+    ).lower() in ("true", "1")
+
+    # SKIP_MEDIADIR_RETRIVAL: Flag to skip media directory retrieval d
+    # during filename generation
+    # Default: False
+    config["SKIP_MEDIADIR_RETRIVAL"] = os.getenv(
+        "OFSC_SKIP_MEDIADIR_RETRIVAL", "False"
+    ).lower() in ("true", "1")
+
     # --- General Paths Configuration ---
     # BATCH_TEMPFILE_CLEANUP: Flag to enable or disable cleanup of temporary files in batches.
     # Default: False

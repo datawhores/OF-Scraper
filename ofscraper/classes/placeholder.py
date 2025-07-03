@@ -239,6 +239,8 @@ class Placeholders(basePlaceholder):
 
     @basePlaceholder.async_wrapper
     async def getmediadir(self, root=None, create=True):
+        if of_env.getattr("SKIP_MEDIADIR_RETRIVAL"):
+            return None
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
@@ -259,6 +261,8 @@ class Placeholders(basePlaceholder):
 
     @basePlaceholder.async_wrapper
     async def createfilename(self):
+        if of_env.getattr("SKIP_FILENAME_RETRIVAL"):
+            return None
         ele = self._ele
         ext = self._ext
         username = ele.username
