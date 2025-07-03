@@ -265,6 +265,7 @@ class InputApp(App):
         self._set_downloaded()
         self._set_date_filter()
         self._set_download_type()
+        self._set_post_id()
         self._filter_runner()
 
     def set_filtered_rows(self):
@@ -359,6 +360,13 @@ class InputApp(App):
         if settings.get_settings().normal:
             self.query_one("#download_type").select_normal()
 
+    def _set_post_id(self):
+        if settings.get_settings().post_id:
+            self.query_one("#post_id").update_table_val(settings.get_settings().post_id)
+      
+    def _set_media_id(self):
+            if settings.get_settings().media_id:
+                self.query_one("#post_id").update_table_val(settings.get_settings().media_id)
     # download_filters
     def init_download_filter(self):
         self._set_download_size()
