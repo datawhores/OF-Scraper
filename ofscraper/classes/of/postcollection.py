@@ -253,11 +253,18 @@ class PostCollection:
         if model_id:
             self.model_id=model_id
 
+    def find_all_media_with_id(self,id):
+        found= list(filter(lambda x:x.id==id,self.all_media))
+        return found
+
     def times_media_id_found(self,id):
         return len(list(filter(lambda x:x.id==id,self.all_media)))
-    
+   
     def find_media_item(self,id):
-        found= list(filter(lambda x:x.id==id,self.all_media))
+        found= self.find_all_media_with_id(id)
         if len(found)>0:
             return found[0]
+    def posts_with_media_id(self,id):
+        found=self.find_all_media_with_id(id)
+        return list(set(map(lambda x:x.postid,found)))
 

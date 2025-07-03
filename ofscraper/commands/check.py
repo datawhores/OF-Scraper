@@ -717,7 +717,7 @@ async def row_gather(username, model_id):
                 "downloaded": (ele.id, ele.postid) in downloaded,
                 "unlocked": unlocked_helper(ele),
                 "download_type": download_type_helper(ele),
-                "other_posts_with_media": postcollection.times_media_id_found(ele.id),
+                "other_posts_with_media": postcollection.posts_with_media_id(ele.id),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,
                 "post_date": datehelper(ele.formatted_postdate),
