@@ -317,7 +317,7 @@ async def process_all_paid():
                 username=username,
             )
             await batch_mediainsert(
-                temp_postcollection.get_all_unique_media(),
+                temp_postcollection.all_unique_media,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -394,7 +394,7 @@ async def process_areas(ele, model_id, username, c=None):
         username = ele.name
         postcollection = await process_tasks(model_id, username, ele, c=c)
         await batch_mediainsert(
-            postcollection.get_all_unique_media(),
+            postcollection.all_unique_media,
             model_id=model_id,
             username=username,
             downloaded=False,

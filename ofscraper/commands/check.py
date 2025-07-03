@@ -7,6 +7,7 @@ import threading
 import time
 import traceback
 from collections import defaultdict
+from rich.text import Text
 
 import arrow
 
@@ -42,18 +43,20 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.main.close.final.final import final_action
 import ofscraper.main.manager as manager
-import ofscraper.filters.media.main as filters
 from ofscraper.commands.scraper.actions.download.download import process_dicts
-from rich.text import Text
 import ofscraper.main.manager as manager
+from ofscraper.classes.of.postcollection import PostCollection
 
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
 
-ROWS = []
+
 ALL_MEDIA = {}
+ROWS={}
 MEDIA_KEY = ["id", "postid", "username"]
+postcollection=PostCollection()
+
 
 
 def process_download_cart():
@@ -101,12 +104,11 @@ def process_item():
         return
     for count in range(0, 2):
         try:
-            username = row["username"]
             post_id = int(row["post_id"])
             media_id = int(row["media_id"])
-            media = ALL_MEDIA.get(
-                "_".join(map(lambda x: str(x), [media_id, post_id, username]))
-            )
+            username=postcollection.username
+            model_id=postcollection.model_id
+            media = postcollection.find_media_item(media_id)
             if not media:
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
@@ -147,7 +149,7 @@ def process_item():
                 )
                 raise E
             log.info("Download Failed Refreshing data")
-            data_refill(media_id, post_id, username, model_id)
+            data_refill(model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     if app.row_queue.empty():
@@ -172,7 +174,7 @@ def update_globals(model_id, username, post, media, values):
 
 
 @run
-async def data_refill(media_id, post_id, target_name, model_id):
+async def data_refill( model_id):
     if settings.get_settings().command == "msg_check":
         reset_message_set(model_id)
         retriver = message_check_retriver
@@ -187,8 +189,7 @@ async def data_refill(media_id, post_id, target_name, model_id):
     else:
         return
     async for username, model_id, final_post_array in retriver():
-        for x in await process_post_media(username, model_id, final_post_array):
-            ALL_MEDIA.update({"_".join([str(getattr(x, key)) for key in MEDIA_KEY]): x})
+        await process_post_media(username, model_id, final_post_array)
 
 
 def allow_check_dupes():
@@ -609,48 +610,21 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
-    media = await insert_media(username, model_id, posts_array)
-    media = filter_media(username, model_id, media)
-    new_media = {
-        "_".join([str(getattr(ele, key)) for key in MEDIA_KEY]): ele for ele in media
-    }
-    ALL_MEDIA.update(new_media)
-    return list(new_media.values())
+    postcollection.update_info(username=username,model_id=model_id)
+    postcollection.add_posts(posts_array,overwrite=True)
+    media=postcollection.all_unique_media
+    await insert_media(username, model_id, media)
+    return media
 
 
-async def insert_media(username, model_id, posts_array):
-    posts_array = list(
-        map(
-            lambda x: (
-                posts_.Post(x, model_id, username)
-                if not isinstance(x, posts_.Post)
-                else x
-            ),
-            posts_array,
-        )
-    )
-    seen = set()
-    unduped = [
-        post
-        for post in posts_array
-        if (post.id, post.username) not in seen
-        and not seen.add((post.id, post.username))
-    ]
-    media = []
-    [media.extend(ele.all_media) for ele in unduped]
-
+async def insert_media(username, model_id, media):
     await batch_mediainsert(
         media,
         model_id=model_id,
         username=username,
         downloaded=False,
     )
-    return media
 
-
-def filter_media(username, model_id, media):
-
-    return filters.filterCheckMode(media, username, model_id)
 
 
 @run
@@ -718,24 +692,10 @@ def datehelper(date):
     return date
 
 
-def times_helper(ele, mediadict):
-    matching = copy.copy(mediadict.get(ele.id, set()))
-    matching.discard(ele.postid)
-    return list(matching)
-
 
 def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
 
-
-def get_media_dict(downloaded):
-    mediadict = defaultdict(lambda: set())
-    [
-        mediadict[ele.id].add(ele.postid)
-        for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
-    ]
-    [mediadict[ele[0]].add(ele[1]) for ele in list(downloaded)]
-    return mediadict
 
 
 async def row_gather(username, model_id):
@@ -743,10 +703,10 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
-    media_dict = get_media_dict(downloaded)
+    media=postcollection.all_unique_media
     out = []
     for count, ele in enumerate(
-        sorted(ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True)
+        sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     ):
         out.append(
             {
@@ -757,7 +717,7 @@ async def row_gather(username, model_id):
                 "downloaded": (ele.id, ele.postid) in downloaded,
                 "unlocked": unlocked_helper(ele),
                 "download_type": download_type_helper(ele),
-                "other_posts_with_media": times_helper(ele, media_dict),
+                "other_posts_with_media": postcollection.times_media_id_found(ele.id),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,
                 "post_date": datehelper(ele.formatted_postdate),

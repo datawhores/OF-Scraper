@@ -41,6 +41,25 @@ class PostCollection:
         """
         return [media for post in self.posts for media in post.all_media]
 
+    @property
+    def all_unique_media(self) -> list:
+        """
+        Takes ALL media from the collection and applies a specific, short
+        sequence of download-related filters.
+
+        Returns:
+            list: A list of unique Media objects.
+        """
+        log.info("Filtering all media with specific download filter sequence...")
+
+        # Start with every piece of media in the collection
+        media_to_filter = self.all_media
+
+        # Apply the exact filter sequence you requested
+        filtered_media = helpers.dupefiltermedia(media_to_filter)
+        log.info(f"Returning {len(filtered_media)} items after specific filtering.")
+        return filtered_media
+    
     def get_media_by_types(self, mediatypes: list[str] or str) -> list:
         """
         Filters all media in the collection by one or more media types.
@@ -63,25 +82,8 @@ class PostCollection:
         # Return a new list containing only media of the matching types
         return [media for media in all_media if media.mediatype.lower() in target_types]
 
-    def get_all_unique_media(self) -> list:
-        """
-        Takes ALL media from the collection and applies a specific, short
-        sequence of download-related filters.
 
-        Returns:
-            list: A list of unique Media objects.
-        """
-        log.info("Filtering all media with specific download filter sequence...")
-
-        # Start with every piece of media in the collection
-        media_to_filter = self.all_media
-
-        # Apply the exact filter sequence you requested
-        filtered_media = helpers.dupefiltermedia(media_to_filter)
-        log.info(f"Returning {len(filtered_media)} items after specific filtering.")
-        return filtered_media
-
-    def add_posts(self, posts_or_data_list: list, actions: list[str] = None):
+    def add_posts(self, posts_or_data_list: list, actions: list[str] = None,overwrite=False):
         """
         Adds a list of items to the collection, handling both raw dictionaries
         and existing Post objects, while ignoring any duplicates. It marks posts
@@ -105,7 +107,7 @@ class PostCollection:
                 log.warning(f"Skipping an item because it's missing an 'id': {item}")
                 continue
 
-            if post_id not in self._posts_map:
+            if post_id not in self._posts_map or overwrite:
                 post_object = post_object or Post(
                     item, self.model_id, self.username, mode=self.mode
                 )
@@ -245,3 +247,17 @@ class PostCollection:
             f"Found {len(posts_for_text)} posts for text download after final filtering."
         )
         return posts_for_text
+    def update_info(self,username:str=None,model_id:str=None):
+        if username:
+            self.username=username
+        if model_id:
+            self.model_id=model_id
+
+    def times_media_id_found(self,id):
+        return len(list(filter(lambda x:x.id==id,self.all_media)))
+    
+    def find_media_item(self,id):
+        found= list(filter(lambda x:x.id==id,self.all_media))
+        if len(found)>0:
+            return found[0]
+
