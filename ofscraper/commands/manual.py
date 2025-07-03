@@ -82,7 +82,7 @@ def manual_download(urls=None):
                 results.append(result)
                 manager.Manager.model_manager.mark_as_processed(username)
 
-        final_action(results)
+        final(results)
 
     except Exception as e:
         log.traceback_(e)
@@ -90,7 +90,7 @@ def manual_download(urls=None):
         raise e
 
 
-def final_action(results):
+def final(results):
     normal_data = ["Manual Mode Results"]
     normal_data.extend(results)
     final_action(
