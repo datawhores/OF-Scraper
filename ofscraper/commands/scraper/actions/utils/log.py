@@ -11,7 +11,7 @@ import ofscraper.utils.settings as settings
 def get_medialog(ele):
     if not ele:
         return ""
-    return f"PID: {os.getpid()} Media:{ele.id} Post:{ele.postid}"
+    return f"PID: {os.getpid()} Media:{ele.id} Post:{ele.post_id}"
 
 
 def path_to_file_logger(placeholderObj, ele, innerlog=None):

@@ -714,7 +714,7 @@ async def row_gather(username, model_id):
                 "number": count + 1,
                 "download_cart": checkmarkhelper(ele),
                 "username": username,
-                "downloaded": (ele.id, ele.postid) in downloaded,
+                "downloaded": (ele.id, ele.post_id) in downloaded,
                 "unlocked": unlocked_helper(ele),
                 "download_type": download_type_helper(ele),
                 "other_posts_with_media": postcollection.posts_with_media_id(ele.id),
@@ -727,7 +727,7 @@ async def row_gather(username, model_id):
                 "price": (
                     "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price)
                 ),
-                "post_id": ele.postid,
+                "post_id": ele.post_id,
                 "media_id": ele.id,
                 "text": ele.post.db_sanitized_text,
             }

@@ -222,7 +222,7 @@ def get_all_media(posts_id, model_id, value, responsetype=None):
     media = list(
         filter(
             lambda x: isinstance(x, media_.Media)
-            and (str(x.id) == str(posts_id) or str(x.postid) == str(posts_id)),
+            and (str(x.id) == str(posts_id) or str(x.post_id) == str(posts_id)),
             media,
         )
     )
@@ -249,7 +249,7 @@ async def paid_failback(post_id, model_id, username):
         return list(
             filter(
                 lambda x: isinstance(x, media_.Media)
-                and (str(x.id) == post_id or str(x.postid) == post_id),
+                and (str(x.id) == post_id or str(x.post_id) == post_id),
                 output,
             )
         )

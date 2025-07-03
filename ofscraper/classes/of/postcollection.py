@@ -266,5 +266,5 @@ class PostCollection:
             return found[0]
     def posts_with_media_id(self,id):
         found=self.find_all_media_with_id(id)
-        return list(set(map(lambda x:x.postid,found)))
+        return list(set(map(lambda x:x.post_id,found)))
 

@@ -23,9 +23,9 @@ import ofscraper.utils.hash as hash
 
 
 async def set_profile_cache_helper(ele):
-    if ele.postid and ele.responsetype == "profile":
+    if ele.post_id and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.set, ele.postid, True)
+            common_globals.thread, partial(cache.set, ele.post_id, True)
         )
 
 

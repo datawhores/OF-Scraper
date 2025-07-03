@@ -26,7 +26,7 @@ def dupefilter(media):
     ids = set()
     output = []
     for item in media:
-        id_pair = (item.id, item.postid) if hasattr(item, "postid") else (item.id, None)
+        id_pair = (item.id, item.post_id) if hasattr(item, "postid") else (item.id, None)
         if not id_pair or id_pair not in ids:
             ids.add(id_pair)
             output.append(item)
@@ -38,8 +38,8 @@ def dupefiltermedia(media):
     output = defaultdict(lambda: None)
     if of_env.getattr("ALLOW_DUPE_MEDIA"):
         for item in media:
-            if not output[(item.id, item.postid)]:
-                output[(item.id, item.postid)] = item
+            if not output[(item.id, item.post_id)]:
+                output[(item.id, item.post_id)] = item
     else:
         for item in media:
             if not output[item.id]:
@@ -202,7 +202,7 @@ def post_id_filter(media):
     if not bool(settings.get_settings().post_id):
         return media
     wanted = set([str(x) for x in settings.get_settings().post_id])
-    return list(filter(lambda x: str(x.postid) in wanted, media))
+    return list(filter(lambda x: str(x.post_id) in wanted, media))
 
 
 # post filters

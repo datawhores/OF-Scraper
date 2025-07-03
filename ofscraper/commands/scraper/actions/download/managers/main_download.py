@@ -83,7 +83,7 @@ class MainDownloadManager(DownloadManager):
     async def _main_download_downloader(self, c, ele):
         self._downloadspace()
         tempholderObj = await placeholder.tempFilePlaceholder(
-            ele, f"{ele.filename}_{ele.id}_{ele.postid}.part"
+            ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
         ).init()
         async for _ in download_retry():
             with _:

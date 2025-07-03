@@ -25,7 +25,7 @@ async def textDownloader(objectdicts, username=None):
         log.info("Downloading Text Files")
         data = (
             {
-                e.postid if isinstance(e, media_class.Media) else e.id: e
+                e.post_id if isinstance(e, media_class.Media) else e.id: e
                 for e in objectdicts
             }
         ).values()

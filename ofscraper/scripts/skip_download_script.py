@@ -30,13 +30,13 @@ def skip_download_script(total, ele):
         processed_post = ele.post.post
 
         log.debug(
-            f"Running download skip script for {ele.username} (media_id: {ele.id}, post_id: {ele.postid})"
+            f"Running download skip script for {ele.username} (media_id: {ele.id}, post_id: {ele.post_id})"
         )
 
         master_dump_payload = {
             "username": ele.username,
             "model_id": ele.model_id,
-            "post_id": ele.postid,
+            "post_id": ele.post_id,
             "media_id": ele.id,
             "media": processed_media,
             "post": processed_post,

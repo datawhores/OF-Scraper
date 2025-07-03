@@ -220,7 +220,7 @@ class Media(base.base):
         return None
 
     @property
-    def postid(self):
+    def post_id(self):
         return self._post.id
 
     @property
@@ -448,7 +448,7 @@ class Media(base.base):
         responsetype = self.post.responsetype
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
-        return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.postid)
+        return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.post_id)
 
     @property
     def mass(self):
@@ -554,7 +554,7 @@ class Media(base.base):
                     "origname": origname,
                     "pssh": kId,
                     "type": "video",
-                    "name": f"tempvid_{self.id}_{self.postid}",
+                    "name": f"tempvid_{self.id}_{self.post_id}",
                     "ext": "mp4",
                 }
 
@@ -580,7 +580,7 @@ class Media(base.base):
                     "origname": origname,
                     "pssh": kId,
                     "type": "audio",
-                    "name": f"tempaudio_{self.id}_{self.postid}",
+                    "name": f"tempaudio_{self.id}_{self.post_id}",
                     "ext": "mp4",
                 }
 

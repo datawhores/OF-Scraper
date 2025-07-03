@@ -36,7 +36,7 @@ def naming_script(dir, file, ele):
             "metadata": config_data.get_metadata(),
             "username": ele.username,
             "model_id": ele.model_id,
-            "post_id": ele.postid,
+            "post_id": ele.post_id,
             "media_id": ele.id,
             "media_type": ele.mediatype.capitalize(),
             "value": ele.value.capitalize(),

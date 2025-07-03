@@ -213,7 +213,7 @@ class Placeholders(basePlaceholder):
     async def add_main_variables(self, ele, username, model_id):
         self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
-        self._variables.update({"post_id": ele.postid})
+        self._variables.update({"post_id": ele.post_id})
         self._variables.update({"media_id": ele.id})
         self._variables.update({"first_letter": username[0].capitalize()})
         self._variables.update({"media_type": ele.mediatype.capitalize()})

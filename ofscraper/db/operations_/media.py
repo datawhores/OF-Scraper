@@ -418,7 +418,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
             map(
                 lambda media: [
                     media.id,
-                    media.postid,
+                    media.post_id,
                     media.link,
                     media.responsetype.capitalize(),
                     media.mediatype.capitalize(),
@@ -446,7 +446,7 @@ def update_media_table_via_api_batch(
             map(
                 lambda media: [
                     media.id,
-                    media.postid,
+                    media.post_id,
                     media.link,
                     media.linked,
                     media.responsetype.capitalize(),
@@ -459,7 +459,7 @@ def update_media_table_via_api_batch(
                     media.canview,
                     media.id,
                     model_id,
-                    media.postid,
+                    media.post_id,
                 ],
                 medias,
             )
@@ -662,7 +662,7 @@ def update_media_table_via_api_helper(
 
     insertData = [
         media.id,
-        media.postid,
+        media.post_id,
         media.link,
         media.linked,
         media.responsetype.capitalize(),
@@ -675,7 +675,7 @@ def update_media_table_via_api_helper(
         media.canview,
         media.id,
         model_id,
-        media.postid,
+        media.post_id,
     ]
     curr.execute(mediaUpdateAPI, insertData)
     conn.commit()
@@ -737,14 +737,14 @@ async def batch_mediainsert(media, **kwargs):
     curr = set(get_media_post_ids(**kwargs) or [])
     mediaDict = {}
     for ele in media:
-        mediaDict[(ele.id, ele.postid)] = ele
+        mediaDict[(ele.id, ele.post_id)] = ele
     write_media_table_via_api_batch(
-        list(filter(lambda x: (x.id, x.postid) not in curr, mediaDict.values())),
+        list(filter(lambda x: (x.id, x.post_id) not in curr, mediaDict.values())),
         **kwargs,
     )
 
     update_media_table_via_api_batch(
-        list(filter(lambda x: (x.id, x.postid) in curr, mediaDict.values())), **kwargs
+        list(filter(lambda x: (x.id, x.post_id) in curr, mediaDict.values())), **kwargs
     )
 
 
