@@ -272,7 +272,6 @@ class InputApp(App):
 
     def _filter_runner(self):
         with mutex:
-            filter_rows = None
             key_order = [
                 str(x.value)
                 for x in self.query_one("#data_table_hidden")._row_locations
