@@ -10,6 +10,8 @@ import aiofiles
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+from ofscraper.scripts.after_download_script import after_download_script
+
 
 
 async def get_text(values):
@@ -46,6 +48,8 @@ async def get_text_process(ele, dupe=None):
         )
         async with aiofiles.open(placeholderObj.filepath, "w") as p:
             await p.writelines(wrapped_text)
+        after_download_script(placeholderObj.filepath)
+
         return True
     except Exception as E:
         log.traceback_(f"{E}")
