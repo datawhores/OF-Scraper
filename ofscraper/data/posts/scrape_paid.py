@@ -14,7 +14,6 @@ from ofscraper.commands.utils.strings import (
     all_paid_progress_download_str,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 

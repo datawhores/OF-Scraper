@@ -27,7 +27,6 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.scraper.actions.download.run import consumer
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
-from ofscraper.utils.args.accessors.areas import get_download_area
 import ofscraper.utils.settings as settings
 import ofscraper.main.manager as manager
 
