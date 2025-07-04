@@ -21,7 +21,7 @@ class Post(base.base):
     ):
         super().__init__()
         self._post = post
-        self._model_id = int(model_id)
+        self._model_id = int(model_id) if model_id else None
         self._username = username
         self._responsetype = responsetype
         self._label = label

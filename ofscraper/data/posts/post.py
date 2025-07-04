@@ -530,7 +530,7 @@ async def process_tasks(model_id, username, ele, c=None):
                 actions_for_this_batch.append("like")
             if area_title in download_area:
                 actions_for_this_batch.append("download")
-            if area_title in text_area:
+            if settings.get_settings().text:
                 actions_for_this_batch.append("text")
 
             if actions_for_this_batch:
