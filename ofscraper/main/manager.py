@@ -12,7 +12,8 @@ import ofscraper.commands.scraper.scraper as actions
 import ofscraper.commands.manual as manual
 import ofscraper.commands.check as check
 import ofscraper.utils.settings as settings
-
+import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
+import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 
 Manager = None
 
@@ -89,49 +90,41 @@ class mainManager:
 
     @contextmanager
     def get_session(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 
         with sessionManager.sessionManager(*args, **kwargs) as c:
             yield c
 
     @contextmanager
     def get_ofsession(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
         with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
             yield c
 
     @asynccontextmanager
     async def aget_ofsession(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
         async with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
             yield c
 
     @asynccontextmanager
     async def get_download_session(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
         async with OFsessionManager.download_session(*args, **kwargs) as c:
             yield c
 
     @asynccontextmanager
     async def get_cdm_session_manual(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
         async with OFsessionManager.cdm_session_manual(*args, **kwargs) as c:
             yield c
 
     @asynccontextmanager
     async def get_cdm_session(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
 
         async with OFsessionManager.cdm_session(*args, **kwargs) as c:
             yield c
 
     @contextmanager
     def get_like_session(self, *args, **kwargs):
-        import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
-
         with OFsessionManager.like_session(*args, **kwargs) as c:
             yield c
