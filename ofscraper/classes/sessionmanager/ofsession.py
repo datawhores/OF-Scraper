@@ -174,7 +174,7 @@ class download_session(sessionManager):
             log=log,
             read_timeout=read_timeout,
             rate_limit_sleeper=rate_limit_sleeper,
-            forbidden_sleeper=forbidden_sleeper
+            forbidden_sleeper=forbidden_sleeper,
             **kwargs,
         )
 
@@ -231,7 +231,7 @@ class metadata_session(download_session):
         super().__init__(
             sem_count=sem_count,
             rate_limit_sleeper=rate_limit_sleeper,
-            forbidden_sleeper=forbidden_sleeper
+            forbidden_sleeper=forbidden_sleeper,
             **kwargs,
         )
 

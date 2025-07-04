@@ -1,9 +1,8 @@
 import asyncio
 import logging
 
-from filelock import FileLock
-
 import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+from ofscraper.classes.sessionmanager.sleepers import discord_forbidden_session_sleeper,discord_rate_limit_session_sleeper
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.dates as dates_manager
@@ -14,17 +13,19 @@ class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
 
-        self.asess = sessionManager.sessionManager(
-            total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
-            retries=of_env.getattr("DISCORD_NUM_TRIES"),
-            wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
-            wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
-        )
+        # self.asess = sessionManager.sessionManager(
+        #     total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
+        #     retries=of_env.getattr("DISCORD_NUM_TRIES"),
+        #     wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
+        #     wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
+        # )
         self.sess = sessionManager.sessionManager(
             total_timeout=of_env.getattr("DISCORD_TOTAL_TIMEOUT"),
             retries=of_env.getattr("DISCORD_NUM_TRIES"),
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
             wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
+            forbidden_sleeper=discord_forbidden_session_sleeper,
+            rate_limit_sleeper=discord_rate_limit_session_sleeper
         )
         # self.asess._set_session(async_=True)
         self.sess._set_session(async_=False)

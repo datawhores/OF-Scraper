@@ -111,3 +111,24 @@ metadata_forbidden_session_sleeper = SessionSleep(
     increase_factor=env.getattr("METADATA_SESSION_403_SLEEP_INCREASE_FACTOR"),
     error_name="METADATA_SESSION_403",
 )
+discord_rate_limit_session_sleeper = SessionSleep(
+    sleep=env.getattr("DISCORD_SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("DISCORD_SESSION_MIN_SLEEP"),
+    difmin=env.getattr("DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("DISCORD_SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("DISCORD_SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("DISCORD_SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("DISCORD_SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="DISCORD_SESSION_RATE_LIMIT",
+)
+
+discord_forbidden_session_sleeper = SessionSleep(
+    sleep=env.getattr("DISCORD_SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("DISCORD_SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("DISCORD_SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("DISCORD_SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="DISCORD_SESSION_403",
+)

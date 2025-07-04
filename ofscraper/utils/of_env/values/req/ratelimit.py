@@ -226,6 +226,51 @@ def load_ratelimit_config():
     )
     config['METADATA_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_METADATA_SESSION_403_MIN_SLEEP', '2'))
 
+
+
+    # --- Dynamic Session Sleep Configuration (For Discord: 429/504 Rate Limiting) ---
+    config["DISCORD_SESSION_SLEEP_INIT"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_INIT", "5")
+    )
+    config["DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF", "30")
+    )
+    config["DISCORD_SESSION_SLEEP_MAX"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_MAX", "60")
+    )
+    config["DISCORD_SESSION_SLEEP_INCREASE_FACTOR"] = float(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_INCREASE_FACTOR", "2.0")
+    )
+    config["DISCORD_SESSION_SLEEP_DECAY_THRESHOLD"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_DECAY_THRESHOLD", "120")
+    )
+    config["DISCORD_SESSION_SLEEP_DECAY_FACTOR"] = float(
+        os.getenv("OFSC_DISCORD_SESSION_SLEEP_DECAY_FACTOR", "1.5")
+    )
+    config['DISCORD_SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_DISCORD_SESSION_MIN_SLEEP', '2'))
+
+
+    # --- Dynamic Session Sleep Configuration (For Discord: 403 Forbidden Errors) ---
+    config["DISCORD_SESSION_403_SLEEP_INIT"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_INIT", "4")
+    )
+    config["DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF", "30")
+    )
+    config["DISCORD_SESSION_403_SLEEP_MAX"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_MAX", "300")
+    )
+    config["DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR"] = float(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR", "4")
+    )
+    config["DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD"] = int(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD", "60")
+    )
+    config["DISCORD_SESSION_403_SLEEP_DECAY_FACTOR"] = float(
+        os.getenv("OFSC_DISCORD_SESSION_403_SLEEP_DECAY_FACTOR", "1.5")
+    )
+    config['DISCORD_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_DISCORD_SESSION_403_MIN_SLEEP', '30'))
+
     # --- Miscellaneous ---
     # AUTH_WARNING_TIMEOUT: Time to wait between printing auth warnings (seconds).)
     config["AUTH_WARNING_TIMEOUT"] = float(
