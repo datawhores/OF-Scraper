@@ -242,7 +242,7 @@ def set_user_data(url_dicts):
             manager.Manager.model_manager.add_model(url_dict["collection"].username)
 
 def allow_manual_dupes():
-    """Forces settings to allow duplicate downloads for manual mode."""
+    """Forces settings to allow debug duplicate downloads for manual mode."""
     args = settings.get_args()
     args.force_all = True
     settings.update_args(args)

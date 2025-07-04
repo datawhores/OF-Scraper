@@ -102,5 +102,4 @@ async def process_user(value, length):
             username, model_id, medias, posts=posts
         )
     progress_updater.increment_activity_count(total=length)
-    after_download_action_script(value, medias, posts)
     return data

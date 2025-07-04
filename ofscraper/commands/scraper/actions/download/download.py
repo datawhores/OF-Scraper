@@ -76,8 +76,6 @@ async def process_dicts(username, model_id, medialist, posts):
     # 3. Consolidate all "skip download" conditions
     if  settings.get_settings().text_only:
         return log_text_array,(0, 0, 0, 0, 0)
-    # 4. Consolidate early exit conditions for no media or no download area
-    download_area_empty = len(get_download_area()) == 0
     medialist_empty = len(medialist) == 0
 
     if  medialist_empty:
