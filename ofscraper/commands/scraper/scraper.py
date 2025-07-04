@@ -138,7 +138,6 @@ class scraperManager(commmandManager):
                         username=username,
                     )
                 )
-            manager.Manager.model_manager.mark_as_processed(username)
         return out
 
     @exit.exit_wrapper

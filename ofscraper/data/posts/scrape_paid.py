@@ -94,11 +94,13 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
+    manager.Manager.model_manager.add_model(username)
     if settings.get_settings().command == "metadata":
         data = await metadata.metadata_process(username, model_id, medias, posts=posts)
     else:
         data, _ = await download.download_process(
             username, model_id, medias, posts=posts
         )
+    manager.Manager.model_manager.mark_as_scrape_paid_processed(username)
     progress_updater.increment_activity_count(total=length)
     return data

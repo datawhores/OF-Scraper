@@ -51,6 +51,12 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
 
 @run_async
 async def download_process(username, model_id, medialist, posts):
+    """
+    Runs after download script for
+    - manual mode
+    - scrape_paid
+    - regular download
+    """
     data, values = await process_dicts(username, model_id, medialist, posts)
     after_download_action_script(username, medialist,posts=posts)
     return data, values

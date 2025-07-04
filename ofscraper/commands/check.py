@@ -64,6 +64,7 @@ def process_download_cart():
             if app.row_queue.empty():
                 continue
             cart_user_dict=defaultdict(dict)
+            all_results=[]
             while not app.row_queue.empty():
                 try:
                     process_item(cart_user_dict)
@@ -73,12 +74,13 @@ def process_download_cart():
             for value in cart_user_dict.values():
                 collection=value["collection"]
                 results=value["results"]
+                all_results.append(results)
                 collection: PostCollection
                 username=collection.username
                 media=collection.all_unique_media
                 posts=collection.posts
                 after_download_action_script(username,media,posts)
-                final_action(normal_data=results)
+            final_action(normal_data=all_results)
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")

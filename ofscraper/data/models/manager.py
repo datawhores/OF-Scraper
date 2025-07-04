@@ -32,6 +32,8 @@ class ModelManager:
         self._parsed_subs_dict: Dict[str, Model] = {}
         self._seen_users: Set[str] = set()
         self._processed_usernames: Set[str] = set()
+        self._scrape_paid_processed_usernames: Set[str] = set()
+        
         self._last_fetched=None
         
 
@@ -357,6 +359,13 @@ class ModelManager:
                 f"Attempted to mark non-selected user '{username}' as processed."
             )
 
+    def mark_as_scrape_paid_processed(self, username: str) -> None:
+        if username in self._parsed_subs_dict:
+            self._scrape_paid_processed_usernames.add(username)
+        else:
+            logging.warning(
+                f"Attempted to mark non-selected user '{username}' as scrape paid processed."
+            )
     def is_processed(self, username: str) -> bool:
         return username in self._processed_usernames
 
@@ -373,9 +382,23 @@ class ModelManager:
         }
 
     @property
+    def scrape_paid_processed_dict(self) -> Dict[str, Model]:
+        return {
+            username: self._parsed_subs_dict[username]
+            for username in self._scrape_paid_processed_usernames
+            if username in self._parsed_subs_dict
+        }
+    @property
     def unprocessed_dict(self) -> Dict[str, Model]:
         return {
             username: model
             for username, model in self._parsed_subs_dict.items()
             if username not in self._processed_usernames
+        }    @property
+    @property
+    def scrape_paid_unprocessed_dict(self) -> Dict[str, Model]:
+        return {
+            username: model
+            for username, model in self._parsed_subs_dict.items()
+            if username not in self._scrape_paid_processed_usernames
         }
