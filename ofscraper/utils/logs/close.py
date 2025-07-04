@@ -25,15 +25,11 @@ def forcedClose():
     log_globals.main_event.set()
     log_globals.other_event.set()
     log_globals.flush_event.set()
-    # closeOther()
-    # closeMain()
     closeQueue()
 
 
 def daemonClose():
     sendCloseMessage()
-    # closeOther()
-    # closeMain()
     clearHandlers()
 
 
