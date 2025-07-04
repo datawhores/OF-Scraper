@@ -188,7 +188,7 @@ class Media(base.base):
 
     @property
     def modified_responsetype(self):
-        return self._post.modified_response_helper() or self._post.modified_responsetype
+        return  self._post.modified_responsetype
 
     @property
     def responsetype(self):

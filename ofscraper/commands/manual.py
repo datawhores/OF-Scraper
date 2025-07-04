@@ -22,9 +22,9 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.main.close.final.final import final_action
-from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
+from ofscraper.classes.of.postcollection import PostCollection
 
 
 def manual_download(urls=None):
@@ -41,13 +41,13 @@ def manual_download(urls=None):
             )
             all_media = [
                 item
-                for media_list in url_dicts.values()
-                for item in media_list.get("media_list", [])
+                for url_dict in url_dicts.values()
+                for item in url_dict["collection"].all_unique_media
             ]
             all_posts = [
                 item
-                for post_list in url_dicts.values()
-                for item in post_list.get("post_list", [])
+                for url_dict in url_dicts.values()
+                for item in url_dict["collection"].posts
             ]
             log.debug(f"Number of values from media dict  {len(all_media)}")
             log.debug(f"Number of values from post dict  {len(all_posts)}")
@@ -58,10 +58,11 @@ def manual_download(urls=None):
         results = []
         for _, value in url_dicts.items():
             with progress_utils.setup_activity_progress_live():
-                model_id = value.get("model_id")
-                username = value.get("username")
-                medialist = value.get("media_list")
-                posts = value.get("post_list", [])
+                collection=value["collection"]
+                model_id = collection.model_id
+                username = collection.username
+                medialist = collection.all_unique_media
+                posts = collection.posts
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
@@ -71,14 +72,11 @@ def manual_download(urls=None):
                     posts, model_id=model_id, username=username
                 )
                 batch_mediainsert(
-                    value.get("media_list"), username=username, model_id=model_id
+                    medialist, username=username, model_id=model_id
                 )
-                if settings.get_settings().text_only:
-                    result = textDownloader(posts, username)
-                else:
-                    result, _ = download.download_process(
-                        username, model_id, medialist, posts=None
-                    )
+                result, _ = download.download_process(
+                        username, model_id, medialist, posts=posts
+                )
                 results.append(result)
                 manager.Manager.model_manager.mark_as_processed(username)
 
@@ -108,7 +106,7 @@ def allow_manual_dupes():
 
 def set_user_data(url_dicts):
     manager.Manager.model_manager.add_model(
-        [nested_dict.get("username") for nested_dict in url_dicts.values()]
+        [url_dict["collection"].username for url_dict in url_dicts.values()]
     )
 
 
@@ -126,76 +124,27 @@ def process_urls(urls):
             user_data = profile.scrape_profile(model)
             model_id = user_data.get("id")
             username = user_data.get("username")
-            out_dict.setdefault(model_id, {})["model_id"] = model_id
-            out_dict.setdefault(model_id, {})["username"] = username
-            out_dict.setdefault(model_id, {})["user_data"] = user_data
-
+            out_dict.setdefault(model_id, {})["collection"] = PostCollection(model_id=model_id,username=username)
+     
+    
             if type == "post":
                 value = get_individual_timeline_post(postid)
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value)
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value)
-                )
+                out_dict[model_id]["collection"].add_posts(value)
             elif type == "msg":
                 value = messages_.get_individual_messages_post(model_id, postid)
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value)
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value)
-                )
+                out_dict[model_id]["collection"].add_posts(value)
             elif type == "msg2":
                 value = messages_.get_individual_messages_post(model_id, postid)
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value)
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value)
-                )
+                out_dict[model_id]["collection"].add_posts(value)
             elif type == "unknown":
                 value = unknown_type_helper(postid) or {}
-                model_id = value.get("author", {}).get("id")
-                if not model_id:
-                    continue
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value)
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value)
-                )
+                out_dict[model_id]["collection"].add_posts(value)
             elif type == "highlights":
                 value = highlights_.get_individual_highlights(postid) or {}
-                model_id = value.get("userId")
-                if not model_id:
-                    continue
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value, responsetype="highlights")
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value, responsetype="highlights")
-                )
+                out_dict[model_id]["collection"].add_posts(value)
                 # special case
             elif type == "stories":
-                value = highlights_.get_individual_stories(postid) or {}
-                model_id = value.get("userId")
-                if not model_id:
-                    continue
-                out_dict.setdefault(model_id, {})["model_id"] = model_id
-                out_dict.setdefault(model_id, {})["username"] = username
-                out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
-                    get_all_media(postid, model_id, value, responsetype="stories")
-                )
-                out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    get_post_item(model_id, value, responsetype="stories")
-                )
+                 out_dict[model_id]["collection"].add_posts(value)
     return out_dict
 
 

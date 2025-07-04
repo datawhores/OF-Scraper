@@ -72,8 +72,6 @@ def set_post_area(action=None):
     action = action or args.action or {}
     if "download" not in action:
         return
-    if areas.get_text_area():
-        return
     elif settings.get_settings().command == "metadata":
         return
     elif len(areas.get_download_area()) > 0:
@@ -93,9 +91,7 @@ def set_download_area(action=None):
     selected = None
     not_anon_safe = ["Messages", "Purchases", "Highlights", "Stories"]
     selected = areas.get_download_area()
-    if areas.get_text_area():
-        pass
-    elif settings.get_settings().command == "metadata":
+    if settings.get_settings().command == "metadata":
         if args.anon and all([ele in not_anon_safe for ele in selected]):
             selected = prompts.metadata_anon_areas_prompt()
         elif not args.anon and len(selected) == 0:

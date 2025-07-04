@@ -290,8 +290,8 @@ class Post(base.base):
     @property
     def mass(self):
         return self._post.get("isFromQueue")
-
-    def modified_response_helper(self):
+    @property
+    def modified_responsetype(self):
         if self.archived:
             if not bool(data.get_archived_responsetype()):
                 return "Archived"

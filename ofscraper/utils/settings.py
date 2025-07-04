@@ -8,7 +8,6 @@ import ofscraper.utils.args.mutators.write as write_args
 from ofscraper.utils.args.mutators.user import resetUserFilters as resetUserFiltersArgs,resetUserSelect as resetUserSelectArg
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
-from ofscraper.utils.args.accessors.areas import get_text_area
 from ofscraper.utils.of_env.load import load_env_files
 
 
@@ -168,15 +167,11 @@ def merged_settings():
     merged.logs_expire_time = config_data.get_logs_expire()
     merged.ssl_verify = config_data.get_ssl_verify()
     merged.env_files=get_env_files()
+    merged.text=read_args.retriveArgs().text or read_args.retriveArgs().text_only
+    merged.text_only=read_args.retriveArgs().text_only
     return merged
 
 
-def get_download_text():
-    return (
-        get_text_area()
-        or read_args.retriveArgs().text
-        or read_args.retriveArgs().text_only
-    )
 
 
 def get_ffmpeg():

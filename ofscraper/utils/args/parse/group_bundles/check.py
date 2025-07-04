@@ -1,4 +1,6 @@
 import cloup as click
+from cloup import argument, command, constraint, option
+from cloup.constraints import If, RequireExactly, mutually_exclusive
 import functools
 from ofscraper.utils.args.parse.arguments.check import (
     force,
@@ -39,6 +41,7 @@ def main_check(func):
     @force
     @text_option
     @text_only_option
+    @constraint(mutually_exclusive, ['text', 'text_only'])
     @functools.wraps(func)
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):

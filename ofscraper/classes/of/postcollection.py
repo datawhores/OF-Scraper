@@ -2,6 +2,8 @@ import logging
 import ofscraper.filters.media.filters as helpers
 import ofscraper.utils.settings as settings
 from ofscraper.classes.of.posts import Post
+from ofscraper.classes.of.media import Media
+
 
 log = logging.getLogger("shared")
 
@@ -97,6 +99,8 @@ class PostCollection:
         actions = actions or []
         if not posts_or_data_list:
             return
+        if not isinstance(posts_or_data_list,list):
+            posts_or_data_list=[posts_or_data_list]
 
         new_posts_added = 0
         for item in posts_or_data_list:
@@ -127,7 +131,29 @@ class PostCollection:
 
         if new_posts_added > 0:
             log.info(f"Added {new_posts_added} new, unique posts to the collection.")
+    def add_items(self, items: list, actions: list[str] = None):
+        """
+        Accepts a list containing either Post or Media objects and adds the
+        associated post data to the collection.
+        """
+        if not isinstance(items, list):
+            items = [items]
 
+        posts_to_add = []
+        for item in items:
+            if isinstance(item, Media):
+                posts_to_add.append(item.post)
+            elif isinstance(item, Post):
+                posts_to_add.append(item)
+            else:
+                log.warning(f"Skipping item of invalid type: {type(item)}")
+                continue
+        # Call add_posts once with the curated list of posts
+        if posts_to_add:
+            self.add_posts(posts_to_add, actions=actions)
+
+    
+    
     def _get_prepared_media_from_candidates(self) -> list:
         """
         Private helper to get download candidates, run per-post filtering,
@@ -227,9 +253,8 @@ class PostCollection:
         """
         if "download" not in settings.get_settings().action:
             return []
-        if not settings.get_download_text():
+        if not settings.get_settings().text:
             return []
-
         text_candidates = [post for post in self.posts if post.is_text_candidate]
         log.info(
             f"Found {len(text_candidates)} posts in areas eligible for text download."

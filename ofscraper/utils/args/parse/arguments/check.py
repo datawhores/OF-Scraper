@@ -89,7 +89,7 @@ text_option = click.option(
     "-tn",
     "--text",
     "--download-text",
-    "text_only",
+    "text",
     help="""
     Download Text files in addition to media
     """,

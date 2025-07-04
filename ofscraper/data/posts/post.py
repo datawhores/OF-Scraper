@@ -44,7 +44,6 @@ from ofscraper.utils.args.accessors.areas import (
     get_download_area,
     get_final_posts_area,
     get_like_area,
-    get_text_area,
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.settings as settings
@@ -279,8 +278,6 @@ async def process_all_paid():
             description="Processsing Paid content data"
         )
         actions = ["download"]
-        if get_text_area():
-            actions.append("text")
         for model_id, value in paid_content.items():
             progress_updater.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
@@ -426,7 +423,6 @@ async def process_tasks(model_id, username, ele, c=None):
 
     like_area = get_like_area()
     download_area = get_download_area()
-    text_area = get_text_area()
     final_post_areas = get_final_posts_area()
     max_count = max(
         min(

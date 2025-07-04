@@ -7,6 +7,9 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
+from ofscraper.classes.of.posts import Post
+from ofscraper.classes.of.media import Media
+
 
 
 def naming_script(dir, file, ele):
@@ -23,12 +26,7 @@ def naming_script(dir, file, ele):
     log.debug(f"Attempting to run naming script: {script_path}")
 
     try:
-        media_payload = ele.media
-        post_payload = ele.post.post
-
         payload_data = {
-            "media": media_payload,
-            "post": post_payload,
             "dir": str(dir),
             "file": str(file),
             "dir_format": config_data.get_dirformat(),
@@ -36,15 +34,35 @@ def naming_script(dir, file, ele):
             "metadata": config_data.get_metadata(),
             "username": ele.username,
             "model_id": ele.model_id,
-            "post_id": ele.post_id,
-            "media_id": ele.id,
-            "media_type": ele.mediatype.capitalize(),
             "value": ele.value.capitalize(),
-            "date": arrow.get(ele.postdate).format(config_data.get_date()),
             "response_type": ele.modified_responsetype,
             "label": ele.label_string,
-            "download_type": ele.downloadtype,
         }
+
+        if isinstance(ele, Media):
+            payload_data.update({
+                "media": ele.media,
+                "post": ele.post.post,
+                "post_id": ele.post_id,
+                "media_id": ele.id,
+                "media_type": ele.mediatype.capitalize(),
+                "date": arrow.get(ele.postdate).format(config_data.get_date()),
+                "download_type": ele.downloadtype,
+            })
+        elif isinstance(ele, Post):
+            payload_data.update({
+                "media": None,
+                "post": ele.post,
+                "post_id": ele.id,
+                "media_id": None,
+                "media_type": None,
+                "date": arrow.get(ele.date).format(config_data.get_date()),
+                "download_type": None,
+            })
+        else:
+            # Optional: Handle cases where 'ele' is an unexpected type.
+            log.error(f"Unsupported type for naming script: {type(ele)}")
+            return
 
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
 

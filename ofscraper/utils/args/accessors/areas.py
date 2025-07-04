@@ -38,26 +38,6 @@ def get_download_area():
     return finalize_choice(all_choices, post)
 
 
-def get_text_area():
-    post = None
-    all_choices = [
-        "Highlights",
-        "Archived",
-        "Messages",
-        "Timeline",
-        "Pinned",
-        "Stories",
-        "Purchased",
-        "Profile",
-        "Streams",
-    ]
-    all_choices.append("Label") if of_env.getattr("INCLUDE_LABELS_ALL") else None
-    post = set(settings.get_settings().download_text or [])
-    if "All" in post:
-        post.update(set(all_choices))
-    return finalize_choice(all_choices, post)
-
-
 def finalize_choice(all_choices, post):
     out = set(post)
     if ("Labels*" or "Labels+") in post:
@@ -85,7 +65,6 @@ def get_final_posts_area():
     actions = settings.get_settings().action
     if "download" in actions:
         final_post_areas.update(get_download_area())
-        final_post_areas.update(get_text_area())
     if settings.get_settings().command == "metadata":
         final_post_areas.update(get_download_area())
     if "like" in actions or "unlike" in actions:

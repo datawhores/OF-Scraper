@@ -68,32 +68,27 @@ async def download_model_deleted_process(
 @run
 async def process_dicts(username, model_id, medialist, posts):
     log_text_array = []
-    log_text_array.append(await textDownloader(posts, username=username))
-    logging.getLogger("shared").info("Downloading in single thread mode")
-    common_globals.mainProcessVariableInit()
-    if settings.get_settings().text_only:
-        return log_text_array, (0, 0, 0, 0, 0)
-    elif settings.get_settings().command in {
-        "manual",
-        "post_check",
-        "msg_check",
-        "story_check",
-        "paid_check",
-    }:
-        pass
-    elif settings.get_settings().scrape_paid:
-        pass
-    elif len(get_download_area()) == 0:
+    # 2. Handle text download if enabled
+    if settings.get_settings().text:
+        text_data = await textDownloader(posts, username=username)
+        if text_data:
+            log_text_array.extend(text_data)  # Use extend for lists
+    # 3. Consolidate all "skip download" conditions
+    if  settings.get_settings().text_only:
+        return log_text_array,(0, 0, 0, 0, 0)
+    # 4. Consolidate early exit conditions for no media or no download area
+    download_area_empty = len(get_download_area()) == 0
+    medialist_empty = len(medialist) == 0
+
+    if  medialist_empty:
         empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(empty_log)
         log_text_array.append(empty_log)
         return log_text_array, (0, 0, 0, 0, 0)
 
-    if len(medialist) == 0:
-        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
-        logging.getLogger("shared").error(empty_log)
-        log_text_array.append(empty_log)
-        return log_text_array, (0, 0, 0, 0, 0)
+    # Continue to download process
+    logging.getLogger("shared").info("Downloading in single thread mode")
+    common_globals.mainProcessVariableInit()    
     task1 = None
     with progress_utils.setup_download_progress_live():
         try:
