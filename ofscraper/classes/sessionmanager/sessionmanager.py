@@ -111,8 +111,10 @@ class SessionSleep:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep <= self._min_sleep:
             logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} min sleep value"
+                f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value"
             )
+            await asyncio.sleep(self._min_sleep)
+            return True
         elif self._sleep and self._sleep > 0:
             logging.getLogger("shared").debug(
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors"
@@ -126,8 +128,10 @@ class SessionSleep:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep <= self._min_sleep:
             logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} min sleep value"
+                f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value"
             )
+            time.sleep(self._min_sleep)
+            return True
         elif self._sleep and self._sleep > 0:
             logging.getLogger("shared").debug(
                 f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} recent errors"
