@@ -111,6 +111,11 @@ class mainManager:
 
         async with OFsessionManager.download_session(*args, **kwargs) as c:
             yield c
+    @asynccontextmanager
+    async def get_metadata_session(self, *args, **kwargs):
+        async with OFsessionManager.metadata_session(*args, **kwargs) as c:
+            yield c
+
 
     @asynccontextmanager
     async def get_cdm_session_manual(self, *args, **kwargs):

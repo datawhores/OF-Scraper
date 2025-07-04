@@ -297,7 +297,7 @@ async def process_dicts(username, model_id, medialist):
 
             aws = []
 
-            async with manager.Manager.get_download_session() as c:
+            async with manager.Manager.get_metadata_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.add_metadata_task(

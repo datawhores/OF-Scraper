@@ -27,13 +27,14 @@ from ofscraper.classes.sessionmanager.sleepers import (
     forbidden_session_sleeper,
     download_forbidden_session_sleeper,
     download_rate_limit_session_sleeper,
-)
-from ofscraper.classes.sessionmanager.sleepers import (
+    metadata_rate_limit_session_sleeper,
+    metadata_forbidden_session_sleeper,
     cdm_rate_limit_session_sleeper,
     cdm_forbidden_session_sleeper,
     like_rate_limit_session_sleeper,
     like_forbidden_session_sleeper,
 )
+
 
 
 class OFSessionManager(sessionManager):
@@ -172,6 +173,8 @@ class download_session(sessionManager):
             wait_max=wait_max,
             log=log,
             read_timeout=read_timeout,
+            rate_limit_sleeper=rate_limit_sleeper,
+            forbidden_sleeper=forbidden_sleeper
             **kwargs,
         )
 
@@ -212,6 +215,65 @@ class download_session(sessionManager):
     async def get_token(self, size: int):
         """Acquires tokens from the leaky bucket corresponding to the chunk size."""
         await self.leaky_bucket.acquire(size)
+class metadata_session(download_session):
+    """
+    A specialized sessionManager for metadata operations,
+    """
+
+    def __init__(
+        self,
+        sem_count=None,
+        # ---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = metadata_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = metadata_forbidden_session_sleeper,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            sem_count=sem_count,
+            rate_limit_sleeper=rate_limit_sleeper,
+            forbidden_sleeper=forbidden_sleeper
+            **kwargs,
+        )
+
+    @contextlib.asynccontextmanager
+    async def requests_async(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[Any, None]:
+        # Set default actions and exceptions for downloads
+        if not kwargs.get("actions"):
+            actions = [SIGN, COOKIES, HEADERS]
+            if of_env.getattr("API_FORCE_KEY"):
+                actions.append(FORCED_NEW)
+            kwargs["actions"] = actions
+        kwargs["exceptions"] = [TOO_MANY, AUTH]
+
+        async with super().requests_async(*args, **kwargs) as r:
+            yield r
+
+    async def _httpx_funct_async(self, *args, **kwargs):
+        """Wraps the parent method to add download speed limiting to chunk iteration."""
+        t = await super()._httpx_funct_async(*args, **kwargs)
+
+        # Override chunk iterators to use the leaky bucket
+        t.iter_chunked = self.chunk_with_limit(t.iter_chunked)
+        t.iter_chunks = self.chunk_with_limit(t.iter_chunks)
+        return t
+
+    def chunk_with_limit(self, funct):
+        """Decorator to apply the leaky bucket to an async chunk generator."""
+
+        async def wrapper(*args, **kwargs):
+            async for chunk in funct(*args, **kwargs):
+                await self.get_token(len(chunk))
+                yield chunk
+
+        return wrapper
+
+    async def get_token(self, size: int):
+        """Acquires tokens from the leaky bucket corresponding to the chunk size."""
+        await self.leaky_bucket.acquire(size)
+
+
 
 
 class cdm_session(sessionManager):

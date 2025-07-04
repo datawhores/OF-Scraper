@@ -183,7 +183,48 @@ def load_ratelimit_config():
     )
     config['LIKE_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_LIKE_SESSION_403_MIN_SLEEP', '0'))
 
-    
+        # --- Dynamic Session Sleep Configuration (For Metadata: 429/504 Rate Limiting) ---
+    config["METADATA_SESSION_SLEEP_INIT"] = int(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_INIT", "4")
+    )
+    config["METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF"] = int(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF", "35")
+    )
+    config["METADATA_SESSION_SLEEP_MAX"] = int(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_MAX", "60")
+    )
+    config["METADATA_SESSION_SLEEP_INCREASE_FACTOR"] = float(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_INCREASE_FACTOR", "1.5")
+    )
+    config["METADATA_SESSION_SLEEP_DECAY_THRESHOLD"] = int(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_DECAY_THRESHOLD", "35")
+    )
+    config["METADATA_SESSION_SLEEP_DECAY_FACTOR"] = float(
+        os.getenv("OFSC_METADATA_SESSION_SLEEP_DECAY_FACTOR", "2")
+    )
+    config['METADATA_SESSION_MIN_SLEEP'] = int(os.getenv('OFSC_METADATA_SESSION_MIN_SLEEP', '2'))
+
+
+    # --- Dynamic Session Sleep Configuration (For Metadata: 403 Forbidden Errors) ---
+    config["METADATA_SESSION_403_SLEEP_INIT"] = int(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_INIT", "4")
+    )
+    config["METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF"] = int(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF", "35")
+    )
+    config["METADATA_SESSION_403_SLEEP_MAX"] = int(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_MAX", "60")
+    )
+    config["METADATA_SESSION_403_SLEEP_INCREASE_FACTOR"] = float(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_INCREASE_FACTOR", "1.5")
+    )
+    config["METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD"] = int(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD", "30")
+    )
+    config["METADATA_SESSION_403_SLEEP_DECAY_FACTOR"] = float(
+        os.getenv("OFSC_METADATA_SESSION_403_SLEEP_DECAY_FACTOR", "2")
+    )
+    config['METADATA_SESSION_403_MIN_SLEEP'] = int(os.getenv('OFSC_METADATA_SESSION_403_MIN_SLEEP', '2'))
 
     # --- Miscellaneous ---
     # AUTH_WARNING_TIMEOUT: Time to wait between printing auth warnings (seconds).)
