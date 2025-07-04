@@ -130,6 +130,7 @@ def process_urls(urls):
             username = None
             if model_id:
                 user_data = profile.scrape_profile(model_id)
+                model_id=user_data.get("id")
                 username = user_data.get("username")
 
             # Fetch data using the mapped function

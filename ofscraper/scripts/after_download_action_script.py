@@ -11,7 +11,7 @@ import ofscraper.main.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
 
-def after_download_action_script(username, media=None, posts=None,action=None):
+def after_download_action_script(username, media, posts=None,action=None):
     log = logging.getLogger("shared")
     action=action or "download"
     if not settings.get_settings().after_action_script:
@@ -29,8 +29,8 @@ def after_download_action_script(username, media=None, posts=None,action=None):
             f"Could not retrieve user data for {username}. Aborting post user script."
         )
         return
-    if not posts and media:
-        posts = list({media.post.id: media.post for ele in media}.values())
+    if not posts:
+        posts = list({ele.post.id: ele.post for ele in media}.values())
     try:
         processed_username = (
             userdata["username"] if isinstance(userdata, dict) else userdata.name

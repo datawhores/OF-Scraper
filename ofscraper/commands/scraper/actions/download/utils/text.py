@@ -15,7 +15,7 @@ async def textDownloader(values, username=None):
         values= (
             [values] if not isinstance(values, list) else values
         )
-        postcollection.add_items(values)
+        postcollection.add_posts(values)
         if not postcollection.posts:
             log.info("No text files found to download")
             return []

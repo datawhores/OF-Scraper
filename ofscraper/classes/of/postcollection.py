@@ -1,3 +1,5 @@
+from copy import deepcopy
+from typing import Iterable
 import logging
 import ofscraper.filters.media.filters as helpers
 import ofscraper.utils.settings as settings
@@ -85,92 +87,34 @@ class PostCollection:
         return [media for media in all_media if media.mediatype.lower() in target_types]
 
 
-    def add_posts(self, posts_or_data_list: list, actions: list[str] = None,overwrite=False):
+    def add_post(self, item, actions: list[str] = None, overwrite=False, copyObj=False):
         """
-        Adds a list of items to the collection, handling both raw dictionaries
-        and existing Post objects, while ignoring any duplicates. It marks posts
-        as candidates for actions based on the provided context.
-
-        Args:
-            posts_or_data_list (list): A list containing either raw post dicts or Post objects.
-            actions (list[str], optional): List of actions ('like', 'download', 'text')
-                                           this batch is eligible for. Defaults to None.
+        Adds a single item (Post, Media, or dict) and returns the resulting Post object.
         """
-        actions = actions or []
-        if not posts_or_data_list:
-            return
-        if not isinstance(posts_or_data_list,list):
-            posts_or_data_list=[posts_or_data_list]
+        if isinstance(item,Iterable):
+            raise Exception("item must not be a iteratable")
+        return self._process_and_add_post(
+            item, actions or [], overwrite=overwrite, copyObj=copyObj
+        )
 
-        new_posts_added = 0
-        for item in posts_or_data_list:
-            post_object, post_id = (
-                (item, item.id) if isinstance(item, Post) else (None, item.get("id"))
-            )
-            if not post_id:
-                log.warning(f"Skipping an item because it's missing an 'id': {item}")
-                continue
-
-            if post_id not in self._posts_map or overwrite:
-                post_object = post_object or Post(
-                    item, self.model_id, self.username, mode=self.mode
-                )
-                self._posts_map[post_id] = post_object
-                new_posts_added += 1
-
-            # Get the single source of truth from the map
-            existing_post = self._posts_map[post_id]
-
-            # Set eligibility flags based on the context provided
-            if "like" in actions:
-                existing_post.is_like_candidate = True
-            if "download" in actions:
-                existing_post.is_download_candidate = True
-            if "text" in actions:
-                existing_post.is_text_candidate = True
-
-        if new_posts_added > 0:
-            log.info(f"Added {new_posts_added} new, unique posts to the collection.")
-    def add_items(self, items: list, actions: list[str] = None):
+    def add_posts(self, items: list, actions: list[str] = None, overwrite=False, copyObj=False):
         """
-        Accepts a list containing either Post or Media objects and adds the
-        associated post data to the collection.
+        Adds a list of items (Posts, Media, or dicts) to the collection.
         """
         if not isinstance(items, list):
             items = [items]
-
-        posts_to_add = []
+        actions = actions or []
+        new_posts_added = 0
         for item in items:
-            if isinstance(item, Media):
-                posts_to_add.append(item.post)
-            elif isinstance(item, Post):
-                posts_to_add.append(item)
-            else:
-                log.warning(f"Skipping item of invalid type: {type(item)}")
-                continue
-        # Call add_posts once with the curated list of posts
-        if posts_to_add:
-            self.add_posts(posts_to_add, actions=actions)
+            # Call the single-item processor
+            post = self._process_and_add_post(item, actions, overwrite, copyObj)
+            if post: # You can track how many were successfully added
+                new_posts_added += 1
+
+        if new_posts_added > 0:
+            log.info(f"Processed {new_posts_added} posts for the collection.")
 
     
-    
-    def _get_prepared_media_from_candidates(self) -> list:
-        """
-        Private helper to get download candidates, run per-post filtering,
-        and return the aggregated list of media before final filtering.
-        """
-        candidate_posts = [post for post in self.posts if post.is_download_candidate]
-        log.info(f"Found {len(candidate_posts)} posts marked as download candidates.")
-
-        for post in candidate_posts:
-            post.prepare_media_for_download()
-
-        all_media = [
-            media for post in candidate_posts for media in post.media_to_download
-        ]
-        log.debug(f"Aggregated {len(all_media)} media items before final filtering.")
-        return all_media
-
     def get_media_to_download(self) -> list:
         """
         Gets the final, filtered list of media for DOWNLOAD mode.
@@ -293,3 +237,62 @@ class PostCollection:
         found=self.find_all_media_with_id(id)
         return list(set(map(lambda x:x.post_id,found)))
 
+    def _get_prepared_media_from_candidates(self) -> list:
+        """
+        Private helper to get download candidates, run per-post filtering,
+        and return the aggregated list of media before final filtering.
+        """
+        candidate_posts = [post for post in self.posts if post.is_download_candidate]
+        log.info(f"Found {len(candidate_posts)} posts marked as download candidates.")
+
+        for post in candidate_posts:
+            post.prepare_media_for_download()
+
+        all_media = [
+            media for post in candidate_posts for media in post.media_to_download
+        ]
+        log.debug(f"Aggregated {len(all_media)} media items before final filtering.")
+        return all_media
+
+    def _process_and_add_post(self, item, actions: list[str], overwrite: bool, copyObj: bool):
+        """
+        Processes a single item (Post, Media, or dict), adds it to the
+        collection, and returns the definitive Post object. This is the
+        core internal logic.
+        """
+        post_to_process, post_id = None, None
+
+        # Resolve the item to its core Post data and ID
+        if isinstance(item, Media):
+            post_to_process = item.post
+        elif isinstance(item, (Post, dict)):
+            post_to_process = item
+        else:
+            log.warning(f"Skipping item of invalid type: {type(item)}")
+            return None
+
+        post_id = post_to_process.id if isinstance(post_to_process, Post) else post_to_process.get("id")
+
+        if not post_id:
+            log.warning(f"Skipping item because it's missing an 'id': {post_to_process}")
+            return None
+
+        # Perform the core logic of adding/updating the post
+        if post_id not in self._posts_map or overwrite:
+            post_object = post_to_process if isinstance(post_to_process, Post) else Post(
+                post_to_process, self.model_id, self.username, mode=self.mode
+            )
+            if copyObj:
+                post_object = deepcopy(post_object)
+            self._posts_map[post_id] = post_object
+
+        existing_post = self._posts_map[post_id]
+
+        # Set eligibility flags
+        if "like" in actions:
+            existing_post.is_like_candidate = True
+        if "download" in actions:
+            existing_post.is_download_candidate = True
+        if "text" in actions:
+            existing_post.is_text_candidate = True
+        return existing_post

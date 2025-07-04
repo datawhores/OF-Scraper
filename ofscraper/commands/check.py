@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import inspect
 import logging
 import re
@@ -41,11 +40,11 @@ from ofscraper.db.operations_.media import (
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
-from ofscraper.main.close.final.final import final_action
 import ofscraper.main.manager as manager
 from ofscraper.commands.scraper.actions.download.download import process_dicts
 import ofscraper.main.manager as manager
 from ofscraper.classes.of.postcollection import PostCollection
+from ofscraper.main.close.final.final import  final_action
 
 
 log = logging.getLogger("shared")
@@ -55,32 +54,30 @@ console = console_.get_shared_console()
 ALL_MEDIA = {}
 ROWS={}
 MEDIA_KEY = ["id", "postid", "username"]
-postcollection=PostCollection()
+check_user_dict=defaultdict(dict)
 
 
 
 def process_download_cart():
-    global cart_dict
     while True:
         try:
-            cart_dict = {}
             if app.row_queue.empty():
                 continue
-
+            cart_user_dict=defaultdict(dict)
             while not app.row_queue.empty():
                 try:
-                    process_item()
+                    process_item(cart_user_dict)
                 except Exception as _:
                     # handle getting new downloads
                     None
-            if len(cart_dict.keys()) > 0:
-                for val in cart_dict.values():
-                    after_download_action_script(
-                        val["userdata"], val["media"], val["post"]
-                    )
-                results = ["check cart results"] + list(
-                    map(lambda x: x["results"], cart_dict.values())
-                )
+            for value in cart_user_dict.values():
+                collection=value["collection"]
+                results=value["results"]
+                collection: PostCollection
+                username=collection.username
+                media=collection.all_unique_media
+                posts=collection.posts
+                after_download_action_script(username,media,posts)
                 final_action(normal_data=results)
             time.sleep(5)
         except Exception as e:
@@ -89,7 +86,10 @@ def process_download_cart():
             continue
 
 
-def process_item():
+
+
+
+def process_item(cart_user_dict):
     if process_download_cart.counter == 0:
         if not network.check_cdm():
             log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
@@ -106,24 +106,23 @@ def process_item():
         try:
             post_id = int(row["post_id"])
             media_id = int(row["media_id"])
-            username=postcollection.username
-            model_id=postcollection.model_id
-            media = postcollection.find_media_item(media_id)
+            username=row["username"]
+            manager.Manager.model_manager.add_model(username)
+            model_id=manager.Manager.model_manager.get_model(username).id
+            media = check_user_dict[model_id]["collection"].find_media_item(media_id)
             if not media:
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
+            cart_user_dict[model_id].setdefault("collection",PostCollection(model_id=model_id,username=username))
+            cart_user_dict[model_id].setdefault("results",[])
+            post=cart_user_dict[model_id]["collection"].add_post(media,copyObj=True)
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
-            manager.Manager.model_manager.add_model(username)
-            post = media.post
-            model_id = media.post.model_id
-            username = media.post.username
-
             log.info(
                 f"Downloading individual media ({media.filename}) to disk for {username}"
             )
             operations.table_init_create(model_id=model_id, username=username)
-
             output, values = process_dicts(username, model_id, [media], [post])
+            cart_user_dict[model_id]["results"].extend(output)
 
             if values is None or values[-1] == 1:
                 raise Exception("Download is marked as failed")
@@ -135,7 +134,6 @@ def process_item():
 
             else:
                 log.info("Download Finished")
-                update_globals(model_id, username, post, media, output)
                 app.app.table.update_cell_at_key(
                     key, "download_cart", Text("[downloaded]", style="bold green")
                 )
@@ -148,6 +146,7 @@ def process_item():
                     key, "download_cart", Text("[failed]", style="bold red")
                 )
                 raise E
+            log.info(f"{E}")
             log.info("Download Failed Refreshing data")
             data_refill(model_id)
             log.traceback_(E)
@@ -155,22 +154,6 @@ def process_item():
     if app.row_queue.empty():
         log.info("Download cart is currently empty")
 
-
-def update_globals(model_id, username, post, media, values):
-    global cart_dict
-    cart_dict.setdefault(
-        model_id,
-        {
-            "post": [],
-            "media": [],
-            "username": username,
-            "model_id": model_id,
-            "userdata": manager.Manager.model_manager.get_model(username),
-            "results": values,
-        },
-    )
-    cart_dict[model_id]["post"].extend([post])
-    cart_dict[model_id]["media"].extend([media])
 
 
 @run
@@ -610,9 +593,11 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
-    postcollection.update_info(username=username,model_id=model_id)
-    postcollection.add_posts(posts_array,overwrite=True)
-    media=postcollection.all_unique_media
+    check_user_dict[model_id].setdefault("collection",PostCollection(username=username,model_id=model_id)) 
+    collection=check_user_dict[model_id]["collection"]
+    collection:PostCollection
+    collection.add_posts(posts_array)
+    media=collection.all_unique_media
     await insert_media(username, model_id, media)
     return media
 
@@ -703,7 +688,10 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
-    media=postcollection.all_unique_media
+    collection=check_user_dict[model_id]["collection"]
+    if not collection:
+        raise Exception("No postcollection object found")
+    media=collection.all_unique_media
     out = []
     for count, ele in enumerate(
         sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
@@ -717,7 +705,7 @@ async def row_gather(username, model_id):
                 "downloaded": (ele.id, ele.post_id) in downloaded,
                 "unlocked": unlocked_helper(ele),
                 "download_type": download_type_helper(ele),
-                "other_posts_with_media": postcollection.posts_with_media_id(ele.id),
+                "other_posts_with_media": collection.posts_with_media_id(ele.id),
                 "post_media_count": len(ele._post.post_media),
                 "mediatype": ele.mediatype,
                 "post_date": datehelper(ele.formatted_postdate),

@@ -115,7 +115,7 @@ class DownloadManager:
         if space_limit > 0 and space_limit > system.get_free():
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
-    def _after_download_script(sel, filepath):
+    def _after_download_script(self, filepath):
         after_download_script(filepath)
 
     async def _size_checker(self, path, ele, total, name=None):
