@@ -106,6 +106,18 @@ class mainManager:
         async with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
             yield c
 
+    @contextmanager
+    def get_subscription_session(self, *args, **kwargs):
+        with OFsessionManager.SubscriptionSessionManager(*args, **kwargs) as c:
+            yield c
+
+    @asynccontextmanager
+    async def aget_subscription_session(self, *args, **kwargs):
+        async with OFsessionManager.SubscriptionSessionManager(*args, **kwargs) as c:
+            yield c
+
+    
+    
     @asynccontextmanager
     async def get_download_session(self, *args, **kwargs):
 
