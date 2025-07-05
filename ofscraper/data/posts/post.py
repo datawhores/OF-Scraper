@@ -376,7 +376,6 @@ async def process_labels(model_id, username, c):
         )
 
         return (
-            [item for sublist in all_output for item in sublist],
             [post for ele in labelled_posts_labels for post in ele.posts],
             labels_api.API,
         )

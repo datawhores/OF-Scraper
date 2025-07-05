@@ -266,7 +266,7 @@ like_toggle_force = click.option(
 label_option = click.option(
     "-lb",
     "--label",
-    help="Filter by label (use helpers.label_helper to process)",
+    help="Filter by label",
     default=[],
     required=False,
     callback=StringSplitNormalizeParse,

@@ -51,13 +51,6 @@ class DiscordHandler(logging.Handler):
             self.queue.task_done()
 
     def emit(self, record):
-        if hasattr(record, "message") and (
-            record.message in log_globals.stop_codes or record.message == ""
-        ):
-            return
-        elif record in log_globals.stop_codes or record == "":
-            return
-
         log_entry = self.format(record)
         if not log_entry or not log_entry.strip():
             return

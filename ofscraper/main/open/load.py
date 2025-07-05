@@ -44,7 +44,6 @@ def setdate():
 
 
 def setLogger():
-    log_globals.init_values()
     logger.get_shared_logger()
     logs.discord_warning()
     paths_manage.cleanup_logs()
