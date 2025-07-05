@@ -41,29 +41,15 @@ def after_download_script(final_path: Union[str, pathlib.Path]):
     )
 
     try:
-        result = run(
+        run(
             [script_path],  # Pass final_path as a command-line argument
             capture_output=True,
             input=final_path,
             text=True,
             check=True,  # Will raise CalledProcessError for non-zero exit codes
-            quiet=True,
+            level=env.getattr("AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
+            name="after download script"
         )
-
-        stdout = result.stdout.strip()
-        stderr = result.stderr.strip()
-
-        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            if stdout:
-                log.log(
-                    100, f"After download script stdout for '{final_path}':\n{stdout}"
-                )
-
-            if stderr:
-                log.log(
-                    100, f"After download script stderr for '{final_path}':\n{stderr}"
-                )
-
         log.info(f"Successfully ran after download script for '{final_path}'.")
 
     except FileNotFoundError:

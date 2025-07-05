@@ -7,7 +7,6 @@ import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
 from ofscraper.classes.sessionmanager.sleepers import discord_forbidden_session_sleeper,discord_rate_limit_session_sleeper
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.logs.globals as log_globals
 
 
 class DiscordHandler(logging.Handler):

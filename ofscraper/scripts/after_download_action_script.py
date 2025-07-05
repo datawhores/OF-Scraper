@@ -19,14 +19,14 @@ def after_download_action_script(username, media, posts=None,action=None):
     script_path = settings.get_settings().after_action_script
     if not script_path or not os.path.exists(script_path):
         log.error(
-            f"Download script path is invalid or not configured: '{script_path}'. Aborting post user script."
+            f"After download action script path is invalid or not configured: '{script_path}'. Aborting after download action script."
         )
         return
 
     userdata = manager.Manager.model_manager.get_model(username)
     if not userdata:
         log.warning(
-            f"Could not retrieve user data for {username}. Aborting post user script."
+            f"Could not retrieve user data for {username}. Aborting after download action script."
         )
         return
     if not posts:
@@ -50,7 +50,7 @@ def after_download_action_script(username, media, posts=None,action=None):
 
         master_dump_payload = {
             "username": processed_username,
-            "action":"download",
+            "action":action,
             "model_id": model_id,
             "media": processed_media,
             "posts": processed_posts,
@@ -61,45 +61,36 @@ def after_download_action_script(username, media, posts=None,action=None):
             master_dump_payload, indent=None, ensure_ascii=False
         )
 
-        result = run(
+        run(
             [script_path],
             input=input_json_str,  # Pass the JSON string as stdin
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
-            quiet=True,
+            name="after download action script",
+            level=env.getattr("AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL")
         )
-        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            log.log(
-                100,
-                f"Post user script stdout for {processed_username}:\n{result.stdout.strip()}",
-            )
-            if result.stderr:
-                log.warning(
-                    100,
-                    f"Post user script stderr for {processed_username}:\n{result.stderr.strip()}",
-                )
         log.debug(
-            f"Post user script ran successfully for {processed_username} via stdin."
+            f"After download action script ran successfully for {processed_username} via stdin."
         )
 
     except FileNotFoundError:
         log.error(
-            f"Post user script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
+            f"After download action script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
         )
     except subprocess.CalledProcessError as e:
         log.error(
-            f"Post user script failed for {processed_username} with exit code {e.returncode}: '{script_path}'"
+            f"After download action script failed for {processed_username} with exit code {e.returncode}: '{script_path}'"
         )
-        log.error(f"Post user script stdout:\n{e.stdout.strip()}")
-        log.error(f"Post user script stderr:\n{e.stderr.strip()}")
+        log.error(f"After download action script stdout:\n{e.stdout.strip()}")
+        log.error(f"After download action script stderr:\n{e.stderr.strip()}")
     except json.JSONDecodeError as e:
         log.error(
-            f"Failed to serialize payload to JSON for post user script for {processed_username}: {e}"
+            f"Failed to serialize payload to JSON for after download action script for {processed_username}: {e}"
         )
     except Exception as e:
         log.critical(
-            f"An unexpected error occurred while running post user script for {processed_username} with script '{script_path}': {e}",
+            f"An unexpected error occurred while running after download script for {processed_username} with script '{script_path}': {e}",
             exc_info=True,
         )
         log.traceback_(e)

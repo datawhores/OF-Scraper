@@ -72,16 +72,12 @@ def naming_script(dir, file, ele):
             capture_output=True,
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes
-            quiet=True,
+            level=env.getattr("NAMING_SCRIPT_SUBPROCESS_LEVEL"),
+            name="naming script"
+
         )
-        stdout = result.stdout
-        stderr = result.stderr
-        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            log.log(100, f"Naming script stdout: {stdout.strip()}")
-            if stderr:
-                log.log(100, f"Naming script stderr: {stderr.strip()}")
         log.debug("Naming script ran successfully via stdin.")
-        return stdout.strip()
+        return result.stdout.strip()
 
     except FileNotFoundError:
         log.error(

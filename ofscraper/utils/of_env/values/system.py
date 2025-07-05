@@ -10,31 +10,30 @@ def load_system_config():
     """
     config = {}
 
-    # --- Subprocess Logging Configuration ---
-    # LOG_SUBPROCESS: Whether to log subprocess activity.
-    # Takes precidence over all other output changes
-    # Default: False
-    config["LOG_SUBPROCESS"] = os.getenv("OFSC_LOG_SUBPROCESS", "True").lower() in (
-        "true",
-        "1",
+    ## --- Subprocess Log Level Configuration ---
+    ## LOG LEVEL of zero will disable all output
+    # Set log level for user-defined scripts
+    config["AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+    config["AFTER_LIKE_ACTION_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_AFTER_LIKE_ACTION_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+    config["NAMING_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_NAMING_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+    config["SKIP_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_SKIP_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+    config["AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+    config["FINAL_SCRIPT_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_FINAL_SCRIPT_SUBPROCESS_LEVEL", "20")
     )
 
-    # FFMPEG_OUTPUT_SUBPROCCESS: Whether to log ffmpeg messages.
-    # Default: None
-    config["FFMPEG_OUTPUT_SUBPROCCESS"] = os.getenv(
-        "OFSC_FFMPEG_OUTPUT_SUBPROCCESS", "False"
-    ).lower() in (
-        "true",
-        "1",
+    # Set log level for FFmpeg operations
+    config["FFMPEG_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_FFMPEG_SUBPROCESS_LEVEL", "0")
     )
-
-    # "SCRIPT_OUTPUT_SUBPROCCESS: Whether to log general script messages.
-    # Default: None
-    config["SCRIPT_OUTPUT_SUBPROCCESS"] = os.getenv(
-        "OFSC_SCRIPT_OUTPUT_SUBPROCCESS", "True"
-    ).lower() in (
-        "true",
-        "1",
-    )
-
     return config

@@ -327,7 +327,8 @@ class AltDownloadManager(DownloadManager):
                 "use_metadata_tags",
                 str(temp_path),
             ],
-            quiet=not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS"),
+            name="ffmpeg",
+            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL")
         )
         if t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")

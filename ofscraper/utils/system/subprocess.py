@@ -1,13 +1,10 @@
-import sys
 import subprocess
+import sys
 import logging
 import ofscraper.utils.of_env.of_env as of_env
 
-
-
-
 def run(
-    *args, log=None, quiet=None, stdout=None, stderr=None, capture_output=None, **kwargs
+    *args, log=None, stdout=None, stderr=None, capture_output=None,level=None,name=None, **kwargs
 ):
     """
     Executes a command, automatically using the current Python interpreter
@@ -21,37 +18,43 @@ def run(
     # Check if the command is a Python script
     if cmd_args and isinstance(cmd_args[0], str) and cmd_args[0].lower().endswith(".py"):
         # Prepend the path to the current Python executable.
-        # This ensures the script runs with the same interpreter.
         cmd_args.insert(0, sys.executable)
+    
+    # Provide a default name for logging if not supplied
+    name = name or ' '.join(cmd_args)
+
+    # Correctly initialize the log level
+    if level is None:
+        level = int(of_env.getattr("LOG_SUBPROCESS_LEVEL", "0"))
 
     # Reassemble the arguments for subprocess.run
     final_args = (cmd_args,) + args[1:]
 
     # Set up standard streams
-    quiet = quiet
     stdout = stdout if stdout else subprocess.PIPE
     stderr = stderr if stderr else subprocess.PIPE
     if capture_output:
         stdout = None  # Let subprocess.run handle piping when capturing
         stderr = None
-        quiet = True
 
     # Execute the command
     t = subprocess.run(
         *final_args, stdout=stdout, stderr=stderr, capture_output=capture_output, **kwargs
     )
 
-    # Optional logging
-    if quiet or not of_env.getattr("LOG_SUBPROCESS"):
+    # Conditional logging (level 0 means OFF)
+    if level == 0:
         return t
 
     if t.stdout:
         # Decode stdout if it's in bytes
-        output = t.stdout.decode() if isinstance(t.stdout, bytes) else t.stdout
-        log.log(100, f"stdout: {output}")
+        output = t.stdout.decode(errors='ignore') if isinstance(t.stdout, bytes) else t.stdout
+        # Correctly call the logger
+        log.log(level, f"{name} stdout: {output.strip()}")
     if t.stderr:
         # Decode stderr if it's in bytes
-        error = t.stderr.decode() if isinstance(t.stderr, bytes) else t.stderr
-        log.log(100, f"stderr: {error}")
+        error = t.stderr.decode(errors='ignore') if isinstance(t.stderr, bytes) else t.stderr
+        # Correctly call the logger
+        log.log(level, f"{name} stderr: {error.strip()}")
 
     return t

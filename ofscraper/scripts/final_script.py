@@ -38,20 +38,15 @@ def final_script():
         # Dump JSON to a string, no indent for efficiency, ensure_ascii=False for non-ASCII chars
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
 
-        result = run(
+        run(
             [script_path],
             input=input_json_str,  # Pass the JSON string as stdin
             capture_output=True,  # Capture stdout and stderr
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
-            quiet=True,
+            level=env.getattr("FINAL_SCRIPT_SUBPROCESS_LEVEL"),
+            name="Final script"
         )
-
-        if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
-            if result.stdout:
-                log.log(100, f"Final script stdout:\n{result.stdout.strip()}")
-            if result.stderr:
-                log.log(100, f"Final script stderr:\n{result.stderr.strip()}")
         log.debug("Final script ran successfully via stdin.")
 
     # 4. Add comprehensive error handling

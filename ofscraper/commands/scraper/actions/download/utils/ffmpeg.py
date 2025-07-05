@@ -29,7 +29,8 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             text=True,
             check=False,
             encoding="utf-8",
-            quiet=not env.getattr("FFMPEG_OUTPUT_SUBPROCCESS"),
+            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
+            name="ffmpeg"
         )
         output = result.stdout + result.stderr
 
