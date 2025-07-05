@@ -33,6 +33,8 @@ from ofscraper.classes.sessionmanager.sleepers import (
     cdm_forbidden_session_sleeper,
     like_rate_limit_session_sleeper,
     like_forbidden_session_sleeper,
+    subscription_rate_limit_session_sleeper,
+    subscription_forbidden_session_sleeper,
 )
 
 
@@ -308,6 +310,22 @@ class like_session(OFSessionManager):
         sem_count: Optional[int] = None,  # ---rate limit sleepers
         rate_limit_sleeper: Optional[float] = like_rate_limit_session_sleeper,
         forbidden_sleeper: Optional[float] = like_forbidden_session_sleeper,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            sem_count=sem_count,
+            rate_limit_sleeper=rate_limit_sleeper,
+            forbidden_sleeper=forbidden_sleeper,**kwargs,
+        )
+
+class SubscriptionSessionManager(OFSessionManager):
+    """A session manager for manual CDM operations, using OFSessionManager presets."""
+
+    def __init__(
+        self,
+        sem_count: Optional[int] = None,  # ---rate limit sleepers
+        rate_limit_sleeper: Optional[float] = subscription_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = subscription_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         super().__init__(

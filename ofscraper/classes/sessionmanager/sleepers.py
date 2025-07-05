@@ -132,3 +132,25 @@ discord_forbidden_session_sleeper = SessionSleep(
     increase_factor=env.getattr("DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR"),
     error_name="DISCORD_SESSION_403",
 )
+
+subscription_rate_limit_session_sleeper = SessionSleep(
+    sleep=env.getattr("SUBSCRIPTION_SESSION_SLEEP_INIT"),
+    min_sleep=env.getattr("SUBSCRIPTION_SESSION_MIN_SLEEP"),
+    difmin=env.getattr("SUBSCRIPTION_SESSION_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("SUBSCRIPTION_SESSION_SLEEP_MAX"),
+    decay_threshold=env.getattr("SUBSCRIPTION_SESSION_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("SUBSCRIPTION_SESSION_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("SUBSCRIPTION_SESSION_SLEEP_INCREASE_FACTOR"),
+    error_name="SUBSCRIPTION_SESSION_RATE_LIMIT",
+)
+
+subscription_forbidden_session_sleeper = SessionSleep(
+    sleep=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_INIT"),
+    min_sleep=env.getattr("SUBSCRIPTION_SESSION_403_MIN_SLEEP"),
+    difmin=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_TIME_DIFF"),
+    max_sleep=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_MAX"),
+    decay_threshold=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD"),
+    decay_factor=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_DECAY_FACTOR"),
+    increase_factor=env.getattr("SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_FACTOR"),
+    error_name="SUBSCRIPTION_SESSION_403",
+)
