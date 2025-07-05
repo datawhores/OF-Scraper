@@ -448,6 +448,8 @@ class Media(base.base):
         responsetype = self.post.responsetype
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
+        else:
+            responsetype="message"
         return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.post_id)
 
     @property
