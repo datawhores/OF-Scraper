@@ -11,7 +11,7 @@ def load_system_config():
     config = {}
 
     ## --- Subprocess Log Level Configuration ---
-    ## LOG LEVEL of zero will disable all output
+    ## LOG LEVEL of 0 will disable that output
     # Set log level for user-defined scripts
     config["AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL"] = int(
         os.getenv("OFSC_AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL", "20")
@@ -30,6 +30,10 @@ def load_system_config():
     )
     config["FINAL_SCRIPT_SUBPROCESS_LEVEL"] = int(
         os.getenv("OFSC_FINAL_SCRIPT_SUBPROCESS_LEVEL", "20")
+    )
+
+    config["LOG_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_LOG_SUBPROCESS_LEVELL", "10")
     )
 
     # Set log level for FFmpeg operations
