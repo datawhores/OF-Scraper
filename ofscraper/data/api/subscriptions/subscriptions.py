@@ -35,7 +35,7 @@ async def get_subscriptions(subscribe_count, account="active"):
     task1 = add_userlist_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         if account == "active":
@@ -46,6 +46,38 @@ async def get_subscriptions(subscribe_count, account="active"):
     log.debug(f"Total {account} subscriptions found {len(out)}")
     return out
 
+@run
+async def get_all_subscriptions(subscribe_count, account="active"):
+    if account=="active":
+       return await get_all_activive_subscriptions(subscribe_count)
+    else:
+       return await get_all_expired_subscriptions(subscribe_count)
+       
+
+async def get_all_activive_subscriptions(subscribe_count):
+    funct = scrape_subscriptions_active
+    async with manager.Manager.aget_subscription_session(
+        sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
+    ) as c:
+        tasks = [
+            asyncio.create_task(funct(c, offset))
+            for offset in range(0, subscribe_count + 1, 10)
+        ]
+        tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
+        return await process_task(tasks)
+
+
+async def get_all_expired_subscriptions(subscribe_count):
+    funct = scrape_subscriptions_disabled
+    async with manager.Manager.aget_subscription_session(
+        sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
+    ) as c:
+        tasks = [
+            asyncio.create_task(funct(c, offset))
+            for offset in range(0, subscribe_count + 1, 10)
+        ]
+        tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
+        return await process_task(tasks)
 
 async def activeHelper(subscribe_count, c):
     if any(

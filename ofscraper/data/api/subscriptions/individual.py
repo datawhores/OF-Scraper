@@ -33,7 +33,7 @@ async def get_subscription(accounts=None):
     task1 = progress_utils.add_userlist_task(
         f"Getting the following accounts => {accounts} (this may take awhile)..."
     )
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         out = await get_subscription_helper(c, accounts)
