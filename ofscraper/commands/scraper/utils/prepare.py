@@ -26,8 +26,7 @@ def prepare(menu=False):
     actions.select_areas()
     if menu is True:
         actions.set_scrape_paid()
-
-    userdata = manager.Manager.model_manager.prepare_activity(activity=settings.get_settings().actions)
+    userdata = manager.Manager.model_manager.prepare_scraper_activity()
     return userdata, session
 
 
