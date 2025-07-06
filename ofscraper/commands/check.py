@@ -85,7 +85,7 @@ def process_download_cart():
                 after_download_action_script(username,media,posts)
                 manager.Manager.model_manager.mark_as_processed(username,activity="download")
             final_action(normal_data=all_results)
-            manager.Manager.model_manager.reset_processed_status("download")
+            manager.Manager.model_manager.clear_queue("download")
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
