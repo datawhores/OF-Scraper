@@ -11,10 +11,6 @@ class TextHandler(logging.Handler):
         # only emit after widget is set
         if self._widget is None:
             return
-        elif hasattr(record, "message") and record.message in log_globals.stop_codes:
-            return
-        elif record in log_globals.stop_codes:
-            return
         log_entry = self.format(record)
         log_entry = f"{log_entry}"
         self._widget.write(log_entry)
