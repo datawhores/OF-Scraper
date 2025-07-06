@@ -16,6 +16,7 @@ from ofscraper.commands.utils.strings import (
 from ofscraper.utils.context.run_async import run
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
+from ofscraper.scripts.after_download_action_script import after_download_action_script
 
 log = logging.getLogger("shared")
 
@@ -23,10 +24,9 @@ log = logging.getLogger("shared")
 @run
 async def scrape_paid_all():
     out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-    await manager.Manager.model_manager._fetch_all_subs_async()
+    #prefill all main models in all_users
+    await manager.Manager.model_manager.sync_models(all_main_models=True)
     async for count, value, length in process_scrape_paid():
-        if count > 150:
-            continue
         process_user_info_printer(
             value,
             length,
@@ -94,13 +94,17 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    manager.Manager.model_manager.add_model(username)
+    activity="scrape_paid"
+    desc=progress_updater. get_activity_description()
+    await manager.Manager.model_manager.add_models(username,activity=activity)
+    progress_updater.update_activity_task(description=desc)
     if settings.get_settings().command == "metadata":
-        data = await metadata.metadata_process(username, model_id, medias, posts=posts)
+        data = await metadata.metadata_process(username, model_id, medias)
     else:
         data, _ = await download.download_process(
             username, model_id, medias, posts=posts
         )
-    manager.Manager.model_manager.mark_as_scrape_paid_processed(username)
+    manager.Manager.model_manager.mark_as_processed(username,activity=activity)
     progress_updater.increment_activity_count(total=length)
+    after_download_action_script(username,medias,posts)
     return data
