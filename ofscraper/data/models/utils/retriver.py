@@ -11,20 +11,16 @@ from ofscraper.utils.live.updater import update_activity_task
 import ofscraper.utils.settings as settings
 
 
-async def get_models(all_main_models: bool = False,all_models:bool=False) -> list:
+async def get_models(all_main_models: bool = False) -> list:
     """
     Get user's subscriptions. Can be forced to fetch all models.
     """
     update_activity_task(description="Getting subscriptions")
     count = get_sub_count()
 
-    if all_main_models and all_models:
-        raise ValueError("Cannot use 'all_main_models' and 'all_models' flags simultaneously.")
 
     if all_main_models:
         return await get_via_main_list(count)
-    if all_models:
-        return await get_via_list()
 
     # --- Existing logic for when all_main_models is False ---
     if settings.get_settings().anon:

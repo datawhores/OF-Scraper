@@ -258,7 +258,7 @@ class ModelManager:
 
     @run
     async def sync_models(
-        self, all_main_models: bool = False, all_models: bool = False
+        self, all_main_models: bool = False,
     ) -> None:
         """
         Fetches models from the API and updates the internal master list.
@@ -266,11 +266,10 @@ class ModelManager:
 
         Args:
             all_main_models (bool): If True, forces fetching of all main subscription models.
-            all_models (bool): If True, forces fetching of all subscription models.
         """
         # Directly call the retriever function with the provided flags
         fetched_models = await retriver.get_models(
-            all_main_models=all_main_models, all_models=all_models
+            all_main_models=all_main_models,
         )
 
         if fetched_models:
