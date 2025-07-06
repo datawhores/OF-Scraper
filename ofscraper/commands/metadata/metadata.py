@@ -52,7 +52,7 @@ from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
-
+from ofscraper.data.posts.scrape_paid import scrape_paid_all
 log = logging.getLogger("shared")
 
 
@@ -87,17 +87,7 @@ class metadataCommandManager(commmandManager):
         old_args = copy.deepcopy(settings.get_args())
         self._force_change_metadata()
         out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-        await manager.Manager.model_manager.sync_models(all_main_models=True)
-        async for count, value, length in process_scrape_paid():
-            process_user_info_printer(
-                value,
-                length,
-                count,
-                all_paid_update=all_paid_metadata_str,
-                all_paid_activity=metadata_activity_str,
-                log_progress=all_paid_progress_metadata_str,
-            )
-            out.append(await process_user(value, length))
+        out.extend(await scrape_paid_all())
         settings.update_args(old_args)
         return out
 

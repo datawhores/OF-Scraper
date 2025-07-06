@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import ofscraper.data.posts.post as OF
 import ofscraper.commands.scraper.actions.download.download as download
@@ -8,10 +9,11 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.utils.strings import (
     all_paid_download_str,
-    all_paid_progress_metadata_str,
-    metadata_activity_str,
-    download_activity_str,
     all_paid_progress_download_str,
+    download_activity_str,
+    metadata_activity_str,
+    all_paid_progress_metadata_str,
+    all_paid_metadata_str
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.main.manager as manager
@@ -19,24 +21,43 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 
 log = logging.getLogger("shared")
-
+activity="scrape_paid"
 
 @run
-async def scrape_paid_all():
+async def scrape_paid_all() -> List[str]:
+    """
+    Scrapes and processes all paid content, either for metadata or download.
+    """
     out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-    #prefill all main models in all_users
+
+    # Prefill modelmanager.all_models property
+    # Does not effected queued models
     await manager.Manager.model_manager.sync_models(all_main_models=True)
+    manager.Manager.model_manager.clear_paid_queues()
+
+    # Set strings based on the command type for clarity.
+    is_metadata_command = settings.get_settings().command == "metadata"
+    if is_metadata_command:
+        update_str = all_paid_metadata_str
+        activity_str = metadata_activity_str
+        log_progress_str = all_paid_progress_metadata_str
+    else:
+        update_str = all_paid_download_str
+        activity_str = download_activity_str
+        log_progress_str = all_paid_progress_download_str
+    # Process all paid content.
     async for count, value, length in process_scrape_paid():
         process_user_info_printer(
             value,
             length,
             count,
-            all_paid_update=all_paid_download_str,
-            all_paid_activity=download_activity_str,
-            log_progress=all_paid_progress_download_str,
+            all_paid_update=update_str,
+            all_paid_activity=activity_str,
+            log_progress=log_progress_str,
         )
         out.append(await process_user(value, length))
     return out
+
 
 
 @run
@@ -94,8 +115,8 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    activity="scrape_paid"
     desc=progress_updater. get_activity_description()
+    #Manually search for model, and queue
     await manager.Manager.model_manager.add_models(username,activity=activity)
     progress_updater.update_activity_task(description=desc)
     if settings.get_settings().command == "metadata":
@@ -104,6 +125,8 @@ async def process_user(value, length):
         data, _ = await download.download_process(
             username, model_id, medias, posts=posts
         )
+    data=[]
+    #mark queued model as done
     manager.Manager.model_manager.mark_as_processed(username,activity=activity)
     progress_updater.increment_activity_count(total=length)
     after_download_action_script(username,medias,posts)
