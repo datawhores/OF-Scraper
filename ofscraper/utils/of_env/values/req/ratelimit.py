@@ -13,7 +13,7 @@ def load_ratelimit_config():
     config = {}
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 429/504 Rate Limiting) ---
-    config["SESSION_SLEEP_INIT"] = float(os.getenv("OFSC_SESSION_SLEEP_INIT", "8"))
+    config["SESSION_SLEEP_INIT"] = float(os.getenv("OFSC_SESSION_SLEEP_INIT", "2.5"))
     config["SESSION_SLEEP_INCREASE_TIME_DIFF"] = float(
         os.getenv("OFSC_SESSION_SLEEP_INCREASE_TIME_DIFF", "30")
     )
@@ -27,7 +27,7 @@ def load_ratelimit_config():
     config["SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
-    config['SESSION_MIN_SLEEP'] = float(os.getenv('OFSC_SESSION_MIN_SLEEP', '4'))
+    config['SESSION_MIN_SLEEP'] = float(os.getenv('OFSC_SESSION_MIN_SLEEP', '2'))
 
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 403 Forbidden Errors) ---
