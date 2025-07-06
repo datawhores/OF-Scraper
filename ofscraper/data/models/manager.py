@@ -60,35 +60,6 @@ class ModelManager:
             if name in self._all_subs_dict
         }
 
-    def update_all_subs(self, models: List["Model"] | Dict[str, "Model"]) -> None:
-        """Updates the global cache of all fetched models."""
-        if isinstance(models, dict):
-            self._all_subs_dict.update(models)
-        elif isinstance(models, list):
-            for ele in models:
-                self._all_subs_dict[ele.name] = ele
-
-    def update_selected_subs(self, models: List["Model"] | Dict[str, "Model"]) -> None:
-        """Updates the global cache of all fetched models."""
-        if isinstance(models, dict):
-            self._selected_subs_dict.update(models)
-        elif isinstance(models, list):
-            for ele in models:
-                self._selected_subs_dict[ele.name] = ele
-
-    def select_models(self) -> List["Model"]:
-        """Applies filters and prompts user to return a list of selected models."""
-        filtered_models = self._filter_and_prompt_for_selection()
-        if settings.get_settings().usernames == "ALL":
-            return list(filtered_models.values())
-        elif settings.get_settings().usernames is not None:
-            allowed_usernames = set(settings.get_settings().usernames)
-            return [
-                model for model in filtered_models.values() if model.name in allowed_usernames
-            ]
-        else:
-            return retriver.get_selected_model(list(filtered_models.values()))
-
     @run
     async def add_models(self, usernames: List[str], activity: Union[EActivity, str]) -> List[str]:
         """
@@ -126,14 +97,14 @@ class ModelManager:
             settings.update_args(args)
             fetched_models = await retriver.get_models()
             if fetched_models:
-                self.update_all_subs(fetched_models)
+                self._update_all_subs(fetched_models)
             args.usernames = original_usernames
             settings.update_args(args)
         # 4. Create and add placeholder models without fetching
         if placeholder_usernames:
             log.info(f"Creating placeholder models for: {', '.join(placeholder_usernames)}")
             placeholder_models = [Model({"username": name, "id": name}) for name in placeholder_usernames]
-            self.update_all_subs(placeholder_models)
+            self._update_all_subs(placeholder_models)
 
         # 5. Queue all successfully added models for the activity
         # This list includes both fetched and placeholder models
@@ -146,112 +117,55 @@ class ModelManager:
 
         return successfully_added
 
-    def setfilter(self):
-        while True:
-            self._print_filter_settings()
-            choice = prompts.decide_filters_menu()
-            try:
-                # --- Place this dictionary outside your main loop for efficiency ---
-                prompt_actions = {
-                    "sort": prompts.modify_sort_prompt,
-                    "subtype": prompts.modify_subtype_prompt,
-                    "promo": prompts.modify_promo_prompt,
-                    "active": prompts.modify_active_prompt,
-                    "price": prompts.modify_prices_prompt,
-                    "list": prompts.modify_list_prompt,
-                }
 
-                if choice == "model_list":
-                    break
-
-                # Get a copy of the arguments before any modifications
-                original_args = settings.get_args()
-                new_args = settings.get_args(copy=True)
-
-                # 1. Determine the new arguments based on the user's choice
-                if choice in prompt_actions:
-                    new_args = prompt_actions[choice](new_args)
-                elif choice == "reset_filters":
-                    new_args = resetUserFilters()
-                elif choice == "reset_list":
-                    new_args.userlist = ["main"]
-                    new_args.blacklist = [""]  # Clears the blacklist
-                elif choice == "rescan":
-                    self._fetch_all_subs(force_refetch=True, reset=True)
-
-                # 2. If any action generated new arguments, process the changes
-                if new_args:
-                    # Use sets to compare lists, safely handling None with 'or []'
-                    user_list_changed = set(original_args.userlist or []) != set(
-                        new_args.userlist or []
-                    )
-                    black_list_changed = set(original_args.blacklist or []) != set(
-                        new_args.blacklist or []
-                    )
-
-                    # Always update the arguments in the settings
-                    settings.update_args(new_args)
-                    # If a list changed, it requires re-fetching all the models
-                    if user_list_changed or black_list_changed:
-                        console.get_console().print(
-                            "[yellow]Lists changed, re-fetching models from API...[/yellow]"
-                        )
-                        self._fetch_all_subs(force_refetch=True, reset=True)
-                        original_args = new_args
-                        new_args = settings.get_args(copy=True)
-
-            except Exception as e:
-                console.get_console().print(f"Exception in menu: {e}")
-            settings.update_args(new_args)
-
-    def prepare_activity(
+    def prepare_scraper_activity(
         self,
-        activity: Union[EActivity, str, List[Union[EActivity, str]]],
-        reset: bool = False,
     ) -> List["Model"]:
         """
-        Prepares one or more activities by fetching data and selecting models as needed,
-        then queues them in the StateManager.
+        Prepares activities. In daemon mode, it directly calls select_models.
+        Otherwise, it uses interactive logic to confirm or get a new selection.
         """
         # --- Step 1: Normalize Input ---
-        # Convert the flexible input into a clean list of EActivity members.
-        activities_to_process = self._get_activities(activity)
-        # --- Step 2: Handle Data Fetching ---
+        activities_to_process = self._get_activities(settings.get_settings().actions)
+        final_selection = []
         self._load_all_subs_if_needed()
 
-        # --- Step 3: Determine if a New Selection is Required ---
-        # Check if any of the specified activities already have users in their queue.
-        existing_queued_users = set()
-        for activity in activities_to_process:
-            existing_queued_users.update(self.state.get_unprocessed(activity))
-
-        requires_new_selection = reset or not existing_queued_users
-
-        # If reset=True but there's an existing selection, prompt the user.
-        if reset and not requires_new_selection:
-            prompt_choice = prompts.reset_username_prompt()
-            if prompt_choice == "No":
-                requires_new_selection = False
-            elif prompt_choice in {"Selection", "Selection_Strict"}:
-                settings.resetUserSelect()
-                if prompt_choice == "Selection":
-                    self._fetch_all_subs(force_refetch=True)
-
-        # --- Step 4: Get the Final List of Models ---
-        if requires_new_selection:
-            # Get a fresh selection from the user.
-            log.info("Prompting for a new model selection.")
-            final_selection = self.select_models()
+        # --- Step 2: Select Models Based on Mode ---
+        if settings.get_args().daemon:
+            # DAEMON MODE: Directly call select_models to get the definitive list.
+            log.info("Daemon mode active. Calling select_models to get model list.")
+            final_selection = self._select_models_scraper()
         else:
-            # Re-use the existing queued users.
-            log.info(f"Re-using existing queue of {len(existing_queued_users)} models.")
-            final_selection = list(self.get_models(existing_queued_users).values())
+            existing_queued_users = set()
+            for act in activities_to_process:
+                existing_queued_users.update(set(self.get_scrape_selected_models(act)))
+            # Default to requiring a new selection unless the user says no.
+            requires_new_selection = True
+            if existing_queued_users:
+                prompt_choice = prompts.reset_username_prompt()
+                if prompt_choice == "No":
+                    requires_new_selection = False
+                elif prompt_choice in {"Selection", "Selection_Strict"}:
+                    settings.resetUserSelect()
+                    if prompt_choice == "Selection":
+                        self._fetch_all_subs(force_refetch=True)
 
-        # --- Step 5: Queue the Selection for All Specified Activities ---
-        # This is the key part: loop through the list of activities.
-        for activity in activities_to_process:
-            self.state.add_to_queue(
-                activity, [model.name for model in final_selection]
+            if requires_new_selection:
+                # Get a fresh selection from the user.
+                log.info("Prompting for a new model selection.")
+                final_selection = self._select_models_scraper()
+            else:
+                # Re-use the existing queued users.
+                log.info(f"Re-using existing queue of {len(existing_queued_users)} models.")
+                final_selection = list(self.get_models(existing_queued_users).values())
+
+        # --- Step 3: Reset and Queue the Selection for All Specified Activities---
+        self.clear_scrape_queues()
+        log.info(f"Final selection contains {len(final_selection)} models. Queuing for all activities.")
+        for act in activities_to_process:
+            # Set_queue is a clean way to reset and populate the queue.
+            self.state.set_queue(
+                act, [model.name for model in final_selection]
             )
 
         return final_selection
@@ -265,7 +179,7 @@ class ModelManager:
         This method is non-interactive and does not use activity queues.
 
         Args:
-            all_main_models (bool): If True, forces fetching of all main subscription models.
+            all_main_moself.updels (bool): If True, forces fetching of all main subscription models.
         """
         # Directly call the retriever function with the provided flags
         fetched_models = await retriver.get_models(
@@ -273,33 +187,37 @@ class ModelManager:
         )
 
         if fetched_models:
-            self.update_all_subs(fetched_models)
+            self._update_all_subs(fetched_models)
             log.info(f"Synchronization complete. Updated {len(fetched_models)} models.")
         else:
             log.info("Synchronization complete. No new models found.")
     # selected models
 
     def get_all_selected_models(self) -> List["Model"]:
-        """
-        Gets a list of all unique models currently queued across ALL activities,
-        preserving the order of first appearance.
-        """
-        all_usernames = self.state.get_all_queued_usernames()
-        # Get models and re-create the list to ensure the final order matches
-        models_dict = self.get_models(set(all_usernames))
-        return [models_dict[name] for name in all_usernames if name in models_dict]
-
+        return self._get_models_from_usernames(self.state.get_all_queued_usernames())
     def get_selected_models_activity(self, activity:  Union[EActivity, str]) -> List["Model"]:
         """
-        Gets a list of all unique models currently queued across ALL activities,
-        preserving the order of first appearance.
+        Gets a list of all unique models currently queued across a specific activitity,
+        preserving the order of first update_alappearance.
         """
         activity = self._get_activity(activity)
         all_usernames = self.state.get_queued_usernames(activity)
         # Get models and re-create the list to ensure the final order matches
         models_dict = self.get_models(set(all_usernames))
         return [models_dict[name] for name in all_usernames if name in models_dict]
+    def get_paid_selected_models(self) -> List["Model"]:
+        return self._get_models_from_usernames(self.state.get_paid_queued_usernames())
 
+    def get_scrape_selected_models(self) -> List["Model"]:
+        return self._get_models_from_usernames(self.state.get_scrape_queued_usernames())
+    #number selected
+    def get_num_paid_selected_models(self) -> int:
+        """Returns the number of unique models in all PaidActivity queues."""
+        return len(self.get_paid_selected_models())
+
+    def get_num_scrape_selected_models(self) -> int:
+        """Returns the number of unique models in all ScrapeActivity queues."""
+        return len(self.get_scrape_selected_models()) 
     def get_num_all_selected_models(self) -> int:
         return len(self.get_all_selected_models())
     
@@ -307,31 +225,49 @@ class ModelManager:
         activity = self._get_activity(activity)
         return len(self.get_selected_models_activity(activity))
     # statemanagement
-
-
     def mark_as_processed(self, username: str, activity:  Union[EActivity, str]):
         """Marks a single user as processed for a given activity."""
         activity=self._get_activity(activity)
         if username in self.state._queues[activity]["queued"]:
-            self.state._queues[activity]["processed"].add(username)
+            self.state.mark_as_processed(username,activity)
    
     def get_processed(self, activity:  Union[EActivity, str]) -> Set[str]:
         """Returns the set of users who have been processed for a given activity."""
         activity=self._get_activity(activity)
-        return self.state._queues[activity]["processed"]
+        return self.state.get_processed(activity)
 
     def get_unprocessed(self, activity:  Union[EActivity, str]) -> Set[str]:
         """Returns the set of users who are still queued but not yet processed."""
         activity=self._get_activity(activity)
         return self.state.get_unprocessed(activity)
+    # Clear Data
+    def reset_paid_processed_status(self) -> None:
+        """Resets the processed status for all PaidActivity instances."""
+        self.state.reset_paid_processed_status()
 
-    def reset_processed_status(self, activity: Union[EActivity, str]) -> Set[str]:
+    def reset_scrape_processed_status(self) -> None:
+        """Resets the processed status for all ScrapeActivity instances."""
+        self.state.reset_scrape_processed_status()
+
+    def reset_processed_status(self, activity: Union[EActivity, str]) -> None:
         activity=self._get_activity(activity)
         self.state.reset_processed_status(activity)
 
-    def reset_all_processed_status(self) -> Set[str]:
+    def reset_all_processed_status(self) -> None:
         self.state.reset_all_processed_status()
+    def clear_queue(self, activity: Union[EActivity, str]) -> None:
+        activity=self._get_activity(activity)
+        self.state.clear_queue(activity)
 
+    def clear_paid_queues(self) -> None:
+        """Clears the 'queued' and 'processed' lists for all PaidActivity instances."""
+        self.state.clear_paid_queues()
+
+    def clear_scrape_queues(self) -> None:
+        """Clears the 'queued' and 'processed' lists for all ScrapeActivity instances."""
+        self.state.clear_scrape_queues()
+    def clear_all_queue(self) -> None:
+        self.state.clear_all_queues()
     def _load_all_subs_if_needed(self) -> None:
         if not self._all_subs_dict:
             self._fetch_all_subs(force_refetch=True)
@@ -351,7 +287,7 @@ class ModelManager:
         while True:
             self._fetch_all_subs_async(all_main_models=all_main_models)
             if self._last_fetched:
-                self.update_all_subs(self._last_fetched)
+                self._update_all_subs(self._last_fetched)
                 return
             console.get_console().print(
                 "[bold red]No accounts found during last scan[/bold red]"
@@ -376,7 +312,7 @@ class ModelManager:
             console.get_console().print(
                 "[bold red]You have filtered the user list to zero.[/bold red]"
             )
-            self.setfilter()
+            self._setfilter()
 
     def _apply_filters(self) -> List["Model"]:
         models = self.all_subs
@@ -476,12 +412,122 @@ class ModelManager:
         for item in input_list:
             if isinstance(item, str):
                 activities_to_process.append(string_to_activity(item))
-            elif isinstance(item, EActivity):
+            elif isinstance(item, (EActivity.ScrapeActivity, EActivity.PaidActivity)):
                 activities_to_process.append(item)
         return activities_to_process
 
-    def _get_activity(self,activitity):
-        if isinstance(activitity, str):
-            return string_to_activity(activitity)
-        elif isinstance(activitity, EActivity):
-            return activitity
+    def _get_activity(self,activity):
+        if isinstance(activity, str):
+            return string_to_activity(activity)
+        elif isinstance(activity, (EActivity.ScrapeActivity, EActivity.PaidActivity)):
+            return activity
+    def _update_all_subs(self, models: List["Model"] | Dict[str, "Model"]) -> None:
+        """Updates the global cache of all fetched models."""
+        if isinstance(models, dict):
+            self._all_subs_dict.update(models)
+        elif isinstance(models, list):
+            for ele in models:
+                self._all_subs_dict[ele.name] = ele
+
+    def _select_models_scraper(self) -> List["Model"]:
+        """
+        Selects models for main scraper mode
+        """
+        usernames = settings.get_settings().usernames
+        is_daemon = settings.get_settings().daemon
+
+        # Guard Clause 1: Daemon mode with a specific list of users.
+        if is_daemon and usernames and usernames != "ALL":
+            allowed_usernames = set(usernames)
+            return [
+                model for model in self.all_subs
+                if model.name in allowed_usernames
+            ]
+
+        # Guard Clause 2: Daemon mode with an existing selection and no new instructions.
+        existing_selection = self.get_scrape_selected_models()
+        if is_daemon and existing_selection and not usernames:
+            return list(existing_selection)
+
+
+        filtered_models = self._filter_and_prompt_for_selection()
+
+        # Handle cases that filter these results without a final interactive prompt.
+        if usernames == "ALL":
+            return list(filtered_models.values())
+
+        # This handles interactive mode when a specific username list is provided.
+        if not is_daemon and usernames:
+            allowed_usernames = set(usernames)
+            return [
+                model for model in filtered_models.values()
+                if model.name in allowed_usernames
+            ]
+
+        # FINAL CASE: We must prompt for a selection. This is reached when:
+        #  1. In interactive mode with no --username argument.
+        #  2. In daemon mode on its first run with no --username argument.
+        return retriver.get_selected_model(list(filtered_models.values()))
+    def _setfilter(self):
+        while True:
+            self._print_filter_settings()
+            choice = prompts.decide_filters_menu()
+            try:
+                # --- Place this dictionary outside your main loop for efficiency ---
+                prompt_actions = {
+                    "sort": prompts.modify_sort_prompt,
+                    "subtype": prompts.modify_subtype_prompt,
+                    "promo": prompts.modify_promo_prompt,
+                    "active": prompts.modify_active_prompt,
+                    "price": prompts.modify_prices_prompt,
+                    "list": prompts.modify_list_prompt,
+                }
+
+                if choice == "model_list":
+                    break
+
+                # Get a copy of the arguments before any modifications
+                original_args = settings.get_args()
+                new_args = settings.get_args(copy=True)
+
+                # 1. Determine the new arguments based on the user's choice
+                if choice in prompt_actions:
+                    new_args = prompt_actions[choice](new_args)
+                elif choice == "reset_filters":
+                    new_args = resetUserFilters()
+                elif choice == "reset_list":
+                    new_args.userlist = ["main"]
+                    new_args.blacklist = [""]  # Clears the blacklist
+                elif choice == "rescan":
+                    self._fetch_all_subs(force_refetch=True, reset=True)
+
+                # 2. If any action generated new arguments, process the changes
+                if new_args:
+                    # Use sets to compare lists, safely handling None with 'or []'
+                    user_list_changed = set(original_args.userlist or []) != set(
+                        new_args.userlist or []
+                    )
+                    black_list_changed = set(original_args.blacklist or []) != set(
+                        new_args.blacklist or []
+                    )
+
+                    # Always update the arguments in the settings
+                    settings.update_args(new_args)
+                    # If a list changed, it requires re-fetching all the models
+                    if user_list_changed or black_list_changed:
+                        console.get_console().print(
+                            "[yellow]Lists changed, re-fetching models from API...[/yellow]"
+                        )
+                        self._fetch_all_subs(force_refetch=True, reset=True)
+                        original_args = new_args
+                        new_args = settings.get_args(copy=True)
+
+            except Exception as e:
+                console.get_console().print(f"Exception in menu: {e}")
+            settings.update_args(new_args)
+    def _get_models_from_usernames(self, usernames: List[str]) -> List["Model"]:
+        """Private helper to fetch Model objects from a list of usernames, preserving order."""
+        if not usernames:
+            return []
+        models_dict = self.get_models(set(usernames))
+        return [models_dict[name] for name in usernames if name in models_dict]
