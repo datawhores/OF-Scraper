@@ -30,10 +30,16 @@ from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.logger import flushlogs
+from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.scripts.after_like_action_script import after_like_action_script
+
 
 
 log = logging.getLogger("shared")
 
+ACTION_SCRIPTS={"like":after_like_action_script,
+                "unlike":after_like_action_script,
+                "download":after_download_action_script}
 
 class scraperManager(commmandManager):
     def __init__(self):
@@ -65,6 +71,7 @@ class scraperManager(commmandManager):
                 else:
                     userdata, session = prepare()
                     normal_data = self._process_users_actions_normal(userdata, session)
+
             final_action(normal_data, scrape_paid_data, user_first_data)
 
     @exit.exit_wrapper
@@ -105,39 +112,48 @@ class scraperManager(commmandManager):
     async def _execute_user_action(
         self, posts=None, like_posts=None, ele=None, media=None
     ):
-        actions = settings.get_settings().action
+        actions = settings.get_settings().actions
         username = ele.name
         model_id = ele.id
         out = []
         for action in actions:
-            if action == "download":
-                result, _ = await downloader(
-                    posts=posts,
-                    media=media,
-                    model_id=model_id,
-                    username=username,
-                )
-                out.append(result)
-            elif action == "like":
-                out.append(
-                    like_action.process_like(
-                        ele=ele,
-                        posts=like_posts,
+            try:
+                if action == "download":
+                    result, _ = await downloader(
+                        posts=posts,
                         media=media,
                         model_id=model_id,
                         username=username,
                     )
-                )
-            elif action == "unlike":
-                out.append(
-                    like_action.process_unlike(
-                        ele=ele,
-                        posts=like_posts,
-                        media=media,
-                        model_id=model_id,
-                        username=username,
+                    out.append(result)
+                elif action == "like":
+                    out.append(
+                        like_action.process_like(
+                            ele=ele,
+                            posts=like_posts,
+                            media=media,
+                            model_id=model_id,
+                            username=username,
+                        )
                     )
-                )
+                elif action == "unlike":
+                    out.append(
+                        like_action.process_unlike(
+                            ele=ele,
+                            posts=like_posts,
+                            media=media,
+                            model_id=model_id,
+                            username=username,
+                        )
+                    )
+                #mark the activity as processed
+                manager.Manager.model_manager.mark_as_processed(username,activity=action)
+                ACTION_SCRIPTS.get(action)(username,media,posts,action=action)
+
+            except Exception as E:
+                log.debug(f"Unable to complete {action} for {username}")
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
         return out
 
     @exit.exit_wrapper
@@ -192,7 +208,7 @@ def daemon_process():
     if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
-    manager.Manager.model_manager.get_selected_models()
+    manager.Manager.model_manager.sync_models()
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
@@ -258,16 +274,14 @@ def process_selected_areas():
 
 
 def scrapper():
-    global selectedusers
-    selectedusers = None
     args = settings.get_args()
     if args.daemon:
-        if len(args.action) == 0 and not args.scrape_paid:
+        if len(args.actions) == 0 and not args.scrape_paid:
             prompts.action_prompt()
         daemon_process()
-    elif len(args.action) > 0 or args.scrape_paid:
+    elif len(args.actions) > 0 or args.scrape_paid:
         process_selected_areas()
-    elif len(args.action) == 0:
+    elif len(args.actions) == 0:
         process_prompts()
 
 
