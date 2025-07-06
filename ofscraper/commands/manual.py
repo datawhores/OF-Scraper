@@ -25,6 +25,8 @@ from ofscraper.main.close.final.final import final_action
 import ofscraper.main.manager as manager
 import ofscraper.utils.settings as settings
 from ofscraper.classes.of.postcollection import PostCollection
+from ofscraper.data.models.state import EActivity
+from ofscraper.scripts.after_download_action_script import after_download_action_script
 
 log=logging.getLogger("shared")
 def manual_download(urls=None):
@@ -87,7 +89,9 @@ def manual_download(urls=None):
                     username, model_id, collection.all_unique_media, posts=collection.posts
                 )
                 results.append(result)
-                manager.Manager.model_manager.mark_as_processed(username)
+                manager.Manager.model_manager.mark_as_processed(username,activity="download")
+                after_download_action_script(username, collection.all_unique_media)
+
 
         final(results)
 
@@ -240,7 +244,7 @@ def set_user_data(url_dicts):
     """Adds models found to the main model manager."""
     for url_dict in url_dicts.values():
         if url_dict["collection"] and url_dict["collection"].username:
-            manager.Manager.model_manager.add_model(url_dict["collection"].username)
+            manager.Manager.model_manager.add_models(url_dict["collection"].username,activity="download")
 
 def allow_manual_dupes():
     """Forces settings to allow debug duplicate downloads for manual mode."""

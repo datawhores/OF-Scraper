@@ -87,7 +87,7 @@ class metadataCommandManager(commmandManager):
         old_args = copy.deepcopy(settings.get_args())
         self._force_change_metadata()
         out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-
+        await manager.Manager.model_manager.sync_models(all_main_models=True)
         async for count, value, length in process_scrape_paid():
             process_user_info_printer(
                 value,
@@ -130,6 +130,8 @@ class metadataCommandManager(commmandManager):
         )
         data = await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
+        manager.Manager.model_manager.mark_as_processed(activity="download")
+        after_download_action_script(username, media,action="metadata")
         return [data]
 
     async def _metadata_stray_media(SELF, username, model_id, media):
@@ -174,8 +176,6 @@ class metadataCommandManager(commmandManager):
             async with session as c:
                 data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
                 for ele in userdata:
-                    username = ele.name
-                    model_id = ele.id
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
@@ -340,7 +340,6 @@ async def process_dicts(username, model_id, medialist):
 @run_async
 async def metadata_process(username, model_id, medialist):
     data = await metadata_picker(username, model_id, medialist)
-    after_download_action_script(username, medialist,action="metadata")
     return data
 
 
@@ -365,7 +364,7 @@ def prepare():
     profile_tools.print_current_profile()
     actions.select_areas()
     init.print_sign_status()
-    userdata = manager.Manager.model_manager.get_selected_models(rescan=False)
+    userdata = manager.Manager.model_manager.select_and_setup_activity()
     session = manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_SEM_MAX"),
         total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),

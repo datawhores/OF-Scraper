@@ -5,8 +5,11 @@ import re
 import threading
 import time
 import traceback
+from functools import partial
+
 from collections import defaultdict
 from rich.text import Text
+
 
 import arrow
 
@@ -29,7 +32,7 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.network as network
-from ofscraper.data.api.common.check import read_check, reset_check, set_check
+from ofscraper.data.api.common.check import read_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
@@ -80,7 +83,9 @@ def process_download_cart():
                 media=collection.all_unique_media
                 posts=collection.posts
                 after_download_action_script(username,media,posts)
+                manager.Manager.model_manager.mark_as_processed(username,activity="download")
             final_action(normal_data=all_results)
+            manager.Manager.model_manager.reset_processed_status("download")
             time.sleep(5)
         except Exception as e:
             log.traceback_(f"Error in process_item: {e}")
@@ -109,7 +114,7 @@ def process_item(cart_user_dict):
             post_id = int(row["post_id"])
             media_id = int(row["media_id"])
             username=row["username"]
-            manager.Manager.model_manager.add_model(username)
+            manager.Manager.model_manager.add_models(username,activity="download")
             model_id=manager.Manager.model_manager.get_model(username).id
             media = check_user_dict[model_id]["collection"].find_media_item(media_id)
             if not media:
@@ -140,7 +145,7 @@ def process_item(cart_user_dict):
                     key, "download_cart", Text("[downloaded]", style="bold green")
                 )
                 #might not be needed because of lack of final_script
-                manager.Manager.model_manager.mark_as_processed(username)
+                manager.Manager.model_manager.mark_as_processed(username,"download")
                 break
         except Exception as E:
             if count == 1:
@@ -161,16 +166,13 @@ def process_item(cart_user_dict):
 @run
 async def data_refill( model_id):
     if settings.get_settings().command == "msg_check":
-        reset_message_set(model_id)
-        retriver = message_check_retriver
+        retriver = partial(message_check_retriver,forced=True)
     elif settings.get_settings().command == "paid_check":
-        reset_paid_set(model_id)
-        retriver = purchase_check_retriver
+        retriver = partial(purchase_check_retriver,forced=True)
     elif settings.get_settings().command == "story_check":
-        retriver = stories_check_retriver
+        retriver = partial(stories_check_retriver,forced=True)
     elif settings.get_settings().command == "post_check":
-        reset_time_line_cache(model_id)
-        retriver = post_check_retriver
+        retriver=partial(post_check_retriver,forced=True)
     else:
         return
     async for username, model_id, final_post_array in retriver():
@@ -234,9 +236,11 @@ async def post_check_runner():
 
 
 @run
-async def post_check_retriver():
+async def post_check_retriver(forced=False):
     user_dict = {}
     links = list(url_helper())
+    if settings.get_settings().force:
+        forced=True
     async with manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -272,7 +276,7 @@ async def post_check_retriver():
                 )
                 if "Timeline" in areas:
                     oldtimeline = read_check(model_id, timeline.API)
-                    if len(oldtimeline) > 0 and not settings.get_settings().force:
+                    if len(oldtimeline) > 0 and not forced:
                         timeline_data = oldtimeline
                     else:
                         timeline_data = await timeline.get_timeline_posts(
@@ -281,7 +285,7 @@ async def post_check_retriver():
                         set_check(timeline_data, model_id, timeline.API)
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
-                    if len(oldarchive) > 0 and not settings.get_settings().force:
+                    if len(oldarchive) > 0 and not forced:
                         archived_data = oldarchive
                     else:
                         archived_data = await archived.get_archived_posts(
@@ -291,7 +295,7 @@ async def post_check_retriver():
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
-                    if len(oldpinned) > 0 and not settings.get_settings().force:
+                    if len(oldpinned) > 0 and not forced:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
@@ -299,7 +303,7 @@ async def post_check_retriver():
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
-                    if len(oldlabels) > 0 and not settings.get_settings().force:
+                    if len(oldlabels) > 0 and not forced:
                         labels_data = oldlabels
                     else:
                         labels_resp = await labels.get_labels(model_id, c=c)
@@ -318,7 +322,7 @@ async def post_check_retriver():
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
-                    if len(oldstreams) > 0 and not settings.get_settings().force:
+                    if len(oldstreams) > 0 and not forced:
                         streams_data = oldstreams
                     else:
                         streams_resp = await streams.get_streams_posts(
@@ -433,8 +437,10 @@ async def message_checker_runner():
             await row_gather(user_name, model_id)
 
 
-async def message_check_retriver():
+async def message_check_retriver(forced=False):
     links = list(url_helper())
+    if settings.get_settings().force:
+        forced=True
     async with manager.Manager.aget_ofsession() as c:
         for item in links:
             num_match = re.search(
@@ -457,7 +463,7 @@ async def message_check_retriver():
                 oldmessages = read_check(model_id, messages_.API)
                 log.debug(f"Number of messages in cache {len(oldmessages)}")
 
-                if len(oldmessages) > 0 and not settings.get_settings().force:
+                if len(oldmessages) > 0 and not forced:
                     messages = oldmessages
                 else:
                     messages = await messages_.get_messages(model_id, user_name, c=c)
@@ -473,7 +479,7 @@ async def message_check_retriver():
                 oldpaid = read_check(model_id, paid_.API) or []
                 paid = None
                 # paid content
-                if len(oldpaid) > 0 and not settings.get_settings().force:
+                if len(oldpaid) > 0 and not forced:
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
@@ -507,9 +513,11 @@ async def purchase_checker_runner():
 
 
 @run
-async def purchase_check_retriver():
+async def purchase_check_retriver(forced=False):
     user_dict = {}
     auth_requests.make_headers()
+    if settings.get_settings().force:
+        forced=True
     async with manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -523,7 +531,7 @@ async def purchase_check_retriver():
             oldpaid = read_check(model_id, paid_.API)
             paid = None
 
-            if len(oldpaid) > 0 and not settings.get_settings().force:
+            if len(oldpaid) > 0 and not forced:
                 paid = oldpaid
             elif user_name == of_env.getattr("DELETED_MODEL_PLACEHOLDER"):
                 paid_user_dict = await paid_.get_all_paid_posts()
@@ -562,7 +570,7 @@ async def stories_checker_runner():
 
 
 @run
-async def stories_check_retriver():
+async def stories_check_retriver(forced=False):
     user_dict = {}
     async with manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
@@ -725,18 +733,3 @@ async def row_gather(username, model_id):
     ROWS = ROWS or []
     ROWS.extend(out)
 
-
-def reset_time_line_cache(model_id):
-    reset_check(model_id, timeline.API)
-    reset_check(model_id, archived.API)
-    reset_check(model_id, labels.API)
-    reset_check(model_id, pinned.API)
-
-
-def reset_message_set(model_id):
-    reset_check(model_id, messages_.API)
-    reset_check(model_id, paid_.API)
-
-
-def reset_paid_set(model_id):
-    reset_check(model_id, paid_.API)

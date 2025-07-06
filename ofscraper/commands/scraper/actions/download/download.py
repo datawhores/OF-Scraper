@@ -58,7 +58,6 @@ async def download_process(username, model_id, medialist, posts):
     - regular download
     """
     data, values = await process_dicts(username, model_id, medialist, posts)
-    after_download_action_script(username, medialist,posts=posts)
     return data, values
 
 
