@@ -46,7 +46,7 @@ def main_menu_action():
                     count > 0 and reset_menu_helper()
                     scapingManager.runner(menu=True)
                     #reset models for menu only
-                    manager.Manager.model_manager.reset_processed_status()
+                    manager.Manager.model_manager.reset_all_processed_status()
                     count = count + 1
 
             elif result_main_prompt == "auth":
@@ -139,4 +139,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    manager.Manager.model_manager.get_selected_models(reset=True)
+    manager.Manager.model_manager.select_and_setup_activity(reset=True)
