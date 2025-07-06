@@ -21,7 +21,18 @@ class EActivity(Enum):
         UNLIKE = auto()
         DOWNLOAD = auto()
 
-
+def _get_all_enum_members(enum_class):
+    """
+    Recursively finds all members in an enum, including nested enums.
+    """
+    for member in enum_class:
+        # Check if the member's value is another Enum class
+        if isinstance(member.value, type) and issubclass(member.value, Enum):
+            # If so, recursively yield from it
+            yield from _get_all_enum_members(member.value)
+        else:
+            # Otherwise, it's a regular member
+            yield member
 class StateManager:
     """
     Manages the processing state for different activities.
@@ -30,19 +41,40 @@ class StateManager:
 
     def __init__(self):
         """Initializes the manager with all defined activities."""
+        # Create a flat list of all enum members
+        all_activities = list(_get_all_enum_members(EActivity))
+    
+        # Use the flat list to build the queues dictionary
         self._queues: Dict[EActivity, Dict[str, Set[str]]] = {
-            activity: {"queued": set(), "processed": set()} for activity in EActivity
+            activity: {"queued": [], "processed": set()} for activity in all_activities
         }
-
-    def queue_for_activity(self, activity: EActivity, usernames: List[str]):
+    def set_queue(self, activity: EActivity, usernames: List[str]):
         """
         Sets the entire queue for a given activity, preserving order.
         This resets any previous progress for that activity.
         """
         # Directly assign the list to preserve its order
-        self._queues[activity]["queued"] = usernames
+        self._queues[activity]["queued"] = list(usernames)
         self._queues[activity]["processed"] = set() # Reset progress
-        print(f"Queued {len(usernames)} users for the {activity.name} activity in their original order.")
+        log.info(f"Queued {len(usernames)} users for the {activity.name} activity in their original order.")
+    def add_to_queue(self, activity: EActivity, usernames: List[str]):
+        """
+        Adds new, unique usernames to an existing activity queue, preserving order.
+        Does not reset progress.
+        """
+        # Get the existing queue and a set of its users for fast lookups
+        current_queue = self._queues[activity]["queued"]
+        existing_users = set(current_queue)
+        
+        added_count = 0
+        for user in usernames:
+            if user not in existing_users:
+                current_queue.append(user)
+                existing_users.add(user)
+                added_count += 1
+                
+        if added_count > 0:
+            log.info(f"Added {added_count} new, unique users to the {activity.name} queue.")
 
     def get_unprocessed(self, activity: EActivity) -> List[str]:
         """
@@ -72,7 +104,7 @@ class StateManager:
         """
         Returns an ordered list of unique usernames for a given activity.
         If no activity is provided, it returns a combined list of all users
-        queued under EActivity.ScrapeActivity.
+        queue
         """
         all_usernames_ordered = []
         seen = set()
@@ -108,7 +140,7 @@ class StateManager:
         """
         if activity in self._queues:
             self._queues[activity]["processed"].clear()
-            print(f"Processed status for {activity.name} has been reset.")
+            log.info(f"Processed status for {activity.name} has been reset.")
 
     def reset_all_processed_status(self) -> None:
         """
@@ -116,7 +148,7 @@ class StateManager:
         """
         for activity in self._queues:
             self._queues[activity]["processed"].clear()
-        print("Processed status for all activities has been reset.")
+        log.info("Processed status for all activities has been reset.")
 
 # The map remains the same
 ACTIVITY_MAP = {
