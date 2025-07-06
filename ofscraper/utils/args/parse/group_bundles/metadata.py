@@ -142,7 +142,7 @@ It also uses a new filename if one is available
                 ctx.params["list"] = False
         elif not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
             raise UsageError("'--scrape-paid' and/or --metadata is required")
-        ctx.params["action"] = []
+        ctx.params["actions"] = []
         return func(ctx, *args, **kwargs)
 
     hide_metadata_mode(wrapper)
