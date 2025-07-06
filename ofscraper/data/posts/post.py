@@ -278,6 +278,7 @@ async def process_all_paid():
             description="Processsing Paid content data"
         )
         actions = ["download"]
+        count=0
         for model_id, value in paid_content.items():
             progress_updater.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
