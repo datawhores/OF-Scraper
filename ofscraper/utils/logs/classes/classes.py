@@ -63,7 +63,7 @@ class DiscordFormatter(SensitiveFormatter):
         # Underline
         t = re.sub(r"\[underline[^\]]*](.*?)\[/underline[^\]]*]", r"__\1__", t, flags=re.IGNORECASE)
         # Strikethrough
-        t = re.sub(r"\[strike[^\]]*](.*?)\[/strike[^\]]*]", r"~~\1~~", t, flags=re_IGNORECASE)
+        t = re.sub(r"\[strike[^\]]*](.*?)\[/strike[^\]]*]", r"~~\1~~", t, flags=re.IGNORECASE)
         # Inline code
         t = re.sub(r"\[code[^\]]*](.*?)\[/code[^\]]*]", r"`\1`", t, flags=re.IGNORECASE)
 

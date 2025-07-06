@@ -6,7 +6,6 @@ import traceback
 import ofscraper.main.open.run as run
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.paths.manage as paths_manage

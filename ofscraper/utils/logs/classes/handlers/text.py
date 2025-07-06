@@ -1,5 +1,4 @@
 import logging
-import ofscraper.utils.logs.globals as log_globals
 
 
 class TextHandler(logging.Handler):
