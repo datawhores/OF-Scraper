@@ -257,7 +257,7 @@ def datevalidator():
 def like_area_validator_posts():
     def callable(x):
         args = settings.get_args()
-        if "like" not in args.action and "unlike" not in args.action:
+        if "like" not in args.actions and "unlike" not in args.actions:
             return True
         elif len(args.like_area) > 0:
             return True

@@ -25,7 +25,7 @@ def action_prompt() -> int:
         args = redownload_prompt()
     if isinstance(action, str):
         return action
-    args.action = action
+    args.actions = action
     settings.update_args(args)
 
 

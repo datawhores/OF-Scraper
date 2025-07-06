@@ -34,7 +34,7 @@ def reset_like():
 @free.space_checker
 def select_areas(actions=None, reset=False):
     args = settings.get_args()
-    actions = actions or args.action or {}
+    actions = actions or args.actions or {}
     if "download" in actions and reset:
         reset_download()
     elif ("like" or "unlike") in actions and reset:
@@ -69,7 +69,7 @@ def remove_post_area():
 # set post for primarily for download-area, secondary for like/unlike
 def set_post_area(action=None):
     args = settings.get_args()
-    action = action or args.action or {}
+    action = action or args.actions or {}
     if "download" not in action:
         return
     elif settings.get_settings().command == "metadata":
@@ -87,7 +87,7 @@ def set_post_area(action=None):
 # set download area area based primarly on posts,secondary on  prompt
 def set_download_area(action=None):
     args = settings.get_args()
-    action = action or args.action or {}
+    action = action or args.actions or {}
     selected = None
     not_anon_safe = ["Messages", "Purchases", "Highlights", "Stories"]
     selected = areas.get_download_area()
@@ -107,7 +107,7 @@ def set_download_area(action=None):
 # set like area based primarly on posts,secondary on from prompt
 def set_like_area(action=None):
     args = settings.get_args()
-    action = action or args.action or {}
+    action = action or args.actions or {}
     if "like" not in action and "unlike" not in action:
         return
     args.like_area = (
@@ -120,7 +120,7 @@ def set_like_area(action=None):
 
 def set_scrape_paid(action=None):
     args = settings.get_args()
-    action = action or args.action or {}
+    action = action or args.actions or {}
     if "download" not in action:
         return
     args.scrape_paid = (
