@@ -1,5 +1,6 @@
 import threading
 import re
+import arrow
 from dotenv import load_dotenv
 from copy import deepcopy
 import ofscraper.utils.ads as ads
@@ -169,6 +170,10 @@ def merged_settings():
     merged.env_files=get_env_files()
     merged.text=read_args.retriveArgs().text or read_args.retriveArgs().text_only
     merged.text_only=read_args.retriveArgs().text_only
+    if read_args.retriveArgs().redownload:
+        merged.force_all=True
+        merged.after=arrow.get(2000)
+        merged.before=arrow.now().shift(days=1)
     return merged
 
 
