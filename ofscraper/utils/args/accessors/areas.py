@@ -62,7 +62,7 @@ def finalize_choice(all_choices, post):
 
 def get_final_posts_area():
     final_post_areas = set()
-    actions = settings.get_settings().action
+    actions = settings.get_settings().actions
     if "download" in actions:
         final_post_areas.update(get_download_area())
     if settings.get_settings().command == "metadata":

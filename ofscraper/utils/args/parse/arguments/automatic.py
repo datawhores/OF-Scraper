@@ -15,6 +15,8 @@ daemon_option = click.option(
 action_option = click.option(
     "-a",
     "--action",
+    "--actions",
+    "actions",
     help="""
     Select batch action(s) to perform [like,unlike,download].
     Accepts space or comma-separated list. Like and unlike cannot be combined.

@@ -131,7 +131,7 @@ force_model_unique_option = click.option(
     "--force-model-unique",
     "--dupe-model-unique",
     "--dupe-model",
-    "--force_model_unique",
+    "force_model_unique",
     help="Only download found files with media ids not present for the current model in the database",
     default=False,
     is_flag=True,
@@ -157,7 +157,7 @@ redownload_option = click.option(
     "--redownload",
     "--re-download",
     "redownload",
-    help="Forces redownloading of all files in selected post types",
+    help="Forces scanning and redownloading of all files in selected post types",
     default=False,
     is_flag=True,
 )
