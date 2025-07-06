@@ -3,7 +3,6 @@ import schedule
 import logging
 import time
 import traceback
-from functools import partial
 
 import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.logs.logs as logs
@@ -37,10 +36,9 @@ def schedule_helper(*functs):
     jobqueue.put(logger.resetLogger)
     jobqueue.put(logs.printStartValues)
     jobqueue.put(
-        partial(manager.Manager.model_manager.get_selected_models, rescan=True)
+       manager.Manager.model_manager.sync_models
     )
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)
-    jobqueue.put(manager.Manager.model_manager.reset_processed_status)
     return schedule.CancelJob
