@@ -137,8 +137,7 @@ class ModelManager:
             final_selection = self._select_models_scraper()
         else:
             existing_queued_users = set()
-            for act in activities_to_process:
-                existing_queued_users.update(set(self.get_scrape_selected_models(act)))
+            existing_queued_users.update(set(self.get_scrape_selected_models()))
             # Default to requiring a new selection unless the user says no.
             requires_new_selection = True
             if existing_queued_users:
