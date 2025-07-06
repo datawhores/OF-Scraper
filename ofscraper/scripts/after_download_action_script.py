@@ -44,9 +44,10 @@ def after_download_action_script(username, media, posts=None,action=None):
         log.debug(
             f"Running post user script for {processed_username} with script: {script_path}"
         )
-
-        processed_posts = [x.post for x in (posts or [])]
         processed_media = [x.media for x in (media or [])]
+        if not posts:
+            posts=[x.post for x in (media or [])]
+        processed_posts = [x.post for x in (posts or [])]
 
         master_dump_payload = {
             "username": processed_username,
