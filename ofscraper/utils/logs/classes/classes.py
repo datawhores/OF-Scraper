@@ -45,20 +45,46 @@ class SensitiveFormatter(logging.Formatter):
 
 
 class DiscordFormatter(SensitiveFormatter):
-    """Formatter that removes sensitive information in logs."""
+    """
+    Formatter that converts rich markup and removes sensitive information
+    for safe display in Discord.
+    """
 
     @staticmethod
-    def _filter(s):
+    def _filter(s: str) -> str:
+        # First, apply the parent's sensitive data filtering
         t = SensitiveFormatter._filter(s)
-        t = re.sub("\\\\+", "\\\\", t)
-        t = re.sub("\[bold[^\]]*]", "**", t)
-        t = re.sub("\[\/bold[^\]]*]", "**", t)
-        t = Text.from_markup(Text(t).plain).plain
-        t = re.sub("  +", " ", t)
-        t = re.sub("\*\*+", "**", t)
-        t = re.sub("\\\\+", "", t)
-        return t
 
+        # --- Convert Rich-style tags to Discord Markdown ---
+        # Bold
+        t = re.sub(r"\[bold[^\]]*](.*?)\[/bold[^\]]*]", r"**\1**", t, flags=re.IGNORECASE)
+        # Italic
+        t = re.sub(r"\[italic[^\]]*](.*?)\[/italic[^\]]*]", r"*\1*", t, flags=re.IGNORECASE)
+        # Underline
+        t = re.sub(r"\[underline[^\]]*](.*?)\[/underline[^\]]*]", r"__\1__", t, flags=re.IGNORECASE)
+        # Strikethrough
+        t = re.sub(r"\[strike[^\]]*](.*?)\[/strike[^\]]*]", r"~~\1~~", t, flags=re_IGNORECASE)
+        # Inline code
+        t = re.sub(r"\[code[^\]]*](.*?)\[/code[^\]]*]", r"`\1`", t, flags=re.IGNORECASE)
+
+        # --- Cleanup and Final Touches ---
+        # Strip any remaining or unsupported Rich tags (e.g., [red], [link])
+        # This leaves the content inside the tags intact.
+        t = re.sub(r"\[.*?\]", "", t)
+
+        # Use Rich's Text class to handle any lingering markup entities
+        t = Text.from_markup(t).plain
+
+        # Consolidate multiple spaces and fix markdown artifacts
+        t = re.sub(r" +", " ", t)
+        t = re.sub(r"\*\*+", "**", t) # Fix cases like "****"
+        t = re.sub(r"__+", "__", t)
+        t = re.sub(r"~~+", "~~", t)
+
+        # Remove backslashes used for escaping in the original markup
+        t = t.replace("\\", "")
+
+        return t.strip()
 
 class LogFileFormatter(SensitiveFormatter):
     """Formatter that removes sensitive information in logs."""
