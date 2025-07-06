@@ -10,12 +10,12 @@ import certifi
 
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console
-import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
 import ofscraper.main.manager as manager
+
 
 
 def printStartValues():
@@ -40,13 +40,6 @@ def printEndValues():
 
 def print_system_log():
     log = logging.getLogger("shared")
-    log_helpers.updateSenstiveDict(
-        f"/{common_paths.get_username()}/", "/your_username/"
-    )
-    log_helpers.updateSenstiveDict(
-        f"\\{common_paths.get_username()}\\", "\\\\your_username\\\\"
-    )
-
     # print info
     log.info(f"Log Level: {settings.get_settings().log_level}")
     log.info(f"version: {__version__}")

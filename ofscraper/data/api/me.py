@@ -16,7 +16,7 @@ import traceback
 
 import ofscraper.main.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.logs.utils.level as log_helpers
+import ofscraper.utils.logs.utils.sensitive as sensitive
 
 log = logging.getLogger("shared")
 
@@ -31,12 +31,12 @@ def _scraper_user_helper(c):
         with c.requests(of_env.getattr("meEP")) as r:
             data = r.json_()
             if data["isAuth"]:
-                log_helpers.updateSenstiveDict(data["id"], "userid")
-                log_helpers.updateSenstiveDict(
+                sensitive.add_sensitive_pattern(data["id"], "userid")
+                sensitive.add_sensitive_pattern(
                     f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
                     "username",
                 )
-                log_helpers.updateSenstiveDict(
+                sensitive.add_sensitive_pattern(
                     f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
                     "name",
                 )

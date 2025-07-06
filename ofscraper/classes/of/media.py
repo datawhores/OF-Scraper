@@ -18,7 +18,7 @@ import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.logs.utils.level as log_helpers
+import ofscraper.utils.logs.utils.sensitive as sensitive
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -572,7 +572,7 @@ class Media(base.base):
                 for prot in adapt_set.content_protections:
                     if prot.value is None:
                         kId = prot.pssh[0].pssh
-                        log_helpers.updateSenstiveDict(kId, "pssh_code")
+                        sensitive.add_sensitive_pattern(kId, "pssh_code")
                         break
 
                 # Typically there's only one audio representation
