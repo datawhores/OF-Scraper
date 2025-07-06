@@ -8,6 +8,7 @@ import ofscraper.utils.actions as actions
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.config.data as data
+import ofscraper.utils.settings as settings
 
 
 log = logging.getLogger("shared")
@@ -26,7 +27,7 @@ def prepare(menu=False):
     if menu is True:
         actions.set_scrape_paid()
 
-    userdata = manager.Manager.model_manager.get_selected_models(rescan=False)
+    userdata = manager.Manager.model_manager.prepare_activity(activity=settings.get_settings().actions)
     return userdata, session
 
 
