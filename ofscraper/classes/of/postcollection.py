@@ -164,9 +164,9 @@ class PostCollection:
         """
         # 1. Determine the action type ('like' or 'unlike') from settings.
         like_action = None
-        if "like" in settings.get_settings().action:
+        if "like" in settings.get_settings().actions:
             like_action = True
-        elif "unlike" in settings.get_settings().action:
+        elif "unlike" in settings.get_settings().actions:
             like_action = False
         else:
             # If neither action is specified, there's nothing to do.
@@ -195,7 +195,7 @@ class PostCollection:
         Filters the list of text candidates to get the final list of posts
         whose text should be downloaded.
         """
-        if "download" not in settings.get_settings().action:
+        if "download" not in settings.get_settings().actions:
             return []
         if not settings.get_settings().text:
             return []
