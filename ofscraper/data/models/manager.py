@@ -79,9 +79,15 @@ class ModelManager:
     def select_models(self) -> List["Model"]:
         """Applies filters and prompts user to return a list of selected models."""
         filtered_models = self._filter_and_prompt_for_selection()
-        if settings.get_settings().username == "ALL":
+        if settings.get_settings().usernames == "ALL":
             return list(filtered_models.values())
-        return retriver.get_selected_model(list(filtered_models.values()))
+        elif settings.get_settings().usernames is not None:
+            allowed_usernames = set(settings.get_settings().usernames)
+            return [
+                model for model in filtered_models.values() if model.name in allowed_usernames
+            ]
+        else:
+            return retriver.get_selected_model(list(filtered_models.values()))
 
     @run
     async def add_models(self, usernames: List[str], activity: Union[EActivity, str]) -> List[str]:
@@ -136,7 +142,7 @@ class ModelManager:
         if successfully_added:
             # Normalize activity string/enum and queue the usernames
             activity = self._get_activity(activity)
-            self.state.queue_for_activity(activity, successfully_added)
+            self.state.add_to_queue(activity, successfully_added)
 
         return successfully_added
 
@@ -201,7 +207,6 @@ class ModelManager:
     def prepare_activity(
         self,
         activity: Union[EActivity, str, List[Union[EActivity, str]]],
-        rescan: bool = False,
         reset: bool = False,
     ) -> List["Model"]:
         """
@@ -212,8 +217,6 @@ class ModelManager:
         # Convert the flexible input into a clean list of EActivity members.
         activities_to_process = self._get_activities(activity)
         # --- Step 2: Handle Data Fetching ---
-        if rescan:
-            self._fetch_all_subs(force_refetch=True)
         self._load_all_subs_if_needed()
 
         # --- Step 3: Determine if a New Selection is Required ---
@@ -247,7 +250,7 @@ class ModelManager:
         # --- Step 5: Queue the Selection for All Specified Activities ---
         # This is the key part: loop through the list of activities.
         for activity in activities_to_process:
-            self.state.queue_for_activity(
+            self.state.add_to_queue(
                 activity, [model.name for model in final_selection]
             )
 
@@ -265,10 +268,6 @@ class ModelManager:
             all_main_models (bool): If True, forces fetching of all main subscription models.
             all_models (bool): If True, forces fetching of all subscription models.
         """
-        log.info("Synchronizing models...")
-        if not all_main_models and not all_models:
-            raise Exception("Must pass all_main or all_models")
-
         # Directly call the retriever function with the provided flags
         fetched_models = await retriver.get_models(
             all_main_models=all_main_models, all_models=all_models
@@ -303,11 +302,9 @@ class ModelManager:
         return [models_dict[name] for name in all_usernames if name in models_dict]
 
     def get_num_all_selected_models(self) -> int:
-        # Just call the corresponding method and get its length
         return len(self.get_all_selected_models())
     
     def get_num_selected_models_activity(self, activity: Union[EActivity, str] = None) -> int:
-        # Call the corresponding method and get its length
         activity = self._get_activity(activity)
         return len(self.get_selected_models_activity(activity))
     # statemanagement
@@ -327,9 +324,7 @@ class ModelManager:
     def get_unprocessed(self, activity:  Union[EActivity, str]) -> Set[str]:
         """Returns the set of users who are still queued but not yet processed."""
         activity=self._get_activity(activity)
-        queued = self.state._queues[activity]["queued"]
-        processed = self.state._queues[activity]["processed"]
-        return queued - processed
+        return self.state.get_unprocessed(activity)
 
     def reset_processed_status(self, activity: Union[EActivity, str]) -> Set[str]:
         activity=self._get_activity(activity)
