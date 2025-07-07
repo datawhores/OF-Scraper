@@ -20,6 +20,7 @@ class EActivity():
         LIKE = auto()
         UNLIKE = auto()
         DOWNLOAD = auto()
+        TEXT= auto()
 
 def _get_all_enum_members(namespace_class):
     """
