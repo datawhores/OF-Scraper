@@ -288,7 +288,9 @@ async def process_all_paid():
             # Check if the scraped username is the placeholder
             if username == placeholder:
                 # Now, check if this model is already known to us
-                if await check_profile_table_exists(model_id=model_id, username=username):
+                if await check_profile_table_exists(
+                    model_id=model_id, username=username
+                ):
                     # Case 1: Known deleted model. Get its unique name from our records.
                     username = (
                         await get_profile_info(model_id=model_id, username=username)

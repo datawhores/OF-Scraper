@@ -46,13 +46,14 @@ async def get_subscriptions(subscribe_count, account="active"):
     log.debug(f"Total {account} subscriptions found {len(out)}")
     return out
 
+
 @run
 async def get_all_subscriptions(subscribe_count, account="active"):
-    if account=="active":
-       return await get_all_activive_subscriptions(subscribe_count)
+    if account == "active":
+        return await get_all_activive_subscriptions(subscribe_count)
     else:
-       return await get_all_expired_subscriptions(subscribe_count)
-       
+        return await get_all_expired_subscriptions(subscribe_count)
+
 
 async def get_all_activive_subscriptions(subscribe_count):
     funct = scrape_subscriptions_active
@@ -78,6 +79,7 @@ async def get_all_expired_subscriptions(subscribe_count):
         ]
         tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
         return await process_task(tasks)
+
 
 async def activeHelper(subscribe_count, c):
     if any(

@@ -13,7 +13,6 @@ import ofscraper.utils.system.system as system
 import ofscraper.utils.settings as settings
 
 
-
 def main():
     try:
         systemSet()
@@ -47,6 +46,7 @@ def setLogger():
     logs.discord_warning()
     paths_manage.cleanup_logs()
 
+
 def systemSet():
     system.setName()
     system.set_eventloop()
@@ -60,4 +60,3 @@ def readConfig():
 
 def make_folder():
     paths_manage.make_folders()
-

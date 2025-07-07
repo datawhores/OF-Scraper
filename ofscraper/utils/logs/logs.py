@@ -17,7 +17,6 @@ from ofscraper.__version__ import __version__
 import ofscraper.managers.manager as manager
 
 
-
 def printStartValues():
     print_system_log()
     print_args()

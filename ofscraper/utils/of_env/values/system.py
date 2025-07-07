@@ -32,16 +32,14 @@ def load_system_config():
         os.getenv("OFSC_FINAL_SCRIPT_SUBPROCESS_LEVEL", "20")
     )
 
-    config["LOG_SUBPROCESS_LEVEL"] = int(
-        os.getenv("OFSC_LOG_SUBPROCESS_LEVELL", "10")
-    )
+    config["LOG_SUBPROCESS_LEVEL"] = int(os.getenv("OFSC_LOG_SUBPROCESS_LEVELL", "10"))
 
     # Set log level for FFmpeg operations
     config["FFMPEG_SUBPROCESS_LEVEL"] = int(
         os.getenv("OFSC_FFMPEG_SUBPROCESS_LEVEL", "0")
     )
 
-    #Free Space
-    config['DISK_SPACE_CHECK_PATH'] = os.getenv('OFSC_DISK_SPACE_CHECK_PATH', '/')
+    # Free Space
+    config["DISK_SPACE_CHECK_PATH"] = os.getenv("OFSC_DISK_SPACE_CHECK_PATH", "/")
 
     return config

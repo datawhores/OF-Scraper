@@ -26,7 +26,9 @@ def dupefilter(media):
     ids = set()
     output = []
     for item in media:
-        id_pair = (item.id, item.post_id) if hasattr(item, "postid") else (item.id, None)
+        id_pair = (
+            (item.id, item.post_id) if hasattr(item, "postid") else (item.id, None)
+        )
         if not id_pair or id_pair not in ids:
             ids.add(id_pair)
             output.append(item)

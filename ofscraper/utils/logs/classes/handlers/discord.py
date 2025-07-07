@@ -4,7 +4,10 @@ import threading
 import queue
 
 import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
-from ofscraper.managers.sessionmanager.sleepers import discord_forbidden_session_sleeper,discord_rate_limit_session_sleeper
+from ofscraper.managers.sessionmanager.sleepers import (
+    discord_forbidden_session_sleeper,
+    discord_rate_limit_session_sleeper,
+)
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
 
@@ -18,7 +21,7 @@ class DiscordHandler(logging.Handler):
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
             wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
             forbidden_sleeper=discord_forbidden_session_sleeper,
-            rate_limit_sleeper=discord_rate_limit_session_sleeper
+            rate_limit_sleeper=discord_rate_limit_session_sleeper,
         )
         self.sess._set_session(async_=False)
 
@@ -53,7 +56,7 @@ class DiscordHandler(logging.Handler):
         log_entry = self.format(record)
         if not log_entry or not log_entry.strip():
             return
-        
+
         log_entry_with_newlines = f"{log_entry}\n\n"
 
         if of_env.getattr("DISCORD_ASYNC"):

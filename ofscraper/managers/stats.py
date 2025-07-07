@@ -4,8 +4,10 @@ from ofscraper.managers.utils.state import EActivity
 from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
 
+
 class DownloadStats:
     """Holds statistics for download-related activities."""
+
     def __init__(self, name: str):
         self.name = name
         self.total_bytes = 0
@@ -26,16 +28,20 @@ class DownloadStats:
         else:
             size_str = f"{self.total_bytes / (1024**2):.2f} MB"
 
-        return (f"({size_str}) ({self.total_count} downloads total "
-                f"[{self.video_count} videos, {self.audio_count} audios, {self.photo_count} photos], "
-                f"{self.skipped_count} skipped, {self.failed_count} failed)")
+        return (
+            f"({size_str}) ({self.total_count} downloads total "
+            f"[{self.video_count} videos, {self.audio_count} audios, {self.photo_count} photos], "
+            f"{self.skipped_count} skipped, {self.failed_count} failed)"
+        )
+
 
 class LikeStats:
     """Holds statistics for liking/unliking posts."""
+
     def __init__(self, name: str):
         self.name = name
         self.posts_checked = 0
-        self.posts_liked = 0    # Changed to liked
+        self.posts_liked = 0  # Changed to liked
         self.posts_unliked = 0  # Changed to unliked
         self.posts_failed = 0
 
@@ -48,9 +54,12 @@ class LikeStats:
         return self.posts_checked - self.posts_changed - self.posts_failed
 
     def __str__(self):
-        return (f"[{self.posts_checked} posts checked, "
-                f"({self.posts_liked} liked, {self.posts_unliked} unliked), "
-                f"{self.posts_unchanged} unchanged, {self.posts_failed} failed]")
+        return (
+            f"[{self.posts_checked} posts checked, "
+            f"({self.posts_liked} liked, {self.posts_unliked} unliked), "
+            f"{self.posts_unchanged} unchanged, {self.posts_failed} failed]"
+        )
+
 
 class StatsManager:
     def __init__(self):
@@ -63,12 +72,18 @@ class StatsManager:
         if activity not in self._stats[username]:
             # Create the correct stat object based on the activity type
             if "download" in activity.name.lower() or "paid" in activity.name.lower():
-                self._stats[username][activity] = DownloadStats(name=f"Action {activity.name.title()}")
+                self._stats[username][activity] = DownloadStats(
+                    name=f"Action {activity.name.title()}"
+                )
             elif "like" in activity.name.lower():
-                 self._stats[username][activity] = LikeStats(name=f"Action {activity.name.title()}d")
+                self._stats[username][activity] = LikeStats(
+                    name=f"Action {activity.name.title()}d"
+                )
         return self._stats[username][activity]
 
-    def update_download_stats(self, username: str, activity: EActivity, media_list: list[Media]):
+    def update_download_stats(
+        self, username: str, activity: EActivity, media_list: list[Media]
+    ):
         """Updates download stats from a list of Media objects."""
         stat_obj = self._get_stat_obj(username, activity)
         for media in media_list:
@@ -76,14 +91,19 @@ class StatsManager:
                 stat_obj.skipped_count += 1
             elif not media.download_succeeded:
                 stat_obj.failed_count += 1
-            else: # Download succeeded
+            else:  # Download succeeded
                 stat_obj.total_bytes += media.final_size or 0
                 mtype = media.mediatype
-                if mtype == "videos": stat_obj.video_count += 1
-                elif mtype == "audios": stat_obj.audio_count += 1
-                elif mtype == "images": stat_obj.photo_count += 1
+                if mtype == "videos":
+                    stat_obj.video_count += 1
+                elif mtype == "audios":
+                    stat_obj.audio_count += 1
+                elif mtype == "images":
+                    stat_obj.photo_count += 1
 
-    def update_like_stats(self, username: str, activity: EActivity, post_list: list[Post]):
+    def update_like_stats(
+        self, username: str, activity: EActivity, post_list: list[Post]
+    ):
         """Updates like stats from a list of Post objects."""
         stat_obj = self._get_stat_obj(username, activity)
         for post in post_list:

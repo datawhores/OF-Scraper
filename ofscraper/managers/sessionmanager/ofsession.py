@@ -38,7 +38,6 @@ from ofscraper.managers.sessionmanager.sleepers import (
 )
 
 
-
 class OFSessionManager(sessionManager):
     """
     A specialized sessionManager for OF API interactions, with preset
@@ -217,6 +216,8 @@ class download_session(sessionManager):
     async def get_token(self, size: int):
         """Acquires tokens from the leaky bucket corresponding to the chunk size."""
         await self.leaky_bucket.acquire(size)
+
+
 class metadata_session(download_session):
     """
     A specialized sessionManager for metadata operations,
@@ -276,8 +277,6 @@ class metadata_session(download_session):
         await self.leaky_bucket.acquire(size)
 
 
-
-
 class cdm_session(sessionManager):
     """A session manager for CDM operations."""
 
@@ -298,7 +297,8 @@ class cdm_session_manual(OFSessionManager):
         super().__init__(
             sem_count=sem_count,
             rate_limit_sleeper=rate_limit_sleeper,
-            forbidden_sleeper=forbidden_sleeper,**kwargs,
+            forbidden_sleeper=forbidden_sleeper,
+            **kwargs,
         )
 
 
@@ -315,8 +315,10 @@ class like_session(OFSessionManager):
         super().__init__(
             sem_count=sem_count,
             rate_limit_sleeper=rate_limit_sleeper,
-            forbidden_sleeper=forbidden_sleeper,**kwargs,
+            forbidden_sleeper=forbidden_sleeper,
+            **kwargs,
         )
+
 
 class SubscriptionSessionManager(OFSessionManager):
     """A session manager for manual CDM operations, using OFSessionManager presets."""
@@ -331,5 +333,6 @@ class SubscriptionSessionManager(OFSessionManager):
         super().__init__(
             sem_count=sem_count,
             rate_limit_sleeper=rate_limit_sleeper,
-            forbidden_sleeper=forbidden_sleeper,**kwargs,
+            forbidden_sleeper=forbidden_sleeper,
+            **kwargs,
         )

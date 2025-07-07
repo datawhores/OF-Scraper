@@ -329,7 +329,7 @@ download_type_option = click.option(
     """,
     default=None,
     callback=set_download_type_flag,
-    is_flag=True # is_flag is still needed for the split flag to work
+    is_flag=True,  # is_flag is still needed for the split flag to work
 )
 
 

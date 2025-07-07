@@ -77,11 +77,11 @@ async def process_dicts(username, model_id, medialist, posts):
         if text_data:
             log_text_array.extend(text_data)  # Use extend for lists
     # 3. Consolidate all "skip download" conditions
-    if  settings.get_settings().text_only:
-        return log_text_array,(0, 0, 0, 0, 0)
+    if settings.get_settings().text_only:
+        return log_text_array, (0, 0, 0, 0, 0)
     medialist_empty = len(medialist) == 0
 
-    if  medialist_empty:
+    if medialist_empty:
         empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
         logging.getLogger("shared").error(empty_log)
         log_text_array.append(empty_log)
@@ -89,7 +89,7 @@ async def process_dicts(username, model_id, medialist, posts):
 
     # Continue to download process
     logging.getLogger("shared").info("Downloading in single thread mode")
-    common_globals.mainProcessVariableInit()    
+    common_globals.mainProcessVariableInit()
     task1 = None
     with progress_utils.setup_download_progress_live():
         try:

@@ -18,7 +18,6 @@ async def get_models(all_main_models: bool = False) -> list:
     update_activity_task(description="Getting subscriptions")
     count = get_sub_count()
 
-
     if all_main_models:
         return await get_via_main_list(count)
 
@@ -49,9 +48,6 @@ async def get_via_main_list(count):
     out.extend(expired_subscriptions)
     models_objects = list(map(lambda x: models.Model(x), out))
     return models_objects
-
-
-
 
 
 async def get_via_list(count):

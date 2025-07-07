@@ -8,8 +8,6 @@ from InquirerPy.base import Choice
 import ofscraper.utils.settings as settings
 
 
-
-
 def action_prompt() -> int:
     action_prompt_choices = [*of_env.getattr("actionPromptChoices")]
     action_prompt_choices.insert(3, Separator())
@@ -34,7 +32,7 @@ def redownload_prompt() -> int:
     answer = promptClasses.getChecklistSelection(
         message="Would you like to redownload all files",
         choices=[Choice(True, "Yes"), Choice(False, "No")],
-        default=False
+        default=False,
     )
     if answer:
         args.force_all = True

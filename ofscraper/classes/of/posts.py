@@ -107,7 +107,7 @@ class Post(base.base):
         Updates the success status of the post after a like/unlike attempt.
         """
         self.like_attempted = True
-        self.like_success =(success)
+        self.like_success = success
         if success:
             self._post["isFavorite"] = True
             self.is_actionable_like = False
@@ -117,11 +117,10 @@ class Post(base.base):
         Updates the success status of the post after a like/unlike attempt.
         """
         self.like_attempted = True
-        self.like_success = (success)
+        self.like_success = success
         if success:
             self._post["isFavorite"] = False
             self.is_actionable_like = False
-    
 
     def mark_like_attempt(self):
         """
@@ -129,8 +128,6 @@ class Post(base.base):
         """
         self.like_attempted = True
 
-    
-    
     @property
     def missed_downloads(self):
         """Convenience property to see what failed to download."""
@@ -182,7 +179,6 @@ class Post(base.base):
             return True
         else:
             return False
-
 
     @property
     def opened(self):
@@ -290,6 +286,7 @@ class Post(base.base):
     @property
     def mass(self):
         return self._post.get("isFromQueue")
+
     @property
     def modified_responsetype(self):
         if self.archived:

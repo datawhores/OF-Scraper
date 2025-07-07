@@ -15,7 +15,6 @@ import ofscraper.utils.profiles.tools as profiles_tools
 import ofscraper.utils.settings as settings
 
 
-
 class MultiValidator(Validator):
     """:Runs Multiple Validators Since Inquirerpy does seem to support this functionality natively
 
@@ -251,7 +250,6 @@ def datevalidator():
         """
         Date is invalid -> Supported Formats: YYYY-MM-DD, YYYY-M-DD, YYYY-M-D, YYYY/MM/DD, YYYY/M/DD, YYYY/M/D, YYYY.MM.DD, YYYY.M.DD, YYYY.M.D, YYYYMMDD, YYYY-DDDD, YYYYDDDD, YYYY-MM, YYYY/MM, YYYY.MM, YYYY, W.""",
     )
-
 
 
 def like_area_validator_posts():

@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
 
 """
+
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
@@ -27,7 +28,6 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
 from humanfriendly import parse_size
-
 
 
 console = Console()
@@ -647,8 +647,7 @@ If value is 'None' or '0' no logs will be touched
                     Choice(None, "Don't Hash Files"),
                 ],
             },
-
-             {
+            {
                 "type": "input",
                 "name": "env_files",
                 "message": "Files used to import env variables",
@@ -780,9 +779,9 @@ def manual_config_prompt(configText) -> str:
 
 
 def retry_user_scan(no_models=False):
-    choices=[Choice(True, "Yes"), Choice(False, "No")]
+    choices = [Choice(True, "Yes"), Choice(False, "No")]
     if no_models:
-        choices=[Choice(True, "Yes"), Choice(False, "Quit")]
+        choices = [Choice(True, "Yes"), Choice(False, "Quit")]
     answer = promptClasses.getChecklistSelection(
         message="Rescan account for users",
         choices=choices,

@@ -48,7 +48,7 @@ def update_activity_count(visible=True, total=False, **kwargs):
         total
         if total is not False
         else manager.Manager.model_manager.get_num_all_selected_models()
-    ) 
+    )
     activity_counter.update(
         get_activity_counter_task(), visible=visible, total=total, **kwargs
     )
@@ -75,19 +75,22 @@ def update_user_activity(visible=True, total=None, **kwargs):
         get_user_first_task(), visible=visible, total=total, **kwargs
     )
 
+
 def get_activity_description() -> str | None:
     """
     Finds the active task and returns its current description.
     """
     # Get the ID of the task we're interested in
     task_id = get_activity_task()
-    
+
     # Find the full task object by its ID in the progress display's list of tasks
     # The 'next' function is a safe way to find the first match
     task = next((task for task in activity_progress.tasks if task.id == task_id), None)
-    
+
     # Return the description if the task was found, otherwise return None
     return task.description if task else None
+
+
 # ##################################################################################################
 # --- API Progress ---
 # ##################################################################################################

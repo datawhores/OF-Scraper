@@ -85,6 +85,7 @@ class DownloadManager:
             pathlib.Path(path).unlink(missing_ok=True)
             return 0
         return resume_size
+
     async def _check_forced_skip(self, ele, total):
         if total is None:
             return

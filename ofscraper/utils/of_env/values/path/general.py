@@ -10,7 +10,7 @@ def load_general_paths_config():
     """
     config = {}
 
-    # SKIP_FILENAME_RETRIVAL: Flag to skip basefilename retrieval 
+    # SKIP_FILENAME_RETRIVAL: Flag to skip basefilename retrieval
     # during filename generation
     # Default: False
     config["SKIP_FILENAME_RETRIVAL"] = os.getenv(

@@ -1,5 +1,6 @@
 import ofscraper.utils.args.accessors.read as read_args
 
+
 def resetUserFilters():
     args = read_args.retriveArgs()
     args.userlist = []
@@ -19,7 +20,9 @@ def resetUserFilters():
     args.sort = "name"
     args.desc = False
     return args
+
+
 def resetUserSelect():
     args = read_args.retriveArgs()
-    args.usernames=None
+    args.usernames = None
     return args

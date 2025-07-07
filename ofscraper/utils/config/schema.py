@@ -61,7 +61,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "default_black_list": data.get_default_blacklist(config=config),
             "logs_expire_time": data.get_logs_expire(config=config),
             "ssl_verify": data.get_ssl_verify(config=config),
-            "env_files":data.get_env_files(config=config),
+            "env_files": data.get_env_files(config=config),
         },
         "script_options": {
             "after_action_script": data.get_after_action_script(config=config),

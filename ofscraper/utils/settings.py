@@ -6,11 +6,13 @@ from copy import deepcopy
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
-from ofscraper.utils.args.mutators.user import resetUserFilters as resetUserFiltersArgs,resetUserSelect as resetUserSelectArg
+from ofscraper.utils.args.mutators.user import (
+    resetUserFilters as resetUserFiltersArgs,
+    resetUserSelect as resetUserSelectArg,
+)
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.of_env.load import load_env_files
-
 
 
 # --- Globals for one-time initialization ---
@@ -44,7 +46,7 @@ settings = {}
 
 def get_args(copy=False):
     if copy:
-        args=read_args.retriveArgs()
+        args = read_args.retriveArgs()
         return deepcopy(args)
     else:
         return read_args.retriveArgs()
@@ -55,10 +57,10 @@ def update_args(args):
     write_args.setArgs(args)
     settings = setup_settings()
 
+
 def update_settings():
     global settings
     settings = setup_settings()
-
 
 
 def get_settings():
@@ -73,19 +75,21 @@ def get_settings():
 
 
 def setup_settings():
-    merged=merged_settings()
+    merged = merged_settings()
     load_env_files(merged.env_files)
     return merged
 
+
 def resetUserFilters():
     global settings
-    args=resetUserFiltersArgs()
+    args = resetUserFiltersArgs()
     write_args.setArgs(args)
     settings = setup_settings()
 
+
 def resetUserSelect():
     global settings
-    args=resetUserSelectArg()
+    args = resetUserSelectArg()
     write_args.setArgs(args)
     settings = setup_settings()
 
@@ -128,7 +132,9 @@ def merged_settings():
     merged.download_sems = (
         read_args.retriveArgs().downloadsem or config_data.get_download_semaphores()
     )
-    merged.system_free_min=read_args.retriveArgs().system_free_min or config_data.get_system_freesize()
+    merged.system_free_min = (
+        read_args.retriveArgs().system_free_min or config_data.get_system_freesize()
+    )
     merged.max_post_count = (
         read_args.retriveArgs().max_count or config_data.get_max_post_count()
     )
@@ -167,16 +173,14 @@ def merged_settings():
     merged.cached_disabled = get_cached_disabled()
     merged.logs_expire_time = config_data.get_logs_expire()
     merged.ssl_verify = config_data.get_ssl_verify()
-    merged.env_files=get_env_files()
-    merged.text=read_args.retriveArgs().text or read_args.retriveArgs().text_only
-    merged.text_only=read_args.retriveArgs().text_only
+    merged.env_files = get_env_files()
+    merged.text = read_args.retriveArgs().text or read_args.retriveArgs().text_only
+    merged.text_only = read_args.retriveArgs().text_only
     if read_args.retriveArgs().redownload:
-        merged.force_all=True
-        merged.after=arrow.get(2000)
-        merged.before=arrow.now().shift(days=1)
+        merged.force_all = True
+        merged.after = arrow.get(2000)
+        merged.before = arrow.now().shift(days=1)
     return merged
-
-
 
 
 def get_ffmpeg():
@@ -243,12 +247,12 @@ def get_blacklist():
     return _listhelper(out)
 
 
-
 def get_env_files():
     out = read_args.retriveArgs().env_files or config_data.get_env_files()
     if isinstance(out, str):
-        out = re.split(r',| ', out)
+        out = re.split(r",| ", out)
     return out
+
 
 def _listhelper(out):
     """
@@ -261,7 +265,7 @@ def _listhelper(out):
         return [str(item).strip() for item in out if str(item).strip()]
     elif isinstance(out, str):
         # If it's a string, split it by commas and then clean each item.
-        split_list = out.split(',')
+        split_list = out.split(",")
         return [item.strip() for item in split_list if item.strip()]
     # Return an empty list for any other input type (like None, int, etc.)
     return []

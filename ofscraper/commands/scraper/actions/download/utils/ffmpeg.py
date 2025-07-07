@@ -30,7 +30,7 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             check=False,
             encoding="utf-8",
             level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-            name="ffmpeg"
+            name="ffmpeg",
         )
         output = result.stdout + result.stderr
 

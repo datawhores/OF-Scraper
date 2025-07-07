@@ -48,7 +48,7 @@ def after_download_script(final_path: Union[str, pathlib.Path]):
             text=True,
             check=True,  # Will raise CalledProcessError for non-zero exit codes
             level=env.getattr("AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
-            name="after download script"
+            name="after download script",
         )
         log.info(f"Successfully ran after download script for '{final_path}'.")
 

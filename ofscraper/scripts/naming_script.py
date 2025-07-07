@@ -11,7 +11,6 @@ from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
 
 
-
 def naming_script(dir, file, ele):
     log = logging.getLogger("shared")
 
@@ -40,25 +39,29 @@ def naming_script(dir, file, ele):
         }
 
         if isinstance(ele, Media):
-            payload_data.update({
-                "media": ele.media,
-                "post": ele.post.post,
-                "post_id": ele.post_id,
-                "media_id": ele.id,
-                "media_type": ele.mediatype.capitalize(),
-                "date": arrow.get(ele.postdate).format(config_data.get_date()),
-                "download_type": ele.downloadtype,
-            })
+            payload_data.update(
+                {
+                    "media": ele.media,
+                    "post": ele.post.post,
+                    "post_id": ele.post_id,
+                    "media_id": ele.id,
+                    "media_type": ele.mediatype.capitalize(),
+                    "date": arrow.get(ele.postdate).format(config_data.get_date()),
+                    "download_type": ele.downloadtype,
+                }
+            )
         elif isinstance(ele, Post):
-            payload_data.update({
-                "media": None,
-                "post": ele.post,
-                "post_id": ele.id,
-                "media_id": None,
-                "media_type": None,
-                "date": arrow.get(ele.date).format(config_data.get_date()),
-                "download_type": None,
-            })
+            payload_data.update(
+                {
+                    "media": None,
+                    "post": ele.post,
+                    "post_id": ele.id,
+                    "media_id": None,
+                    "media_type": None,
+                    "date": arrow.get(ele.date).format(config_data.get_date()),
+                    "download_type": None,
+                }
+            )
         else:
             # Optional: Handle cases where 'ele' is an unexpected type.
             log.error(f"Unsupported type for naming script: {type(ele)}")
@@ -73,8 +76,7 @@ def naming_script(dir, file, ele):
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError for non-zero exit codes
             level=env.getattr("NAMING_SCRIPT_SUBPROCESS_LEVEL"),
-            name="naming script"
-
+            name="naming script",
         )
         log.debug("Naming script ran successfully via stdin.")
         return result.stdout.strip()

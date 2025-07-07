@@ -76,9 +76,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 "-y",
             ],
             level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-            name="ffmpeg"
-
-
+            name="ffmpeg",
         )
         if not pathlib.Path(newpath).exists():
             log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
@@ -182,7 +180,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 wait_max=of_env.getattr("OF_MAX_WAIT_API"),
                 total_timeout=of_env.getattr("CDM_TIMEOUT"),
             ) as r:
-                data=await r.read_()
+                data = await r.read_()
                 cdm.parse_license(session_id, (data))
                 keys = cdm.get_keys(session_id)
                 cdm.close(session_id)

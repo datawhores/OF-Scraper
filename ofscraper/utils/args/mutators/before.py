@@ -1,9 +1,9 @@
 import arrow
 
 
-
 def update_before():
     import ofscraper.utils.settings as settings
+
     args = settings.get_args()
     if args.before_original:
         return

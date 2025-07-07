@@ -10,11 +10,9 @@ from ofscraper.managers.postcollection import PostCollection
 @run
 async def textDownloader(values, username=None):
     log = logging.getLogger("shared")
-    postcollection=PostCollection()
+    postcollection = PostCollection()
     try:
-        values= (
-            [values] if not isinstance(values, list) else values
-        )
+        values = [values] if not isinstance(values, list) else values
         postcollection.add_posts(values)
         if not postcollection.posts:
             log.info("No text files found to download")

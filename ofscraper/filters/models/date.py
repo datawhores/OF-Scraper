@@ -1,10 +1,11 @@
 import logging
 import arrow
 import operator
-from ofscraper.utils import settings # 
+from ofscraper.utils import settings  #
 from ofscraper.filters.models.utils.logs import trace_log_user
 
 log = logging.getLogger("shared")
+
 
 def _apply_date_filter(
     items: list,
@@ -73,13 +74,15 @@ def dateFilters(filterusername: list) -> list:
         ("last_seen_after", "final_last_seen", operator.ge, False),
         ("last_seen_before", "final_last_seen", operator.le, False),
         ("subscribed_after", "subscribed", operator.ge, True),
-        ("subscribed_before", "subscribed", operator.le, True), 
+        ("subscribed_before", "subscribed", operator.le, True),
         ("expired_after", "expired", operator.ge, True),
         ("expired_before", "expired", operator.le, True),
     ]
 
     # Loop through and apply each filter sequentially
     for setting, model_key, op, parse in filters_to_apply:
-        filterusername = _apply_date_filter(filterusername, setting, model_key, op, parse)
+        filterusername = _apply_date_filter(
+            filterusername, setting, model_key, op, parse
+        )
 
     return filterusername

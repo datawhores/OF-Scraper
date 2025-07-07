@@ -33,15 +33,14 @@ from ofscraper.utils.args.parse.arguments.metadata_filters import (
     posted_after,
     posted_before,
 )
-from ofscraper.utils.args.parse.arguments.post_content import (
-    download_type_option
-)
+from ofscraper.utils.args.parse.arguments.post_content import download_type_option
+
 
 def main_check(func):
     @force
     @text_option
     @text_only_option
-    @constraint(mutually_exclusive, ['text', 'text_only'])
+    @constraint(mutually_exclusive, ["text", "text_only"])
     @functools.wraps(func)
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):

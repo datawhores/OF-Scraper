@@ -11,9 +11,9 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
 
-def after_download_action_script(username, media, posts=None,action=None):
+def after_download_action_script(username, media, posts=None, action=None):
     log = logging.getLogger("shared")
-    action=action or "download"
+    action = action or "download"
     if not settings.get_settings().after_action_script:
         return
     script_path = settings.get_settings().after_action_script
@@ -46,12 +46,12 @@ def after_download_action_script(username, media, posts=None,action=None):
         )
         processed_media = [x.media for x in (media or [])]
         if not posts:
-            posts=[x.post for x in (media or [])]
+            posts = [x.post for x in (media or [])]
         processed_posts = [x.post for x in (posts or [])]
 
         master_dump_payload = {
             "username": processed_username,
-            "action":action,
+            "action": action,
             "model_id": model_id,
             "media": processed_media,
             "posts": processed_posts,
@@ -69,7 +69,7 @@ def after_download_action_script(username, media, posts=None,action=None):
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
             name="after download action script",
-            level=env.getattr("AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL")
+            level=env.getattr("AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL"),
         )
         log.debug(
             f"After download action script ran successfully for {processed_username} via stdin."

@@ -13,7 +13,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_script import after_download_script
 
 
-
 async def get_text(values):
     dupe = (
         settings.get_settings().force_all or settings.get_settings().force_model_unique

@@ -192,7 +192,7 @@ class InputApp(App):
         elif key == "other_posts_with_media":
             self.query_one("#data_table_hidden").sort(
                 key,
-                key=lambda x:  len(re.findall(r"\d+", x.plain)),
+                key=lambda x: len(re.findall(r"\d+", x.plain)),
                 reverse=self._reverse,
             )
         elif key == "length":
@@ -220,7 +220,7 @@ class InputApp(App):
 
         elif key == "responsetype":
             self.query_one("#data_table_hidden").sort(
-               key, key=lambda x: x.plain, reverse=self._reverse
+                key, key=lambda x: x.plain, reverse=self._reverse
             )
 
         elif key == "price":
@@ -363,10 +363,13 @@ class InputApp(App):
     def _set_post_id(self):
         if settings.get_settings().post_id:
             self.query_one("#post_id").update_table_val(settings.get_settings().post_id)
-      
+
     def _set_media_id(self):
-            if settings.get_settings().media_id:
-                self.query_one("#post_id").update_table_val(settings.get_settings().media_id)
+        if settings.get_settings().media_id:
+            self.query_one("#post_id").update_table_val(
+                settings.get_settings().media_id
+            )
+
     # download_filters
     def init_download_filter(self):
         self._set_download_size()

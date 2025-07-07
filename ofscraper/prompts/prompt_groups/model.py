@@ -32,10 +32,10 @@ console = Console()
 models = None
 
 
-def model_selector(models_:Union[dict|list]) -> bool:
+def model_selector(models_: Union[dict | list]) -> bool:
     global models
-    if isinstance(models_,dict):
-        models_=list(models.values())
+    if isinstance(models_, dict):
+        models_ = list(models.values())
     models = models_
     choices = list(
         map(
@@ -60,6 +60,7 @@ def model_selector(models_:Union[dict|list]) -> bool:
     )
 
     return p
+
 
 def decide_filters_menu() -> int:
     name = "modelList"
@@ -130,8 +131,7 @@ def modify_active_prompt(args):
             {
                 "type": "list",
                 "name": "last-seen",
-                "default":settings.get_settings().last_seen,
-
+                "default": settings.get_settings().last_seen,
                 "message": "Filter Accounts By whether the account by the visability of last seen",
                 "choices": [
                     Choice(True, "Last seen is present"),
@@ -185,9 +185,7 @@ def modify_active_prompt(args):
         answer["last-seen-after"] if answer["last-seen-after"] != 0 else None
     )
     args.last_seen_before = (
-        answer["last-seen-before"]
-        if answer["last-seen-before"] != 0
-        else None
+        answer["last-seen-before"] if answer["last-seen-before"] != 0 else None
     )
     return args
 

@@ -34,12 +34,14 @@ from ofscraper.scripts.after_download_action_script import after_download_action
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 
 
-
 log = logging.getLogger("shared")
 
-ACTION_SCRIPTS={"like":after_like_action_script,
-                "unlike":after_like_action_script,
-                "download":after_download_action_script}
+ACTION_SCRIPTS = {
+    "like": after_like_action_script,
+    "unlike": after_like_action_script,
+    "download": after_download_action_script,
+}
+
 
 class scraperManager(commmandManager):
     def __init__(self):
@@ -146,9 +148,11 @@ class scraperManager(commmandManager):
                             username=username,
                         )
                     )
-                #mark the activity as processed
-                manager.Manager.model_manager.mark_as_processed(username,activity=action)
-                ACTION_SCRIPTS.get(action)(username,media,posts,action=action)
+                # mark the activity as processed
+                manager.Manager.model_manager.mark_as_processed(
+                    username, activity=action
+                )
+                ACTION_SCRIPTS.get(action)(username, media, posts, action=action)
 
             except Exception as E:
                 log.debug(f"Unable to complete {action} for {username}")

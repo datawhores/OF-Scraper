@@ -47,6 +47,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
+
 log = logging.getLogger("shared")
 
 
@@ -115,7 +116,7 @@ class metadataCommandManager(commmandManager):
         data = await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
         manager.Manager.model_manager.mark_as_processed(activity="download")
-        after_download_action_script(username, media,action="metadata")
+        after_download_action_script(username, media, action="metadata")
         return [data]
 
     async def _metadata_stray_media(SELF, username, model_id, media):

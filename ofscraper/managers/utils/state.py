@@ -1,16 +1,15 @@
 import logging
 from typing import Dict, List, Set
 from enum import Enum, auto
-import inspect 
-
+import inspect
 
 
 log = logging.getLogger("shared")
 
 
-
-class EActivity():
+class EActivity:
     """Defines all possible processing activities."""
+
     class PaidActivity(Enum):
         # A top-level activity
         SCRAPE_PAID = auto()
@@ -20,7 +19,8 @@ class EActivity():
         LIKE = auto()
         UNLIKE = auto()
         DOWNLOAD = auto()
-        TEXT= auto()
+        TEXT = auto()
+
 
 def _get_all_enum_members(namespace_class):
     """
@@ -34,6 +34,8 @@ def _get_all_enum_members(namespace_class):
             # If so, extend our list with all members from that enum
             all_members.extend(list(member_class))
     return all_members
+
+
 class StateManager:
     """
     Manages the processing state for different activities.
@@ -44,12 +46,13 @@ class StateManager:
         """Initializes the manager with all defined activities."""
         # Create a flat list of all enum members
         all_activities = list(_get_all_enum_members(EActivity))
-    
+
         # Use the flat list to build the queues dictionary
         self._queues: Dict[Enum, Dict[str, List[str]]] = {
             activity: {"queued": [], "processed": set()} for activity in all_activities
         }
         pass
+
     def set_queue(self, activity: EActivity, usernames: List[str]):
         """
         Sets the entire queue for a given activity, preserving order.
@@ -57,10 +60,11 @@ class StateManager:
         """
         # Directly assign the list to preserve its order
         self._queues[activity]["queued"] = list(usernames)
-        self._queues[activity]["processed"] = set() # Reset progress
-        log.info(f"Queued {len(usernames)} users for the {activity.name} activity in their original order.")
-    
-    
+        self._queues[activity]["processed"] = set()  # Reset progress
+        log.info(
+            f"Queued {len(usernames)} users for the {activity.name} activity in their original order."
+        )
+
     def add_to_queue(self, activity: EActivity, usernames: List[str]):
         """
         Adds new, unique usernames to an existing activity queue, preserving order.
@@ -69,16 +73,18 @@ class StateManager:
         # Get the existing queue and a set of its users for fast lookups
         current_queue = self._queues[activity]["queued"]
         existing_users = set(current_queue)
-        
+
         added_count = 0
         for user in usernames:
             if user not in existing_users:
                 current_queue.append(user)
                 existing_users.add(user)
                 added_count += 1
-                
+
         if added_count > 0:
-            log.info(f"Added {added_count} new, unique users to the {activity.name} queue.")
+            log.info(
+                f"Added {added_count} new, unique users to the {activity.name} queue."
+            )
 
     def get_unprocessed(self, activity: EActivity) -> List[str]:
         """
@@ -88,7 +94,6 @@ class StateManager:
         processed = self._queues[activity]["processed"]
         # Return a new list preserving the original order
         return [user for user in queued if user not in processed]
-    
 
     def get_all_queued_usernames(self) -> List[str]:
         """
@@ -103,7 +108,7 @@ class StateManager:
                     all_usernames_ordered.append(username)
                     seen.add(username)
         return all_usernames_ordered
-    
+
     def get_paid_queued_usernames(self) -> List[str]:
         """
         Returns a single list of unique usernames from all PaidActivity queues,
@@ -136,17 +141,15 @@ class StateManager:
                         seen.add(username)
         return all_usernames_ordered
 
-    
     def get_queued_usernames(self, activity: EActivity) -> List[str]:
         """
         Returns an ordered list of unique usernames for a given activity.
         If no activity is provided, it returns a combined list of all users
         queue
-        """     
+        """
         # This just returns the original list, already ordered and unique
         return self._queues[activity]["queued"]
 
-      
     def mark_as_processed(self, username: str, activity: EActivity):
         """Marks a single user as processed for a given activity."""
         if username in self._queues[activity]["queued"]:
@@ -172,6 +175,7 @@ class StateManager:
         for activity in self._queues:
             self._queues[activity]["processed"].clear()
         log.info("Processed status for all activities has been reset.")
+
     def reset_paid_processed_status(self) -> None:
         """
         Resets the processed status for all PaidActivity instances.
@@ -199,7 +203,7 @@ class StateManager:
         """
         # Directly assign the list to preserve its order
         self._queues[activity]["queued"] = []
-        self._queues[activity]["processed"] = set() # Reset progress
+        self._queues[activity]["processed"] = set()  # Reset progress
         log.info(f"clear the queue for the {activity.name} activity")
 
     def clear_all_queues(self) -> None:
@@ -241,14 +245,16 @@ class StateManager:
     def _is_scrape_activity(self, activity: Enum) -> bool:
         """Checks if the activity is a ScrapeActivity."""
         return isinstance(activity, EActivity.ScrapeActivity)
-    
+
+
 # The map remains the same
 ACTIVITY_MAP = {
     "scrape_paid": EActivity.PaidActivity.SCRAPE_PAID,
     "like": EActivity.ScrapeActivity.LIKE,
     "unlike": EActivity.ScrapeActivity.UNLIKE,
-    "download": EActivity.ScrapeActivity.DOWNLOAD
+    "download": EActivity.ScrapeActivity.DOWNLOAD,
 }
+
 
 def string_to_activity(s: str) -> EActivity:
     """
@@ -259,5 +265,7 @@ def string_to_activity(s: str) -> EActivity:
     """
     activity = ACTIVITY_MAP.get(s.lower())
     if not activity:
-        raise ValueError(f"'{s}' is not a valid activity. Options are: {list(ACTIVITY_MAP.keys())}")
+        raise ValueError(
+            f"'{s}' is not a valid activity. Options are: {list(ACTIVITY_MAP.keys())}"
+        )
     return activity

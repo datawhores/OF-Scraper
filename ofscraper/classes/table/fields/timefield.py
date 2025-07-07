@@ -80,34 +80,37 @@ class TimeField(Container):
     def reset(self):
         for ele in self.query(IntegerInput):
             ele.value = ""
-    def compare(self,value):
 
-        max_val=arrow.get(
-                "{hour}:{minute}:{second}".format(
-                    hour= self.query_one("#max_hour").value or 0,
-                    minute= self.query_one("#max_minute").value or 0,
-                    second= self.query_one("#max_second").value or 0,
-                ),
-                ["h:m:s"],
-            )
-        min_val=arrow.get(
-                "{hour}:{minute}:{second}".format(
-                    hour= self.query_one("#min_hour").value or 0,
-                    minute= self.query_one("#min_minute").value or 0,
-                    second= self.query_one("#min_second").value or 0,
-                ),
-                ["h:m:s"],
-            )
-        compare_value=arrow.get("0:0:0" if value in {"N\A","N/A"} else value,["h:m:s"])
-        
-        if min_val==max_val and min_val==arrow.get("0:0:0",["h:m:s"]):
+    def compare(self, value):
+
+        max_val = arrow.get(
+            "{hour}:{minute}:{second}".format(
+                hour=self.query_one("#max_hour").value or 0,
+                minute=self.query_one("#max_minute").value or 0,
+                second=self.query_one("#max_second").value or 0,
+            ),
+            ["h:m:s"],
+        )
+        min_val = arrow.get(
+            "{hour}:{minute}:{second}".format(
+                hour=self.query_one("#min_hour").value or 0,
+                minute=self.query_one("#min_minute").value or 0,
+                second=self.query_one("#min_second").value or 0,
+            ),
+            ["h:m:s"],
+        )
+        compare_value = arrow.get(
+            "0:0:0" if value in {"N\A", "N/A"} else value, ["h:m:s"]
+        )
+
+        if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):
             return True
-        elif max_val==arrow.get("0:0:0",["h:m:s"]):
-            return compare_value>min_val
-        elif min_val==arrow.get("0:0:0",["h:m:s"]):
-            return compare_value<max_val
+        elif max_val == arrow.get("0:0:0", ["h:m:s"]):
+            return compare_value > min_val
+        elif min_val == arrow.get("0:0:0", ["h:m:s"]):
+            return compare_value < max_val
         else:
-            return compare_value.is_between(min_val,max_val,bounds="[]")
+            return compare_value.is_between(min_val, max_val, bounds="[]")
 
     @property
     def key(self):

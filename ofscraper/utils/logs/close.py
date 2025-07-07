@@ -4,6 +4,7 @@ import logging
 def gracefulClose():
     sendCloseMessage()
 
+
 def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
 

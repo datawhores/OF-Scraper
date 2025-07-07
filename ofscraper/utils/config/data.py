@@ -19,6 +19,7 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.utils.wrapper as wrapper
 import ofscraper.utils.const as const
 
+
 def _to_comma_separated_string(value: any) -> str | None:
     """
     Helper function to convert a list into a comma-separated string.
@@ -28,6 +29,7 @@ def _to_comma_separated_string(value: any) -> str | None:
         # Use map(str, ...) to ensure all items in the list are strings before joining
         return ",".join(map(str, value))
     return value
+
 
 @wrapper.config_reader
 def get_main_profile(config=None):
@@ -189,19 +191,23 @@ def get_default_userlist(config=None):
         raw_value = of_env.getattr("DEFAULT_USER_LIST")
     else:
         # First, attempt to get the value from any of the config locations.
-        config_value = (
-            config.get("default_user_list")
-            or config.get("advanced_options", {}).get("default_user_list")
-        )
+        config_value = config.get("default_user_list") or config.get(
+            "advanced_options", {}
+        ).get("default_user_list")
 
         # Fallback to the environment variable only if no value was found in the config.
-        raw_value = config_value if config_value is not None else of_env.getattr("DEFAULT_USER_LIST")
+        raw_value = (
+            config_value
+            if config_value is not None
+            else of_env.getattr("DEFAULT_USER_LIST")
+        )
 
     # Format the found value
     formatted_value = _to_comma_separated_string(raw_value)
 
     # Ensure a string is always returned
     return formatted_value or ""
+
 
 @wrapper.config_reader
 def get_default_blacklist(config=None):
@@ -214,14 +220,17 @@ def get_default_blacklist(config=None):
         raw_value = of_env.getattr("DEFAULT_BLACK_LIST")
     else:
         # First, attempt to get the value from any of the config locations.
-        config_value = (
-            config.get("default_black_list")
-            or config.get("advanced_options", {}).get("default_black_list")
-        )
+        config_value = config.get("default_black_list") or config.get(
+            "advanced_options", {}
+        ).get("default_black_list")
 
         # Use the config value if it exists (even if it's "" or []),
         # otherwise, fall back to the environment variable.
-        raw_value = config_value if config_value is not None else of_env.getattr("DEFAULT_BLACK_LIST")
+        raw_value = (
+            config_value
+            if config_value is not None
+            else of_env.getattr("DEFAULT_BLACK_LIST")
+        )
 
     # Format the found value (which could be a list, str, or None)
     formatted_value = _to_comma_separated_string(raw_value)
@@ -312,6 +321,8 @@ def get_after_download_script(config=None):
         or config.get("script_options", {}).get("after_download_script")
         or of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
     )
+
+
 @wrapper.config_reader
 def get_env_files(config=None):
     """
@@ -331,14 +342,17 @@ def get_env_files(config=None):
         )
 
         # Only if the config value is None, use the environment variable.
-        raw_value = config_value if config_value is not None else of_env.getattr("ENV_FILES_DEFAULT")
+        raw_value = (
+            config_value
+            if config_value is not None
+            else of_env.getattr("ENV_FILES_DEFAULT")
+        )
 
     # Format the final value.
     formatted_value = _to_comma_separated_string(raw_value)
 
     # Ensure a string is always returned.
     return formatted_value or ""
-
 
 
 @wrapper.config_reader
@@ -694,7 +708,6 @@ def get_truncation(config=None):
         "truncation_default"
     )
     return val if val is not None else of_env.getattr("TRUNCATION_DEFAULT")
-
 
 
 @wrapper.config_reader

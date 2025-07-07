@@ -47,7 +47,7 @@ import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.actions.download.download import process_dicts
 import ofscraper.managers.manager as manager
 from ofscraper.managers.postcollection import PostCollection
-from ofscraper.main.close.final.final import  final_action
+from ofscraper.main.close.final.final import final_action
 
 
 log = logging.getLogger("shared")
@@ -55,10 +55,9 @@ console = console_.get_shared_console()
 
 
 ALL_MEDIA = {}
-ROWS={}
+ROWS = {}
 MEDIA_KEY = ["id", "postid", "username"]
-check_user_dict=defaultdict(dict)
-
+check_user_dict = defaultdict(dict)
 
 
 def process_download_cart():
@@ -66,8 +65,8 @@ def process_download_cart():
         try:
             if app.row_queue.empty():
                 continue
-            cart_user_dict=defaultdict(dict)
-            all_results=[]
+            cart_user_dict = defaultdict(dict)
+            all_results = []
             while not app.row_queue.empty():
                 try:
                     process_item(cart_user_dict)
@@ -75,15 +74,17 @@ def process_download_cart():
                     # handle getting new downloads
                     None
             for value in cart_user_dict.values():
-                collection=value["collection"]
-                results=value["results"]
+                collection = value["collection"]
+                results = value["results"]
                 all_results.append(results)
                 collection: PostCollection
-                username=collection.username
-                media=collection.all_unique_media
-                posts=collection.posts
-                after_download_action_script(username,media,posts)
-                manager.Manager.model_manager.mark_as_processed(username,activity="download")
+                username = collection.username
+                media = collection.all_unique_media
+                posts = collection.posts
+                after_download_action_script(username, media, posts)
+                manager.Manager.model_manager.mark_as_processed(
+                    username, activity="download"
+                )
             final_action(normal_data=all_results)
             manager.Manager.model_manager.clear_queue("download")
             time.sleep(5)
@@ -91,9 +92,6 @@ def process_download_cart():
             log.traceback_(f"Error in process_item: {e}")
             log.traceback_(f"Error in process_item: {traceback.format_exc()}")
             continue
-
-
-
 
 
 def process_item(cart_user_dict):
@@ -113,15 +111,17 @@ def process_item(cart_user_dict):
         try:
             post_id = int(row["post_id"])
             media_id = int(row["media_id"])
-            username=row["username"]
-            manager.Manager.model_manager.add_models(username,activity="download")
-            model_id=manager.Manager.model_manager.get_model(username).id
+            username = row["username"]
+            manager.Manager.model_manager.add_models(username, activity="download")
+            model_id = manager.Manager.model_manager.get_model(username).id
             media = check_user_dict[model_id]["collection"].find_media_item(media_id)
             if not media:
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
-            cart_user_dict[model_id].setdefault("collection",PostCollection(model_id=model_id,username=username))
-            cart_user_dict[model_id].setdefault("results",[])
-            post=cart_user_dict[model_id]["collection"].add_post(media,copyObj=True)
+            cart_user_dict[model_id].setdefault(
+                "collection", PostCollection(model_id=model_id, username=username)
+            )
+            cart_user_dict[model_id].setdefault("results", [])
+            post = cart_user_dict[model_id]["collection"].add_post(media, copyObj=True)
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
             log.info(
@@ -144,8 +144,8 @@ def process_item(cart_user_dict):
                 app.app.table.update_cell_at_key(
                     key, "download_cart", Text("[downloaded]", style="bold green")
                 )
-                #might not be needed because of lack of final_script
-                manager.Manager.model_manager.mark_as_processed(username,"download")
+                # might not be needed because of lack of final_script
+                manager.Manager.model_manager.mark_as_processed(username, "download")
                 break
         except Exception as E:
             if count == 1:
@@ -162,17 +162,16 @@ def process_item(cart_user_dict):
         log.info("Download cart is currently empty")
 
 
-
 @run
-async def data_refill( model_id):
+async def data_refill(model_id):
     if settings.get_settings().command == "msg_check":
-        retriver = partial(message_check_retriver,forced=True)
+        retriver = partial(message_check_retriver, forced=True)
     elif settings.get_settings().command == "paid_check":
-        retriver = partial(purchase_check_retriver,forced=True)
+        retriver = partial(purchase_check_retriver, forced=True)
     elif settings.get_settings().command == "story_check":
-        retriver = partial(stories_check_retriver,forced=True)
+        retriver = partial(stories_check_retriver, forced=True)
     elif settings.get_settings().command == "post_check":
-        retriver=partial(post_check_retriver,forced=True)
+        retriver = partial(post_check_retriver, forced=True)
     else:
         return
     async for username, model_id, final_post_array in retriver():
@@ -240,7 +239,7 @@ async def post_check_retriver(forced=False):
     user_dict = {}
     links = list(url_helper())
     if settings.get_settings().force:
-        forced=True
+        forced = True
     async with manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -440,7 +439,7 @@ async def message_checker_runner():
 async def message_check_retriver(forced=False):
     links = list(url_helper())
     if settings.get_settings().force:
-        forced=True
+        forced = True
     async with manager.Manager.aget_ofsession() as c:
         for item in links:
             num_match = re.search(
@@ -517,7 +516,7 @@ async def purchase_check_retriver(forced=False):
     user_dict = {}
     auth_requests.make_headers()
     if settings.get_settings().force:
-        forced=True
+        forced = True
     async with manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
@@ -603,11 +602,13 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
-    check_user_dict[model_id].setdefault("collection",PostCollection(username=username,model_id=model_id)) 
-    collection=check_user_dict[model_id]["collection"]
-    collection:PostCollection
+    check_user_dict[model_id].setdefault(
+        "collection", PostCollection(username=username, model_id=model_id)
+    )
+    collection = check_user_dict[model_id]["collection"]
+    collection: PostCollection
     collection.add_posts(posts_array)
-    media=collection.all_unique_media
+    media = collection.all_unique_media
     await insert_media(username, model_id, media)
     return media
 
@@ -619,7 +620,6 @@ async def insert_media(username, model_id, media):
         username=username,
         downloaded=False,
     )
-
 
 
 @run
@@ -687,10 +687,8 @@ def datehelper(date):
     return date
 
 
-
 def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
-
 
 
 async def row_gather(username, model_id):
@@ -698,10 +696,10 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
-    collection=check_user_dict[model_id]["collection"]
+    collection = check_user_dict[model_id]["collection"]
     if not collection:
         raise Exception("No postcollection object found")
-    media=collection.all_unique_media
+    media = collection.all_unique_media
     out = []
     for count, ele in enumerate(
         sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
@@ -732,4 +730,3 @@ async def row_gather(username, model_id):
         )
     ROWS = ROWS or []
     ROWS.extend(out)
-

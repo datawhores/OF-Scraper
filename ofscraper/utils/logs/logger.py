@@ -2,7 +2,7 @@ import logging
 
 import ofscraper.utils.logs.utils.level as log_helpers
 from ofscraper.utils.logs.stdout import add_stdout_handler
-from ofscraper.utils.logs.other import add_other_handler,getstreamHandlers
+from ofscraper.utils.logs.other import add_other_handler, getstreamHandlers
 from ofscraper.utils.logs.classes.handlers.text import TextHandler
 import ofscraper.utils.dates as dates
 
@@ -18,6 +18,7 @@ def add_widget(widget):
         )
     ]
 
+
 def get_shared_logger(name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")
@@ -27,12 +28,13 @@ def get_shared_logger(name=None):
     add_stdout_handler(logger, clear=False)
     add_other_handler(logger, clear=False)
     logger.setLevel(1)
-    #don't propate to root
-    logger.propagate=False
+    # don't propate to root
+    logger.propagate = False
     return logger
 
+
 def clearHandlers(name=None):
-    log=logging.getLogger(name or "shared")
+    log = logging.getLogger(name or "shared")
     for handler in log.handlers[:]:  # Iterate over a copy of the list
         try:
             log.removeHandler(handler)
@@ -40,14 +42,14 @@ def clearHandlers(name=None):
         except Exception as e:
             # Basic error handling (optional)
             print(f"Error closing handler: {str(e)}")
-    log=log.parent
+    log = log.parent
 
 
 def resetLogger():
     dates.resetLogDateVManager()
     get_shared_logger()
 
+
 def flushlogs():
     for handler in getstreamHandlers():
         handler.flush()
-

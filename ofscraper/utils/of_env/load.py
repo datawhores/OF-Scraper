@@ -3,7 +3,8 @@ from dotenv import dotenv_values
 import os
 import json
 import yaml
-log=logging.getLogger("shared")
+
+log = logging.getLogger("shared")
 
 
 def load_env_files(values: list[str] | None):
@@ -55,7 +56,9 @@ def load_env_files(values: list[str] | None):
             if data:
                 # Update os.environ, ensuring all keys and values are strings
                 os.environ.update({str(k): str(v) for k, v in data.items()})
-                log.info(f"Successfully loaded environment variables from '{file_path}'")
+                log.info(
+                    f"Successfully loaded environment variables from '{file_path}'"
+                )
 
         except FileNotFoundError:
             # Let the caller handle this exception
@@ -64,9 +67,12 @@ def load_env_files(values: list[str] | None):
         except (json.JSONDecodeError, yaml.YAMLError, ValueError) as e:
             # Raise a new, more informative error that includes the file path
             log.error(f"Error parsing environment file '{file_path}': {e}")
-            raise ValueError(f"Error parsing environment file '{file_path}': {e}") from e
+            raise ValueError(
+                f"Error parsing environment file '{file_path}': {e}"
+            ) from e
         except Exception as e:
             # Catch any other unexpected errors and add context before raising
             log.error(f"An unexpected error occurred while loading '{file_path}': {e}")
-            raise RuntimeError(f"An unexpected error occurred while loading '{file_path}': {e}") from e
-
+            raise RuntimeError(
+                f"An unexpected error occurred while loading '{file_path}': {e}"
+            ) from e

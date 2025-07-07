@@ -30,16 +30,21 @@ def final_script():
 
         # Create the dictionary with 8 keys in a single assignment
         payload_data = {
-            "like_processed_users":     list(model_manager.get_processed("like")),
-            "like_unprocessed_users":   list(model_manager.get_unprocessed("like")),
-            "unlike_processed_users":   list(model_manager.get_processed("unlike")),
+            "like_processed_users": list(model_manager.get_processed("like")),
+            "like_unprocessed_users": list(model_manager.get_unprocessed("like")),
+            "unlike_processed_users": list(model_manager.get_processed("unlike")),
             "unlike_unprocessed_users": list(model_manager.get_unprocessed("unlike")),
             "download_processed_users": list(model_manager.get_processed("download")),
-            "download_unprocessed_users": list(model_manager.get_unprocessed("download")),
-            "scrape_paid_processed_users":     list(model_manager.get_processed("scrape_paid")),
-            "scrape_paid_unprocessed_users":   list(model_manager.get_unprocessed("scrape_paid")),
+            "download_unprocessed_users": list(
+                model_manager.get_unprocessed("download")
+            ),
+            "scrape_paid_processed_users": list(
+                model_manager.get_processed("scrape_paid")
+            ),
+            "scrape_paid_unprocessed_users": list(
+                model_manager.get_unprocessed("scrape_paid")
+            ),
         }
-
 
         # Dump JSON to a string, no indent for efficiency, ensure_ascii=False for non-ASCII chars
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
@@ -51,7 +56,7 @@ def final_script():
             text=True,  # Decode stdout/stderr as text
             check=True,  # Raise CalledProcessError if script exits with non-zero status
             level=env.getattr("FINAL_SCRIPT_SUBPROCESS_LEVEL"),
-            name="Final script"
+            name="Final script",
         )
         log.debug("Final script ran successfully via stdin.")
 

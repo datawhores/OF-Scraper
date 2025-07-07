@@ -53,10 +53,10 @@ class Media(base.base):
         """Marks that a download has been attempted."""
         self.download_attempted = True
 
-    def mark_download_finished(self,success=True):
+    def mark_download_finished(self, success=True):
         """Marks a download as successful/failed."""
         self.download_attempted = True
-        self.download_succeeded =(success)
+        self.download_succeeded = success
         self.update_status()
 
     def update_status(self):
@@ -188,7 +188,7 @@ class Media(base.base):
 
     @property
     def modified_responsetype(self):
-        return  self._post.modified_responsetype
+        return self._post.modified_responsetype
 
     @property
     def responsetype(self):
@@ -449,7 +449,7 @@ class Media(base.base):
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
         else:
-            responsetype="message"
+            responsetype = "message"
         return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.post_id)
 
     @property

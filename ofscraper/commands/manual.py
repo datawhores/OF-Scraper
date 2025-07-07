@@ -27,7 +27,9 @@ import ofscraper.utils.settings as settings
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 
-log=logging.getLogger("shared")
+log = logging.getLogger("shared")
+
+
 def manual_download(urls=None):
     """
     Main function to handle manual download of posts from URLs.
@@ -70,7 +72,7 @@ def manual_download(urls=None):
                 collection = value["collection"]
                 model_id = collection.model_id
                 username = collection.username
-                
+
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
                     description=download_manual_str.format(username=username)
@@ -83,14 +85,18 @@ def manual_download(urls=None):
                 batch_mediainsert(
                     collection.all_unique_media, username=username, model_id=model_id
                 )
-                
+
                 result, _ = download.download_process(
-                    username, model_id, collection.all_unique_media, posts=collection.posts
+                    username,
+                    model_id,
+                    collection.all_unique_media,
+                    posts=collection.posts,
                 )
                 results.append(result)
-                manager.Manager.model_manager.mark_as_processed(username,activity="download")
+                manager.Manager.model_manager.mark_as_processed(
+                    username, activity="download"
+                )
                 after_download_action_script(username, collection.all_unique_media)
-
 
         final(results)
 
@@ -99,7 +105,9 @@ def manual_download(urls=None):
         log.traceback_(traceback.format_exc())
         raise e
 
+
 # --- Data Processing ---
+
 
 def process_urls(urls):
     """
@@ -107,14 +115,14 @@ def process_urls(urls):
     This version is refactored to be data-driven and reduce repetition.
     """
     out_dict = defaultdict(lambda: {"collection": None})
-    
+
     # Map API types to their corresponding data-fetching functions
     API_MAP = {
         "post": get_individual_timeline_post,
         "msg": messages_.get_individual_messages_post,
         "msg2": messages_.get_individual_messages_post,
         "highlights": highlights_.get_individual_highlights,
-        "stories": highlights_.get_individual_stories, # Assumed function
+        "stories": highlights_.get_individual_stories,  # Assumed function
         "unknown": unknown_type_helper,
     }
 
@@ -123,7 +131,7 @@ def process_urls(urls):
             progress_updater.update_activity_task(
                 description=post_str_manual.format(url=url)
             )
-            
+
             model_id, post_id, api_type = get_info(url)
             if not api_type:
                 log.warning(f"Could not determine type for URL: {url}")
@@ -133,7 +141,7 @@ def process_urls(urls):
             username = None
             if model_id:
                 user_data = profile.scrape_profile(model_id)
-                model_id=user_data.get("id")
+                model_id = user_data.get("id")
                 username = user_data.get("username")
 
             # Fetch data using the mapped function
@@ -141,7 +149,7 @@ def process_urls(urls):
             if not fetch_func:
                 log.warning(f"No fetch function defined for API type: {api_type}")
                 continue
-            
+
             # Use partial for functions that need model_id
             if api_type in {"msg", "msg2"}:
                 fetch_func = partial(fetch_func, model_id)
@@ -157,15 +165,18 @@ def process_urls(urls):
                 if not username:
                     log.warning(f"Could not find user info for post ID {post_id}")
                     continue
-            
+
             # Initialize collection if it doesn't exist
             if out_dict[model_id]["collection"] is None:
-                out_dict[model_id]["collection"] = PostCollection(username=username, model_id=model_id)
-            
+                out_dict[model_id]["collection"] = PostCollection(
+                    username=username, model_id=model_id
+                )
+
             # Add the fetched post to the collection
             out_dict[model_id]["collection"].add_posts(value)
 
     return out_dict
+
 
 def get_info(url):
     """
@@ -175,12 +186,36 @@ def get_info(url):
     # Each tuple: (regex_pattern, (api_type, model_group_index, post_group_index))
     # Indices are 1-based for match groups. 0 means not present in URL.
     URL_PATTERNS = [
-        (re.compile(f"chats/chat/({of_env.getattr('NUMBER_REGEX')}+)/.*?({of_env.getattr('NUMBER_REGEX')}+)"), ("msg", 1, 2)),
-        (re.compile(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories/highlights"), ("highlights", 0, 1)),
-        (re.compile(f"/stories/highlights/({of_env.getattr('NUMBER_REGEX')}+)"), ("highlights", 0, 1)),
-        (re.compile(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories"), ("stories", 0, 1)),
-        (re.compile(f"chats/({of_env.getattr('USERNAME_REGEX')}+)/.*?(id|firstId)=({of_env.getattr('NUMBER_REGEX')}+)"), ("msg2", 1, 3)),
-        (re.compile(f"/({of_env.getattr('NUMBER_REGEX')}+)/({of_env.getattr('USERNAME_REGEX')}+)"), ("post", 2, 1)),
+        (
+            re.compile(
+                f"chats/chat/({of_env.getattr('NUMBER_REGEX')}+)/.*?({of_env.getattr('NUMBER_REGEX')}+)"
+            ),
+            ("msg", 1, 2),
+        ),
+        (
+            re.compile(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories/highlights"),
+            ("highlights", 0, 1),
+        ),
+        (
+            re.compile(f"/stories/highlights/({of_env.getattr('NUMBER_REGEX')}+)"),
+            ("highlights", 0, 1),
+        ),
+        (
+            re.compile(f"/({of_env.getattr('NUMBER_REGEX')}+)/stories"),
+            ("stories", 0, 1),
+        ),
+        (
+            re.compile(
+                f"chats/({of_env.getattr('USERNAME_REGEX')}+)/.*?(id|firstId)=({of_env.getattr('NUMBER_REGEX')}+)"
+            ),
+            ("msg2", 1, 3),
+        ),
+        (
+            re.compile(
+                f"/({of_env.getattr('NUMBER_REGEX')}+)/({of_env.getattr('USERNAME_REGEX')}+)"
+            ),
+            ("post", 2, 1),
+        ),
         (re.compile(f"^{of_env.getattr('NUMBER_REGEX')}+$"), ("unknown", 0, 0)),
     ]
 
@@ -190,10 +225,12 @@ def get_info(url):
             model_id = match.group(model_idx) if model_idx > 0 else None
             post_id = match.group(post_idx) if post_idx > 0 else url
             return model_id, post_id, api_type
-            
+
     return None, None, None
 
+
 # --- Helper Functions ---
+
 
 def url_helper(urls):
     """Combines URLs from args and the provided list."""
@@ -204,6 +241,7 @@ def url_helper(urls):
     out.extend(urls or [])
     return map(str.strip, out)
 
+
 def get_profile_helper(value):
     """Extracts username and model_id from a post's author data."""
     author_info = value.get("author", {})
@@ -212,6 +250,7 @@ def get_profile_helper(value):
         data = profile.scrape_profile(model_id)
         return data.get("username"), data.get("id")
     return None, None
+
 
 @run
 async def unknown_type_helper(postid):
@@ -228,28 +267,35 @@ async def unknown_type_helper(postid):
         return value
 
     # If timeline post has no media, or was not found, try paid posts.
-    log.debug(f"Post {postid} from timeline has no media or was not found. Attempting paid fallback.")
+    log.debug(
+        f"Post {postid} from timeline has no media or was not found. Attempting paid fallback."
+    )
 
     if value and not value.get("error"):
         username, model_id = get_profile_helper(value)
         if username and model_id:
             paid_post = await _find_paid_post_by_id(postid, model_id, username)
             if paid_post:
-                return paid_post # Return the paid post if found
+                return paid_post  # Return the paid post if found
 
-    return value # Return original timeline value (or None) if fallback fails
+    return value  # Return original timeline value (or None) if fallback fails
+
 
 def set_user_data(url_dicts):
     """Adds models found to the main model manager."""
     for url_dict in url_dicts.values():
         if url_dict["collection"] and url_dict["collection"].username:
-            manager.Manager.model_manager.add_models(url_dict["collection"].username,activity="download")
+            manager.Manager.model_manager.add_models(
+                url_dict["collection"].username, activity="download"
+            )
+
 
 def allow_manual_dupes():
     """Forces settings to allow debug duplicate downloads for manual mode."""
     args = settings.get_args()
     args.force_all = True
     settings.update_args(args)
+
 
 def final(results):
     """Prepares and calls the final action summary."""

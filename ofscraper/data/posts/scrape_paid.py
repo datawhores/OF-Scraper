@@ -13,7 +13,7 @@ from ofscraper.commands.utils.strings import (
     download_activity_str,
     metadata_activity_str,
     all_paid_progress_metadata_str,
-    all_paid_metadata_str
+    all_paid_metadata_str,
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.managers.manager as manager
@@ -21,7 +21,8 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 
 log = logging.getLogger("shared")
-activity="scrape_paid"
+activity = "scrape_paid"
+
 
 @run
 async def scrape_paid_all() -> List[str]:
@@ -57,7 +58,6 @@ async def scrape_paid_all() -> List[str]:
         )
         out.append(await process_user(value, length))
     return out
-
 
 
 @run
@@ -115,9 +115,9 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    desc=progress_updater. get_activity_description()
-    #Manually search for model, and queue
-    await manager.Manager.model_manager.add_models(username,activity=activity)
+    desc = progress_updater.get_activity_description()
+    # Manually search for model, and queue
+    await manager.Manager.model_manager.add_models(username, activity=activity)
     progress_updater.update_activity_task(description=desc)
     if settings.get_settings().command == "metadata":
         data = await metadata.metadata_process(username, model_id, medias)
@@ -125,9 +125,9 @@ async def process_user(value, length):
         data, _ = await download.download_process(
             username, model_id, medias, posts=posts
         )
-    data=[]
-    #mark queued model as done
-    manager.Manager.model_manager.mark_as_processed(username,activity=activity)
+    data = []
+    # mark queued model as done
+    manager.Manager.model_manager.mark_as_processed(username, activity=activity)
     progress_updater.increment_activity_count(total=length)
-    after_download_action_script(username,medias,posts)
+    after_download_action_script(username, medias, posts)
     return data
