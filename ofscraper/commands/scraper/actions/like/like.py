@@ -34,8 +34,8 @@ def process_like(posts=None, model_id=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared").warning(like_str.format(name=username))
-    like_result = like(model_id, username, posts)
-    return like_result
+    like(model_id, username, posts)
+    manager.Manager.stats_manager.update_stats(username,"like",posts)
 
 
 @exit.exit_wrapper
@@ -43,8 +43,8 @@ def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     progress_utils.switch_api_progress()
     progress_updater.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared").warning(unlike_str.format(name=username))
-    unlike_result = unlike(model_id, username, posts)
-    return unlike_result
+    unlike(model_id, username, posts)
+    manager.Manager.stats_manager.update_stats(username,"unlike",posts)
 
 
 def get_posts_for_unlike(post):
@@ -102,59 +102,18 @@ def _like(model_id, username, posts: list, like_action: bool):
             ]
             max_duration = of_env.getattr("MAX_SLEEP_DURATION_LIKE")
             min_duration = of_env.getattr("MIN_SLEEP_DURATION_LIKE")
-            failed = 0
-            post = 0
-            liked = 0
 
             for _, func in enumerate(tasks):
                 out = func()
-                post += 1
-                # no sleep if cache
-                if out == 0:
-                    sleep_duration = 0
-                # random sleep else
-                else:
-                    sleep_duration = random.uniform(min_duration, max_duration)
-                # if toggled once
+                sleep_duration = random.uniform(min_duration, max_duration)
                 if out == 1:
-                    liked += 1
                     progress_updater.increment_like_task(task2)
-                # if failed
-                elif out == 3:
-                    failed += 1
                 progress_updater.increment_like_task(task)
                 time.sleep(sleep_duration)
             progress_updater.remove_like_task(task)
             progress_updater.remove_like_task(task2)
-        return get_final_like_log(like_action, username, failed, post, liked)
 
 
-def get_final_like_log(like_action, username, failed, post, liked):
-    title = "Liked" if like_action else "Unliked"
-    action = title.lower()
-    unchanged = post - failed - liked
-
-    liked_changed_log = (
-        f"{liked} post changed to {action}"
-        if liked == 0
-        else f"[green]{liked} post changed to {action}[/green]"
-    )
-    like_unchanged_log = (
-        f"{unchanged} posts not changed"
-        if unchanged == 0
-        else f"[yellow]{unchanged} post not changed[/yellow]"
-    )
-    failed_log = "0 post failed" if failed == 0 else f"[red]{failed} post failed[/red]"
-    post_check_log = f"{post} posts checked and kept at {action}"
-
-    text_out = ""
-    if post == 0:
-        text_out = f"[bold]\\[{username}][/bold] [bold][Action {title}][/bold] \\[{post_check_log}, ({liked_changed_log}, {like_unchanged_log}), {failed_log}]"
-        log.warning(text_out)
-    else:
-        text_out = f"[deep_sky_blue2][bold]\\[{username}][/bold] [bold][Action {title}][/bold] [[yellow]{post_check_log}[/yellow], ({liked_changed_log}, {like_unchanged_log}), {failed_log}][/deep_sky_blue2]"
-        log.warning(text_out)
-    return text_out
 
 
 def _toggle_like_requests(c, post: Post, model_id):
@@ -166,18 +125,17 @@ def _toggle_like_requests(c, post: Post, model_id):
     favorited, id = _like_request(c, post.id, model_id)
     if favorited is None:
         post.mark_post_liked(success=False)
-        out = 3
+        return 3
     elif favorited:
         log.debug(f"ID: {id} changed to liked")
-        out = 1
         post.mark_post_liked()
+        return 1
     else:
         log.debug(f"ID: {id} restored to liked")
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
-        out = 2
         post.mark_post_liked()
-    return out
+        return 2
 
 
 def _toggle_unlike_requests(c, post: Post, model_id):
@@ -187,18 +145,17 @@ def _toggle_unlike_requests(c, post: Post, model_id):
     favorited, id = _like_request(c, post.id, model_id)
     if favorited is None:
         post.mark_post_unliked(success=False)
-        out = 3
+        return 3
     elif favorited is False:
         log.debug(f"ID: {id} changed to unliked")
-        out = 1
         post.mark_post_unliked()
+        return 1
     else:
         log.debug(f"ID: {id} restored to unlike")
         time.sleep(sleep_duration)
         _like_request(c, id, model_id)
-        out = 2
         post.mark_post_unliked()
-    return out
+        return 2
 
 
 def _like_request(c, id, model_id):

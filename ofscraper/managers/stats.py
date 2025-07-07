@@ -7,9 +7,13 @@ from ofscraper.managers.utils.state import EActivity, string_to_activity
 
 from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
-log=logging.getLogger("shared")
+
+log = logging.getLogger("shared")
+
+
 class TextStats:
     """Holds statistics for text download activities."""
+
     def __init__(self, name: str):
         self.name = name
         self.text_count = 0
@@ -18,10 +22,23 @@ class TextStats:
 
     def __str__(self):
         # Apply formatting only if the count > 0
-        text_str = f"[bold green]{self.text_count} text[/bold green]" if self.text_count > 0 else f"{self.text_count} text"
-        skipped_str = f"[bold yellow]{self.skipped_count} skipped[/bold yellow]" if self.skipped_count > 0 else f"{self.skipped_count} skipped"
-        failed_str = f"[bold red]{self.failed_count} failed[/bold red]" if self.failed_count > 0 else f"{self.failed_count} failed"
+        text_str = (
+            f"[bold green]{self.text_count} text[/bold green]"
+            if self.text_count > 0
+            else f"{self.text_count} text"
+        )
+        skipped_str = (
+            f"[bold yellow]{self.skipped_count} skipped[/bold yellow]"
+            if self.skipped_count > 0
+            else f"{self.skipped_count} skipped"
+        )
+        failed_str = (
+            f"[bold red]{self.failed_count} failed[/bold red]"
+            if self.failed_count > 0
+            else f"{self.failed_count} failed"
+        )
         return f"\[{text_str}, {skipped_str}, {failed_str}]"
+
     @property
     def has_changes(self):
         return self.text_count > 0 or self.skipped_count > 0 or self.failed_count > 0
@@ -29,6 +46,7 @@ class TextStats:
 
 class DownloadStats:
     """Holds statistics for download-related activities."""
+
     def __init__(self, name: str):
         self.name = name
         self.total_bytes = 0
@@ -41,10 +59,10 @@ class DownloadStats:
     @property
     def total_count(self):
         return self.video_count + self.audio_count + self.photo_count
+
     @property
     def has_changes(self):
         return self.total_count > 0 or self.skipped_count > 0 or self.failed_count > 0
-
 
     def __str__(self):
         # Format size
@@ -55,19 +73,46 @@ class DownloadStats:
 
         # Apply formatting conditionally
         size_str = f"[bold]{size_str}[/bold]" if self.total_bytes > 0 else size_str
-        videos_str = f"[bold green]{self.video_count} videos[/bold green]" if self.video_count > 0 else f"{self.video_count} videos"
-        audios_str = f"[bold green]{self.audio_count} audios[/bold green]" if self.audio_count > 0 else f"{self.audio_count} audios"
-        photos_str = f"[bold green]{self.photo_count} photos[/bold green]" if self.photo_count > 0 else f"{self.photo_count} photos"
-        skipped_str = f"[bold yellow]{self.skipped_count} skipped[/bold yellow]" if self.skipped_count > 0 else f"{self.skipped_count} skipped"
-        failed_str = f"[bold red]{self.failed_count} failed[/bold red]" if self.failed_count > 0 else f"{self.failed_count} failed"
-        downloads_str=f"[bold]{self.total_count} downloads total[/bold]" if self.has_changes else f"{self.total_count} downloads total"
-        return (f"({size_str}) ({downloads_str} "
-                f"\[{videos_str}, {audios_str}, {photos_str}], "
-                f"{skipped_str}, {failed_str})")
+        videos_str = (
+            f"[bold green]{self.video_count} videos[/bold green]"
+            if self.video_count > 0
+            else f"{self.video_count} videos"
+        )
+        audios_str = (
+            f"[bold green]{self.audio_count} audios[/bold green]"
+            if self.audio_count > 0
+            else f"{self.audio_count} audios"
+        )
+        photos_str = (
+            f"[bold green]{self.photo_count} photos[/bold green]"
+            if self.photo_count > 0
+            else f"{self.photo_count} photos"
+        )
+        skipped_str = (
+            f"[bold yellow]{self.skipped_count} skipped[/bold yellow]"
+            if self.skipped_count > 0
+            else f"{self.skipped_count} skipped"
+        )
+        failed_str = (
+            f"[bold red]{self.failed_count} failed[/bold red]"
+            if self.failed_count > 0
+            else f"{self.failed_count} failed"
+        )
+        downloads_str = (
+            f"[bold]{self.total_count} downloads total[/bold]"
+            if self.has_changes
+            else f"{self.total_count} downloads total"
+        )
+        return (
+            f"({size_str}) ({downloads_str} "
+            f"\[{videos_str}, {audios_str}, {photos_str}], "
+            f"{skipped_str}, {failed_str})"
+        )
 
 
 class LikeStats:
     """Holds statistics for liking/unliking posts."""
+
     def __init__(self, name: str):
         self.name = name
         self.posts_checked = 0
@@ -82,18 +127,43 @@ class LikeStats:
     @property
     def posts_unchanged(self):
         return self.posts_checked - self.posts_changed - self.posts_failed
+
     @property
     def has_changes(self):
         return self.posts_changed > 0 or self.posts_failed > 0
 
     def __str__(self):
         # Apply formatting conditionally
-        liked_str = f"[bold green]{self.posts_liked} liked[/bold green]" if self.posts_liked > 0 else f"{self.posts_liked} liked"
-        unliked_str = f"[bold green]{self.posts_unliked} unliked[/bold green]" if self.posts_unliked > 0 else f"{self.posts_unliked} unliked"
-        failed_str = f"[bold red]{self.posts_failed} failed[/bold red]" if self.posts_failed > 0 else f"{self.posts_failed} failed"
-        return (f"\[{self.posts_checked} posts checked, "
-                f"({liked_str}, {unliked_str}), "
-                f"{self.posts_unchanged} unchanged, {failed_str}]")
+        liked_str = (
+            f"[bold green]{self.posts_liked} liked[/bold green]"
+            if self.posts_liked > 0
+            else f"{self.posts_liked} liked"
+        )
+        unliked_str = (
+            f"[bold green]{self.posts_unliked} unliked[/bold green]"
+            if self.posts_unliked > 0
+            else f"{self.posts_unliked} unliked"
+        )
+        failed_str = (
+            f"[bold red]{self.posts_failed} failed[/bold red]"
+            if self.posts_failed > 0
+            else f"{self.posts_failed} failed"
+        )
+        unchanged_str = (
+            f"[bold]{self.posts_unchanged} unchanged[/bold]"
+            if self.posts_unchanged > 0
+            else f"{self.posts_unchanged} unchanged"
+        )
+        checked_str = (
+            f"[bold]{self.posts_checked} posts checked[/bold]"
+            if self.posts_checked > 0
+            else f"{self.posts_checked} posts checked"
+        )
+        return (
+            f"[{checked_str}, "
+            f"({liked_str}, {unliked_str}), "
+            f"{unchanged_str}, {failed_str}]"
+        )
 
 
 class StatsManager:
@@ -102,45 +172,64 @@ class StatsManager:
         # Structure: {username: {activity_enum: StatObject}}
         self._stats = defaultdict(dict)
 
-    def update_stats(self, username: str, activity: Union[str, EActivity], data_list: list):
+    def update_stats(
+        self, username: str, activity: Union[str, EActivity], data_list: list
+    ):
         """
         A unified entry point to update stats for any activity.
         It dispatches the data to the correct internal update method.
         """
         # Get or create the stat object first
         stat_obj = self._get_stat_obj(username, activity)
-        activity_enum = string_to_activity(activity) if isinstance(activity, str) else activity
+        activity_enum = (
+            string_to_activity(activity) if isinstance(activity, str) else activity
+        )
 
         # Dispatch to the correct private helper based on the activity type
-        if activity_enum in [EActivity.ScrapeActivity.DOWNLOAD, EActivity.PaidActivity.SCRAPE_PAID]:
+        if activity_enum in [
+            EActivity.ScrapeActivity.DOWNLOAD,
+            EActivity.PaidActivity.SCRAPE_PAID,
+        ]:
             self._update_download_stats_helper(stat_obj, data_list)
-        elif activity_enum in [EActivity.ScrapeActivity.LIKE, EActivity.ScrapeActivity.UNLIKE]:
+        elif activity_enum in [
+            EActivity.ScrapeActivity.LIKE,
+            EActivity.ScrapeActivity.UNLIKE,
+        ]:
             self._update_like_stats_helper(stat_obj, data_list)
         elif activity_enum == EActivity.ScrapeActivity.TEXT:
             self._update_text_stats_helper(stat_obj, data_list)
-    def update_and_print_stats(self, username: str, activity: Union[str, EActivity], data_list: list,ignore_missing=False):
+
+    def update_and_print_stats(
+        self,
+        username: str,
+        activity: Union[str, EActivity],
+        data_list: list,
+        ignore_missing=False,
+    ):
         """
         A convenience method that updates the stats for an activity and then
         immediately prints the summary for that specific activity.
         """
         # Step 1: Call the unified update method to process the data
         self.update_stats(username, activity, data_list)
-        
+
         # Step 2: Immediately call the print method for that same activity
-        self.print_user_activity_summary(username, activity,ignore_missing=ignore_missing)
+        self.print_user_activity_summary(
+            username, activity, ignore_missing=ignore_missing
+        )
 
     def print_all_summary(self):
         """Builds a complete summary string grouped by user and logs it once."""
         if not self._stats:
             return
-        
+
         summary_string = "".join(
-            self._get_user_summary_string(username) 
+            self._get_user_summary_string(username)
             for username in sorted(self._stats.keys())
         )
-        
+
         if summary_string:
-             log.error("\n\n--- Final Stats Summary ---" + summary_string)
+            log.error("\n\n--- Final Stats Summary ---" + summary_string)
 
     def print_summary_by_activity(self):
         """Builds a complete summary string grouped by activity and logs it once."""
@@ -159,19 +248,23 @@ class StatsManager:
         output_lines = ["\n\n--- Final Stats Summary  ---"]
         for activity in sorted(stats_by_activity.keys(), key=lambda x: x.name):
             user_stat_list = stats_by_activity[activity]
-            
+
             activity_header = escape(user_stat_list[0][1].name)
             output_lines.append(f"\n--- {activity_header} ---")
-            
+
             for username, stat_obj in sorted(user_stat_list, key=lambda x: x[0]):
                 prefix = escape(f"[{username}][{stat_obj.name}]")
                 # Conditionally apply bolding
-                formatted_prefix = f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+                formatted_prefix = (
+                    f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+                )
                 output_lines.append(f"{formatted_prefix} {stat_obj}")
-        
+
         log.error("\n".join(output_lines))
 
-    def print_user_activity_summary(self, username: str, activity: Union[str, EActivity],ignore_missing=False):
+    def print_user_activity_summary(
+        self, username: str, activity: Union[str, EActivity], ignore_missing=False
+    ):
         """
         Prints a formatted summary for a single activity for a specific user.
         The prefix is bolded only if there are non-zero stats.
@@ -186,20 +279,23 @@ class StatsManager:
             prefix = escape(f"[{username}][{stat_obj.name}]")
 
             # Conditionally apply bolding based on the has_changes property
-            formatted_prefix = f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+            formatted_prefix = (
+                f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+            )
 
             # Build the final output string and log it once
-            output_string = (
-                f"{formatted_prefix} {stat_obj}\n"
-            )
+            output_string = f"{formatted_prefix} {stat_obj}\n"
             log.error(output_string)
 
         except KeyError as err:
             if not ignore_missing:
                 raise KeyError(
                     f"No statistics found for user '{username}' and activity '{activity}'."
-                ) from err  
-    def _update_download_stats_helper(self, stat_obj: DownloadStats, media_list: list[Media]):
+                ) from err
+
+    def _update_download_stats_helper(
+        self, stat_obj: DownloadStats, media_list: list[Media]
+    ):
         """Private helper to update download stats."""
         for media in media_list:
             if not media.download_attempted:
@@ -209,17 +305,23 @@ class StatsManager:
             else:
                 stat_obj.total_bytes += media.size or 0
                 mtype = media.mediatype.lower()
-                if mtype == "videos": stat_obj.video_count += 1
-                elif mtype == "audios": stat_obj.audio_count += 1
-                elif mtype == "images": stat_obj.photo_count += 1
+                if mtype == "videos":
+                    stat_obj.video_count += 1
+                elif mtype == "audios":
+                    stat_obj.audio_count += 1
+                elif mtype == "images":
+                    stat_obj.photo_count += 1
 
     def _update_like_stats_helper(self, stat_obj: LikeStats, post_list: list[Post]):
         """Private helper to update like stats."""
         for post in post_list:
             stat_obj.posts_checked += 1
-            if post.like_result == "liked": stat_obj.posts_liked += 1
-            elif post.like_result == "unliked": stat_obj.posts_unliked += 1
-            elif post.like_result == "failed": stat_obj.posts_failed += 1
+            if post.favorited and post.like_success:
+                stat_obj.posts_liked += 1
+            elif not post.favorited and post.like_success:
+                stat_obj.posts_unliked += 1
+            elif not post.like_success:
+                stat_obj.posts_failed += 1
 
     def _update_text_stats_helper(self, stat_obj: TextStats, post_list: list[Post]):
         """Private helper to update text download stats."""
@@ -230,20 +332,21 @@ class StatsManager:
                 stat_obj.failed_count += 1
             else:
                 stat_obj.text_count += 1
-        
+
     def _get_user_summary_string(self, username: str) -> str:
         if username not in self._stats:
             return ""
         lines = []
-        
+
         for stat_obj in self._stats[username].values():
             prefix = escape(f"[{username}][{stat_obj.name}]")
             # Conditionally apply bolding based on the has_changes property
-            formatted_prefix = f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+            formatted_prefix = (
+                f"[bold]{prefix}[/bold]" if stat_obj.has_changes else prefix
+            )
             lines.append(f"{formatted_prefix} {stat_obj}")
         return "\n".join(lines) if len(lines) > 1 else ""
 
-        
     def _get_stat_obj(self, username: str, activity: Union[str, EActivity]):
         """
         Internal factory to get or create a stat object.

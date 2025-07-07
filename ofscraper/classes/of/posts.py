@@ -41,6 +41,7 @@ class Post(base.base):
         self.text_download_attempted = False
         self.text_download_succeeded = None
 
+
     # --------------------------------------------------------------------------------
     # --- Action Preparation & Marking Methods ---
     # --------------------------------------------------------------------------------
