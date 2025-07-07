@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Iterable
 import logging
 import ofscraper.filters.media.filters as helpers
@@ -87,17 +86,17 @@ class PostCollection:
         return [media for media in all_media if media.mediatype.lower() in target_types]
 
 
-    def add_post(self, item, actions: list[str] = None, overwrite=False, copyObj=False):
+    def add_post(self, item, actions: list[str] = None, overwrite=False):
         """
         Adds a single item (Post, Media, or dict) and returns the resulting Post object.
         """
         if isinstance(item,Iterable):
             raise Exception("item must not be a iteratable")
         return self._process_and_add_post(
-            item, actions or [], overwrite=overwrite, copyObj=copyObj
+            item, actions or [], overwrite=overwritej
         )
 
-    def add_posts(self, items: list, actions: list[str] = None, overwrite=False, copyObj=False):
+    def add_posts(self, items: list, actions: list[str] = None, overwrite=False):
         """
         Adds a list of items (Posts, Media, or dicts) to the collection.
         """
@@ -107,7 +106,7 @@ class PostCollection:
         new_posts_added = 0
         for item in items:
             # Call the single-item processor
-            post = self._process_and_add_post(item, actions, overwrite, copyObj)
+            post = self._process_and_add_post(item, actions, overwrite)
             if post: # You can track how many were successfully added
                 new_posts_added += 1
 
@@ -254,7 +253,7 @@ class PostCollection:
         log.debug(f"Aggregated {len(all_media)} media items before final filtering.")
         return all_media
 
-    def _process_and_add_post(self, item, actions: list[str], overwrite: bool, copyObj: bool):
+    def _process_and_add_post(self, item, actions: list[str], overwrite: bool):
         """
         Processes a single item (Post, Media, or dict), adds it to the
         collection, and returns the definitive Post object. This is the
@@ -282,8 +281,6 @@ class PostCollection:
             post_object = post_to_process if isinstance(post_to_process, Post) else Post(
                 post_to_process, self.model_id, self.username, mode=self.mode
             )
-            if copyObj:
-                post_object = deepcopy(post_object)
             self._posts_map[post_id] = post_object
 
         existing_post = self._posts_map[post_id]
