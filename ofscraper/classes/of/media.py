@@ -13,7 +13,7 @@ from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
 
 import ofscraper.classes.of.base as base
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.dates as dates

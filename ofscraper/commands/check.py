@@ -43,10 +43,10 @@ from ofscraper.db.operations_.media import (
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.actions.download.download import process_dicts
-import ofscraper.main.manager as manager
-from ofscraper.classes.of.postcollection import PostCollection
+import ofscraper.managers.manager as manager
+from ofscraper.managers.postcollection import PostCollection
 from ofscraper.main.close.final.final import  final_action
 
 

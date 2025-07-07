@@ -5,7 +5,7 @@ import os
 import traceback
 
 import ofscraper.utils.settings as settings
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 

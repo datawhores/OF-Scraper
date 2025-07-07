@@ -7,7 +7,7 @@ import traceback
 import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.logger as logger
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 import ofscraper.utils.settings as settings
 

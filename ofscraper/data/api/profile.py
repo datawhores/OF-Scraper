@@ -18,7 +18,7 @@ from typing import Union
 from rich.console import Console
 from xxhash import xxh128
 
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings

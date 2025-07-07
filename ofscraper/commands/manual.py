@@ -22,10 +22,9 @@ from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.main.close.final.final import final_action
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
-from ofscraper.classes.of.postcollection import PostCollection
-from ofscraper.data.models.state import EActivity
+from ofscraper.managers.postcollection import PostCollection
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 
 log=logging.getLogger("shared")

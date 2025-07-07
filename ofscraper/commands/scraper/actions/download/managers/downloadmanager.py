@@ -22,7 +22,6 @@ from ofscraper.commands.scraper.actions.utils.progress.update import update_tota
 import ofscraper.utils.settings as settings
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import download_media_update
 from ofscraper.scripts.skip_download_script import skip_download_script
@@ -86,7 +85,6 @@ class DownloadManager:
             pathlib.Path(path).unlink(missing_ok=True)
             return 0
         return resume_size
-
     async def _check_forced_skip(self, ele, total):
         if total is None:
             return
@@ -111,8 +109,7 @@ class DownloadManager:
             return 0
 
     def _downloadspace(self):
-        space_limit = config_data.get_system_freesize()
-        if space_limit > 0 and space_limit > system.get_free():
+        if not system.check_free_size():
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
     def _after_download_script(self, filepath):

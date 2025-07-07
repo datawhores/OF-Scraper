@@ -12,17 +12,11 @@ import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process
 from ofscraper.commands.utils.strings import (
     avatar_str,
-    all_paid_metadata_str,
-    all_paid_progress_metadata_str,
     metadata_activity_str,
     mark_stray_str,
 )
 from ofscraper.commands.utils.command import commmandManager
-from ofscraper.data.posts.scrape_paid import (
-    process_scrape_paid,
-    process_user_info_printer,
-    process_user,
-)
+
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.db.operations as operations
 from ofscraper.db.operations_.media import (
@@ -38,7 +32,7 @@ import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.main.close.final.final import final_action
 from ofscraper.utils.checkers import check_auth
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache

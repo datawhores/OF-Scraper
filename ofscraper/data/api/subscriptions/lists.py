@@ -16,7 +16,7 @@ import contextvars
 import logging
 import traceback
 
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater

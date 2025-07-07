@@ -16,7 +16,7 @@ from ofscraper.commands.utils.strings import (
     all_paid_metadata_str
 )
 from ofscraper.utils.context.run_async import run
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 

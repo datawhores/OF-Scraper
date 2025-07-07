@@ -25,7 +25,7 @@ from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 
 

@@ -4,7 +4,6 @@ import asyncio
 
 import ofscraper.utils.hash as hash
 from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.commands.utils.strings import (
     download_activity_str,
 )
@@ -28,7 +27,7 @@ from ofscraper.commands.scraper.actions.download.run import consumer
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.settings as settings
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):

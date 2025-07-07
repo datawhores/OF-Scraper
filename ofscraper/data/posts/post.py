@@ -47,7 +47,7 @@ from ofscraper.utils.args.accessors.areas import (
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.settings as settings
-from ofscraper.classes.of.postcollection import PostCollection
+from ofscraper.managers.postcollection import PostCollection
 
 log = logging.getLogger("shared")
 
@@ -283,16 +283,19 @@ async def process_all_paid():
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
             )
 
+            placeholder = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
             username = profile.scrape_profile(model_id).get("username")
-            if username == of_env.getattr(
-                "DELETED_MODEL_PLACEHOLDER"
-            ) and await check_profile_table_exists(
-                model_id=model_id, username=username
-            ):
-                username = (
-                    await get_profile_info(model_id=model_id, username=username)
-                    or username
-                )
+            # Check if the scraped username is the placeholder
+            if username == placeholder:
+                # Now, check if this model is already known to us
+                if await check_profile_table_exists(model_id=model_id, username=username):
+                    # Case 1: Known deleted model. Get its unique name from our records.
+                    username = (
+                        await get_profile_info(model_id=model_id, username=username)
+                        or f"{placeholder}_{model_id}"
+                    )
+                else:
+                    username = f"{placeholder}_{model_id}"
             progress_updater.update_activity_count(
                 total=None, description=all_paid_str.format(username=username)
             )

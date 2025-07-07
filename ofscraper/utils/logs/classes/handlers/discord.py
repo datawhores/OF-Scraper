@@ -3,8 +3,8 @@ import logging
 import threading
 import queue
 
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
-from ofscraper.classes.sessionmanager.sleepers import discord_forbidden_session_sleeper,discord_rate_limit_session_sleeper
+import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
+from ofscraper.managers.sessionmanager.sleepers import discord_forbidden_session_sleeper,discord_rate_limit_session_sleeper
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
 

@@ -16,7 +16,7 @@ from ofscraper.commands.utils.strings import (
     data_str,
     progress_str,
 )
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")

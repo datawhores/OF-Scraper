@@ -26,7 +26,7 @@ from ofscraper.db.operations_.media import (
 )
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
-from ofscraper.classes.sessionmanager.sessionmanager import FORCED_NEW, SIGN
+from ofscraper.managers.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog

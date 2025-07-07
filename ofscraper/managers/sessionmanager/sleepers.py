@@ -1,5 +1,5 @@
 import ofscraper.utils.of_env.of_env as env
-from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
+from ofscraper.managers.sessionmanager.sessionmanager import SessionSleep
 
 
 rate_limit_session_sleeper = SessionSleep(

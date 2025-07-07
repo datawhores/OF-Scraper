@@ -4,7 +4,7 @@ import traceback
 
 import httpx
 
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
 import ofscraper.utils.console as console_
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings

@@ -18,7 +18,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
-from ofscraper.classes.sessionmanager.cert import create_custom_ssl_context
+from ofscraper.managers.sessionmanager.cert import create_custom_ssl_context
 
 # Constants for request actions
 TOO_MANY = "too_many"

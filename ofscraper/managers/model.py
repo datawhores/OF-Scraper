@@ -15,7 +15,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.classes.of.models import Model
 import ofscraper.utils.settings as settings
 from ofscraper.utils.args.mutators.user import resetUserFilters
-from ofscraper.data.models.state import StateManager, EActivity, string_to_activity
+from ofscraper.managers.utils.state import StateManager, EActivity, string_to_activity
 import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")

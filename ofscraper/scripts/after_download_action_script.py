@@ -7,7 +7,7 @@ import subprocess
 
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
 

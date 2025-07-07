@@ -5,7 +5,7 @@ import threading
 from typing import Optional, Dict, List, Any, AsyncGenerator, Generator
 
 import ofscraper.utils.of_env.of_env as of_env
-from ofscraper.classes.sessionmanager.sessionmanager import (
+from ofscraper.managers.sessionmanager.sessionmanager import (
     AUTH,
     COOKIES,
     FORCED_NEW,
@@ -22,7 +22,7 @@ from ofscraper.commands.scraper.actions.utils.retries import get_download_req_re
 from ofscraper.commands.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
-from ofscraper.classes.sessionmanager.sleepers import (
+from ofscraper.managers.sessionmanager.sleepers import (
     rate_limit_session_sleeper,
     forbidden_session_sleeper,
     download_forbidden_session_sleeper,

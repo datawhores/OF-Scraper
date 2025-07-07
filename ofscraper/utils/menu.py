@@ -9,7 +9,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 
 
 log = logging.getLogger("shared")

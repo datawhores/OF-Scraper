@@ -16,7 +16,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run

@@ -4,7 +4,7 @@ import traceback
 import ofscraper.main.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit_context
-from ofscraper.main.manager import start_manager
+from ofscraper.managers.manager import start_manager
 
 
 def main():

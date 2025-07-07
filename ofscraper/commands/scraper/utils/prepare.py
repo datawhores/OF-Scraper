@@ -3,12 +3,11 @@ import time
 import re
 
 import ofscraper.data.api.init as init
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.config.data as data
-import ofscraper.utils.settings as settings
 
 
 log = logging.getLogger("shared")

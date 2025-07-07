@@ -4,7 +4,7 @@ import traceback
 import ofscraper.commands.scraper.actions.utils.log as logs
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run
-from ofscraper.classes.of.postcollection import PostCollection
+from ofscraper.managers.postcollection import PostCollection
 
 
 @run

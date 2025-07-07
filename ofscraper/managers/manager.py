@@ -5,15 +5,15 @@ import ofscraper.main.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
-from ofscraper.data.models.manager import ModelManager
+from ofscraper.managers.model import ModelManager
 from ofscraper.commands.db import db
 import ofscraper.commands.metadata.metadata as metadata
 import ofscraper.commands.scraper.scraper as actions
 import ofscraper.commands.manual as manual
 import ofscraper.commands.check as check
 import ofscraper.utils.settings as settings
-import ofscraper.classes.sessionmanager.ofsession as OFsessionManager
-import ofscraper.classes.sessionmanager.sessionmanager as sessionManager
+import ofscraper.managers.sessionmanager.ofsession as OFsessionManager
+import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
 
 Manager = None
 

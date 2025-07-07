@@ -18,14 +18,14 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check
 from ofscraper.data.api.common.check import update_check
-from ofscraper.classes.sessionmanager.sessionmanager import SessionSleep
+from ofscraper.managers.sessionmanager.sessionmanager import SessionSleep
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
     get_messages_media,

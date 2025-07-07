@@ -22,7 +22,7 @@ import ofscraper.utils.console as console
 from ofscraper.commands.utils.command import commmandManager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.checkers as checkers
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.utils.schedule import set_schedule
 import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
