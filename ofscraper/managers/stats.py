@@ -292,7 +292,28 @@ class StatsManager:
                 raise KeyError(
                     f"No statistics found for user '{username}' and activity '{activity}'."
                 ) from err
+    def clear_activity_stats(self, activity: Union[str, EActivity]):
+        """
+        Removes all stat entries for a specific activity across all users.
+        This is useful for resetting counters before a new run.
+        """
+        # Convert the activity string to an enum for consistent key lookup
+        activity_enum = (
+            string_to_activity(activity) if isinstance(activity, str) else activity
+        )
+        
+        # Iterate through all users in the stats dictionary
+        for username in list(self._stats.keys()):
+            # Use .pop() to safely remove the key if it exists
+            self._stats[username].pop(activity_enum, None)
 
+    def clear_all_stats(self):
+        """
+        Resets all statistics for all users and all activities.
+        """
+        self._stats = defaultdict(dict)
+        log.debug("All statistics have been cleared.")
+    
     def _update_download_stats_helper(
         self, stat_obj: DownloadStats, media_list: list[Media]
     ):

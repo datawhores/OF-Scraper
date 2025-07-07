@@ -5,6 +5,7 @@ import re
 import threading
 import time
 import traceback
+from copy import deepcopy
 from functools import partial
 
 from collections import defaultdict
@@ -104,13 +105,14 @@ def process_download_queue():
         # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
         final_action()
         manager.Manager.model_manager.clear_queue("download")
+        manager.Manager.stats_manager.clear_activity_stats("download")
         log.info("Download processing complete. Waiting for new items...")
 
 
 def _get_data_from_row(row: dict):
     """
-    Takes a row dictionary and returns the corresponding data objects.
-    This function no longer has side effects.
+    Takes a row dictionary and returns fresh, deep copies of the
+    corresponding data objects to prevent state issues between loops.
     """
     username = row["username"]
     media_id = int(row["media_id"])
@@ -119,13 +121,19 @@ def _get_data_from_row(row: dict):
     model_obj = manager.Manager.model_manager.get_model(username)
     if not model_obj:
         raise Exception(f"Could not find model for username: {username}")
-    
-    # Assuming check_user_dict holds PostCollection objects
-    media = check_user_dict[model_obj.id]["collection"].find_media_item(media_id)
-    if not media:
+
+    # Find the original, cached media object
+    cached_media = check_user_dict[model_obj.id]["collection"].find_media_item(media_id)
+    if not cached_media:
         raise Exception(f"No media data found for media_id {media_id} from {username}")
 
-    return media, media.post, username, model_obj.id
+    # Create fresh, deep copies to work with.
+    # This ensures no state from a previous loop is carried over.
+    fresh_media = deepcopy(cached_media)
+    fresh_post = deepcopy(cached_media.post)
+
+    # The rest of the system will now use these fresh, stateless copies
+    return fresh_media, fresh_post, username, model_obj.id
 
 
 def _process_user_batch(username: str, model_id: int, media_list: list, post_list: list, row_list: list):
