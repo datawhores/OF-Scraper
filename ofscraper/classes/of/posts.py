@@ -34,8 +34,12 @@ class Post(base.base):
         self.downloaded_media = []
         self.failed_downloads = []
         self.is_actionable_like = False
+
         self.like_attempted = False
         self.like_success = None
+
+        self.text_download_attempted = False
+        self.text_download_succeeded = None
 
     # --------------------------------------------------------------------------------
     # --- Action Preparation & Marking Methods ---
@@ -127,7 +131,14 @@ class Post(base.base):
         Updates the status of the post before a like/unlike attempt.
         """
         self.like_attempted = True
-
+    def mark_text_downloaded(self, success: bool):
+        """Updates the status of the post after a text download attempt."""
+        self.text_download_attempted = True
+        self.text_download_succeeded = success
+    def mark_text_download_attempt(self):
+        """Marks that a text download has been attempted."""
+        self.text_download_attempted = True
+            
     @property
     def missed_downloads(self):
         """Convenience property to see what failed to download."""

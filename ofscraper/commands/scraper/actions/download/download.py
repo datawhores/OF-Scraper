@@ -17,7 +17,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 
-from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 
 from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
 
@@ -44,48 +43,32 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
     progress_updater.update_activity_task(description=download_str + path_str)
     logging.getLogger("shared").warning(download_activity_str.format(username=username))
     progress_updater.update_activity_task(description="")
-    data, values = await download_process(username, model_id, media, posts=posts)
-    return data, values
+    values = await download_process(username, model_id, media, posts=posts)
+    return values
 
 
 @run_async
 async def download_process(username, model_id, medialist, posts):
-    """
-    Runs after download script for
-    - manual mode
-    - scrape_paid
-    - regular download
-    """
-    data, values = await process_dicts(username, model_id, medialist, posts)
-    return data, values
+    values = await process_dicts(username, model_id, medialist, posts)
+    return values
 
-
-@run_async
-async def download_model_deleted_process(
-    username, model_id, medialist=None, posts=None
-):
-    data, values = await process_dicts(username, model_id, medialist, posts)
-    return data, values
 
 
 @run
 async def process_dicts(username, model_id, medialist, posts):
-    log_text_array = []
     # 2. Handle text download if enabled
+    if not isinstance (medialist,list):
+        medialist=[medialist]
+    if not isinstance (posts,list):
+        posts=[posts]
     if settings.get_settings().text:
-        text_data = await textDownloader(posts, username=username)
-        if text_data:
-            log_text_array.extend(text_data)  # Use extend for lists
-    # 3. Consolidate all "skip download" conditions
+        await textDownloader(posts, username=username)
     if settings.get_settings().text_only:
-        return log_text_array, (0, 0, 0, 0, 0)
+        return  (0, 0, 0, 0, 0)
     medialist_empty = len(medialist) == 0
 
     if medialist_empty:
-        empty_log = final_log_text(username, 0, 0, 0, 0, 0, 0)
-        logging.getLogger("shared").error(empty_log)
-        log_text_array.append(empty_log)
-        return log_text_array, (0, 0, 0, 0, 0)
+        return  (0, 0, 0, 0, 0)
 
     # Continue to download process
     logging.getLogger("shared").info("Downloading in single thread mode")
@@ -130,10 +113,8 @@ async def process_dicts(username, model_id, medialist, posts):
             common_globals.thread.shutdown()
 
         setDirectoriesDate()
-        final_log(username, log=logging.getLogger("shared"))
         progress_updater.remove_download_task(task1)
-        log_text_array.append(final_log_text(username))
-        return log_text_array, (
+        return (
             common_globals.video_count,
             common_globals.audio_count,
             common_globals.photo_count,

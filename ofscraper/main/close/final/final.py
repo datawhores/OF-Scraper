@@ -11,12 +11,12 @@ r"""
                                                                                       f
 """
 
-from ofscraper.main.close.final.final_log import final_log
 from ofscraper.scripts.final_script import final_script
 from ofscraper.utils.logs.logs import printEndValues
+import ofscraper.managers.manager as manager
 
 
-def final_action(normal_data=None, scrape_paid_data=None, user_first_data=None):
+def final_action():
     final_script()
-    final_log(normal_data or [] + scrape_paid_data or [] + user_first_data or [])
+    manager.Manager.stats_manager.print_summary_by_activity()
     printEndValues()

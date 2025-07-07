@@ -60,106 +60,125 @@ MEDIA_KEY = ["id", "postid", "username"]
 check_user_dict = defaultdict(dict)
 
 
-def process_download_cart():
+def process_download_queue():
+    """
+    Orchestrator function that processes the entire download queue in batches grouped by user.
+    """
     while True:
-        try:
-            if app.row_queue.empty():
-                continue
-            cart_user_dict = defaultdict(dict)
-            all_results = []
-            while not app.row_queue.empty():
-                try:
-                    process_item(cart_user_dict)
-                except Exception as _:
-                    # handle getting new downloads
-                    None
-            for value in cart_user_dict.values():
-                collection = value["collection"]
-                results = value["results"]
-                all_results.append(results)
-                collection: PostCollection
-                username = collection.username
-                media = collection.all_unique_media
-                posts = collection.posts
-                after_download_action_script(username, media, posts)
-                manager.Manager.model_manager.mark_as_processed(
-                    username, activity="download"
-                )
-            final_action(normal_data=all_results)
-            manager.Manager.model_manager.clear_queue("download")
-            time.sleep(5)
-        except Exception as e:
-            log.traceback_(f"Error in process_item: {e}")
-            log.traceback_(f"Error in process_item: {traceback.format_exc()}")
+        if app.row_queue.empty():
+            time.sleep(1)
             continue
+        user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
+        while not app.row_queue.empty():
+            try:
+                key, row_data = app.row_queue.get()
+                media_item, post_item, username, model_id = _get_data_from_row(row_data)
+                
+                # Append all necessary data for later processing
+                user_cart[model_id]["posts"].append(post_item)
+                user_cart[model_id]["media"].append(media_item)
+                user_cart[model_id]["rows"].append((key, row_data))
+                user_cart[model_id]["username"] = username # Store username once
+
+            except Exception as e:
+                log.error(f"Error processing row from queue: {e}")
+                log.traceback_(traceback.format_exc())
+
+        # 2. PROCESS: Loop through each user's batch and process their items
+        for model_id, data in user_cart.items():
+            username = data["username"]
+            log.info(f"Processing download batch for user: {username}")
+            try:
+                # Pass the user's entire batch to the processing function
+                _process_user_batch(username, model_id, data["media"], data["posts"], data["rows"])
+                
+                # Run after-actions for this user
+                after_download_action_script(username, data["media"], data["posts"])
+                manager.Manager.model_manager.mark_as_processed(username, activity="download")
+                manager.Manager.stats_manager.update_and_print_stats(username, "download", data["media"])
+
+            except Exception as e:
+                log.error(f"An error occurred while processing the batch for {username}.")
+                log.traceback_(e)
+
+        # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
+        final_action()
+        manager.Manager.model_manager.clear_queue("download")
+        log.info("Download processing complete. Waiting for new items...")
 
 
-def process_item(cart_user_dict):
-    if process_download_cart.counter == 0:
+def _get_data_from_row(row: dict):
+    """
+    Takes a row dictionary and returns the corresponding data objects.
+    This function no longer has side effects.
+    """
+    username = row["username"]
+    media_id = int(row["media_id"])
+
+    manager.Manager.model_manager.add_models(username, activity="download")
+    model_obj = manager.Manager.model_manager.get_model(username)
+    if not model_obj:
+        raise Exception(f"Could not find model for username: {username}")
+    
+    # Assuming check_user_dict holds PostCollection objects
+    media = check_user_dict[model_obj.id]["collection"].find_media_item(media_id)
+    if not media:
+        raise Exception(f"No media data found for media_id {media_id} from {username}")
+
+    return media, media.post, username, model_obj.id
+
+
+def _process_user_batch(username: str, model_id: int, media_list: list, post_list: list, row_list: list):
+    """
+    Processes all media items for a single user's batch.
+    """
+    if _process_user_batch.counter == 0:
+        # Simplified CDM check
+        log.info("Performing first-run CDM check...")
         if not network.check_cdm():
-            log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
+            log.info("CDM check raised an error. This check will not be repeated.")
         else:
-            log.info("cdm checker was fine\ncdm will not be check again\n\n")
-    process_download_cart.counter = process_download_cart.counter + 1
-    log.info("Getting items from cart")
-    try:
-        key, row = app.row_queue.get()
-    except Exception as E:
-        log.debug(f"Error getting item from queue: {E}")
-        return
-    for count in range(0, 2):
-        try:
-            post_id = int(row["post_id"])
-            media_id = int(row["media_id"])
-            username = row["username"]
-            manager.Manager.model_manager.add_models(username, activity="download")
-            model_id = manager.Manager.model_manager.get_model(username).id
-            media = check_user_dict[model_id]["collection"].find_media_item(media_id)
-            if not media:
-                raise Exception(f"No data for {media_id}_{post_id}_{username}")
-            cart_user_dict[model_id].setdefault(
-                "collection", PostCollection(model_id=model_id, username=username)
-            )
-            cart_user_dict[model_id].setdefault("results", [])
-            post = cart_user_dict[model_id]["collection"].add_post(media, copyObj=True)
-            log.info(f"Added url {media.url or media.mpd}")
-            log.info("Sending URLs to OF-Scraper")
-            log.info(
-                f"Downloading individual media ({media.filename}) to disk for {username}"
-            )
-            operations.table_init_create(model_id=model_id, username=username)
-            output, values = process_dicts(username, model_id, [media], [post])
-            cart_user_dict[model_id]["results"].extend(output)
+            log.info("CDM check passed. This check will not be repeated.")
+    _process_user_batch.counter += 1
 
-            if values is None or values[-1] == 1:
-                raise Exception("Download is marked as failed")
-            elif values[-2] == 1:
-                log.info("Download Skipped")
-                app.app.table.update_cell_at_key(
-                    key, "download_cart", Text("[skipped]", style="bold bright_yellow")
-                )
+    operations.table_init_create(model_id=model_id, username=username)
 
-            else:
-                log.info("Download Finished")
-                app.app.table.update_cell_at_key(
-                    key, "download_cart", Text("[downloaded]", style="bold green")
-                )
-                # might not be needed because of lack of final_script
-                manager.Manager.model_manager.mark_as_processed(username, "download")
-                break
-        except Exception as E:
-            if count == 1:
-                app.app.table.update_cell_at_key(
-                    key, "download_cart", Text("[failed]", style="bold red")
-                )
-                raise E
-            log.info(f"{E}")
-            log.info("Download Failed Refreshing data")
-            data_refill(model_id)
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-    if app.row_queue.empty():
-        log.info("Download cart is currently empty")
+    for i, media in enumerate(media_list):
+        key = row_list[i][0] # Get the original key for UI updates
+        post = post_list[i]
+        
+        log.info(f"Attempting to download: {media.filename} for {username}")
+        
+        # Retry logic for each item
+        for attempt in range(2): # 0 for first try, 1 for retry
+            try:
+                values = process_dicts(username, model_id, media, post)
+                if values is None or values[-1] == 1:
+                    raise Exception("Download failed based on process_dicts result")
+                
+                # Success cases
+                if values[-2] == 1:
+                    log.info(f"Download skipped: {media.filename}")
+                    app.app.table.update_cell_at_key(key, "download_cart", Text("[skipped]", style="bold bright_yellow"))
+                else:
+                    log.info(f"Download finished: {media.filename}")
+                    app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]", style="bold green"))
+                
+                break # Exit retry loop on success
+
+            except Exception as e:
+                log.warning(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
+                if attempt == 0: # If first attempt failed
+                    log.info("Refreshing data and retrying...")
+                    data_refill(model_id)
+                    time.sleep(1) # Small delay before retry
+                else: # If second attempt also failed
+                    log.error(f"Download failed permanently for {media.filename}.")
+                    app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]", style="bold red"))
+
+# Initialize counter on the function object
+_process_user_batch.counter = 0
+
 
 
 @run
@@ -642,9 +661,8 @@ async def get_paid_ids(model_id, user_name):
 
 
 def thread_starters(ROWS_):
-    worker_thread = threading.Thread(target=process_download_cart, daemon=True)
+    worker_thread = threading.Thread(target=process_download_queue, daemon=True)
     worker_thread.start()
-    process_download_cart.counter = 0
     start_table(ROWS_)
 
 

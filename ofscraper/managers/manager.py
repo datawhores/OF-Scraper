@@ -6,6 +6,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
 from ofscraper.managers.model import ModelManager
+from ofscraper.managers.stats import StatsManager
 from ofscraper.commands.db import db
 import ofscraper.commands.metadata.metadata as metadata
 import ofscraper.commands.scraper.scraper as actions
@@ -14,6 +15,7 @@ import ofscraper.commands.check as check
 import ofscraper.utils.settings as settings
 import ofscraper.managers.sessionmanager.ofsession as OFsessionManager
 import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
+
 
 Manager = None
 
@@ -36,6 +38,7 @@ def start_other_managers():
 class mainManager:
     def __init__(self) -> None:
         self.model_manager = None
+        self.stats_manager= None
 
     def start(self):
         self.initLogs()
@@ -47,6 +50,9 @@ class mainManager:
     def start_managers(self):
         if self.model_manager is None:
             self.model_manager = ModelManager()
+        if self.stats_manager is None:
+            self.stats_manager=StatsManager()
+
 
     def pick(self):
         if settings.get_settings().command in [

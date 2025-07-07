@@ -49,7 +49,6 @@ async def consumer(aws, task1, medialist, lock):
                 if media_type == "images":
                     common_globals.photo_count += 1
                     ele.mark_download_finished()
-
                 elif media_type == "videos":
                     common_globals.video_count += 1
                     ele.mark_download_finished()

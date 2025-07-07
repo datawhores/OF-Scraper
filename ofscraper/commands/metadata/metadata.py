@@ -39,7 +39,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
 
 
-from ofscraper.commands.scraper.actions.utils.log import final_log, final_log_text
 from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
 
 from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
@@ -113,11 +112,10 @@ class metadataCommandManager(commmandManager):
         progress_updater.update_activity_task(
             description=metadata_activity_str.format(username=username)
         )
-        data = await metadata_process(username, model_id, media)
+        await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
         manager.Manager.model_manager.mark_as_processed(activity="download")
         after_download_action_script(username, media, action="metadata")
-        return [data]
 
     async def _metadata_stray_media(SELF, username, model_id, media):
         if not settings.get_settings().mark_stray:
@@ -318,23 +316,18 @@ async def process_dicts(username, model_id, medialist):
 
         setDirectoriesDate()
         progress_updater.remove_metadata_task(task1)
-        final_log(username)
-        return final_log_text(username)
 
 
 @run_async
 async def metadata_process(username, model_id, medialist):
-    data = await metadata_picker(username, model_id, medialist)
-    return data
+    await metadata_picker(username, model_id, medialist)
 
 
 async def metadata_picker(username, model_id, medialist):
     if len(medialist) == 0:
-        out = final_log_text(username, 0, 0, 0, 0, 0, 0)
-        logging.getLogger("shared").error(out)
-        return out
+        return
     else:
-        return await process_dicts(username, model_id, medialist)
+        await process_dicts(username, model_id, medialist)
 
 
 def process_selected_areas():

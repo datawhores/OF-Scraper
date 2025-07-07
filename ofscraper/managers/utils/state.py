@@ -247,12 +247,12 @@ class StateManager:
         return isinstance(activity, EActivity.ScrapeActivity)
 
 
-# The map remains the same
 ACTIVITY_MAP = {
     "scrape_paid": EActivity.PaidActivity.SCRAPE_PAID,
     "like": EActivity.ScrapeActivity.LIKE,
     "unlike": EActivity.ScrapeActivity.UNLIKE,
     "download": EActivity.ScrapeActivity.DOWNLOAD,
+    "text":EActivity.ScrapeActivity.TEXT
 }
 
 

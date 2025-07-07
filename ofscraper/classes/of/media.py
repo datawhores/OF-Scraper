@@ -59,6 +59,11 @@ class Media(base.base):
         self.download_succeeded = success
         self.update_status()
 
+    def remove_download_attempt(self):
+        """Marks that a download was not attempted."""
+        self.download_attempted = False
+
+
     def update_status(self):
         self.media["download_status"] = "skipped"
         if self.download_attempted and not self.download_succeeded:
@@ -69,6 +74,9 @@ class Media(base.base):
     def add_filepath(self, path: Union[str | Path]):
         path = str(path)
         self.media["filepath"] = path
+
+    def add_size(self, size: Union[int | float]):
+        self.media["size"] = float(size)
 
     # only use if content type can't be found from request
     @property
@@ -503,6 +511,18 @@ class Media(base.base):
     @property
     def log(self):
         return self._log
+    
+    @property
+    def size(self):
+        """
+        Returns the size of the media.
+
+        Raises:
+            AttributeError: If the 'size' key has not been set yet.
+        """
+        if "size" not in self.media:
+            raise AttributeError("Size is not available yet. It must be set after the request is made.")
+        return self.media["size"]
 
     @log.setter
     def log(self, val):

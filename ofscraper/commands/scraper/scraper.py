@@ -51,30 +51,26 @@ class scraperManager(commmandManager):
     def runner(self, menu=False):
         check_auth()
         with scrape_context_manager():
-            normal_data = []
-            user_first_data = []
-            scrape_paid_data = []
-            userdata = []
 
             with progress_utils.setup_activity_group_live(
                 setup=True, revert=False, stop=True
             ):
                 if settings.get_settings().scrape_paid:
-                    scrape_paid_data = scrape_paid_all()
+                     scrape_paid_all()
 
                 if not self.run_action:
                     pass
 
                 elif settings.get_settings().users_first:
                     userdata, session = prepare(menu=menu)
-                    user_first_data = self._process_users_actions_user_first(
+                    self._process_users_actions_user_first(
                         userdata, session
                     )
                 else:
                     userdata, session = prepare()
-                    normal_data = self._process_users_actions_normal(userdata, session)
+                    self._process_users_actions_normal(userdata, session)
 
-            final_action(normal_data, scrape_paid_data, user_first_data)
+            final_action()
 
     @exit.exit_wrapper
     @run_async
@@ -117,19 +113,18 @@ class scraperManager(commmandManager):
         actions = settings.get_settings().actions
         username = ele.name
         model_id = ele.id
-        out = []
         for action in actions:
             try:
                 if action == "download":
-                    result, _ = await downloader(
+                    await downloader(
                         posts=posts,
                         media=media,
                         model_id=model_id,
                         username=username,
                     )
-                    out.append(result)
+                    manager.Manager.stats_manager.update_and_print_stats(username,"download",media)
                 elif action == "like":
-                    out.append(
+                
                         like_action.process_like(
                             ele=ele,
                             posts=like_posts,
@@ -137,9 +132,7 @@ class scraperManager(commmandManager):
                             model_id=model_id,
                             username=username,
                         )
-                    )
                 elif action == "unlike":
-                    out.append(
                         like_action.process_unlike(
                             ele=ele,
                             posts=like_posts,
@@ -147,7 +140,6 @@ class scraperManager(commmandManager):
                             model_id=model_id,
                             username=username,
                         )
-                    )
                 # mark the activity as processed
                 manager.Manager.model_manager.mark_as_processed(
                     username, activity=action
@@ -158,7 +150,6 @@ class scraperManager(commmandManager):
                 log.debug(f"Unable to complete {action} for {username}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
-        return out
 
     @exit.exit_wrapper
     @run_async
@@ -167,7 +158,7 @@ class scraperManager(commmandManager):
             description="Users with Actions Completed"
         )
         flushlogs()
-        return await self._get_user_action_function(self._execute_user_action)(
+        await self._get_user_action_function(self._execute_user_action)(
             userdata, session
         )
 

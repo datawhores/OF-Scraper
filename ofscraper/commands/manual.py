@@ -66,12 +66,13 @@ def manual_download(urls=None):
             # Set user data for models that will be processed
             set_user_data(url_dicts)
 
-        results = []
         for _, value in url_dicts.items():
             with progress_utils.setup_activity_progress_live():
                 collection = value["collection"]
                 model_id = collection.model_id
                 username = collection.username
+                media=collection.all_unique_media
+                posts=collection.posts
 
                 log.info(download_manual_str.format(username=username))
                 progress_updater.update_activity_task(
@@ -80,25 +81,25 @@ def manual_download(urls=None):
 
                 operations.table_init_create(model_id=model_id, username=username)
                 make_changes_to_content_tables(
-                    collection.posts, model_id=model_id, username=username
+                    posts, model_id=model_id, username=username
                 )
                 batch_mediainsert(
-                    collection.all_unique_media, username=username, model_id=model_id
+                    media, username=username, model_id=model_id
                 )
 
-                result, _ = download.download_process(
+                download.download_process(
                     username,
                     model_id,
-                    collection.all_unique_media,
-                    posts=collection.posts,
+                    media,
+                    posts,
                 )
-                results.append(result)
                 manager.Manager.model_manager.mark_as_processed(
                     username, activity="download"
                 )
-                after_download_action_script(username, collection.all_unique_media)
-
-        final(results)
+                manager.Manager.stats_manager.update_and_print_stats(username,"download",media,ignore_missing=True)
+                after_download_action_script(username,media)
+        final_action(
+    )
 
     except Exception as e:
         log.traceback_(e)
@@ -106,7 +107,6 @@ def manual_download(urls=None):
         raise e
 
 
-# --- Data Processing ---
 
 
 def process_urls(urls):
@@ -297,15 +297,6 @@ def allow_manual_dupes():
     settings.update_args(args)
 
 
-def final(results):
-    """Prepares and calls the final action summary."""
-    normal_data = ["Manual Mode Results"]
-    normal_data.extend(results)
-    final_action(
-        normal_data=normal_data,
-        scrape_paid_data=None,
-        user_first_data=None,
-    )
 
 
 async def _find_paid_post_by_id(post_id, model_id, username):

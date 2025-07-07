@@ -72,7 +72,7 @@ class MainDownloadManager(DownloadManager):
             c,
             ele,
         )
-
+        ele.add_size(result[0])
         # special case for zero byte files
         if result[0] == 0:
             if ele.mediatype != "forced_skipped":
@@ -190,6 +190,7 @@ class MainDownloadManager(DownloadManager):
                     ).init()
                 path_to_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
+                    ele.remove_download_attempt()
                     total = 0
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:

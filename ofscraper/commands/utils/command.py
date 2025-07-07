@@ -29,7 +29,6 @@ class commmandManager:
     def _get_user_action_function(self, funct=None):
         async def wrapper(userdata, session, *args, **kwargs):
             async with session as c:
-                data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
                 for ele in userdata:
                     try:
                         with progress_utils.setup_api_split_progress_live():
@@ -46,13 +45,12 @@ class commmandManager:
                                 logging.getLogger("shared").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
-                            result = await funct(
+                            await funct(
                                 media=postcollection.get_media_to_download(),
                                 posts=postcollection.get_posts_for_text_download(),
                                 like_posts=postcollection.get_posts_to_like(),
                                 ele=ele,
                             )
-                            data.extend(result)
                     except Exception as e:
 
                         log.traceback_(f"failed with exception: {e}")
@@ -66,7 +64,6 @@ class commmandManager:
                     description="Finished Action Mode"
                 )
                 time.sleep(1)
-                return data
 
         return wrapper
 
@@ -81,7 +78,7 @@ class commmandManager:
             progress_updater.update_activity_count(
                 description="Overall progress", total=2
             )
-            data = {}
+            data={}
             async with session as c:
                 for ele in userdata:
                     try:
@@ -96,13 +93,11 @@ class commmandManager:
                     finally:
                         c.reset_sleep()
                         progress_updater.increment_user_activity()
-            return data
-
+                return data
         return wrapper
 
     def _get_userfirst_action_execution_function(self, funct):
         async def wrapper(data, *args, **kwargs):
-            out = ["[bold yellow]User First Results[/bold yellow]"]
             progress_updater.increment_activity_count(total=2)
             try:
                 progress_updater.update_user_activity(total=len(data.items()))
@@ -122,7 +117,7 @@ class commmandManager:
                         )
                     try:
                         with progress_utils.setup_activity_counter_live(revert=False):
-                            result = await funct(
+                            await funct(
                                 posts,
                                 like_posts,
                                 *args,
@@ -130,7 +125,6 @@ class commmandManager:
                                 ele=ele,
                                 **kwargs,
                             )
-                            out.extend(result)
                     except Exception as e:
                         log.traceback_(f"failed with exception: {e}")
                         log.traceback_(traceback.format_exc())
@@ -147,7 +141,6 @@ class commmandManager:
                 progress_updater.increment_activity_count(
                     description="Overall progress", total=2
                 )
-            return out
 
         return wrapper
 

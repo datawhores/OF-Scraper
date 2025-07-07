@@ -21,23 +21,10 @@ def sort_by_date(media):
     return sorted(media, key=lambda x: x.date)
 
 
-# protect db from dupe insertsd
-def dupefilter(media):
-    ids = set()
-    output = []
-    for item in media:
-        id_pair = (
-            (item.id, item.post_id) if hasattr(item, "postid") else (item.id, None)
-        )
-        if not id_pair or id_pair not in ids:
-            ids.add(id_pair)
-            output.append(item)
-    return output
-
-
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
+    media=sorted(media,key=lambda item: (item.post.date, item.id, item.count) )
     if of_env.getattr("ALLOW_DUPE_MEDIA"):
         for item in media:
             if not output[(item.id, item.post_id)]:
@@ -166,6 +153,8 @@ def previous_download_filter(medialist, username=None, model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous downloads")
     medialist = seperate.seperate_by_self(medialist)
+    #sort to key order same
+    medialist=sorted(medialist,key=    lambda item: (item.post.date, item.id, item.count))
     if settings.get_settings().force_all:
         log.info("forcing all media to be downloaded")
     elif settings.get_settings().force_model_unique:

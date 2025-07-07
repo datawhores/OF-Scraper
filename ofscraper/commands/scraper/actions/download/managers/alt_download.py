@@ -83,6 +83,7 @@ class AltDownloadManager(DownloadManager):
 
         audio = await self._alt_download_downloader(audio, c, ele)
         video = await self._alt_download_downloader(video, c, ele)
+        ele.add_size(audio["total"]+video["total"])
 
         post_result = await self._media_item_post_process_alt(
             audio, video, ele, username, model_id
@@ -206,6 +207,7 @@ class AltDownloadManager(DownloadManager):
 
                 temp_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
+                    ele.remove_download_attempt()
                     item["total"] = 0
                     total = item["total"]
                     return item
