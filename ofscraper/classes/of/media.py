@@ -51,27 +51,35 @@ class Media(base.base):
             return NotImplemented
         return self.id == other.id
 
-    def mark_download_attempt(self):
-        """Marks that a download has been attempted."""
+    def mark_download_succeeded(self):
+        """Sets the flags to represent a successful download."""
         self.download_attempted = True
+        self.download_succeeded = True
+        self.update_download_status()
 
-    def mark_download_finished(self, success=True):
-        """Marks a download as successful/failed."""
+    def mark_download_failed(self):
+        """Sets the flags to represent a failed download."""
         self.download_attempted = True
-        self.download_succeeded = success
-        self.update_status()
+        self.download_succeeded = False
+        self.update_download_status()
 
-    def remove_download_attempt(self):
-        """Marks that a download was not attempted."""
+    def mark_download_skipped(self):
+        """Sets the flags to represent a skipped download."""
         self.download_attempted = False
+        self.download_succeeded = None
 
-
-    def update_status(self):
-        self.media["download_status"] = "skipped"
-        if self.download_attempted and not self.download_succeeded:
+    def update_download_status(self):
+        """
+        Updates the download status string in the internal media dictionary
+        based on the two download flags.
+        """
+        if self.download_attempted and self.download_succeeded:
+            self.media["download_status"] = "succeeded"
+        elif self.download_attempted and not self.download_succeeded:
             self.media["download_status"] = "failed"
-        elif self.download_attempted and self.download_succeeded:
-            self.media["download_status"] = "succeed"
+        else: # Not attempted
+            self.media["download_status"] = "skipped"
+
 
     def add_filepath(self, path: Union[str | Path]):
         path = str(path)
@@ -84,16 +92,33 @@ class Media(base.base):
         """Marks the metadata as successfully updated WITH changes."""
         self.metadata_attempted = True
         self.metadata_succeeded = True
+        self.update_metadata_status()
 
     def mark_metadata_unchanged(self):
         """Marks the metadata as successfully checked with NO changes."""
         self.metadata_attempted = True
         self.metadata_succeeded = None # Using None to signify "unchanged"
+        self.update_metadata_status()
 
     def mark_metadata_failed(self):
         """Marks the metadata update as failed."""
         self.metadata_attempted = True
         self.metadata_succeeded = False
+        self.update_metadata_status()
+
+    def update_metadata_status(self):
+        """
+        Updates the metadata status string in the internal media dictionary
+        based on the three metadata flags.
+        """
+        if not self.metadata_attempted:
+            self.media["metadata_status"] = "skipped"
+        elif self.metadata_succeeded is False:
+            self.media["metadata_status"] = "failed"
+        elif self.metadata_succeeded:
+            self.media["metadata_status"] = "changed"
+        else: # Succeeded but not changed
+            self.media["metadata_status"] = "unchanged"
 
     # only use if content type can't be found from request
     @property
