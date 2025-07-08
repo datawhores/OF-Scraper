@@ -269,7 +269,7 @@ async def process_profile(username) -> list:
 
 @free.space_checker
 @run
-async def process_all_paid():
+async def process_all_paid(actions):
     with progress_utils.setup_api_split_progress_live():
         paid_content = await paid.get_all_paid_posts()
     output = {}
@@ -277,7 +277,6 @@ async def process_all_paid():
         progress_updater.update_activity_task(
             description="Processsing Paid content data"
         )
-        actions = ["download"]
         for model_id, value in paid_content.items():
             progress_updater.update_activity_count(
                 total=None, description=all_paid_model_id_str.format(model_id=model_id)
@@ -529,22 +528,27 @@ async def process_tasks(model_id, username, ele, c=None):
             posts, area = await result
             area_title = area.title()
             actions_for_this_batch = []
+            command = settings.get_settings().command or "scraper"
 
-            if area_title in like_area:
-                actions_for_this_batch.append("like")
-            if area_title in download_area:
-                actions_for_this_batch.append("download")
-            if settings.get_settings().text:
-                actions_for_this_batch.append("text")
+            if command == "metadata":
+                actions_for_this_batch.append("metadata")
+            elif not command: # This is the main scraper mode
+                if area_title in like_area:
+                    actions_for_this_batch.append("like")
+                if area_title in download_area:
+                    actions_for_this_batch.append("download")
+                # You can add the text action here as well
+                if settings.get_settings().text:
+                    actions_for_this_batch.append("text")
 
+            # 2. If any actions were determined, add the posts to the collection.
             if actions_for_this_batch:
                 postcollection.add_posts(posts, actions=actions_for_this_batch)
             else:
-                # Optional: Log if a post area didn't match any action
+                # This else now correctly captures all cases where no actions were matched.
                 log.debug(
-                    f"Posts from area '{area_title}' did not match any action criteria."
+                    f"Posts from area '{area_title}' with command '{command}' did not match any action criteria."
                 )
-
         except Exception as E:
             log.debug(E)
     return postcollection

@@ -137,4 +137,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    manager.Manager.model_manager.select_and_setup_activity(reset=True)
+    manager.Manager.model_manager.prepare_scraper_activity()

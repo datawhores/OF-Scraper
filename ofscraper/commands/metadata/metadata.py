@@ -60,7 +60,7 @@ class metadataCommandManager(commmandManager):
             self._execute_metadata_action_on_user
         )
         progress_updater.update_user_activity(description="Users with Updated Metadata")
-        return await user_action_funct(userdata, session)
+        await user_action_funct(userdata, session)
 
     @run_async
     async def metadata_user_first(self, userdata, session):
@@ -72,7 +72,7 @@ class metadataCommandManager(commmandManager):
             description="Users with Metadata Changed", completed=0
         )
         # pass all data to userfirst
-        return await self._get_userfirst_action_execution_function(
+        await self._get_userfirst_action_execution_function(
             self._execute_metadata_action_on_user
         )(data)
 
@@ -114,7 +114,8 @@ class metadataCommandManager(commmandManager):
         )
         await metadata_process(username, model_id, media)
         await self._metadata_stray_media(username, model_id, media)
-        manager.Manager.model_manager.mark_as_processed(activity="download")
+        manager.Manager.model_manager.mark_as_processed(username,activity="metadata")
+        manager.Manager.stats_manager.update_and_print_stats(username,"metadata",media)
         after_download_action_script(username, media, action="metadata")
 
     async def _metadata_stray_media(SELF, username, model_id, media):
@@ -157,13 +158,12 @@ class metadataCommandManager(commmandManager):
     def _get_user_action_function(self, funct):
         async def wrapper(userdata, session, *args, **kwargs):
             async with session as c:
-                data = ["[bold yellow]Normal Mode Results[/bold yellow]"]
                 for ele in userdata:
                     try:
                         with progress_utils.setup_api_split_progress_live():
                             self._data_helper(ele)
                             postcollection = await post_media_process(ele, c=c)
-
+                            media=postcollection.get_media_for_metadata()
                         with progress_utils.setup_activity_group_live(revert=False):
                             avatar = ele.avatar
                             if (
@@ -174,13 +174,11 @@ class metadataCommandManager(commmandManager):
                                 logging.getLogger("shared").warning(
                                     avatar_str.format(avatar=avatar)
                                 )
-                            data.extend(
-                                await funct(
-                                    media=postcollection.get_media_for_metadata(),
-                                    posts=postcollection.get_posts_for_text_download(),
-                                    like_posts=postcollection.get_posts_to_like(),
-                                    ele=ele,
-                                )
+                            await funct(
+                                media=media,
+                                posts=None,
+                                like_posts=None,
+                                ele=ele,
                             )
                     except Exception as e:
 
@@ -195,7 +193,6 @@ class metadataCommandManager(commmandManager):
                     description="Finished Metadata Mode"
                 )
                 time.sleep(1)
-                return data
 
         return wrapper
 
@@ -251,24 +248,18 @@ def metadata():
     with progress_utils.setup_activity_progress_live(
         revert=True, stop=True, setup=True
     ):
-        scrape_paid_data = []
-        userfirst_data = []
-        normal_data = []
-        userdata = []
         if settings.get_settings().scrape_paid:
-            scrape_paid_data = metaCommandManager.metadata_paid_all()
+            metaCommandManager.metadata_paid_all()
         if not metaCommandManager.run_metadata:
             pass
 
         elif not settings.get_settings().users_first:
             userdata, session = prepare()
-            normal_data = metaCommandManager.process_users_metadata_normal(
-                userdata, session
-            )
+            metaCommandManager.process_users_metadata_normal(userdata, session)
         else:
             userdata, session = prepare()
-            userfirst_data = metaCommandManager.metadata_user_first(userdata, session)
-    final_action(normal_data, scrape_paid_data, userfirst_data)
+            metaCommandManager.metadata_user_first(userdata, session)
+    final_action()
 
 
 @run
@@ -342,7 +333,8 @@ def prepare():
     profile_tools.print_current_profile()
     actions.select_areas()
     init.print_sign_status()
-    userdata = manager.Manager.model_manager.select_and_setup_activity()
+    manager.Manager.stats_manager.clear_all_stats()
+    userdata = manager.Manager.model_manager.prepare_scraper_activity()
     session = manager.Manager.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_SEM_MAX"),
         total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),

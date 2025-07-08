@@ -125,13 +125,14 @@ class scraperManager(commmandManager):
                     manager.Manager.stats_manager.update_and_print_stats(username,"download",media)
                 elif action == "like":
                 
-                        like_action.process_like(
-                            ele=ele,
-                            posts=like_posts,
-                            media=media,
-                            model_id=model_id,
-                            username=username,
-                        )
+                    like_action.process_like(
+                        ele=ele,
+                        posts=like_posts,
+                        media=media,
+                        model_id=model_id,
+                        username=username,
+                    )
+                    manager.Manager.stats_manager.update_and_print_stats(username,"like",like_posts)
                 elif action == "unlike":
                         like_action.process_unlike(
                             ele=ele,
@@ -140,7 +141,7 @@ class scraperManager(commmandManager):
                             model_id=model_id,
                             username=username,
                         )
-                # mark the activity as processed
+                        manager.Manager.stats_manager.update_and_print_stats(username,"unlike",like_posts)
                 manager.Manager.model_manager.mark_as_processed(
                     username, activity=action
                 )

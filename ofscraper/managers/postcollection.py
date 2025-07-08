@@ -93,7 +93,7 @@ class PostCollection:
         if isinstance(item,Iterable):
             raise Exception("item must not be a iteratable")
         return self._process_and_add_post(
-            item, actions or [], overwrite=overwritej
+            item, actions or [], overwrite=overwrite
         )
 
     def add_posts(self, items: list, actions: list[str] = None, overwrite=False):
@@ -121,7 +121,7 @@ class PostCollection:
         filtersettings = settings.get_settings().mediatypes
         log.debug(f"filtering Media to {','.join(filtersettings)}")
 
-        all_media = self._get_prepared_media_from_candidates()
+        all_media = self._get_prepared_media_from_download_candidates()
 
         log.info("Applying final 'download' mode filters to media list...")
         all_media = helpers.dupefiltermedia(all_media)
@@ -138,7 +138,7 @@ class PostCollection:
         """
         Gets the final, filtered list of media for METADATA mode.
         """
-        all_media = self._get_prepared_media_from_candidates()
+        all_media = self._get_prepared_media_for_metadata()
 
         log.info("Applying final 'metadata' mode filters to media list...")
         all_media = helpers.previous_download_filter(
@@ -236,7 +236,7 @@ class PostCollection:
         found=self.find_all_media_with_id(id)
         return list(set(map(lambda x:x.post_id,found)))
 
-    def _get_prepared_media_from_candidates(self) -> list:
+    def _get_prepared_media_from_download_candidates(self) -> list:
         """
         Private helper to get download candidates, run per-post filtering,
         and return the aggregated list of media before final filtering.
@@ -251,6 +251,21 @@ class PostCollection:
             media for post in candidate_posts for media in post.media_to_download
         ]
         log.debug(f"Aggregated {len(all_media)} media items before final filtering.")
+        return all_media
+    
+    def _get_prepared_media_for_metadata(self) -> list:
+        """
+        Private helper for getting METADATA candidates.
+        """
+        # This uses the specific metadata flag
+        candidate_posts = [post for post in self.posts if post.is_metadata_candidate]
+        log.info(f"Found {len(candidate_posts)} posts marked as metadata candidates.")
+
+        # No preparation step is needed, just collect all media from the posts
+        all_media = [
+            media for post in candidate_posts for media in post.all_media
+        ]
+        log.debug(f"Aggregated {len(all_media)} media items for metadata processing.")
         return all_media
 
     def _process_and_add_post(self, item, actions: list[str], overwrite: bool):
@@ -292,4 +307,6 @@ class PostCollection:
             existing_post.is_download_candidate = True
         if "text" in actions:
             existing_post.is_text_candidate = True
+        if "metadata" in actions:
+            existing_post.is_metadata_candidate = True
         return existing_post

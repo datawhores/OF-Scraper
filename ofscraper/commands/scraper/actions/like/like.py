@@ -35,7 +35,6 @@ def process_like(posts=None, model_id=None, username=None, **kwargs):
     progress_updater.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared").warning(like_str.format(name=username))
     like(model_id, username, posts)
-    manager.Manager.stats_manager.update_stats(username,"like",posts)
 
 
 @exit.exit_wrapper
@@ -44,7 +43,6 @@ def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     progress_updater.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared").warning(unlike_str.format(name=username))
     unlike(model_id, username, posts)
-    manager.Manager.stats_manager.update_stats(username,"unlike",posts)
 
 
 def get_posts_for_unlike(post):

@@ -43,6 +43,8 @@ class Media(base.base):
         self.download_succeeded = (
             None  # Using tri-state: None (not attempted), True, False
         )
+        self.metadata_attempted = False
+        self.metadata_succeeded = None
 
     def __eq__(self, other):
         if not isinstance(other, Media):
@@ -77,6 +79,21 @@ class Media(base.base):
 
     def add_size(self, size: Union[int | float]):
         self.media["size"] = float(size)
+
+    def mark_metadata_changed(self):
+        """Marks the metadata as successfully updated WITH changes."""
+        self.metadata_attempted = True
+        self.metadata_succeeded = True
+
+    def mark_metadata_unchanged(self):
+        """Marks the metadata as successfully checked with NO changes."""
+        self.metadata_attempted = True
+        self.metadata_succeeded = None # Using None to signify "unchanged"
+
+    def mark_metadata_failed(self):
+        """Marks the metadata update as failed."""
+        self.metadata_attempted = True
+        self.metadata_succeeded = False
 
     # only use if content type can't be found from request
     @property

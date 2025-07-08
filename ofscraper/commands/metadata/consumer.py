@@ -48,18 +48,19 @@ async def consumer(aws, task1, medialist, lock):
             try:
                 if media_type == "images":
                     common_globals.photo_count += 1
-                    ele.mark_download_finished()
+                    ele.mark_metadata_changed()
                 elif media_type == "videos":
                     common_globals.video_count += 1
-                    ele.mark_download_finished()
+                    ele.mark_metadata_changed()
                 elif media_type == "audios":
                     common_globals.audio_count += 1
-                    ele.mark_download_finished()
+                    ele.mark_metadata_changed()
                 elif media_type == "skipped":
                     common_globals.skipped += 1
-                    ele.mark_download_finished(success=False)
+                    ele.mark_metadata_failed()
                 elif media_type == "forced_skipped":
                     common_globals.forced_skipped += 1
+                    ele.mark_metadata_unchanged()
                 sum_count = (
                     common_globals.photo_count
                     + common_globals.video_count

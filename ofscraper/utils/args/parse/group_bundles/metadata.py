@@ -32,6 +32,7 @@ from ofscraper.utils.args.parse.groups.post_filter import (
     post_sort_option,
     post_filter_options_desc,
     post_filter_options_help,
+    download_type_option
 )
 
 
@@ -119,6 +120,7 @@ It also uses a new filename if one is available
         timed_only_option,
         mass_msg_option,
         post_id_filter_option,
+        download_type_option,
         help=post_filter_options_help,
     )
     @click.option_group(

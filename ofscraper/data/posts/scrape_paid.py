@@ -29,7 +29,6 @@ async def scrape_paid_all() -> List[str]:
     """
     Scrapes and processes all paid content, either for metadata or download.
     """
-    out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
 
     # Prefill modelmanager.all_models property
     # Does not effected queued models
@@ -42,12 +41,14 @@ async def scrape_paid_all() -> List[str]:
         update_str = all_paid_metadata_str
         activity_str = metadata_activity_str
         log_progress_str = all_paid_progress_metadata_str
+        actions="metadata"
     else:
         update_str = all_paid_download_str
         activity_str = download_activity_str
         log_progress_str = all_paid_progress_download_str
+        actions="download"
     # Process all paid content.
-    async for count, value, length in process_scrape_paid():
+    async for count, value, length in process_scrape_paid(actions):
         process_user_info_printer(
             value,
             length,
@@ -56,20 +57,19 @@ async def scrape_paid_all() -> List[str]:
             all_paid_activity=activity_str,
             log_progress=log_progress_str,
         )
-        out.append(await process_user(value, length))
-    return out
+        await process_user(value, length)
 
 
 @run
-async def process_scrape_paid():
+async def process_scrape_paid(actions):
     progress_updater.update_activity_task(description="Scraping Entire Paid page")
     with progress_utils.setup_all_paid_database_live():
         async for ele in process_paid_dict():
             yield ele
 
 
-async def process_paid_dict():
-    user_dict = await OF.process_all_paid()
+async def process_paid_dict(actions):
+    user_dict = await OF.process_all_paid(actions)
     length = len(list(user_dict.keys()))
     progress_updater.update_activity_count(totat=length, completed=0)
 
