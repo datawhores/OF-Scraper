@@ -39,9 +39,9 @@ class Post(base.base):
         self.text_download_succeeded = None
 
         self.is_metadata_candidate=False
-        
-        self.media_for_metadata=None
-        self.media_to_download=None
+
+        self.media_for_metadata=[]
+        self.media_to_download=[]
         
 
 
@@ -73,25 +73,9 @@ class Post(base.base):
             return self.media_for_metadata
         if not media:
             return [] 
-        media=self._apply_media_filters(media)      
+        media=self._apply_media_filters(media)
         self.media_for_metadata = media
         return media
-    def get_media_for_something(media):
-        media = helpers.sort_by_date(media)
-        media = helpers.mediatype_type_filter(media)
-        media = helpers.posts_date_filter_media(media)
-        media = helpers.temp_post_filter(media)
-        media = helpers.post_text_filter(media)
-        media = helpers.post_neg_text_filter(media)
-        media = helpers.download_type_filter(media)
-        media = helpers.mass_msg_filter(media)
-        media = helpers.media_length_filter(media)
-        media = helpers.media_id_filter(media)
-        media = helpers.post_id_filter(media)
-        return media
-
-    
-
     
     
     def prepare_post_for_like(self, like_action=True):
@@ -332,7 +316,6 @@ class Post(base.base):
         """
         Private helper to run a list of media through all configured filters.
         """
-        # Note: Added 'self' to the method definition
         media = helpers.sort_by_date(media)
         media = helpers.mediatype_type_filter(media)
         media = helpers.posts_date_filter_media(media)
