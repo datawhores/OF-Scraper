@@ -45,7 +45,7 @@ def manual_download(urls=None):
             log.warning("No valid data found from the provided URLs.")
             return
 
-        with progress_utils.setup_activity_progress_live():
+        with progress_utils.setup_live("manual"):
             # Consolidate media and posts from all processed collections
             all_media = [
                 item
@@ -67,7 +67,6 @@ def manual_download(urls=None):
             set_user_data(url_dicts)
 
         for _, value in url_dicts.items():
-            with progress_utils.setup_activity_progress_live():
                 collection = value["collection"]
                 model_id = collection.model_id
                 username = collection.username
@@ -75,8 +74,9 @@ def manual_download(urls=None):
                 posts=collection.posts
 
                 log.info(download_manual_str.format(username=username))
-                progress_updater.update_activity_task(
-                    description=download_manual_str.format(username=username)
+                progress_updater.activity.update_task(
+                    description=download_manual_str.format(username=username),
+                    visible=True
                 )
 
                 operations.table_init_create(model_id=model_id, username=username)
@@ -126,10 +126,11 @@ def process_urls(urls):
         "unknown": unknown_type_helper,
     }
 
-    with progress_utils.setup_api_split_progress_live(revert=False):
+    with progress_utils.setup_live("api"):
         for url in url_helper(urls):
-            progress_updater.update_activity_task(
-                description=post_str_manual.format(url=url)
+            progress_updater.activity.update_task(
+                description=post_str_manual.format(url=url),
+                visible=True
             )
 
             model_id, post_id, api_type = get_info(url)

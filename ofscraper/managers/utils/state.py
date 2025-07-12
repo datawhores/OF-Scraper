@@ -12,7 +12,8 @@ class EActivity:
 
     class PaidActivity(Enum):
         # A top-level activity
-        SCRAPE_PAID = auto()
+        SCRAPE_PAID_DOWNLOAD = auto()
+        SCRAPE_PAID_METADATA = auto()
 
     # A nested enum for a group of related sub-activities
     class ScrapeActivity(Enum):
@@ -249,12 +250,13 @@ class StateManager:
 
 
 ACTIVITY_MAP = {
-    "scrape_paid": EActivity.PaidActivity.SCRAPE_PAID,
+    "scrape_paid_download": EActivity.PaidActivity.SCRAPE_PAID_DOWNLOAD,
     "like": EActivity.ScrapeActivity.LIKE,
     "unlike": EActivity.ScrapeActivity.UNLIKE,
     "download": EActivity.ScrapeActivity.DOWNLOAD,
     "text":EActivity.ScrapeActivity.TEXT,
     "metadata":EActivity.ScrapeActivity.METADATA,
+    "scrape_paid_metadata": EActivity.PaidActivity.SCRAPE_PAID_METADATA,
 }
 
 

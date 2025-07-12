@@ -22,7 +22,7 @@ from ofscraper.utils.live.classes.transfercol import (
 )
 
 # activity
-activity_progress = Progress(
+activity_desc = Progress(
     TextColumn("[white]{task.description}[/white]"),
     refresh_per_second=2,
     transient=True,

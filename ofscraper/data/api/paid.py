@@ -41,7 +41,7 @@ async def get_paid_posts(username, model_id, c=None):
 
 async def process_tasks(tasks):
     page_count = 0
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
     responseArray = []
@@ -54,7 +54,7 @@ async def process_tasks(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Paid Content Pages Progress: {page_count}",
                 )
@@ -74,7 +74,7 @@ async def process_tasks(tasks):
                 continue
         tasks = new_tasks_batch
 
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -95,7 +95,7 @@ async def scrape_paid(c, username, offset=0):
     url = of_env.getattr("purchased_contentEP").format(offset, username)
     try:
 
-        task = progress_utils.add_api_job_task(
+        task = progress_utils.api.add_job_task(
             f"scrape paid offset -> {offset} username -> {username}",
             visible=True,
         )
@@ -133,7 +133,7 @@ async def scrape_paid(c, username, offset=0):
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
     return media, new_tasks
 
 
@@ -182,7 +182,7 @@ async def process_tasks_all_paid(tasks):
     page_count = 0
     allpaid = cache.get("purchased_all", default=[])
     log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"[Scrape Paid] Pages Progress: {page_count}", visible=True
     )
     while tasks:
@@ -192,7 +192,7 @@ async def process_tasks_all_paid(tasks):
                 result, new_tasks = await task
                 new_tasks_batch.extend(new_tasks)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"[Scrape Paid] Pages Progress: {page_count}",
                 )
@@ -206,7 +206,7 @@ async def process_tasks_all_paid(tasks):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
         tasks = new_tasks_batch
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
 
     log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
     trace_log_raw(f"{API} all users final", output, final_count=True)
@@ -239,7 +239,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     url = of_env.getattr("purchased_contentALL").format(offset)
     try:
 
-        task = progress_utils.add_api_job_task(
+        task = progress_utils.api.add_job_task(
             f"scrape entire paid page offset={offset}",
             visible=True,
         )
@@ -288,7 +288,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
 
 
 def get_individual_paid_post(username, model_id, postid):

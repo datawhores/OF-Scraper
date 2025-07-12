@@ -31,18 +31,18 @@ unlike_str = "Performing Unlike Action on {name}" + warning_str
 
 @exit.exit_wrapper
 def process_like(posts=None, model_id=None, username=None, **kwargs):
-    progress_utils.switch_api_progress()
-    progress_updater.update_activity_task(description=like_str.format(name=username))
-    logging.getLogger("shared").warning(like_str.format(name=username))
-    like(model_id, username, posts)
+    with progress_utils.setup_live("like"):
+        progress_updater.activity.update_task(description=like_str.format(name=username),visible=True)
+        logging.getLogger("shared").warning(like_str.format(name=username))
+        like(model_id, username, posts)
 
 
 @exit.exit_wrapper
 def process_unlike(posts=None, model_id=None, username=None, **kwargs):
-    progress_utils.switch_api_progress()
-    progress_updater.update_activity_task(description=unlike_str.format(name=username))
-    logging.getLogger("shared").warning(unlike_str.format(name=username))
-    unlike(model_id, username, posts)
+    with progress_utils.setup_live("like"):
+        progress_updater.activity.update_task(description=unlike_str.format(name=username),visible=True)
+        logging.getLogger("shared").warning(unlike_str.format(name=username))
+        unlike(model_id, username, posts)
 
 
 def get_posts_for_unlike(post):
@@ -83,16 +83,16 @@ def _like(model_id, username, posts: list, like_action: bool):
     )
 
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
-    with progress_utils.setup_like_progress_live():
+    with progress_utils.setup_live("like"):
         with manager.Manager.get_like_session(
             sem_count=1,
             retries=of_env.getattr("API_LIKE_NUM_TRIES"),
         ) as c:
             tasks = []
-            task = progress_updater.add_like_task(
+            task = progress_updater.like.add_overall_task(
                 "checked posts...\n", total=len(posts)
             )
-            task2 = progress_updater.add_like_task(like_str, total=None)
+            task2 = progress_updater.like.add_overall_task(like_str, total=None)
 
             [
                 tasks.append(functools.partial(like_func, c, post, model_id))
@@ -105,11 +105,11 @@ def _like(model_id, username, posts: list, like_action: bool):
                 out = func()
                 sleep_duration = random.uniform(min_duration, max_duration)
                 if out == 1:
-                    progress_updater.increment_like_task(task2)
-                progress_updater.increment_like_task(task)
+                    progress_updater.like.update_overall_task(task2,advance=1)
+                progress_updater.like.update_overall_task(task,advance=1)
                 time.sleep(sleep_duration)
-            progress_updater.remove_like_task(task)
-            progress_updater.remove_like_task(task2)
+            progress_updater.like.remove_overall_task(task)
+            progress_updater.like.remove_overall_task(task2)
 
 
 

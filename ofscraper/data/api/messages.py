@@ -100,7 +100,7 @@ def process_individual(model_id):
 async def process_tasks(tasks):
     page_count = 0
     responseArray = []
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -111,7 +111,7 @@ async def process_tasks(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Message Content Pages Progress: {page_count}",
                 )
@@ -132,7 +132,7 @@ async def process_tasks(tasks):
                 continue
         tasks = new_tasks
 
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -298,7 +298,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
 
     try:
         async with c.requests_async(url=url) as r:
-            task = progress_utils.add_api_job_task(
+            task = progress_utils.api.add_job_task(
                 f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
             )
             log.debug(
@@ -360,7 +360,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> li
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
     return messages, new_tasks
 
 

@@ -37,7 +37,7 @@ class DownloadManager:
         self, ele, total=None, placeholderObj=None, tempholderObj=None
     ):
         pathstr = str(placeholderObj.trunicated_filepath)
-        task1 = progress_updater.add_download_job_task(
+        task1 = progress_updater.download.add_job_task(
             f"{(pathstr[:of_env.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > of_env.getattr('PATH_STR_MAX') else pathstr}\n",
             total=total,
             file=tempholderObj.tempfilepath,
@@ -46,7 +46,7 @@ class DownloadManager:
 
     async def _remove_download_job_task(self, task1, ele):
         if task1:
-            progress_updater.remove_download_job_task(task1)
+            progress_updater.download.remove_job_task(task1)
 
     async def _total_change_helper(self, new_total, **kwargs):
         if not self.total and not new_total:

@@ -6,7 +6,7 @@ all_paid_model_id_str = "getting username data for {model_id}"
 all_paid_str = "Creating databases for {username}"
 download_activity_str = "Performing Downloading Action on {username}"
 all_paid_download_str = "Users With paid content downloaded"
-all_paid_metadata_str = "Users With metadata updated"
+all_paid_metadata_str = "Users With Metadata updated"
 
 metadata_activity_str = "Updating Metadata for {username}"
 

@@ -269,19 +269,22 @@ async def process_profile(username) -> list:
 
 @free.space_checker
 @run
-async def process_all_paid(actions):
-    with progress_utils.setup_api_split_progress_live():
+async def process_all_paid():
+    with progress_utils.setup_live("api"):
         paid_content = await paid.get_all_paid_posts()
     output = {}
-    with progress_utils.setup_all_paid_database_live():
-        progress_updater.update_activity_task(
-            description="Processsing Paid content data"
+    count=0
+    with  progress_utils.setup_live("main_activity", revert=True):
+        progress_updater.activity.update_task(
+            description="Processsing Paid content data",
+            visible=True
         )
-        for model_id, value in paid_content.items():
-            progress_updater.update_activity_count(
-                total=None, description=all_paid_model_id_str.format(model_id=model_id)
+        for count, (model_id, value) in enumerate(paid_content.items()):
+            progress_updater.activity.update_overall(
+                total=None, description=all_paid_model_id_str.format(model_id=model_id),completed=count,visible=True
             )
-
+            if count==2:
+                break
             placeholder = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
             username = profile.scrape_profile(model_id).get("username")
             # Check if the scraped username is the placeholder
@@ -297,8 +300,8 @@ async def process_all_paid(actions):
                     )
                 else:
                     username = f"{placeholder}_{model_id}"
-            progress_updater.update_activity_count(
-                total=None, description=all_paid_str.format(username=username)
+            progress_updater.activity.update_overall(
+                total=None, description=all_paid_str.format(username=username),completed=count
             )
             log.info(f"Processing {username}_{model_id}")
             await operations.table_init_create(model_id=model_id, username=username)
@@ -311,7 +314,7 @@ async def process_all_paid(actions):
                     value,
                 )
             )
-            temp_postcollection.add_posts(all_posts, actions=actions)
+            temp_postcollection.add_posts(all_posts, actions="scrape_paid_download")
             await operations.make_post_table_changes(
                 temp_postcollection.posts,
                 model_id=model_id,
@@ -325,7 +328,7 @@ async def process_all_paid(actions):
             )
             text_posts = temp_postcollection.get_posts_for_text_download()
 
-            final_medias = temp_postcollection.get_media_for_scrape_paid()
+            final_medias = temp_postcollection.get_media_for_processing()
             output[model_id] = dict(
                 model_id=model_id,
                 username=username,
@@ -335,7 +338,7 @@ async def process_all_paid(actions):
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
             )
-            progress_updater.increment_activity_count(total=None)
+            progress_updater.activity.update_overall(advance=1)
 
         log.debug(
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"
@@ -438,7 +441,7 @@ async def process_tasks(model_id, username, ele, c=None):
     sem = asyncio.Semaphore(max_count)
     postcollection = PostCollection(username=username, model_id=model_id)
 
-    with progress_utils.setup_api_split_progress_live():
+    with progress_utils.setup_live("api"):
         if "Profile" in final_post_areas:
             tasks.append(
                 asyncio.create_task(
@@ -523,31 +526,31 @@ async def process_tasks(model_id, username, ele, c=None):
                     )(sem=sem)
                 )
             )
-    for result in asyncio.as_completed(tasks):
-        try:
-            posts, area = await result
-            area_title = area.title()
-            actions_for_this_batch = []
-            command = settings.get_settings().command
-            if command == "metadata":
-                actions_for_this_batch.append("metadata")
-            else:
-                if area_title in like_area:
-                    actions_for_this_batch.append("like")
-                if area_title in download_area:
-                    actions_for_this_batch.append("download")
-                # You can add the text action here as well
-                if settings.get_settings().text:
-                    actions_for_this_batch.append("text")
+        for result in asyncio.as_completed(tasks):
+            try:
+                posts, area = await result
+                area_title = area.title()
+                actions_for_this_batch = []
+                command = settings.get_settings().command
+                if command == "metadata":
+                    actions_for_this_batch.append("metadata")
+                else:
+                    if area_title in like_area:
+                        actions_for_this_batch.append("like")
+                    if area_title in download_area:
+                        actions_for_this_batch.append("download")
+                    # You can add the text action here as well
+                    if settings.get_settings().text:
+                        actions_for_this_batch.append("text")
 
-            # 2. If any actions were determined, add the posts to the collection.
-            if actions_for_this_batch:
-                postcollection.add_posts(posts, actions=actions_for_this_batch)
-            else:
-                # This else now correctly captures all cases where no actions were matched.
-                log.debug(
-                    f"Posts from area '{area_title}' with command '{command}' did not match any action criteria."
-                )
-        except Exception as E:
-            log.debug(E)
+                # 2. If any actions were determined, add the posts to the collection.
+                if actions_for_this_batch:
+                    postcollection.add_posts(posts, actions=actions_for_this_batch)
+                else:
+                    # This else now correctly captures all cases where no actions were matched.
+                    log.debug(
+                        f"Posts from area '{area_title}' with command '{command}' did not match any action criteria."
+                    )
+            except Exception as E:
+                log.debug(E)
     return postcollection

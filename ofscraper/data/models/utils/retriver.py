@@ -7,7 +7,7 @@ import ofscraper.classes.of.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
-from ofscraper.utils.live.updater import update_activity_task
+from ofscraper.utils.live.updater import activity
 import ofscraper.utils.settings as settings
 
 
@@ -15,15 +15,15 @@ async def get_models(all_main_models: bool = False) -> list:
     """
     Get user's subscriptions. Can be forced to fetch all models.
     """
-    update_activity_task(description="Getting subscriptions")
-    count = get_sub_count()
-
-    if all_main_models:
-        return await get_via_main_list(count)
-
-    # --- Existing logic for when all_main_models is False ---
+    activity.update_task(description="Getting subscriptions")
+    #if the anon flag is on force individual
     if settings.get_settings().anon:
         return await get_via_individual()
+    #actions for if anon flag is falses
+    count = get_sub_count()
+    if all_main_models:
+        return await get_via_main_list(count)
+    # --- Existing logic for when all_main_models is False ---
     if not bool(settings.get_settings().usernames):
         return await get_via_list(count)
     elif "ALL" in settings.get_settings().usernames:

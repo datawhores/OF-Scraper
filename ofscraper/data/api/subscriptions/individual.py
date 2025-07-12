@@ -30,14 +30,14 @@ async def get_subscription(accounts=None):
     accounts = accounts or settings.get_settings().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
-    task1 = progress_utils.add_userlist_task(
+    task1 = progress_utils.userlist.add_overall_task(
         f"Getting the following accounts => {accounts} (this may take awhile)..."
     )
     async with manager.Manager.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         out = await get_subscription_helper(c, accounts)
-    progress_utils.remove_userlist_task(task1)
+    progress_utils.userlist.remove_overall_task(task1)
     outdict = {}
     for ele in filter(
         lambda x: x["username"] != of_env.getattr("DELETED_MODEL_PLACEHOLDER"),

@@ -63,7 +63,7 @@ async def process_tasks_batch(tasks):
     responseArray = []
     page_count = 0
 
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -74,7 +74,7 @@ async def process_tasks_batch(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Timeline Content Pages Progress: {page_count}",
                 )
@@ -94,7 +94,7 @@ async def process_tasks_batch(tasks):
                 continue
         tasks = new_tasks
 
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -282,7 +282,7 @@ async def scrape_timeline_posts(
     task = None
 
     try:
-        task = progress_utils.add_api_job_task(
+        task = progress_utils.api.add_job_task(
             f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
             visible=True,
         )
@@ -343,7 +343,8 @@ async def scrape_timeline_posts(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
+        
 
 
 def time_log(username, after):

@@ -82,7 +82,7 @@ async def consumer(aws, task1, medialist, lock):
                     + common_globals.forced_skipped
                 )
                 log_download_progress(media_type)
-                progress_updater.update_download_task(
+                progress_updater.download.update_overall_task(
                     task1,
                     description=desc.format(
                         p_count=common_globals.photo_count,

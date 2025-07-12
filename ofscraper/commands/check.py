@@ -248,11 +248,12 @@ def post_checker():
 @run
 async def post_check_runner():
     async for user_name, model_id, final_post_array in post_check_retriver():
-        with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_updater.update_activity_task(
+        with progress_utils.setup_live("api"):
+            progress_updater.activity.update_task(
                 description=check_str.format(
                     username=user_name, activity="Timeline posts"
-                )
+                ),
+                visible=True
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
@@ -452,9 +453,10 @@ def message_checker():
 @run
 async def message_checker_runner():
     async for user_name, model_id, final_post_array in message_check_retriver():
-        with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_updater.update_activity_task(
-                description=check_str.format(username=user_name, activity="Messages")
+        with progress_utils.setup_live("api"):
+            progress_updater.activity.update_task(
+                description=check_str.format(username=user_name, activity="Messages"),
+                visible=True
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
@@ -525,11 +527,12 @@ def purchase_checker():
 @run
 async def purchase_checker_runner():
     async for user_name, model_id, final_post_array in purchase_check_retriver():
-        with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_updater.update_activity_task(
+        with progress_utils.setup_live("api"):
+            progress_updater.activity.update_task(
                 description=check_str.format(
                     username=user_name, activity="Purchased posts"
-                )
+                ),
+                visible=True
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
@@ -582,8 +585,8 @@ def stories_checker():
 @run
 async def stories_checker_runner():
     async for user_name, model_id, final_post_array in stories_check_retriver():
-        with progress_utils.setup_api_split_progress_live(revert=True):
-            progress_updater.update_activity_task(
+        with progress_utils.setup_live("api"):
+            progress_updater.activity.update_task(
                 description=check_str.format(
                     username=user_name, activity="Stories posts"
                 )

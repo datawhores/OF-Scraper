@@ -1,5 +1,4 @@
-import traceback
-import time
+
 import logging
 import copy
 import arrow
@@ -11,11 +10,10 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process
 from ofscraper.commands.utils.strings import (
-    avatar_str,
     metadata_activity_str,
     mark_stray_str,
 )
-from ofscraper.commands.utils.command import commmandManager
+from ofscraper.commands.utils.command import CommandManager
 
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.db.operations as operations
@@ -25,7 +23,6 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.data.posts.post import process_areas
 import ofscraper.data.api.init as init
 import ofscraper.utils.actions as actions
 import ofscraper.utils.profiles.tools as profile_tools
@@ -33,7 +30,6 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.main.close.final.final import final_action
 from ofscraper.utils.checkers import check_auth
 import ofscraper.managers.manager as manager
-from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.exit as exit
@@ -46,101 +42,138 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
+from ofscraper.managers.postcollection import PostCollection
 
 log = logging.getLogger("shared")
 
 
-class metadataCommandManager(commmandManager):
+class MetadataCommandManager(CommandManager):
     def __init__(self):
         super().__init__()
 
     @run_async
     async def process_users_metadata_normal(self, userdata, session):
-        user_action_funct = self._get_user_action_function(
-            self._execute_metadata_action_on_user
-        )
-        progress_updater.update_user_activity(description="Users with Updated Metadata")
-        await user_action_funct(userdata, session)
+        with progress_utils.setup_live("main_activity"):
+            """Processes metadata in normal mode."""
+            progress_updater.activity.update_user(description="Users with Updated Metadata",total=len(userdata))
+            await self._process_users_normal(
+                userdata, session, self._execute_metadata_action_on_user
+            )
+        progress_updater.activity.update_task(description="Finished Metadata Mode")
+
 
     @run_async
     async def metadata_user_first(self, userdata, session):
-        data = await self._get_userfirst_data_function(self._metadata_data_user_first)(
-            userdata, session
+        """Processes metadata in user-first mode."""
+        # Phase 1: Gather data for all users firstprocess_users_normal
+        progress_updater.activity.update_overall(visible=True,total=2)
+        data = await self._gather_user_first_data(
+            userdata, session, self._get_metadata_for_user
         )
-        progress_updater.update_activity_task(description="Changing Metadata for Users")
-        progress_updater.update_user_activity(
-            description="Users with Metadata Changed", completed=0
+        progress_updater.activity.update_user(description="Users with Updated Metadata",total=len(data.keys()))
+
+        await self._execute_user_first_actions(
+            data, self._execute_metadata_action_on_user
         )
-        # pass all data to userfirst
-        await self._get_userfirst_action_execution_function(
-            self._execute_metadata_action_on_user
-        )(data)
+        progress_updater.activity.update_task(description="Finished Metadata Mode")
+
+
 
     @run_async
     async def metadata_paid_all(self):
+        """Helper to run the 'scrape_paid_all' process in metadata mode."""
         old_args = copy.deepcopy(settings.get_args())
         self._force_change_metadata()
-        out = ["[bold yellow]Scrape Paid Results[/bold yellow]"]
-        out.extend(await scrape_paid_all())
+        await scrape_paid_all()
         settings.update_args(old_args)
-        return out
 
     def _force_change_metadata(self):
-        args = settings.get_args()
+        """Helper to temporarily set the 'metadata' action for paid scraping."""
+        args = settings.get_args(copy=True)
         args.metadata = args.scrape_paid
         settings.update_args(args)
 
     async def _execute_metadata_action_on_user(
-        self, *args, ele=None, media=None, **kwargs
+        self, ele=None, postcollection:PostCollection=None,
     ):
+        """
+        The specific action for metadata processing for a single user.
+        This contains the logic you wanted to fill in.
+        """
+       
         username = ele.name
         model_id = ele.id
-        mark_stray = settings.get_settings().mark_stray
-        metadata_action = settings.get_settings().metadata
-        active = ele.active
         log.warning(
-            f"""
-                    Perform Meta {metadata_action} with
-                    Mark Stray: {mark_stray}
-                    Anon Mode {settings.get_settings().anon}
-
-                    for [bold]{username}[/bold]
-                    [bold]Subscription Active:[/bold] {active}
-                    """
+            f"Performing metadata update for [bold]{username}[/bold]\n"
+            f"Subscription Active: {ele.active}"
         )
+  
+        # Ensure the user's database table exists
         await operations.table_init_create(model_id=model_id, username=username)
-        progress_updater.update_activity_task(
+
+        # Update the progress bar description for the current user
+        progress_updater.activity.update_task(
             description=metadata_activity_str.format(username=username)
         )
-        await metadata_process(username, model_id, media)
-        await self._metadata_stray_media(username, model_id, media)
-        manager.Manager.model_manager.mark_as_processed(username,activity="metadata")
-        manager.Manager.stats_manager.update_and_print_stats(username,"metadata",media)
-        after_download_action_script(username, media, action="metadata")
+        media=postcollection.get_media_for_metadata()
 
-    async def _metadata_stray_media(SELF, username, model_id, media):
+
+        # Run the main metadata processing function
+        await metadata_process(username, model_id, media)
+
+        # Optionally, find and mark media in the DB that is no longer accessible
+        await self._metadata_stray_media(username, model_id, media)
+
+        # Update and print statistics for this user's metadata activity
+        manager.Manager.stats_manager.update_and_print_stats(
+            username, "metadata", media
+        )
+
+        # Mark this user as processed for the metadata activity
+        manager.Manager.model_manager.mark_as_processed(username, activity="metadata")
+
+    async def _get_metadata_for_user(self, c, ele):
+        """
+        The specific data gathering function for metadata in user-first mode.
+        """
+        postcollection = await post_media_process(ele, c)
+        return {
+            ele.id: {
+                "username": ele.name,
+                "ele": ele,
+                "postcollection": postcollection,
+                "avatar": ele.avatar,
+            }
+        }
+
+    async def _metadata_stray_media(self, username, model_id, media):
+        """
+        Finds and marks media in the database that is no longer present in a scrape.
+        """
         if not settings.get_settings().mark_stray:
             return
-        all_media = []
+        all_db_media = []
         curr_media_set = set(map(lambda x: str(x.id), media))
         args = settings.get_args()
-        progress_updater.update_activity_task(
+        progress_updater.activity.update_task(
             description=mark_stray_str.format(username=username)
         )
+        # Fetch all media for the user from the database based on selected areas
         if "Timeline" in args.download_area:
-            all_media.extend(
+            all_db_media.extend(
                 await get_timeline_media(model_id=model_id, username=username)
             )
         if "Messages" in args.download_area:
-            all_media.extend(
+            all_db_media.extend(
                 await get_messages_media(model_id=model_id, username=username)
             )
         if "Archived" in args.download_area:
-            all_media.extend(
+            all_db_media.extend(
                 await get_archived_media(model_id=model_id, username=username)
             )
-        if not bool(all_media):
+        if not all_db_media:
             return
+        # Filter to find items in the DB that were not in the current scrape
         filtered_media = list(
             filter(
                 lambda x: str(x["media_id"]) not in curr_media_set
@@ -149,123 +182,47 @@ class metadataCommandManager(commmandManager):
                 )
                 and x.get("downloaded") != 1
                 and x.get("unlocked") != 0,
-                all_media,
+                all_db_media,
             )
         )
-        log.info(f"Found {len(filtered_media)} stray items to mark as locked")
-        batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
-
-    def _get_user_action_function(self, funct):
-        async def wrapper(userdata, session, *args, **kwargs):
-            async with session as c:
-                for ele in userdata:
-                    try:
-                        with progress_utils.setup_api_split_progress_live():
-                            self._data_helper(ele)
-                            postcollection = await post_media_process(ele, c=c)
-                            media=postcollection.get_media_for_metadata()
-                        with progress_utils.setup_activity_group_live(revert=False):
-                            avatar = ele.avatar
-                            if (
-                                of_env.getattr("SHOW_AVATAR")
-                                and avatar
-                                and settings.get_settings().userfirst
-                            ):
-                                logging.getLogger("shared").warning(
-                                    avatar_str.format(avatar=avatar)
-                                )
-                            await funct(
-                                media=media,
-                                posts=None,
-                                like_posts=None,
-                                ele=ele,
-                            )
-                    except Exception as e:
-
-                        log.traceback_(f"failed with exception: {e}")
-                        log.traceback_(traceback.format_exc())
-
-                        if isinstance(e, KeyboardInterrupt):
-                            raise e
-                    finally:
-                        progress_updater.increment_user_activity()
-                progress_updater.update_activity_task(
-                    description="Finished Metadata Mode"
-                )
-                time.sleep(1)
-
-        return wrapper
-
-    # data functions
-    @run_async
-    async def _metadata_data_user_first(self, session, ele):
-        try:
-            return await self._process_ele_user_first_data_retriver(
-                ele=ele, session=session
+        if filtered_media:
+            log.info(f"Found {len(filtered_media)} stray items to mark as locked")
+            await batch_set_media_downloaded(
+                filtered_media, model_id=model_id, username=username
             )
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
-
-    async def _process_ele_user_first_data_retriver(self, ele=None, session=None):
-        data = {}
-        progress_utils.switch_api_progress()
-        model_id = ele.id
-        username = ele.name
-        avatar = ele.avatar
-        try:
-            model_id = ele.id
-            username = ele.name
-            await operations.table_init_create(model_id=model_id, username=username)
-            postcollection = await process_areas(ele, model_id, username, c=session)
-            return {
-                model_id: {
-                    "username": username,
-                    "media": postcollection.get_media_for_metadata(),
-                    "avatar": avatar,
-                    "ele": ele,
-                    "posts": postcollection.get_posts_for_text_download(),
-                    "like_posts": postcollection.get_posts_to_like(),
-                }
-            }
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
-        return data
 
     @property
     def run_metadata(self):
         return settings.get_settings().metadata
 
 
-def metadata():
-    metaCommandManager = metadataCommandManager()
-    check_auth()
-    with progress_utils.setup_activity_progress_live(
-        revert=True, stop=True, setup=True
-    ):
-        if settings.get_settings().scrape_paid:
-            metaCommandManager.metadata_paid_all()
-        if not metaCommandManager.run_metadata:
-            pass
 
-        elif not settings.get_settings().users_first:
-            userdata, session = prepare()
-            metaCommandManager.process_users_metadata_normal(userdata, session)
-        else:
-            userdata, session = prepare()
-            metaCommandManager.metadata_user_first(userdata, session)
-    final_action()
+
+def metadata():
+    metaCommandManager = MetadataCommandManager()
+    check_auth()
+    with  progress_utils.stop_live_screen(clear="all"):
+        with progress_utils.setup_live("activity_desc",
+            revert=True
+        ):
+            if settings.get_settings().scrape_paid:
+                metaCommandManager.metadata_paid_all()
+            if not metaCommandManager.run_metadata:
+                pass
+
+            elif not settings.get_settings().users_first:
+                userdata, session = prepare()
+                metaCommandManager.process_users_metadata_normal(userdata, session)
+            else:
+                userdata, session = prepare()
+                metaCommandManager.metadata_user_first(userdata, session)
+        final_action()
 
 
 @run
 async def process_dicts(username, model_id, medialist):
     task1 = None
-    with progress_utils.setup_metadata_progress_live():
+    with progress_utils.setup_live("metadata"):
         common_globals.mainProcessVariableInit()
         try:
 
@@ -274,7 +231,7 @@ async def process_dicts(username, model_id, medialist):
             async with manager.Manager.get_metadata_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
-                task1 = progress_updater.add_metadata_task(
+                task1 = progress_updater.metadata.add_overall_task(
                     desc.format(
                         p_count=0,
                         v_count=0,
@@ -306,8 +263,7 @@ async def process_dicts(username, model_id, medialist):
             common_globals.thread.shutdown()
 
         setDirectoriesDate()
-        progress_updater.remove_metadata_task(task1)
-
+        progress_updater.metadata.remove_overall_task(task1)
 
 @run_async
 async def metadata_process(username, model_id, medialist):
@@ -323,20 +279,20 @@ async def metadata_picker(username, model_id, medialist):
 
 def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Metadata Mode [/bold deep_sky_blue2]")
-    progress_updater.update_activity_task(description="Running Metadata Mode")
+    progress_updater.activity.update_task(description="Running Metadata Mode")
     with scrape_context_manager():
-        with progress_utils.setup_activity_group_live(revert=True):
-            metadata()
+        metadata()
 
 
 def prepare():
-    profile_tools.print_current_profile()
-    actions.select_areas()
-    init.print_sign_status()
-    manager.Manager.stats_manager.clear_all_stats()
-    userdata = manager.Manager.model_manager.prepare_scraper_activity()
-    session = manager.Manager.aget_ofsession(
-        sem_count=of_env.getattr("API_REQ_SEM_MAX"),
-        total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),
-    )
-    return userdata, session
+    with progress_utils.stop_live_screen(clear="all"):
+        profile_tools.print_current_profile()
+        actions.select_areas()
+        init.print_sign_status()
+        manager.Manager.stats_manager.clear_scraper_activity_stats()
+        userdata = manager.Manager.model_manager.prepare_scraper_activity()
+        session = manager.Manager.aget_ofsession(
+            sem_count=of_env.getattr("API_REQ_SEM_MAX"),
+            total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),
+        )
+        return userdata, session

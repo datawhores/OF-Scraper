@@ -15,6 +15,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
 import ofscraper.managers.manager as manager
+import ofscraper.utils.cache as cache
 
 
 def printStartValues():
@@ -66,6 +67,9 @@ def print_config():
 
 def print_start_message():
     log = logging.getLogger("shared")
+    message=cache.get("OFSCRAPER_MESSAGE")
+    if message:
+        return message
     with manager.Manager.get_session() as sess:
         with sess.requests(
             url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD"
@@ -73,6 +77,7 @@ def print_start_message():
             data = re.sub("\n", "", j.text_())
             if not data:
                 return
+            cache.set("OFSCRAPER_MESSAGE",data)
             log.error(f"{data}")
 
 

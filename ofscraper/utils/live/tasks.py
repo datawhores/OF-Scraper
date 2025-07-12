@@ -1,4 +1,4 @@
-from ofscraper.utils.live.progress import activity_counter, activity_progress
+from ofscraper.utils.live.progress import activity_counter, activity_desc
 
 activity_task = None
 activity_counter_task = None
@@ -8,7 +8,7 @@ user_first_task = None
 def get_activity_task():
     global activity_task
     if activity_task is None:
-        activity_task = activity_progress.add_task(description="Running OF-Scraper")
+        activity_task = activity_desc.add_task(description="Running OF-Scraper")
     return activity_task
 
 
@@ -21,7 +21,7 @@ def get_activity_counter_task():
     return activity_counter_task
 
 
-def get_user_first_task():
+def get_user_task():
     global user_first_task
     if user_first_task is None:
         user_first_task = activity_counter.add_task(
@@ -41,7 +41,7 @@ def reset_activity_tasks():
 
 def get_user_task_obj():
     try:
-        task = get_user_first_task()
+        task = get_user_task()
         return activity_counter._tasks[task]
     except:
         pass

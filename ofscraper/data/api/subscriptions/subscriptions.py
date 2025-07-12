@@ -22,8 +22,7 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.live.updater import add_userlist_task, remove_userlist_task
-
+from ofscraper.utils.live.updater import userlist
 
 log = logging.getLogger("shared")
 console = Console()
@@ -32,7 +31,7 @@ console = Console()
 @run
 async def get_subscriptions(subscribe_count, account="active"):
 
-    task1 = add_userlist_task(
+    task1 = userlist.add_overall_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
     async with manager.Manager.aget_subscription_session(
@@ -42,7 +41,7 @@ async def get_subscriptions(subscribe_count, account="active"):
             out = await activeHelper(subscribe_count, c)
         else:
             out = await expiredHelper(subscribe_count, c)
-    remove_userlist_task(task1)
+    userlist.remove_overall_task(task1)
     log.debug(f"Total {account} subscriptions found {len(out)}")
     return out
 
@@ -184,7 +183,7 @@ async def process_task(tasks):
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    with progress_utils.setup_subscription_progress_live():
+    with progress_utils.setup_live("user_list"):
         new_tasks = []
         url = of_env.getattr("subscriptionsActiveEP").format(offset)
         try:
@@ -219,7 +218,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    with progress_utils.setup_subscription_progress_live():
+    with progress_utils.setup_live("user_list"):
         new_tasks = []
         url = of_env.getattr("subscriptionsExpiredEP").format(offset)
         try:

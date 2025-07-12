@@ -27,7 +27,7 @@ class MetadataStats:
     
     @property
     def has_changes(self):
-        return self.changed_video >0  or self.changed_audio >0 or self.changed_photo>0
+        return self.changed_video >0  or self.changed_audio >0 or self.changed_photo
 
     def __str__(self):
         # Conditionally format the 'changed' media types
@@ -220,7 +220,7 @@ class StatsManager:
         # Dispatch to the correct private helper based on the activity type
         if activity_enum in [
             EActivity.ScrapeActivity.DOWNLOAD,
-            EActivity.PaidActivity.SCRAPE_PAID,
+            EActivity.PaidActivity.SCRAPE_PAID_DOWNLOAD,
         ]:
             self._update_download_stats_helper(stat_obj, data_list)
         elif activity_enum in [
@@ -230,7 +230,7 @@ class StatsManager:
             self._update_like_stats_helper(stat_obj, data_list)
         elif activity_enum == EActivity.ScrapeActivity.TEXT:
             self._update_text_stats_helper(stat_obj, data_list)
-        elif activity_enum ==EActivity.ScrapeActivity.METADATA:
+        elif activity_enum in [EActivity.ScrapeActivity.METADATA,EActivity.PaidActivity.SCRAPE_PAID_METADATA]:
             self._update_metadata_stats_helper(stat_obj, data_list)
 
     def update_and_print_stats(
@@ -326,6 +326,46 @@ class StatsManager:
                 raise KeyError(
                     f"No statistics found for user '{username}' and activity '{activity}'."
                 ) from err
+    def clear_scraper_activity_stats(self):
+        """
+        Removes all stat entries for any activity that is a ScrapeActivity
+        across all users, while leaving other activity types untouched.
+        """
+        # Iterate through all users
+        for username in list(self._stats.keys()):
+            user_activities = self._stats[username]
+            # 1. Find all keys that need to be deleted for this user
+            keys_to_delete = [
+                activity_enum
+                for activity_enum in user_activities
+                if isinstance(activity_enum, EActivity.ScrapeActivity)
+            ]
+            # 2. Safely delete those keys
+            for key in keys_to_delete:
+                del user_activities[key]     
+        log.info("All Scrape Activity statistics have been cleared.")
+    def clear_paid_stats(self):
+        """
+        Removes all stat entries for any activity that is a ScrapeActivity
+        across all users, while leaving other activity types untouched.
+        """
+        # Iterate through all users
+        for username in list(self._stats.keys()):
+            user_activities = self._stats[username]
+            # 1. Find all keys that need to be deleted for this user
+            keys_to_delete = [
+                activity_enum
+                for activity_enum in user_activities
+                if isinstance(activity_enum, EActivity.PaidActivity)
+            ]
+            
+            # 2. Safely delete those keys
+            for key in keys_to_delete:
+                del user_activities[key]
+                
+        log.info("All Scrape Activity statistics have been cleared.")
+    
+    
     def clear_activity_stats(self, activity: Union[str, EActivity]):
         """
         Removes all stat entries for a specific activity across all users.
@@ -421,29 +461,24 @@ class StatsManager:
 
     def _get_stat_obj(self, username: str, activity: Union[str, EActivity]):
         """
-        Internal factory to get or create a stat object.
-        Now accepts a string or an EActivity enum.
+        Internal factory that gets or creates the correct stat object
+        for any given activity.
         """
-        # Convert string to EActivity enum for consistent keys
         activity_enum = (
             string_to_activity(activity) if isinstance(activity, str) else activity
         )
 
         if activity_enum not in self._stats[username]:
-            # Create the correct stat object based on the activity type
             activity_name = activity_enum.name.title()
-            if activity_enum == EActivity.ScrapeActivity.TEXT:
-                self._stats[username][activity_enum] = TextStats(
-                    name="Action Text Download"
-                )
-            elif "like" in activity_name.lower() or "unlike" in activity_name.lower():
-                self._stats[username][activity_enum] = LikeStats(
-                    name=f"Action {activity_name}d"
-                )
-            elif activity_enum == EActivity.ScrapeActivity.METADATA: # Add this block
-                self._stats[username][activity_enum] = MetadataStats(name="Action Metadata")
-            else:  # Default to DownloadStats for 'download', 'scrape_paid', etc.
-                self._stats[username][activity_enum] = DownloadStats(
-                    name=f"Action {activity_name}"
-                )
+
+            # Route to the correct Stat class based on the enum member
+            if activity_enum in [EActivity.ScrapeActivity.METADATA, EActivity.PaidActivity.SCRAPE_PAID_METADATA]:
+                self._stats[username][activity_enum] = MetadataStats(name=f"Action {activity_name}")
+            elif activity_enum == EActivity.ScrapeActivity.TEXT:
+                self._stats[username][activity_enum] = TextStats(name="Action Text Download")
+            elif activity_enum in [EActivity.ScrapeActivity.LIKE, EActivity.ScrapeActivity.UNLIKE]:
+                self._stats[username][activity_enum] = LikeStats(name=f"Action {activity_name}d")
+            else:  # Default for DOWNLOAD and SCRAPE_PAID_DOWNLOAD
+                self._stats[username][activity_enum] = DownloadStats(name=f"Action {activity_name}")
+
         return self._stats[username][activity_enum]

@@ -1,5 +1,4 @@
 import traceback
-import time
 import logging
 
 
@@ -22,151 +21,114 @@ import ofscraper.utils.settings as settings
 log = logging.getLogger("shared")
 
 
-class commmandManager:
+
+class CommandManager:
     def __init__(self):
         pass
 
-    def _get_user_action_function(self, funct=None):
-        async def wrapper(userdata, session, *args, **kwargs):
-            async with session as c:
-                for ele in userdata:
-                    try:
-                        with progress_utils.setup_api_split_progress_live():
-                            self._data_helper(ele)
-                            postcollection = await post_media_process(ele, c=c)
+    async def _process_users_normal(self, userdata: list, session, action_func):
+        """
+        Processes users one by one, fetching data and then executing an action.
+        """
+        async with session as c:
+            for ele in userdata:
+                try:
+                    #reset user activity to initiial
+                    self._data_helper(ele)
+                    postcollection = await post_media_process(ele, c=c)
+                    self._avatar_helper(ele)
+                    #show progress bars/set string in action function
+                    await action_func(ele=ele, postcollection=postcollection)
+                except Exception as e:
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                finally:
+                    progress_updater.activity.update_user(advance=1,visible=True)
 
-                        with progress_utils.setup_activity_group_live(revert=False):
-                            avatar = ele.avatar
-                            if (
-                                of_env.getattr("SHOW_AVATAR")
-                                and avatar
-                                and settings.get_settings().userfirst
-                            ):
-                                logging.getLogger("shared").warning(
-                                    avatar_str.format(avatar=avatar)
-                                )
-                            await funct(
-                                media=postcollection.get_media_to_download(),
-                                posts=postcollection.get_posts_for_text_download(),
-                                like_posts=postcollection.get_posts_to_like(),
-                                ele=ele,
-                            )
-                    except Exception as e:
+    async def _gather_user_first_data(self, userdata: list, session, data_func):
+        """
+        Phase 1 of user-first mode: Gathers all data for all users.
+        """
+        progress_updater.activity.update_user(
+                description="Users with Data Retrieved",total=len(userdata),
+                visible=True
+        )
+        all_data = {}
+        progress_updater.activity.update_overall(completed=0,visible=True,total=2, description="Overall Progress")
+        async with session as c:
+            for ele in userdata:
+                try:
+                    self._data_helper(ele)
+                    all_data.update(await data_func(c, ele))
+                except Exception as e:
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                finally:
+                    c.reset_sleep()
+                    progress_updater.activity.update_user(advance=1,visible=True)
+        progress_updater.activity.update_overall(advance=1,visible=True)
+        return all_data
 
-                        log.traceback_(f"failed with exception: {e}")
-                        log.traceback_(traceback.format_exc())
+    async def _execute_user_first_actions(self, userdata: dict, action_func):
+        """
+        Phase 2 of user-first mode: Executes actions on the gathered data.
+        """
+        progress_updater.activity.update_user(
+                description="Users with Action Completed",total=len(userdata),
+                visible=True,
+                completed=0
+        )
 
-                        if isinstance(e, KeyboardInterrupt):
-                            raise e
-                    finally:
-                        progress_updater.increment_user_activity()
-                progress_updater.update_activity_task(
-                    description="Finished Action Mode"
-                )
-                time.sleep(1)
-
-        return wrapper
-
-    def _get_userfirst_data_function(self, funct):
-        async def wrapper(userdata, session, *args, **kwargs):
-            progress_updater.update_activity_task(
-                description="Getting all user data first"
-            )
-            progress_updater.update_user_activity(
-                description="Users with Data Retrieved"
-            )
-            progress_updater.update_activity_count(
-                description="Overall progress", total=2
-            )
-            data={}
-            async with session as c:
-                for ele in userdata:
-                    try:
-                        self._data_helper(ele)
-                        with progress_utils.setup_activity_counter_live(revert=False):
-                            data.update(await funct(c, ele))
-                    except Exception as e:
-                        log.traceback_(f"failed with exception: {e}")
-                        log.traceback_(traceback.format_exc())
-                        if isinstance(e, KeyboardInterrupt):
-                            raise e
-                    finally:
-                        c.reset_sleep()
-                        progress_updater.increment_user_activity()
-                return data
-        return wrapper
-
-    def _get_userfirst_action_execution_function(self, funct):
-        async def wrapper(data, *args, **kwargs):
-            progress_updater.increment_activity_count(total=2)
+        for _, val in userdata.items():
             try:
-                progress_updater.update_user_activity(total=len(data.items()))
-                for _, val in data.items():
-                    all_media = val["media"]
-                    posts = val["posts"]
-                    like_posts = val["like_posts"]
-                    ele = val["ele"]
-                    avatar = ele.avatar
-                    if (
-                        of_env.getattr("SHOW_AVATAR")
-                        and avatar
-                        and settings.get_settings().userfirst
-                    ):
-                        logging.getLogger("shared").warning(
-                            avatar_str.format(avatar=avatar)
-                        )
-                    try:
-                        with progress_utils.setup_activity_counter_live(revert=False):
-                            await funct(
-                                posts,
-                                like_posts,
-                                *args,
-                                media=all_media,
-                                ele=ele,
-                                **kwargs,
-                            )
-                    except Exception as e:
-                        log.traceback_(f"failed with exception: {e}")
-                        log.traceback_(traceback.format_exc())
-                        if isinstance(e, KeyboardInterrupt):
-                            raise e
-                    finally:
-                        progress_updater.increment_user_activity()
+                self._avatar_helper(val['ele'])
+                await action_func(
+                    postcollection=val["postcollection"],
+                    ele=val["ele"],
+                )
             except Exception as e:
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
                 if isinstance(e, KeyboardInterrupt):
                     raise e
             finally:
-                progress_updater.increment_activity_count(
-                    description="Overall progress", total=2
-                )
-
-        return wrapper
+                progress_updater.activity.update_user(advance=1,visible=True)
+        progress_updater.activity.update_overall(advance=1,visible=True)
 
     def _data_helper(self, user):
-        avatar = user.avatar
-        username = user.name
-        active = user.active
-        final_post_areas = areas.get_final_posts_area()
-        length = manager.Manager.model_manager.get_num_all_selected_models()
-        count = progress_tasks.get_user_task_obj().completed
-        logging.getLogger("shared").warning(
-            progress_str.format(count=count + 1, length=length)
-        )
-        logging.getLogger("shared").warning(data_str.format(name=username))
-        if of_env.getattr("SHOW_AVATAR") and avatar:
+            avatar = user.avatar
+            username = user.name
+            active = user.active
+            final_post_areas = areas.get_final_posts_area()
+            length = manager.Manager.model_manager.get_num_all_selected_models()
+            count = progress_tasks.get_user_task_obj().completed
+            logging.getLogger("shared").warning(
+                progress_str.format(count=count + 1, length=length)
+            )
+            logging.getLogger("shared").warning(data_str.format(name=username))
+            if of_env.getattr("SHOW_AVATAR") and avatar:
+                logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
+            progress_updater.activity.update_task(
+                description=area_str.format(
+                    areas=",".join(final_post_areas), name=username, active=active
+                ),
+                visible=True
+            )
+            logging.getLogger("shared").info(
+                area_str.format(
+                    areas=",".join(final_post_areas), name=username, active=active
+                )
+            )
+
+
+    def _avatar_helper(self, ele):
+        avatar = ele.avatar
+        if of_env.getattr("SHOW_AVATAR") and avatar and settings.get_settings().userfirst:
             logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
-        progress_updater.update_activity_task(
-            description=area_str.format(
-                areas=",".join(final_post_areas), name=username, active=active
-            )
-        )
-        logging.getLogger("shared").info(
-            area_str.format(
-                areas=",".join(final_post_areas), name=username, active=active
-            )
-        )
 
     @property
     def run_action(self):

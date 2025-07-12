@@ -150,7 +150,8 @@ class PostCollection:
         log.info(f"Returning {len(all_media)} final media items for metadata.")
         return all_media
 
-    def get_media_for_scrape_paid(self):
+
+    def get_media_for_processing(self):
         if settings.get_settings().command == "metadata":
             return self.get_media_for_metadata()
         else:

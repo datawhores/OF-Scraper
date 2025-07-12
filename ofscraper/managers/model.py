@@ -17,7 +17,8 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.args.mutators.user import resetUserFilters
 from ofscraper.managers.utils.state import StateManager, EActivity, string_to_activity
 import ofscraper.utils.of_env.of_env as of_env
-
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.live.screens as progress_utils
 log = logging.getLogger("shared")
 
 
@@ -68,62 +69,64 @@ class ModelManager:
         Fetches data for new usernames and adds them to the master list.
         Handles placeholder models by skipping the fetch and creating a dummy object.
         """
-        if not isinstance(usernames, list):
-            usernames = [usernames]
-        # 1. Get placeholder prefix and initial username set
-        placeholder_prefix = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
-        username_set = set(usernames)
+        #restore activity screen to caller state
+        with progress_utils.TemporaryTaskState(progress_updater.activity,["main","overall","user"]):
+            if not isinstance(usernames, list):
+                usernames = [usernames]
+            # 1. Get placeholder prefix and initial username set
+            placeholder_prefix = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
+            username_set = set(usernames)
 
-        # 2. Partition usernames into 'to_fetch' and 'placeholders'
-        new_usernames_to_fetch = set()
-        placeholder_usernames = set()
+            # 2. Partition usernames into 'to_fetch' and 'placeholders'
+            new_usernames_to_fetch = set()
+            placeholder_usernames = set()
 
-        for name in username_set:
-            # Skip if already in our master list
-            if name in self._all_subs_dict:
-                continue
-            # Check for placeholder prefix, but only if the prefix is set
-            if placeholder_prefix and name.startswith(placeholder_prefix):
-                placeholder_usernames.add(name)
-            else:
-                new_usernames_to_fetch.add(name)
+            for name in username_set:
+                # Skip if already in our master list
+                if name in self._all_subs_dict:
+                    continue
+                # Check for placeholder prefix, but only if the prefix is set
+                if placeholder_prefix and name.startswith(placeholder_prefix):
+                    placeholder_usernames.add(name)
+                else:
+                    new_usernames_to_fetch.add(name)
 
-        # 3. Fetch real models from the API if needed
-        if new_usernames_to_fetch:
-            log.info(
-                f"Attempting to fetch new model data for: {list(new_usernames_to_fetch)}"
-            )
-            args = settings.get_args()
-            original_usernames = args.usernames or []
-            args.usernames = list(new_usernames_to_fetch)
-            settings.update_args(args)
-            fetched_models = await retriver.get_models()
-            if fetched_models:
-                self._update_all_subs(fetched_models)
-            args.usernames = original_usernames
-            settings.update_args(args)
-        # 4. Create and add placeholder models without fetching
-        if placeholder_usernames:
-            log.info(
-                f"Creating placeholder models for: {', '.join(placeholder_usernames)}"
-            )
-            placeholder_models = [
-                Model({"username": name, "id": name}) for name in placeholder_usernames
+            # 3. Fetch real models from the API if needed
+            if new_usernames_to_fetch:
+                log.info(
+                    f"Attempting to fetch new model data for: {list(new_usernames_to_fetch)}"
+                )
+                args = settings.get_args()
+                original_usernames = args.usernames or []
+                args.usernames = list(new_usernames_to_fetch)
+                settings.update_args(args)
+                fetched_models = await retriver.get_models()
+                if fetched_models:
+                    self._update_all_subs(fetched_models)
+                args.usernames = original_usernames
+                settings.update_args(args)
+            # 4. Create and add placeholder models without fetching
+            if placeholder_usernames:
+                log.info(
+                    f"Creating placeholder models for: {', '.join(placeholder_usernames)}"
+                )
+                placeholder_models = [
+                    Model({"username": name, "id": name}) for name in placeholder_usernames
+                ]
+                self._update_all_subs(placeholder_models)
+
+            # 5. Queue all successfully added models for the activity
+            # This list includes both fetched and placeholder models
+            successfully_added = [
+                name for name in username_set if name in self._all_subs_dict
             ]
-            self._update_all_subs(placeholder_models)
 
-        # 5. Queue all successfully added models for the activity
-        # This list includes both fetched and placeholder models
-        successfully_added = [
-            name for name in username_set if name in self._all_subs_dict
-        ]
+            if successfully_added:
+                # Normalize activity string/enum and queue the usernames
+                activity = self._get_activity(activity)
+                self.state.add_to_queue(activity, successfully_added)
 
-        if successfully_added:
-            # Normalize activity string/enum and queue the usernames
-            activity = self._get_activity(activity)
-            self.state.add_to_queue(activity, successfully_added)
-
-        return successfully_added
+            return successfully_added
 
     def prepare_scraper_activity(
         self,

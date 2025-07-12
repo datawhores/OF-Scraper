@@ -39,12 +39,11 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
         modelusername=username,
         modelid=model_id,
     )
-
-    progress_updater.update_activity_task(description=download_str + path_str)
-    logging.getLogger("shared").warning(download_activity_str.format(username=username))
-    progress_updater.update_activity_task(description="")
-    values = await download_process(username, model_id, media, posts=posts)
-    return values
+    with progress_utils.TemporaryTaskState(progress_updater.activity,["main"]):
+        progress_updater.activity.update_task(description=download_str + path_str,visible=True)
+        logging.getLogger("shared").warning(download_activity_str.format(username=username))
+        values = await download_process(username, model_id, media, posts=posts)
+        return values
 
 
 @run_async
@@ -74,14 +73,14 @@ async def process_dicts(username, model_id, medialist, posts):
     logging.getLogger("shared").info("Downloading in single thread mode")
     common_globals.mainProcessVariableInit()
     task1 = None
-    with progress_utils.setup_download_progress_live():
+    with progress_utils.setup_live("download"):
         try:
 
             aws = []
             async with manager.Manager.get_download_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
-                task1 = progress_updater.add_download_task(
+                task1 = progress_updater.download.add_overall_task(
                     desc.format(
                         p_count=0,
                         v_count=0,
@@ -113,7 +112,7 @@ async def process_dicts(username, model_id, medialist, posts):
             common_globals.thread.shutdown()
 
         setDirectoriesDate()
-        progress_updater.remove_download_task(task1)
+        progress_updater.download.remove_overall_task(task1)
         return (
             common_globals.video_count,
             common_globals.audio_count,

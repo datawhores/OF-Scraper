@@ -70,7 +70,7 @@ async def consumer(aws, task1, medialist, lock):
                 )
                 log_download_progress(media_type)
 
-                progress_updater.update_metadata_task(
+                progress_updater.metadata.update_overall_task(
                     task1,
                     description=desc.format(
                         p_count=common_globals.photo_count,

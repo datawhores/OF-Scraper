@@ -56,7 +56,7 @@ async def scrape_stories(c, user_id) -> list:
 
     url = of_env.getattr("highlightsWithAStoryEP").format(user_id)
     try:
-        task = progress_utils.add_api_job_task(
+        task =progress_utils.api.add_job_task(
             f"[Stories] user id -> {user_id}",
             visible=True,
         )
@@ -82,7 +82,7 @@ async def scrape_stories(c, user_id) -> list:
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
 
     return stories, new_tasks
 
@@ -90,7 +90,7 @@ async def scrape_stories(c, user_id) -> list:
 async def process_stories_tasks(tasks):
     responseArray = []
     page_count = 0
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
 
@@ -102,7 +102,7 @@ async def process_stories_tasks(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
@@ -123,7 +123,7 @@ async def process_stories_tasks(tasks):
                 continue
 
         tasks = new_tasks
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -165,7 +165,7 @@ async def process_task_get_highlight_list(tasks):
 
     page_count = 0
 
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -176,7 +176,7 @@ async def process_task_get_highlight_list(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Highlights List Pages Progress: {page_count}",
                 )
@@ -194,7 +194,7 @@ async def process_task_get_highlight_list(tasks):
                 continue
         tasks = new_tasks
 
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
 
     log.debug(
@@ -207,7 +207,7 @@ async def process_task_get_highlight_list(tasks):
 async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
-    page_task = progress_utils.add_api_task(
+    page_task =progress_utils.api.add_overall_task(
         f"Highlight Content via list pages progress: {page_count}", visible=True
     )
     seen = set()
@@ -218,7 +218,7 @@ async def process_task_highlights(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                progress_utils.update_api_task(
+                progress_utils.api.update_overall_task(
                     page_task,
                     description=f"Highlights content via list pages progress: {page_count}",
                 )
@@ -247,7 +247,7 @@ async def process_task_highlights(tasks):
         log.debug(
             f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)}"
         )
-    progress_utils.remove_api_task(page_task)
+    progress_utils.api.remove_overall_task(page_task)
     return highlightResponse
 
 
@@ -261,7 +261,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
     )
 
     try:
-        task = progress_utils.add_api_job_task(
+        task = progress_utils.api.add_job_task(
             f"[Highlights] scraping highlight list  offset-> {offset}",
             visible=True,
         )
@@ -288,7 +288,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
 
     return data, new_tasks
 
@@ -300,7 +300,7 @@ async def scrape_highlights_from_list(c, id) -> list:
     task = None
 
     try:
-        task = progress_utils.add_api_job_task(
+        task = progress_utils.api.add_job_task(
             f"[Highlights]  highlights id -> {id}",
             visible=True,
         )
@@ -326,7 +326,7 @@ async def scrape_highlights_from_list(c, id) -> list:
         raise E
 
     finally:
-        progress_utils.remove_api_job_task(task)
+        progress_utils.api.remove_job_task(task)
 
     return resp_data["stories"], new_tasks
 
