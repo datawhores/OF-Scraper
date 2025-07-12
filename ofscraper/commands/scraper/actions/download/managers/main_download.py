@@ -54,7 +54,6 @@ from ofscraper.classes.of.media import Media
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
-        ele.mark_download_attempt()
         await common_globals.sem.acquire()
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with normal downloader"
@@ -190,7 +189,6 @@ class MainDownloadManager(DownloadManager):
                     ).init()
                 path_to_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
-                    ele.remove_download_attempt()
                     total = 0
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:

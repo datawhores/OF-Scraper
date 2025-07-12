@@ -260,10 +260,11 @@ class PostCollection:
         # This uses the specific metadata flag
         candidate_posts = [post for post in self.posts if post.is_metadata_candidate]
         log.info(f"Found {len(candidate_posts)} posts marked as metadata candidates.")
+        for post in candidate_posts:
+            post.prepare_media_for_metadata()
 
-        # No preparation step is needed, just collect all media from the posts
         all_media = [
-            media for post in candidate_posts for media in post.all_media
+            media for post in candidate_posts for media in post.media_for_metadata
         ]
         log.debug(f"Aggregated {len(all_media)} media items for metadata processing.")
         return all_media

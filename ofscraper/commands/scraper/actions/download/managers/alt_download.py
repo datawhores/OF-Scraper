@@ -62,7 +62,6 @@ class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
         await common_globals.sem.acquire()
-        ele.mark_download_attempt()
         common_globals.log.debug(
             f"{get_medialog(ele)} Downloading with protected media downloader"
         )
@@ -207,7 +206,6 @@ class AltDownloadManager(DownloadManager):
 
                 temp_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
-                    ele.remove_download_attempt()
                     item["total"] = 0
                     total = item["total"]
                     return item

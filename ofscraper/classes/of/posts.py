@@ -30,9 +30,6 @@ class Post(base.base):
         self.is_like_candidate = False
         self.is_text_candidate = False
 
-        self.media_to_download = []
-        self.downloaded_media = []
-        self.failed_downloads = []
         self.is_actionable_like = False
 
         self.like_attempted = False
@@ -40,6 +37,12 @@ class Post(base.base):
 
         self.text_download_attempted = False
         self.text_download_succeeded = None
+
+        self.is_metadata_candidate=False
+        
+        self.media_for_metadata=None
+        self.media_to_download=None
+        
 
 
     # --------------------------------------------------------------------------------
@@ -56,7 +59,24 @@ class Post(base.base):
             return self.media_to_download
         if not media:
             return []
-        # This follows the same filtering logic we established previously
+        media=self._apply_media_filters(media)
+        self.media_to_download=media
+        return media
+    
+    def prepare_media_for_metadata(self):
+        """
+        Processes this post's media to determine which items are candidates
+        for download, assuming this post has already been marked as a download candidate.
+        """
+        media = self.media
+        if self.media_for_metadata:
+            return self.media_for_metadata
+        if not media:
+            return [] 
+        media=self._apply_media_filters(media)      
+        self.media_for_metadata = media
+        return media
+    def get_media_for_something(media):
         media = helpers.sort_by_date(media)
         media = helpers.mediatype_type_filter(media)
         media = helpers.posts_date_filter_media(media)
@@ -68,8 +88,12 @@ class Post(base.base):
         media = helpers.media_length_filter(media)
         media = helpers.media_id_filter(media)
         media = helpers.post_id_filter(media)
-        self.media_to_download = media
+        return media
 
+    
+
+    
+    
     def prepare_post_for_like(self, like_action=True):
         """
         Determines if this post is specifically actionable for a like/unlike,
@@ -91,21 +115,6 @@ class Post(base.base):
             self.is_actionable_like = True
         else:
             self.is_actionable_like = False
-
-    def mark_media_downloaded(self, media_item, success):
-        """
-        Updates the status of a media item after a download attempt.
-        """
-        media_item.download_attempted = True
-        media_item.download_success = success
-
-        if success:
-            self.downloaded_media.append(media_item)
-        else:
-            self.failed_downloads.append(media_item)
-
-        if media_item in self.media_to_download:
-            self.media_to_download.remove(media_item)
 
     def mark_post_liked(self, success=True):
         """
@@ -139,6 +148,8 @@ class Post(base.base):
     def mark_text_download_attempt(self):
         """Marks that a text download has been attempted."""
         self.text_download_attempted = True
+
+        
             
     @property
     def missed_downloads(self):
@@ -317,3 +328,20 @@ class Post(base.base):
                 return self.responsetype.capitalize()
             else:
                 return response.capitalize()
+    def _apply_media_filters(self, media: list) -> list:
+        """
+        Private helper to run a list of media through all configured filters.
+        """
+        # Note: Added 'self' to the method definition
+        media = helpers.sort_by_date(media)
+        media = helpers.mediatype_type_filter(media)
+        media = helpers.posts_date_filter_media(media)
+        media = helpers.temp_post_filter(media)
+        media = helpers.post_text_filter(media)
+        media = helpers.post_neg_text_filter(media)
+        media = helpers.download_type_filter(media)
+        media = helpers.mass_msg_filter(media)
+        media = helpers.media_length_filter(media)
+        media = helpers.media_id_filter(media)
+        media = helpers.post_id_filter(media)
+        return media

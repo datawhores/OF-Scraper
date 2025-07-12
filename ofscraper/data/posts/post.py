@@ -528,11 +528,10 @@ async def process_tasks(model_id, username, ele, c=None):
             posts, area = await result
             area_title = area.title()
             actions_for_this_batch = []
-            command = settings.get_settings().command or "scraper"
-
+            command = settings.get_settings().command
             if command == "metadata":
                 actions_for_this_batch.append("metadata")
-            elif not command: # This is the main scraper mode
+            else:
                 if area_title in like_area:
                     actions_for_this_batch.append("like")
                 if area_title in download_area:
