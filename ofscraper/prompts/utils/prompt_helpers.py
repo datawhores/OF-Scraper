@@ -6,14 +6,13 @@ from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-import ofscraper.filters.models.sort as sort
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
-import ofscraper.main.manager as manager
+import ofscraper.managers.manager as manager
 
 
 console = Console()
@@ -118,10 +117,9 @@ PRESS ENTER TO RETURN
 
 def model_funct(prompt):
     while True:
-        manager.Manager.model_manager.setfilter()
         with stdout.nostdout():
             choices = _get_choices()
-        if len(choices)==0:
+        if len(choices) == 0:
             console.print("Current filters returned zero models")
             continue
         with stdout.nostdout():
@@ -200,12 +198,11 @@ def _select_helper(prompt, toggle=True):
 
 
 def _get_choices():
-    models = manager.Manager.model_manager.get_selected_models()
-    models = sort.sort_models_helper(models)
+    models = manager.Manager.model_manager.get_models_from_prompt()
     return list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models),
+            enumerate(models.values()),
         )
     )
 

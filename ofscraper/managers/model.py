@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union,Iterable
 
 
 import ofscraper.data.models.utils.retriver as retriver
@@ -19,6 +19,7 @@ from ofscraper.managers.utils.state import StateManager, EActivity, string_to_ac
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.live.screens as progress_utils
+
 log = logging.getLogger("shared")
 
 
@@ -69,8 +70,10 @@ class ModelManager:
         Fetches data for new usernames and adds them to the master list.
         Handles placeholder models by skipping the fetch and creating a dummy object.
         """
-        #restore activity screen to caller state
-        with progress_utils.TemporaryTaskState(progress_updater.activity,["main","overall","user"]):
+        # restore activity screen to caller state
+        with progress_utils.TemporaryTaskState(
+            progress_updater.activity, ["main", "overall", "user"]
+        ):
             if not isinstance(usernames, list):
                 usernames = [usernames]
             # 1. Get placeholder prefix and initial username set
@@ -111,7 +114,8 @@ class ModelManager:
                     f"Creating placeholder models for: {', '.join(placeholder_usernames)}"
                 )
                 placeholder_models = [
-                    Model({"username": name, "id": name}) for name in placeholder_usernames
+                    Model({"username": name, "id": name})
+                    for name in placeholder_usernames
                 ]
                 self._update_all_subs(placeholder_models)
 
@@ -180,6 +184,21 @@ class ModelManager:
             self.state.set_queue(act, [model.name for model in final_selection])
 
         return final_selection
+    def get_models_from_prompt(self):
+        while True:
+            self.setfilter()
+            filtered_models = self._apply_filters()
+            sorted_models = sort.sort_models_helper(filtered_models)
+            if sorted_models:
+                return {
+                    model.name: self._all_subs_dict[model.name]
+                    for model in sorted_models
+                }
+            else:
+                console.get_console().print(
+                    "[bold red]You have filtered the user list to zero.[/bold red]"
+                )
+                self.setfilter()
 
     @run
     async def sync_models(
@@ -337,7 +356,7 @@ class ModelManager:
             console.get_console().print(
                 "[bold red]You have filtered the user list to zero.[/bold red]"
             )
-            self._setfilter()
+            self.setfilter()
 
     def _apply_filters(self) -> List["Model"]:
         models = self.all_subs
@@ -433,7 +452,7 @@ class ModelManager:
         if not activities:
             return []
         activities_to_process = []
-        input_list = activities if isinstance(activities, list) else [activities]
+        input_list = activities if isinstance(activities, Iterable) else [activities]
         for item in input_list:
             if isinstance(item, str):
                 activities_to_process.append(string_to_activity(item))
@@ -490,26 +509,23 @@ class ModelManager:
         # FINAL CASE: We must prompt for a selection. This is reached when:
         #  1. In interactive mode with no --username argument.
         #  2. In daemon mode on its first run with no --username argument.
-        return retriver.get_selected_model(list(filtered_models.values()))
+        return retriver.get_selected_model(list(filtered_models.values()),existing_selection)
 
-    def _setfilter(self):
-        while True:
-            self._print_filter_settings()
-            choice = prompts.decide_filters_menu()
-            try:
-                # --- Place this dictionary outside your main loop for efficiency ---
-                prompt_actions = {
+    def setfilter(self):
+        prompt_actions = {
                     "sort": prompts.modify_sort_prompt,
                     "subtype": prompts.modify_subtype_prompt,
                     "promo": prompts.modify_promo_prompt,
                     "active": prompts.modify_active_prompt,
                     "price": prompts.modify_prices_prompt,
                     "list": prompts.modify_list_prompt,
-                }
-
+        }
+        while True:
+            self._print_filter_settings()
+            choice = prompts.decide_filters_menu()
+            try:   
                 if choice == "model_list":
                     break
-
                 # Get a copy of the arguments before any modifications
                 original_args = settings.get_args()
                 new_args = settings.get_args(copy=True)
