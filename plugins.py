@@ -5,7 +5,6 @@
 import re
 import subprocess
 import os
-from pathlib import Path
 
 def get_version_dict():
     """

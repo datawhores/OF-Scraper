@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
-COPY --parents pyproject.toml uv.lock README.md .git ofscraper .
+COPY --parents pyproject.toml uv.lock README.md .git ofscraper plugins.py .
 
 RUN \
     if [ -n "$BUILD_VERSION" ]; then \
@@ -25,7 +25,6 @@ RUN \
       VERSION="${BASE_VERSION}+g${SHORT_HASH}"; \
     fi && \
     export HATCH_VCS_PRETEND_VERSION=$VERSION && \
-    export SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION && \
     echo "Build OF-SCRAPER with ${VERSION}" && \
 
     python3 -m pip install --no-cache-dir hatch hatch-vcs && \
