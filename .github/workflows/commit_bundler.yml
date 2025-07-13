@@ -203,6 +203,7 @@ jobs:
           name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
           
           body: "This is an auto-generated development release created from commit hash `${{ needs.generate_version.outputs.long_hash }}`. Version: `${{ needs.generate_version.outputs.version }}`"
-          commit: "${{ needs.generate_version.outputs.long_hash }}"
+          commii
+          uv sync --verbose --extra ffmpeg --extra devt: "${{ needs.generate_version.outputs.long_hash }}"
           allowUpdates: true
           prerelease: true

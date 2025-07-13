@@ -74,18 +74,20 @@ ofscraper = "ofscraper.__main__:main"
 
 # --- Build System & Tool Configuration ---
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.hooks.custom]
-path = "hatch_build.py"
-
+# This section tells hatchling how to build the wheel.
 [tool.hatch.build.targets.wheel]
 packages = ["ofscraper"]
 
+[build-system]
+requires = ["hatchling", "version-pioneer"]
+build-backend = "hatchling.build"
+
 [tool.hatch.version]
-source = "vcs"
+source = "version-pioneer"
+
+[tool.version-pioneer]
+# This tells the plugin to create a _version.py file inside your ofscraper package.
+versionscript = "plugins.py"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
