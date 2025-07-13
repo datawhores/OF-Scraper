@@ -126,3 +126,4 @@ if [ "$GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPU
     echo "is_stable_release=${IS_STABLE_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
+fi
