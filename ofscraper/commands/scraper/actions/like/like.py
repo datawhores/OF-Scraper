@@ -32,7 +32,9 @@ unlike_str = "Performing Unlike Action on {name}" + warning_str
 @exit.exit_wrapper
 def process_like(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
-        progress_updater.activity.update_task(description=like_str.format(name=username),visible=True)
+        progress_updater.activity.update_task(
+            description=like_str.format(name=username), visible=True
+        )
         logging.getLogger("shared").warning(like_str.format(name=username))
         like(model_id, username, posts)
 
@@ -40,7 +42,9 @@ def process_like(posts=None, model_id=None, username=None, **kwargs):
 @exit.exit_wrapper
 def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
-        progress_updater.activity.update_task(description=unlike_str.format(name=username),visible=True)
+        progress_updater.activity.update_task(
+            description=unlike_str.format(name=username), visible=True
+        )
         logging.getLogger("shared").warning(unlike_str.format(name=username))
         unlike(model_id, username, posts)
 
@@ -105,13 +109,11 @@ def _like(model_id, username, posts: list, like_action: bool):
                 out = func()
                 sleep_duration = random.uniform(min_duration, max_duration)
                 if out == 1:
-                    progress_updater.like.update_overall_task(task2,advance=1)
-                progress_updater.like.update_overall_task(task,advance=1)
+                    progress_updater.like.update_overall_task(task2, advance=1)
+                progress_updater.like.update_overall_task(task, advance=1)
                 time.sleep(sleep_duration)
             progress_updater.like.remove_overall_task(task)
             progress_updater.like.remove_overall_task(task2)
-
-
 
 
 def _toggle_like_requests(c, post: Post, model_id):

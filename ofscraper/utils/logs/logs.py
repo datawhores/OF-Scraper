@@ -67,7 +67,7 @@ def print_config():
 
 def print_start_message():
     log = logging.getLogger("shared")
-    message=cache.get("OFSCRAPER_MESSAGE")
+    message = cache.get("OFSCRAPER_MESSAGE")
     if message:
         return message
     with manager.Manager.get_session() as sess:
@@ -77,7 +77,7 @@ def print_start_message():
             data = re.sub("\n", "", j.text_())
             if not data:
                 return
-            cache.set("OFSCRAPER_MESSAGE",data)
+            cache.set("OFSCRAPER_MESSAGE", data)
             log.error(f"{data}")
 
 

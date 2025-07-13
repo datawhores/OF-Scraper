@@ -67,46 +67,40 @@ def manual_download(urls=None):
             set_user_data(url_dicts)
 
         for _, value in url_dicts.items():
-                collection = value["collection"]
-                model_id = collection.model_id
-                username = collection.username
-                media=collection.all_unique_media
-                posts=collection.posts
+            collection = value["collection"]
+            model_id = collection.model_id
+            username = collection.username
+            media = collection.all_unique_media
+            posts = collection.posts
 
-                log.info(download_manual_str.format(username=username))
-                progress_updater.activity.update_task(
-                    description=download_manual_str.format(username=username),
-                    visible=True
-                )
+            log.info(download_manual_str.format(username=username))
+            progress_updater.activity.update_task(
+                description=download_manual_str.format(username=username), visible=True
+            )
 
-                operations.table_init_create(model_id=model_id, username=username)
-                make_changes_to_content_tables(
-                    posts, model_id=model_id, username=username
-                )
-                batch_mediainsert(
-                    media, username=username, model_id=model_id
-                )
+            operations.table_init_create(model_id=model_id, username=username)
+            make_changes_to_content_tables(posts, model_id=model_id, username=username)
+            batch_mediainsert(media, username=username, model_id=model_id)
 
-                download.download_process(
-                    username,
-                    model_id,
-                    media,
-                    posts,
-                )
-                manager.Manager.model_manager.mark_as_processed(
-                    username, activity="download"
-                )
-                manager.Manager.stats_manager.update_and_print_stats(username,"download",media,ignore_missing=True)
-                after_download_action_script(username,media)
-        final_action(
-    )
+            download.download_process(
+                username,
+                model_id,
+                media,
+                posts,
+            )
+            manager.Manager.model_manager.mark_as_processed(
+                username, activity="download"
+            )
+            manager.Manager.stats_manager.update_and_print_stats(
+                username, "download", media, ignore_missing=True
+            )
+            after_download_action_script(username, media)
+        final_action()
 
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         raise e
-
-
 
 
 def process_urls(urls):
@@ -129,8 +123,7 @@ def process_urls(urls):
     with progress_utils.setup_live("api"):
         for url in url_helper(urls):
             progress_updater.activity.update_task(
-                description=post_str_manual.format(url=url),
-                visible=True
+                description=post_str_manual.format(url=url), visible=True
             )
 
             model_id, post_id, api_type = get_info(url)
@@ -296,8 +289,6 @@ def allow_manual_dupes():
     args = settings.get_args()
     args.force_all = True
     settings.update_args(args)
-
-
 
 
 async def _find_paid_post_by_id(post_id, model_id, username):

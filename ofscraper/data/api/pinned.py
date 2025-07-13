@@ -68,7 +68,7 @@ async def process_tasks(tasks):
     responseArray = []
     page_count = 0
 
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Pinned Content Pages Progress: {page_count}", visible=True
     )
     seen = set()

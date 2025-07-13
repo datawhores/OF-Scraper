@@ -70,7 +70,7 @@ async def process_tasks_labels(tasks):
 
     page_count = 0
 
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Label Names Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -173,7 +173,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
 
     page_count = 0
 
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Labels Progress: {page_count}", visible=True
     )
 

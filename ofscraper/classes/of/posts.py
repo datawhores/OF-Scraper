@@ -38,12 +38,10 @@ class Post(base.base):
         self.text_download_attempted = False
         self.text_download_succeeded = None
 
-        self.is_metadata_candidate=False
+        self.is_metadata_candidate = False
 
-        self.media_for_metadata=[]
-        self.media_to_download=[]
-        
-
+        self.media_for_metadata = []
+        self.media_to_download = []
 
     # --------------------------------------------------------------------------------
     # --- Action Preparation & Marking Methods ---
@@ -59,10 +57,10 @@ class Post(base.base):
             return self.media_to_download
         if not media:
             return []
-        media=self._apply_media_filters(media)
-        self.media_to_download=media
+        media = self._apply_media_filters(media)
+        self.media_to_download = media
         return media
-    
+
     def prepare_media_for_metadata(self):
         """
         Processes this post's media to determine which items are candidates
@@ -72,12 +70,11 @@ class Post(base.base):
         if self.media_for_metadata:
             return self.media_for_metadata
         if not media:
-            return [] 
-        media=self._apply_media_filters(media)
+            return []
+        media = self._apply_media_filters(media)
         self.media_for_metadata = media
         return media
-    
-    
+
     def prepare_post_for_like(self, like_action=True):
         """
         Determines if this post is specifically actionable for a like/unlike,
@@ -125,16 +122,16 @@ class Post(base.base):
         Updates the status of the post before a like/unlike attempt.
         """
         self.like_attempted = True
+
     def mark_text_downloaded(self, success: bool):
         """Updates the status of the post after a text download attempt."""
         self.text_download_attempted = True
         self.text_download_succeeded = success
+
     def mark_text_download_attempt(self):
         """Marks that a text download has been attempted."""
         self.text_download_attempted = True
 
-        
-            
     @property
     def missed_downloads(self):
         """Convenience property to see what failed to download."""
@@ -312,6 +309,7 @@ class Post(base.base):
                 return self.responsetype.capitalize()
             else:
                 return response.capitalize()
+
     def _apply_media_filters(self, media: list) -> list:
         """
         Private helper to run a list of media through all configured filters.

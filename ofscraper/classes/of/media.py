@@ -77,9 +77,8 @@ class Media(base.base):
             self.media["download_status"] = "succeeded"
         elif self.download_attempted and not self.download_succeeded:
             self.media["download_status"] = "failed"
-        else: # Not attempted
+        else:  # Not attempted
             self.media["download_status"] = "skipped"
-
 
     def add_filepath(self, path: Union[str | Path]):
         path = str(path)
@@ -97,7 +96,7 @@ class Media(base.base):
     def mark_metadata_unchanged(self):
         """Marks the metadata as successfully checked with NO changes."""
         self.metadata_attempted = True
-        self.metadata_succeeded = None # Using None to signify "unchanged"
+        self.metadata_succeeded = None  # Using None to signify "unchanged"
         self.update_metadata_status()
 
     def mark_metadata_failed(self):
@@ -117,7 +116,7 @@ class Media(base.base):
             self.media["metadata_status"] = "failed"
         elif self.metadata_succeeded:
             self.media["metadata_status"] = "changed"
-        else: # Succeeded but not changed
+        else:  # Succeeded but not changed
             self.media["metadata_status"] = "unchanged"
 
     # only use if content type can't be found from request
@@ -553,7 +552,7 @@ class Media(base.base):
     @property
     def log(self):
         return self._log
-    
+
     @property
     def size(self):
         """
@@ -563,7 +562,9 @@ class Media(base.base):
             AttributeError: If the 'size' key has not been set yet.
         """
         if "size" not in self.media:
-            raise AttributeError("Size is not available yet. It must be set after the request is made.")
+            raise AttributeError(
+                "Size is not available yet. It must be set after the request is made."
+            )
         return self.media["size"]
 
     @log.setter

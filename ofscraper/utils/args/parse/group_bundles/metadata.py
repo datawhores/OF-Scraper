@@ -32,7 +32,7 @@ from ofscraper.utils.args.parse.groups.post_filter import (
     post_sort_option,
     post_filter_options_desc,
     post_filter_options_help,
-    download_type_option
+    download_type_option,
 )
 
 

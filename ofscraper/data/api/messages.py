@@ -100,7 +100,7 @@ def process_individual(model_id):
 async def process_tasks(tasks):
     page_count = 0
     responseArray = []
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()

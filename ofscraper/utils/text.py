@@ -13,14 +13,14 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_script import after_download_script
 
 
-async def get_text(username,values):
+async def get_text(username, values):
     async with asyncio.TaskGroup() as tg:
-        tasks = [tg.create_task(get_text_process(username,value)) for value in values]
+        tasks = [tg.create_task(get_text_process(username, value)) for value in values]
     for task in asyncio.as_completed(tasks):
         await task
 
 
-async def get_text_process(username,ele):
+async def get_text_process(username, ele):
     log = logging.getLogger("shared")
     dupe = (
         settings.get_settings().force_all or settings.get_settings().force_model_unique

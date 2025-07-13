@@ -76,7 +76,6 @@ async def process_paid_dict():
         yield count, value, length
 
 
-
 def process_user_info_printer(
     value,
     length,
@@ -88,11 +87,8 @@ def process_user_info_printer(
     model_id = value["model_id"]
     username = value["username"]
 
-
-
     progress_updater.activity.update_task(
-        description=all_paid_update.format(username=username),
-        visible=True
+        description=all_paid_update.format(username=username), visible=True
     )
     progress_updater.activity.update_overall(
         description=(
@@ -102,7 +98,7 @@ def process_user_info_printer(
         ),
         total=length,
         completed=count,
-        visible=True
+        visible=True,
     )
     progress_updater.activity.update_user(visible=False)
     logging.getLogger("shared").warning(
@@ -117,19 +113,29 @@ async def process_user(value, length):
     username = value["username"]
     posts = value["posts"]
     medias = value["medias"]
-    #lock activity from changing
-    with progress_utils.TaskLock(progress_updater.activity,["main","overall"]):
+    # lock activity from changing
+    with progress_utils.TaskLock(progress_updater.activity, ["main", "overall"]):
         if settings.get_settings().command == "metadata":
-            await manager.Manager.model_manager.add_models(username,activity="scrape_paid_metadata")
-            await metadata.metadata_process(username, model_id, medias)
-            manager.Manager.stats_manager.update_and_print_stats(username,"scrape_paid_metadata",medias)
-            manager.Manager.model_manager.mark_as_processed(username,"scrape_paid_metadata")
-        else:
-            await manager.Manager.model_manager.add_models(username,activity="scrape_paid_download")
-            await download.download_process(
-                username, model_id, medias, posts=posts
+            await manager.Manager.model_manager.add_models(
+                username, activity="scrape_paid_metadata"
             )
-            manager.Manager.stats_manager.update_and_print_stats(username,"scrape_paid_download",medias)
-            manager.Manager.model_manager.mark_as_processed(username,"scrape_paid_download")
-        progress_updater.activity.update_overall(total=length,advance=1)
+            await metadata.metadata_process(username, model_id, medias)
+            manager.Manager.stats_manager.update_and_print_stats(
+                username, "scrape_paid_metadata", medias
+            )
+            manager.Manager.model_manager.mark_as_processed(
+                username, "scrape_paid_metadata"
+            )
+        else:
+            await manager.Manager.model_manager.add_models(
+                username, activity="scrape_paid_download"
+            )
+            await download.download_process(username, model_id, medias, posts=posts)
+            manager.Manager.stats_manager.update_and_print_stats(
+                username, "scrape_paid_download", medias
+            )
+            manager.Manager.model_manager.mark_as_processed(
+                username, "scrape_paid_download"
+            )
+        progress_updater.activity.update_overall(total=length, advance=1)
         after_download_action_script(username, medias, posts)

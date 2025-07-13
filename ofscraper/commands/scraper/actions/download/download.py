@@ -39,9 +39,13 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
         modelusername=username,
         modelid=model_id,
     )
-    with progress_utils.TemporaryTaskState(progress_updater.activity,["main"]):
-        progress_updater.activity.update_task(description=download_str + path_str,visible=True)
-        logging.getLogger("shared").warning(download_activity_str.format(username=username))
+    with progress_utils.TemporaryTaskState(progress_updater.activity, ["main"]):
+        progress_updater.activity.update_task(
+            description=download_str + path_str, visible=True
+        )
+        logging.getLogger("shared").warning(
+            download_activity_str.format(username=username)
+        )
         values = await download_process(username, model_id, media, posts=posts)
         return values
 
@@ -52,22 +56,21 @@ async def download_process(username, model_id, medialist, posts):
     return values
 
 
-
 @run
 async def process_dicts(username, model_id, medialist, posts):
     # 2. Handle text download if enabled
-    if not isinstance (medialist,list):
-        medialist=[medialist]
-    if not isinstance (posts,list):
-        posts=[posts]
+    if not isinstance(medialist, list):
+        medialist = [medialist]
+    if not isinstance(posts, list):
+        posts = [posts]
     if settings.get_settings().text:
         await textDownloader(posts, username=username)
     if settings.get_settings().text_only:
-        return  (0, 0, 0, 0, 0)
+        return (0, 0, 0, 0, 0)
     medialist_empty = len(medialist) == 0
 
     if medialist_empty:
-        return  (0, 0, 0, 0, 0)
+        return (0, 0, 0, 0, 0)
 
     # Continue to download process
     logging.getLogger("shared").info("Downloading in single thread mode")

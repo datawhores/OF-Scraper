@@ -32,12 +32,15 @@ activity_counter_group = Group(
 
 # user
 userlist_group = Group(
-    activity_desc_counter_group, Blue_Panel(Group(userlist_overall_progress, userlist_job_progress))
+    activity_desc_counter_group,
+    Blue_Panel(Group(userlist_overall_progress, userlist_job_progress)),
 )
 
 
 # like
-like_progress_group = Group(activity_desc_counter_group, Blue_Panel(like_overall_progress))
+like_progress_group = Group(
+    activity_desc_counter_group, Blue_Panel(like_overall_progress)
+)
 # activity
 api_progress_group = Group(
     activity_desc_counter_group,
@@ -59,7 +62,12 @@ def get_download_group():
     global download_progress_group
     if not download_progress_group:
         download_progress_group = (
-            Group(activity_desc_counter_group, download_overall_panel, single_panel, fit=True)
+            Group(
+                activity_desc_counter_group,
+                download_overall_panel,
+                single_panel,
+                fit=True,
+            )
             if settings.get_settings().download_bars
             else Group(activity_desc_counter_group, download_overall_panel, fit=True)
         )

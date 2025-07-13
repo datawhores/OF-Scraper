@@ -13,6 +13,7 @@ log = logging.getLogger("shared")
 
 class MetadataStats:
     """Holds statistics for metadata update activities."""
+
     def __init__(self, name: str):
         self.name = name
         self.changed_video = 0
@@ -24,24 +25,47 @@ class MetadataStats:
     @property
     def total_changed(self):
         return self.changed_video + self.changed_audio + self.changed_photo
-    
+
     @property
     def has_changes(self):
-        return self.changed_video >0  or self.changed_audio >0 or self.changed_photo
+        return self.changed_video > 0 or self.changed_audio > 0 or self.changed_photo
 
     def __str__(self):
         # Conditionally format the 'changed' media types
-        videos_str = f"[bold green]{self.changed_video} videos[/bold green]" if self.changed_video > 0 else "0 videos"
-        audios_str = f"[bold green]{self.changed_audio} audios[/bold green]" if self.changed_audio > 0 else "0 audios"
-        photos_str = f"[bold green]{self.changed_photo} photos[/bold green]" if self.changed_photo > 0 else "0 photos"
-        
-        # Conditionally format unchanged and failed counts
-        unchanged_str = f"[bold yellow]{self.unchanged_count} items unchanged[/bold yellow]" if self.unchanged_count > 0 else "0 items unchanged"
-        failed_str = f"[bold red]{self.failed_count} failed[/bold red]" if self.failed_count > 0 else "0 failed"
+        videos_str = (
+            f"[bold green]{self.changed_video} videos[/bold green]"
+            if self.changed_video > 0
+            else "0 videos"
+        )
+        audios_str = (
+            f"[bold green]{self.changed_audio} audios[/bold green]"
+            if self.changed_audio > 0
+            else "0 audios"
+        )
+        photos_str = (
+            f"[bold green]{self.changed_photo} photos[/bold green]"
+            if self.changed_photo > 0
+            else "0 photos"
+        )
 
-        return (f"({self.total_changed} changed media item total "
-                f"[{videos_str}, {audios_str}, {photos_str}], "
-                f"{unchanged_str}, {failed_str})")
+        # Conditionally format unchanged and failed counts
+        unchanged_str = (
+            f"[bold yellow]{self.unchanged_count} items unchanged[/bold yellow]"
+            if self.unchanged_count > 0
+            else "0 items unchanged"
+        )
+        failed_str = (
+            f"[bold red]{self.failed_count} failed[/bold red]"
+            if self.failed_count > 0
+            else "0 failed"
+        )
+
+        return (
+            f"({self.total_changed} changed media item total "
+            f"[{videos_str}, {audios_str}, {photos_str}], "
+            f"{unchanged_str}, {failed_str})"
+        )
+
 
 class TextStats:
     """Holds statistics for text download activities."""
@@ -230,7 +254,10 @@ class StatsManager:
             self._update_like_stats_helper(stat_obj, data_list)
         elif activity_enum == EActivity.ScrapeActivity.TEXT:
             self._update_text_stats_helper(stat_obj, data_list)
-        elif activity_enum in [EActivity.ScrapeActivity.METADATA,EActivity.PaidActivity.SCRAPE_PAID_METADATA]:
+        elif activity_enum in [
+            EActivity.ScrapeActivity.METADATA,
+            EActivity.PaidActivity.SCRAPE_PAID_METADATA,
+        ]:
             self._update_metadata_stats_helper(stat_obj, data_list)
 
     def update_and_print_stats(
@@ -326,6 +353,7 @@ class StatsManager:
                 raise KeyError(
                     f"No statistics found for user '{username}' and activity '{activity}'."
                 ) from err
+
     def clear_scraper_activity_stats(self):
         """
         Removes all stat entries for any activity that is a ScrapeActivity
@@ -342,8 +370,9 @@ class StatsManager:
             ]
             # 2. Safely delete those keys
             for key in keys_to_delete:
-                del user_activities[key]     
+                del user_activities[key]
         log.info("All Scrape Activity statistics have been cleared.")
+
     def clear_paid_stats(self):
         """
         Removes all stat entries for any activity that is a ScrapeActivity
@@ -358,14 +387,13 @@ class StatsManager:
                 for activity_enum in user_activities
                 if isinstance(activity_enum, EActivity.PaidActivity)
             ]
-            
+
             # 2. Safely delete those keys
             for key in keys_to_delete:
                 del user_activities[key]
-                
+
         log.info("All Scrape Activity statistics have been cleared.")
-    
-    
+
     def clear_activity_stats(self, activity: Union[str, EActivity]):
         """
         Removes all stat entries for a specific activity across all users.
@@ -375,7 +403,7 @@ class StatsManager:
         activity_enum = (
             string_to_activity(activity) if isinstance(activity, str) else activity
         )
-        
+
         # Iterate through all users in the stats dictionary
         for username in list(self._stats.keys()):
             # Use .pop() to safely remove the key if it exists
@@ -387,7 +415,7 @@ class StatsManager:
         """
         self._stats = defaultdict(dict)
         log.debug("All statistics have been cleared.")
-    
+
     def _update_download_stats_helper(
         self, stat_obj: DownloadStats, media_list: list[Media]
     ):
@@ -427,14 +455,17 @@ class StatsManager:
                 stat_obj.failed_count += 1
             else:
                 stat_obj.text_count += 1
-    def _update_metadata_stats_helper(self, stat_obj: MetadataStats, media_list: list[Media]):
+
+    def _update_metadata_stats_helper(
+        self, stat_obj: MetadataStats, media_list: list[Media]
+    ):
         """Private helper that contains the loop logic for metadata stats."""
         for media in media_list:
             if not media.metadata_attempted:
                 stat_obj.skipped_count += 1
             elif media.metadata_succeeded is False:
                 stat_obj.failed_count += 1
-            elif media.metadata_succeeded is True: # Changed
+            elif media.metadata_succeeded is True:  # Changed
                 mtype = media.mediatype.lower()
                 if mtype == "videos":
                     stat_obj.changed_video += 1
@@ -442,7 +473,7 @@ class StatsManager:
                     stat_obj.changed_audio += 1
                 elif mtype == "images":
                     stat_obj.changed_photo += 1
-            elif media.metadata_succeeded is None: # Unchanged
+            elif media.metadata_succeeded is None:  # Unchanged
                 stat_obj.unchanged_count += 1
 
     def _get_user_summary_string(self, username: str) -> str:
@@ -472,13 +503,27 @@ class StatsManager:
             activity_name = activity_enum.name.title()
 
             # Route to the correct Stat class based on the enum member
-            if activity_enum in [EActivity.ScrapeActivity.METADATA, EActivity.PaidActivity.SCRAPE_PAID_METADATA]:
-                self._stats[username][activity_enum] = MetadataStats(name=f"Action {activity_name}")
+            if activity_enum in [
+                EActivity.ScrapeActivity.METADATA,
+                EActivity.PaidActivity.SCRAPE_PAID_METADATA,
+            ]:
+                self._stats[username][activity_enum] = MetadataStats(
+                    name=f"Action {activity_name}"
+                )
             elif activity_enum == EActivity.ScrapeActivity.TEXT:
-                self._stats[username][activity_enum] = TextStats(name="Action Text Download")
-            elif activity_enum in [EActivity.ScrapeActivity.LIKE, EActivity.ScrapeActivity.UNLIKE]:
-                self._stats[username][activity_enum] = LikeStats(name=f"Action {activity_name}d")
+                self._stats[username][activity_enum] = TextStats(
+                    name="Action Text Download"
+                )
+            elif activity_enum in [
+                EActivity.ScrapeActivity.LIKE,
+                EActivity.ScrapeActivity.UNLIKE,
+            ]:
+                self._stats[username][activity_enum] = LikeStats(
+                    name=f"Action {activity_name}d"
+                )
             else:  # Default for DOWNLOAD and SCRAPE_PAID_DOWNLOAD
-                self._stats[username][activity_enum] = DownloadStats(name=f"Action {activity_name}")
+                self._stats[username][activity_enum] = DownloadStats(
+                    name=f"Action {activity_name}"
+                )
 
         return self._stats[username][activity_enum]

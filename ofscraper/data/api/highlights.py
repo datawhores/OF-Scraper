@@ -56,7 +56,7 @@ async def scrape_stories(c, user_id) -> list:
 
     url = of_env.getattr("highlightsWithAStoryEP").format(user_id)
     try:
-        task =progress_utils.api.add_job_task(
+        task = progress_utils.api.add_job_task(
             f"[Stories] user id -> {user_id}",
             visible=True,
         )
@@ -90,7 +90,7 @@ async def scrape_stories(c, user_id) -> list:
 async def process_stories_tasks(tasks):
     responseArray = []
     page_count = 0
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
 
@@ -165,7 +165,7 @@ async def process_task_get_highlight_list(tasks):
 
     page_count = 0
 
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -207,7 +207,7 @@ async def process_task_get_highlight_list(tasks):
 async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Highlight Content via list pages progress: {page_count}", visible=True
     )
     seen = set()

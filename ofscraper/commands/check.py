@@ -74,12 +74,12 @@ def process_download_queue():
             try:
                 key, row_data = app.row_queue.get()
                 media_item, post_item, username, model_id = _get_data_from_row(row_data)
-                
+
                 # Append all necessary data for later processing
                 user_cart[model_id]["posts"].append(post_item)
                 user_cart[model_id]["media"].append(media_item)
                 user_cart[model_id]["rows"].append((key, row_data))
-                user_cart[model_id]["username"] = username # Store username once
+                user_cart[model_id]["username"] = username  # Store username once
 
             except Exception as e:
                 log.error(f"Error processing row from queue: {e}")
@@ -91,15 +91,23 @@ def process_download_queue():
             log.info(f"Processing download batch for user: {username}")
             try:
                 # Pass the user's entire batch to the processing function
-                _process_user_batch(username, model_id, data["media"], data["posts"], data["rows"])
-                
+                _process_user_batch(
+                    username, model_id, data["media"], data["posts"], data["rows"]
+                )
+
                 # Run after-actions for this user
                 after_download_action_script(username, data["media"], data["posts"])
-                manager.Manager.model_manager.mark_as_processed(username, activity="download")
-                manager.Manager.stats_manager.update_and_print_stats(username, "download", data["media"])
+                manager.Manager.model_manager.mark_as_processed(
+                    username, activity="download"
+                )
+                manager.Manager.stats_manager.update_and_print_stats(
+                    username, "download", data["media"]
+                )
 
             except Exception as e:
-                log.error(f"An error occurred while processing the batch for {username}.")
+                log.error(
+                    f"An error occurred while processing the batch for {username}."
+                )
                 log.traceback_(e)
 
         # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
@@ -136,7 +144,9 @@ def _get_data_from_row(row: dict):
     return fresh_media, fresh_post, username, model_obj.id
 
 
-def _process_user_batch(username: str, model_id: int, media_list: list, post_list: list, row_list: list):
+def _process_user_batch(
+    username: str, model_id: int, media_list: list, post_list: list, row_list: list
+):
     """
     Processes all media items for a single user's batch.
     """
@@ -152,41 +162,49 @@ def _process_user_batch(username: str, model_id: int, media_list: list, post_lis
     operations.table_init_create(model_id=model_id, username=username)
 
     for i, media in enumerate(media_list):
-        key = row_list[i][0] # Get the original key for UI updates
+        key = row_list[i][0]  # Get the original key for UI updates
         post = post_list[i]
-        
+
         log.info(f"Attempting to download: {media.filename} for {username}")
-        
+
         # Retry logic for each item
-        for attempt in range(2): # 0 for first try, 1 for retry
+        for attempt in range(2):  # 0 for first try, 1 for retry
             try:
                 values = process_dicts(username, model_id, media, post)
                 if values is None or values[-1] == 1:
                     raise Exception("Download failed based on process_dicts result")
-                
+
                 # Success cases
                 if values[-2] == 1:
                     log.info(f"Download skipped: {media.filename}")
-                    app.app.table.update_cell_at_key(key, "download_cart", Text("[skipped]", style="bold bright_yellow"))
+                    app.app.table.update_cell_at_key(
+                        key,
+                        "download_cart",
+                        Text("[skipped]", style="bold bright_yellow"),
+                    )
                 else:
                     log.info(f"Download finished: {media.filename}")
-                    app.app.table.update_cell_at_key(key, "download_cart", Text("[downloaded]", style="bold green"))
-                
-                break # Exit retry loop on success
+                    app.app.table.update_cell_at_key(
+                        key, "download_cart", Text("[downloaded]", style="bold green")
+                    )
+
+                break  # Exit retry loop on success
 
             except Exception as e:
                 log.warning(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
-                if attempt == 0: # If first attempt failed
+                if attempt == 0:  # If first attempt failed
                     log.info("Refreshing data and retrying...")
                     data_refill(model_id)
-                    time.sleep(1) # Small delay before retry
-                else: # If second attempt also failed
+                    time.sleep(1)  # Small delay before retry
+                else:  # If second attempt also failed
                     log.error(f"Download failed permanently for {media.filename}.")
-                    app.app.table.update_cell_at_key(key, "download_cart", Text("[failed]", style="bold red"))
+                    app.app.table.update_cell_at_key(
+                        key, "download_cart", Text("[failed]", style="bold red")
+                    )
+
 
 # Initialize counter on the function object
 _process_user_batch.counter = 0
-
 
 
 @run
@@ -253,7 +271,7 @@ async def post_check_runner():
                 description=check_str.format(
                     username=user_name, activity="Timeline posts"
                 ),
-                visible=True
+                visible=True,
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
@@ -456,7 +474,7 @@ async def message_checker_runner():
         with progress_utils.setup_live("api"):
             progress_updater.activity.update_task(
                 description=check_str.format(username=user_name, activity="Messages"),
-                visible=True
+                visible=True,
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
@@ -532,7 +550,7 @@ async def purchase_checker_runner():
                 description=check_str.format(
                     username=user_name, activity="Purchased posts"
                 ),
-                visible=True
+                visible=True,
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(

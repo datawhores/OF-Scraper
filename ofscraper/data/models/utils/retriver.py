@@ -16,10 +16,10 @@ async def get_models(all_main_models: bool = False) -> list:
     Get user's subscriptions. Can be forced to fetch all models.
     """
     activity.update_task(description="Getting subscriptions")
-    #if the anon flag is on force individual
+    # if the anon flag is on force individual
     if settings.get_settings().anon:
         return await get_via_individual()
-    #actions for if anon flag is falses
+    # actions for if anon flag is falses
     count = get_sub_count()
     if all_main_models:
         return await get_via_main_list(count)
@@ -82,12 +82,12 @@ async def get_via_individual():
     return models_objects
 
 
-def get_selected_model(parsed_subscriptions: list) -> tuple:
+def get_selected_model(parsed_subscriptions: list,existing_models:list) -> tuple:
     """
     Prints user's subscriptions to console and accepts input from user corresponding
     to the model(s) whose content they would like to scrape.
     """
-    return prompts.model_selector(parsed_subscriptions)
+    return prompts.model_selector(parsed_subscriptions,existing_models)
 
 
 def get_sub_count():

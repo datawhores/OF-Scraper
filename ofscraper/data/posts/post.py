@@ -273,17 +273,19 @@ async def process_all_paid():
     with progress_utils.setup_live("api"):
         paid_content = await paid.get_all_paid_posts()
     output = {}
-    count=0
-    with  progress_utils.setup_live("main_activity", revert=True):
+    count = 0
+    with progress_utils.setup_live("main_activity", revert=True):
         progress_updater.activity.update_task(
-            description="Processsing Paid content data",
-            visible=True
+            description="Processsing Paid content data", visible=True
         )
         for count, (model_id, value) in enumerate(paid_content.items()):
             progress_updater.activity.update_overall(
-                total=None, description=all_paid_model_id_str.format(model_id=model_id),completed=count,visible=True
+                total=None,
+                description=all_paid_model_id_str.format(model_id=model_id),
+                completed=count,
+                visible=True,
             )
-            if count==2:
+            if count == 2:
                 break
             placeholder = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
             username = profile.scrape_profile(model_id).get("username")
@@ -301,7 +303,9 @@ async def process_all_paid():
                 else:
                     username = f"{placeholder}_{model_id}"
             progress_updater.activity.update_overall(
-                total=None, description=all_paid_str.format(username=username),completed=count
+                total=None,
+                description=all_paid_str.format(username=username),
+                completed=count,
             )
             log.info(f"Processing {username}_{model_id}")
             await operations.table_init_create(model_id=model_id, username=username)

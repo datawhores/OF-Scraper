@@ -62,7 +62,7 @@ class PostCollection:
         filtered_media = helpers.dupefiltermedia(media_to_filter)
         log.info(f"Returning {len(filtered_media)} items after specific filtering.")
         return filtered_media
-    
+
     def get_media_by_types(self, mediatypes: list[str] or str) -> list:
         """
         Filters all media in the collection by one or more media types.
@@ -85,16 +85,13 @@ class PostCollection:
         # Return a new list containing only media of the matching types
         return [media for media in all_media if media.mediatype.lower() in target_types]
 
-
     def add_post(self, item, actions: list[str] = None, overwrite=False):
         """
         Adds a single item (Post, Media, or dict) and returns the resulting Post object.
         """
-        if isinstance(item,Iterable):
+        if isinstance(item, Iterable):
             raise Exception("item must not be a iteratable")
-        return self._process_and_add_post(
-            item, actions or [], overwrite=overwrite
-        )
+        return self._process_and_add_post(item, actions or [], overwrite=overwrite)
 
     def add_posts(self, items: list, actions: list[str] = None, overwrite=False):
         """
@@ -107,13 +104,12 @@ class PostCollection:
         for item in items:
             # Call the single-item processor
             post = self._process_and_add_post(item, actions, overwrite)
-            if post: # You can track how many were successfully added
+            if post:  # You can track how many were successfully added
                 new_posts_added += 1
 
         if new_posts_added > 0:
             log.info(f"Processed {new_posts_added} posts for the collection.")
 
-    
     def get_media_to_download(self) -> list:
         """
         Gets the final, filtered list of media for DOWNLOAD mode.
@@ -150,7 +146,6 @@ class PostCollection:
         log.info(f"Returning {len(all_media)} final media items for metadata.")
         return all_media
 
-
     def get_media_for_processing(self):
         if settings.get_settings().command == "metadata":
             return self.get_media_for_metadata()
@@ -170,26 +165,29 @@ class PostCollection:
             like_action = False
         else:
             # If neither action is specified, there's nothing to do.
-            log.debug("Skipping like filtering because 'like' or 'unlike' not in actions.")
+            log.debug(
+                "Skipping like filtering because 'like' or 'unlike' not in actions."
+            )
             return []
 
         like_candidates = [post for post in self.posts if post.is_like_candidate]
         log.info(f"Found {len(like_candidates)} posts in areas eligible for liking.")
-        
+
         actionable_posts = []
         for post in like_candidates:
             post.prepare_post_for_like(like_action=like_action)
             if post.is_actionable_like:
                 actionable_posts.append(post)
         log.debug(f"{len(actionable_posts)} posts are actionable for liking.")
-        
+
         final_posts_to_like = helpers.sort_by_date(actionable_posts)
         final_posts_to_like = helpers.dupefilterPost(final_posts_to_like)
         final_posts_to_like = helpers.temp_post_filter(final_posts_to_like)
         final_posts_to_like = helpers.final_post_sort(final_posts_to_like)
-        
+
         log.info(f"Returning {len(final_posts_to_like)} final posts to be liked.")
         return final_posts_to_like
+
     def get_posts_for_text_download(self) -> list[Post]:
         """
         Filters the list of text candidates to get the final list of posts
@@ -216,26 +214,28 @@ class PostCollection:
             f"Found {len(posts_for_text)} posts for text download after final filtering."
         )
         return posts_for_text
-    def update_info(self,username:str=None,model_id:str=None):
-        if username:
-            self.username=username
-        if model_id:
-            self.model_id=model_id
 
-    def find_all_media_with_id(self,id):
-        found= list(filter(lambda x:x.id==id,self.all_media))
+    def update_info(self, username: str = None, model_id: str = None):
+        if username:
+            self.username = username
+        if model_id:
+            self.model_id = model_id
+
+    def find_all_media_with_id(self, id):
+        found = list(filter(lambda x: x.id == id, self.all_media))
         return found
 
-    def times_media_id_found(self,id):
-        return len(list(filter(lambda x:x.id==id,self.all_media)))
-   
-    def find_media_item(self,id):
-        found= self.find_all_media_with_id(id)
-        if len(found)>0:
+    def times_media_id_found(self, id):
+        return len(list(filter(lambda x: x.id == id, self.all_media)))
+
+    def find_media_item(self, id):
+        found = self.find_all_media_with_id(id)
+        if len(found) > 0:
             return found[0]
-    def posts_with_media_id(self,id):
-        found=self.find_all_media_with_id(id)
-        return list(set(map(lambda x:x.post_id,found)))
+
+    def posts_with_media_id(self, id):
+        found = self.find_all_media_with_id(id)
+        return list(set(map(lambda x: x.post_id, found)))
 
     def _get_prepared_media_from_download_candidates(self) -> list:
         """
@@ -253,7 +253,7 @@ class PostCollection:
         ]
         log.debug(f"Aggregated {len(all_media)} media items before final filtering.")
         return all_media
-    
+
     def _get_prepared_media_for_metadata(self) -> list:
         """
         Private helper for getting METADATA candidates.
@@ -287,16 +287,24 @@ class PostCollection:
             log.warning(f"Skipping item of invalid type: {type(item)}")
             return None
 
-        post_id = post_to_process.id if isinstance(post_to_process, Post) else post_to_process.get("id")
+        post_id = (
+            post_to_process.id
+            if isinstance(post_to_process, Post)
+            else post_to_process.get("id")
+        )
 
         if not post_id:
-            log.warning(f"Skipping item because it's missing an 'id': {post_to_process}")
+            log.warning(
+                f"Skipping item because it's missing an 'id': {post_to_process}"
+            )
             return None
 
         # Perform the core logic of adding/updating the post
         if post_id not in self._posts_map or overwrite:
-            post_object = post_to_process if isinstance(post_to_process, Post) else Post(
-                post_to_process, self.model_id, self.username, mode=self.mode
+            post_object = (
+                post_to_process
+                if isinstance(post_to_process, Post)
+                else Post(post_to_process, self.model_id, self.username, mode=self.mode)
             )
             self._posts_map[post_id] = post_object
 

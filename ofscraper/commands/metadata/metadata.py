@@ -1,4 +1,3 @@
-
 import logging
 import copy
 import arrow
@@ -55,29 +54,30 @@ class MetadataCommandManager(CommandManager):
     async def process_users_metadata_normal(self, userdata, session):
         with progress_utils.setup_live("main_activity"):
             """Processes metadata in normal mode."""
-            progress_updater.activity.update_user(description="Users with Updated Metadata",total=len(userdata))
+            progress_updater.activity.update_user(
+                description="Users with Updated Metadata", total=len(userdata)
+            )
             await self._process_users_normal(
                 userdata, session, self._execute_metadata_action_on_user
             )
         progress_updater.activity.update_task(description="Finished Metadata Mode")
 
-
     @run_async
     async def metadata_user_first(self, userdata, session):
         """Processes metadata in user-first mode."""
         # Phase 1: Gather data for all users firstprocess_users_normal
-        progress_updater.activity.update_overall(visible=True,total=2)
+        progress_updater.activity.update_overall(visible=True, total=2)
         data = await self._gather_user_first_data(
             userdata, session, self._get_metadata_for_user
         )
-        progress_updater.activity.update_user(description="Users with Updated Metadata",total=len(data.keys()))
+        progress_updater.activity.update_user(
+            description="Users with Updated Metadata", total=len(data.keys())
+        )
 
         await self._execute_user_first_actions(
             data, self._execute_metadata_action_on_user
         )
         progress_updater.activity.update_task(description="Finished Metadata Mode")
-
-
 
     @run_async
     async def metadata_paid_all(self):
@@ -94,20 +94,22 @@ class MetadataCommandManager(CommandManager):
         settings.update_args(args)
 
     async def _execute_metadata_action_on_user(
-        self, ele=None, postcollection:PostCollection=None,
+        self,
+        ele=None,
+        postcollection: PostCollection = None,
     ):
         """
         The specific action for metadata processing for a single user.
         This contains the logic you wanted to fill in.
         """
-       
+
         username = ele.name
         model_id = ele.id
         log.warning(
             f"Performing metadata update for [bold]{username}[/bold]\n"
             f"Subscription Active: {ele.active}"
         )
-  
+
         # Ensure the user's database table exists
         await operations.table_init_create(model_id=model_id, username=username)
 
@@ -115,8 +117,7 @@ class MetadataCommandManager(CommandManager):
         progress_updater.activity.update_task(
             description=metadata_activity_str.format(username=username)
         )
-        media=postcollection.get_media_for_metadata()
-
+        media = postcollection.get_media_for_metadata()
 
         # Run the main metadata processing function
         await metadata_process(username, model_id, media)
@@ -196,15 +197,11 @@ class MetadataCommandManager(CommandManager):
         return settings.get_settings().metadata
 
 
-
-
 def metadata():
     metaCommandManager = MetadataCommandManager()
     check_auth()
-    with  progress_utils.stop_live_screen(clear="all"):
-        with progress_utils.setup_live("activity_desc",
-            revert=True
-        ):
+    with progress_utils.stop_live_screen(clear="all"):
+        with progress_utils.setup_live("activity_desc", revert=True):
             if settings.get_settings().scrape_paid:
                 metaCommandManager.metadata_paid_all()
             if not metaCommandManager.run_metadata:
@@ -264,6 +261,7 @@ async def process_dicts(username, model_id, medialist):
 
         setDirectoriesDate()
         progress_updater.metadata.remove_overall_task(task1)
+
 
 @run_async
 async def metadata_process(username, model_id, medialist):

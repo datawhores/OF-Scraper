@@ -21,7 +21,7 @@ class EActivity:
         UNLIKE = auto()
         DOWNLOAD = auto()
         TEXT = auto()
-        METADATA=auto()
+        METADATA = auto()
 
 
 def _get_all_enum_members(namespace_class):
@@ -254,8 +254,8 @@ ACTIVITY_MAP = {
     "like": EActivity.ScrapeActivity.LIKE,
     "unlike": EActivity.ScrapeActivity.UNLIKE,
     "download": EActivity.ScrapeActivity.DOWNLOAD,
-    "text":EActivity.ScrapeActivity.TEXT,
-    "metadata":EActivity.ScrapeActivity.METADATA,
+    "text": EActivity.ScrapeActivity.TEXT,
+    "metadata": EActivity.ScrapeActivity.METADATA,
     "scrape_paid_metadata": EActivity.PaidActivity.SCRAPE_PAID_METADATA,
 }
 

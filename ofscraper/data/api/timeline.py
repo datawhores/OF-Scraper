@@ -63,7 +63,7 @@ async def process_tasks_batch(tasks):
     responseArray = []
     page_count = 0
 
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -344,7 +344,6 @@ async def scrape_timeline_posts(
         raise E
     finally:
         progress_utils.api.remove_job_task(task)
-        
 
 
 def time_log(username, after):

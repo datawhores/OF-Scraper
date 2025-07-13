@@ -27,6 +27,7 @@ def _hide_tasks_in_progress(progress_instance):
     except Exception:
         pass  # Failsafe for any potential race conditions or errors
 
+
 def clear_api_tasks():
     _hide_tasks_in_progress(api_job_progress)
     _hide_tasks_in_progress(api_overall_progress)
@@ -64,6 +65,7 @@ def clear_all_tasks():
     clear_like_tasks()
     clear_userlist_tasks()
 
+
 TASK_CLEAR_MAP = {
     "api": clear_api_tasks,
     "download": clear_download_tasks,
@@ -71,7 +73,7 @@ TASK_CLEAR_MAP = {
     "like": clear_like_tasks,
     "userlist": clear_userlist_tasks,
     "all": clear_all_tasks,
-    "activity":clear_activity_tasks
+    "activity": clear_activity_tasks,
 }
 
 

@@ -12,6 +12,7 @@ r"""
 """
 
 import inspect
+import re
 from typing import Union
 
 import arrow
@@ -32,20 +33,27 @@ console = Console()
 models = None
 
 
-def model_selector(models_: Union[dict | list]) -> bool:
-    global models
-    if isinstance(models_, dict):
-        models_ = list(models.values())
-    models = models_
+def model_selector(models: Union[dict | list],existing_models) -> bool:
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
             enumerate(models),
         )
     )
+    selectedSet = set(
+                map(
+                    lambda x: x.name,existing_models
+                )
+    )
+    for model in choices:
+        name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+        if name in selectedSet:
+            model.enabled = True
+
 
     p = promptClasses.getFuzzySelection(
         choices=choices,
+
         transformer=lambda result: ",".join(map(lambda x: x.split(" ")[1], result)),
         multiselect=True,
         more_instruction=prompt_strings.MODEL_SELECT,

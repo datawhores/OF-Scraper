@@ -38,7 +38,7 @@ def start_other_managers():
 class mainManager:
     def __init__(self) -> None:
         self.model_manager = None
-        self.stats_manager= None
+        self.stats_manager = None
 
     def start(self):
         self.initLogs()
@@ -51,8 +51,7 @@ class mainManager:
         if self.model_manager is None:
             self.model_manager = ModelManager()
         if self.stats_manager is None:
-            self.stats_manager=StatsManager()
-
+            self.stats_manager = StatsManager()
 
     def pick(self):
         if settings.get_settings().command in [

@@ -51,7 +51,7 @@ class scraperManager(CommandManager):
     def runner(self, menu=False):
         check_auth()
         with scrape_context_manager():
-            with  progress_utils.stop_live_screen(clear="all"):
+            with progress_utils.stop_live_screen(clear="all"):
                 with progress_utils.setup_live("main_activity"):
                     if settings.get_settings().scrape_paid:
                         scrape_paid_all()
@@ -61,12 +61,10 @@ class scraperManager(CommandManager):
 
                     elif settings.get_settings().users_first:
                         userdata, session = prepare(menu=menu)
-                        self._process_users_actions_user_first(
-                            userdata, session
-                        )
+                        self._process_users_actions_user_first(userdata, session)
                     else:
 
-                        userdata, session = prepare()
+                        userdata, session = prepare(menu=menu)
                         self._process_users_actions_normal(userdata, session)
 
                 final_action()
@@ -74,12 +72,14 @@ class scraperManager(CommandManager):
     @exit.exit_wrapper
     @run_async
     async def _process_users_actions_user_first(self, userdata, session):
-        data = await self._gather_user_first_data( userdata, session,self._get_users_data_user_first)
-        flushlogs()
-        return await self._execute_user_first_actions(
-            data,self._execute_user_action
+        data = await self._gather_user_first_data(
+            userdata, session, self._get_users_data_user_first
         )
-    progress_updater.activity.update_task(description="Finished Action Mode")
+        flushlogs()
+        await self._execute_user_first_actions(data, self._execute_user_action)
+        progress_updater.activity.update_task(description="Finished Action Mode")
+
+
 
     async def _get_users_data_user_first(self, session, ele):
         return await self._process_ele_user_first_data_retriver(ele, session)
@@ -99,21 +99,19 @@ class scraperManager(CommandManager):
             }
         }
 
-    async def _execute_user_action(
-        self, ele,postcollection:PostCollection
-    ):
-        with progress_utils.setup_live("main_activity",clear=False):
+    async def _execute_user_action(self, ele, postcollection: PostCollection):
+        with progress_utils.setup_live("main_activity", clear=False):
             progress_updater.activity.update_task(
-            description=f"Performing Actions on {ele.name}",
-            total=manager.Manager.model_manager.get_num_scrape_selected_models(),
-            visible=True
+                description=f"Performing Actions on {ele.name}",
+                total=manager.Manager.model_manager.get_num_scrape_selected_models(),
+                visible=True,
             )
             actions = settings.get_settings().actions
             username = ele.name
             model_id = ele.id
-            media=postcollection.get_media_for_processing()
-            like_posts=postcollection.get_posts_to_like
-            posts=postcollection.get_posts_for_text_download()
+            media = postcollection.get_media_for_processing()
+            like_posts = postcollection.get_posts_to_like
+            posts = postcollection.get_posts_for_text_download()
             for action in actions:
                 try:
                     if action == "download":
@@ -123,7 +121,9 @@ class scraperManager(CommandManager):
                             model_id=model_id,
                             username=username,
                         )
-                        manager.Manager.stats_manager.update_and_print_stats(username,"download",media)
+                        manager.Manager.stats_manager.update_and_print_stats(
+                            username, "download", media
+                        )
                     elif action == "like":
                         like_action.process_like(
                             ele=ele,
@@ -132,16 +132,20 @@ class scraperManager(CommandManager):
                             model_id=model_id,
                             username=username,
                         )
-                        manager.Manager.stats_manager.update_and_print_stats(username,"like",like_posts)
+                        manager.Manager.stats_manager.update_and_print_stats(
+                            username, "like", like_posts
+                        )
                     elif action == "unlike":
-                            like_action.process_unlike(
-                                ele=ele,
-                                posts=like_posts,
-                                media=media,
-                                model_id=model_id,
-                                username=username,
-                            )
-                            manager.Manager.stats_manager.update_and_print_stats(username,"unlike",like_posts)
+                        like_action.process_unlike(
+                            ele=ele,
+                            posts=like_posts,
+                            media=media,
+                            model_id=model_id,
+                            username=username,
+                        )
+                        manager.Manager.stats_manager.update_and_print_stats(
+                            username, "unlike", like_posts
+                        )
                     manager.Manager.model_manager.mark_as_processed(
                         username, activity=action
                     )
@@ -157,13 +161,12 @@ class scraperManager(CommandManager):
     async def _process_users_actions_normal(self, userdata=None, session=None):
         flushlogs()
         progress_updater.activity.update_user(
-                description="Users with Actions Completed",
-                total=manager.Manager.model_manager.get_num_scrape_selected_models(),
-                visible=True,
-                completed=0
+            description="Users with Actions Completed",
+            total=manager.Manager.model_manager.get_num_scrape_selected_models(),
+            visible=True,
+            completed=0,
         )
         await self._process_users_normal(userdata, session, self._execute_user_action)
-
 
 
 def main():

@@ -41,7 +41,7 @@ async def get_paid_posts(username, model_id, c=None):
 
 async def process_tasks(tasks):
     page_count = 0
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
     responseArray = []
@@ -182,7 +182,7 @@ async def process_tasks_all_paid(tasks):
     page_count = 0
     allpaid = cache.get("purchased_all", default=[])
     log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
-    page_task =progress_utils.api.add_overall_task(
+    page_task = progress_utils.api.add_overall_task(
         f"[Scrape Paid] Pages Progress: {page_count}", visible=True
     )
     while tasks:
