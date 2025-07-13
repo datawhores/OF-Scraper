@@ -117,7 +117,6 @@ if [ "$GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPU
     echo "--- GitHub Actions environment detected. Setting outputs and env vars. ---"
 
     # For subsequent steps in the same job (e.g., for build arguments)
-    echo "SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
     echo "HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
 
     # For other jobs that depend on this one
@@ -128,8 +127,6 @@ if [ "$GITHUB_ACTIONS" = "true" ] && [ -n "$GITHUB_ENV" ] && [ -n "$GITHUB_OUTPU
     echo "is_dev_release=${IS_DEV_RELEASE}" >> "$GITHUB_OUTPUT"
     echo "commit_timestamp=${CURRENT_COMMIT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
 else
-    # Local Use: Export variables. This only works if the script is run with `source`.
-    export SETUPTOOLS_SCM_PRETEND_VERSION=${PACKAGE_VERSION}
     export HATCH_VCS_PRETEND_VERSION=${PACKAGE_VERSION}
     echo "✅ Local environment variables exported. To use them, run this script with 'source'."
 fi
