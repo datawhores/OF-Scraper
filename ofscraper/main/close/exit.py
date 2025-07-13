@@ -15,7 +15,6 @@ def shutdown():
 
 def forcedShutDown():
     time.sleep(3)
-    close_log.forcedClose()
     manager.shutdown()
     closeCache()
 
