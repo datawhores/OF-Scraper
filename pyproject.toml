@@ -53,7 +53,6 @@ dependencies = [
   "dotenv>=0.9.9",
 ]
 
-
 [project.optional-dependencies]
 dev = ["autopep8~=2.0.2", "pyinstaller"]
 test = [
@@ -67,46 +66,26 @@ test = [
 docs = ["sphinx-argparse~=0.5.2"]
 ffmpeg = ["pyffmpeg==2.4.2.20"]
 
-
 [project.scripts]
 ofscraper = "ofscraper.__main__:main"
-
 
 [project.urls]
 "Homepage" = "https://github.com/datawhores/OF-Scraper"
 
-
 # --- Build System & Tool Configuration ---
 
 [build-system]
-# Use the standard, built-in hatch-vcs for versioning
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ofscraper"]
 
-# Part 2: This tells Hatch to also include everything else.
-# The "/" glob means "the project root". This ensures all your
-# other files (README.md, config files, etc.) are included.
-include = ["ofscraper"]
-
 [tool.hatch.version]
 source = "vcs"
-
-# Properly escaped regex pattern
-tag-pattern = "^(?:v)?(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:\\.[a-zA-Z0-9]+)?)$"
-
-# Add fallback version
-fallback_version = "0.0.0"
-
-# Simplified patterns
-dev-pattern = "dev{distance}"
-local-pattern = "+{node}"
-
-# setuptools-scm configuration
-[tool.setuptools_scm]
-git_describe_command = ["git", "describe", "--dirty", "--tags"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
