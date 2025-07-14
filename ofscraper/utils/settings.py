@@ -167,7 +167,7 @@ def merged_settings():
         read_args.retriveArgs().after_download_script
         or config_data.get_after_download_script()
     )
-
+    merged.rotate_logs=config_data.get_rotate_logs()
     merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()
     merged.cached_disabled = get_cached_disabled()

@@ -243,9 +243,9 @@ def get_default_blacklist(config=None):
 def get_logs_expire(config=None):
     if not config:
         return None
-    return config.get("logs_expire_time") or config.get("advanced_options", {}).get(
+    return int(config.get("logs_expire_time") or config.get("advanced_options", {}).get(
         "logs_expire_time"
-    )
+    ) or 0)
 
 
 @wrapper.config_reader
