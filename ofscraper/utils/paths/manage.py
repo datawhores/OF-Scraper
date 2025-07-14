@@ -56,7 +56,7 @@ def delete_old_logs():
     now = arrow.now().float_timestamp
     for log_file in log_path.rglob("*.log"):  # rglob for recursive globbing
         try:
-            if (now - log_file.stat().st_mtime) > settings.get_settings().logs_expire_time*86400000:
+            if (now - log_file.stat().st_mtime) > settings.get_settings().logs_expire_time*3600:
                 log_file.unlink()  # pathlib's way to delete a file
                 console.print(f"Deleted old log file: {log_file}")
         except OSError as e:
