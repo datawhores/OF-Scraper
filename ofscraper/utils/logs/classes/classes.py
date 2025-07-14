@@ -76,13 +76,13 @@ class DiscordFormatter(SensitiveFormatter):
         t = re.sub(r"\[code[^\]]*](.*?)\[/code[^\]]*]", r"`\1`", t, flags=re.IGNORECASE)
 
         # --- Cleanup and Final Touches ---
-        t = re.sub(r"\[.*?\]", "", t)  # Strip any remaining unsupported Rich tags
         t = Text.from_markup(t).plain  # Handle any lingering markup entities
         t = re.sub(r" +", " ", t)  # Consolidate multiple spaces
         t = re.sub(r"\*\*+", "**", t)  # Fix cases like "****"
         t = re.sub(r"__+", "__", t)
         t = re.sub(r"~~+", "~~", t)
-        t = t.replace("\\", "")  # Remove escape characters
+        # Remove escape characters
+        t=re.sub(r"\\([\[\]])", r"\1", t)
         return t.strip()
 
 
