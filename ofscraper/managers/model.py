@@ -482,7 +482,7 @@ class ModelManager:
         is_daemon = settings.get_settings().daemon
 
         # Guard Clause 1: Daemon mode with a specific list of users.
-        if is_daemon and usernames and "ALL" in usernames:
+        if is_daemon and usernames and "ALL" not in usernames:  
             allowed_usernames = set(usernames)
             return [model for model in self.all_subs if model.name in allowed_usernames]
 
