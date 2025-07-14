@@ -482,7 +482,7 @@ class ModelManager:
         is_daemon = settings.get_settings().daemon
 
         # Guard Clause 1: Daemon mode with a specific list of users.
-        if is_daemon and usernames and usernames != "ALL":
+        if is_daemon and usernames and "ALL" in usernames:
             allowed_usernames = set(usernames)
             return [model for model in self.all_subs if model.name in allowed_usernames]
 
@@ -494,7 +494,7 @@ class ModelManager:
         filtered_models = self._filter_and_prompt_for_selection()
 
         # Handle cases that filter these results without a final interactive prompt.
-        if usernames == "ALL":
+        if "ALL" in usernames:
             return list(filtered_models.values())
 
         # This handles interactive mode when a specific username list is provided.
