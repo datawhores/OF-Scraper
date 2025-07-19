@@ -324,6 +324,13 @@ def script_config():
                 "default": data.get_naming_script() or "",
                 "option_instruction": "Leave empty to skip the naming script",
             },
+              {
+                "type": "input",
+                "name": "after_download_script",
+                "message": "Script that runs after download complete",
+                "default": data.get_after_download_script() or "",
+                "option_instruction": "Leave empty to skip the download skip script",
+            },
             {
                 "type": "input",
                 "name": "skip_download_script",
@@ -331,15 +338,9 @@ def script_config():
                 "default": data.get_skip_download_script() or "",
                 "option_instruction": "Leave empty to skip the download skip script",
             },
-            {
-                "type": "input",
-                "name": "after_download_script",
-                "message": "Script that runs after download complete",
-                "default": data.get_after_download_script() or "",
-                "option_instruction": "Leave empty to skip the download skip script",
-            },
         ],
     )
+
     out.update(answer)
     config = config_file.open_config()
     config.update(out)
@@ -347,6 +348,11 @@ def script_config():
     return final
 
 
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
 def cdm_config():
     out = {}
     answer = promptClasses.batchConverter(
@@ -471,13 +477,6 @@ def content_config():
     answer = promptClasses.batchConverter(
         *[
             {
-                "type": "list",
-                "name": "block_ads",
-                "choices": [Choice(True, "Yes"), Choice(False, "No")],
-                "message": "Do you want to auto block post with advertisment words:\n",
-                "default": data.get_block_ads(),
-            },
-            {
                 "type": "input",
                 "name": "file_size_max",
                 "message": "file_size_max: ",
@@ -505,6 +504,14 @@ Enter 0 for no minimum
                 "default": str(data.get_filesize_min()),
                 "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
             },
+                       {
+                "type": "list",
+                "name": "block_ads",
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
+                "message": "Do you want to auto block post with advertisment words:\n",
+                "default": data.get_block_ads(),
+            },
+
             {
                 "type": "checkbox",
                 "name": "filter",

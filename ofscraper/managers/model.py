@@ -198,7 +198,7 @@ class ModelManager:
                 console.get_console().print(
                     "[bold red]You have filtered the user list to zero.[/bold red]"
                 )
-                self.setfilter()
+
 
     @run
     async def sync_models(
