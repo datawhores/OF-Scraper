@@ -23,18 +23,7 @@ from ofscraper.commands.scraper.actions.download.utils.leaky import LeakyBucket
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 from ofscraper.managers.sessionmanager.sleepers import (
-    rate_limit_session_sleeper,
-    forbidden_session_sleeper,
-    download_forbidden_session_sleeper,
-    download_rate_limit_session_sleeper,
-    metadata_rate_limit_session_sleeper,
-    metadata_forbidden_session_sleeper,
-    cdm_rate_limit_session_sleeper,
-    cdm_forbidden_session_sleeper,
-    like_rate_limit_session_sleeper,
-    like_forbidden_session_sleeper,
-    subscription_rate_limit_session_sleeper,
-    subscription_forbidden_session_sleeper,
+    sleepers
 )
 
 
@@ -68,8 +57,8 @@ class OFSessionManager(sessionManager):
         sync_sem_count: Optional[int] = None,
         sync_sem: Optional[threading.Semaphore] = None,
         # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.forbidden_session_sleeper,
     ):
         # --- Apply specialized defaults for this subclass ---
         limit = limit if limit is not None else of_env.getattr("API_MAX_CONNECTION")
@@ -155,8 +144,8 @@ class download_session(sessionManager):
         self,
         sem_count=None,
         # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = download_rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = download_forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.download_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.download_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         # --- Apply specialized defaults for download sessions ---
@@ -227,8 +216,8 @@ class metadata_session(download_session):
         self,
         sem_count=None,
         # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = metadata_rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = metadata_forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.metadata_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.metadata_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -290,8 +279,8 @@ class cdm_session_manual(OFSessionManager):
     def __init__(
         self,
         sem_count: Optional[int] = None,  # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = cdm_rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = cdm_forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.cdm_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.cdm_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -308,8 +297,8 @@ class like_session(OFSessionManager):
     def __init__(
         self,
         sem_count: Optional[int] = None,  # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = like_rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = like_forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.like_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.like_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -321,13 +310,13 @@ class like_session(OFSessionManager):
 
 
 class SubscriptionSessionManager(OFSessionManager):
-    """A session manager for manual CDM operations, using OFSessionManager presets."""
+    """A session manager for subsciption operations, using OFSessionManager presets."""
 
     def __init__(
         self,
         sem_count: Optional[int] = None,  # ---rate limit sleepers
-        rate_limit_sleeper: Optional[float] = subscription_rate_limit_session_sleeper,
-        forbidden_sleeper: Optional[float] = subscription_forbidden_session_sleeper,
+        rate_limit_sleeper: Optional[float] = sleepers.subscription_rate_limit_session_sleeper,
+        forbidden_sleeper: Optional[float] = sleepers.subscription_forbidden_session_sleeper,
         **kwargs: Any,
     ) -> None:
         super().__init__(
