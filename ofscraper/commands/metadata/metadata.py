@@ -131,7 +131,7 @@ class MetadataCommandManager(CommandManager):
         )
 
         # Mark this user as processed for the metadata activity
-        manager.Manager.model_manager.mark_as_processed(username, activity="metadata")
+        manager.Manager.current_model_manager.mark_as_processed(username, activity="metadata")
 
     async def _get_metadata_for_user(self, c, ele):
         """
@@ -225,7 +225,7 @@ async def process_dicts(username, model_id, medialist):
 
             aws = []
 
-            async with manager.Manager.get_metadata_session() as c:
+            async with manager.Manager.session.get_metadata_session() as c:
                 for ele in medialist:
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.metadata.add_overall_task(
@@ -288,8 +288,8 @@ def prepare():
         actions.select_areas()
         init.print_sign_status()
         manager.Manager.stats_manager.clear_scraper_activity_stats()
-        userdata = manager.Manager.model_manager.prepare_scraper_activity()
-        session = manager.Manager.aget_ofsession(
+        userdata = manager.Manager.current_model_manager.prepare_scraper_activity()
+        session = manager.Manager.session.aget_ofsession(
             sem_count=of_env.getattr("API_REQ_SEM_MAX"),
             total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),
         )

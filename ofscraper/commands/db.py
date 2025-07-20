@@ -374,7 +374,7 @@ class DBManager:
 
 def db():
     actions.select_areas()
-    manager.Manager.model_manager.sync_models(all_main_models=True)
-    for model in manager.Manager.model_manager.all_subs:
+    manager.Manager.current_model_manager.sync_models(all_main_models=True)
+    for model in manager.Manager.current_model_manager.all_subs:
         db_manager = DBManager(model.name, model.id)
         db_manager.print_media()

@@ -35,7 +35,7 @@ def set_schedule(*functs):
 def schedule_helper(*functs):
     jobqueue.put(logger.resetLogger)
     jobqueue.put(logs.printStartValues)
-    jobqueue.put(manager.Manager.model_manager.sync_models)
+    jobqueue.put(manager.Manager.current_model_manager.sync_models)
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)

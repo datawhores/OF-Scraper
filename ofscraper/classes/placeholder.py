@@ -167,7 +167,7 @@ class Placeholders(basePlaceholder):
         return self
 
     def add_price_variables(self, username):
-        modelObj = manager.Manager.model_manager.get_model(username)
+        modelObj = manager.Manager.current_model_manager.get_model(username)
         self._variables.update(
             {
                 "current_price": (
@@ -226,7 +226,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"label": ele.label_string})
         self._variables.update({"download_type": ele.downloadtype})
         self._variables.update(
-            {"modelObj": manager.Manager.model_manager.get_model(username)}
+            {"modelObj": manager.Manager.current_model_manager.get_model(username)}
         )
         self._variables.update({"quality": await ele.selected_quality_placeholder})
         self._variables.update({"file_name": await ele.final_filename})
@@ -376,7 +376,7 @@ class Textholders(basePlaceholder):
         return self
 
     def add_price_variables(self, username):
-        modelObj = manager.Manager.model_manager.get_model(username)
+        modelObj = manager.Manager.current_model_manager.get_model(username)
         self._variables.update(
             {
                 "current_price": (
@@ -431,7 +431,7 @@ class Textholders(basePlaceholder):
         self._variables.update({"response_type": ele.modified_responsetype})
         self._variables.update({"label": ele.label_string})
         self._variables.update(
-            {"modelObj": manager.Manager.model_manager.get_model(username)}
+            {"modelObj": manager.Manager.current_model_manager.get_model(username)}
         )
         self._variables.update({"text": ele.text_trunicate(ele.file_sanitized_text)})
         self._variables.update({"config": config_file.open_config()})

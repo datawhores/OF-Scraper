@@ -104,7 +104,7 @@ class CommandManager:
         username = user.name
         active = user.active
         final_post_areas = areas.get_final_posts_area()
-        length = manager.Manager.model_manager.get_num_all_selected_models()
+        length = manager.Manager.current_model_manager.get_num_all_selected_models()
         count = progress_tasks.get_user_task_obj().completed
         logging.getLogger("shared").warning(
             progress_str.format(count=count + 1, length=length)

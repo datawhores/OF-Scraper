@@ -1,44 +1,43 @@
 import time
-from contextlib import contextmanager, asynccontextmanager
+from typing import Union
 
 import ofscraper.main.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
 from ofscraper.managers.model import ModelManager
-from ofscraper.managers.stats import StatsManager
+
+
 from ofscraper.commands.db import db
 import ofscraper.commands.metadata.metadata as metadata
 import ofscraper.commands.scraper.scraper as actions
 import ofscraper.commands.manual as manual
 import ofscraper.commands.check as check
 import ofscraper.utils.settings as settings
-import ofscraper.managers.sessionmanager.ofsession as OFsessionManager
-import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
 
+
+# Forward declarations for type hinting to prevent circular imports
+class StatsManager: 
+    pass
+class ProfileManager: 
+    pass
+class SessionHandler: 
+    pass
 
 Manager = None
-
 
 def start_manager():
     global Manager
     if not isinstance(Manager, mainManager):
         Manager = mainManager()
-        Manager.start_managers()
         Manager.start()
-
-
-def start_other_managers():
-    global Manager
-    if not isinstance(Manager, mainManager):
-        Manager = mainManager()
-        Manager.start_managers()
 
 
 class mainManager:
     def __init__(self) -> None:
-        self.model_manager = None
-        self.stats_manager = None
+        self._stats_manager:Union[None, StatsManager] = None
+        self._profile_manager:Union[None, ProfileManager]=None
+        self._session:Union[None, SessionHandler]=None
 
     def start(self):
         self.initLogs()
@@ -47,11 +46,38 @@ class mainManager:
         self.pick()
         exit_manager.shutdown()
 
-    def start_managers(self):
-        if self.model_manager is None:
-            self.model_manager = ModelManager()
-        if self.stats_manager is None:
-            self.stats_manager = StatsManager()
+
+    @property
+    def profile_manager(self) -> ProfileManager:
+        """
+        Lazily initializes and returns the ProfileManager instance.
+        """
+        if self._profile_manager is None:
+            from ofscraper.managers.profile import ProfileManager
+            self._profile_manager = ProfileManager()
+        return self._profile_manager
+
+    @property
+    def session(self) -> SessionHandler:
+        """
+        Lazily initializes and returns the SessionHandler instance.
+        """
+        if self._session is None:
+            from ofscraper.managers.sessionHandler import SessionHandler
+            self._session = SessionHandler()
+        return self._session
+
+    @property
+    def stats_manager(self) -> StatsManager:
+        """
+        Lazily initializes and returns the StatsManager instance.
+        This prevents circular imports at startup.
+        """
+        if self._stats_manager is None:
+            # Import is moved inside the property, delaying it until first access
+            from ofscraper.managers.stats import StatsManager
+            self._stats_manager = StatsManager()
+        return self._stats_manager
 
     def pick(self):
         if settings.get_settings().command in [
@@ -93,58 +119,10 @@ class mainManager:
             )
         logs.printStartValues()
 
-    @contextmanager
-    def get_session(self, *args, **kwargs):
-
-        with sessionManager.sessionManager(*args, **kwargs) as c:
-            yield c
-
-    @contextmanager
-    def get_ofsession(self, *args, **kwargs):
-
-        with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def aget_ofsession(self, *args, **kwargs):
-
-        async with OFsessionManager.OFSessionManager(*args, **kwargs) as c:
-            yield c
-
-    @contextmanager
-    def get_subscription_session(self, *args, **kwargs):
-        with OFsessionManager.SubscriptionSessionManager(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def aget_subscription_session(self, *args, **kwargs):
-        async with OFsessionManager.SubscriptionSessionManager(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def get_download_session(self, *args, **kwargs):
-
-        async with OFsessionManager.download_session(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def get_metadata_session(self, *args, **kwargs):
-        async with OFsessionManager.metadata_session(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def get_cdm_session_manual(self, *args, **kwargs):
-
-        async with OFsessionManager.cdm_session_manual(*args, **kwargs) as c:
-            yield c
-
-    @asynccontextmanager
-    async def get_cdm_session(self, *args, **kwargs):
-
-        async with OFsessionManager.cdm_session(*args, **kwargs) as c:
-            yield c
-
-    @contextmanager
-    def get_like_session(self, *args, **kwargs):
-        with OFsessionManager.like_session(*args, **kwargs) as c:
-            yield c
+    @property
+    def current_model_manager(self) -> ModelManager:
+        """
+        Gets the ModelManager for the currently active profile.
+        If a manager for this profile doesn't exist, it creates one.
+        """
+        return self.profile_manager.current_model_manager

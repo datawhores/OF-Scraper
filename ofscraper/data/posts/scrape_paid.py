@@ -32,8 +32,8 @@ async def scrape_paid_all() -> List[str]:
 
     # Prefill modelmanager.all_models property
     # Does not effected queued models
-    await manager.Manager.model_manager.sync_models(all_main_models=True)
-    manager.Manager.model_manager.clear_paid_queues()
+    await manager.Manager.current_model_manager.sync_models(all_main_models=True)
+    manager.Manager.current_model_manager.clear_paid_queues()
     manager.Manager.stats_manager.clear_paid_stats()
 
     # Set strings based on the command type for clarity.
@@ -116,25 +116,25 @@ async def process_user(value, length):
     # lock activity from changing
     with progress_utils.TaskLock(progress_updater.activity, ["main", "overall"]):
         if settings.get_settings().command == "metadata":
-            await manager.Manager.model_manager.add_models(
+            await manager.Manager.current_model_manager.add_models(
                 username, activity="scrape_paid_metadata"
             )
             await metadata.metadata_process(username, model_id, medias)
             manager.Manager.stats_manager.update_and_print_stats(
                 username, "scrape_paid_metadata", medias
             )
-            manager.Manager.model_manager.mark_as_processed(
+            manager.Manager.current_model_manager.mark_as_processed(
                 username, "scrape_paid_metadata"
             )
         else:
-            await manager.Manager.model_manager.add_models(
+            await manager.Manager.current_model_manager.add_models(
                 username, activity="scrape_paid_download"
             )
             await download.download_process(username, model_id, medias, posts=posts)
             manager.Manager.stats_manager.update_and_print_stats(
                 username, "scrape_paid_download", medias
             )
-            manager.Manager.model_manager.mark_as_processed(
+            manager.Manager.current_model_manager.mark_as_processed(
                 username, "scrape_paid_download"
             )
         progress_updater.activity.update_overall(total=length, advance=1)

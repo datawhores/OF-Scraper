@@ -88,7 +88,7 @@ def manual_download(urls=None):
                 media,
                 posts,
             )
-            manager.Manager.model_manager.mark_as_processed(
+            manager.Manager.current_model_manager.mark_as_processed(
                 username, activity="download"
             )
             manager.Manager.stats_manager.update_and_print_stats(
@@ -279,7 +279,7 @@ def set_user_data(url_dicts):
     """Adds models found to the main model manager."""
     for url_dict in url_dicts.values():
         if url_dict["collection"] and url_dict["collection"].username:
-            manager.Manager.model_manager.add_models(
+            manager.Manager.current_model_manager.add_models(
                 url_dict["collection"].username, activity="download"
             )
 
@@ -296,7 +296,7 @@ async def _find_paid_post_by_id(post_id, model_id, username):
     post_id = str(post_id)
     log = logging.getLogger("shared")
     log.debug(f"Searching paid content for post_id: {post_id} under user {username}")
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         paid_posts_data = await paid.get_paid_posts(username, model_id, c=c) or []

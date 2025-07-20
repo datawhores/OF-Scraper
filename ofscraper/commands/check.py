@@ -97,7 +97,7 @@ def process_download_queue():
 
                 # Run after-actions for this user
                 after_download_action_script(username, data["media"], data["posts"])
-                manager.Manager.model_manager.mark_as_processed(
+                manager.Manager.current_model_manager.mark_as_processed(
                     username, activity="download"
                 )
                 manager.Manager.stats_manager.update_and_print_stats(
@@ -112,7 +112,7 @@ def process_download_queue():
 
         # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
         final_action()
-        manager.Manager.model_manager.clear_queue("download")
+        manager.Manager.current_model_manager.clear_queue("download")
         manager.Manager.stats_manager.clear_activity_stats("download")
         log.info("Download processing complete. Waiting for new items...")
 
@@ -125,8 +125,8 @@ def _get_data_from_row(row: dict):
     username = row["username"]
     media_id = int(row["media_id"])
 
-    manager.Manager.model_manager.add_models(username, activity="download")
-    model_obj = manager.Manager.model_manager.get_model(username)
+    manager.Manager.current_model_manager.add_models(username, activity="download")
+    model_obj = manager.Manager.current_model_manager.get_model(username)
     if not model_obj:
         raise Exception(f"Could not find model for username: {username}")
 
@@ -286,7 +286,7 @@ async def post_check_retriver(forced=False):
     links = list(url_helper())
     if settings.get_settings().force:
         forced = True
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for ele in links:
@@ -487,7 +487,7 @@ async def message_check_retriver(forced=False):
     links = list(url_helper())
     if settings.get_settings().force:
         forced = True
-    async with manager.Manager.aget_ofsession() as c:
+    async with manager.Manager.session.aget_ofsession() as c:
         for item in links:
             num_match = re.search(
                 f"({of_env.getattr('NUMBER_REGEX')}+)", item
@@ -565,7 +565,7 @@ async def purchase_check_retriver(forced=False):
     auth_requests.make_headers()
     if settings.get_settings().force:
         forced = True
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for name in settings.get_settings().check_usernames:
@@ -619,7 +619,7 @@ async def stories_checker_runner():
 @run
 async def stories_check_retriver(forced=False):
     user_dict = {}
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
         for user_name in settings.get_settings().check_usernames:
@@ -678,7 +678,7 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not settings.get_settings().force:
         paid = oldpaid
     else:
-        async with manager.Manager.aget_ofsession(
+        async with manager.Manager.session.aget_ofsession(
             sem_count=of_env.getattr("API_REQ_CHECK_MAX")
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)

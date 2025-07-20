@@ -103,7 +103,7 @@ class scraperManager(CommandManager):
         with progress_utils.setup_live("main_activity", clear=False):
             progress_updater.activity.update_task(
                 description=f"Performing Actions on {ele.name}",
-                total=manager.Manager.model_manager.get_num_scrape_selected_models(),
+                total=manager.Manager.current_model_manager.get_num_scrape_selected_models(),
                 visible=True,
             )
             actions = settings.get_settings().actions
@@ -146,7 +146,7 @@ class scraperManager(CommandManager):
                         manager.Manager.stats_manager.update_and_print_stats(
                             username, "unlike", like_posts
                         )
-                    manager.Manager.model_manager.mark_as_processed(
+                    manager.Manager.current_model_manager.mark_as_processed(
                         username, activity=action
                     )
                     ACTION_SCRIPTS.get(action)(username, media, posts, action=action)
@@ -162,7 +162,7 @@ class scraperManager(CommandManager):
         flushlogs()
         progress_updater.activity.update_user(
             description="Users with Actions Completed",
-            total=manager.Manager.model_manager.get_num_scrape_selected_models(),
+            total=manager.Manager.current_model_manager.get_num_scrape_selected_models(),
             visible=True,
             completed=0,
         )
@@ -210,7 +210,7 @@ def daemon_process():
     if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
-    manager.Manager.model_manager.sync_models()
+    manager.Manager.current_model_manager.sync_models()
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
