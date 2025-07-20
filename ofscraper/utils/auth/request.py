@@ -88,7 +88,7 @@ def get_request_auth_dynamic_rule_manual():
 
 def get_request_auth_generic():
     logging.getLogger("shared").debug("getting new signature with generic")
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -104,7 +104,7 @@ def get_request_auth_generic():
 def get_request_auth_deviint():
     logging.getLogger("shared").debug("getting new signature with deviint")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -120,7 +120,7 @@ def get_request_auth_deviint():
 def get_request_auth_datawhores():
     logging.getLogger("shared").debug("getting new signature with datawhores")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -136,7 +136,7 @@ def get_request_auth_datawhores():
 def get_request_auth_xagler():
     logging.getLogger("shared").debug("getting new signature with xagler")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -152,7 +152,7 @@ def get_request_auth_xagler():
 def get_request_auth_rafa():
     logging.getLogger("shared").debug("getting new signature with rafa")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -168,7 +168,7 @@ def get_request_auth_rafa():
 def get_request_auth_riley():
     logging.getLogger("shared").debug("getting new signature with riley")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
@@ -184,7 +184,7 @@ def get_request_auth_riley():
 def get_request_auth_digitalcriminals():
     logging.getLogger("shared").debug("getting new signature with digitalcriminals")
 
-    with manager.Manager.get_session(
+    with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
