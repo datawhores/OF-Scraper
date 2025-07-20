@@ -25,7 +25,7 @@ def make_auth(auth=None,include_main_menu=False):
         authwarning(common_paths.get_auth_file())
         browserSelect = prompts.prompt_for_browser_auth(include_main_menu=include_main_menu)
         if browserSelect in {"quit","main"}:
-            return browserSelect
+            return None,browserSelect
         auth = auth_schema.auth_schema(auth or auth_dict.get_empty())
         if browserSelect == "Paste From M-rcus' OnlyFans-Cookie-Helper":
             auth = auth_schema.auth_schema(auth_prompt.cookie_helper_extension())
@@ -55,4 +55,4 @@ def make_auth(auth=None,include_main_menu=False):
             continue
         with open(authFile, "w") as f:
             f.write(json.dumps(auth, indent=4))
-        return auth
+        return auth,None

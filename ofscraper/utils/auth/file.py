@@ -39,7 +39,7 @@ def read_auth():
             if auth_schema.auth_key_missing(old_auth):
                 auth = write_auth(auth)
             if auth_schema.auth_key_null(auth):
-                auth = make.make_auth(auth)
+                auth,_ = make.make_auth(auth)
             
             # If all checks pass, break the loop and return the auth data
             break
@@ -68,11 +68,11 @@ def edit_auth():
                 return result
     
     current_auth = auth_dict.get_auth_dict()
-    new_auth = make.make_auth(current_auth, include_main_menu=True)
+    new_auth,result = make.make_auth(current_auth, include_main_menu=True)
     
     # Check if the user quit from the edit menu itself
-    if new_auth in {"quit", "main"}:
-        return new_auth
+    if result in {"quit", "main"}:
+        return result
 
     console.print("Your `auth.json` file has been edited.")
     return new_auth
