@@ -32,3 +32,8 @@ def stop_live():
     if live:
         live.stop()
         live = None
+
+def start_live(refresh=True):
+    global live
+    if live and not live.is_started:
+        live.start(refresh=refresh)

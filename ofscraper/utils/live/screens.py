@@ -1,5 +1,4 @@
 import contextlib
-import time
 from typing import List, Union
 
 import ofscraper.utils.console as console_
@@ -14,24 +13,36 @@ from ofscraper.utils.live.groups import (
     metadata_group,
     userlist_group,
 )
-from ofscraper.utils.live.live import get_live, stop_live
+from ofscraper.utils.live.live import get_live, stop_live,start_live
 
 from ofscraper.utils.live.clear import clear_tasks_by_name
 from ofscraper.utils.live.updater import ActivityManager
 
 
 @contextlib.contextmanager
-def stop_live_screen(revert=True, clear=None):
-    old_render = get_live().renderable
-    stop_live()
-    console_.get_console().clear_live()
-    ##give time for console to clear
-    time.sleep(0.3)
-    yield
-    if revert and old_render:
-        get_live().update(old_render)
-    elif clear:
-        clear_tasks_by_name(clear)
+def stop_live_screen(clear=False):
+    """
+    A context manager to safely stop the live display, show a prompt,
+    and then resume the display.
+    """
+    live = get_live()
+    if not live.is_started:
+        yield
+        return
+    original_transient_state = live.transient
+    live.transient = False
+
+    try:
+        # Stop the live display. Because it's transient, it will be erased.
+        stop_live()
+        yield
+    finally:
+        # Restore the original state before restarting
+        live.transient = original_transient_state
+        # Restart the live display with its original content
+        start_live(refresh=True)
+        if clear:
+            clear_tasks_by_name(clear)
 
 
 SCREENS = {
