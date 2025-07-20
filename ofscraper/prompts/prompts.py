@@ -19,3 +19,4 @@ from ofscraper.prompts.prompt_groups.menu import *
 from ofscraper.prompts.prompt_groups.merge import *
 from ofscraper.prompts.prompt_groups.model import *
 from ofscraper.prompts.prompt_groups.profile import *
+from ofscraper.prompts.prompt_groups.misc import *
