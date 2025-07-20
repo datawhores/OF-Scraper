@@ -451,9 +451,11 @@ def reset_username_prompt() -> bool:
                 "name": name,
                 "message": "Do you want to reset username info",
                 "choices": [
+                    Choice(None, "Print Selection"),
+                    Separator(),
                     Choice("Selection", "Yes Update Selection"),
                     Choice("Selection_Strict", "Yes Update Selection (No Data Fetch)"),
-                    "No",
+                    Choice("No", "No"),
                 ],
                 "default": "No",
             }
