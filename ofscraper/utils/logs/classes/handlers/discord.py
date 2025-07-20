@@ -5,8 +5,7 @@ import queue
 
 import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
 from ofscraper.managers.sessionmanager.sleepers import (
-    discord_forbidden_session_sleeper,
-    discord_rate_limit_session_sleeper,
+    sleepers
 )
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
@@ -20,8 +19,8 @@ class DiscordHandler(logging.Handler):
             retries=of_env.getattr("DISCORD_NUM_TRIES"),
             wait_min=of_env.getattr("DISCORD_MIN_WAIT"),
             wait_max=of_env.getattr("DISCORD_MAX_WAIT"),
-            forbidden_sleeper=discord_forbidden_session_sleeper,
-            rate_limit_sleeper=discord_rate_limit_session_sleeper,
+            forbidden_sleeper=sleepers.discord_forbidden_session_sleeper,
+            rate_limit_sleeper=sleepers.discord_rate_limit_session_sleeper,
         )
         self.sess._set_session(async_=False)
 
