@@ -14,8 +14,8 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-import ofscraper.managers.manager as manager
 import ofscraper.utils.cache as cache
+from ofscraper.managers.sessionmanager.sessionmanager import BareSession
 
 
 def printStartValues():
@@ -70,40 +70,37 @@ def print_start_message():
     message = cache.get("OFSCRAPER_MESSAGE")
     if message:
         return message
-    with manager.Manager.get_session() as sess:
-        with sess.requests(
-            url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD"
-        ) as j:
-            data = re.sub("\n", "", j.text_())
-            if not data:
-                return
-            cache.set("OFSCRAPER_MESSAGE", data)
-            log.error(f"{data}")
+    with  BareSession.get_bare_session(url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD",
+method="get") as sess:
+        data = re.sub("\n", "", sess.text)
+        if not data:
+            return
+        cache.set("OFSCRAPER_MESSAGE", data)
+        log.error(f"{data}")
 
 
 def print_latest_version():
     log = logging.getLogger("shared")
-    with manager.Manager.get_session() as sess:
-        with sess.requests(url="https://pypi.org/pypi/ofscraper/json") as j:
-            data = j.json()
-            if not data:
-                return
-            new_version = data["info"]["version"]
-            url = data["info"]["project_url"]
+    with  BareSession.get_bare_session(url="https://pypi.org/pypi/ofscraper/json",method="get") as sess:
+        data = sess.json()
+        if not data:
+            return
+        new_version = data["info"]["version"]
+        url = data["info"]["project_url"]
 
-            if re.search(new_version, __version__):
-                log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
-            elif __version__ == "0.0.0":
-                log.error(
-                    "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
-                )
-            elif ".dev" in __version__:
-                log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
-            else:
-                log.error(
-                    f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
-                )
-                log.error(f"[bold yellow]project url: {url}[/bold yellow]")
+        if re.search(new_version, __version__):
+            log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
+        elif __version__ == "0.0.0":
+            log.error(
+                "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
+            )
+        elif ".dev" in __version__:
+            log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
+        else:
+            log.error(
+                f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
+            )
+            log.error(f"[bold yellow]project url: {url}[/bold yellow]")
 
 
 def discord_warning():

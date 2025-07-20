@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+from contextlib import contextmanager
 import time
 import ssl
 import certifi
@@ -40,8 +41,14 @@ def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     elif isinstance(exception, httpx.HTTPStatusError):
         status_code = getattr(exception.response, "status_code", None)
     return status_code in numbers
-
-
+class BareSession:
+    @staticmethod
+    @contextmanager
+    def get_bare_session(*args, **kwargs):
+        with httpx.stream(*args, **kwargs) as response:
+            response.raise_for_status()
+            response.read()
+            yield response
 class SessionSleep:
     """
     Manages dynamic sleep intervals to handle API rate-limiting.
