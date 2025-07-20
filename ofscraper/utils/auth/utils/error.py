@@ -40,8 +40,8 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
     if isinstance(e, FileNotFoundError):
         console.print("You don't seem to have an `auth.json` file. Creating one for you.")
         # make_auth will guide the user. It returns "quit" or "main" if the user backs out.
-        result = make.make_auth(include_main_menu=include_main_menu)
-        if result in {"quit", "main"}:
+        _,result = make.make_auth(include_main_menu=include_main_menu)
+        if result and result in {"quit", "main"}:
             return result
 
     elif isinstance(e, json.JSONDecodeError):
