@@ -139,7 +139,7 @@ async def scrape_paid(c, username, offset=0):
 
 @run
 async def get_all_paid_posts():
-    async with manager.Manager.aget_ofsession(
+    async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("SCRAPE_PAID_SEMS"),
     ) as c:
         tasks = await create_tasks_scrape_paid(c)

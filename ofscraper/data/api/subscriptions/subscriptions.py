@@ -34,7 +34,7 @@ async def get_subscriptions(subscribe_count, account="active"):
     task1 = userlist.add_overall_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
-    async with manager.Manager.aget_subscription_session(
+    async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         if account == "active":
@@ -56,7 +56,7 @@ async def get_all_subscriptions(subscribe_count, account="active"):
 
 async def get_all_activive_subscriptions(subscribe_count):
     funct = scrape_subscriptions_active
-    async with manager.Manager.aget_subscription_session(
+    async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks = [
@@ -69,7 +69,7 @@ async def get_all_activive_subscriptions(subscribe_count):
 
 async def get_all_expired_subscriptions(subscribe_count):
     funct = scrape_subscriptions_disabled
-    async with manager.Manager.aget_subscription_session(
+    async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks = [

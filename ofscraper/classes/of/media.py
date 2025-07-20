@@ -463,7 +463,7 @@ class Media(base.base):
         async with self._lock:
             if self._cached_mpd:  # double check lock
                 return self._cached_mpd
-            async with manager.Manager.aget_ofsession(
+            async with manager.Manager.session.aget_ofsession(
                 retries=of_env.getattr("MPD_NUM_TRIES"),
                 wait_min=of_env.getattr("OF_MIN_WAIT_API"),
                 wait_max=of_env.getattr("OF_MAX_WAIT_API"),

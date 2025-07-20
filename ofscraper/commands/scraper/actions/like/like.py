@@ -88,7 +88,7 @@ def _like(model_id, username, posts: list, like_action: bool):
 
     like_func = _toggle_like_requests if like_action else _toggle_unlike_requests
     with progress_utils.setup_live("like"):
-        with manager.Manager.get_like_session(
+        with manager.Manager.session.get_like_session(
             sem_count=1,
             retries=of_env.getattr("API_LIKE_NUM_TRIES"),
         ) as c:

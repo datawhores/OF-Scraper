@@ -14,7 +14,7 @@ log = logging.getLogger("shared")
 
 
 def prepare(menu=False):
-    session = manager.Manager.aget_ofsession(
+    session = manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_SEM_MAX"),
         total_timeout=of_env.getattr("API_TIMEOUT_PER_TASK"),
     )
@@ -26,7 +26,7 @@ def prepare(menu=False):
     if menu is True:
         actions.set_scrape_paid()
     manager.Manager.stats_manager.clear_scraper_activity_stats()
-    userdata = manager.Manager.model_manager.prepare_scraper_activity()
+    userdata = manager.Manager.current_model_manager.prepare_scraper_activity()
     return userdata, session
 
 

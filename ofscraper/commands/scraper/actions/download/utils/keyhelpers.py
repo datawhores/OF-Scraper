@@ -170,7 +170,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with manager.Manager.get_cdm_session_manual() as c:
+        async with manager.Manager.session.get_cdm_session_manual() as c:
             async with c.requests_async(
                 url=licence_url,
                 method="post",

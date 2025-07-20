@@ -86,7 +86,7 @@ async def get_lists():
     output = []
     tasks = []
     page_count = 0
-    async with manager.Manager.aget_subscription_session(
+    async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks.append(asyncio.create_task(scrape_for_list(c)))
@@ -160,7 +160,7 @@ async def get_list_users(lists):
     output = []
     tasks = []
     page_count = 0
-    async with manager.Manager.aget_subscription_session(
+    async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
