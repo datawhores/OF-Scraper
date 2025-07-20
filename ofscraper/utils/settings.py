@@ -14,33 +14,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.of_env.load import load_env_files
 
-
-# --- Globals for one-time initialization ---
-_env_loaded = False
 _init_lock = threading.Lock()
-
-
-def _load_env_once():
-    """
-    Loads all environment-based configurations once.
-    This function is thread-safe and ensures that config files are read
-    and processed only one time during the application's lifecycle.
-    """
-    global _env_loaded
-    # Quick check to avoid locking if already loaded
-    if _env_loaded:
-        return
-
-    with _init_lock:
-        # Double-check inside the lock to handle race conditions
-        if _env_loaded:
-            return
-        # Load .env file if it exists
-        load_dotenv(override=True)
-        _env_loaded = True
-
-
-# --- Main Settings Logic ---
 settings = {}
 
 
@@ -65,7 +39,6 @@ def update_settings():
 
 def get_settings():
     global settings
-    _load_env_once()  # Ensures env is populated before settings are first calculated.
     if not settings:
         with _init_lock:
             # Check again inside lock for thread safety
@@ -77,6 +50,7 @@ def get_settings():
 def setup_settings():
     merged = merged_settings()
     load_env_files(merged.env_files)
+    of_env.get_all_configs(forced=True)
     return merged
 
 
