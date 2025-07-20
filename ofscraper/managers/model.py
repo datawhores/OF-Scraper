@@ -150,19 +150,22 @@ class ModelManager:
             log.info("Daemon mode active. Calling select_models to get model list.")
             final_selection = self._select_models_scraper()
         else:
-            existing_queued_users = set()
-            existing_queued_users.update(set(self.get_scrape_selected_models()))
+            existing_queued_users = [x.name for x in self.get_scrape_selected_models()]
             # Default to requiring a new selection unless the user says no.
             requires_new_selection = True
             if existing_queued_users:
-                prompt_choice = prompts.reset_username_prompt()
-                if prompt_choice == "No":
-                    requires_new_selection = False
-                elif prompt_choice in {"Selection", "Selection_Strict"}:
-                    settings.resetUserSelect()
-                    if prompt_choice == "Selection":
-                        self._fetch_all_subs(force_refetch=True)
-
+                prompt_choice=None
+                while not prompt_choice:
+                        prompt_choice = prompts.reset_username_prompt()
+                        if prompt_choice == "No":
+                            requires_new_selection = False
+                        elif prompt_choice in {"Selection", "Selection_Strict"}:
+                            settings.resetUserSelect()
+                            if prompt_choice == "Selection":
+                                self._fetch_all_subs(force_refetch=True)
+                        else:
+                            console.get_shared_console().print(existing_queued_users)
+                            prompts.press_enter_to_continue()
             if requires_new_selection:
                 # Get a fresh selection from the user.
                 log.info("Prompting for a new model selection.")
