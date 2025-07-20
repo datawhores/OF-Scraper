@@ -19,5 +19,5 @@ def getattr(val):
     return None  # Or raise KeyError(f"Configuration key '{val}' not found.")
 
 
-def getkeys():
-    return get_all_configs()
+def getkeys(forced=False):
+    return get_all_configs(forced=forced)

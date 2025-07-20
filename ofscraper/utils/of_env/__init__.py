@@ -64,7 +64,7 @@ from .values.url.dynamic import load_dynamic_url_config
 _cached_settings = None
 
 
-def get_all_configs():
+def get_all_configs(forced=False):
     """
     Aggregates all application configuration settings by calling individual loader functions.
     This function ensures environment variables are read and defaults are applied.
@@ -73,7 +73,7 @@ def get_all_configs():
     global _cached_settings
 
     # If settings are already loaded, return the cached version
-    if _cached_settings is not None:
+    if not forced and _cached_settings is not None:
         return _cached_settings
 
     # If you are using `python-dotenv` library to load from `.env` files,
