@@ -26,7 +26,7 @@ def final_script():
     log.debug(f"Attempting to run final script: {script_path}")
 
     try:
-        model_manager = manager.Manager.model_manager
+        model_manager = manager.Manager.current_model_manager
 
         if settings.get_settings().command == "metadata":
             scrape_paid_activity = "scrape_paid_metadata"

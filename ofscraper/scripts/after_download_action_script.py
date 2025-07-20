@@ -23,7 +23,7 @@ def after_download_action_script(username, media, posts=None, action=None):
         )
         return
 
-    userdata = manager.Manager.model_manager.get_model(username)
+    userdata = manager.Manager.current_model_manager.get_model(username)
     if not userdata:
         log.warning(
             f"Could not retrieve user data for {username}. Aborting after download action script."

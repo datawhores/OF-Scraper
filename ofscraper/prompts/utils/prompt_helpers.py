@@ -198,7 +198,7 @@ def _select_helper(prompt, toggle=True):
 
 
 def _get_choices():
-    models = manager.Manager.model_manager.get_models_from_prompt()
+    models = manager.Manager.current_model_manager.get_models_from_prompt()
     return list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
