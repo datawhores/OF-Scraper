@@ -60,7 +60,8 @@ def load_prompts_config():
 
     # --- Profiles Prompt Choices ---
     config["profilesPromptChoices"] = {
-        "Change default profile": "default",
+        "Change the default profile": "default",
+        "Switch profile for current run": "active",
         "Edit a profile name": "name",
         "Create a profile": "create",
         "Delete a profile": "delete",

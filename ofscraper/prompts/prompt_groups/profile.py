@@ -14,6 +14,8 @@ r"""
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.shortcuts import prompt as prompt
+from InquirerPy.base import Choice
+
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -120,7 +122,7 @@ def get_profile_prompt(profiles: list) -> str:
     return profile
 
 
-def change_default_profile() -> bool:
+def change_selected_profile() -> bool:
     name = "reset username"
     answer = promptClasses.batchConverter(
         *[
@@ -128,7 +130,10 @@ def change_default_profile() -> bool:
                 "type": "list",
                 "name": name,
                 "message": "Set this as the new default profile",
-                "choices": ["Yes", "No"],
+                "choices": [Choice("default","Set as config default"),
+                            Choice("active","Set as active profile for current run"),
+                            Choice(None,"No Change")],
+                "default":None
             }
         ]
     )

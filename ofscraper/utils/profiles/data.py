@@ -23,11 +23,11 @@ def get_my_info():
 
 
 def get_profiles() -> list:
-    data.path = common_paths.get_config_home()
+    home_folder = common_paths.get_config_home()
     return list(
         filter(
             lambda x: re.search(".*_profile$", str(x)) and x.is_dir(),
-            data.path.glob("*"),
+            home_folder.glob("*"),
         )
     )
 

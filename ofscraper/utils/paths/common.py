@@ -101,14 +101,13 @@ def get_log_folder():
 
 
 def get_profile_path(name=None):
-    if name:
-        profile = get_config_home() / name
-    elif not settings.get_settings().profile:
-        profile = get_config_home() / profile_data.get_current_config_profile()
-    else:
-        profile = get_config_home() / settings.get_settings().profile
-    return pathlib.Path(tools.profile_name_fixer(profile))
-
+    """
+    Determines the correct profile path based on a priority order.
+    """
+    profile_name = name or settings.get_settings().profile or profile_data.get_current_config_profile()
+    profile = get_config_home() / profile_name
+    # Sanitize and return the final path, matching the original function's behavior
+    return pathlib.Path(tools.profile_name_fixer(str(profile)))
 
 def get_save_location(config=None, mediatype=None):
     if config is False:

@@ -25,16 +25,22 @@ currentProfile = None
 
 
 def print_profiles() -> list:
-    print_current_profile()
     console.print("\n\nCurrent Profiles\n")
     profile_fmt = "Profile: [cyan]{}"
     for name in profile_data.get_profile_names():
         console.print(profile_fmt.format(name))
+    console.print("\n")
+    print_current_profile()
+    print_default_profile()
+
 
 
 def print_current_profile():
     current_profile = profile_data.get_active_profile()
-    log.info("Using profile: [cyan]{}[/cyan]".format(current_profile))
+    console.print("Active profile: [cyan]{}[/cyan]".format(current_profile))
+def print_default_profile():
+    current_profile = profile_data.get_current_config_profile()
+    console.print("Default config profile: [cyan]{}[/cyan]".format(current_profile))
 
 
 def profile_name_fixer(input):
