@@ -110,7 +110,7 @@ class scraperManager(CommandManager):
             username = ele.name
             model_id = ele.id
             media = postcollection.get_media_for_processing()
-            like_posts = postcollection.get_posts_to_like
+            like_posts = postcollection.get_posts_to_like()
             posts = postcollection.get_posts_for_text_download()
             for action in actions:
                 try:
