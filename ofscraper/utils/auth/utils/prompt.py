@@ -38,4 +38,5 @@ def browser_cookie_helper(auth, browserSelect):
 
 
 def cookie_helper_extension():
-    return prompts.auth_full_paste()
+    result=prompts.auth_full_paste()
+    return result.get("auth") or result

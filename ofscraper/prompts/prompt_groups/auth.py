@@ -227,7 +227,7 @@ Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
             }
         ]
     )
-    return questions[name]["auth"]
+    return questions[name]
 
 
 def reset_auth_prompt(include_main_menu=False) -> bool:
