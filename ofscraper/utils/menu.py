@@ -43,9 +43,7 @@ def main_menu_action():
                 elif action_result_prompt == "main":
                     continue
                 else:
-                    count > 0 and reset_menu_helper()
                     scapingManager.runner(menu=True)
-                    count = count + 1
 
             elif result_main_prompt == "auth":
                 # Edit `auth.json` file
@@ -85,8 +83,11 @@ def main_menu_action():
 def profile_menu_helper(result_profiles_prompt):
     if result_profiles_prompt == "default":
         # Change profiles
-        profiles_manage.change_profile()
-
+        profiles_manage.change_default_profile()
+    if result_profiles_prompt == "active":
+        # Change profiles
+        profiles_manage.change_active_profile()
+    
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()
@@ -103,6 +104,7 @@ def profile_menu_helper(result_profiles_prompt):
     elif result_profiles_prompt == "view":
         # View profiles
         profile_tools.print_profiles()
+        prompts.press_enter_to_continue()
 
 
 def config_menu_helper(result_config_prompt):
@@ -137,4 +139,4 @@ def reset_menu_helper():
         actions.remove_download_area()
     elif reset == "Like":
         actions.remove_like_area()
-    manager.Manager.model_manager.prepare_scraper_activity()
+    manager.Manager.current_model_manager.prepare_scraper_activity()
