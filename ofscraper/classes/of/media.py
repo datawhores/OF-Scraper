@@ -23,7 +23,6 @@ import ofscraper.utils.logs.utils.sensitive as sensitive
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 log = logging.getLogger("shared")
-semaphore = asyncio.BoundedSemaphore(of_env.getattr("MPD_MAX_SEMS"))
 
 
 class Media(base.base):
@@ -471,7 +470,7 @@ class Media(base.base):
                 total_timeout=of_env.getattr("MPD_TOTAL_TIMEOUT"),
                 read_timeout=of_env.getattr("MPD_READ_TIMEOUT"),
                 pool_timeout=of_env.getattr("MPD_POOL_CONNECT_TIMEOUT"),
-                sem=semaphore,
+                sem=asyncio.BoundedSemaphore(of_env.getattr("MPD_MAX_SEMS")),
                 log=self._log,
             ) as c:
                 async with c.requests_async(url=self.mpd, params=params) as r:
