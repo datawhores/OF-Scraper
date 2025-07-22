@@ -1,10 +1,6 @@
 version = 1
 revision = 1
 requires-python = ">=3.11, <3.14"
-resolution-markers = [
-    "sys_platform == 'linux' or sys_platform == 'linux2'",
-    "sys_platform != 'linux' and sys_platform != 'linux2'",
-]
 
 [[package]]
 name = "aiofiles"
@@ -863,7 +859,7 @@ name = "macholib"
 version = "1.16.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "altgraph", marker = "sys_platform != 'linux' and sys_platform != 'linux2'" },
+    { name = "altgraph" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/95/ee/af1a3842bdd5902ce133bd246eb7ffd4375c38642aeb5dc0ae3a0329dfa2/macholib-1.16.3.tar.gz", hash = "sha256:07ae9e15e8e4cd9a788013d81f5908b3609aa76f9b1421bae9c4d7606ec86a30", size = 59309 }
 wheels = [
