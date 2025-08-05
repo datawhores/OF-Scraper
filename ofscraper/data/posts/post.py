@@ -28,7 +28,6 @@ import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
-import ofscraper.filters.media.main as filters
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater

@@ -5,7 +5,6 @@ import logging
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.data.posts.post import post_media_process
-import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.live.tasks as progress_tasks
 from ofscraper.commands.utils.strings import (
