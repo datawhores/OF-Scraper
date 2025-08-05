@@ -1,7 +1,6 @@
 import threading
 import re
 import arrow
-from dotenv import load_dotenv
 from copy import deepcopy
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
