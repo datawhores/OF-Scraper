@@ -1,6 +1,5 @@
 [project]
 name = "ofscraper"
-# The version is now determined from your Git tags by Hatch
 dynamic = ["version"]
 description = "automatically scrape onlyfans"
 authors = [{ name = "datawhores", email = "datawhores@riseup.net" }]
