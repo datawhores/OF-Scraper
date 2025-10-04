@@ -215,19 +215,17 @@ async def scrape_list_members(c, item, offset=0):
                 f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
             )
             log.debug(
+                f"{log_id}  -> nextOffset value in json {data.get('nextOffset','undefined') }"
+            )
+            log.debug(
                 f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
             )
             name = f"API {item.get('name')}"
             trace_progress_log(name, data, offset=offset)
 
-            if (
-                data.get("hasMore")
-                and len(users) > 0
-                and offset != data.get("nextOffset")
-            ):
-                offset += len(users)
+            if data.get("hasMore"):
                 new_tasks.append(
-                    asyncio.create_task(scrape_list_members(c, item, offset=offset))
+                    asyncio.create_task(scrape_list_members(c, item, offset=data["nextOffset"]))
                 )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
