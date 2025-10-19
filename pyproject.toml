@@ -63,7 +63,7 @@ test = [
   "pytest-mock~=3.12.0",
 ]
 docs = ["sphinx-argparse~=0.5.2"]
-ffmpeg = ["pyffmpeg==2.4.2.20"]
+ffmpeg = []
 
 [project.scripts]
 ofscraper = "ofscraper.__main__:main"
@@ -80,6 +80,11 @@ packages = ["ofscraper"]
 [build-system]
 requires = ["hatchling", "version-pioneer"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+ffmpeg = [
+    "pyffmpeg>=2.5.2.3.1",
+]
 
 [tool.hatch.version]
 source = "version-pioneer"

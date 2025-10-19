@@ -41,29 +41,37 @@ ENV VIRTUAL_ENV="/app/.venv"
 ENV UV_CACHE_DIR="/app/.uv_cache"
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# STEP 1: Create venv, install pyffmpeg and force static
-# timestamps for venv & cache to avoid unnecessary layer updates.
-RUN uv venv && uv pip install pyffmpeg==2.4.2.20 && \
-    find "${VIRTUAL_ENV}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z' && \
-    find "${UV_CACHE_DIR}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z'
-
+# >>> CORRECTED STEP 1: Install build dependencies, then pyffmpeg, then clean up <<<
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-dev \
+    # Install pyffmpeg and dependencies
+    && uv venv && uv pip install pyffmpeg \
+    # Clean up the build tools immediately
+    && apt-get purge -y --auto-remove build-essential python3-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    # Final cleanup (static timestamps)
+    && find "${VIRTUAL_ENV}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z' \
+    && find "${UV_CACHE_DIR}" -print0 | xargs -0 touch -h -d '2025-01-01T00:00:00Z'
+# >>> END CORRECTED STEP 1 <<<
 # STEP 2: Install all OS-level dependencies in a single layer.
+# (This step remains the same, installing gosu)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
-    && rm -rf /var/lib/apt/lists/*
-
+    && rm -rf /var/lib/apt/lists/*# STEP 2: Install all OS-level dependencies in a single layer.
 # STEP 3: Copy entrypoint scripts and make them executable.
 COPY --chmod=755 ./scripts/entry/. /usr/local/bin/entry/
 
 # STEP 4: Copy and install the ofscraper wheels into the venv.
 COPY --from=builder /app/dist/*.whl .
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN \
+    WHEEL_FILE=$(ls *.whl) && \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential && \
-    uv pip install *.whl -v && \
-    rm *.whl && \
+    uv pip install "${WHEEL_FILE}[ffmpeg]" -v && \
+    rm "${WHEEL_FILE}" && \
     apt-get purge -y --auto-remove build-essential && \
     rm -rf /var/lib/apt/lists/*
-
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]

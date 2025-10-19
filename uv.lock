@@ -1129,9 +1129,6 @@ dev = [
 docs = [
     { name = "sphinx-argparse" },
 ]
-ffmpeg = [
-    { name = "pyffmpeg" },
-]
 test = [
     { name = "coverage" },
     { name = "pytest" },
@@ -1139,6 +1136,11 @@ test = [
     { name = "pytest-mock" },
     { name = "random-emoji" },
     { name = "random-unicode-emoji" },
+]
+
+[package.dev-dependencies]
+ffmpeg = [
+    { name = "pyffmpeg" },
 ]
 
 [package.metadata]
@@ -1175,7 +1177,6 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = "~=3.0.43" },
     { name = "psutil", specifier = "~=5.9.8" },
     { name = "pycryptodome", specifier = "~=3.20.0" },
-    { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = "==2.4.2.20" },
     { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pynumparser", specifier = "~=1.4.1" },
     { name = "pytest", marker = "extra == 'test'", specifier = "~=7.3.1" },
@@ -1199,6 +1200,9 @@ requires-dist = [
     { name = "xxhash", specifier = "~=3.4.1" },
 ]
 provides-extras = ["dev", "docs", "ffmpeg", "test"]
+
+[package.metadata.requires-dev]
+ffmpeg = [{ name = "pyffmpeg", specifier = ">=2.5.2.3.1" }]
 
 [[package]]
 name = "packaging"
@@ -1435,16 +1439,15 @@ wheels = [
 
 [[package]]
 name = "pyffmpeg"
-version = "2.4.2.20"
+version = "2.5.2.3.1"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/dc/206547ec12d68e4b0cd6fd35f7db9fc7e5bff1d0618c4afc2411e2c57d9b/pyffmpeg-2.4.2.20-py3-none-macosx_10_9_universal2.whl", hash = "sha256:4273a4ef3e279a94cd5b4259b6aee24f515962013810e68ef173f042fd742173", size = 17511584 },
-    { url = "https://files.pythonhosted.org/packages/99/aa/4c2ea1859ef33eb1defd744254f175ecdb1ecde3925ddfb60318ba4a356e/pyffmpeg-2.4.2.20-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:3408092f124375726294d2207d035211d3cf1f741408cb8bd486444c3ec146df", size = 17511584 },
-    { url = "https://files.pythonhosted.org/packages/39/25/aa3de10a902e865425a206d79de42c7fc43d4083636adede22ae8c3a0cca/pyffmpeg-2.4.2.20-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8d6dd248c82b2f24ef94acf523e549999d39a341e985e29ee15db159387d4ecd", size = 17511584 },
-    { url = "https://files.pythonhosted.org/packages/e4/b9/d4b9da3ee9a02fd6659ac010c019cc1332153d5836b2662797a4da905085/pyffmpeg-2.4.2.20-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:44699f44624cfed9d312005b0d36d1bf107418b2493b9a7aa85a61d7504bea09", size = 16782975 },
-    { url = "https://files.pythonhosted.org/packages/d9/8a/94d3a7cf53212ef75ff4c2cce5f35b0d535526c1e9f4a67f0efe6f8cc967/pyffmpeg-2.4.2.20-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d7e044c5aa54fdaa912b532987e70c02969f8428aee50a82999daed64b71a6e0", size = 16782975 },
-    { url = "https://files.pythonhosted.org/packages/31/73/034821f90bba3870a34094849bc1f8ae7e28cfc6dd1ffbd66b2da9a2b083/pyffmpeg-2.4.2.20-py3-none-win32.whl", hash = "sha256:b3d20fb24e94324a084cfa38a2de672a6bad9e410cb452ca7bd5da5002862513", size = 41008901 },
-    { url = "https://files.pythonhosted.org/packages/e6/cb/72c76729bcb224521c9a747cdbae9a3e0cf8500ed5d882c7c0559e823fa3/pyffmpeg-2.4.2.20-py3-none-win_amd64.whl", hash = "sha256:36548aad655a74045f9900ce5ead236223cb6f727896dbb088d4d787098340e6", size = 41008901 },
+    { url = "https://files.pythonhosted.org/packages/38/c6/d5169a67ddfbeda6d5a0368b22198f9d98ef39f60d73112b67a8938a7859/pyffmpeg-2.5.2.3.1-py3-none-macosx_10_9_universal2.whl", hash = "sha256:47fa229c9b93b8bb707d5043e354a13cbd9eb3a9296abf5ebfd000465c948b12", size = 18937365 },
+    { url = "https://files.pythonhosted.org/packages/15/1f/adabeed97ae27e0e61795ebb1c31c4ef2dd73f4da096ec865249e88ff821/pyffmpeg-2.5.2.3.1-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:df71c11d5109563e95ad29cc3abeeb68fa23946c2c8b467d7617cdd712999dde", size = 18937365 },
+    { url = "https://files.pythonhosted.org/packages/93/28/00ef9a91e4a01a8c7e522a4643373217eca526813ea36535f367ef2b0cb9/pyffmpeg-2.5.2.3.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fd412a6361ed3f50701ae82a07af64d931d06a288fbadd3b5e304c531eabee7e", size = 18937365 },
+    { url = "https://files.pythonhosted.org/packages/83/0f/4d97e41d44a8f81cf451ea579e99a7370204c03091a0fc90e6a494b30a57/pyffmpeg-2.5.2.3.1-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:de53ebbb9af8c5d09f6d4e3449eec7fa505d5bddcad9656ded987bcfa36a97d5", size = 43264784 },
+    { url = "https://files.pythonhosted.org/packages/5f/70/78dcaaa807a98f4e4a89308fdae00d969c2076033222df8d102aeb4a67b0/pyffmpeg-2.5.2.3.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:52913bc820823ae932beb37ed39b50df0f7f8079c0e62c9283f26e3f1ec44a1b", size = 43264784 },
+    { url = "https://files.pythonhosted.org/packages/26/d7/58b220b255f5ba2ef7c8770a186c94a6787a6a5d2d85b7bc20a9d2c2702a/pyffmpeg-2.5.2.3.1-py3-none-win_amd64.whl", hash = "sha256:bbf0d97e90811355e8e1a5c8b1f273149f5bc7c1e25c78dd859ee9b430e1c608", size = 42532899 },
 ]
 
 [[package]]
