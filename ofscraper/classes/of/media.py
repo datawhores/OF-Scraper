@@ -578,74 +578,117 @@ class Media(base.base):
             text = f"{date_str} {self.text or self.filename}"
         return text
 
-    async def mpd_video_helper(self, mpd_obj=None):
-        mpd = mpd_obj or await self.parse_mpd
+
+    @async_cached_property
+    async def _video_adaptation_set(self):
+        """Finds and caches the first video/mp4 AdaptationSet."""
+        mpd = await self.parse_mpd
         if not mpd:
             return None
-        allowed = quality.get_allowed_qualities()
         for period in mpd.periods:
             for adapt_set in filter(
                 lambda x: x.mime_type == "video/mp4", period.adaptation_sets
             ):
-                kId = None
-                for prot in adapt_set.content_protections:
-                    if prot.value is None:
-                        kId = prot.pssh[0].pssh
-                        break
+                return adapt_set
+        return None
 
-                representations = sorted(
-                    adapt_set.representations, key=lambda x: x.height, reverse=True
-                )
-                selected_repr = None
-                for quality_val in allowed:
-                    if quality_val.lower() == "source":
-                        selected_repr = representations[0]
-                        break
-                    for r in representations:
-                        if str(r.height) == quality_val:
-                            selected_repr = r
-                            break
-                    if selected_repr:
-                        break
-
-                selected_repr = (
-                    selected_repr or representations[0]
-                )  # Fallback to highest
-
-                origname = f"{selected_repr.base_urls[0].base_url_value}"
-                return {
-                    "origname": origname,
-                    "pssh": kId,
-                    "type": "video",
-                    "name": f"tempvid_{self.id}_{self.post_id}",
-                    "ext": "mp4",
-                }
-
-    async def mpd_audio_helper(self, mpd_obj=None):
-        mpd = mpd_obj or await self.parse_mpd
+    @async_cached_property
+    async def _audio_adaptation_set(self):
+        """Finds and caches the first audio/mp4 AdaptationSet."""
+        mpd = await self.parse_mpd
         if not mpd:
             return None
         for period in mpd.periods:
             for adapt_set in filter(
                 lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
             ):
-                kId = None
-                for prot in adapt_set.content_protections:
-                    if prot.value is None:
-                        kId = prot.pssh[0].pssh
-                        sensitive.add_sensitive_pattern(kId, "pssh_code")
-                        break
+                return adapt_set
+        return None
 
-                # Typically there's only one audio representation
-                repr = adapt_set.representations[0]
-                origname = f"{repr.base_urls[0].base_url_value}"
-                return {
-                    "origname": origname,
-                    "pssh": kId,
-                    "type": "audio",
-                    "name": f"tempaudio_{self.id}_{self.post_id}",
-                    "ext": "mp4",
-                }
+    @async_cached_property
+    async def selected_video_representation(self):
+        """
+        Finds and caches the specific video Representation object
+        based on user's quality settings.
+        """
+        adapt_set = await self._video_adaptation_set
+        if not adapt_set:
+            return None
+
+        representations = sorted(
+            adapt_set.representations, key=lambda x: x.height, reverse=True
+        )
+        if not representations:
+            return None
+
+        allowed = quality.get_allowed_qualities()
+        # Build a map of height -> representation
+        # e.g., {'1080': <Repr obj>, '720': <Repr obj>}
+        available_map = {str(r.height): r for r in representations}
+
+        # Loop from LOWEST to HIGHEST allowed
+        for qual in allowed:
+            if qual in available_map:
+                return available_map[qual]  # Return first (lowest) match
+
+        # Fallback: return highest available
+        return representations[0]
+
+    @async_cached_property
+    async def selected_audio_representation(self):
+        """Finds and caches the specific audio Representation object."""
+        adapt_set = await self._audio_adaptation_set
+        if not adapt_set or not adapt_set.representations:
+            return None
+        # Audio typically only has one representation
+        return adapt_set.representations[0]
+
+    async def mpd_video_helper(self, mpd_obj=None):
+        # We ignore mpd_obj because our helper properties are cached
+        adapt_set = await self._video_adaptation_set
+        selected_repr = await self.selected_video_representation
+
+        if not adapt_set or not selected_repr:
+            return None
+
+        kId = None
+        for prot in adapt_set.content_protections:
+            if prot.value is None:
+                kId = prot.pssh[0].pssh
+                break
+
+        origname = f"{selected_repr.base_urls[0].base_url_value}"
+        return {
+            "origname": origname,
+            "pssh": kId,
+            "type": "video",
+            "name": f"tempvid_{self.id}_{self.post_id}",
+            "ext": "mp4",
+        }
+
+    async def mpd_audio_helper(self, mpd_obj=None):
+        # We ignore mpd_obj because our helper properties are cached
+        adapt_set = await self._audio_adaptation_set
+        selected_repr = await self.selected_audio_representation
+
+        if not adapt_set or not selected_repr:
+            return None
+
+        kId = None
+        for prot in adapt_set.content_protections:
+            if prot.value is None:
+                kId = prot.pssh[0].pssh
+                sensitive.add_sensitive_pattern(kId, "pssh_code")
+                break
+
+        origname = f"{selected_repr.base_urls[0].base_url_value}"
+        return {
+            "origname": origname,
+            "pssh": kId,
+            "type": "audio",
+            "name": f"tempaudio_{self.id}_{self.post_id}",
+            "ext": "mp4",
+        }
 
     def normal_quality_helper(self):
         if self.mediatype != "videos":
@@ -664,25 +707,11 @@ class Media(base.base):
         return "source"
 
     async def alt_quality_helper(self, mpd_obj=None):
-        mpd = mpd_obj or await self.parse_mpd
-        if not mpd:
+        # We ignore mpd_obj because our helper properties are cached
+        selected_repr = await self.selected_video_representation
+        if not selected_repr:
             return None
-
-        allowed = quality.get_allowed_qualities()
-        for period in mpd.periods:
-            for adapt_set in filter(
-                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
-            ):
-                representations = sorted(
-                    adapt_set.representations, key=lambda x: x.height, reverse=True
-                )
-                for qual in allowed:
-                    if qual.lower() == "source":
-                        return str(representations[0].height)
-                    for r in representations:
-                        if str(r.height) == qual:
-                            return str(r.height)
-                return str(representations[0].height)  # Fallback to best
+        return str(selected_repr.height)
 
     async def _get_final_filename_async(self):
         filename = self.filename or str(self.id)
