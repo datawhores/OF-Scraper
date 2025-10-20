@@ -189,16 +189,15 @@ class Media(base.base):
 
     def _url_quality_picker(self):
         quality_val = self.normal_quality_helper()
+        # Start with None. This will be our first value in the 'or' chain.
         out = None
+        # 1. Try to get the specific quality (but only if it's not "source")
         if quality_val != "source":
             out = self._media.get("videoSources", {}).get(quality_val)
 
-        if out is None:
-            out = self.files_source.get("full")
-
-        if out is None:
-            out = self.media_source.get("source")
-        return out
+        # 2. If 'out' is still None, try the first fallback.
+        # 3. If that is also None, try the second fallback.
+        return out or self.files_source.get("full") or self.media_source.get("source")
 
     @property
     def post(self):
@@ -657,11 +656,12 @@ class Media(base.base):
 
         # Check from highest to lowest preferred quality
         for qual in allowed:
-            if qual.lower() == "source":  # "source" is an alias for the best available
-                return "source"
+            # Check if the quality (e.g., '240', '720', or 'source')
+            # is a key in the available sources.
             if available.get(qual):
-                return qual
-        return "source"  # Fallback
+                return qual  # Return the FIRST (lowest) match we find
+        # Fallback if *none* of your allowed qualities were available
+        return "source"
 
     async def alt_quality_helper(self, mpd_obj=None):
         mpd = mpd_obj or await self.parse_mpd
