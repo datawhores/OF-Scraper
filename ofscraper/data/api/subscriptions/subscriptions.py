@@ -60,10 +60,8 @@ async def get_all_activive_subscriptions(subscribe_count):
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks = [
-            asyncio.create_task(funct(c, offset))
-            for offset in range(0, subscribe_count + 1, 10)
+            asyncio.create_task(funct(c))
         ]
-        tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
         return await process_task(tasks)
 
 
@@ -73,10 +71,8 @@ async def get_all_expired_subscriptions(subscribe_count):
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         tasks = [
-            asyncio.create_task(funct(c, offset))
-            for offset in range(0, subscribe_count + 1, 10)
+            asyncio.create_task(funct(c))
         ]
-        tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
         return await process_task(tasks)
 
 
@@ -112,10 +108,8 @@ async def activeHelper(subscribe_count, c):
     funct = scrape_subscriptions_active
 
     tasks = [
-        asyncio.create_task(funct(c, offset))
-        for offset in range(0, subscribe_count + 1, 10)
+        asyncio.create_task(funct(c))
     ]
-    tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
     return await process_task(tasks)
 
 
@@ -151,11 +145,8 @@ async def expiredHelper(subscribe_count, c):
     funct = scrape_subscriptions_disabled
 
     tasks = [
-        asyncio.create_task(funct(c, offset))
-        for offset in range(0, subscribe_count + 1, 10)
+        asyncio.create_task(funct(c))
     ]
-    tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-
     return await process_task(tasks)
 
 
@@ -182,29 +173,22 @@ async def process_task(tasks):
     return output
 
 
-async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
+async def scrape_subscriptions_active(c, offset=0):
     with progress_utils.setup_live("user_list"):
         new_tasks = []
         url = of_env.getattr("subscriptionsActiveEP").format(offset)
         try:
             log.debug(f"usernames active offset {offset}")
             async with c.requests_async(url=url) as r:
-                subscriptions = (await r.json_())["list"]
+                response = await r.json_()
+                subscriptions = response["list"]
                 log.debug(
                     f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
-                if len(subscriptions) == 0:
-                    return subscriptions, new_tasks
-                elif recur is False:
-                    pass
-                elif (await r.json_())["hasMore"] is True:
+                if response["hasMore"] is True:
                     new_tasks.append(
                         asyncio.create_task(
-                            scrape_subscriptions_active(
-                                c,
-                                recur=True,
-                                offset=offset + len(subscriptions),
-                            )
+                            scrape_subscriptions_active(c, offset=offset + 10)
                         )
                     )
                 return subscriptions, new_tasks
@@ -217,30 +201,22 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
             raise E
 
 
-async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
+async def scrape_subscriptions_disabled(c, offset=0):
     with progress_utils.setup_live("user_list"):
         new_tasks = []
         url = of_env.getattr("subscriptionsExpiredEP").format(offset)
         try:
             log.debug(f"usernames offset expired {offset}")
             async with c.requests_async(url=url) as r:
-                subscriptions = (await r.json_())["list"]
+                response = await r.json_()
+                subscriptions = response["list"]
                 log.debug(
                     f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
-
-                if len(subscriptions) == 0:
-                    return subscriptions, new_tasks
-                elif recur is False:
-                    pass
-                elif (await r.json_())["hasMore"] is True:
+                if response["hasMore"] is True:
                     new_tasks.append(
                         asyncio.create_task(
-                            scrape_subscriptions_disabled(
-                                c,
-                                recur=True,
-                                offset=offset + len(subscriptions),
-                            )
+                            scrape_subscriptions_disabled(c, offset=offset + 10)
                         )
                     )
 
