@@ -8,7 +8,7 @@ permissions: read-all
 
 on:
   push:
-    branches: "*"
+    branches: ["*"]
     # Publish semver tags as releases.
     tags: ["*.*.*"]
 
@@ -125,6 +125,14 @@ jobs:
             ./bake-daily.hcl
             ${{ steps.meta.outputs.bake-file }}
           push: true
+        # uses: docker/bake-action@v5
+        # with:
+        #   context: .
+        #   platforms: linux/amd64,linux/arm64
+        #   tags: ${{ steps.meta.outputs.tags }}
+        #   labels: ${{ steps.meta.outputs.labels }}
+        #   cache-to: type=gha,mode=max
+        #   push: true
 
       - name: cosign-installer Docker Hub
         uses: sigstore/cosign-installer@v3

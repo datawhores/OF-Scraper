@@ -1,6 +1,6 @@
 variable "version" {
     type = string
-    default = "3.11.7"
+    default = "3.12.9"
 }
 variable "docker_repo" {
     type = string
