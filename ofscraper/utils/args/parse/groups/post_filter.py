@@ -13,6 +13,8 @@ from ofscraper.utils.args.parse.arguments.post_content import (
     posts_option,
     download_type_option,
     scrape_paid_option,
+    download_area_option,
+    like_area_option
 )
 
 post_filter_options_desc = "Posts Filters Options"
@@ -21,6 +23,8 @@ post_filter_options_help = (
 )
 post_filter_options_tuple = (
     posts_option,
+    download_area_option,
+    like_area_option,
     download_type_option,
     post_id_filter_option,
     max_post_count_option,
