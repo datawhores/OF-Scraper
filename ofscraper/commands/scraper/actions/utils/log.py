@@ -15,10 +15,9 @@ def get_medialog(ele):
 
 def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
-    # Temporarily escape potentially problematic values for testing the log
-    safe_filename = re.escape(placeholderObj.filename)
-    safe_filepath = re.escape(placeholderObj.filepath)
-    safe_trunicated_filepath = re.escape(placeholderObj.trunicated_filepath)
+    safe_filename = re.escape(str(placeholderObj.filename))
+    safe_filepath = re.escape(str(placeholderObj.filepath))
+    safe_trunicated_filepath = re.escape(str(placeholderObj.trunicated_filepath))
     innerlog.debug(
         f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
     )
@@ -31,7 +30,8 @@ def path_to_file_logger(placeholderObj, ele, innerlog=None):
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
-    safe_tempfilepath = re.escape(placeholderObj.tempfilepath)
+
+    safe_tempfilepath = re.escape(str(placeholderObj.tempfilepath))
     innerlog.debug(
         f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_tempfilepath}"
     )
