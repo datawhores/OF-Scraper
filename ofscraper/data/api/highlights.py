@@ -128,7 +128,7 @@ async def process_stories_tasks(tasks):
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(f"{API_S} final", responseArray, final_count=True)
-    log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)}")
+    log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)} posts")
 
     return responseArray
 
@@ -198,7 +198,7 @@ async def process_task_get_highlight_list(tasks):
     trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
 
     log.debug(
-        f"{common_logs.FINAL_COUNT.format('Highlight List')} {len(highlightLists)}"
+        f"{common_logs.FINAL_COUNT.format('Highlight List')} {len(highlightLists)} posts"
     )
 
     return highlightLists
@@ -245,7 +245,7 @@ async def process_task_highlights(tasks):
         trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
 
         log.debug(
-            f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)}"
+            f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)} posts"
         )
     progress_utils.api.remove_overall_task(page_task)
     return highlightResponse

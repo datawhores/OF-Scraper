@@ -138,7 +138,7 @@ async def process_tasks(tasks):
     )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
 
-    log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)}")
+    log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)} posts")
 
     return responseArray
 
