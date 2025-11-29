@@ -20,7 +20,10 @@ quality_option = click.option(
 media_type_option = click.option(
     "-mt",
     "--mediatype",
-    "mediatype",
+    "--mediatypes",
+    "--media-types",
+    "--media-type",
+    "mediatypes",
     help="Filter by media type (Videos, Audios, Images)",
     default=[],
     required=False,

@@ -243,7 +243,7 @@ class PostCollection:
         and return the aggregated list of media before final filtering.
         """
         candidate_posts = [post for post in self.posts if post.is_download_candidate]
-        log.info(f"Found {len(candidate_posts)} posts marked as download candidates.")
+        log.info(f"Found {len(candidate_posts)} posts with download candidates")
 
         for post in candidate_posts:
             post.prepare_media_for_download()

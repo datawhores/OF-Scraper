@@ -111,7 +111,7 @@ def merged_settings():
     merged.max_post_count = (
         read_args.retriveArgs().max_count or config_data.get_max_post_count()
     )
-    merged.mediatypes = read_args.retriveArgs().mediatype or config_data.get_filter()
+    merged.mediatypes = read_args.retriveArgs().mediatypes or config_data.get_filter()
     merged.private_key = (
         read_args.retriveArgs().private_key or config_data.get_private_key()
     )

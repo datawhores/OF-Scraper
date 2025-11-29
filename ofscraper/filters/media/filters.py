@@ -57,7 +57,7 @@ def ele_count_filter(media):
 
 
 def mediatype_type_filter(media):
-    filtersettings = settings.get_settings().mediatype
+    filtersettings = settings.get_settings().mediatypes
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):
