@@ -108,7 +108,7 @@ class PostCollection:
                 new_posts_added += 1
 
         if new_posts_added > 0:
-            log.info(f"Processed {new_posts_added} posts for the collection.")
+            log.info(f"Added {new_posts_added} posts to the collection")
 
     def get_media_to_download(self) -> list:
         """
@@ -243,7 +243,7 @@ class PostCollection:
         and return the aggregated list of media before final filtering.
         """
         candidate_posts = [post for post in self.posts if post.is_download_candidate]
-        log.info(f"Found {len(candidate_posts)} posts with download candidates")
+        log.info(f"Found {len(candidate_posts)} posts marked as download candidates.")
 
         for post in candidate_posts:
             post.prepare_media_for_download()
