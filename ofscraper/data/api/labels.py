@@ -106,8 +106,9 @@ async def process_tasks_labels(tasks):
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(f"{API} names final", responseArray, final_count=True)
-    log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)} posts")
-
+    log.debug(
+        f"{common_logs.FINAL_COUNT_ITEM.format('Label Names', len(responseArray), 'labels')}"
+    )
     return responseArray
 
 
@@ -212,13 +213,19 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
         )
     )
     log.debug(
-        f"{common_logs.FINAL_COUNT.format('All Labels Content')} {len([item['id'] for value in responseDict.values() for item in value.get('posts', [])])} posts"
+    common_logs.FINAL_COUNT_POST.format('All Labels Content',
+        len([
+            item['id']
+            for value in responseDict.values()
+            for item in value.get('posts', [])
+        ])
+    )
     )
     log.debug(
-        f"{common_logs.FINAL_COUNT.format('Labels Individual Content')} posts"
+        f"{common_logs.FINAL_COUNT.format('Labels Individual Content ->')}"
         + "\n".join(
             [
-                f"{responseDict[key]['id']}:{len(responseDict[key]['posts'])}"
+                f"{responseDict[key]['id']}:{len(responseDict[key]['posts'])} posts"
                 for key in responseDict.keys()
             ]
         )

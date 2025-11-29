@@ -129,7 +129,9 @@ async def process_tasks_batch(tasks):
         f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(responseArray, API, final_count=True)
-    log.debug(f"{common_logs.FINAL_COUNT.format('Streams')} {len(responseArray)} posts")
+    log.debug(
+        common_logs.FINAL_COUNT_POST.format('Streams', len(responseArray))
+    )
     return responseArray
 
 

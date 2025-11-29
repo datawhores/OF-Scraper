@@ -104,7 +104,9 @@ async def process_tasks(tasks):
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
-    log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)} posts")
+    log.debug(
+        common_logs.FINAL_COUNT_POST.format('Pinned', len(responseArray))
+    )
     return responseArray
 
 

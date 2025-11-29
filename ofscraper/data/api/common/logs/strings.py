@@ -9,6 +9,8 @@ PROGRESS_RAW_OFFSET = (
 
 FINAL_IDS = "[bold]{} Final ids[/bold] "
 FINAL_RAW = "[bold]{} Final raw data[/bold]"
-FINAL_COUNT = "[bold]{} Final count[bold]: "
+FINAL_COUNT = "[bold]{} Final Count[bold] "
+FINAL_COUNT_POST = "[bold]{} Final count[bold]: {} post(s) "
+FINAL_COUNT_ITEM = "[bold]{} Final count[bold]: {} {} "
 
 RAW_INNER = "list info"
