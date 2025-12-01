@@ -1,5 +1,6 @@
 import logging
 import re
+import sys
 from rich.text import Text
 
 # Assumes you have this module for getting sensitive patterns
@@ -34,10 +35,16 @@ class SensitiveFormatter(logging.Formatter):
     """
 
     def _filter(self, s: str) -> str:
-        # Fetch the complete, up-to-the-minute dictionary of rules
         sensitive_dict = sensitive.getSenstiveDict()
         for pattern, replacement in sensitive_dict.items():
-            s = re.sub(pattern, replacement, s)
+            try:
+                # If 'pattern' is just a string you want to find/replace:
+                # Use re.escape(pattern) to treat characters like * or + as literals
+                s = re.sub(re.escape(pattern), replacement, s)
+                # OR, if 'pattern' IS supposed to be Regex, keep using it raw
+                # but ensure the regex syntax in 'sensitive_dict' is correct.
+            except re.error:
+                sys.stderr.write(f"Bad regex: {pattern}\n")
         return s
 
     def format(self, record: logging.LogRecord) -> str:
