@@ -35,22 +35,21 @@ class SensitiveFormatter(logging.Formatter):
     """
 
     def _filter(self, s: str) -> str:
+        # Fetch the rules
         sensitive_dict = sensitive.getSenstiveDict()
         for pattern, replacement in sensitive_dict.items():
             try:
-                # If 'pattern' is just a string you want to find/replace:
-                # Use re.escape(pattern) to treat characters like * or + as literals
-                s = re.sub(re.escape(pattern), replacement, s)
-                # OR, if 'pattern' IS supposed to be Regex, keep using it raw
-                # but ensure the regex syntax in 'sensitive_dict' is correct.
+                # Try to replace the pattern
+                s = re.sub(pattern, replacement, s)
             except re.error:
-                sys.stderr.write(f"Bad regex: {pattern}\n")
+                # DO NOT use sys.stderr here if you are worried about Rich.
+                # Instead, modify 's' to include the warning.
+                # This ensures Rich prints it safely as part of the log line.
+                s += f"\n [LOGGING ERROR: Bad regex pattern '{pattern}']"
         return s
 
     def format(self, record: logging.LogRecord) -> str:
-        # Call the parent's format method first
         original = super().format(record)
-        # Then, filter the result
         return self._filter(original)
 
 
