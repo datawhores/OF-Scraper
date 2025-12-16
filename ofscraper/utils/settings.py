@@ -40,11 +40,12 @@ settings = {}
 # CONFIG READERS (Internal - interact with JSON/Env)
 # =========================================================================
 
+
 @wrapper.config_reader
 def get_main_profile(config=None):
     if config is False:
         return of_env.getattr("PROFILE_DEFAULT")
-    
+
     value = config.get(of_env.getattr("mainProfile"))
     return value or of_env.getattr("PROFILE_DEFAULT")
 
@@ -61,8 +62,10 @@ def get_filesize_max(config=None):
             size = config.get("download_options", {}).get("file_size_limit")  # Legacy
         if size is None:
             size = config.get("content_filter_options", {}).get("file_size_max")
-        
-        final_size = size if size is not None else of_env.getattr("FILE_SIZE_MAX_DEFAULT")
+
+        final_size = (
+            size if size is not None else of_env.getattr("FILE_SIZE_MAX_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -79,7 +82,9 @@ def get_filesize_min(config=None):
         if size is None:
             size = config.get("content_filter_options", {}).get("file_size_min")
 
-        final_size = size if size is not None else of_env.getattr("FILE_SIZE_MIN_DEFAULT")
+        final_size = (
+            size if size is not None else of_env.getattr("FILE_SIZE_MIN_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -89,13 +94,13 @@ def get_filesize_min(config=None):
 def _get_min_length_config(config=None):
     if config is False:
         return of_env.getattr("MIN_LENGTH_DEFAULT")
-    
+
     value = config.get("length_min")
     if value is None:
         value = config.get("download_options", {}).get("length_min")
     if value is None:
         value = config.get("content_filter_options", {}).get("length_min")
-        
+
     return value if value is not None else of_env.getattr("MIN_LENGTH_DEFAULT")
 
 
@@ -121,8 +126,10 @@ def get_system_freesize(config=None):
         size = config.get("system_free_min")
         if size is None:
             size = config.get("download_options", {}).get("system_free_min")
-        
-        final_size = size if size is not None else of_env.getattr("SYSTEM_FREEMIN_DEFAULT")
+
+        final_size = (
+            size if size is not None else of_env.getattr("SYSTEM_FREEMIN_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -158,8 +165,10 @@ def get_textlength(config=None):
         length = config.get("textlength")
         if length is None:
             length = config.get("file_options", {}).get("textlength")
-        
-        final_length = length if length is not None else of_env.getattr("TEXTLENGTH_DEFAULT")
+
+        final_length = (
+            length if length is not None else of_env.getattr("TEXTLENGTH_DEFAULT")
+        )
         return int(final_length)
     except (ValueError, TypeError):
         return of_env.getattr("TEXTLENGTH_DEFAULT")
@@ -181,11 +190,11 @@ def get_date(config=None):
 def get_InfiniteLoop(config=None):
     if config is False:
         return of_env.getattr("INFINITE_LOOP_DEFAULT")
-    
+
     val = config.get("infinite_loop_action_mode")
     if val is None:
         val = config.get("advanced_options", {}).get("infinite_loop_action_mode")
-        
+
     return val if val is not None else of_env.getattr("INFINITE_LOOP_DEFAULT")
 
 
@@ -193,7 +202,7 @@ def get_InfiniteLoop(config=None):
 def get_enable_after(config=None):
     if config is False:
         return of_env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
-    
+
     val = config.get("enable_auto_after")
     if val is None:
         val = config.get("advanced_options", {}).get("enable_auto_after")
@@ -232,7 +241,7 @@ def get_default_blacklist(config=None):
 def get_logs_expire(config=None):
     if not config:
         return None
-    
+
     val = config.get("logs_expire_time")
     if val is None:
         val = config.get("advanced_options", {}).get("logs_expire_time")
@@ -243,11 +252,11 @@ def get_logs_expire(config=None):
 def get_ssl_verify(config=None):
     if not config:
         return of_env.getattr("SSL_VALIDATION_DEFAULT")
-    
+
     val = config.get("ssl_verify")
     if val is None:
         val = config.get("advanced_options", {}).get("ssl_verify")
-        
+
     return val if val is not None else of_env.getattr("SSL_VALIDATION_DEFAULT")
 
 
@@ -255,13 +264,13 @@ def get_ssl_verify(config=None):
 def get_after_action_script(config=None):
     if config is False:
         return of_env.getattr("AFTER_ACTION_SCRIPT_DEFAULT")
-    
+
     val = config.get("after_action_script")
     if val is None:
         val = config.get("advanced_options", {}).get("after_action_script")
     if val is None:
         val = config.get("script_options", {}).get("after_action_script")
-        
+
     return val if val is not None else of_env.getattr("AFTER_ACTION_SCRIPT_DEFAULT")
 
 
@@ -285,7 +294,7 @@ def get_post_script(config=None):
 def get_naming_script(config=None):
     if config is False:
         return of_env.getattr("NAMING_SCRIPT_DEFAULT")
-    
+
     val = config.get("naming_script")
     if val is None:
         val = config.get("advanced_options", {}).get("naming_script")
@@ -317,7 +326,7 @@ def get_skip_download_script(config=None):
 def get_after_download_script(config=None):
     if config is False:
         return of_env.getattr("AFTER_DOWNLOAD_SCRIPT_DEFAULT")
-    
+
     val = config.get("after_download_script")
     if val is None:
         val = config.get("advanced_options", {}).get("after_download_script")
@@ -342,8 +351,12 @@ def _get_env_files_config(config=None):
         if config_value is None:
             config_value = config.get("script_options", {}).get("env_files")
 
-        raw_value = config_value if config_value is not None else of_env.getattr("ENV_FILES_DEFAULT")
-    
+        raw_value = (
+            config_value
+            if config_value is not None
+            else of_env.getattr("ENV_FILES_DEFAULT")
+        )
+
     return raw_value or []
 
 
@@ -363,7 +376,9 @@ def _get_download_limit_config(config=None):
         if limit is None:
             limit = config.get("performance_options", {}).get("download_limit")
 
-        final_limit = limit if limit is not None else of_env.getattr("DOWNLOAD_LIMIT_DEFAULT")
+        final_limit = (
+            limit if limit is not None else of_env.getattr("DOWNLOAD_LIMIT_DEFAULT")
+        )
         return parse_size(str(final_limit))
     except (ValueError, TypeError):
         return 0
@@ -373,11 +388,11 @@ def _get_download_limit_config(config=None):
 def _get_ffmpeg_config(config=None):
     if config is False:
         return of_env.getattr("FFMPEG_DEFAULT")
-    
+
     val = config.get("ffmpeg")
     if val is None:
         val = config.get("binary_options", {}).get("ffmpeg")
-        
+
     return val if val is not None else of_env.getattr("FFMPEG_DEFAULT")
 
 
@@ -385,7 +400,7 @@ def _get_ffmpeg_config(config=None):
 def get_discord(config=None):
     if config is False:
         return of_env.getattr("DISCORD_DEFAULT")
-    
+
     val = config.get("discord")
     return val if val is not None else of_env.getattr("DISCORD_DEFAULT", "")
 
@@ -394,15 +409,17 @@ def get_discord(config=None):
 def get_filter(config=None):
     if config is False:
         return of_env.getattr("FILTER_DEFAULT")
-    
+
     filter_val = config.get("filter")
     if filter_val is None:
         filter_val = config.get("download_options", {}).get("filter")
     if filter_val is None:
         filter_val = config.get("content_filter_options", {}).get("filter")
-    
-    final_filter = filter_val if filter_val is not None else of_env.getattr("FILTER_DEFAULT")
-    
+
+    final_filter = (
+        filter_val if filter_val is not None else of_env.getattr("FILTER_DEFAULT")
+    )
+
     if isinstance(final_filter, str):
         return [x.capitalize().strip() for x in final_filter.split(",")]
     elif isinstance(final_filter, list):
@@ -414,7 +431,7 @@ def get_filter(config=None):
 def responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")
-    
+
     val = config.get("responsetype")
     return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")
 
@@ -423,14 +440,14 @@ def responsetype(config=None):
 def get_timeline_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
-    
+
     val = config.get("timeline")
     if val is None:
         val = config.get("post")
     if val is None:
         val = config.get("responsetype", {}).get("timeline")
     if val is None:
-        val = config.get("responsetype", {}).get("post") 
+        val = config.get("responsetype", {}).get("post")
     return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
 
 
@@ -438,7 +455,7 @@ def get_timeline_responsetype(config=None):
 def get_post_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
-    
+
     val = config.get("post")
     if val is None:
         val = config.get("timeline")
@@ -447,18 +464,18 @@ def get_post_responsetype(config=None):
     if val is None:
         val = config.get("responsetype", {}).get("timeline")
 
-    return val or  of_env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+    return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
 
 
 @wrapper.config_reader
 def get_archived_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
-    
+
     val = config.get("archived")
     if val is None:
         val = config.get("responsetype", {}).get("archived")
-        
+
     return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
 
 
@@ -490,7 +507,7 @@ def get_highlights_responsetype(config=None):
 def get_paid_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
-    
+
     val = config.get("paid")
     if val is None:
         val = config.get("responsetype", {}).get("paid")
@@ -502,7 +519,7 @@ def get_paid_responsetype(config=None):
 def get_messages_progress_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["message"]
-    
+
     val = config.get("message")
     if val is None:
         val = config.get("responsetype", {}).get("message")
@@ -514,7 +531,7 @@ def get_messages_progress_responsetype(config=None):
 def get_profile_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
-    
+
     val = config.get("profile")
     if val is None:
         val = config.get("responsetype", {}).get("profile")
@@ -526,23 +543,23 @@ def get_profile_responsetype(config=None):
 def get_pinned_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
-    
+
     val = config.get("pinned")
     if val is None:
         val = config.get("responsetype", {}).get("pinned")
-        
-    return val or  of_env.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
+
+    return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
 
 
 @wrapper.config_reader
 def get_streams_responsetype(config=None):
     if config is False:
         return of_env.getattr("RESPONSE_TYPE_DEFAULT")["streams"]
-    
+
     val = config.get("streams")
     if val is None:
         val = config.get("responsetype", {}).get("streams")
-        
+
     return val or of_env.getattr("RESPONSE_TYPE_DEFAULT")["streams"]
 
 
@@ -550,13 +567,13 @@ def get_streams_responsetype(config=None):
 def get_spacereplacer(config=None):
     if config is False:
         return of_env.getattr("SPACE_REPLACER_DEFAULT")
-    
+
     val = config.get("space_replacer")
     if val is None:
         val = config.get("file_options", {}).get("space_replacer")
     if val is None:
         val = config.get("file_options", {}).get("space-replacer")  # Legacy
-        
+
     return val or of_env.getattr("SPACE_REPLACER_DEFAULT")
 
 
@@ -564,7 +581,7 @@ def get_spacereplacer(config=None):
 def get_private_key(config=None):
     if config is None or config is False:
         return None
-    
+
     val = config.get("private-key")
     if val is None:
         val = config.get("cdm_options", {}).get("private-key")
@@ -575,7 +592,7 @@ def get_private_key(config=None):
 def get_client_id(config=None):
     if config is None or config is False:
         return None
-    
+
     val = config.get("client-id")
     if val is None:
         val = config.get("cdm_options", {}).get("client-id")
@@ -586,37 +603,45 @@ def get_client_id(config=None):
 def get_key_mode(config=None):
     if config is False:
         return of_env.getattr("KEY_DEFAULT")
-    
+
     value = config.get("key-mode-default")
     if value is None:
         value = config.get("cdm_options", {}).get("key-mode-default")
-    
+
     final_value = value if value is not None else of_env.getattr("KEY_DEFAULT")
-    return final_value.lower() if final_value and final_value.lower() in const.KEY_OPTIONS else of_env.getattr("KEY_DEFAULT")
+    return (
+        final_value.lower()
+        if final_value and final_value.lower() in const.KEY_OPTIONS
+        else of_env.getattr("KEY_DEFAULT")
+    )
 
 
 @wrapper.config_reader
 def get_dynamic(config=None):
     if config is False:
         return of_env.getattr("DYNAMIC_RULE_DEFAULT")
-    
+
     value = config.get("dynamic-mode-default")
     if value is None:
         value = config.get("advanced_options", {}).get("dynamic-mode-default")
 
     final_value = value if value is not None else of_env.getattr("DYNAMIC_RULE_DEFAULT")
-    return final_value.lower() if final_value and final_value.lower() in of_env.getattr("DYNAMIC_OPTIONS_ALL") else of_env.getattr("DYNAMIC_RULE_DEFAULT")
+    return (
+        final_value.lower()
+        if final_value and final_value.lower() in of_env.getattr("DYNAMIC_OPTIONS_ALL")
+        else of_env.getattr("DYNAMIC_RULE_DEFAULT")
+    )
 
 
 @wrapper.config_reader
 def get_part_file_clean(config=None):
     if config is False:
         return of_env.getattr("RESUME_DEFAULT")
-    
+
     val = config.get("auto_resume")
     if val is None:
         val = config.get("download_options", {}).get("auto_resume")
-    
+
     if val is not None:
         return val
 
@@ -624,7 +649,7 @@ def get_part_file_clean(config=None):
     legacy_val = config.get("partfileclean")
     if legacy_val is not None:
         return legacy_val is False
-        
+
     return of_env.getattr("RESUME_DEFAULT")
 
 
@@ -636,7 +661,7 @@ def get_download_semaphores(config=None):
         sem = config.get("download_sems")
         if sem is None:
             sem = config.get("performance_options", {}).get("download_sems")
-        
+
         final_sem = sem if sem is not None else of_env.getattr("DOWNLOAD_SEM_DEFAULT")
         return int(final_sem)
     except (ValueError, TypeError):
@@ -647,11 +672,11 @@ def get_download_semaphores(config=None):
 def get_show_downloadprogress(config=None):
     if config is False:
         return of_env.getattr("PROGRESS_DEFAULT")
-    
+
     val = config.get("downloadbars")
     if val is None:
         val = config.get("advanced_options", {}).get("downloadbars")
-        
+
     return val if val is not None else of_env.getattr("PROGRESS_DEFAULT")
 
 
@@ -668,11 +693,11 @@ def cache_mode_helper(config=None):
         return of_env.getattr("CACHEDEFAULT")
     if config is None:
         config = config_file.open_config()
-    
+
     data = config.get("cache-mode")
     if data is None:
         data = config.get("advanced_options", {}).get("cache-mode")
-    
+
     final_data = data if data is not None else of_env.getattr("CACHEDEFAULT")
 
     if final_data in {"sqlite", "json", "disabled"}:
@@ -685,11 +710,11 @@ def cache_mode_helper(config=None):
 def get_rotate_logs(config=None):
     if config is False:
         return of_env.getattr("ROTATE_DEFAULT")
-    
+
     value = config.get("rotate_logs")
     if value is None:
         value = config.get("advanced_options", {}).get("rotate_logs")
-        
+
     return value if value is not None else of_env.getattr("ROTATE_DEFAULT")
 
 
@@ -697,11 +722,11 @@ def get_rotate_logs(config=None):
 def get_sanitizeDB(config=None):
     if config is False:
         return of_env.getattr("SANITIZE_DB_DEFAULT")
-    
+
     val = config.get("sanitize_text")
     if val is None:
         val = config.get("advanced_options", {}).get("sanitize_text")
-        
+
     return val if val is not None else of_env.getattr("SANITIZE_DB_DEFAULT")
 
 
@@ -709,20 +734,24 @@ def get_sanitizeDB(config=None):
 def get_textType(config=None):
     if config is False:
         return of_env.getattr("TEXT_TYPE_DEFAULT")
-    
+
     value = config.get("text_type_default")
     if value is None:
         value = config.get("file_options", {}).get("text_type_default")
 
     final_value = value if value is not None else of_env.getattr("TEXT_TYPE_DEFAULT")
-    return final_value if final_value in {"letter", "word"} else of_env.getattr("TEXT_TYPE_DEFAULT")
+    return (
+        final_value
+        if final_value in {"letter", "word"}
+        else of_env.getattr("TEXT_TYPE_DEFAULT")
+    )
 
 
 @wrapper.config_reader
 def get_TempDir(config=None):
     if config is False:
         return of_env.getattr("TEMP_FOLDER_DEFAULT")
-    
+
     val = config.get("temp_dir")
     if val is None:
         val = config.get("advanced_options", {}).get("temp_dir")
@@ -734,11 +763,11 @@ def get_TempDir(config=None):
 def get_truncation(config=None):
     if config is False:
         return of_env.getattr("TRUNCATION_DEFAULT")
-    
+
     val = config.get("truncation_default")
     if val is None:
         val = config.get("file_options", {}).get("truncation_default")
-        
+
     return val if val is not None else of_env.getattr("TRUNCATION_DEFAULT")
 
 
@@ -750,8 +779,10 @@ def get_max_post_count(config=None):
         count = config.get("max_post_count")
         if count is None:
             count = config.get("download_options", {}).get("max_post_count")
-        
-        final_count = count if count is not None else of_env.getattr("MAX_COUNT_DEFAULT")
+
+        final_count = (
+            count if count is not None else of_env.getattr("MAX_COUNT_DEFAULT")
+        )
         return int(final_count)
     except (ValueError, TypeError):
         return of_env.getattr("MAX_COUNT_DEFAULT")
@@ -764,7 +795,9 @@ def get_hash(config=None):
     val = config.get("remove_hash_match")
     if val is not None:
         return val
-    return config.get("advanced_options", {}).get("remove_hash_match", of_env.getattr("HASHED_DEFAULT"))
+    return config.get("advanced_options", {}).get(
+        "remove_hash_match", of_env.getattr("HASHED_DEFAULT")
+    )
 
 
 @wrapper.config_reader
@@ -774,12 +807,15 @@ def get_block_ads(config=None):
     val = config.get("block_ads")
     if val is not None:
         return val
-    return config.get("content_filter_options", {}).get("block_ads", of_env.getattr("BLOCKED_ADS_DEFAULT"))
+    return config.get("content_filter_options", {}).get(
+        "block_ads", of_env.getattr("BLOCKED_ADS_DEFAULT")
+    )
 
 
 # =========================================================================
 # SETTINGS MANAGEMENT & HELPERS
 # =========================================================================
+
 
 def get_args(copy=False):
     if copy:
@@ -836,21 +872,17 @@ def resetUserSelect():
 def merged_settings():
     # 1. Retrieve args once
     args = read_args.retriveArgs()
-    
+
     # 2. Create the copy from the local variable
     merged = deepcopy(args)
 
     # 3. Merge Args with Config
     merged.key_mode = args.key_mode or get_key_mode()
-    
-    merged.cache_disabled = (
-        args.no_cache or get_cache_mode() == "disabled"
-    )
-    
+
+    merged.cache_disabled = args.no_cache or get_cache_mode() == "disabled"
+
     merged.api_cached_disabled = (
-        args.no_cache
-        or args.no_api_cache
-        or get_cache_mode() == "api_disabled"
+        args.no_cache or args.no_api_cache or get_cache_mode() == "api_disabled"
     )
 
     merged.dynamic_rules = args.dynamic_rules or get_dynamic()
@@ -879,8 +911,12 @@ def merged_settings():
     merged.post_script = args.post_script or get_post_script()
     merged.after_action_script = args.after_action_script or get_after_action_script()
     merged.naming_script = args.naming_script or get_naming_script()
-    merged.skip_download_script = args.skip_download_script or get_skip_download_script()
-    merged.after_download_script = args.after_download_script or get_after_download_script()
+    merged.skip_download_script = (
+        args.skip_download_script or get_skip_download_script()
+    )
+    merged.after_download_script = (
+        args.after_download_script or get_after_download_script()
+    )
     merged.rotate_logs = get_rotate_logs()
     merged.auto_resume = get_auto_resume()
     merged.auto_after = get_auto_after_enabled()
@@ -888,7 +924,7 @@ def merged_settings():
     merged.logs_expire_time = get_logs_expire()
     merged.ssl_verify = get_ssl_verify()
     merged.env_files = get_env_files()
-    
+
     merged.text = args.text or args.text_only
     merged.text_only = args.text_only
 
@@ -896,7 +932,7 @@ def merged_settings():
         merged.force_all = True
         merged.after = arrow.get(2000)
         merged.before = arrow.now().shift(days=1)
-        
+
     return merged
 
 
@@ -972,12 +1008,12 @@ def get_env_files():
     # Helper to resolve between Args and Config
     args = read_args.retriveArgs()
     out = args.env_files or _get_env_files_config()
-    
-    # If it came from args (string), split it. 
+
+    # If it came from args (string), split it.
     # If it came from config (list), keep it.
     if isinstance(out, str):
         return [x for x in re.split(r",| ", out) if x.strip()]
-    
+
     return [str(x).strip() for x in out] if out else []
 
 
@@ -988,11 +1024,11 @@ def _listhelper(out):
     """
     if out is None:
         return []
-    
+
     if isinstance(out, str):
         out = out.split(",")
-    
+
     if isinstance(out, list):
         return [str(x).strip() for x in out if str(x).strip()]
-        
+
     return []

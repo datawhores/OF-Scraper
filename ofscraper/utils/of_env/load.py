@@ -1,5 +1,5 @@
 import logging
-from dotenv import dotenv_values,load_dotenv
+from dotenv import dotenv_values, load_dotenv
 import os
 import json
 import yaml
@@ -21,14 +21,13 @@ def load_env_files(values: list[str] | None):
         ValueError: If a YAML or JSON file is malformed or not a dictionary.
         Exception: For other unexpected errors during file processing.
     """
-    #load local env
+    # load local env
     load_dotenv(override=True)
     if not values:  # If no paths were provided, do nothing
         return
     for value in values:
         if not value:
             continue
-
 
         file_path = os.path.abspath(value)
         file_extension = os.path.splitext(file_path)[1].lower()

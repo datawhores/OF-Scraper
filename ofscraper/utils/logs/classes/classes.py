@@ -1,6 +1,5 @@
 import logging
 import re
-import sys
 from rich.text import Text
 
 # Assumes you have this module for getting sensitive patterns
@@ -88,7 +87,7 @@ class DiscordFormatter(SensitiveFormatter):
         t = re.sub(r"__+", "__", t)
         t = re.sub(r"~~+", "~~", t)
         # Remove escape characters
-        t=re.sub(r"\\([\[\]])", r"\1", t)
+        t = re.sub(r"\\([\[\]])", r"\1", t)
         return t.strip()
 
 
