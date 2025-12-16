@@ -25,10 +25,10 @@ def load_env_files(values: list[str] | None):
     load_dotenv(override=True)
     if not values:  # If no paths were provided, do nothing
         return
-
     for value in values:
         if not value:
             continue
+
 
         file_path = os.path.abspath(value)
         file_extension = os.path.splitext(file_path)[1].lower()

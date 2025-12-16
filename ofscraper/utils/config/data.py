@@ -22,15 +22,6 @@ import ofscraper.utils.config.utils.wrapper as wrapper
 import ofscraper.utils.const as const
 
 
-def _to_comma_separated_string(value: any) -> str | None:
-    """
-    Helper function to convert a list into a comma-separated string.
-    If the value is not a list, it's returned as is.
-    """
-    if isinstance(value, list):
-        return ",".join(map(str, value))
-    return value
-
 
 @wrapper.config_reader
 def get_main_profile(config=None):
@@ -203,8 +194,7 @@ def get_default_userlist(config=None):
             config_value = config.get("advanced_options", {}).get("default_user_list")
 
         raw_value = config_value or of_env.getattr("DEFAULT_USER_LIST")
-    formatted_value = _to_comma_separated_string(raw_value)
-    return formatted_value or ""
+    return raw_value or []
 
 
 @wrapper.config_reader
@@ -218,8 +208,7 @@ def get_default_blacklist(config=None):
 
         raw_value = config_value or of_env.getattr("DEFAULT_BLACK_LIST")
 
-    formatted_value = _to_comma_separated_string(raw_value)
-    return formatted_value or ""
+    return raw_value or []
 
 
 @wrapper.config_reader
@@ -337,9 +326,7 @@ def get_env_files(config=None):
             config_value = config.get("script_options", {}).get("env_files")
 
         raw_value = config_value if config_value is not None else of_env.getattr("ENV_FILES_DEFAULT")
-    
-    formatted_value = _to_comma_separated_string(raw_value)
-    return formatted_value or ""
+    return raw_value or []
 
 
 @wrapper.config_reader
