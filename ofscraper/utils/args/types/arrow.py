@@ -21,7 +21,7 @@ class ArrowType(click.ParamType):
                 x = re.sub("\\bday\\b", "days", x)
                 x = re.sub("\\bmonth\\b", "months", x)
                 x = re.sub("\\bweek\\b", "weeks", x)
-                arw = arrow.utcnow()
+                arw = arrow.now()
                 t = arw.dehumanize(x)
             except ValueError as E:
                 raise E
