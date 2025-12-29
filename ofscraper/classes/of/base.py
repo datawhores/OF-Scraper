@@ -34,7 +34,8 @@ class base:
     def file_cleanup(self, text):
         text = str(text)
         text = re.sub("<[^>]*>", "", text)
-        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
+        text = re.sub("[/\\]", "_", text)
+        text = re.sub('[\n<>:"\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
         text = re.sub(" ", settings.get_settings().space_replacer, text)
