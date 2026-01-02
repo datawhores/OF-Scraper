@@ -231,23 +231,27 @@ def daemon_process():
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
-                if worker_thread:
+                if worker_thread and worker_thread.is_alive():
                     worker_thread.join(timeout=5)
             raise KeyboardInterrupt
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
                 raise E
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
-                if worker_thread:
+                if worker_thread and worker_thread.is_alive():
                     worker_thread.join(timeout=5)
             raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
                 raise E
 
 

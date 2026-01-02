@@ -10,6 +10,7 @@ def shutdown():
     manager.shutdown()
     closeThreadExecutor()
     closeCache()
+    closeThreadExecutor()
 
 
 def forcedShutDown():
@@ -17,6 +18,7 @@ def forcedShutDown():
     manager.shutdown()
     closeThreadExecutor()
     closeCache()
+    closeThreadExecutor()
 
 
 def closeThreadExecutor():
