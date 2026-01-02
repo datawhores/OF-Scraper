@@ -62,38 +62,41 @@ class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
         await common_globals.sem.acquire()
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Downloading with protected media downloader"
-        )
-        async for _ in download_retry():
-            with _:
-                try:
-                    sharedPlaceholderObj = await placeholder.Placeholders(
-                        ele, "mp4"
-                    ).init()
-                    common_globals.log.debug(
-                        f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
-                    )
-                except Exception as e:
-                    raise e
-        audio = await ele.mpd_audio
-        video = await ele.mpd_video
-        path_to_file_logger(sharedPlaceholderObj, ele)
+        try:
+            common_globals.log.debug(
+                f"{get_medialog(ele)} Downloading with protected media downloader"
+            )
+            async for _ in download_retry():
+                with _:
+                    try:
+                        sharedPlaceholderObj = await placeholder.Placeholders(
+                            ele, "mp4"
+                        ).init()
+                        common_globals.log.debug(
+                            f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+                        )
+                    except Exception as e:
+                        raise e
+            audio = await ele.mpd_audio
+            video = await ele.mpd_video
+            path_to_file_logger(sharedPlaceholderObj, ele)
 
-        audio = await self._alt_download_downloader(audio, c, ele)
-        video = await self._alt_download_downloader(video, c, ele)
-        ele.add_size(audio["total"] + video["total"])
+            audio = await self._alt_download_downloader(audio, c, ele)
+            video = await self._alt_download_downloader(video, c, ele)
+            ele.add_size(audio["total"] + video["total"])
 
-        post_result = await self._media_item_post_process_alt(
-            audio, video, ele, username, model_id
-        )
-        if post_result:
-            return post_result
-        await self._media_item_keys_alt(c, audio, video, ele)
+            post_result = await self._media_item_post_process_alt(
+                audio, video, ele, username, model_id
+            )
+            if post_result:
+                return post_result
+            await self._media_item_keys_alt(c, audio, video, ele)
 
-        return await self._handle_result_alt(
-            sharedPlaceholderObj, ele, audio, video, username, model_id
-        )
+            return await self._handle_result_alt(
+                sharedPlaceholderObj, ele, audio, video, username, model_id
+            )
+        finally:
+            common_globals.sem.release()
 
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
@@ -220,8 +223,6 @@ class AltDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
         common_globals.log.debug(

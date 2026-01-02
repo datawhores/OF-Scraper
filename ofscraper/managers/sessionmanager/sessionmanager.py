@@ -634,13 +634,12 @@ class sessionManager:
                         self._log.debug(f"response headers {dict(r.headers)}")
                         r.raise_for_status()
 
-                    self._sem.release()
                     yield r
-                    return
                 except Exception as E:
                     await self._async_handle_error(E, exceptions)
-                    self._sem.release()
                     raise E
+                finally:
+                    self._sem.release()
 
     @property
     def sleep(self):

@@ -55,29 +55,32 @@ class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
         await common_globals.sem.acquire()
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Downloading with normal downloader"
-        )
-        common_globals.log.debug(
-            f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
-        )
-        if common.is_bad_url(ele.url):
+        try:
             common_globals.log.debug(
-                f"{get_medialog(ele)} Forcing download because known bad url"
+                f"{get_medialog(ele)} Downloading with normal downloader"
             )
-            await self._force_download(ele, username, model_id)
-            return ele.mediatype, 0
-        result = await self._main_download_downloader(
-            c,
-            ele,
-        )
-        ele.add_size(result[0])
-        # special case for zero byte files
-        if result[0] == 0:
-            if ele.mediatype != "forced_skipped":
+            common_globals.log.debug(
+                f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+            )
+            if common.is_bad_url(ele.url):
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} Forcing download because known bad url"
+                )
                 await self._force_download(ele, username, model_id)
-            return ele.mediatype, 0
-        return await self._handle_results_main(result, ele, username, model_id)
+                return ele.mediatype, 0
+            result = await self._main_download_downloader(
+                c,
+                ele,
+            )
+            ele.add_size(result[0])
+            # special case for zero byte files
+            if result[0] == 0:
+                if ele.mediatype != "forced_skipped":
+                    await self._force_download(ele, username, model_id)
+                return ele.mediatype, 0
+            return await self._handle_results_main(result, ele, username, model_id)
+        finally:
+            common_globals.sem.release()
 
     async def _main_download_downloader(self, c, ele):
         self._downloadspace()
@@ -202,8 +205,6 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(
         self, r, ele, tempholderObj, placeholderObj, total
