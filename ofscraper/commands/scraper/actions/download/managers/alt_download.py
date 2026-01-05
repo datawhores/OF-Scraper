@@ -52,7 +52,9 @@ from ofscraper.db.operations_.media import mark_media_as_downloaded
 class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots before: {common_globals.sem._value}")
         async with common_globals.sem:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after acquire: {common_globals.sem._value}")
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
             )
@@ -88,6 +90,7 @@ class AltDownloadManager(DownloadManager):
             return await self._handle_result_alt(
                 sharedPlaceholderObj, ele, audio, video, username, model_id
             )
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after release: {common_globals.sem._value}")
 
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
@@ -234,8 +237,10 @@ class AltDownloadManager(DownloadManager):
             ele, total=total, placeholderObj=placeholderObj
         )
         try:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file: {placeholderObj.tempfilepath}")
             async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
                 await fileobject.write(await res.read_())
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed: {placeholderObj.tempfilepath}")
         finally:
             await self._remove_download_job_task(task1, ele)
 
@@ -244,6 +249,7 @@ class AltDownloadManager(DownloadManager):
     ):
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         try:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file for streaming: {placeholderObj.tempfilepath}")
             async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
                 chunk_iter = res.iter_chunked(get_chunk_size())
 
@@ -254,6 +260,7 @@ class AltDownloadManager(DownloadManager):
                         send_chunk_msg(ele, total, placeholderObj)
                     except StopAsyncIteration:
                         break  # Exit loop when no more chunks
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed after streaming: {placeholderObj.tempfilepath}")
 
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
