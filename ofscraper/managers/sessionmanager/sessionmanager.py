@@ -635,8 +635,7 @@ class sessionManager:
             ),
         ):
             with _:
-                await self._sem.acquire()
-                try:
+                async with self._sem:
                     if await self._rate_limit_sleeper.async_do_sleep():
                         pass
                     else:
@@ -682,11 +681,6 @@ class sessionManager:
                         r.raise_for_status()
 
                     yield r
-                except Exception as E:
-                    await self._async_handle_error(E, exceptions)
-                    raise E
-                finally:
-                    self._sem.release()
 
     @property
     def sleep(self):

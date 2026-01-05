@@ -40,8 +40,7 @@ from ofscraper.db.operations_.media import mark_media_as_downloaded
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
-        try:
+        async with common_globals.sem:
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with normal downloader"
             )
@@ -64,9 +63,6 @@ class MainDownloadManager(DownloadManager):
                 return ele.mediatype.capitalize(), 0
 
             return await self._handle_result_main(result, ele, username, model_id)
-
-        finally:
-            common_globals.sem.release()
 
     async def _main_download_downloader(self, c, ele):
         self._downloadspace()
