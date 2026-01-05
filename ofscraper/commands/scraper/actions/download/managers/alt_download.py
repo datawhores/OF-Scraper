@@ -233,40 +233,28 @@ class AltDownloadManager(DownloadManager):
         task1 = await self._add_download_job_task(
             ele, total=total, placeholderObj=placeholderObj
         )
-        fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         try:
-            await fileobject.write(await res.read_())
-        except Exception as E:
-            raise E
+            async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
+                await fileobject.write(await res.read_())
         finally:
-            try:
-                await fileobject.close()
-            except Exception as E:
-                raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                raise E
+            await self._remove_download_job_task(task1, ele)
 
     async def _download_fileobject_writer_streamer(
         self, ele, total, res, placeholderObj
     ):
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None
         try:
-            fileobject = await aiofiles.open(
-                placeholderObj.tempfilepath, "ab"
-            ).__aenter__()
-            chunk_iter = res.iter_chunked(get_chunk_size())
+            async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
+                chunk_iter = res.iter_chunked(get_chunk_size())
 
-            while True:
-                try:
-                    chunk = await chunk_iter.__anext__()
-                    await fileobject.write(chunk)
-                    send_chunk_msg(ele, total, placeholderObj)
-                except StopAsyncIteration:
-                    break  # Exit loop when no more chunks
-                    
+                while True:
+                    try:
+                        chunk = await chunk_iter.__anext__()
+                        await fileobject.write(chunk)
+                        send_chunk_msg(ele, total, placeholderObj)
+                    except StopAsyncIteration:
+                        break  # Exit loop when no more chunks
+
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
@@ -277,19 +265,7 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
         finally:
-            if fileobject:
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.debug(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E
+            await self._remove_download_job_task(task1, ele)
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
