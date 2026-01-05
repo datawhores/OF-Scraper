@@ -61,8 +61,7 @@ from ofscraper.classes.of.media import Media
 class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
-        try:
+        async with common_globals.sem:
             common_globals.log.debug(
                 f"{get_medialog(ele)} Downloading with protected media downloader"
             )
@@ -95,8 +94,6 @@ class AltDownloadManager(DownloadManager):
             return await self._handle_result_alt(
                 sharedPlaceholderObj, ele, audio, video, username, model_id
             )
-        finally:
-            common_globals.sem.release()
 
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()

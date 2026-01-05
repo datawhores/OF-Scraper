@@ -592,8 +592,7 @@ class sessionManager:
             ),
         ):
             with _:
-                await self._sem.acquire()
-                try:
+                async with self._sem:
                     if await self._rate_limit_sleeper.async_do_sleep():
                         pass
                     else:
@@ -605,41 +604,40 @@ class sessionManager:
                     if COOKIES in actions:
                         cookies = self._create_cookies()
 
-                    r = await self._aio_funct(
-                        method,
-                        url,
-                        timeout=aiohttp.ClientTimeout(
-                            total=total_timeout or self._total_timeout,
-                            connect=connect_timeout or self._connect_timeout,
-                            sock_connect=pool_connect_timeout
-                            or self._pool_connect_timeout,
-                            sock_read=read_timeout or self._read_timeout,
-                        ),
-                        headers=headers,
-                        cookies=cookies,
-                        allow_redirects=redirects,
-                        proxy=self._proxy,
-                        params=params,
-                        json=json,
-                        data=data,
-                        ssl=ssl.create_default_context(cafile=certifi.where()),
-                    )
-
-                    if not r.ok and r.status_code != 404:
-                        self._log.debug(f"[bold]failed: [bold] {r.url}")
-                        self._log.debug(f"[bold]status: [bold] {r.status_code}")
-                        self._log.debug(
-                            f"[bold]response text [/bold]: {await r.text_()}"
+                    try:
+                        r = await self._aio_funct(
+                            method,
+                            url,
+                            timeout=aiohttp.ClientTimeout(
+                                total=total_timeout or self._total_timeout,
+                                connect=connect_timeout or self._connect_timeout,
+                                sock_connect=pool_connect_timeout
+                                or self._pool_connect_timeout,
+                                sock_read=read_timeout or self._read_timeout,
+                            ),
+                            headers=headers,
+                            cookies=cookies,
+                            allow_redirects=redirects,
+                            proxy=self._proxy,
+                            params=params,
+                            json=json,
+                            data=data,
+                            ssl=ssl.create_default_context(cafile=certifi.where()),
                         )
-                        self._log.debug(f"response headers {dict(r.headers)}")
-                        r.raise_for_status()
 
-                    yield r
-                except Exception as E:
-                    await self._async_handle_error(E, exceptions)
-                    raise E
-                finally:
-                    self._sem.release()
+                        if not r.ok and r.status_code != 404:
+                            self._log.debug(f"[bold]failed: [bold] {r.url}")
+                            self._log.debug(f"[bold]status: [bold] {r.status_code}")
+                            self._log.debug(
+                                f"[bold]response text [/bold]: {await r.text_()}"
+                            )
+                            self._log.debug(f"response headers {dict(r.headers)}")
+                            r.raise_for_status()
+
+                        yield r
+                    except Exception as E:
+                        await self._async_handle_error(E, exceptions)
+                        raise E
 
     @property
     def sleep(self):
