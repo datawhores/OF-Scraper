@@ -1,7 +1,7 @@
 import os
 
 
-def load_misc_config():
+def load_auth_config():
     config = {}
     # AUTH_WARNING_TIMEOUT: Time to wait between printing auth warnings (seconds).)
     config["AUTH_WARNING_TIMEOUT"] = float(
