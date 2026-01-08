@@ -1,5 +1,6 @@
 import ssl
-
+import logging
+log = logging.getLogger("shared")
 
 def get_default_cipher_names():
     """
@@ -68,11 +69,11 @@ def create_custom_ssl_context(
                 swapped_ciphers[0],
             )
             effective_cipher_string = ":".join(swapped_ciphers)
-            print(
+            log.debug(
                 f"  Info: Reordered default ciphers. New order example: {swapped_ciphers[0]}, {swapped_ciphers[1]}"
             )
         else:
-            print(
+            log.debug(
                 "  Warning: Could not reorder default ciphers (list too short). Using OpenSSL defaults for ciphers."
             )
             # effective_cipher_string remains None
@@ -81,13 +82,13 @@ def create_custom_ssl_context(
         try:
             context.set_ciphers(effective_cipher_string)
         except ssl.SSLError as e:
-            print(
+            log.debug(
                 f"  Warning: Could not set ciphers '{effective_cipher_string}': {e}. OpenSSL may use its defaults."
             )
     else:
         # No specific cipher string provided or generated, OpenSSL will use its defaults
         # for the configured protocol (PROTOCOL_TLS_CLIENT) and options.
-        print(
+        log.debug(
             "  Info: Using OpenSSL default ciphers for the configured TLS versions and options."
         )
 
@@ -96,11 +97,11 @@ def create_custom_ssl_context(
         try:
             context.set_ecdh_curve(elliptic_curves_string)
         except AttributeError:  # Older Python/OpenSSL might not have this
-            print(
+            log.debug(
                 "  Warning: set_ecdh_curve is not available on this Python/OpenSSL version."
             )
         except ssl.SSLError as e:
-            print(
+            log.debug(
                 f"  Warning: Could not set custom elliptic curves '{elliptic_curves_string}': {e}"
             )
 
@@ -111,7 +112,7 @@ def create_custom_ssl_context(
         try:
             context.load_default_certs(ssl.Purpose.SERVER_AUTH)
         except Exception as e:  # Catches FileNotFoundError etc.
-            print(
+            log.debug(
                 f"  Warning: Could not load default CAcerts: {e}. Manual CA loading might be needed (e.g., using certifi)."
             )
             # Example for systems needing certifi:
@@ -119,6 +120,6 @@ def create_custom_ssl_context(
             # try:
             #     context.load_verify_locations(cafile=certifi.where())
             # except Exception as cert_e:
-            #     print(f"  Warning: Could not load certifi CAcerts: {cert_e}")
+            #     log.debug(f"  Warning: Could not load certifi CAcerts: {cert_e}")
 
     return context
