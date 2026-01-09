@@ -65,21 +65,36 @@ def operation_wrapper_async(func: abc.Callable):
                 if conn:
                     conn.close()
                 if LOCK_POOL:
-                    LOCK_POOL.shutdown()
+                    LOCK_POOL.shutdown(wait=True)
                 if PROCESS_POOL:
-                    PROCESS_POOL.shutdown()
+                    PROCESS_POOL.shutdown(wait=True)
                 raise E
         except Exception as E:
             raise E
         finally:
             if conn:
-                conn.close()
+                try:
+                    conn.close()
+                except Exception:
+                    pass
             if lock:
-                await loop.run_in_executor(LOCK_POOL, partial(lock.release, force=True))
+                try:
+                    if loop and LOCK_POOL:
+                        await loop.run_in_executor(LOCK_POOL, partial(lock.release, force=True))
+                    else:
+                        lock.release(force=True)
+                except Exception:
+                    pass
             if LOCK_POOL:
-                LOCK_POOL.shutdown()
+                try:
+                    LOCK_POOL.shutdown(wait=True)
+                except Exception:
+                    pass
             if PROCESS_POOL:
-                PROCESS_POOL.shutdown()
+                try:
+                    PROCESS_POOL.shutdown(wait=True)
+                except Exception:
+                    pass
             log.trace("Force Closing DB")
 
     return inner

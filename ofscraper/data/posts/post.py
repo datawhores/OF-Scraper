@@ -414,14 +414,12 @@ async def process_areas(ele, model_id, username, c=None):
 def process_single_task(func):
     async def inner(sem=None):
         data = None
-        await sem.acquire()
-        try:
-            data = await func()
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            sem.release()
+        async with sem:
+            try:
+                data = await func()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
         return data
 
     return inner

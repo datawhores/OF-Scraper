@@ -54,30 +54,33 @@ from ofscraper.classes.of.media import Media
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Downloading with normal downloader"
-        )
-        common_globals.log.debug(
-            f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
-        )
-        if common.is_bad_url(ele.url):
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots before: {common_globals.sem._value}")
+        async with common_globals.sem:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after acquire: {common_globals.sem._value}")
             common_globals.log.debug(
-                f"{get_medialog(ele)} Forcing download because known bad url"
+                f"{get_medialog(ele)} Downloading with normal downloader"
             )
-            await self._force_download(ele, username, model_id)
-            return ele.mediatype, 0
-        result = await self._main_download_downloader(
-            c,
-            ele,
-        )
-        ele.add_size(result[0])
-        # special case for zero byte files
-        if result[0] == 0:
-            if ele.mediatype != "forced_skipped":
+            common_globals.log.debug(
+                f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+            )
+            if common.is_bad_url(ele.url):
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} Forcing download because known bad url"
+                )
                 await self._force_download(ele, username, model_id)
-            return ele.mediatype, 0
-        return await self._handle_results_main(result, ele, username, model_id)
+                return ele.mediatype, 0
+            result = await self._main_download_downloader(
+                c,
+                ele,
+            )
+            ele.add_size(result[0])
+            # special case for zero byte files
+            if result[0] == 0:
+                if ele.mediatype != "forced_skipped":
+                    await self._force_download(ele, username, model_id)
+                return ele.mediatype, 0
+            return await self._handle_results_main(result, ele, username, model_id)
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after release: {common_globals.sem._value}")
 
     async def _main_download_downloader(self, c, ele):
         self._downloadspace()
@@ -202,8 +205,6 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(
         self, r, ele, tempholderObj, placeholderObj, total
@@ -231,21 +232,13 @@ class MainDownloadManager(DownloadManager):
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
 
-        fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         try:
-            await fileobject.write(await r.read_())
-        except Exception as E:
-            raise E
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file: {tempholderObj.tempfilepath}")
+            async with aiofiles.open(tempholderObj.tempfilepath, "ab") as fileobject:
+                await fileobject.write(await r.read_())
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed: {tempholderObj.tempfilepath}")
         finally:
-            # Close file if needed
-            try:
-                await fileobject.close()
-            except Exception as E:
-                raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                raise E
+            await self._remove_download_job_task(task1, ele)
 
     async def _download_fileobject_writer_streamer(  # Renamed function as per user's prompt
         self, res, ele, tempholderObj, placeholderObj, total
@@ -253,21 +246,19 @@ class MainDownloadManager(DownloadManager):
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
-        fileobject = None  # Initialize to None for finally block
         try:
-            # Use asyncio.timeout as a context manager for the entire download process
             async with asyncio.timeout(None):
-                fileobject = await aiofiles.open(
-                    tempholderObj.tempfilepath, "ab"
-                ).__aenter__()
-                chunk_iter = res.iter_chunked(get_chunk_size())
-                while True:
-                    try:
-                        chunk = await chunk_iter.__anext__()
-                        await fileobject.write(chunk)
-                        send_chunk_msg(ele, total, tempholderObj)
-                    except StopAsyncIteration:
-                        break  # Exit loop when no more chunks
+                common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file for streaming: {tempholderObj.tempfilepath}")
+                async with aiofiles.open(tempholderObj.tempfilepath, "ab") as fileobject:
+                    chunk_iter = res.iter_chunked(get_chunk_size())
+                    while True:
+                        try:
+                            chunk = await chunk_iter.__anext__()
+                            await fileobject.write(chunk)
+                            send_chunk_msg(ele, total, tempholderObj)
+                        except StopAsyncIteration:
+                            break  # Exit loop when no more chunks
+                common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed after streaming: {tempholderObj.tempfilepath}")
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
             common_globals.log.warning(
@@ -281,20 +272,7 @@ class MainDownloadManager(DownloadManager):
             )
             raise E  # Re-raise the exception after logging
         finally:
-            # Close file if needed
-            if fileobject:  # Ensure fileobject was successfully opened
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.error(f"Error closing file for {ele}: {E}")
-                    raise E  # Re-raise if closing fails
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.error(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E  # Re-raise if task removal fails
+            await self._remove_download_job_task(task1, ele)
 
     async def _handle_results_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result

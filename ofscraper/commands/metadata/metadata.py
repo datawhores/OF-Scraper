@@ -46,6 +46,17 @@ from ofscraper.managers.postcollection import PostCollection
 log = logging.getLogger("shared")
 
 
+def _handle_consumer_exception(task):
+    """Handle exceptions from consumer tasks."""
+    try:
+        if task.exception():
+            logging.getLogger("shared").debug(
+                f"Consumer task failed with exception: {task.exception()}"
+            )
+    except (asyncio.CancelledError, asyncio.InvalidStateError):
+        pass
+
+
 class MetadataCommandManager(CommandManager):
     def __init__(self):
         super().__init__()
@@ -249,7 +260,10 @@ async def process_dicts(username, model_id, medialist):
                     asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
-                await asyncio.gather(*consumers)
+                # Add exception callback to detect any unhandled exceptions
+                for task in consumers:
+                    task.add_done_callback(_handle_consumer_exception)
+                await asyncio.gather(*consumers, return_exceptions=True)
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():
                 raise E

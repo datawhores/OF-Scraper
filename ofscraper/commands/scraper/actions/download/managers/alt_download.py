@@ -61,39 +61,42 @@ from ofscraper.classes.of.media import Media
 class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Downloading with protected media downloader"
-        )
-        async for _ in download_retry():
-            with _:
-                try:
-                    sharedPlaceholderObj = await placeholder.Placeholders(
-                        ele, "mp4"
-                    ).init()
-                    common_globals.log.debug(
-                        f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
-                    )
-                except Exception as e:
-                    raise e
-        audio = await ele.mpd_audio
-        video = await ele.mpd_video
-        path_to_file_logger(sharedPlaceholderObj, ele)
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots before: {common_globals.sem._value}")
+        async with common_globals.sem:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after acquire: {common_globals.sem._value}")
+            common_globals.log.debug(
+                f"{get_medialog(ele)} Downloading with protected media downloader"
+            )
+            async for _ in download_retry():
+                with _:
+                    try:
+                        sharedPlaceholderObj = await placeholder.Placeholders(
+                            ele, "mp4"
+                        ).init()
+                        common_globals.log.debug(
+                            f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+                        )
+                    except Exception as e:
+                        raise e
+            audio = await ele.mpd_audio
+            video = await ele.mpd_video
+            path_to_file_logger(sharedPlaceholderObj, ele)
 
-        audio = await self._alt_download_downloader(audio, c, ele)
-        video = await self._alt_download_downloader(video, c, ele)
-        ele.add_size(audio["total"] + video["total"])
+            audio = await self._alt_download_downloader(audio, c, ele)
+            video = await self._alt_download_downloader(video, c, ele)
+            ele.add_size(audio["total"] + video["total"])
 
-        post_result = await self._media_item_post_process_alt(
-            audio, video, ele, username, model_id
-        )
-        if post_result:
-            return post_result
-        await self._media_item_keys_alt(c, audio, video, ele)
+            post_result = await self._media_item_post_process_alt(
+                audio, video, ele, username, model_id
+            )
+            if post_result:
+                return post_result
+            await self._media_item_keys_alt(c, audio, video, ele)
 
-        return await self._handle_result_alt(
-            sharedPlaceholderObj, ele, audio, video, username, model_id
-        )
+            return await self._handle_result_alt(
+                sharedPlaceholderObj, ele, audio, video, username, model_id
+            )
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after release: {common_globals.sem._value}")
 
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
@@ -220,8 +223,6 @@ class AltDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
         common_globals.log.debug(
@@ -241,43 +242,33 @@ class AltDownloadManager(DownloadManager):
         task1 = await self._add_download_job_task(
             ele, total=total, placeholderObj=placeholderObj
         )
-        fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         try:
-            await fileobject.write(await res.read_())
-        except Exception as E:
-            raise E
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file: {placeholderObj.tempfilepath}")
+            async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
+                await fileobject.write(await res.read_())
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed: {placeholderObj.tempfilepath}")
         finally:
-            # Close file if needed
-            try:
-                await fileobject.close()
-            except Exception as E:
-                raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                raise E
+            await self._remove_download_job_task(task1, ele)
 
     async def _download_fileobject_writer_streamer(
         self, ele, total, res, placeholderObj
     ):
 
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None  # Initialize to None for finally block
         try:
-            # Use asyncio.timeout as a context manager for the entire download process
             async with asyncio.timeout(None):
-                fileobject = await aiofiles.open(
-                    placeholderObj.tempfilepath, "ab"
-                ).__aenter__()
-                chunk_iter = res.iter_chunked(get_chunk_size())
+                common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file for streaming: {placeholderObj.tempfilepath}")
+                async with aiofiles.open(placeholderObj.tempfilepath, "ab") as fileobject:
+                    chunk_iter = res.iter_chunked(get_chunk_size())
 
-                while True:
-                    try:
-                        chunk = await chunk_iter.__anext__()
-                        await fileobject.write(chunk)
-                        send_chunk_msg(ele, total, placeholderObj)
-                    except StopAsyncIteration:
-                        break  # Exit loop when no more chunks
+                    while True:
+                        try:
+                            chunk = await chunk_iter.__anext__()
+                            await fileobject.write(chunk)
+                            send_chunk_msg(ele, total, placeholderObj)
+                        except StopAsyncIteration:
+                            break  # Exit loop when no more chunks
+                common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed after streaming: {placeholderObj.tempfilepath}")
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
             common_globals.log.warning(
@@ -291,20 +282,7 @@ class AltDownloadManager(DownloadManager):
             )
             raise E  # Re-raise the exception after logging
         finally:
-            # Close file if needed
-            if fileobject:  # Ensure fileobject was successfully opened
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.error(f"Error closing file for {ele}: {E}")
-                    raise E  # Re-raise if closing fails
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.error(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E  # Re-raise if task removal fails
+            await self._remove_download_job_task(task1, ele)
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id

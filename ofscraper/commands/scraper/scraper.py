@@ -214,7 +214,7 @@ def daemon_process():
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
-            target=set_schedule, args=[scrapingManager.runner], daemon=True
+            target=set_schedule, args=[scrapingManager.runner], daemon=False
         )
         worker_thread.start()
         # Check if jobqueue has function
@@ -231,19 +231,27 @@ def daemon_process():
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
             raise KeyboardInterrupt
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
                 raise E
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
             raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread and worker_thread.is_alive():
+                    worker_thread.join(timeout=5)
                 raise E
 
 
