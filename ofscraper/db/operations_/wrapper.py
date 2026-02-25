@@ -1,16 +1,3 @@
-r"""
-
- _______  _______         _______  _______  _______  _______  _______  _______  _______
-(  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
-| (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
-| |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
-| |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
-| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
-(_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-
-"""
-
 import asyncio
 import logging
 import pathlib
@@ -19,74 +6,46 @@ from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
-from filelock import FileLock
-from rich.console import Console
-
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.paths.common as common_paths
 
-console = Console()
 log = logging.getLogger("shared")
 
+# A single global pool to handle DB operations one at a time.
+# This prevents 2GB RAM systems from being overwhelmed by threads.
+_DB_POOL = ThreadPoolExecutor(max_workers=1)
 
 def operation_wrapper_async(func: abc.Callable):
     async def inner(*args, **kwargs):
-        LOCK_POOL = None
-        PROCESS_POOL = None
-        lock = None
         conn = None
+        loop = asyncio.get_event_loop()
         try:
-            LOCK_POOL = ThreadPoolExecutor(max_workers=1)
-            PROCESS_POOL = ThreadPoolExecutor(max_workers=1)
-            # FIX: Change timeout to prevent indefinite hanging on stale locks
-            lock = FileLock(common_paths.getDB(), timeout=120)
-
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(LOCK_POOL, lock.acquire)
-
             database_path = pathlib.Path(
-                kwargs.get("db_path")
+                kwargs.get("db_path", None)
                 or placeholder.databasePlaceholder().databasePathHelper(
                     kwargs.get("model_id"), kwargs.get("username")
                 )
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
-
-            conn = sqlite3.connect(database_path, check_same_thread=False, timeout=10)
+            conn = sqlite3.connect(database_path, check_same_thread=False, timeout=200)
             conn.row_factory = sqlite3.Row
-
+            # Execute the DB function in our serialized global pool.
             return await loop.run_in_executor(
-                PROCESS_POOL, partial(func, *args, **kwargs, conn=conn)
+                _DB_POOL, partial(func, *args, **kwargs, conn=conn)
             )
+
         except Exception as E:
             log.debug(f"Database operation failed: {E}")
             raise E
         finally:
-            # FIX: Explicitly close connection and shutdown pools on all paths
             if conn:
                 conn.close()
-            if lock:
-                try:
-                    lock.release(force=True)
-                except Exception:
-                    pass
-            if LOCK_POOL:
-                LOCK_POOL.shutdown(wait=True)
-            if PROCESS_POOL:
-                PROCESS_POOL.shutdown(wait=True)
-
     return inner
-
 
 def operation_wrapper(func: abc.Callable):
     def inner(*args, **kwargs):
-        lock = None
         conn = None
         try:
-            lock = FileLock(common_paths.getDB(), timeout=120)
-            lock.acquire()
-
             database_path = pathlib.Path(
                 kwargs.get("db_path", None)
                 or placeholder.databasePlaceholder().databasePathHelper(
@@ -95,16 +54,16 @@ def operation_wrapper(func: abc.Callable):
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
             
-            conn = sqlite3.connect(database_path, check_same_thread=True, timeout=10)
+            # Standard synchronous connection with internal timeout.
+            conn = sqlite3.connect(database_path, check_same_thread=True, timeout=200)
             conn.row_factory = sqlite3.Row
             return func(*args, **kwargs, conn=conn)
-
+            
         except sqlite3.OperationalError as E:
-            log.info("DB may be locked or system is under heavy load")
+            log.info("Database is currently busy.")
             raise E
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                # Cleanup is now handled in the 'finally' block below
                 raise E
         except Exception as E:
             raise E
@@ -114,10 +73,4 @@ def operation_wrapper(func: abc.Callable):
                     conn.close()
                 except:
                     pass
-            if lock:
-                try:
-                    lock.release(force=True)
-                except:
-                    pass
-            log.trace("Force Closing DB")
     return inner
