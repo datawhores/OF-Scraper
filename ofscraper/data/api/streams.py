@@ -343,7 +343,7 @@ async def scrape_stream_posts(
         log.warning(f"Task timed out {url}")
         return [], []
     except Exception as E:
-        log.error("Error in streams branch {url}")
+        log.error(f"Error in streams branch {url}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         return [], []

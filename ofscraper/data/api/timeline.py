@@ -344,7 +344,7 @@ async def scrape_timeline_posts(
         log.warning(f"Task timed out {url}")
         return [], []  # Return empty rather than crashing the whole UI
     except Exception as E:
-        log.error(f"Error in scrape_timeline_posts: {str(E)}")
+        log.error("Error in scrape_timeline_posts")
         log.traceback_(E)
         return [], []  # Return empty to allow other tasks to continue
     finally:
