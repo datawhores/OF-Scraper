@@ -201,6 +201,8 @@ def main():
                     raise E
 
 
+# commands/scraper/scraper.py
+
 def daemon_process():
     checkers.check_auth()
     worker_thread = None
@@ -214,10 +216,9 @@ def daemon_process():
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
-            target=set_schedule, args=[scrapingManager.runner], daemon=True
+            target=set_schedule, args=[scrapingManager.runner], daemon=False
         )
         worker_thread.start()
-        # Check if jobqueue has function
         while True:
             try:
                 job_func = jobqueue.get()
@@ -231,6 +232,8 @@ def daemon_process():
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread:
+                    worker_thread.join(timeout=5)
             raise KeyboardInterrupt
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
@@ -240,12 +243,13 @@ def daemon_process():
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
+                if worker_thread:
+                    worker_thread.join(timeout=5)
             raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 raise E
-
 
 @exit.exit_wrapper
 def process_prompts():
