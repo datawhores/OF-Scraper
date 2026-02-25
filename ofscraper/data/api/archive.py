@@ -266,57 +266,53 @@ async def scrape_archived_posts(
     c, model_id, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global sem
-    posts = None
+    posts = []
+    new_tasks = []
+    task = None
+
+    # Initial safety check for 'before' setting
     if timestamp and (
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
+
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
         of_env.getattr("archivedNextEP").format(model_id, str(timestamp))
         if timestamp
         else of_env.getattr("archivedEP").format(model_id)
     )
-    log.debug(url)
 
-    new_tasks = []
-    posts = []
     try:
-        task = progress_utils.api.add_job_task(
-            f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-            visible=True,
-        )
-        log.debug(
-            f"trying to access {API.lower()} posts with url:{url}  offset:{offset}"
-        )
+        task_label = f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+        task = progress_utils.api.add_job_task(task_label, visible=True)
+        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+
+        log.debug(f"trying to access archived posts with url:{url} offset:{offset}")
 
         async with c.requests_async(url) as r:
+            # FIX 1: Success range check (200-299)
+            if not (200 <= r.status < 300):
+                log.error(f"{log_id} -> API Request failed with status {r.status}")
+                return [], []
 
-            posts = (await r.json_())["list"]
-            log.debug(
-                f"successfully accessed {API.lower()} posts with url:{url}  offset:{offset}"
-            )
+            # FIX 2: Safe JSON parsing and dict validation
+            data = await r.json_()
+            if not isinstance(data, dict):
+                log.error(f"{log_id} -> API returned unexpected format (not a dict)")
+                return [], []
+            
+            posts = data.get("list", [])
+            log.debug(f"successfully accessed archived posts with url:{url}")
 
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
-            if not bool(posts):
+            if not posts:
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
 
-            log.debug(f"{log_id} -> number of archived post found {len(posts)}")
-            log.debug(
-                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-            )
-            log.debug(
-                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-            )
-            log.debug(
-                f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
-            )
             trace_progress_log(f"{API} request", posts)
 
-            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
-                required_ids
-            ):
+            # RECURSION LOGIC
+            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(required_ids):
                 pass
             elif float(timestamp or 0) >= max(required_ids):
                 pass
@@ -326,27 +322,36 @@ async def scrape_archived_posts(
                 log.debug(f"{log_id} Required after change: {required_ids}")
 
                 if len(required_ids) > 0:
+                    new_ts = posts[-1]["postedAtPrecise"]
+                    
+                    # SAFETY CHECK: Prevent stuck recursion
+                    if str(new_ts) == str(timestamp):
+                        log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                        return posts, new_tasks
+
                     new_tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
                                 c,
                                 model_id,
-                                timestamp=posts[-1]["postedAtPrecise"],
+                                timestamp=new_ts,
                                 required_ids=required_ids,
                                 offset=False,
                             )
                         )
                     )
-    except asyncio.TimeoutError as _:
-        raise Exception(f"Task timed out {url}")
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
-    finally:
-        progress_utils.api.remove_job_task(task)
+            return posts, new_tasks
 
-    return posts, new_tasks
+    except asyncio.TimeoutError:
+        log.warning(f"Task timed out {url}")
+        return [], [] # Keep the parent 'process_tasks' alive
+    except Exception as E:
+        log.error(f"Error in archived branch {url}: {str(E)}")
+        log.traceback_(E)
+        return [], [] # Fail gracefully
+    finally:
+        if task:
+            progress_utils.api.remove_job_task(task)
 
 
 def time_log(username, after):

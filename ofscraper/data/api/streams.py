@@ -15,7 +15,6 @@ import asyncio
 import logging
 import math
 import traceback
-
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
@@ -35,13 +34,10 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
-
-API = "streams"
-
-
-log = logging.getLogger("shared")
 from ofscraper.data.api.common.timeline import process_posts_as_individual
 
+API = "streams"
+log = logging.getLogger("shared")
 sem = None
 
 
@@ -105,21 +101,21 @@ async def process_tasks_batch(tasks):
                     description=f"Streams Content Pages Progress: {page_count}",
                 )
 
-                new_posts = [
-                    post
-                    for post in result
-                    if post["id"] not in seen and not seen.add(post["id"])
-                ]
-                log.debug(
-                    f"{common_logs.PROGRESS_IDS.format('Streams')} {list(map(lambda x:x['id'],new_posts))}"
-                )
-                trace_progress_log(f"{API} tasks", new_posts, offset=None)
+                if result:
+                    new_posts = [
+                        post
+                        for post in result
+                        if post.get("id") not in seen and not seen.add(post.get("id"))
+                    ]
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Streams')} {list(map(lambda x:x['id'],new_posts))}"
+                    )
+                    trace_progress_log(f"{API} tasks", new_posts, offset=None)
 
-                responseArray.extend(new_posts)
+                    responseArray.extend(new_posts)
 
             except Exception as E:
                 log.traceback_(E)
-                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
 
@@ -265,88 +261,88 @@ async def scrape_stream_posts(
     c, model_id, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global sem
-    posts = None
+    posts = []
+    new_tasks = []
+    task = None
+    
     if timestamp and (
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
+        
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
         of_env.getattr("streamsNextEP").format(model_id, str(timestamp))
         if timestamp
         else of_env.getattr("streamsEP").format(model_id)
     )
-    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
-    log.debug(url)
-
-    new_tasks = []
-    posts = []
+    
     try:
-        task = progress_utils.api.add_job_task(
-            f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-            visible=True,
-        )
-        log.debug(
-            f"trying to access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-        )
+        task_label = f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
+        task = progress_utils.api.add_job_task(task_label, visible=True)
+        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
+
+        log.debug(f"trying to access {API.lower()} posts with url:{url}")
+
         async with c.requests_async(url) as r:
+            if not (200 <= r.status < 300):
+                log.error(f"{log_id} -> API Request failed with status {r.status}")
+                return [], []
 
-            posts = (await r.json_())["list"]
+            data = await r.json_()
+            if not isinstance(data, dict):
+                log.error(f"{log_id} -> API returned unexpected format (not a dict)")
+                return [], []
+                
+            posts = data.get("list", [])
+            log.debug(f"successfully accessed {API.lower()} posts with url:{url}")
 
-            log.debug(
-                f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-            )
-
-            if not bool(posts):
+            if not posts:
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
 
             log.debug(f"{log_id} -> number of streams post found {len(posts)}")
-            log.debug(
-                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-            )
-            log.debug(
-                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-            )
-            log.debug(
-                f"{log_id} -> found streams post IDs {list(map(lambda x:x.get('id'),posts))}"
-            )
-
             trace_progress_log(f"{API} requests", posts, offset=None)
 
-            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
-                required_ids
-            ):
+            if max(map(lambda x: float(x.get("postedAtPrecise", 0)), posts)) >= max(required_ids):
                 pass
             elif float(timestamp or 0) >= max(required_ids):
                 pass
             else:
                 log.debug(f"{log_id} Required before change:  {required_ids}")
-                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+                [required_ids.discard(float(ele.get("postedAtPrecise", 0))) for ele in posts]
                 log.debug(f"{log_id} Required after change: {required_ids}")
 
                 if len(required_ids) > 0:
+                    new_ts = posts[-1].get("postedAtPrecise")
+                    
+                    if str(new_ts) == str(timestamp):
+                        log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                        return posts, []
+
                     new_tasks.append(
                         asyncio.create_task(
                             scrape_stream_posts(
                                 c,
                                 model_id,
-                                timestamp=posts[-1]["postedAtPrecise"],
+                                timestamp=new_ts,
                                 required_ids=required_ids,
                                 offset=False,
                             )
                         )
                     )
-    except asyncio.TimeoutError as _:
-        raise Exception(f"Task timed out {url}")
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
-    finally:
-        progress_utils.api.remove_job_task(task)
+            return posts, new_tasks
 
-    return posts, new_tasks
+    except asyncio.TimeoutError:
+        log.warning(f"Task timed out {url}")
+        return [], []
+    except Exception as E:
+        log.error(f"Error in streams branch {url}: {str(E)}")
+        log.traceback_(E)
+        return [], []
+    finally:
+        if task:
+            progress_utils.api.remove_job_task(task)
 
 
 def time_log(username, after):

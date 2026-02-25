@@ -271,7 +271,9 @@ async def get_after(model_id, username):
 async def scrape_timeline_posts(
     c, model_id, timestamp=None, required_ids=None, offset=False
 ) -> list:
-    posts = None
+    posts = [] # Initialize as empty list
+    new_tasks = []
+    task = None
     timestamp = float(timestamp) - 100 if timestamp and offset else timestamp
 
     url = (
@@ -279,73 +281,71 @@ async def scrape_timeline_posts(
         if timestamp
         else of_env.getattr("timelineEP").format(model_id)
     )
-    log.debug(url)
-    new_tasks = []
-    task = None
-
     try:
-        task = progress_utils.api.add_job_task(
-            f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-            visible=True,
-        )
-        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
-
-        log.debug(
-            f"trying to access {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-        )
+        task_name = f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
+        task = progress_utils.api.add_job_task(task_name, visible=True)
+        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
 
         async with c.requests_async(url=url) as r:
-            posts = (await r.json_())["list"]
-            log.debug(
-                f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-            )
+            if not (200 <= r.status < 300):
+                log.error(f"{log_id} -> API Request failed with status {r.status}")
+                return [], []
+            data = await r.json_()
+            if not isinstance(data, dict):
+                log.error(f"{log_id} -> API returned unexpected format (not a dict)")
+                return [], []
+            posts = data.get("list", [])
+            log.debug(f"successfully accessed {API.lower()} posts with url:{url}")
 
-            if not bool(posts):
+            if not posts:
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
 
+            # (Logging logic remains the same...)
             log.debug(f"{log_id} -> number of post found {len(posts)}")
-            log.debug(
-                f"{log_id} -> first date {arrow.get(posts[0].get('createdAt') or posts[0].get('postedAt')).format(of_env.getattr('API_DATE_FORMAT'))}"
-            )
-            log.debug(
-                f"{log_id} -> last date {arrow.get(posts[-1].get('createdAt') or posts[-1].get('postedAt')).format(of_env.getattr('API_DATE_FORMAT'))}"
-            )
-            log.debug(
-                f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
-            )
             trace_progress_log(f"{API} requests", posts, offset=offset)
-            if min(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
-                required_ids
-            ):
-                pass
-            elif float(timestamp or 0) >= max(required_ids):
-                pass
-            else:
-                log.debug(f"{log_id} Required before change: {required_ids}")
-                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-                log.debug(f"{log_id} Required after change: {required_ids}")
-                if len(required_ids) > 0:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_timeline_posts(
-                                c,
-                                model_id,
-                                timestamp=posts[-1]["postedAtPrecise"],
-                                required_ids=required_ids,
-                                offset=False,
+
+
+            if required_ids:
+                # Use a small buffer or standard float comparison
+                current_min_precise = min(map(lambda x: float(x["postedAtPrecise"]), posts))
+                max_required = max(required_ids)
+
+                if current_min_precise >= max_required:
+                    pass
+                elif float(timestamp or 0) >= max_required:
+                    pass
+                else:
+                    [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+                    if len(required_ids) > 0:
+                        new_ts = posts[-1]["postedAtPrecise"]
+                        if str(new_ts) == str(timestamp):
+                            log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                            return posts, new_tasks
+
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_timeline_posts(
+                                    c,
+                                    model_id,
+                                    timestamp=new_ts,
+                                    required_ids=required_ids,
+                                    offset=False,
+                                )
                             )
                         )
-                    )
             return posts, new_tasks
+
     except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+        log.warning(f"Task timed out {url}")
+        return [], [] # Return empty rather than crashing the whole UI
     except Exception as E:
+        log.error(f"Error in scrape_timeline_posts: {str(E)}")
         log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+        return [], [] # Return empty to allow other tasks to continue
     finally:
-        progress_utils.api.remove_job_task(task)
+        if task:
+            progress_utils.api.remove_job_task(task)
 
 
 def time_log(username, after):

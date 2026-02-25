@@ -6,7 +6,7 @@ r"""
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
-| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
+| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )   ( || (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
 
 """
@@ -84,24 +84,25 @@ async def process_tasks(tasks):
                     page_task,
                     description=f"Pinned Content Pages Progress: {page_count}",
                 )
-                new_posts = [
-                    post
-                    for post in result
-                    if post["id"] not in seen and not seen.add(post["id"])
-                ]
-                log.debug(
-                    f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
-                )
-                trace_progress_log(f"{API} tasks", new_posts)
-                responseArray.extend(new_posts)
+                
+                if result:
+                    new_posts = [
+                        post
+                        for post in result
+                        if post.get("id") not in seen and not seen.add(post.get("id"))
+                    ]
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x.get('id'),new_posts))}"
+                    )
+                    trace_progress_log(f"{API} tasks", new_posts)
+                    responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
-                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
     progress_utils.api.remove_overall_task(page_task)
     log.debug(
-        f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
+        f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x.get('id'),responseArray))}"
     )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(
@@ -111,74 +112,75 @@ async def process_tasks(tasks):
 
 
 async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
-    posts = None
+    posts = []
+    new_tasks = []
+    task = None
 
     if timestamp and (
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
+    
     url = of_env.getattr("timelinePinnedEP").format(model_id, count)
-    log.debug(url)
-
-    new_tasks = []
-    posts = []
+    
     try:
-
-        task = progress_utils.api.add_job_task(
-            f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
-            visible=True,
-        )
-        log.debug(
-            f"trying to access  {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-        )
+        task_label = f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+        task = progress_utils.api.add_job_task(task_label, visible=True)
+        
+        log.debug(f"trying to access pinned posts with url:{url}")
+        
         async with c.requests_async(url=url) as r:
-            log.debug(
-                f"successfully accessed {API.lower()} posts with url:{url} timestamp:{timestamp if timestamp is not None else 'initial'}"
-            )
-            posts = (await r.json_())["list"]
-            posts = list(sorted(posts, key=lambda x: float(x["postedAtPrecise"])))
+            if not (200 <= r.status < 300):
+                log.error(f"Pinned API Error: {r.status}")
+                return [], []
+
+            log.debug(f"successfully accessed pinned posts with url:{url}")
+            
+            data = await r.json_()
+            if not isinstance(data, dict):
+                 return [], []
+                 
+            posts = data.get("list", [])
+            posts = list(sorted(posts, key=lambda x: float(x.get("postedAtPrecise", 0))))
             posts = list(
                 filter(
-                    lambda x: float(x["postedAtPrecise"]) > float(timestamp or 0),
+                    lambda x: float(x.get("postedAtPrecise", 0)) > float(timestamp or 0),
                     posts,
                 )
             )
+            
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+            
             if not posts:
-                posts = []
-            if len(posts) == 0:
                 log.debug(f"{log_id} -> number of pinned post found 0")
-            else:
-                log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
-                log.debug(
-                    f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-                )
-                log.debug(
-                    f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                )
-                log.debug(
-                    f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}"
-                )
-                trace_progress_log(f"{API} requests", posts)
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_pinned_posts(
-                            c,
-                            model_id,
-                            timestamp=posts[-1]["postedAtPrecise"],
-                            count=count + len(posts),
-                        )
+                return [], []
+
+            log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
+            trace_progress_log(f"{API} requests", posts)
+            
+            # Recursive task logic
+            new_ts = posts[-1].get("postedAtPrecise")
+            
+            if str(new_ts) == str(timestamp):
+                return posts, []
+
+            new_tasks.append(
+                asyncio.create_task(
+                    scrape_pinned_posts(
+                        c,
+                        model_id,
+                        timestamp=new_ts,
+                        count=count + len(posts),
                     )
                 )
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
-
+            )
+            
     except Exception as E:
+        log.error(f"Pinned branch failed: {E}")
         log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
-
+        return [], [] # Keep it moving
     finally:
-        progress_utils.api.remove_job_task(task)
+        if task:
+            progress_utils.api.remove_job_task(task)
 
     return posts, new_tasks
