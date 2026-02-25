@@ -92,7 +92,6 @@ async def scrape_paid(c, username, offset=0):
         )
 
         async with c.requests_async(url) as r:
-            # FIX: Success range check
             if not (200 <= r.status < 300):
                 log.error(f"Paid API Error: {r.status}")
                 return [], []
@@ -109,7 +108,6 @@ async def scrape_paid(c, username, offset=0):
 
             if data.get("hasMore") and len(media) > 0:
                 new_offset = offset + len(media)
-                # FIX: Prevent infinite loop if offset doesn't change
                 if new_offset == offset:
                     return media, []
 
