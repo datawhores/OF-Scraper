@@ -444,9 +444,8 @@ async def post_check_retriver(forced=False):
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 resp = get_individual_timeline_post(post_id)
-                data = list(map(lambda x: posts_.Post(x, model_id, user_name), resp))
-                yield user_name, model_id, data
-
+                data = posts_.Post(resp, model_id, user_name)
+                yield user_name, model_id, [data]
 
 def reset_data():
     # clean up args once check modes are ready to launch
@@ -648,7 +647,6 @@ def url_helper():
     return map(lambda x: x.strip(), out)
 
 
-@run
 async def process_post_media(username, model_id, posts_array):
     check_user_dict[model_id].setdefault(
         "collection", PostCollection(username=username, model_id=model_id)

@@ -3,43 +3,37 @@ import asyncio
 import ofscraper.utils.context.exit as exit
 
 
+# utils/context/run_async.py
+
+import asyncio
+import ofscraper.utils.context.exit as exit
+
 def run(coro):
     def inner(*args, **kwargs):
         try:
-            loop = asyncio.get_running_loop()
+            # Get the loop or create a new one
+            loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         if not loop.is_running():
             try:
-                asyncio.set_event_loop(loop)
+                # Use run_until_complete for the top-level coro
                 return loop.run_until_complete(coro(*args, **kwargs))
-            except RuntimeError as e:
-                if "Event loop is closed" in str(e):
-                    return coro(*args, **kwargs)
-                raise e
             except KeyboardInterrupt as E:
+                # Keep the protection, but simplify the exit
                 with exit.DelayedKeyboardInterrupt():
-                    try:
-                        pending = asyncio.all_tasks(loop)
-                        for task in pending:
-                            task.cancel()
-                        loop.run_until_complete(
-                            asyncio.gather(*pending, return_exceptions=True)
-                        )
-                    except Exception:
-                        pass
+                    # Let the normal cleanup happen in 'finally'
+                    pass
                 raise E
             finally:
-                try:
-                    loop.close()
-                except:
-                    pass
-                asyncio.set_event_loop(None)
+                # Soft cleanup: shut down generators without killing the loop instantly
+                if loop.is_running():
+                    loop.run_until_complete(loop.shutdown_asyncgens())
+        # If the loop is ALREADY running (nested call), just return the coro
         return coro(*args, **kwargs)
 
     return inner
-
-
 def run_forever(coro):
     def inner(*args, **kwargs):
         try:
