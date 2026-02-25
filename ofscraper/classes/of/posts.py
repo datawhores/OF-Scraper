@@ -214,17 +214,25 @@ class Post(base.base):
 
     @property
     def responsetype(self):
+        # Prioritize the internal explicit type if set
         if self._responsetype:
-            return self._responsetype
-        elif self.pinned:
-            return "pinned"
-        elif self.archived:
-            return "archived"
-        elif self.stream:
-            return "stream"
-        elif self.post.get("responseType") == "post":
-            return "timeline"
-        return self.post.get("responseType")
+            return str(self._responsetype).capitalize()
+
+        # Check boolean flags
+        if self.pinned:
+            return "Pinned"
+        if self.archived:
+            return "Archived"
+        if self.stream:
+            return "Streams"
+
+        # Fallback to raw API response type
+        raw_type = self.post.get("responseType")
+        if raw_type == "post":
+            return "Timeline"
+
+    # Capitalize the raw type (e.g., "message" -> "Message")
+    return str(raw_type).capitalize() if raw_type else "Unknown"
 
     @property
     def id(self):

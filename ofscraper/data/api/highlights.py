@@ -234,7 +234,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
             data = get_highlightList(resp_data)
 
     except Exception as E:
-        log.error(f"Highlight list failed")
+        log.error("Highlight list failed")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         return [], []
