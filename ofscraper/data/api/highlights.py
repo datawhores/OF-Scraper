@@ -29,6 +29,7 @@ API_H = "highlights"
 #### Stories
 ##############################################################################
 
+
 @run
 async def get_stories_post(model_id, c=None):
     tasks = []
@@ -119,6 +120,7 @@ async def process_stories_tasks(tasks):
 #### Highlights
 ##############################################################################
 
+
 @run
 async def get_highlight_post(model_id, c=None):
     highlightLists = await get_highlight_list(model_id, c)
@@ -158,7 +160,9 @@ async def process_task_get_highlight_list(tasks):
                 )
                 if result:
                     new_posts = [
-                        post for post in result if post not in seen and not seen.add(post)
+                        post
+                        for post in result
+                        if post not in seen and not seen.add(post)
                     ]
                     highlightLists.extend(new_posts)
             except Exception as E:

@@ -210,7 +210,7 @@ async def scrape_all_paid(c, offset=0, required=None):
 
             data = await r.json_()
             trace_progress_log(f"{API} all users requests", data)
-            
+
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
             media = media_lists[0] if media_lists else []
 
