@@ -8,6 +8,7 @@ import ofscraper.utils.context.exit as exit
 import asyncio
 import ofscraper.utils.context.exit as exit
 
+
 def run(coro):
     def inner(*args, **kwargs):
         try:
@@ -34,6 +35,8 @@ def run(coro):
         return coro(*args, **kwargs)
 
     return inner
+
+
 def run_forever(coro):
     def inner(*args, **kwargs):
         try:

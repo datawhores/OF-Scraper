@@ -19,7 +19,7 @@ import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_progress_log
 
 log = logging.getLogger("shared")
 API_S = "stories"
@@ -28,6 +28,7 @@ API_H = "highlights"
 #############################################################################
 #### Stories
 ##############################################################################
+
 
 @run
 async def get_stories_post(model_id, c=None):
@@ -63,9 +64,12 @@ async def scrape_stories(c, user_id) -> list:
             trace_progress_log(f"{API_S} requests", stories)
 
     except Exception as E:
-        log.error(f"Failed to scrape stories for {user_id}: {E}")
+        log.error(f"Failed to scrape stories for {user_id}")
         log.traceback_(E)
-        return [], [] # Fail gracefully to prevent UI stall
+        
+        log.traceback_(traceback.format_exc())
+
+        return [], []  # Fail gracefully to prevent UI stall
 
     finally:
         if task:
@@ -93,7 +97,7 @@ async def process_stories_tasks(tasks):
                     page_task,
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
-                
+
                 # Check that result is iterable
                 if result:
                     new_posts = [
@@ -105,18 +109,20 @@ async def process_stories_tasks(tasks):
 
             except Exception as E:
                 log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
 
         tasks = new_tasks
-        
+
     progress_utils.api.remove_overall_task(page_task)
-    log.debug(common_logs.FINAL_COUNT_POST.format('Stories', len(responseArray)))
+    log.debug(common_logs.FINAL_COUNT_POST.format("Stories", len(responseArray)))
     return responseArray
 
 
 ##############################################################################
 #### Highlights
 ##############################################################################
+
 
 @run
 async def get_highlight_post(model_id, c=None):
@@ -157,11 +163,14 @@ async def process_task_get_highlight_list(tasks):
                 )
                 if result:
                     new_posts = [
-                        post for post in result if post not in seen and not seen.add(post)
+                        post
+                        for post in result
+                        if post not in seen and not seen.add(post)
                     ]
                     highlightLists.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
 
@@ -196,6 +205,7 @@ async def process_task_highlights(tasks):
                     highlightResponse.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
 
@@ -220,7 +230,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
             resp_data = await r.json_()
             data = get_highlightList(resp_data)
-            
+
     except Exception as E:
         log.error(f"Highlight list failed: {E}")
         return [], []
@@ -247,9 +257,11 @@ async def scrape_highlights_from_list(c, id) -> list:
 
             resp_data = await r.json_()
             # FIX: Safe extraction of stories
-            stories = resp_data.get("stories", []) if isinstance(resp_data, dict) else []
+            stories = (
+                resp_data.get("stories", []) if isinstance(resp_data, dict) else []
+            )
             return stories, new_tasks
-            
+
     except Exception as E:
         log.debug(f"Highlight extraction failed for ID {id}: {E}")
         return [], []

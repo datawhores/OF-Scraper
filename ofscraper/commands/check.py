@@ -447,6 +447,7 @@ async def post_check_retriver(forced=False):
                 data = posts_.Post(resp, model_id, user_name)
                 yield user_name, model_id, [data]
 
+
 def reset_data():
     # clean up args once check modes are ready to launch
     args = settings.get_args()

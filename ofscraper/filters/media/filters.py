@@ -175,7 +175,9 @@ def previous_download_filter(medialist, username=None, model_id=None):
     else:
         log.info("Downloading unique media across all models")
         media_ids = set(get_media_ids_downloaded(model_id=model_id, username=username))
-        log.debug(f"Number of unique media ids in database for all models: {len(media_ids)}")
+        log.debug(
+            f"Number of unique media ids in database for all models: {len(media_ids)}"
+        )
         medialist = seperate.separate_by_id(medialist, media_ids)
         log.debug(f"Number of new media_ids after dupe ids removed: {len(medialist)}")
         medialist = seperate.seperate_avatars(medialist)

@@ -116,6 +116,7 @@ async def process_tasks_batch(tasks):
 
             except Exception as E:
                 log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
 
@@ -125,9 +126,7 @@ async def process_tasks_batch(tasks):
         f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(responseArray, API, final_count=True)
-    log.debug(
-        common_logs.FINAL_COUNT_POST.format('Streams', len(responseArray))
-    )
+    log.debug(common_logs.FINAL_COUNT_POST.format("Streams", len(responseArray)))
     return responseArray
 
 
@@ -264,19 +263,19 @@ async def scrape_stream_posts(
     posts = []
     new_tasks = []
     task = None
-    
+
     if timestamp and (
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
-        
+
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
         of_env.getattr("streamsNextEP").format(model_id, str(timestamp))
         if timestamp
         else of_env.getattr("streamsEP").format(model_id)
     )
-    
+
     try:
         task_label = f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
         task = progress_utils.api.add_job_task(task_label, visible=True)
@@ -293,7 +292,7 @@ async def scrape_stream_posts(
             if not isinstance(data, dict):
                 log.error(f"{log_id} -> API returned unexpected format (not a dict)")
                 return [], []
-                
+
             posts = data.get("list", [])
             log.debug(f"successfully accessed {API.lower()} posts with url:{url}")
 
@@ -304,20 +303,27 @@ async def scrape_stream_posts(
             log.debug(f"{log_id} -> number of streams post found {len(posts)}")
             trace_progress_log(f"{API} requests", posts, offset=None)
 
-            if max(map(lambda x: float(x.get("postedAtPrecise", 0)), posts)) >= max(required_ids):
+            if max(map(lambda x: float(x.get("postedAtPrecise", 0)), posts)) >= max(
+                required_ids
+            ):
                 pass
             elif float(timestamp or 0) >= max(required_ids):
                 pass
             else:
                 log.debug(f"{log_id} Required before change:  {required_ids}")
-                [required_ids.discard(float(ele.get("postedAtPrecise", 0))) for ele in posts]
+                [
+                    required_ids.discard(float(ele.get("postedAtPrecise", 0)))
+                    for ele in posts
+                ]
                 log.debug(f"{log_id} Required after change: {required_ids}")
 
                 if len(required_ids) > 0:
                     new_ts = posts[-1].get("postedAtPrecise")
-                    
+
                     if str(new_ts) == str(timestamp):
-                        log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                        log.debug(
+                            f"{log_id} -> API stuck on same timestamp. Breaking recursion."
+                        )
                         return posts, []
 
                     new_tasks.append(
@@ -337,8 +343,9 @@ async def scrape_stream_posts(
         log.warning(f"Task timed out {url}")
         return [], []
     except Exception as E:
-        log.error(f"Error in streams branch {url}: {str(E)}")
+        log.error("Error in streams branch {url}")
         log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         return [], []
     finally:
         if task:

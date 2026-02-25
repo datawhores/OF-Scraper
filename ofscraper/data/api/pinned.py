@@ -15,7 +15,6 @@ import asyncio
 import logging
 import math
 import traceback
-
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
@@ -84,7 +83,7 @@ async def process_tasks(tasks):
                     page_task,
                     description=f"Pinned Content Pages Progress: {page_count}",
                 )
-                
+
                 if result:
                     new_posts = [
                         post
@@ -98,6 +97,7 @@ async def process_tasks(tasks):
                     responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
     progress_utils.api.remove_overall_task(page_task)
@@ -105,9 +105,7 @@ async def process_tasks(tasks):
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x.get('id'),responseArray))}"
     )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
-    log.debug(
-        common_logs.FINAL_COUNT_POST.format('Pinned', len(responseArray))
-    )
+    log.debug(common_logs.FINAL_COUNT_POST.format("Pinned", len(responseArray)))
     return responseArray
 
 
@@ -120,47 +118,50 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
         float(timestamp) > (settings.get_settings().before).float_timestamp
     ):
         return [], []
-    
+
     url = of_env.getattr("timelinePinnedEP").format(model_id, count)
-    
+
     try:
         task_label = f"[Pinned] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
         task = progress_utils.api.add_job_task(task_label, visible=True)
-        
+
         log.debug(f"trying to access pinned posts with url:{url}")
-        
+
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
                 log.error(f"Pinned API Error: {r.status}")
                 return [], []
 
             log.debug(f"successfully accessed pinned posts with url:{url}")
-            
+
             data = await r.json_()
             if not isinstance(data, dict):
-                 return [], []
-                 
+                return [], []
+
             posts = data.get("list", [])
-            posts = list(sorted(posts, key=lambda x: float(x.get("postedAtPrecise", 0))))
+            posts = list(
+                sorted(posts, key=lambda x: float(x.get("postedAtPrecise", 0)))
+            )
             posts = list(
                 filter(
-                    lambda x: float(x.get("postedAtPrecise", 0)) > float(timestamp or 0),
+                    lambda x: float(x.get("postedAtPrecise", 0))
+                    > float(timestamp or 0),
                     posts,
                 )
             )
-            
+
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
-            
+
             if not posts:
                 log.debug(f"{log_id} -> number of pinned post found 0")
                 return [], []
 
             log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
             trace_progress_log(f"{API} requests", posts)
-            
+
             # Recursive task logic
             new_ts = posts[-1].get("postedAtPrecise")
-            
+
             if str(new_ts) == str(timestamp):
                 return posts, []
 
@@ -174,11 +175,13 @@ async def scrape_pinned_posts(c, model_id, timestamp=None, count=0) -> list:
                     )
                 )
             )
-            
+
     except Exception as E:
-        log.error(f"Pinned branch failed: {E}")
+        log.error("Pinned branch failed")
         log.traceback_(E)
-        return [], [] # Keep it moving
+        log.traceback_(traceback.format_exc())
+
+        return [], []  # Keep it moving
     finally:
         if task:
             progress_utils.api.remove_job_task(task)

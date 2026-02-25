@@ -126,7 +126,7 @@ async def process_tasks(tasks):
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
     )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
-    log.debug(common_logs.FINAL_COUNT_POST.format('Archived',len(responseArray)))
+    log.debug(common_logs.FINAL_COUNT_POST.format("Archived", len(responseArray)))
     return responseArray
 
 
@@ -301,7 +301,7 @@ async def scrape_archived_posts(
             if not isinstance(data, dict):
                 log.error(f"{log_id} -> API returned unexpected format (not a dict)")
                 return [], []
-            
+
             posts = data.get("list", [])
             log.debug(f"successfully accessed archived posts with url:{url}")
 
@@ -312,7 +312,9 @@ async def scrape_archived_posts(
             trace_progress_log(f"{API} request", posts)
 
             # RECURSION LOGIC
-            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(required_ids):
+            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
+                required_ids
+            ):
                 pass
             elif float(timestamp or 0) >= max(required_ids):
                 pass
@@ -323,10 +325,12 @@ async def scrape_archived_posts(
 
                 if len(required_ids) > 0:
                     new_ts = posts[-1]["postedAtPrecise"]
-                    
+
                     # SAFETY CHECK: Prevent stuck recursion
                     if str(new_ts) == str(timestamp):
-                        log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                        log.debug(
+                            f"{log_id} -> API stuck on same timestamp. Breaking recursion."
+                        )
                         return posts, new_tasks
 
                     new_tasks.append(
@@ -344,11 +348,12 @@ async def scrape_archived_posts(
 
     except asyncio.TimeoutError:
         log.warning(f"Task timed out {url}")
-        return [], [] # Keep the parent 'process_tasks' alive
+        return [], []  # Keep the parent 'process_tasks' alive
     except Exception as E:
-        log.error(f"Error in archived branch {url}: {str(E)}")
+        log.error(f"Error in archived branch {url}")
         log.traceback_(E)
-        return [], [] # Fail gracefully
+        log.traceback_(traceback.format_exc())
+        return [], []  # Fail gracefully
     finally:
         if task:
             progress_utils.api.remove_job_task(task)

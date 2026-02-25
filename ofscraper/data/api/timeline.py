@@ -98,9 +98,7 @@ async def process_tasks_batch(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    log.debug(
-        common_logs.FINAL_COUNT_POST.format('Timeline', len(responseArray))
-    )
+    log.debug(common_logs.FINAL_COUNT_POST.format("Timeline", len(responseArray)))
     trace_log_raw(f"{API} final", responseArray, final_count=True)
     return responseArray
 
@@ -271,7 +269,7 @@ async def get_after(model_id, username):
 async def scrape_timeline_posts(
     c, model_id, timestamp=None, required_ids=None, offset=False
 ) -> list:
-    posts = [] # Initialize as empty list
+    posts = []  # Initialize as empty list
     new_tasks = []
     task = None
     timestamp = float(timestamp) - 100 if timestamp and offset else timestamp
@@ -305,10 +303,11 @@ async def scrape_timeline_posts(
             log.debug(f"{log_id} -> number of post found {len(posts)}")
             trace_progress_log(f"{API} requests", posts, offset=offset)
 
-
             if required_ids:
                 # Use a small buffer or standard float comparison
-                current_min_precise = min(map(lambda x: float(x["postedAtPrecise"]), posts))
+                current_min_precise = min(
+                    map(lambda x: float(x["postedAtPrecise"]), posts)
+                )
                 max_required = max(required_ids)
 
                 if current_min_precise >= max_required:
@@ -316,11 +315,16 @@ async def scrape_timeline_posts(
                 elif float(timestamp or 0) >= max_required:
                     pass
                 else:
-                    [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+                    [
+                        required_ids.discard(float(ele["postedAtPrecise"]))
+                        for ele in posts
+                    ]
                     if len(required_ids) > 0:
                         new_ts = posts[-1]["postedAtPrecise"]
                         if str(new_ts) == str(timestamp):
-                            log.debug(f"{log_id} -> API stuck on same timestamp. Breaking recursion.")
+                            log.debug(
+                                f"{log_id} -> API stuck on same timestamp. Breaking recursion."
+                            )
                             return posts, new_tasks
 
                         new_tasks.append(
@@ -338,11 +342,11 @@ async def scrape_timeline_posts(
 
     except asyncio.TimeoutError:
         log.warning(f"Task timed out {url}")
-        return [], [] # Return empty rather than crashing the whole UI
+        return [], []  # Return empty rather than crashing the whole UI
     except Exception as E:
         log.error(f"Error in scrape_timeline_posts: {str(E)}")
         log.traceback_(E)
-        return [], [] # Return empty to allow other tasks to continue
+        return [], []  # Return empty to allow other tasks to continue
     finally:
         if task:
             progress_utils.api.remove_job_task(task)
