@@ -40,7 +40,7 @@ def operation_wrapper_async(func: abc.Callable):
             LOCK_POOL = ThreadPoolExecutor(max_workers=1)
             PROCESS_POOL = ThreadPoolExecutor(max_workers=1)
             # FIX: Change timeout to prevent indefinite hanging on stale locks
-            lock = FileLock(common_paths.getDB(), timeout=20)
+            lock = FileLock(common_paths.getDB(), timeout=120)
 
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(LOCK_POOL, lock.acquire)
@@ -81,12 +81,12 @@ def operation_wrapper_async(func: abc.Callable):
 
 def operation_wrapper(func: abc.Callable):
     def inner(*args, **kwargs):
+        lock = None
+        conn = None
         try:
-            lock = FileLock(common_paths.getDB(), timeout=-1)
-        except Exception as E:
-            raise E
-        try:
-            lock.acquire(timeout=-1)
+            lock = FileLock(common_paths.getDB(), timeout=120)
+            lock.acquire()
+
             database_path = pathlib.Path(
                 kwargs.get("db_path", None)
                 or placeholder.databasePlaceholder().databasePathHelper(
@@ -94,35 +94,30 @@ def operation_wrapper(func: abc.Callable):
                 )
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
+            
             conn = sqlite3.connect(database_path, check_same_thread=True, timeout=10)
             conn.row_factory = sqlite3.Row
             return func(*args, **kwargs, conn=conn)
+
         except sqlite3.OperationalError as E:
-            log.info("DB may be locked")
+            log.info("DB may be locked or system is under heavy load")
             raise E
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                try:
-                    lock.release(force=True)
-                except:
-                    None
-                try:
-                    conn.close()
-                except:
-                    None
+                # Cleanup is now handled in the 'finally' block below
                 raise E
-
         except Exception as E:
             raise E
         finally:
-            try:
-                conn.close()
-            except:
-                None
-            try:
-                lock.release(force=True)
-            except:
-                None
+            if conn:
+                try:
+                    conn.close()
+                except:
+                    pass
+            if lock:
+                try:
+                    lock.release(force=True)
+                except:
+                    pass
             log.trace("Force Closing DB")
-
     return inner
