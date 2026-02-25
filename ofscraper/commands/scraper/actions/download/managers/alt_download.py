@@ -67,11 +67,9 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} Downloading with protected media downloader"
             )
-            
+
             # Removed redundant download_retry loop here as it is handled in sub-methods
-            sharedPlaceholderObj = await placeholder.Placeholders(
-                ele, "mp4"
-            ).init()
+            sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
             common_globals.log.debug(
                 f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
             )
@@ -96,6 +94,7 @@ class AltDownloadManager(DownloadManager):
             )
         finally:
             common_globals.sem.release()
+
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
         placeholderObj = await placeholder.tempFilePlaceholder(

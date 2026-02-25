@@ -79,8 +79,6 @@ class scraperManager(CommandManager):
         await self._execute_user_first_actions(data, self._execute_user_action)
         progress_updater.activity.update_task(description="Finished Action Mode")
 
-
-
     async def _get_users_data_user_first(self, session, ele):
         return await self._process_ele_user_first_data_retriver(ele, session)
 
@@ -203,6 +201,7 @@ def main():
 
 # commands/scraper/scraper.py
 
+
 def daemon_process():
     checkers.check_auth()
     worker_thread = None
@@ -250,6 +249,7 @@ def daemon_process():
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 raise E
+
 
 @exit.exit_wrapper
 def process_prompts():

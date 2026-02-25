@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import asyncio
@@ -40,8 +40,8 @@ def operation_wrapper_async(func: abc.Callable):
             LOCK_POOL = ThreadPoolExecutor(max_workers=1)
             PROCESS_POOL = ThreadPoolExecutor(max_workers=1)
             # FIX: Change timeout to prevent indefinite hanging on stale locks
-            lock = FileLock(common_paths.getDB(), timeout=20) 
-            
+            lock = FileLock(common_paths.getDB(), timeout=20)
+
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(LOCK_POOL, lock.acquire)
 
@@ -52,10 +52,10 @@ def operation_wrapper_async(func: abc.Callable):
                 )
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             conn = sqlite3.connect(database_path, check_same_thread=False, timeout=10)
             conn.row_factory = sqlite3.Row
-            
+
             return await loop.run_in_executor(
                 PROCESS_POOL, partial(func, *args, **kwargs, conn=conn)
             )
@@ -75,6 +75,7 @@ def operation_wrapper_async(func: abc.Callable):
                 LOCK_POOL.shutdown(wait=True)
             if PROCESS_POOL:
                 PROCESS_POOL.shutdown(wait=True)
+
     return inner
 
 

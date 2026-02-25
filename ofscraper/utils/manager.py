@@ -26,6 +26,7 @@ def shutdown():
         manager.shutdown()
         manager = None
 
+
 def update_dict(new_dict):
     manager_dict = get_manager_process_dict()
     manager_dict.update(new_dict)

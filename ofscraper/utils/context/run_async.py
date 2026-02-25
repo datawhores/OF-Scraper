@@ -3,8 +3,6 @@ import asyncio
 import ofscraper.utils.context.exit as exit
 
 
-
-
 def run(coro):
     def inner(*args, **kwargs):
         try:
@@ -25,7 +23,9 @@ def run(coro):
                         pending = asyncio.all_tasks(loop)
                         for task in pending:
                             task.cancel()
-                        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                        loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
                     except Exception:
                         pass
                 raise E
@@ -38,6 +38,7 @@ def run(coro):
         return coro(*args, **kwargs)
 
     return inner
+
 
 def run_forever(coro):
     def inner(*args, **kwargs):
