@@ -231,8 +231,8 @@ class Post(base.base):
         if raw_type == "post":
             return "Timeline"
 
-    # Capitalize the raw type (e.g., "message" -> "Message")
-    return str(raw_type).capitalize() if raw_type else "Unknown"
+        # Capitalize the raw type (e.g., "message" -> "Message")
+        return str(raw_type).capitalize() if raw_type else "Unknown"
 
     @property
     def id(self):
