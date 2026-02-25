@@ -66,7 +66,7 @@ async def scrape_stories(c, user_id) -> list:
     except Exception as E:
         log.error(f"Failed to scrape stories for {user_id}")
         log.traceback_(E)
-        
+
         log.traceback_(traceback.format_exc())
 
         return [], []  # Fail gracefully to prevent UI stall
