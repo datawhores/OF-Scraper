@@ -75,9 +75,7 @@ async def process_tasks(tasks):
         tasks = new_tasks
 
     progress_utils.api.remove_overall_task(page_task)
-    log.debug(
-        common_logs.FINAL_COUNT_POST.format('Paid', len(responseArray))
-    )
+    log.debug(common_logs.FINAL_COUNT_POST.format("Paid", len(responseArray)))
     return responseArray
 
 
@@ -86,13 +84,13 @@ async def scrape_paid(c, username, offset=0):
     new_tasks = []
     task = None
     url = of_env.getattr("purchased_contentEP").format(offset, username)
-    
+
     try:
         task = progress_utils.api.add_job_task(
             f"scrape paid offset -> {offset} username -> {username}",
             visible=True,
         )
-        
+
         async with c.requests_async(url) as r:
             # FIX: Success range check
             if not (200 <= r.status < 300):
@@ -100,8 +98,9 @@ async def scrape_paid(c, username, offset=0):
                 return [], []
 
             data = await r.json_()
-            if not isinstance(data, dict): return [], []
-            
+            if not isinstance(data, dict):
+                return [], []
+
             trace_progress_log(f"{API} all users requests", data)
 
             # Safely extract list from data values
@@ -111,8 +110,9 @@ async def scrape_paid(c, username, offset=0):
             if data.get("hasMore") and len(media) > 0:
                 new_offset = offset + len(media)
                 # FIX: Prevent infinite loop if offset doesn't change
-                if new_offset == offset: return media, []
-                
+                if new_offset == offset:
+                    return media, []
+
                 new_tasks.append(
                     asyncio.create_task(scrape_paid(c, username, offset=new_offset))
                 )
@@ -142,12 +142,20 @@ async def create_tasks_scrape_paid(c):
     min_posts = 80
     tasks = []
     allpaid = cache.get("purchased_all", default=[])
-    
+
     if len(allpaid) > min_posts:
         splitArrays = [i for i in range(0, len(allpaid), min_posts)]
         for i in range(0, len(splitArrays) - 1):
-            tasks.append(asyncio.create_task(scrape_all_paid(c, required=min_posts, offset=splitArrays[i])))
-        tasks.append(asyncio.create_task(scrape_all_paid(c, offset=splitArrays[-1], required=None)))
+            tasks.append(
+                asyncio.create_task(
+                    scrape_all_paid(c, required=min_posts, offset=splitArrays[i])
+                )
+            )
+        tasks.append(
+            asyncio.create_task(
+                scrape_all_paid(c, offset=splitArrays[-1], required=None)
+            )
+        )
     else:
         tasks.append(asyncio.create_task(scrape_all_paid(c)))
     return tasks
@@ -159,7 +167,7 @@ async def process_tasks_all_paid(tasks):
     page_task = progress_utils.api.add_overall_task(
         f"[Scrape Paid] Pages Progress: {page_count}", visible=True
     )
-    
+
     while tasks:
         new_tasks_batch = []
         for task in asyncio.as_completed(tasks):
@@ -167,15 +175,22 @@ async def process_tasks_all_paid(tasks):
                 result, new_tasks = await task
                 new_tasks_batch.extend(new_tasks)
                 page_count += 1
-                progress_utils.api.update_overall_task(page_task, description=f"[Scrape Paid] Pages Progress: {page_count}")
-                if result: output.extend(result)
+                progress_utils.api.update_overall_task(
+                    page_task, description=f"[Scrape Paid] Pages Progress: {page_count}"
+                )
+                if result:
+                    output.extend(result)
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
         tasks = new_tasks_batch
-        
+
     progress_utils.api.remove_overall_task(page_task)
-    cache.set("purchased_all", list(map(lambda x: x.get("id"), output)), expire=of_env.getattr("RESPONSE_EXPIRY"))
+    cache.set(
+        "purchased_all",
+        list(map(lambda x: x.get("id"), output)),
+        expire=of_env.getattr("RESPONSE_EXPIRY"),
+    )
     return output
 
 
@@ -184,11 +199,14 @@ async def scrape_all_paid(c, offset=0, required=None):
     new_tasks = []
     task = None
     url = of_env.getattr("purchased_contentALL").format(offset)
-    
+
     try:
-        task = progress_utils.api.add_job_task(f"scrape entire paid page offset={offset}", visible=True)
+        task = progress_utils.api.add_job_task(
+            f"scrape entire paid page offset={offset}", visible=True
+        )
         async with c.requests_async(url) as r:
-            if not (200 <= r.status < 300): return [], []
+            if not (200 <= r.status < 300):
+                return [], []
 
             data = await r.json_()
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
@@ -198,10 +216,20 @@ async def scrape_all_paid(c, offset=0, required=None):
                 return media, new_tasks
 
             if required is None:
-                new_tasks.append(asyncio.create_task(scrape_all_paid(c, offset=offset + len(media))))
+                new_tasks.append(
+                    asyncio.create_task(scrape_all_paid(c, offset=offset + len(media)))
+                )
             elif len(media) < required:
-                new_tasks.append(asyncio.create_task(scrape_all_paid(c, offset=offset + len(media), required=required - len(media))))
-            
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_all_paid(
+                            c,
+                            offset=offset + len(media),
+                            required=required - len(media),
+                        )
+                    )
+                )
+
             return media, new_tasks
 
     except Exception as E:
@@ -213,6 +241,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         if task:
             progress_utils.api.remove_job_task(task)
 
+
 def create_all_paid_dict(paid_content):
     user_dict = {}
     for ele in paid_content:
@@ -220,6 +249,7 @@ def create_all_paid_dict(paid_content):
         user_dict.setdefault(str(user_id), []).append(ele)
     [update_check(val, key, None, API) for key, val in user_dict.items()]
     return user_dict
+
 
 def get_individual_paid_post(username, model_id, postid):
     data = get_paid_posts(username, model_id)
