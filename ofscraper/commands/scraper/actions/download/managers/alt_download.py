@@ -95,7 +95,6 @@ class AltDownloadManager(DownloadManager):
                 sharedPlaceholderObj, ele, audio, video, username, model_id
             )
         finally:
-            # Ensure the semaphore is always released, regardless of errors or early returns
             common_globals.sem.release()
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()

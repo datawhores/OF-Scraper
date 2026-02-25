@@ -24,8 +24,7 @@ def shutdown():
     global manager
     if manager:
         manager.shutdown()
-        manager is None
-
+        manager = None
 
 def update_dict(new_dict):
     manager_dict = get_manager_process_dict()
