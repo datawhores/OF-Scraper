@@ -3,6 +3,8 @@ import asyncio
 import ofscraper.utils.context.exit as exit
 
 
+
+
 def run(coro):
     def inner(*args, **kwargs):
         try:
@@ -12,31 +14,30 @@ def run(coro):
         if not loop.is_running():
             try:
                 asyncio.set_event_loop(loop)
-                tasks = loop.run_until_complete(coro(*args, **kwargs))
-                return tasks
-            except RuntimeError:
-                return coro(*args, **kwargs)
+                return loop.run_until_complete(coro(*args, **kwargs))
+            except RuntimeError as e:
+                if "Event loop is closed" in str(e):
+                    return coro(*args, **kwargs)
+                raise e
             except KeyboardInterrupt as E:
                 with exit.DelayedKeyboardInterrupt():
                     try:
-                        tasks.cancel()
-                        loop.run_forever()
-                        tasks.exception()
+                        pending = asyncio.all_tasks(loop)
+                        for task in pending:
+                            task.cancel()
+                        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
                     except Exception:
-                        None
-                raise E
-            except Exception as E:
+                        pass
                 raise E
             finally:
                 try:
                     loop.close()
                 except:
-                    None
+                    pass
                 asyncio.set_event_loop(None)
         return coro(*args, **kwargs)
 
     return inner
-
 
 def run_forever(coro):
     def inner(*args, **kwargs):
