@@ -40,7 +40,7 @@ API = "streams"
 
 
 log = logging.getLogger("shared")
-from ofscraper.data.api.common.timeline import process_individual
+from ofscraper.data.api.common.timeline import process_posts_as_individual
 
 sem = None
 
@@ -57,7 +57,7 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks_batch(tasks)
     elif len(post_id) <= of_env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
-        data = process_individual()
+        data = process_posts_as_individual()
     update_check(data, model_id, after, API)
     return data
 

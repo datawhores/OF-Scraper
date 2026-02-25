@@ -59,7 +59,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
     elif len(settings.get_settings().post_id or []) <= of_env.getattr(
         "MAX_MESSAGES_INDIVIDUAL_SEARCH"
     ):
-        data = process_individual(model_id)
+        data = process_messages_as_individual(model_id)
     update_check(data, model_id, after, API)
     return data
 
@@ -84,7 +84,7 @@ async def get_old_messages(model_id, username):
     return oldmessages
 
 
-def process_individual(model_id):
+def process_messages_as_individual(model_id):
     data = []
     for ele in settings.get_settings().post_id:
         try:

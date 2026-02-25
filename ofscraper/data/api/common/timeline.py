@@ -26,7 +26,7 @@ def get_individual_timeline_post(id, session=None):
             return r.json()
 
 
-def process_individual():
+def process_posts_as_individual():
     data = []
     for ele in settings.get_settings().post_id:
         try:

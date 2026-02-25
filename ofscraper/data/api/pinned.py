@@ -22,7 +22,7 @@ import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
-from ofscraper.data.api.common.timeline import process_individual
+from ofscraper.data.api.common.timeline import process_posts_as_individual
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.settings as settings
@@ -41,7 +41,7 @@ async def get_pinned_posts(model_id, c=None, post_id=None):
         tasks = get_tasks(c, model_id)
         data = await process_tasks(tasks)
     elif len(post_id) <= of_env.getattr("MAX_PINNED_INDIVIDUAL_SEARCH"):
-        data = process_individual()
+        data = process_posts_as_individual()
     update_check(data, model_id, None, API)
     return data
 

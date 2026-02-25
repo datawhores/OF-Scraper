@@ -25,7 +25,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check
 from ofscraper.data.api.common.check import update_check
-from ofscraper.data.api.common.timeline import process_individual
+from ofscraper.data.api.common.timeline import process_posts_as_individual
 from ofscraper.db.operations_.media import (
     get_archived_media,
     get_media_ids_downloaded_model,
@@ -56,7 +56,7 @@ async def get_archived_posts(model_id, username, c=None, post_id=None):
         tasks = get_tasks(splitArrays, c, model_id, after)
         data = await process_tasks(tasks)
     elif len(post_id) <= of_env.getattr("MAX_ARCHIVED_INDIVIDUAL_SEARCH"):
-        data = process_individual()
+        data = process_posts_as_individual()
     update_check(data, model_id, after, API)
     return data
 
