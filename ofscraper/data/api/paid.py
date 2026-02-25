@@ -22,7 +22,7 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -75,6 +75,7 @@ async def process_tasks(tasks):
         tasks = new_tasks
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Paid", len(responseArray)))
     return responseArray
 
@@ -102,7 +103,6 @@ async def scrape_paid(c, username, offset=0):
 
             trace_progress_log(f"{API} all users requests", data)
 
-            # Safely extract list from data values
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
             media = media_lists[0] if media_lists else []
 
@@ -178,12 +178,14 @@ async def process_tasks_all_paid(tasks):
                 )
                 if result:
                     output.extend(result)
+                    trace_progress_log(f"{API} all users tasks", result)
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
         tasks = new_tasks_batch
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API} all users final", output, final_count=True)
     cache.set(
         "purchased_all",
         list(map(lambda x: x.get("id"), output)),
@@ -207,6 +209,8 @@ async def scrape_all_paid(c, offset=0, required=None):
                 return [], []
 
             data = await r.json_()
+            trace_progress_log(f"{API} all users requests", data)
+            
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
             media = media_lists[0] if media_lists else []
 

@@ -13,7 +13,6 @@ r"""
 
 import asyncio
 import logging
-import math
 import traceback
 import arrow
 

@@ -19,7 +19,7 @@ import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_progress_log
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 log = logging.getLogger("shared")
 API_S = "stories"
@@ -28,7 +28,6 @@ API_H = "highlights"
 #############################################################################
 #### Stories
 ##############################################################################
-
 
 @run
 async def get_stories_post(model_id, c=None):
@@ -51,13 +50,11 @@ async def scrape_stories(c, user_id) -> list:
         log.debug(f"trying to access {API_S.lower()} with url:{url}  user_id:{user_id}")
 
         async with c.requests_async(url=url) as r:
-            # FIX: Success range check
             if not (200 <= r.status < 300):
                 log.error(f"Stories API Error: {r.status} for {user_id}")
                 return [], []
 
             stories = await r.json_()
-            # Safety check for unexpected return types
             stories = stories if isinstance(stories, list) else []
 
             log.debug(f"successfully accessed {API_S.lower()} with url:{url}")
@@ -66,10 +63,8 @@ async def scrape_stories(c, user_id) -> list:
     except Exception as E:
         log.error(f"Failed to scrape stories for {user_id}")
         log.traceback_(E)
-
         log.traceback_(traceback.format_exc())
-
-        return [], []  # Fail gracefully to prevent UI stall
+        return [], []
 
     finally:
         if task:
@@ -98,7 +93,6 @@ async def process_stories_tasks(tasks):
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
 
-                # Check that result is iterable
                 if result:
                     new_posts = [
                         post
@@ -106,6 +100,7 @@ async def process_stories_tasks(tasks):
                         if post.get("id") not in seen and not seen.add(post.get("id"))
                     ]
                     responseArray.extend(new_posts)
+                    trace_progress_log(f"{API_S} task", new_posts)
 
             except Exception as E:
                 log.traceback_(E)
@@ -115,6 +110,7 @@ async def process_stories_tasks(tasks):
         tasks = new_tasks
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API_S} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Stories", len(responseArray)))
     return responseArray
 
@@ -122,7 +118,6 @@ async def process_stories_tasks(tasks):
 ##############################################################################
 #### Highlights
 ##############################################################################
-
 
 @run
 async def get_highlight_post(model_id, c=None):
@@ -163,9 +158,7 @@ async def process_task_get_highlight_list(tasks):
                 )
                 if result:
                     new_posts = [
-                        post
-                        for post in result
-                        if post not in seen and not seen.add(post)
+                        post for post in result if post not in seen and not seen.add(post)
                     ]
                     highlightLists.extend(new_posts)
             except Exception as E:
@@ -175,6 +168,7 @@ async def process_task_get_highlight_list(tasks):
         tasks = new_tasks
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API_H} list final", highlightLists, final_count=True)
     return highlightLists
 
 
@@ -203,6 +197,7 @@ async def process_task_highlights(tasks):
                         if post.get("id") not in seen and not seen.add(post.get("id"))
                     ]
                     highlightResponse.extend(new_posts)
+                    trace_progress_log(f"{API_H} list posts task", new_posts)
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
@@ -210,6 +205,7 @@ async def process_task_highlights(tasks):
         tasks = new_tasks
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
     return highlightResponse
 
 
@@ -226,13 +222,17 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
         )
         async with c.requests_async(url) as r:
             if not (200 <= r.status < 300):
+                log.error(f"Highlight List API Error: {r.status}")
                 return [], []
 
             resp_data = await r.json_()
+            trace_progress_log(f"{API_H} list requests", resp_data)
             data = get_highlightList(resp_data)
 
     except Exception as E:
-        log.error(f"Highlight list failed: {E}")
+        log.error(f"Highlight list failed")
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         return [], []
     finally:
         if task:
@@ -256,14 +256,16 @@ async def scrape_highlights_from_list(c, id) -> list:
                 return [], []
 
             resp_data = await r.json_()
-            # FIX: Safe extraction of stories
+            trace_progress_log(f"{API_H} list post requests", resp_data)
             stories = (
                 resp_data.get("stories", []) if isinstance(resp_data, dict) else []
             )
             return stories, new_tasks
 
     except Exception as E:
-        log.debug(f"Highlight extraction failed for ID {id}: {E}")
+        log.debug(f"Highlight extraction failed for ID {id}")
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         return [], []
     finally:
         if task:

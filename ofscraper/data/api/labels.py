@@ -29,7 +29,6 @@ API = "labels"
 
 @run
 async def get_labels(model_id, c=None):
-    # Top level entry point
     labels_ = await get_labels_data(model_id, c=c)
     labels_ = (
         labels_
@@ -57,7 +56,7 @@ async def get_posts_for_labels(labels, model_id, c=None):
     tasks = []
     for label in labels:
         tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id)))
-
+    
     labels_final = await process_tasks_get_posts_for_labels(tasks, labels)
     return labels_final
 
@@ -87,13 +86,19 @@ async def process_tasks_labels(tasks):
                         for post in result
                         if post.get("id") not in seen and not seen.add(post.get("id"))
                     ]
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
+                    )
+                    trace_progress_log(f"{API} names tasks", new_posts)
                     responseArray.extend(new_posts)
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
+        
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API} names final", responseArray, final_count=True)
     return responseArray
 
 
@@ -102,35 +107,29 @@ async def scrape_labels(c, model_id, offset=0):
     new_tasks = []
     url = of_env.getattr("labelsEP").format(model_id, offset)
     task = None
-
+    
     try:
-        task = progress_utils.api.add_job_task(
-            f"labels offset -> {offset}", visible=True
-        )
+        task = progress_utils.api.add_job_task(f"labels offset -> {offset}", visible=True)
         async with c.requests_async(url) as r:
             if not (200 <= r.status < 300):
                 log.error(f"Labels API Error: {r.status}")
                 return [], []
 
             data = await r.json_()
-            if not isinstance(data, dict):
-                return [], []
+            if not isinstance(data, dict): return [], []
+
+            trace_progress_log(f"{API} names requests", data)
 
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
             labels = media_lists[0] if media_lists else []
 
             if data.get("hasMore") and len(labels) > 0:
                 new_offset = offset + len(labels)
-                # Infinite loop guard
                 if new_offset != offset:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_labels(c, model_id, offset=new_offset)
-                        )
-                    )
-
+                    new_tasks.append(asyncio.create_task(scrape_labels(c, model_id, offset=new_offset)))
+            
             return labels, new_tasks
-
+            
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -153,14 +152,13 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
             try:
                 label, posts, batch_new_tasks = await task
                 page_count += 1
-                progress_utils.api.update_overall_task(
-                    page_task, description=f"Labels Progress: {page_count}"
-                )
-
+                progress_utils.api.update_overall_task(page_task, description=f"Labels Progress: {page_count}")
+                
                 if posts:
                     new_posts = label_dedupe(responseDict[label["id"]]["seen"], posts)
+                    trace_progress_log(f"{API} content tasks", new_posts)
                     responseDict[label["id"]]["posts"].extend(new_posts)
-
+                
                 new_tasks.extend(batch_new_tasks)
             except Exception as E:
                 log.traceback_(E)
@@ -169,6 +167,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels):
         tasks = new_tasks
 
     [label.pop("seen", None) for label in responseDict.values()]
+    trace_log_raw(f"{API} content final", list(responseDict.values()), final_count=True)
     progress_utils.api.remove_overall_task(page_task)
     return list(responseDict.values())
 
@@ -180,19 +179,15 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     task = None
 
     try:
-        task = progress_utils.api.add_job_task(
-            f": getting posts from label -> {label['name']}", visible=True
-        )
+        task = progress_utils.api.add_job_task(f": getting posts from label -> {label['name']}", visible=True)
         async with c.requests_async(url) as r:
             if not (200 <= r.status < 300):
-                log.error(
-                    f"Label Content API Error: {r.status} for label {label['id']}"
-                )
                 return label, [], []
 
             data = await r.json_()
-            if not isinstance(data, dict):
-                return label, [], []
+            if not isinstance(data, dict): return label, [], []
+
+            trace_progress_log(f"{API} content requests", data)
 
             media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
             posts = media_lists[0] if media_lists else []
@@ -200,11 +195,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             if data.get("hasMore") and len(posts) > 0:
                 new_offset = offset + len(posts)
                 if new_offset != offset:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_posts_labels(c, label, model_id, offset=new_offset)
-                        )
-                    )
+                    new_tasks.append(asyncio.create_task(scrape_posts_labels(c, label, model_id, offset=new_offset)))
 
             return label, posts, new_tasks
 
@@ -218,11 +209,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
 
 
 def label_dedupe(seen, labelArray):
-    return [
-        post
-        for post in labelArray
-        if post.get("id") not in seen and not seen.add(post.get("id"))
-    ]
+    return [post for post in labelArray if post.get("id") not in seen and not seen.add(post.get("id"))]
 
 
 def get_default_label_dict(labels):
