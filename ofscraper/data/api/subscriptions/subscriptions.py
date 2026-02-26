@@ -1,5 +1,4 @@
 r"""
-
  _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
@@ -8,7 +7,6 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-
 """
 
 import asyncio
@@ -30,7 +28,6 @@ console = Console()
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-
     task1 = userlist.add_overall_task(
         f"Getting your {account} subscriptions (this may take awhile)..."
     )
@@ -55,176 +52,132 @@ async def get_all_subscriptions(subscribe_count, account="active"):
 
 
 async def get_all_activive_subscriptions(subscribe_count):
-    funct = scrape_subscriptions_active
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
-        tasks = [
-            asyncio.create_task(funct(c))
-        ]
-        return await process_task(tasks)
+        # Pass the generator function as a list to the orchestrator
+        return await process_task([scrape_subscriptions_active(c)])
 
 
 async def get_all_expired_subscriptions(subscribe_count):
-    funct = scrape_subscriptions_disabled
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
-        tasks = [
-            asyncio.create_task(funct(c))
-        ]
-        return await process_task(tasks)
+        return await process_task([scrape_subscriptions_disabled(c)])
 
 
 async def activeHelper(subscribe_count, c):
-    if any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) or any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
-        ]
-    ):
+    # Blacklist/Reserved list logic check
+    if any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) or any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_ACTIVE_LIST"), of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT")]):
         return []
-    if all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) and all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
-        ]
-    ):
+    if all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) and all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_ACTIVE_LIST"), of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT")]):
         return []
-    funct = scrape_subscriptions_active
 
-    tasks = [
-        asyncio.create_task(funct(c))
-    ]
-    return await process_task(tasks)
+    return await process_task([scrape_subscriptions_active(c)])
 
 
 async def expiredHelper(subscribe_count, c):
-    if any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) or any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
-        ]
-    ):
+    if any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) or any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_EXPIRED_LIST"), of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT")]):
         return []
-    if all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) and all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
-        ]
-    ):
+    if all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) and all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_EXPIRED_LIST"), of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT")]):
         return []
-    funct = scrape_subscriptions_disabled
 
-    tasks = [
-        asyncio.create_task(funct(c))
-    ]
-    return await process_task(tasks)
+    return await process_task([scrape_subscriptions_disabled(c)])
 
 
-async def process_task(tasks):
+async def process_task(generators):
+    """
+    Fixed Orchestrator: Consumes async generators and returns a final LIST.
+    This satisfies the 'await' in retriver.py.
+    """
     output = []
     seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                users = [
-                    user
-                    for user in result
-                    if user["id"] not in seen and not seen.add(user["id"])
-                ]
-                output.extend(users)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+
+    # Iterate through the provided generator workers
+    for gen in generators:
+        try:
+            # Consuming the AsyncGenerator using 'async for'
+            async for batch in gen:
+                if batch:
+                    users = [
+                        user
+                        for user in batch
+                        if user["id"] not in seen and not seen.add(user["id"])
+                    ]
+                    output.extend(users)
+        except Exception as E:
+            log.error("Failed in subscription processing loop")
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            continue
     return output
 
 
 async def scrape_subscriptions_active(c, offset=0):
-    with progress_utils.setup_live("user_list"):
-        new_tasks = []
-        url = of_env.getattr("subscriptionsActiveEP").format(offset)
+    """
+    Async Generator Worker Loop for active subscriptions.
+    Yields batches page-by-page.
+    """
+    current_offset = offset
+    while True:
+        url = of_env.getattr("subscriptionsActiveEP").format(current_offset)
         try:
-            log.debug(f"usernames active offset {offset}")
+            log.debug(f"usernames active offset {current_offset}")
             async with c.requests_async(url=url) as r:
-                response = await r.json_()
-                subscriptions = response["list"]
-                log.debug(
-                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                )
-                if response["hasMore"] is True:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_subscriptions_active(c, offset=offset + 10)
-                        )
-                    )
-                return subscriptions, new_tasks
-        except asyncio.TimeoutError:
-            raise Exception(f"Task timed out {url}")
+                if not (200 <= r.status < 300):
+                    log.error(f"Subscription API Error: {r.status}")
+                    break
 
+                response = await r.json_()
+                subscriptions = response.get("list", [])
+                
+                if subscriptions:
+                    yield subscriptions
+
+                if response.get("hasMore") is not True or not subscriptions:
+                    break
+                
+                current_offset += len(subscriptions)
+
+        except asyncio.TimeoutError:
+            log.error(f"Task timed out {url}")
+            break
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-            raise E
+            break
 
 
 async def scrape_subscriptions_disabled(c, offset=0):
-    with progress_utils.setup_live("user_list"):
-        new_tasks = []
-        url = of_env.getattr("subscriptionsExpiredEP").format(offset)
+    """
+    Async Generator Worker Loop for expired subscriptions.
+    Yields batches page-by-page.
+    """
+    current_offset = offset
+    while True:
+        url = of_env.getattr("subscriptionsExpiredEP").format(current_offset)
         try:
-            log.debug(f"usernames offset expired {offset}")
+            log.debug(f"usernames offset expired {current_offset}")
             async with c.requests_async(url=url) as r:
+                if not (200 <= r.status < 300):
+                    log.error(f"Subscription API Error: {r.status}")
+                    break
+
                 response = await r.json_()
-                subscriptions = response["list"]
-                log.debug(
-                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                )
-                if response["hasMore"] is True:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_subscriptions_disabled(c, offset=offset + 10)
-                        )
-                    )
+                subscriptions = response.get("list", [])
+                
+                if subscriptions:
+                    yield subscriptions
 
-                return subscriptions, new_tasks
+                if response.get("hasMore") is not True or not subscriptions:
+                    break
+                
+                current_offset += len(subscriptions)
+
         except asyncio.TimeoutError:
-            raise Exception(f"Task timed out {url}")
-
+            log.error(f"Task timed out {url}")
+            break
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-            raise E
+            break

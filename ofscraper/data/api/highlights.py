@@ -32,87 +32,70 @@ API_H = "highlights"
 
 @run
 async def get_stories_post(model_id, c=None):
-    tasks = []
-    tasks.append(asyncio.create_task(scrape_stories(c, model_id)))
-    return await process_stories_tasks(tasks)
+    # Pass the raw generator
+    generators = [scrape_stories(c, model_id)]
+    return await process_stories_tasks(generators)
 
 
-async def scrape_stories(c, user_id) -> list:
-    stories = []
-    new_tasks = []
-    task = None
-
+async def scrape_stories(c, user_id):
     url = of_env.getattr("highlightsWithAStoryEP").format(user_id)
+    task = None
     try:
         task = progress_utils.api.add_job_task(
-            f"[Stories] user id -> {user_id}",
-            visible=True,
+            f"[Stories] user id -> {user_id}", visible=True
         )
-        log.debug(f"trying to access {API_S.lower()} with url:{url}  user_id:{user_id}")
-
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
-                log.error(f"Stories API Error: {r.status} for {user_id}")
-                return [], []
-
+                return
             stories = await r.json_()
             stories = stories if isinstance(stories, list) else []
-
-            log.debug(f"successfully accessed {API_S.lower()} with url:{url}")
-            trace_progress_log(f"{API_S} requests", stories)
-
+            if stories:
+                yield stories
     except Exception as E:
-        log.error(f"Failed to scrape stories for {user_id}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
-        return [], []
-
     finally:
         if task:
             progress_utils.api.remove_job_task(task)
 
-    return stories, new_tasks
 
-
-async def process_stories_tasks(tasks):
+async def process_stories_tasks(generators):
     responseArray = []
     page_count = 0
     page_task = progress_utils.api.add_overall_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
-
     seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Stories Content Pages Progress: {page_count}",
-                )
+    queue = asyncio.Queue()
 
-                if result:
-                    new_posts = [
-                        post
-                        for post in result
-                        if post.get("id") not in seen and not seen.add(post.get("id"))
-                    ]
-                    responseArray.extend(new_posts)
-                    trace_progress_log(f"{API_S} task", new_posts)
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            await queue.put(None)
 
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
 
-        tasks = new_tasks
+    while active_workers > 0:
+        batch = await queue.get()
+        if batch is None:
+            active_workers -= 1
+            continue
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task, description=f"Stories Pages Progress: {page_count}"
+        )
+        if batch:
+            new_posts = [p for p in batch if p.get("id") not in seen and not seen.add(p.get("id"))]
+            responseArray.extend(new_posts)
+            trace_progress_log(f"{API_S} task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    trace_log_raw(f"{API_S} final", responseArray, final_count=True)
-    log.debug(common_logs.FINAL_COUNT_POST.format("Stories", len(responseArray)))
     return responseArray
 
 
@@ -128,177 +111,135 @@ async def get_highlight_post(model_id, c=None):
 
 
 async def get_highlight_list(model_id, c=None):
-    tasks = []
-    tasks.append(asyncio.create_task(scrape_highlight_list(c, model_id)))
-    return await process_task_get_highlight_list(tasks)
+    generators = [scrape_highlight_list(c, model_id)]
+    return await process_task_get_highlight_list(generators)
 
 
 async def get_highlights_via_list(highlightLists, c=None):
-    tasks = []
-    for i in highlightLists:
-        tasks.append(asyncio.create_task(scrape_highlights_from_list(c, i)))
-    return await process_task_highlights(tasks)
+    generators = [scrape_highlights_from_list(c, i) for i in highlightLists]
+    return await process_task_highlights(generators)
 
 
-async def process_task_get_highlight_list(tasks):
+async def process_task_get_highlight_list(generators):
     highlightLists = []
     page_count = 0
     page_task = progress_utils.api.add_overall_task(
-        f"Highlights List Pages Progress: {page_count}", visible=True
+        f"Highlights List Progress: {page_count}", visible=True
     )
     seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Highlights List Pages Progress: {page_count}",
-                )
-                if result:
-                    new_posts = [
-                        post
-                        for post in result
-                        if post not in seen and not seen.add(post)
-                    ]
-                    highlightLists.extend(new_posts)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+    queue = asyncio.Queue()
+
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            await queue.put(None)
+
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
+
+    while active_workers > 0:
+        batch = await queue.get()
+        if batch is None:
+            active_workers -= 1
+            continue
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task, description=f"Highlights List Progress: {page_count}"
+        )
+        if batch:
+            new_posts = [p for p in batch if p not in seen and not seen.add(p)]
+            highlightLists.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    trace_log_raw(f"{API_H} list final", highlightLists, final_count=True)
     return highlightLists
 
 
-async def process_task_highlights(tasks):
+async def process_task_highlights(generators):
     highlightResponse = []
     page_count = 0
     page_task = progress_utils.api.add_overall_task(
         f"Highlight Content Progress: {page_count}", visible=True
     )
     seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Highlights content progress: {page_count}",
-                )
-                if result:
-                    new_posts = [
-                        post
-                        for post in result
-                        if post.get("id") not in seen and not seen.add(post.get("id"))
-                    ]
-                    highlightResponse.extend(new_posts)
-                    trace_progress_log(f"{API_H} list posts task", new_posts)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+    queue = asyncio.Queue()
+
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            await queue.put(None)
+
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
+
+    while active_workers > 0:
+        batch = await queue.get()
+        if batch is None:
+            active_workers -= 1
+            continue
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task, description=f"Highlight Content Progress: {page_count}"
+        )
+        if batch:
+            new_posts = [p for p in batch if p.get("id") not in seen and not seen.add(p.get("id"))]
+            highlightResponse.extend(new_posts)
+            trace_progress_log(f"{API_H} list posts task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
     return highlightResponse
 
 
-async def scrape_highlight_list(c, user_id, offset=0) -> list:
-    new_tasks = []
-    url = of_env.getattr("highlightsWithStoriesEP").format(user_id, offset)
-    task = None
-    data = []
-
-    try:
-        task = progress_utils.api.add_job_task(
-            f"[Highlights] scraping list offset-> {offset}",
-            visible=True,
-        )
-        async with c.requests_async(url) as r:
-            if not (200 <= r.status < 300):
-                log.error(f"Highlight List API Error: {r.status}")
-                return [], []
-
-            resp_data = await r.json_()
-            trace_progress_log(f"{API_H} list requests", resp_data)
-            data = get_highlightList(resp_data)
-
-    except Exception as E:
-        log.error("Highlight list failed")
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        return [], []
-    finally:
-        if task:
-            progress_utils.api.remove_job_task(task)
-
-    return data, new_tasks
+async def scrape_highlight_list(c, user_id, offset=0):
+    current_offset = offset
+    while True:
+        url = of_env.getattr("highlightsWithStoriesEP").format(user_id, current_offset)
+        task = None
+        try:
+            task = progress_utils.api.add_job_task(f"[Highlights] offset-> {current_offset}", visible=True)
+            async with c.requests_async(url) as r:
+                if not (200 <= r.status < 300): break
+                resp_data = await r.json_()
+                data = get_highlightList(resp_data)
+                if not data: break
+                yield data
+                if not resp_data.get("hasMore"): break
+                current_offset += len(data)
+        except Exception as E:
+            log.traceback_(E)
+            break
+        finally:
+            if task: progress_utils.api.remove_job_task(task)
 
 
-async def scrape_highlights_from_list(c, id) -> list:
-    new_tasks = []
+async def scrape_highlights_from_list(c, id):
     url = of_env.getattr("storyEP").format(id)
     task = None
-
     try:
-        task = progress_utils.api.add_job_task(
-            f"[Highlights] ID -> {id}",
-            visible=True,
-        )
+        task = progress_utils.api.add_job_task(f"[Highlights] ID -> {id}", visible=True)
         async with c.requests_async(url=url) as r:
-            if not (200 <= r.status < 300):
-                return [], []
-
+            if not (200 <= r.status < 300): return
             resp_data = await r.json_()
-            trace_progress_log(f"{API_H} list post requests", resp_data)
-            stories = (
-                resp_data.get("stories", []) if isinstance(resp_data, dict) else []
-            )
-            return stories, new_tasks
-
+            stories = resp_data.get("stories", []) if isinstance(resp_data, dict) else []
+            if stories: yield stories
     except Exception as E:
-        log.debug(f"Highlight extraction failed for ID {id}")
         log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        return [], []
     finally:
-        if task:
-            progress_utils.api.remove_job_task(task)
+        if task: progress_utils.api.remove_job_task(task)
 
 
 def get_highlightList(data):
-    if not isinstance(data, dict):
-        return []
+    if not isinstance(data, dict): return []
     for ele in list(filter(lambda x: isinstance(x, list), data.values())):
-        if (
-            len(
-                list(
-                    filter(
-                        lambda x: isinstance(x.get("id"), (int, str)),
-                        ele,
-                    )
-                )
-            )
-            > 0
-        ):
-            return list(map(lambda x: x.get("id"), ele))
+        if len(list(filter(lambda x: isinstance(x.get("id"), (int, str)), ele))) > 0:
+            return [x.get("id") for x in ele]
     return []
-
-
-async def get_individual_stories(id, c):
-    url = of_env.getattr("storiesSPECIFIC").format(id)
-    async with c.requests_async(url) as r:
-        if not (200 <= r.status < 300):
-            return []
-        data = await r.json_()
-        return data if isinstance(data, list) else [data]

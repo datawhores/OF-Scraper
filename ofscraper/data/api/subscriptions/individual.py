@@ -50,18 +50,32 @@ async def get_subscription(accounts=None):
 
 async def get_subscription_helper(c, accounts):
     output = []
-    tasks = [
-        asyncio.create_task(profile.scrape_profile_helper_async(c, account))
-        for account in accounts
-    ]
-    for task in asyncio.as_completed(tasks):
+    queue = asyncio.Queue()
+    
+    async def producer(account):
         try:
-            result = await task
-            log.debug(f"subscription data found for {result['username']} ")
-            log.trace(result)
-            output.append(result)
+            # CHANGE: Use 'await' instead of 'async for' 
+            # because scrape_profile_helper_async returns a dict, not a generator
+            result = await profile.scrape_profile_helper_async(c, account)
+            if result:
+                await queue.put(result)
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+        finally:
+            # Still signal that this worker is done
+            await queue.put(None)
+
+    workers = [asyncio.create_task(producer(account)) for account in accounts]
+    active_workers = len(workers)
+
+    while active_workers > 0:
+        result = await queue.get()
+        if result is None:
+            active_workers -= 1
             continue
+        
+        log.debug(f"subscription data found for {result.get('username')} ")
+        output.append(result)
+
     return output

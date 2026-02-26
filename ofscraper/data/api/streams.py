@@ -38,7 +38,6 @@ from ofscraper.data.api.common.timeline import process_posts_as_individual
 
 API = "streams"
 log = logging.getLogger("shared")
-sem = None
 
 
 @run
@@ -50,8 +49,9 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
         "MAX_STREAMS_INDIVIDUAL_SEARCH"
     ):
         splitArrays = await get_split_array(model_id, username, after)
-        tasks = get_tasks(splitArrays, c, model_id, after)
-        data = await process_tasks_batch(tasks)
+        # get_tasks now returns raw generators
+        generators = get_tasks(splitArrays, c, model_id, after)
+        data = await process_tasks_batch(generators)
     elif len(post_id) <= of_env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
         data = process_posts_as_individual()
     update_check(data, model_id, after, API)
@@ -59,15 +59,13 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
 
 
 async def get_oldstreams(model_id, username):
-    oldstreams = None
-    if not read_full_after_scan_check(model_id, API):
+    if read_full_after_scan_check(model_id, API):
         return []
     if not settings.get_settings().api_cache_disabled:
         oldstreams = await get_streams_post_info(model_id=model_id, username=username)
     else:
         oldstreams = []
     oldstreams = list(filter(lambda x: x is not None, oldstreams))
-    # dedupe oldtimeline
     seen = set()
     oldstreams = [
         post
@@ -76,56 +74,58 @@ async def get_oldstreams(model_id, username):
     ]
     log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
     trace_log_raw("oldtimestreams", oldstreams)
-
     return oldstreams
 
 
-async def process_tasks_batch(tasks):
+async def process_tasks_batch(generators):
+    """
+    Fixed Orchestrator: Uses a Queue to consume batches from generators concurrently.
+    """
     responseArray = []
     page_count = 0
+    seen = set()
+    queue = asyncio.Queue()
 
     page_task = progress_utils.api.add_overall_task(
         f"Streams Content Pages Progress: {page_count}", visible=True
     )
-    seen = set()
-    while tasks:
-        new_tasks = []
 
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Streams Content Pages Progress: {page_count}",
-                )
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback(traceback.format_exc())
+        finally:
+            await queue.put(None)
 
-                if result:
-                    new_posts = [
-                        post
-                        for post in result
-                        if post.get("id") not in seen and not seen.add(post.get("id"))
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Streams')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    trace_progress_log(f"{API} tasks", new_posts, offset=None)
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
 
-                    responseArray.extend(new_posts)
+    while active_workers > 0:
+        batch = await queue.get()
+        if batch is None:
+            active_workers -= 1
+            continue
 
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task,
+            description=f"Streams Content Pages Progress: {page_count}",
+        )
+
+        if batch:
+            new_posts = [
+                post for post in batch
+                if post.get("id") not in seen and not seen.add(post.get("id"))
+            ]
+            responseArray.extend(new_posts)
+            trace_progress_log(f"{API} task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-
-    log.debug(
-        f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x:x['id'],responseArray))}"
-    )
-    trace_log_raw(responseArray, API, final_count=True)
+    log.debug(f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x: x.get('id'), responseArray))}")
+    trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Streams", len(responseArray)))
     return responseArray
 
@@ -138,8 +138,6 @@ async def get_split_array(model_id, username, after):
         len(oldstreams) // of_env.getattr("REASONABLE_MAX_PAGE"),
         of_env.getattr("MIN_PAGE_POST_COUNT"),
     )
-    log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
-    oldstreams = list(filter(lambda x: x is not None, oldstreams))
     postsDataArray = sorted(oldstreams, key=lambda x: x.get("created_at"))
     filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
@@ -151,75 +149,101 @@ async def get_split_array(model_id, username, after):
 
 
 def get_tasks(splitArrays, c, model_id, after):
+    """
+    Returns list of raw Generators. Removed asyncio.create_task to fix TypeError.
+    """
     tasks = []
     before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
     if len(splitArrays) > 2:
         tasks.append(
-            asyncio.create_task(
-                scrape_stream_posts(
-                    c,
-                    model_id,
-                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
-                    timestamp=splitArrays[0][0].get("created_at"),
-                    offset=True,
-                )
+            scrape_stream_posts(
+                c, model_id,
+                required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
+                timestamp=splitArrays[0][0].get("created_at"),
+                offset=True,
             )
         )
-        [
+        for i in range(1, len(splitArrays) - 1):
             tasks.append(
-                asyncio.create_task(
-                    scrape_stream_posts(
-                        c,
-                        model_id,
-                        required_ids=set(
-                            [ele.get("created_at") for ele in splitArrays[i]]
-                        ),
-                        timestamp=splitArrays[i - 1][-1].get("created_at"),
-                        offset=False,
-                    )
+                scrape_stream_posts(
+                    c, model_id,
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                    timestamp=splitArrays[i - 1][-1].get("created_at"),
+                    offset=False,
                 )
             )
-            for i in range(1, len(splitArrays) - 1)
-        ]
-        # keeping grabbing until nothing left
         tasks.append(
-            asyncio.create_task(
-                scrape_stream_posts(
-                    c,
-                    model_id,
-                    timestamp=splitArrays[-1][0].get("created_at"),
-                    offset=True,
-                    required_ids=set([before]),
-                )
+            scrape_stream_posts(
+                c, model_id,
+                timestamp=splitArrays[-1][0].get("created_at"),
+                offset=True,
+                required_ids=set([before]),
             )
         )
-    # use the first split if less then 3
     elif len(splitArrays) > 0:
         tasks.append(
-            asyncio.create_task(
-                scrape_stream_posts(
-                    c,
-                    model_id,
-                    timestamp=splitArrays[0][0].get("created_at"),
-                    offset=True,
-                    required_ids=set([before]),
-                )
+            scrape_stream_posts(
+                c, model_id,
+                timestamp=splitArrays[0][0].get("created_at"),
+                offset=True,
+                required_ids=set([before]),
             )
         )
-    # use after if split is empty i.e no db data
     else:
         tasks.append(
-            asyncio.create_task(
-                scrape_stream_posts(
-                    c,
-                    model_id,
-                    timestamp=after,
-                    offset=True,
-                    required_ids=set([before]),
-                )
-            )
+            scrape_stream_posts(c, model_id, timestamp=after, offset=True, required_ids=set([before]))
         )
     return tasks
+
+
+async def scrape_stream_posts(c, model_id, timestamp=None, required_ids=None, offset=False):
+    if timestamp and (float(timestamp) > (settings.get_settings().before).float_timestamp):
+        return
+
+    current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
+
+    while True:
+        url = (
+            of_env.getattr("streamsNextEP").format(model_id, str(current_timestamp))
+            if current_timestamp else of_env.getattr("streamsEP").format(model_id)
+        )
+        
+        task_label = f"[Streams] Timestamp -> {arrow.get(math.trunc(float(current_timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if current_timestamp is not None else 'initial'}"
+        task = progress_utils.api.add_job_task(task_label, visible=True)
+
+        try:
+            async with c.requests_async(url=url) as r:
+                if not (200 <= r.status < 300):
+                    break
+
+                data = await r.json_()
+                batch = data.get("list", [])
+                if not batch:
+                    break
+
+                yield batch 
+
+                if not required_ids:
+                    break
+                
+                [required_ids.discard(float(ele.get("postedAtPrecise", 0))) for ele in batch]
+                
+                if len(required_ids) == 0:
+                    break
+                
+                new_ts = batch[-1].get("postedAtPrecise")
+                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(required_ids):
+                    break
+                    
+                current_timestamp = new_ts
+
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback(traceback.format_exc())
+            break
+        finally:
+            if task:
+                progress_utils.api.remove_job_task(task)
 
 
 async def get_after(model_id, username):
@@ -228,136 +252,18 @@ async def get_after(model_id, username):
         return prechecks
     curr = await get_streams_media(model_id=model_id, username=username)
     if len(curr) == 0:
-        log.debug("Setting date to zero because database is empty")
         return 0
-    curr_downloaded = await get_media_ids_downloaded_model(
-        model_id=model_id, username=username
+    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
+    missing_items = sorted(
+        [x for x in curr if x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded and x.get("unlocked") != 0],
+        key=lambda x: x.get("posted_at") or 0
     )
-    missing_items = list(
-        filter(
-            lambda x: x.get("downloaded") != 1
-            and x.get("post_id") not in curr_downloaded
-            and x.get("unlocked") != 0,
-            curr,
-        )
-    )
-    missing_items = list(sorted(missing_items, key=lambda x: x.get("posted_at") or 0))
     if len(missing_items) == 0:
-        log.debug(
-            "Using newest db date because,all downloads in db marked as downloaded"
-        )
-        return arrow.get(
-            await get_youngest_streams_date(model_id=model_id, username=username)
-        ).float_timestamp
-    else:
-        log.debug(
-            f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
-        )
-        return arrow.get(missing_items[0]["posted_at"] or 0).float_timestamp
-
-
-async def scrape_stream_posts(
-    c, model_id, timestamp=None, required_ids=None, offset=False
-) -> list:
-    global sem
-    posts = []
-    new_tasks = []
-    task = None
-
-    if timestamp and (
-        float(timestamp) > (settings.get_settings().before).float_timestamp
-    ):
-        return [], []
-
-    timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
-    url = (
-        of_env.getattr("streamsNextEP").format(model_id, str(timestamp))
-        if timestamp
-        else of_env.getattr("streamsEP").format(model_id)
-    )
-
-    try:
-        task_label = f"[Streams] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
-        task = progress_utils.api.add_job_task(task_label, visible=True)
-        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
-
-        log.debug(f"trying to access {API.lower()} posts with url:{url}")
-
-        async with c.requests_async(url) as r:
-            if not (200 <= r.status < 300):
-                log.error(f"{log_id} -> API Request failed with status {r.status}")
-                return [], []
-
-            data = await r.json_()
-            if not isinstance(data, dict):
-                log.error(f"{log_id} -> API returned unexpected format (not a dict)")
-                return [], []
-
-            posts = data.get("list", [])
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url}")
-
-            if not posts:
-                log.debug(f"{log_id} -> no posts found")
-                return [], []
-
-            log.debug(f"{log_id} -> number of streams post found {len(posts)}")
-            trace_progress_log(f"{API} requests", posts, offset=None)
-
-            if max(map(lambda x: float(x.get("postedAtPrecise", 0)), posts)) >= max(
-                required_ids
-            ):
-                pass
-            elif float(timestamp or 0) >= max(required_ids):
-                pass
-            else:
-                log.debug(f"{log_id} Required before change:  {required_ids}")
-                [
-                    required_ids.discard(float(ele.get("postedAtPrecise", 0)))
-                    for ele in posts
-                ]
-                log.debug(f"{log_id} Required after change: {required_ids}")
-
-                if len(required_ids) > 0:
-                    new_ts = posts[-1].get("postedAtPrecise")
-
-                    if str(new_ts) == str(timestamp):
-                        log.debug(
-                            f"{log_id} -> API stuck on same timestamp. Breaking recursion."
-                        )
-                        return posts, []
-
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_stream_posts(
-                                c,
-                                model_id,
-                                timestamp=new_ts,
-                                required_ids=required_ids,
-                                offset=False,
-                            )
-                        )
-                    )
-            return posts, new_tasks
-
-    except asyncio.TimeoutError:
-        log.warning(f"Task timed out {url}")
-        return [], []
-    except Exception as E:
-        log.error(f"Error in streams branch {url}")
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        return [], []
-    finally:
-        if task:
-            progress_utils.api.remove_job_task(task)
+        return arrow.get(await get_youngest_streams_date(model_id=model_id, username=username)).float_timestamp
+    return arrow.get(missing_items[0]["posted_at"] or 0).float_timestamp
 
 
 def time_log(username, after):
     log.info(
-        f"""
-Setting streams scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}
-[yellow]Hint: append ' --after 2000' to command to force scan of all streams posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all streams posts + download/re-download of all files[/yellow]
-
-            """
+        f"Setting streams scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}"
     )

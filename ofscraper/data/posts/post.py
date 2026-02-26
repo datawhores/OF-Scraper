@@ -284,8 +284,6 @@ async def process_all_paid():
                 completed=count,
                 visible=True,
             )
-            if count == 2:
-                break
             placeholder = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
             username = profile.scrape_profile(model_id).get("username")
             # Check if the scraped username is the placeholder
@@ -340,7 +338,42 @@ async def process_all_paid():
             )
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
+            )            # log.info(f"Processing {username}_{model_id}")
+            await operations.table_init_create(model_id=model_id, username=username)
+            log.debug(f"Created table for {username}_{model_id}")
+            temp_postcollection = PostCollection(username=username, model_id=model_id)
+
+            all_posts = list(
+                map(
+                    lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
+                    value,
+                )
             )
+            temp_postcollection.add_posts(all_posts, actions="scrape_paid_download")
+            await operations.make_post_table_changes(
+                temp_postcollection.posts,
+                model_id=model_id,
+                username=username,
+            )
+            await batch_mediainsert(
+                temp_postcollection.all_unique_media,
+                model_id=model_id,
+                username=username,
+                downloaded=False,
+            )
+            text_posts = temp_postcollection.get_posts_for_text_download()
+
+            final_medias = temp_postcollection.get_media_for_processing()
+            output[model_id] = dict(
+                model_id=model_id,
+                username=username,
+                posts=text_posts,
+                medias=final_medias,
+            )
+            log.debug(
+                f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
+            )
+
             progress_updater.activity.update_overall(advance=1)
 
         log.debug(

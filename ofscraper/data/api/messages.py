@@ -92,121 +92,140 @@ async def process_messages_as_individual(model_id, c):
     return data
 
 
-async def process_tasks(tasks):
+async def process_tasks(generators):
     page_count = 0
     responseArray = []
     page_task = progress_utils.api.add_overall_task(
         f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count += 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Message Content Pages Progress: {page_count}",
-                )
-                if result:
-                    new_posts = [
-                        post
-                        for post in result
-                        if post.get("id") not in seen and not seen.add(post.get("id"))
-                    ]
-                    responseArray.extend(new_posts)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+    queue = asyncio.Queue()
+
+    # The Producer: Unwraps the generator batches into the queue
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            await queue.put(None)
+
+    # Start producers concurrently as real Tasks
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
+
+    # The Consumer: Aggregates data as batches arrive
+    while active_workers > 0:
+        batch = await queue.get()
+        
+        if batch is None:
+            active_workers -= 1
+            continue
+
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task,
+            description=f"Message Content Pages Progress: {page_count}",
+        )
+
+        if batch:
+            new_posts = [
+                post
+                for post in batch
+                if post.get("id") not in seen and not seen.add(post.get("id"))
+            ]
+            responseArray.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
     log.debug(common_logs.FINAL_COUNT_POST.format("Messages", len(responseArray)))
     return responseArray
 
 
-async def scrape_messages(c, model_id, message_id=None, required_ids=None) -> list:
-    messages = []
-    new_tasks = []
-    task = None
-    ep = (
-        of_env.getattr("messagesNextEP") if message_id else of_env.getattr("messagesEP")
-    )
-    url = ep.format(model_id, message_id)
+async def scrape_messages(c, model_id, message_id=None, required_ids=None):
+    """
+    Async Generator Worker Loop for messages.
+    Yields batches immediately for memory efficiency and crash resilience.
+    """
+    current_message_id = message_id
 
-    try:
-        task = progress_utils.api.add_job_task(
-            f"[Messages] Message ID-> {message_id if message_id else 'initial'}",
-            visible=True,
+    while True:
+        ep = (
+            of_env.getattr("messagesNextEP")
+            if current_message_id
+            else of_env.getattr("messagesEP")
         )
+        url = ep.format(model_id, current_message_id)
+        task = None
 
-        async with c.requests_async(url=url) as r:
-            if not (200 <= r.status < 300):
-                log.error(f"Messages API Error: {r.status} for {url}")
-                return [], []
-
-            data = await r.json_()
-            if not isinstance(data, dict):
-                return [], []
-
-            messages = data.get("list", [])
-            log.debug(f"successfully accessed messages with url:{url}")
-
-            if not messages:
-                return [], []
-
-            trace_progress_log(f"{API} requests", messages)
-
-            current_max_ts = max(
-                map(
-                    lambda x: arrow.get(
-                        x.get("createdAt", 0) or x.get("postedAt", 0)
-                    ).float_timestamp,
-                    messages,
-                )
+        try:
+            task = progress_utils.api.add_job_task(
+                f"[Messages] Message ID-> {current_message_id if current_message_id else 'initial'}",
+                visible=True,
             )
 
-            if required_ids and current_max_ts <= min(required_ids):
-                pass
-            else:
-                if required_ids:
-                    [
-                        required_ids.discard(
-                            arrow.get(
-                                ele.get("createdAt") or ele.get("postedAt")
-                            ).float_timestamp
-                        )
-                        for ele in messages
-                    ]
+            async with c.requests_async(url=url) as r:
+                if not (200 <= r.status < 300):
+                    log.error(f"Messages API Error: {r.status} for {url}")
+                    break
 
-                if required_ids and len(required_ids) > 0:
-                    new_mid = messages[-1].get("id")
+                data = await r.json_()
+                if not isinstance(data, dict):
+                    log.error(f"API returned unexpected format (not a dict) for {url}")
+                    break
 
-                    if str(new_mid) == str(message_id):
-                        return messages, []
+                batch = data.get("list", [])
+                if not batch:
+                    break
+                
+                # CRITICAL: Yield batch immediately
+                yield batch
 
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_messages(
-                                c,
-                                model_id,
-                                message_id=new_mid,
-                                required_ids=required_ids,
-                            )
-                        )
+                trace_progress_log(f"{API} requests", batch)
+
+                if not required_ids:
+                    break
+
+                # Prune requirements for this parallel window
+                [
+                    required_ids.discard(
+                        arrow.get(
+                            ele.get("createdAt") or ele.get("postedAt")
+                        ).float_timestamp
                     )
-            return messages, new_tasks
-    except Exception as E:
-        log.error(f"Messages branch failed for {url}")
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        return [], []
-    finally:
-        if task:
-            progress_utils.api.remove_job_task(task)
+                    for ele in batch
+                ]
+
+                # EXIT LOGIC: Window satisfied
+                if len(required_ids) == 0:
+                    break
+
+                new_mid = batch[-1].get("id")
+                
+                # SAFETY CHECK: Prevent stuck API loop
+                if str(new_mid) == str(current_message_id):
+                    break
+                
+                # SAFETY CHECK: Boundary overshoot (timestamps decrease)
+                # If the last item is older than the oldest required ID, we are done
+                last_item_ts = arrow.get(batch[-1].get("createdAt") or batch[-1].get("postedAt")).float_timestamp
+                if last_item_ts < min(required_ids):
+                    break
+
+                current_message_id = new_mid
+
+        except asyncio.TimeoutError:
+            log.warning(f"Task timed out {url}")
+            break
+        except Exception as E:
+            log.error(f"Messages branch failed for {url}")
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            break
+        finally:
+            if task:
+                progress_utils.api.remove_job_task(task)
 
 
 async def get_individual_messages_post(model_id, postid, c):
@@ -279,20 +298,18 @@ def get_filterArray(after, before, oldmessages):
 
 def get_i(oldmessages, before):
     """
-    Finds the starting index for the slice (Newest -> Oldest).
+    Finds the starting index for the slice based on the 'before' date.
+    Fixed to handle sparse lists without IndexError.
     """
     if not oldmessages:
         return 0
-
-    # If 'before' is newer than our newest message, start at the beginning
+    
     if before >= oldmessages[0].get("created_at"):
         return 0
-
-    # If 'before' is older than our oldest message, start at the end
+    
     if before <= oldmessages[-1].get("created_at"):
         return max(0, len(oldmessages) - 1)
 
-    # Standard linear search for the date boundary
     try:
         return max(
             0,
@@ -308,20 +325,18 @@ def get_i(oldmessages, before):
 
 def get_j(oldmessages, after):
     """
-    Finds the ending index for the slice (Newest -> Oldest).
+    Finds the ending index for the slice based on the 'after' date.
+    Fixed to handle sparse lists without IndexError.
     """
     if not oldmessages:
         return 0
-
-    # If 'after' is newer than our newest message, return 0 (slice is empty)
+    
     if after >= oldmessages[0].get("created_at"):
         return 0
-
-    # If 'after' is older than our oldest message, take everything
+    
     if after <= oldmessages[-1].get("created_at"):
         return len(oldmessages)
 
-    # Standard linear search for the date boundary
     try:
         return min(
             len(oldmessages),
@@ -352,58 +367,48 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after):
     tasks = []
     if len(splitArrays) > 2:
         tasks.append(
-            asyncio.create_task(
-                scrape_messages(
-                    c,
-                    model_id,
-                    message_id=splitArrays[0][0].get("post_id"),
-                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
-                )
+            scrape_messages(
+                c,
+                model_id,
+                message_id=splitArrays[0][0].get("post_id"),
+                required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
             )
         )
         for i in range(1, len(splitArrays)):
             tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        message_id=splitArrays[i - 1][-1].get("post_id"),
-                        required_ids=set(
-                            [ele.get("created_at") for ele in splitArrays[i]]
-                        ),
-                    )
-                )
-            )
-        tasks.append(
-            asyncio.create_task(
                 scrape_messages(
                     c,
                     model_id,
-                    message_id=splitArrays[-1][-1].get("post_id"),
-                    required_ids=set([after]),
+                    message_id=splitArrays[i - 1][-1].get("post_id"),
+                    required_ids=set(
+                        [ele.get("created_at") for ele in splitArrays[i]]
+                    ),
                 )
+            )
+        tasks.append(
+            scrape_messages(
+                c,
+                model_id,
+                message_id=splitArrays[-1][-1].get("post_id"),
+                required_ids=set([after]),
             )
         )
     elif len(splitArrays) > 0:
         tasks.append(
-            asyncio.create_task(
-                scrape_messages(
-                    c,
-                    model_id,
-                    required_ids=set([after]),
-                    message_id=(
-                        splitArrays[0][0].get("post_id")
-                        if len(filteredArray) != len(oldmessages)
-                        else None
-                    ),
-                )
+            scrape_messages(
+                c,
+                model_id,
+                required_ids=set([after]),
+                message_id=(
+                    splitArrays[0][0].get("post_id")
+                    if len(filteredArray) != len(oldmessages)
+                    else None
+                ),
             )
         )
     else:
         tasks.append(
-            asyncio.create_task(
-                scrape_messages(c, model_id, message_id=None, required_ids=set([after]))
-            )
+            scrape_messages(c, model_id, message_id=None, required_ids=set([after]))
         )
     return tasks
 

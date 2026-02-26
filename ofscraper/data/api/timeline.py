@@ -11,7 +11,6 @@ r"""
 
 import asyncio
 import logging
-import math
 import traceback
 
 import arrow
@@ -51,7 +50,7 @@ async def get_timeline_posts(model_id, username, c=None, post_id=None):
     ):
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
-        data = await process_tasks_batch(tasks)
+        data = await process_tasks(tasks)
     elif len(post_id) <= of_env.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
         data = process_posts_as_individual()
 
@@ -59,49 +58,59 @@ async def get_timeline_posts(model_id, username, c=None, post_id=None):
     return data
 
 
-async def process_tasks_batch(tasks):
+async def process_tasks(generators):
+    """
+    Consumes async generators using a shared Queue.
+    This replaces the old list-based batch processing.
+    """
     responseArray = []
     page_count = 0
+    seen = set()
+    queue = asyncio.Queue()
 
     page_task = progress_utils.api.add_overall_task(
-        f" Timeline Content Pages Progress: {page_count}", visible=True
+        f"Timeline Content Pages Progress: {page_count}", visible=True
     )
-    seen = set()
-    while tasks:
-        new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                progress_utils.api.update_overall_task(
-                    page_task,
-                    description=f"Timeline Content Pages Progress: {page_count}",
-                )
-                new_posts = [
-                    post
-                    for post in result
-                    if post["id"] not in seen and not seen.add(post["id"])
-                ]
-                log.debug(
-                    f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}"
-                )
-                trace_progress_log(f"{API} tasks", new_posts)
-                responseArray.extend(new_posts)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
-        tasks = new_tasks
+
+    # Internal worker to 'produce' data from generators into the queue
+    async def producer(gen):
+        try:
+            async for batch in gen:
+                await queue.put(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            await queue.put(None) # Signal completion for this specific generator
+
+    # Schedule producers as concurrent tasks
+    workers = [asyncio.create_task(producer(g)) for g in generators]
+    active_workers = len(workers)
+
+    # Consume batches as they arrive in the queue
+    while active_workers > 0:
+        batch = await queue.get()
+        if batch is None:
+            active_workers -= 1
+            continue
+
+        page_count += 1
+        progress_utils.api.update_overall_task(
+            page_task,
+            description=f"Timeline Content Pages Progress: {page_count}",
+        )
+
+        if batch:
+            new_posts = [
+                post for post in batch
+                if post.get("id") not in seen and not seen.add(post.get("id"))
+            ]
+            log.debug(f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}")
+            trace_progress_log(f"{API} task", new_posts)
+            responseArray.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    log.debug(
-        f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
-    )
-    log.debug(common_logs.FINAL_COUNT_POST.format("Timeline", len(responseArray)))
-    trace_log_raw(f"{API} final", responseArray, final_count=True)
     return responseArray
-
 
 async def get_oldtimeline(model_id, username):
     if read_full_after_scan_check(model_id, API):
@@ -150,76 +159,52 @@ async def get_split_array(model_id, username, after):
 
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
-    # special case pass before to stop work
     before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
-
+    
     if len(splitArrays) > 2:
         tasks.append(
-            asyncio.create_task(
-                scrape_timeline_posts(
-                    c,
-                    model_id,
-                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
-                    timestamp=splitArrays[0][0].get("created_at"),
-                    offset=True,
-                )
+            scrape_timeline_posts(
+                c, model_id,
+                required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
+                timestamp=splitArrays[0][0].get("created_at"),
+                offset=True,
             )
         )
-        [
+        for i in range(1, len(splitArrays) - 1):
             tasks.append(
-                asyncio.create_task(
-                    scrape_timeline_posts(
-                        c,
-                        model_id,
-                        required_ids=set(
-                            [ele.get("created_at") for ele in splitArrays[i]]
-                        ),
-                        timestamp=splitArrays[i - 1][-1].get("created_at"),
-                        offset=False,
-                    )
+                scrape_timeline_posts(
+                    c, model_id,
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                    timestamp=splitArrays[i - 1][-1].get("created_at"),
+                    offset=False,
                 )
             )
-            for i in range(1, len(splitArrays) - 1)
-        ]
-        # keeping grabbing until nothing left
         tasks.append(
-            asyncio.create_task(
-                scrape_timeline_posts(
-                    c,
-                    model_id,
-                    timestamp=splitArrays[-1][0].get("created_at"),
-                    offset=True,
-                    required_ids=set([before]),
-                )
+            scrape_timeline_posts(
+                c, model_id,
+                timestamp=splitArrays[-1][0].get("created_at"),
+                offset=True,
+                required_ids=set([before]),
             )
         )
-    # use the first split if less then 3
     elif len(splitArrays) > 0:
         tasks.append(
-            asyncio.create_task(
-                scrape_timeline_posts(
-                    c,
-                    model_id,
-                    timestamp=splitArrays[0][0].get("created_at"),
-                    offset=True,
-                    required_ids=set([before]),
-                )
+            scrape_timeline_posts(
+                c, model_id,
+                timestamp=splitArrays[0][0].get("created_at"),
+                offset=True,
+                required_ids=set([before]),
             )
         )
-    # use after if split is empty i.e no db data
     else:
         tasks.append(
-            asyncio.create_task(
-                scrape_timeline_posts(
-                    c,
-                    model_id,
-                    timestamp=after,
-                    offset=True,
-                    required_ids=set([before]),
-                )
+            scrape_timeline_posts(
+                c, model_id,
+                timestamp=after,
+                offset=True,
+                required_ids=set([before]),
             )
         )
-
     return tasks
 
 
@@ -266,13 +251,12 @@ async def get_after(model_id, username):
         return arrow.get(missing_items[0]["posted_at"]).float_timestamp
 
 
-async def scrape_timeline_posts(c, model_id, timestamp=None, required_ids=None, offset=False):
-    posts = []
-    new_tasks = [] # We keep this signature to match your current architecture
+async def scrape_timeline_posts(
+    c, model_id, timestamp=None, required_ids=None, offset=False
+):  
     
-    # Use a high-precision offset to avoid unnecessary duplicate fetching
     current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
-    
+
     while True:
         url = (
             of_env.getattr("timelineNextEP").format(model_id, str(current_timestamp))
@@ -281,38 +265,39 @@ async def scrape_timeline_posts(c, model_id, timestamp=None, required_ids=None, 
         
         try:
             async with c.requests_async(url=url) as r:
+                if not (200 <= r.status < 300):
+                    log.error(f"API Error: {r.status}")
+                    break # Stop this block, but previously yielded data is safe
+
                 data = await r.json_()
                 batch = data.get("list", [])
+                
                 if not batch:
                     break
 
-                posts.extend(batch)
-                
+                yield batch 
+
                 if not required_ids:
                     break
                 
-                # Prune the required set for THIS specific window
+                # Prune requirements
                 [required_ids.discard(float(ele["postedAtPrecise"])) for ele in batch]
                 
-                # Logic Fix: Exit if we've filled our window's requirements
-                # or if the API starts returning posts older than our window's end
                 if len(required_ids) == 0:
                     break
                 
                 new_ts = batch[-1]["postedAtPrecise"]
                 
-                # Safety check for stuck API or overshooting the next task's start
                 if str(new_ts) == str(current_timestamp) or float(new_ts) < min(required_ids):
                     break
                     
                 current_timestamp = new_ts
+
         except Exception as E:
             log.error(f"Error in timeline worker at {current_timestamp}")
             log.traceback_(E)
             log.traceback(traceback.format_exc())
             break
-    return posts, new_tasks
-
 
 def time_log(username, after):
     log.info(

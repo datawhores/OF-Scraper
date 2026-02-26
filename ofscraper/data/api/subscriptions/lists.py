@@ -1,5 +1,4 @@
 r"""
-
  _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
@@ -8,7 +7,6 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-
 """
 
 import asyncio
@@ -82,159 +80,192 @@ async def get_blacklist():
 
 
 async def get_lists():
-
     output = []
-    tasks = []
     page_count = 0
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
-        tasks.append(asyncio.create_task(scrape_for_list(c)))
         page_task = progress_updater.userlist.add_overall_task(
             f"UserList Pages Progress: {page_count}", visible=True
         )
-        while tasks:
-            new_tasks = []
-            for task in asyncio.as_completed(tasks):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    progress_updater.userlist.update_overall_task(
-                        page_task,
-                        description=f"UserList Pages Progress: {page_count}",
-                    )
-                    output.extend(result)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-            tasks = new_tasks
-    progress_updater.userlist.remove_overall_task(page_task)
-    trace_log_raw("list raw unduped", output)
+        
+        try:
+            generator = scrape_for_list(c)
+            async for batch in generator:
+                page_count += 1
+                progress_updater.userlist.update_overall_task(
+                    page_task,
+                    description=f"UserList Pages Progress: {page_count}",
+                )
+                output.extend(batch)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            
+        progress_updater.userlist.remove_overall_task(page_task)
 
+    trace_log_raw("list raw unduped", output)
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
 
 
 async def scrape_for_list(c, offset=0):
+    """
+    Async Generator Worker for fetching user lists.
+    """
     attempt.set(0)
-    new_tasks = []
-    url = of_env.getattr("listEP").format(offset)
-    try:
-        attempt.set(attempt.get(0) + 1)
-        task = progress_updater.userlist.add_job_task(
-            f" : getting lists offset -> {offset}",
-            visible=True,
-        )
-        async with c.requests_async(url=url) as r:
-            data = await r.json_()
-            out_list = data["list"] or []
-            log.debug(
-                f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
+    current_offset = offset
+    
+    while True:
+        url = of_env.getattr("listEP").format(current_offset)
+        task = None
+        try:
+            attempt.set(attempt.get(0) + 1)
+            task = progress_updater.userlist.add_job_task(
+                f" : getting lists offset -> {current_offset}",
+                visible=True,
             )
-            log.debug(f"offset:{offset} -> number of lists found {len(out_list)}")
-            log.debug(
-                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-            )
+            async with c.requests_async(url=url) as r:
+                data = await r.json()
+                out_list = data["list"] or []
+                log.debug(
+                    f"offset:{current_offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
+                )
+                log.debug(f"offset:{current_offset} -> number of lists found {len(out_list)}")
+                log.debug(
+                    f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+                )
 
-            trace_log_raw("list names raw", data)
-            if data.get("hasMore") and len(out_list) > 0:
-                offset = offset + len(out_list)
-                new_tasks.append(asyncio.create_task(scrape_for_list(c, offset=offset)))
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                trace_log_raw("list names raw", data)
+                
+                # YIELD BATCH
+                yield out_list
+                
+                # PAGINATION LOGIC
+                if not data.get("hasMore") or not out_list:
+                    break
+                
+                current_offset += len(out_list)
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
-
-    finally:
-        progress_updater.userlist.remove_job_task(task)
-    return out_list, new_tasks
+        except asyncio.TimeoutError:
+            log.error(f"Task timed out {url}")
+            break
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            break
+        finally:
+            if task:
+                progress_updater.userlist.remove_job_task(task)
 
 
 async def get_list_users(lists):
-
     output = []
-    tasks = []
     page_count = 0
+    
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
-        [tasks.append(asyncio.create_task(scrape_list_members(c, id))) for id in lists]
         page_task = progress_updater.userlist.add_overall_task(
             f"UserList Users Pages Progress: {page_count}", visible=True
         )
-        while tasks:
-            new_tasks = []
-            for task in asyncio.as_completed(tasks):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    progress_updater.userlist.update_overall_task(
-                        page_task,
-                        description=f"UserList Users Pages Progress: {page_count}",
-                    )
-                    output.extend(result)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-            tasks = new_tasks
 
-    progress_updater.userlist.remove_overall_task(page_task)
+        # Queue to aggregate results from concurrent generators
+        queue = asyncio.Queue()
+
+        async def producer(generator):
+            try:
+                async for batch in generator:
+                    await queue.put(batch)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+            finally:
+                await queue.put(None) # Signal done
+
+        # Start producers for each list
+        generators = [scrape_list_members(c, item) for item in lists]
+        producers = [asyncio.create_task(producer(gen)) for gen in generators]
+        active_producers = len(producers)
+
+        while active_producers > 0:
+            item = await queue.get()
+            
+            if item is None:
+                active_producers -= 1
+                continue
+            
+            page_count += 1
+            progress_updater.userlist.update_overall_task(
+                page_task,
+                description=f"UserList Users Pages Progress: {page_count}",
+            )
+            output.extend(item)
+
+        progress_updater.userlist.remove_overall_task(page_task)
+
     outdict = {}
     for ele in output:
         outdict[ele["id"]] = ele
     trace_log_raw("raw user data", outdict.values())
     log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")
-    return outdict.values()
+    return list(outdict.values())
 
 
 async def scrape_list_members(c, item, offset=0):
-    users = None
+    """
+    Async Generator Worker for fetching members of a specific list.
+    """
     attempt.set(0)
-    new_tasks = []
-    url = of_env.getattr("listusersEP").format(item.get("id"), offset)
-    try:
-        attempt.set(attempt.get(0) + 1)
-        task = progress_updater.userlist.add_job_task(
-            f" : offset -> {offset} + list name -> {item.get('name')}",
-            visible=True,
-        )
+    current_offset = offset
+    
+    while True:
+        url = of_env.getattr("listusersEP").format(item.get("id"), current_offset)
+        task = None
+        try:
+            attempt.set(attempt.get(0) + 1)
+            task = progress_updater.userlist.add_job_task(
+                f" : offset -> {current_offset} + list name -> {item.get('name')}",
+                visible=True,
+            )
 
-        async with c.requests_async(url=url) as r:
-            log_id = f"offset:{offset} list:{item.get('name')} =>"
-            data = await r.json_()
-            users = data.get("list") or []
-            log.debug(f"{log_id} -> names found {len(users)}")
-            log.debug(
-                f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
-            )
-            log.debug(
-                f"{log_id}  -> nextOffset value in json {data.get('nextOffset','undefined') }"
-            )
-            log.debug(
-                f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
-            )
-            name = f"API {item.get('name')}"
-            trace_progress_log(name, data, offset=offset)
-
-            if data.get("hasMore"):
-                new_tasks.append(
-                    asyncio.create_task(scrape_list_members(c, item, offset=data["nextOffset"]))
+            async with c.requests_async(url=url) as r:
+                log_id = f"offset:{current_offset} list:{item.get('name')} =>"
+                data = await r.json()
+                users = data.get("list") or []
+                
+                log.debug(f"{log_id} -> names found {len(users)}")
+                log.debug(
+                    f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
                 )
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                log.debug(
+                    f"{log_id}  -> nextOffset value in json {data.get('nextOffset','undefined') }"
+                )
+                
+                name = f"API {item.get('name')}"
+                trace_progress_log(name, data, offset=current_offset)
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+                # YIELD BATCH
+                if users:
+                    yield users
 
-    finally:
-        progress_updater.userlist.remove_job_task(task)
-    return users, new_tasks
+                # PAGINATION LOGIC
+                if not data.get("hasMore"):
+                    break
+                
+                if "nextOffset" in data:
+                    current_offset = data["nextOffset"]
+                else:
+                    # Fallback if nextOffset isn't present but hasMore is true
+                    current_offset += len(users)
+
+        except asyncio.TimeoutError:
+            log.error(f"Task timed out {url}")
+            break
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            break
+        finally:
+            if task:
+                progress_updater.userlist.remove_job_task(task)

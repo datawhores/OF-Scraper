@@ -76,9 +76,11 @@ async def get_via_individual():
         "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
     )
     models_objects = list(map(lambda x: models.Model(x), out))
+    
     if len(models_objects) == 0:
-        logging.getLogger("shared").warning("[bold red]No models were found[/bold red]")
-        raise Exception("Provided usernames did not yield any valid models")
+        # Log a warning instead of raising an Exception that kills the script
+        logging.getLogger("shared").warning("[bold red]No valid models found for the provided usernames. Skipping...[/bold red]")
+        return [] 
     return models_objects
 
 
