@@ -278,25 +278,61 @@ def get_filterArray(after, before, oldmessages):
 
 
 def get_i(oldmessages, before):
-    if before >= oldmessages[1].get("created_at"):
+    """
+    Finds the starting index for the slice (Newest -> Oldest).
+    """
+    if not oldmessages:
         return 0
+
+    # If 'before' is newer than our newest message, start at the beginning
+    if before >= oldmessages[0].get("created_at"):
+        return 0
+
+    # If 'before' is older than our oldest message, start at the end
     if before <= oldmessages[-1].get("created_at"):
-        return len(oldmessages) - 2
-    return max(
-        next(i - 1 for i, m in enumerate(oldmessages) if m.get("created_at") <= before),
-        0,
-    )
+        return max(0, len(oldmessages) - 1)
+
+    # Standard linear search for the date boundary
+    try:
+        return max(
+            0,
+            next(
+                index - 1
+                for index, m in enumerate(oldmessages)
+                if (m.get("created_at") or 0) <= before
+            ),
+        )
+    except StopIteration:
+        return 0
 
 
 def get_j(oldmessages, after):
+    """
+    Finds the ending index for the slice (Newest -> Oldest).
+    """
+    if not oldmessages:
+        return 0
+
+    # If 'after' is newer than our newest message, return 0 (slice is empty)
     if after >= oldmessages[0].get("created_at"):
         return 0
+
+    # If 'after' is older than our oldest message, take everything
     if after <= oldmessages[-1].get("created_at"):
         return len(oldmessages)
-    return min(
-        next(i + 1 for i, m in enumerate(oldmessages) if m.get("created_at") <= after),
-        len(oldmessages) - 1,
-    )
+
+    # Standard linear search for the date boundary
+    try:
+        return min(
+            len(oldmessages),
+            next(
+                index + 1
+                for index, m in enumerate(oldmessages)
+                if (m.get("created_at") or 0) <= after
+            ),
+        )
+    except StopIteration:
+        return len(oldmessages)
 
 
 def get_split_array(filteredArray):
