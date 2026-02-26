@@ -266,90 +266,52 @@ async def get_after(model_id, username):
         return arrow.get(missing_items[0]["posted_at"]).float_timestamp
 
 
-async def scrape_timeline_posts(
-    c, model_id, timestamp=None, required_ids=None, offset=False
-) -> list:
-    posts = []  # Initialize as empty list
-    new_tasks = []
-    task = None
-    timestamp = float(timestamp) - 100 if timestamp and offset else timestamp
+async def scrape_timeline_posts(c, model_id, timestamp=None, required_ids=None, offset=False):
+    posts = []
+    new_tasks = [] # We keep this signature to match your current architecture
+    
+    # Use a high-precision offset to avoid unnecessary duplicate fetching
+    current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
+    
+    while True:
+        url = (
+            of_env.getattr("timelineNextEP").format(model_id, str(current_timestamp))
+            if current_timestamp else of_env.getattr("timelineEP").format(model_id)
+        )
+        
+        try:
+            async with c.requests_async(url=url) as r:
+                data = await r.json_()
+                batch = data.get("list", [])
+                if not batch:
+                    break
 
-    url = (
-        of_env.getattr("timelineNextEP").format(model_id, str(timestamp))
-        if timestamp
-        else of_env.getattr("timelineEP").format(model_id)
-    )
-    try:
-        task_name = f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
-        task = progress_utils.api.add_job_task(task_name, visible=True)
-        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if timestamp is not None else 'initial'}"
-
-        async with c.requests_async(url=url) as r:
-            if not (200 <= r.status < 300):
-                log.error(f"{log_id} -> API Request failed with status {r.status}")
-                return [], []
-            data = await r.json_()
-            if not isinstance(data, dict):
-                log.error(f"{log_id} -> API returned unexpected format (not a dict)")
-                return [], []
-            posts = data.get("list", [])
-            log.debug(f"successfully accessed {API.lower()} posts with url:{url}")
-
-            if not posts:
-                log.debug(f"{log_id} -> no posts found")
-                return [], []
-
-            # (Logging logic remains the same...)
-            log.debug(f"{log_id} -> number of post found {len(posts)}")
-            trace_progress_log(f"{API} requests", posts, offset=offset)
-
-            if required_ids:
-                # Use a small buffer or standard float comparison
-                current_min_precise = min(
-                    map(lambda x: float(x["postedAtPrecise"]), posts)
-                )
-                max_required = max(required_ids)
-
-                if current_min_precise >= max_required:
-                    pass
-                elif float(timestamp or 0) >= max_required:
-                    pass
-                else:
-                    [
-                        required_ids.discard(float(ele["postedAtPrecise"]))
-                        for ele in posts
-                    ]
-                    if len(required_ids) > 0:
-                        new_ts = posts[-1]["postedAtPrecise"]
-                        if str(new_ts) == str(timestamp):
-                            log.debug(
-                                f"{log_id} -> API stuck on same timestamp. Breaking recursion."
-                            )
-                            return posts, new_tasks
-
-                        new_tasks.append(
-                            asyncio.create_task(
-                                scrape_timeline_posts(
-                                    c,
-                                    model_id,
-                                    timestamp=new_ts,
-                                    required_ids=required_ids,
-                                    offset=False,
-                                )
-                            )
-                        )
-            return posts, new_tasks
-
-    except asyncio.TimeoutError:
-        log.warning(f"Task timed out {url}")
-        return [], []  # Return empty rather than crashing the whole UI
-    except Exception as E:
-        log.error("Error in scrape_timeline_posts")
-        log.traceback_(E)
-        return [], []  # Return empty to allow other tasks to continue
-    finally:
-        if task:
-            progress_utils.api.remove_job_task(task)
+                posts.extend(batch)
+                
+                if not required_ids:
+                    break
+                
+                # Prune the required set for THIS specific window
+                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in batch]
+                
+                # Logic Fix: Exit if we've filled our window's requirements
+                # or if the API starts returning posts older than our window's end
+                if len(required_ids) == 0:
+                    break
+                
+                new_ts = batch[-1]["postedAtPrecise"]
+                
+                # Safety check for stuck API or overshooting the next task's start
+                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(required_ids):
+                    break
+                    
+                current_timestamp = new_ts
+        except Exception as E:
+            log.error(f"Error in timeline worker at {current_timestamp}")
+            log.traceback_(E)
+            log.traceback(traceback.format_exc())
+            break
+    return posts, new_tasks
 
 
 def time_log(username, after):
