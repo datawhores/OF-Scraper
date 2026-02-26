@@ -338,7 +338,7 @@ async def process_all_paid():
             )
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(final_medias)}"
-            )            # log.info(f"Processing {username}_{model_id}")
+            )  # log.info(f"Processing {username}_{model_id}")
             await operations.table_init_create(model_id=model_id, username=username)
             log.debug(f"Created table for {username}_{model_id}")
             temp_postcollection = PostCollection(username=username, model_id=model_id)

@@ -47,7 +47,7 @@ async def get_labels(model_id, c=None):
 
 
 async def get_labels_data(model_id, c=None):
-    generators = [scrape_labels(c, model_id)] 
+    generators = [scrape_labels(c, model_id)]
     return await process_tasks_labels(generators)
 
 
@@ -67,7 +67,7 @@ async def process_tasks_labels(generators):
     page_task = progress_utils.api.add_overall_task(
         f"Labels Progress: {page_count}", visible=True
     )
-    
+
     queue = asyncio.Queue()
 
     async def producer(gen):
@@ -88,13 +88,13 @@ async def process_tasks_labels(generators):
         if batch is None:
             active_workers -= 1
             continue
-            
+
         page_count += 1
         progress_utils.api.update_overall_task(
             page_task,
             description=f"Labels Progress: {page_count}",
         )
-        
+
         if batch:
             output.extend(batch)
 
@@ -131,7 +131,7 @@ async def process_tasks_get_posts_for_labels(generators, labels):
 
     while active_workers > 0:
         result = await queue.get()
-        
+
         if result is None:
             active_workers -= 1
             continue
@@ -150,10 +150,10 @@ async def process_tasks_get_posts_for_labels(generators, labels):
 
     # Clean up 'seen' sets before returning
     [label.pop("seen", None) for label in responseDict.values()]
-    
+
     trace_log_raw(f"{API} content final", list(responseDict.values()), final_count=True)
     progress_utils.api.remove_overall_task(page_task)
-    
+
     return list(responseDict.values())
 
 
@@ -176,12 +176,12 @@ async def scrape_labels(c, model_id, offset=0):
 
                 if not batch:
                     break
-                
+
                 yield batch
 
                 if not data.get("hasMore"):
                     break
-                
+
                 current_offset += len(batch)
         except Exception as E:
             log.traceback_(E)
@@ -194,7 +194,9 @@ async def scrape_labels(c, model_id, offset=0):
 async def scrape_posts_labels(c, label, model_id, offset=0):
     current_offset = offset
     while True:
-        url = of_env.getattr("labelledPostsEP").format(model_id, current_offset, label["id"])
+        url = of_env.getattr("labelledPostsEP").format(
+            model_id, current_offset, label["id"]
+        )
         task = None
         try:
             task = progress_utils.api.add_job_task(
@@ -216,7 +218,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
 
                 if not data.get("hasMore"):
                     break
-                
+
                 current_offset += len(batch)
         except Exception as E:
             log.traceback_(E)

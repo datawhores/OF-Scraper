@@ -267,7 +267,7 @@ async def scrape_archived_posts(
 ) -> list:
     posts = []
     new_tasks = []  # Kept for architectural compatibility
-    
+
     # SAFETY: Initial boundary check
     if timestamp and (
         float(timestamp) > (settings.get_settings().before).float_timestamp
@@ -280,9 +280,10 @@ async def scrape_archived_posts(
     while True:
         url = (
             of_env.getattr("archivedNextEP").format(model_id, str(current_timestamp))
-            if current_timestamp else of_env.getattr("archivedEP").format(model_id)
+            if current_timestamp
+            else of_env.getattr("archivedEP").format(model_id)
         )
-        
+
         task_label = f"[Archived] Timestamp -> {arrow.get(math.trunc(float(current_timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if current_timestamp is not None else 'initial'}"
         task = progress_utils.api.add_job_task(task_label, visible=True)
         log_id = f"timestamp:{arrow.get(math.trunc(float(current_timestamp))).format(of_env.getattr('API_DATE_FORMAT')) if current_timestamp is not None else 'initial'}"
@@ -295,7 +296,9 @@ async def scrape_archived_posts(
 
                 data = await r.json_()
                 if not isinstance(data, dict):
-                    log.error(f"{log_id} -> API returned unexpected format (not a dict)")
+                    log.error(
+                        f"{log_id} -> API returned unexpected format (not a dict)"
+                    )
                     break
 
                 batch = data.get("list", [])
@@ -308,20 +311,22 @@ async def scrape_archived_posts(
 
                 if not required_ids:
                     break
-                
+
                 # Prune the specific Parallel Window
                 [required_ids.discard(float(ele["postedAtPrecise"])) for ele in batch]
-                
+
                 # EXIT LOGIC: Window satisfied or head of API reached
                 if len(required_ids) == 0:
                     break
-                
+
                 new_ts = batch[-1]["postedAtPrecise"]
-                
+
                 # SAFETY CHECK: Prevent stuck API or boundary overshoot
-                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(required_ids):
+                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(
+                    required_ids
+                ):
                     break
-                    
+
                 current_timestamp = new_ts
 
         except Exception as E:
@@ -332,8 +337,9 @@ async def scrape_archived_posts(
         finally:
             if task:
                 progress_utils.api.remove_job_task(task)
-            
+
     return posts, new_tasks
+
 
 def time_log(username, after):
     log.info(

@@ -81,7 +81,7 @@ async def process_tasks(generators):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         finally:
-            await queue.put(None) # Signal completion for this specific generator
+            await queue.put(None)  # Signal completion for this specific generator
 
     # Schedule producers as concurrent tasks
     workers = [asyncio.create_task(producer(g)) for g in generators]
@@ -102,15 +102,19 @@ async def process_tasks(generators):
 
         if batch:
             new_posts = [
-                post for post in batch
+                post
+                for post in batch
                 if post.get("id") not in seen and not seen.add(post.get("id"))
             ]
-            log.debug(f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}")
+            log.debug(
+                f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}"
+            )
             trace_progress_log(f"{API} task", new_posts)
             responseArray.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
     return responseArray
+
 
 async def get_oldtimeline(model_id, username):
     if read_full_after_scan_check(model_id, API):
@@ -160,11 +164,12 @@ async def get_split_array(model_id, username, after):
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
-    
+
     if len(splitArrays) > 2:
         tasks.append(
             scrape_timeline_posts(
-                c, model_id,
+                c,
+                model_id,
                 required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 timestamp=splitArrays[0][0].get("created_at"),
                 offset=True,
@@ -173,7 +178,8 @@ def get_tasks(splitArrays, c, model_id, after):
         for i in range(1, len(splitArrays) - 1):
             tasks.append(
                 scrape_timeline_posts(
-                    c, model_id,
+                    c,
+                    model_id,
                     required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
                     timestamp=splitArrays[i - 1][-1].get("created_at"),
                     offset=False,
@@ -181,7 +187,8 @@ def get_tasks(splitArrays, c, model_id, after):
             )
         tasks.append(
             scrape_timeline_posts(
-                c, model_id,
+                c,
+                model_id,
                 timestamp=splitArrays[-1][0].get("created_at"),
                 offset=True,
                 required_ids=set([before]),
@@ -190,7 +197,8 @@ def get_tasks(splitArrays, c, model_id, after):
     elif len(splitArrays) > 0:
         tasks.append(
             scrape_timeline_posts(
-                c, model_id,
+                c,
+                model_id,
                 timestamp=splitArrays[0][0].get("created_at"),
                 offset=True,
                 required_ids=set([before]),
@@ -199,7 +207,8 @@ def get_tasks(splitArrays, c, model_id, after):
     else:
         tasks.append(
             scrape_timeline_posts(
-                c, model_id,
+                c,
+                model_id,
                 timestamp=after,
                 offset=True,
                 required_ids=set([before]),
@@ -253,44 +262,47 @@ async def get_after(model_id, username):
 
 async def scrape_timeline_posts(
     c, model_id, timestamp=None, required_ids=None, offset=False
-):  
-    
+):
+
     current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
 
     while True:
         url = (
             of_env.getattr("timelineNextEP").format(model_id, str(current_timestamp))
-            if current_timestamp else of_env.getattr("timelineEP").format(model_id)
+            if current_timestamp
+            else of_env.getattr("timelineEP").format(model_id)
         )
-        
+
         try:
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.error(f"API Error: {r.status}")
-                    break # Stop this block, but previously yielded data is safe
+                    break  # Stop this block, but previously yielded data is safe
 
                 data = await r.json_()
                 batch = data.get("list", [])
-                
+
                 if not batch:
                     break
 
-                yield batch 
+                yield batch
 
                 if not required_ids:
                     break
-                
+
                 # Prune requirements
                 [required_ids.discard(float(ele["postedAtPrecise"])) for ele in batch]
-                
+
                 if len(required_ids) == 0:
                     break
-                
+
                 new_ts = batch[-1]["postedAtPrecise"]
-                
-                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(required_ids):
+
+                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(
+                    required_ids
+                ):
                     break
-                    
+
                 current_timestamp = new_ts
 
         except Exception as E:
@@ -298,6 +310,7 @@ async def scrape_timeline_posts(
             log.traceback_(E)
             log.traceback(traceback.format_exc())
             break
+
 
 def time_log(username, after):
     log.info(

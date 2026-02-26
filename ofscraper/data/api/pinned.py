@@ -34,7 +34,7 @@ async def get_pinned_posts(model_id, c=None, post_id=None):
     post_id = post_id or []
     # 1. build the list of raw generators
     generators = [scrape_pinned_posts(c, model_id)]
-    
+
     # 2. process them through the Queue engine
     data = await process_tasks_batch(generators)
     return data
@@ -42,7 +42,7 @@ async def get_pinned_posts(model_id, c=None, post_id=None):
 
 async def process_tasks_batch(generators):
     """
-    Fixed Orchestrator: Bridges Async Generators to the event loop 
+    Fixed Orchestrator: Bridges Async Generators to the event loop
     via a Producer-Consumer Queue.
     """
     responseArray = []
@@ -72,7 +72,7 @@ async def process_tasks_batch(generators):
     # The Consumer: Aggregates data in real-time
     while active_workers > 0:
         batch = await queue.get()
-        
+
         if batch is None:
             active_workers -= 1
             continue
@@ -133,14 +133,14 @@ async def scrape_pinned_posts(c, model_id, offset=0):
                 batch = data.get("list", [])
                 if not batch:
                     break
-                
+
                 yield batch
 
                 trace_progress_log(f"{API} request", batch)
 
                 if not data.get("hasMore"):
                     break
-                
+
                 current_offset += len(batch)
 
         except Exception as E:

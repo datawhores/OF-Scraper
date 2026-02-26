@@ -68,18 +68,66 @@ async def get_all_expired_subscriptions(subscribe_count):
 
 async def activeHelper(subscribe_count, c):
     # Blacklist/Reserved list logic check
-    if any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) or any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_ACTIVE_LIST"), of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT")]):
+    if any(
+        x in common.get_black_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) or any(
+        x in common.get_black_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+        ]
+    ):
         return []
-    if all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) and all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_ACTIVE_LIST"), of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT")]):
+    if all(
+        x not in common.get_user_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) and all(
+        x not in common.get_user_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
+            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+        ]
+    ):
         return []
 
     return await process_task([scrape_subscriptions_active(c)])
 
 
 async def expiredHelper(subscribe_count, c):
-    if any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) or any(x in common.get_black_list_helper() for x in [of_env.getattr("OFSCRAPER_EXPIRED_LIST"), of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT")]):
+    if any(
+        x in common.get_black_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) or any(
+        x in common.get_black_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+        ]
+    ):
         return []
-    if all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_RESERVED_LIST"), of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT")]) and all(x not in common.get_user_list_helper() for x in [of_env.getattr("OFSCRAPER_EXPIRED_LIST"), of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT")]):
+    if all(
+        x not in common.get_user_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) and all(
+        x not in common.get_user_list_helper()
+        for x in [
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
+            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+        ]
+    ):
         return []
 
     return await process_task([scrape_subscriptions_disabled(c)])
@@ -130,13 +178,13 @@ async def scrape_subscriptions_active(c, offset=0):
 
                 response = await r.json_()
                 subscriptions = response.get("list", [])
-                
+
                 if subscriptions:
                     yield subscriptions
 
                 if response.get("hasMore") is not True or not subscriptions:
                     break
-                
+
                 current_offset += len(subscriptions)
 
         except asyncio.TimeoutError:
@@ -165,13 +213,13 @@ async def scrape_subscriptions_disabled(c, offset=0):
 
                 response = await r.json_()
                 subscriptions = response.get("list", [])
-                
+
                 if subscriptions:
                     yield subscriptions
 
                 if response.get("hasMore") is not True or not subscriptions:
                     break
-                
+
                 current_offset += len(subscriptions)
 
         except asyncio.TimeoutError:

@@ -88,7 +88,7 @@ async def get_lists():
         page_task = progress_updater.userlist.add_overall_task(
             f"UserList Pages Progress: {page_count}", visible=True
         )
-        
+
         try:
             generator = scrape_for_list(c)
             async for batch in generator:
@@ -101,7 +101,7 @@ async def get_lists():
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-            
+
         progress_updater.userlist.remove_overall_task(page_task)
 
     trace_log_raw("list raw unduped", output)
@@ -115,7 +115,7 @@ async def scrape_for_list(c, offset=0):
     """
     attempt.set(0)
     current_offset = offset
-    
+
     while True:
         url = of_env.getattr("listEP").format(current_offset)
         task = None
@@ -131,20 +131,22 @@ async def scrape_for_list(c, offset=0):
                 log.debug(
                     f"offset:{current_offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
                 )
-                log.debug(f"offset:{current_offset} -> number of lists found {len(out_list)}")
+                log.debug(
+                    f"offset:{current_offset} -> number of lists found {len(out_list)}"
+                )
                 log.debug(
                     f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined') }"
                 )
 
                 trace_log_raw("list names raw", data)
-                
+
                 # YIELD BATCH
                 yield out_list
-                
+
                 # PAGINATION LOGIC
                 if not data.get("hasMore") or not out_list:
                     break
-                
+
                 current_offset += len(out_list)
 
         except asyncio.TimeoutError:
@@ -162,7 +164,7 @@ async def scrape_for_list(c, offset=0):
 async def get_list_users(lists):
     output = []
     page_count = 0
-    
+
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
@@ -181,7 +183,7 @@ async def get_list_users(lists):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
             finally:
-                await queue.put(None) # Signal done
+                await queue.put(None)  # Signal done
 
         # Start producers for each list
         generators = [scrape_list_members(c, item) for item in lists]
@@ -190,11 +192,11 @@ async def get_list_users(lists):
 
         while active_producers > 0:
             item = await queue.get()
-            
+
             if item is None:
                 active_producers -= 1
                 continue
-            
+
             page_count += 1
             progress_updater.userlist.update_overall_task(
                 page_task,
@@ -218,7 +220,7 @@ async def scrape_list_members(c, item, offset=0):
     """
     attempt.set(0)
     current_offset = offset
-    
+
     while True:
         url = of_env.getattr("listusersEP").format(item.get("id"), current_offset)
         task = None
@@ -233,7 +235,7 @@ async def scrape_list_members(c, item, offset=0):
                 log_id = f"offset:{current_offset} list:{item.get('name')} =>"
                 data = await r.json()
                 users = data.get("list") or []
-                
+
                 log.debug(f"{log_id} -> names found {len(users)}")
                 log.debug(
                     f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
@@ -241,7 +243,7 @@ async def scrape_list_members(c, item, offset=0):
                 log.debug(
                     f"{log_id}  -> nextOffset value in json {data.get('nextOffset','undefined') }"
                 )
-                
+
                 name = f"API {item.get('name')}"
                 trace_progress_log(name, data, offset=current_offset)
 
@@ -252,7 +254,7 @@ async def scrape_list_members(c, item, offset=0):
                 # PAGINATION LOGIC
                 if not data.get("hasMore"):
                     break
-                
+
                 if "nextOffset" in data:
                     current_offset = data["nextOffset"]
                 else:

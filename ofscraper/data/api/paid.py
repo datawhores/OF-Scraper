@@ -74,10 +74,13 @@ async def process_tasks(generators):
         )
         if batch:
             new_posts = [
-                post for post in batch
+                post
+                for post in batch
                 if post.get("id") not in seen and not seen.add(post.get("id"))
             ]
-            log.debug(f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}")
+            log.debug(
+                f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}"
+            )
             trace_progress_log(f"{API} tasks", new_posts)
             responseArray.extend(new_posts)
 
@@ -85,6 +88,8 @@ async def process_tasks(generators):
     trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Paid", len(responseArray)))
     return responseArray
+
+
 async def scrape_paid(c, username, offset=0):
     """
     Async Generator version of scrape_paid.
@@ -108,7 +113,9 @@ async def scrape_paid(c, username, offset=0):
 
                 data = await r.json_()
                 if not isinstance(data, dict):
-                    log.error(f"API returned unexpected format at offset {current_offset}")
+                    log.error(
+                        f"API returned unexpected format at offset {current_offset}"
+                    )
                     break
 
                 trace_progress_log(f"{API} individual requests", data)
@@ -165,12 +172,8 @@ async def create_tasks_scrape_paid(c):
     if len(allpaid) > min_posts:
         splitArrays = [i for i in range(0, len(allpaid), min_posts)]
         for i in range(0, len(splitArrays) - 1):
-            tasks.append(
-                scrape_all_paid(c, required=min_posts, offset=splitArrays[i])
-            )
-        tasks.append(
-            scrape_all_paid(c, offset=splitArrays[-1], required=None)
-        )
+            tasks.append(scrape_all_paid(c, required=min_posts, offset=splitArrays[i]))
+        tasks.append(scrape_all_paid(c, offset=splitArrays[-1], required=None))
     else:
         tasks.append(scrape_all_paid(c))
     return tasks
@@ -213,8 +216,14 @@ async def process_tasks_all_paid(generators):
 
     progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API} all users final", output, final_count=True)
-    cache.set("purchased_all", list(map(lambda x: x.get("id"), output)), expire=of_env.getattr("RESPONSE_EXPIRY"))
+    cache.set(
+        "purchased_all",
+        list(map(lambda x: x.get("id"), output)),
+        expire=of_env.getattr("RESPONSE_EXPIRY"),
+    )
     return output
+
+
 async def scrape_all_paid(c, offset=0, required=None):
     """
     Async Generator Worker Loop for global paid content.
@@ -250,13 +259,13 @@ async def scrape_all_paid(c, offset=0, required=None):
 
                 # YIELD BATCH IMMEDIATELY
                 yield batch
-                
+
                 items_retrieved += len(batch)
 
                 # EXIT LOGIC
                 if not data.get("hasMore"):
                     break
-                
+
                 if required is not None and items_retrieved >= required:
                     break
 

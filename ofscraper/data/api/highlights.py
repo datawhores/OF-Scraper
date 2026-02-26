@@ -91,7 +91,11 @@ async def process_stories_tasks(generators):
             page_task, description=f"Stories Pages Progress: {page_count}"
         )
         if batch:
-            new_posts = [p for p in batch if p.get("id") not in seen and not seen.add(p.get("id"))]
+            new_posts = [
+                p
+                for p in batch
+                if p.get("id") not in seen and not seen.add(p.get("id"))
+            ]
             responseArray.extend(new_posts)
             trace_progress_log(f"{API_S} task", new_posts)
 
@@ -191,7 +195,11 @@ async def process_task_highlights(generators):
             page_task, description=f"Highlight Content Progress: {page_count}"
         )
         if batch:
-            new_posts = [p for p in batch if p.get("id") not in seen and not seen.add(p.get("id"))]
+            new_posts = [
+                p
+                for p in batch
+                if p.get("id") not in seen and not seen.add(p.get("id"))
+            ]
             highlightResponse.extend(new_posts)
             trace_progress_log(f"{API_H} list posts task", new_posts)
 
@@ -205,20 +213,26 @@ async def scrape_highlight_list(c, user_id, offset=0):
         url = of_env.getattr("highlightsWithStoriesEP").format(user_id, current_offset)
         task = None
         try:
-            task = progress_utils.api.add_job_task(f"[Highlights] offset-> {current_offset}", visible=True)
+            task = progress_utils.api.add_job_task(
+                f"[Highlights] offset-> {current_offset}", visible=True
+            )
             async with c.requests_async(url) as r:
-                if not (200 <= r.status < 300): break
+                if not (200 <= r.status < 300):
+                    break
                 resp_data = await r.json_()
                 data = get_highlightList(resp_data)
-                if not data: break
+                if not data:
+                    break
                 yield data
-                if not resp_data.get("hasMore"): break
+                if not resp_data.get("hasMore"):
+                    break
                 current_offset += len(data)
         except Exception as E:
             log.traceback_(E)
             break
         finally:
-            if task: progress_utils.api.remove_job_task(task)
+            if task:
+                progress_utils.api.remove_job_task(task)
 
 
 async def scrape_highlights_from_list(c, id):
@@ -227,18 +241,24 @@ async def scrape_highlights_from_list(c, id):
     try:
         task = progress_utils.api.add_job_task(f"[Highlights] ID -> {id}", visible=True)
         async with c.requests_async(url=url) as r:
-            if not (200 <= r.status < 300): return
+            if not (200 <= r.status < 300):
+                return
             resp_data = await r.json_()
-            stories = resp_data.get("stories", []) if isinstance(resp_data, dict) else []
-            if stories: yield stories
+            stories = (
+                resp_data.get("stories", []) if isinstance(resp_data, dict) else []
+            )
+            if stories:
+                yield stories
     except Exception as E:
         log.traceback_(E)
     finally:
-        if task: progress_utils.api.remove_job_task(task)
+        if task:
+            progress_utils.api.remove_job_task(task)
 
 
 def get_highlightList(data):
-    if not isinstance(data, dict): return []
+    if not isinstance(data, dict):
+        return []
     for ele in list(filter(lambda x: isinstance(x, list), data.values())):
         if len(list(filter(lambda x: isinstance(x.get("id"), (int, str)), ele))) > 0:
             return [x.get("id") for x in ele]

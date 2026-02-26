@@ -119,7 +119,7 @@ async def process_tasks(generators):
     # The Consumer: Aggregates data as batches arrive
     while active_workers > 0:
         batch = await queue.get()
-        
+
         if batch is None:
             active_workers -= 1
             continue
@@ -178,7 +178,7 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None):
                 batch = data.get("list", [])
                 if not batch:
                     break
-                
+
                 # CRITICAL: Yield batch immediately
                 yield batch
 
@@ -202,14 +202,16 @@ async def scrape_messages(c, model_id, message_id=None, required_ids=None):
                     break
 
                 new_mid = batch[-1].get("id")
-                
+
                 # SAFETY CHECK: Prevent stuck API loop
                 if str(new_mid) == str(current_message_id):
                     break
-                
+
                 # SAFETY CHECK: Boundary overshoot (timestamps decrease)
                 # If the last item is older than the oldest required ID, we are done
-                last_item_ts = arrow.get(batch[-1].get("createdAt") or batch[-1].get("postedAt")).float_timestamp
+                last_item_ts = arrow.get(
+                    batch[-1].get("createdAt") or batch[-1].get("postedAt")
+                ).float_timestamp
                 if last_item_ts < min(required_ids):
                     break
 
@@ -303,10 +305,10 @@ def get_i(oldmessages, before):
     """
     if not oldmessages:
         return 0
-    
+
     if before >= oldmessages[0].get("created_at"):
         return 0
-    
+
     if before <= oldmessages[-1].get("created_at"):
         return max(0, len(oldmessages) - 1)
 
@@ -330,10 +332,10 @@ def get_j(oldmessages, after):
     """
     if not oldmessages:
         return 0
-    
+
     if after >= oldmessages[0].get("created_at"):
         return 0
-    
+
     if after <= oldmessages[-1].get("created_at"):
         return len(oldmessages)
 
@@ -380,9 +382,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c, after):
                     c,
                     model_id,
                     message_id=splitArrays[i - 1][-1].get("post_id"),
-                    required_ids=set(
-                        [ele.get("created_at") for ele in splitArrays[i]]
-                    ),
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
                 )
             )
         tasks.append(

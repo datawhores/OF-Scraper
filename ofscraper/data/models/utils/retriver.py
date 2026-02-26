@@ -76,20 +76,22 @@ async def get_via_individual():
         "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
     )
     models_objects = list(map(lambda x: models.Model(x), out))
-    
+
     if len(models_objects) == 0:
         # Log a warning instead of raising an Exception that kills the script
-        logging.getLogger("shared").warning("[bold red]No valid models found for the provided usernames. Skipping...[/bold red]")
-        return [] 
+        logging.getLogger("shared").warning(
+            "[bold red]No valid models found for the provided usernames. Skipping...[/bold red]"
+        )
+        return []
     return models_objects
 
 
-def get_selected_model(parsed_subscriptions: list,existing_models:list) -> tuple:
+def get_selected_model(parsed_subscriptions: list, existing_models: list) -> tuple:
     """
     Prints user's subscriptions to console and accepts input from user corresponding
     to the model(s) whose content they would like to scrape.
     """
-    return prompts.model_selector(parsed_subscriptions,existing_models)
+    return prompts.model_selector(parsed_subscriptions, existing_models)
 
 
 def get_sub_count():

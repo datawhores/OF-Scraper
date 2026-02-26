@@ -51,10 +51,10 @@ async def get_subscription(accounts=None):
 async def get_subscription_helper(c, accounts):
     output = []
     queue = asyncio.Queue()
-    
+
     async def producer(account):
         try:
-            # CHANGE: Use 'await' instead of 'async for' 
+            # CHANGE: Use 'await' instead of 'async for'
             # because scrape_profile_helper_async returns a dict, not a generator
             result = await profile.scrape_profile_helper_async(c, account)
             if result:
@@ -74,7 +74,7 @@ async def get_subscription_helper(c, accounts):
         if result is None:
             active_workers -= 1
             continue
-        
+
         log.debug(f"subscription data found for {result.get('username')} ")
         output.append(result)
 
