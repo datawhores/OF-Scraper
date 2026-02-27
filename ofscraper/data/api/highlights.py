@@ -272,3 +272,15 @@ async def get_individual_highlights(id, c):
     async for batch in scrape_highlights_from_list(c, id):
         return batch
     return []
+
+async def get_individual_stories(id, c):
+    """
+    Bridge function: Consumes the new 'scrape_highlights_from_list' generator
+    to return a standard list of stories for a specific ID.
+    """
+    data = []
+    # We use 'async for' because scrape_highlights_from_list is now a generator
+    async for batch in scrape_highlights_from_list(c, id):
+        if batch:
+            data.extend(batch)
+    return data
