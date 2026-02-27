@@ -11,9 +11,9 @@ r"""
 
 """
 
-import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.me as me_util
+from ofscraper.utils.cache.profile import is_profile_cached
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
@@ -26,12 +26,7 @@ def seperate_avatars(data):
 
 
 def seperate_avatar_helper(ele):
-    # id for avatar comes from xxh32 of url
-    if ele.post_id and ele.responsetype == "profile":
-        value = cache.get(ele.post_id, default=False)
-
-        return value
-    return False
+    return is_profile_cached(ele)
 
 
 def seperate_by_self(data):

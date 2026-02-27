@@ -17,16 +17,9 @@ from functools import partial
 
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.hash as hash
 
-
-async def set_profile_cache_helper(ele):
-    if ele.post_id and ele.responsetype == "profile":
-        await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.set, ele.post_id, True)
-        )
 
 
 async def get_hash(file_data):

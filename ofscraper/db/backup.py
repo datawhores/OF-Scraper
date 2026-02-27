@@ -18,7 +18,7 @@ import arrow
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.db.difference import get_group_difference
 from ofscraper.utils.paths.manage import copy_path

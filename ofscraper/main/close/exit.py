@@ -1,7 +1,7 @@
 import time
 import ofscraper.utils.logs.close as close_log
 import ofscraper.utils.manager as manager
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 
 
 def shutdown():

@@ -15,7 +15,7 @@ import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.managers.manager as manager
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.data.api.common.check import update_check

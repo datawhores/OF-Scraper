@@ -208,7 +208,7 @@ async def make_stories_table_changes(
     all_stories: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     all_stories_filtered = filter(
-        lambda x: x.responsetype in {"stories", "highlights"}, all_stories
+        lambda x: x.responsetype in {"Stories", "Highlights"}, all_stories
     )
 
     curr_id = set(await get_all_stories_ids(model_id=model_id, username=username))

@@ -87,7 +87,7 @@ async def process_paid_post(model_id, username, c):
         paid_content = await paid.get_paid_posts(username, model_id, c=c)
         paid_content = list(
             map(
-                lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
+                lambda x: posts_.Post(x, model_id, username, responsetype="Paid"),
                 paid_content,
             )
         )
@@ -252,19 +252,29 @@ async def process_pinned_posts(model_id, username, c):
 
 @free.space_checker
 async def process_profile(username) -> list:
+    """
+    Handles the unique 'singleton' nature of profile media by relying
+    on the standardized parse_profile output.
+    """
     try:
         user_profile = profile.scrape_profile(username)
-        urls, info = profile.parse_profile(user_profile)
-        profile.print_profile_info(info)
-        posts = []
-        for count, data in enumerate(urls):
-            post = posts_.Post(data, info[2], username, responsetype=profile.API)
-            posts.append(post)
-        return posts, profile.API
+        if not user_profile:
+            return [], profile.API
+
+        # standardized_dicts now contains the correctly nested 'media' keys,
+        standardized_dicts, info = profile.parse_profile(user_profile)
+        # We no longer need a manual loop to map keys here.
+        # We simply initialize Post objects with the already-hardened data.
+        posts_array = [
+            posts_.Post(data, model_id=info[2], username=username, responsetype=profile.API)
+            for data in standardized_dicts
+        ]
+        return posts_array, profile.API
     except Exception as E:
+        log.traceback_(f"Failed to process profile for {username}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
-
+        return [], profile.API
 
 @free.space_checker
 @run
@@ -311,7 +321,7 @@ async def process_all_paid():
 
             all_posts = list(
                 map(
-                    lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
+                    lambda x: posts_.Post(x, model_id, username, responsetype="Paid"),
                     value,
                 )
             )
@@ -345,7 +355,7 @@ async def process_all_paid():
 
             all_posts = list(
                 map(
-                    lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
+                    lambda x: posts_.Post(x, model_id, username, responsetype="Paid"),
                     value,
                 )
             )
@@ -565,7 +575,7 @@ async def process_tasks(model_id, username, ele, c=None):
         for result in asyncio.as_completed(tasks):
             try:
                 posts, area = await result
-                area_title = area.title()
+                area_title = area.capitalize()
                 actions_for_this_batch = []
                 command = settings.get_settings().command
                 if command == "metadata":

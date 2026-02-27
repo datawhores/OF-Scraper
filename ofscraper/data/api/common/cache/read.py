@@ -1,4 +1,4 @@
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.settings as settings
 
 

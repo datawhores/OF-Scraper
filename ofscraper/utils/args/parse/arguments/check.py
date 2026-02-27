@@ -114,7 +114,6 @@ check_mode_media_sort = click.option(
             "username",
             "downloaded",
             "unlocked",
-            "other_posts_with_media",
             "length",
             "mediatype",
             "post_date",

@@ -109,7 +109,7 @@ def get_profile_path(name=None):
     # Sanitize and return the final path, matching the original function's behavior
     return pathlib.Path(tools.profile_name_fixer(str(profile)))
 
-def get_save_location(config=None, mediatype=None):
+def get_save_location(config=None):
     if config is False:
         return of_env.getattr("SAVE_PATH_DEFAULT")
     config = config or config_file.open_config()

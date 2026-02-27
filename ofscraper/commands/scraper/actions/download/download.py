@@ -13,7 +13,7 @@ import ofscraper.utils.paths.common as common_paths
 from ofscraper.utils.string import format_safe
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 

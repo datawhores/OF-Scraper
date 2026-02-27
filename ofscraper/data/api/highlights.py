@@ -16,14 +16,15 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
+
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
+from ofscraper.data.api.common.logs.logs import  trace_progress_log,trace_log_raw
 
 log = logging.getLogger("shared")
-API_S = "stories"
-API_H = "highlights"
+API_S = "Stories"
+API_H = "Highlights"
 
 #############################################################################
 #### Stories
@@ -98,7 +99,10 @@ async def process_stories_tasks(generators):
             ]
             responseArray.extend(new_posts)
             trace_progress_log(f"{API_S} task", new_posts)
-
+    trace_log_raw(f"{API_S} final", responseArray, final_count=True)
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
+    )
     progress_utils.api.remove_overall_task(page_task)
     return responseArray
 
@@ -160,6 +164,10 @@ async def process_task_get_highlight_list(generators):
             highlightLists.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
+    trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
+    log.debug(
+    common_logs.FINAL_COUNT_ITEM.format('Highlight List', len(highlightLists),"highlights")
+    )
     return highlightLists
 
 
@@ -196,14 +204,20 @@ async def process_task_highlights(generators):
         )
         if batch:
             new_posts = [
-                p
-                for p in batch
+                p for p in batch
                 if p.get("id") not in seen and not seen.add(p.get("id"))
             ]
             highlightResponse.extend(new_posts)
             trace_progress_log(f"{API_H} list posts task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
+    )
+    trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
+    log.debug(
+        common_logs.FINAL_COUNT_POST.format('Highlight List Posts',{len(highlightResponse)})
+    )
     return highlightResponse
 
 

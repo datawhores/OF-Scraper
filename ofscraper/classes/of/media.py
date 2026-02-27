@@ -151,13 +151,13 @@ class Media(base.base):
     def mediatype(self):
         media_type = self._media["type"]
         if media_type == "photo":
-            return "images"
+            return "Images"
         elif media_type == "gif":
-            return "videos"
+            return "Videos"
         elif media_type == "forced_skipped":
-            return "forced_skipped"
+            return "Forced_skipped"
         else:
-            return f"{media_type}s".lower()
+            return f"{media_type}s".capitalize()
 
     @property
     def duration(self):
@@ -179,10 +179,8 @@ class Media(base.base):
             return None
         elif self._final_url:
             return self._final_url
-        elif self.responsetype in {"stories", "highlights"}:
+        elif self.responsetype.capitalize() in {"Stories", "Highlights"}:
             self._final_url = self.files_source.get("full")
-        elif self.responsetype == "profile":
-            self._final_url = self._media.get("url")
         else:
             self._final_url = self._url_quality_picker()
         return self._final_url
@@ -213,7 +211,7 @@ class Media(base.base):
 
     @property
     def canview(self):
-        if self.responsetype.lower() == "profile":
+        if self.responsetype.capitalize() == "Profile":
             return True
         return (
             self._media.get("canView", False)
@@ -408,8 +406,8 @@ class Media(base.base):
         )
         filename = re.sub(r"\.mpd$", "", filename_part)
 
-        if self.responsetype.lower() == "profile":
-            date_str = arrow.get(self.date).format()
+        if self.responsetype.capitalize() == "Profile":
+            date_str = arrow.get(self.date).format("YYYY_MM_DD")
             return f"{filename}_{date_str}"
         return filename
 
@@ -420,7 +418,7 @@ class Media(base.base):
     @property
     def no_quality_final_filename(self):
         filename = self.filename or str(self.id)
-        if self.mediatype == "videos":
+        if self.mediatype.capitalize() == "Videos":
             filename = re.sub("_[a-z0-9]+$", "", filename)
 
         try:
@@ -492,7 +490,7 @@ class Media(base.base):
     def license(self):
         if not self.mpd:
             return None
-        responsetype = self.post.responsetype
+        responsetype = self.post.responsetype.lower()
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
         else:
@@ -527,7 +525,7 @@ class Media(base.base):
 
     @property
     def protected(self):
-        if self.mediatype not in {"videos", "texts"}:
+        if self.mediatype.capitalize() not in {"Videos", "Texts"}:
             return False
         if self.media_source.get("source"):
             return False
@@ -570,7 +568,7 @@ class Media(base.base):
         self._log = val
 
     def get_text(self):
-        if self.responsetype.lower() != "profile":
+        if self.responsetype.capitalize() != "Profile":
             date_str = arrow.get(self.date).format(data.get_date())
             text = self._post.file_sanitized_text or self.filename or date_str
         else:
@@ -691,7 +689,7 @@ class Media(base.base):
         }
 
     def normal_quality_helper(self):
-        if self.mediatype != "videos":
+        if self.mediatype.capitalize()  != "Videos":
             return "source"
 
         allowed = quality.get_allowed_qualities()
@@ -715,7 +713,7 @@ class Media(base.base):
 
     async def _get_final_filename_async(self):
         filename = self.filename or str(self.id)
-        if self.mediatype == "videos":
+        if self.mediatype.capitalize()  == "Videos":
             filename = re.sub("_[a-z0-9]+$", "", filename)
             quality_placeholder = await self.selected_quality_placeholder
             filename = f"{filename}_{quality_placeholder}"

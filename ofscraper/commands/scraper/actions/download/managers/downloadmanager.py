@@ -97,13 +97,13 @@ class DownloadManager:
         file_size_max = settings.get_settings().size_max
         file_size_min = settings.get_settings().size_min
         if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
-            ele.mediatype = "forced_skipped"
+            ele.mediatype = "Forced_skipped"
             common_globals.log.debug(
                 f"{get_medialog(ele)} {format_size(total)} over size limit"
             )
             return 0
         elif int(file_size_min) > 0 and (int(total) < int(file_size_min)):
-            ele.mediatype = "forced_skipped"
+            ele.mediatype = "Forced_skipped"
             common_globals.log.debug(
                 f"{get_medialog(ele)} {format_size(total)} under size min"
             )

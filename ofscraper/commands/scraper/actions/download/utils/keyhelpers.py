@@ -11,7 +11,7 @@ from pywidevine.pssh import PSSH
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.utils.retries import (

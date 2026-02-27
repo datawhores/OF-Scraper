@@ -34,7 +34,7 @@ from ofscraper.db.operations_.messages import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
-API = "messages"
+API = "Messages"
 log = logging.getLogger("shared")
 
 

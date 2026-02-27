@@ -761,11 +761,11 @@ async def row_gather(username, model_id):
                 "download_type": download_type_helper(ele),
                 "other_posts_with_media": collection.posts_with_media_id(ele.id),
                 "post_media_count": len(ele._post.post_media),
-                "mediatype": ele.mediatype,
+                "mediatype": ele.mediatype.capitalize(),
                 "post_date": datehelper(ele.formatted_postdate),
                 "media": len(ele._post.post_media),
                 "length": ele.numeric_duration,
-                "responsetype": ele.responsetype,
+                "responsetype": ele.responsetype.capitalize(),
                 "price": (
                     "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price)
                 ),

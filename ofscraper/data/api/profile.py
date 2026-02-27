@@ -19,7 +19,7 @@ from rich.console import Console
 from xxhash import xxh128
 
 import ofscraper.managers.manager as manager
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
@@ -27,7 +27,7 @@ from ...utils import encoding
 
 console = Console()
 log = logging.getLogger("shared")
-API = "profile"
+API = "Profile"
 
 
 # can get profile from username or id
@@ -87,47 +87,45 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
         raise E
 
 
+
 def parse_profile(profile: dict) -> tuple:
-    media = []
-    media.append(profile.get("avatar"))
-    media.append(profile.get("header"))
-    media.append(profile.get("profile"))
-    media = list(filter(lambda x: x is not None, media))
+    # Identify valid media URLs from the raw profile dict
+    media_urls = list(filter(None, [
+        profile.get("avatar"),
+        profile.get("header"),
+        profile.get("profile")
+    ]))
 
     output = []
-    for ele in media:
-        output.append(
-            {
-                "url": ele,
-                "responsetype": "profile",
-                "mediatype": "photo",
-                "value": "free",
-                "createdAt": profile["joinDate"],
-                "text": profile["about"],
-                "id": xxh128(ele).hexdigest(),
-                "mediaid": xxh128(ele[:-1]).hexdigest(),
-            }
-        )
+    for ele in media_urls:
+        # Standardizing structure and casing for hardening
+        output.append({
+            "id": xxh128(ele).hexdigest(),
+            "postedAt": profile.get("joinDate"),
+            "text": profile.get("about"),
+            "responsetype": "Profile",  # Capitalized
+            "mediatype": "Photo",      # Capitalized
+            "value": "Free",           # Hardened value for price filtering
+            "media": [{
+                "id": xxh128(ele[:-1]).hexdigest(),
+                "type": "photo",
+                "canView": True,
+                "source": {"source": ele},
+                "createdAt": profile.get("joinDate"),
+            }]
+        })
 
-    name = encoding.encode_utf_16(profile["name"])
-    username = profile["username"]
-    id_ = profile["id"]
-    join_date = profile["joinDate"]
-    posts_count = profile["postsCount"]
-    photos_count = profile["photosCount"]
-    videos_count = profile["videosCount"]
-    audios_count = profile["audiosCount"]
-    archived_posts_count = profile["archivedPostsCount"]
+    # Keep info tuple consistent for existing profile info prints
     info = (
-        name,
-        username,
-        id_,
-        join_date,
-        posts_count,
-        photos_count,
-        videos_count,
-        audios_count,
-        archived_posts_count,
+        encoding.encode_utf_16(profile["name"]),
+        profile["username"],
+        profile["id"],
+        profile["joinDate"],
+        profile["postsCount"],
+        profile["photosCount"],
+        profile["videosCount"],
+        profile["audiosCount"],
+        profile["archivedPostsCount"],
     )
 
     return output, info

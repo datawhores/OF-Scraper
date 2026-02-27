@@ -309,7 +309,7 @@ class Post(base.base):
             response_key = self.responsetype
             response_key = (
                 "timeline"
-                if response_key.lower() in {"post", "posts"}
+                if response_key.capitalize() in {"Post", "Posts"}
                 else response_key
             )
             response = data.responsetype().get(response_key)

@@ -50,7 +50,7 @@ import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.system.system as system
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
@@ -443,7 +443,7 @@ class AltDownloadManager(DownloadManager):
 
     async def _media_item_post_process_alt(self, audio, video, ele, username, model_id):
         if (audio["total"] + video["total"]) == 0:
-            if ele.mediatype != "forced_skipped":
+            if ele.mediatype.capitalize() != "Forced_skipped":
                 await self._force_download(ele, username, model_id)
             return ele.mediatype, 0
         for m in [audio, video]:

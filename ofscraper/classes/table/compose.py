@@ -93,9 +93,7 @@ def composer():
                         yield TextSearch(ele)
                     yield Rule()
 
-                    for ele in ["Media_ID"]:
-                        yield NumField(ele)
-                    for ele in ["Post_ID"]:
+                    for ele in ["Media_ID","Post_ID"]:
                         yield NumField(ele)
                     yield Rule()
                     for ele in ["Post_Media_Count"]:
@@ -110,8 +108,8 @@ def composer():
                     for ele in ["Length"]:
                         yield TimeField(ele)
                     yield Rule()
-                    yield SelectField("Downloaded")
-                    yield SelectField("Unlocked")
+                    for ele in ["Downloaded","Unlocked"]:
+                        yield SelectField(ele)
                     yield Rule()
                     for ele in ["Mediatype"]:
                         yield MediaField(ele)

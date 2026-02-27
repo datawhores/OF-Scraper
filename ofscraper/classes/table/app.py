@@ -37,8 +37,13 @@ class InputApp(App):
         super().__init__(*args, **kwargs)
 
     # Main
-
     def __call__(self, *args, **kwargs):
+        """
+        Entry point for the TUI. Captures external data and resets 
+        internal state variables before launching the application loop.
+        Args:
+            table_data (list): The raw data (models/posts) used to populate the UI.
+        """
         self.table_data = kwargs.pop("table_data", None)
         self._sortkey = None
         self._reverse = False
@@ -46,14 +51,30 @@ class InputApp(App):
         self.run()
 
     def compose(self):
+        """
+        Defines the widget hierarchy for the application.
+        Delegates the layout to the composer() helper and provides
+        a safety barrier against UI rendering exceptions.
+        Returns:
+            Yields/Returns the widget tree defined in composer().
+        """
         try:
             return composer()
         except Exception as e:
+            # Silently failing here prevents a hard crash but may result in a blank UI
             pass
 
     def on_ready(self) -> None:
+        """
+        Lifecycle hook called after all widgets are mounted.
+        Used for final data population and connecting the application
+        logger to the in-app console widget.
+        """
+        # Populate the interactive table with the data captured in __call__
         self.init_table()
+        # Link the shared logger to the 'OutConsole' widget to display logs in real-time
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
+
 
     # events
     def on_data_table_header_selected(self, event):
@@ -290,7 +311,8 @@ class InputApp(App):
                             filter_rows,
                         )
                     )
-                except Exception:
+                    pass
+                except Exception as E:
                     pass
             self._filtered_rows = filter_rows
 

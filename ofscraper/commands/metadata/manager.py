@@ -17,7 +17,7 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
@@ -73,7 +73,7 @@ class MetaDataManager:
             effected = prevData != await prev_download_media_data(
                 ele, model_id=model_id, username=username
             )
-        return ele.mediatype if effected else "forced_skipped"
+        return ele.mediatype.capitalize() if effected else "Forced_skipped"
 
     def _metadata_downloaded_helper(self, placeholderObj, prevData):
         if settings.get_settings().metadata == "check":

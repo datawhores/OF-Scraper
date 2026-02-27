@@ -500,7 +500,7 @@ class StatsManager:
         )
 
         if activity_enum not in self._stats[username]:
-            activity_name = activity_enum.name.title()
+            activity_name = activity_enum.name.capitalize()
 
             # Route to the correct Stat class based on the enum member
             if activity_enum in [

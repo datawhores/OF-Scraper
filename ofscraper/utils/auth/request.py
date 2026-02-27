@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 import arrow
 
 import ofscraper.utils.auth.file as auth_file
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager

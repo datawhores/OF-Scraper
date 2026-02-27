@@ -30,7 +30,7 @@ async def get_text_process(username, ele):
             return
         # make new text mediatype
         new_ele = copy.deepcopy(ele)
-        new_ele.mediatype = "text"
+        new_ele.mediatype = "Text"
 
         placeholderObj = await placeholder.Textholders(new_ele, "txt").init()
         if pathlib.Path(placeholderObj.filepath).exists() and not dupe:

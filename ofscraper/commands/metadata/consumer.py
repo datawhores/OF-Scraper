@@ -46,6 +46,7 @@ async def consumer(aws, task1, medialist, lock):
                 common_globals.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
             try:
+                media_type = media_type.lower()
                 if media_type == "images":
                     common_globals.photo_count += 1
                     ele.mark_metadata_changed()

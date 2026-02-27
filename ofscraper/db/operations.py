@@ -53,19 +53,19 @@ log = logging.getLogger("shared")
 async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
     await make_post_table_changes(
         filter(
-            lambda x: x.responsetype in {"timeline", "pinned", "archived", "streams"},
+            lambda x: x.responsetype.capitalize() in {"Timeline", "Pinned", "Archived", "Streams"},
             posts,
         ),
         model_id=model_id,
         username=username,
     )
     await make_messages_table_changes(
-        filter(lambda x: x.responsetype == "message", posts),
+        filter(lambda x: x.responsetype.capitalize() == "Messages", posts),
         model_id=model_id,
         username=username,
     )
     await make_stories_table_changes(
-        filter(lambda x: x.responsetype in {"stories", "highlights"}, posts),
+        filter(lambda x: x.responsetype.capitalize() in {"Stories", "Highlights"}, posts),
         model_id=model_id,
         username=username,
     )

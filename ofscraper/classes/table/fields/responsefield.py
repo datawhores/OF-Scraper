@@ -22,49 +22,49 @@ class ResponseField(SelectField):
         self.filter_name = name
         self._pinned = Selection(
             "Pinned",
-            value="pinned",
+            value="Pinned",
             disabled=False,
             id=f"{self.filter_name}_pinned",
             initial_state=True,
         )
         self._archived = Selection(
             "Archived",
-            value="archived",
+            value="Archived",
             disabled=False,
             id=f"{self.filter_name}_archived",
             initial_state=True,
         )
         self._timeline = Selection(
             "Timeline",
-            value="timeline",
+            value="Timeline",
             disabled=False,
             id=f"{self.filter_name}_timeline",
             initial_state=True,
         )
         self._stories = Selection(
             "Stories",
-            value="stories",
+            value="Stories",
             disabled=False,
             id=f"{self.filter_name}_stories",
             initial_state=True,
         )
         self._highlights = Selection(
             "Highlights",
-            value="highlights",
+            value="Highlights",
             disabled=False,
             id=f"{self.filter_name}_highlights",
             initial_state=True,
         )
         self._streams = Selection(
             "Stream",
-            value="stream",
+            value="Stream",
             disabled=False,
             id=f"{self.filter_name}_stream",
             initial_state=True,
         )
         self._messages = Selection(
             "Message",
-            value="message",
+            value="Message",
             disabled=False,
             id=f"{self.filter_name}_message",
             initial_state=True,

@@ -30,7 +30,7 @@ from ofscraper.main.close.final.final import final_action
 from ofscraper.utils.checkers import check_auth
 import ofscraper.managers.manager as manager
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.context.exit as exit
 
 

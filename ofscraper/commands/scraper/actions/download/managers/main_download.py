@@ -46,9 +46,10 @@ import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.dates as dates
 import ofscraper.utils.system.system as system
-import ofscraper.utils.cache as cache
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
 from ofscraper.classes.of.media import Media
+from ofscraper.utils.cache.profile import set_profile_cache
+import ofscraper.utils.cache.cache as cache
 
 
 class MainDownloadManager(DownloadManager):
@@ -73,9 +74,9 @@ class MainDownloadManager(DownloadManager):
             ele.add_size(result[0])
 
             if result[0] == 0:
-                if ele.mediatype != "forced_skipped":
+                if ele.mediatype.capitalize() != "Forced_skipped":
                     await self._force_download(ele, username, model_id)
-                return ele.mediatype, 0
+                return ele.mediatype.capitalize(), 0
 
             return await self._handle_results_main(result, ele, username, model_id)
 
@@ -333,7 +334,7 @@ class MainDownloadManager(DownloadManager):
                 hashdata=await common.get_hash(path_to_file),
                 size=placeholderObj.size,
             )
-        await common.set_profile_cache_helper(ele)
+        await set_profile_cache(ele,common_globals.thread) # Mark profile as cached after successful download
         ele.add_filepath(placeholderObj.trunicated_filepath)
         self._after_download_script(path_to_file)
 
@@ -344,7 +345,6 @@ class MainDownloadManager(DownloadManager):
             common_globals.thread,
             partial(cache.get, f"{ele.id}_{ele.username}_headers"),
         )
-        # data=cache.get(f"{ele.id}_{ele.username}_headers")
         return data
 
     async def _set_data(self, ele, data):

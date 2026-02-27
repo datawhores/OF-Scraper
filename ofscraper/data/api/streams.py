@@ -36,7 +36,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 from ofscraper.data.api.common.timeline import process_posts_as_individual
 
-API = "streams"
+API = "Streams"
 log = logging.getLogger("shared")
 
 

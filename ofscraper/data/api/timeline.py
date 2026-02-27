@@ -36,7 +36,7 @@ from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_lo
 
 
 log = logging.getLogger("shared")
-API = "timeline"
+API = "Timeline"
 
 
 @run

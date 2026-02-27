@@ -4,7 +4,7 @@ import pathlib
 import re
 import arrow
 
-import ofscraper.utils.cache as cache
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.of_env.of_env as of_env
@@ -31,10 +31,10 @@ class basePlaceholder:
             "config_path": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),
             "site_name": "Onlyfans",
-            "save_location": common_paths.get_save_location(mediatype=self._ele),
+            "save_location": common_paths.get_save_location(),
             "my_id": my_id,
             "my_username": my_username,
-            "root": pathlib.Path((common_paths.get_save_location(mediatype=self._ele))),
+            "root": pathlib.Path((common_paths.get_save_location())),
         }
 
     def async_wrapper(f):
@@ -244,7 +244,7 @@ class Placeholders(basePlaceholder):
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or common_paths.get_save_location(mediatype=self._ele))
+        root = pathlib.Path(root or common_paths.get_save_location())
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
@@ -274,7 +274,7 @@ class Placeholders(basePlaceholder):
             f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         out = None
-        if ele.responsetype == "profile":
+        if ele.responsetype.capitalize() == "Profile":
             out = f"{await ele.final_filename}.{ext}"
         else:
             out = data.get_fileformat().format(**self._variables)
@@ -312,7 +312,7 @@ class Placeholders(basePlaceholder):
         # return early if pass
         if len((unique & file_format)) > 0:
             return False
-        elif len(ele._post.post_media) > 1 or ele.responsetype in [
+        elif len(ele._post.post_media) > 1 or ele.responsetype.lower() in [
             "stories",
             "highlights",
         ]:
@@ -482,7 +482,7 @@ class Textholders(basePlaceholder):
             f"modelid:{model_id}  filename placeholders {filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items()))}"
         )
         out = None
-        if ele.responsetype == "profile":
+        if ele.responsetype.capitalize() == "Profile":
             text = ele.file_sanitized_text
             text = re.sub(" ", data.get_spacereplacer(), text)
             out = f"{text}.{ext}"

@@ -13,20 +13,17 @@ r"""
 
 import asyncio
 import logging
-import math
 import traceback
 
-import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
-import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 log = logging.getLogger("shared")
-API = "pinned"
+API = "Pinned"
 
 
 @run
