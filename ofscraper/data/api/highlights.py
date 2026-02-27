@@ -263,3 +263,12 @@ def get_highlightList(data):
         if len(list(filter(lambda x: isinstance(x.get("id"), (int, str)), ele))) > 0:
             return [x.get("id") for x in ele]
     return []
+
+async def get_individual_highlights(id, c):
+    """
+    Compatibility wrapper for individual highlight fetching.
+    """
+    # This calls the internal worker we just modernized
+    async for batch in scrape_highlights_from_list(c, id):
+        return batch
+    return []
