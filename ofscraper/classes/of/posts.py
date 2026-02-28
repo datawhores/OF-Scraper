@@ -147,7 +147,7 @@ class Post(base.base):
 
     @property
     def label(self):
-        return self._label
+        return self._label.capitalize() if self._label else None
 
     @property
     def label_string(self):
@@ -163,7 +163,7 @@ class Post(base.base):
 
     @property
     def username(self):
-        return self._username
+        return self._username.lower() if self._username else None
 
     @property
     def archived(self):
@@ -183,7 +183,7 @@ class Post(base.base):
             return True
         else:
             return False
-
+l() if sel
     @property
     def opened(self):
         return 1 if self.post.get("isOpened") else 0

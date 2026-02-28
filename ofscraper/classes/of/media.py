@@ -221,11 +221,11 @@ class Media(base.base):
 
     @property
     def label(self):
-        return self._post.label
+        return self._post.label.capitalize()
 
     @property
     def label_string(self):
-        return self._post.label_string
+        return self._post.label_string.capitalize()
 
     @property
     def downloadtype(self):
@@ -233,11 +233,11 @@ class Media(base.base):
 
     @property
     def modified_responsetype(self):
-        return self._post.modified_responsetype
+        return self._post.modified_responsetype.capitalize()
 
     @property
     def responsetype(self):
-        return self._post.responsetype
+        return self._post.responsetype.capitalize()
 
     @property
     def value(self):
@@ -535,7 +535,7 @@ class Media(base.base):
 
     @property
     def username(self):
-        return self._post.username
+        return self._post.username.lower()
 
     @property
     def model_id(self):
