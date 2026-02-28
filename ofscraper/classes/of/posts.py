@@ -80,7 +80,7 @@ class Post(base.base):
         Determines if this post is specifically actionable for a like/unlike,
         assuming this post has already been marked as a like candidate.
         """
-        is_candidate = self.opened and self.responsetype.capitalize() in {
+        is_candidate = self.opened and self.responsetype in {
             "Timeline",
             "Archived",
             "Pinned",
@@ -314,7 +314,6 @@ l() if sel
                 
             # 3. Lookup in the lowercase config dictionary
             response = data.responsetype().get(response_key) 
-            
             # 4. Fallback: if no custom mapping exists, use the original type capitalized
             if response in (None, ""):
                 return self.responsetype.capitalize()
