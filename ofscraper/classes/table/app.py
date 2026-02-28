@@ -280,13 +280,8 @@ class InputApp(App):
 
     # filter runner
     def init_filtered_rows(self):
-        self._set_media_type()
-        self._set_length()
-        self._set_unlocked()
-        self._set_downloaded()
-        self._set_date_filter()
-        self._set_download_type()
-        self._set_post_id()
+        # #mediatype, #unlocked, #downloaded, #download_type, #post_id, #media_id, #length,
+        # #post_date are filtered in the component
         self._filter_runner()
 
     def set_filtered_rows(self):
@@ -302,8 +297,9 @@ class InputApp(App):
                 self.query_one("#data_table_hidden")._data[ele] for ele in key_order
             ]
             for name in get_col_names():
-                if name in {"number", "download_cart"}:
+                if name in {"number", "download_cart",'other_posts_with_media'}:
                     continue
+
                 try:
                     filter_rows = list(
                         filter(
@@ -311,9 +307,8 @@ class InputApp(App):
                             filter_rows,
                         )
                     )
-                    pass
                 except Exception as E:
-                    pass
+                    log.debug(f"Error filtering {name}: {str(E)}")
             self._filtered_rows = filter_rows
 
     # inputs
@@ -332,65 +327,8 @@ class InputApp(App):
             except:
                 continue
 
-    def _set_media_type(self):
-        mediatype = (
-            settings.get_settings().mediatype
-            if bool(settings.get_settings().mediatype)
-            else ["Audios", "Videos", "Images"]
-        )
-        self.query_one("#mediatype").query_one(SelectionList).deselect_all()
-        for ele in mediatype:
-            self.query_one("#mediatype").query_one(SelectionList).select(ele.lower())
 
-    def _set_unlocked(self):
-        if settings.get_settings().unlocked:
-            self.query_one("#unlocked").select_true()
 
-        elif settings.get_settings().unlocked is False:
-            self.query_one("#unlocked").select_false()
-
-    def _set_downloaded(self):
-        if settings.get_settings().downloaded:
-            self.query_one("#downloaded").select_true()
-
-        elif settings.get_settings().downloaded is False:
-            self.query_one("#downloaded").select_false()
-
-    def _set_length(self):
-        if settings.get_settings().length_max:
-            self.query_one("#length").update_table_max(
-                settings.get_settings().length_max
-            )
-        if settings.get_settings().length_min:
-            self.query_one("#length").update_table_min(
-                settings.get_settings().length_min
-            )
-
-    def _set_date_filter(self):
-        if settings.get_settings().posted_after:
-            self.query_one("#post_date").update_min_val(
-                settings.get_settings().posted_after
-            )
-        if settings.get_settings().posted_before:
-            self.query_one("#post_date").update_max_val(
-                settings.get_settings().posted_before
-            )
-
-    def _set_download_type(self):
-        if settings.get_settings().protected:
-            self.query_one("#download_type").select_protected()
-        if settings.get_settings().normal:
-            self.query_one("#download_type").select_normal()
-
-    def _set_post_id(self):
-        if settings.get_settings().post_id:
-            self.query_one("#post_id").update_table_val(settings.get_settings().post_id)
-
-    def _set_media_id(self):
-        if settings.get_settings().media_id:
-            self.query_one("#post_id").update_table_val(
-                settings.get_settings().media_id
-            )
 
     # download_filters
     def init_download_filter(self):

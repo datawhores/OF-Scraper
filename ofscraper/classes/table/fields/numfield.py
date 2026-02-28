@@ -1,13 +1,19 @@
 from textual.containers import Horizontal
 from ofscraper.classes.table.inputs.intergerinput import PostiveIntegerInput
-
+import ofscraper.utils.settings as settings
 class NumField(Horizontal):
     Field=PostiveIntegerInput
     def __init__(self, name: str, default=None) -> None:
         name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
-        self._set_default(default)
+        setting_val = getattr(settings.get_settings(), self.filter_name, None)
+        if setting_val:
+            if isinstance(setting_val, list):
+                setting_val = ",".join(map(str, setting_val))
+            self._set_default(setting_val)
+        else:
+            self._set_default(default)
         
 
     def _set_default(self, default):

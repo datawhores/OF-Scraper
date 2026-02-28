@@ -3,6 +3,7 @@ from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
+import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 
 
 class TimeField(Container):
@@ -19,9 +20,7 @@ class TimeField(Container):
     .min_length,.max_length{
     width:1fr;
     }
-
-    
-"""
+    """
 
     def __init__(self, name: str) -> None:
         name = name.lower()
@@ -40,6 +39,20 @@ class TimeField(Container):
             yield IntegerInput(placeholder="Hour", classes="max_length", id="max_hour")
             yield IntegerInput(placeholder="Min", classes="max_length", id="max_minute")
             yield IntegerInput(placeholder="Sec", classes="max_length", id="max_second")
+
+    def on_mount(self):
+        """
+        Self-Aware Logic: Runs immediately after the inputs are drawn to the screen.
+        Dynamically fetches "{name}_min" and "{name}_max" (e.g., length_min and length_max).
+        """
+        # Dynamically map the name (e.g., 'length') to settings (e.g., 'length_min')
+        min_val = getattr(settings.get_settings(), f"{self.filter_name}_min", None)
+        max_val = getattr(settings.get_settings(), f"{self.filter_name}_max", None)
+        
+        if min_val is not None:
+            self.update_table_min(min_val)
+        if max_val is not None:
+            self.update_table_max(max_val)
 
     def update_table_val(self, val):
         self.update_table_min(val)
@@ -82,7 +95,6 @@ class TimeField(Container):
             ele.value = ""
 
     def compare(self, value):
-
         max_val = arrow.get(
             "{hour}:{minute}:{second}".format(
                 hour=self.query_one("#max_hour").value or 0,

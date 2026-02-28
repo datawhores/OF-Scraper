@@ -1,8 +1,7 @@
 from textual.widgets import SelectionList
-
-from ofscraper.classes.table.fields.selectfield import SelectField
 from textual.widgets.selection_list import Selection
-
+from ofscraper.classes.table.fields.selectfield import SelectField
+import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 
 class MediaField(SelectField):
     DEFAULT_CSS = """
@@ -15,21 +14,39 @@ class MediaField(SelectField):
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
-        self._videos=Selection("Videos",value="videos",disabled=False,id=f"{self.filter_name}_videos",initial_state=True)
-        self._audios=Selection("Audios",value="audios",disabled=False,id=f"{self.filter_name}_audios",initial_state=True)
-        self._images=Selection("Images",value="images",disabled=False,id=f"{self.filter_name}_images",initial_state=True)
+        
+        # 1. Fetch the active media types from the config right now
+        active_media = settings.get_settings().mediatypes or ["Audios", "Videos", "Images"]
+        # 2. Harden the capitalization
+        active_media = [m.capitalize() for m in active_media] 
+
+        self._videos = Selection(
+            "Videos", value="Videos", id=f"{self.filter_name}_videos", 
+            initial_state="Videos" in active_media
+        )
+        self._audios = Selection(
+            "Audios", value="Audios", id=f"{self.filter_name}_audios", 
+            initial_state="Audios" in active_media
+        )
+        self._images = Selection(
+            "Images", value="Images", id=f"{self.filter_name}_images", 
+            initial_state="Images" in active_media
+        )
 
     def compose(self):
         yield SelectionList(
-                self._videos, self._images,self._audios
+            self._videos, 
+            self._images, 
+            self._audios
         )
+
+    def compare(self, value):
+        if not value:
+            return False
+        return str(value).capitalize() in self.query_one(SelectionList).selected
 
     def update_table_val(self, val):
         self.query_one(SelectionList).deselect_all()
-        if val == "videos":
-            self.query_one(SelectionList).select(self._videos)
-        elif val == "audios":
-            self.query_one(SelectionList).select(self._audios)
-
-        elif val == "images":
-            self.query_one(SelectionList).select(self._images)
+        val_cap = str(val).capitalize()
+        if val_cap in ["Videos", "Audios", "Images"]:
+            self.query_one(SelectionList).select(val_cap)

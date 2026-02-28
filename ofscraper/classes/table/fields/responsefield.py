@@ -83,17 +83,18 @@ class ResponseField(SelectField):
 
     def update_table_val(self, val):
         self.query_one(SelectionList).deselect_all()
-        if val == "pinned":
+        val=val.capitalize()
+        if val == "Pinned":
             self.query_one(SelectionList).select(self._pinned)
-        elif val == "archived":
+        elif val == "Archived":
             self.query_one(SelectionList).select(self._archived)
-        elif val == "timeline":
+        elif val == "Timeline":
             self.query_one(SelectionList).select(self._timeline)
-        elif val == "stories":
+        elif val == "Stories":
             self.query_one(SelectionList).select(self._stories)
-        elif val == "highlights":
+        elif val == "Highlights":
             self.query_one(SelectionList).select(self._highlights)
-        elif val == "stream":
+        elif val == "Stream":
             self.query_one(SelectionList).select(self._streams)
-        elif val == "messages":
+        elif val == "Messages":
             self.query_one(SelectionList).select(self._messages)

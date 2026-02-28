@@ -1,8 +1,9 @@
+from ofscraper.utils import settings
 from textual.widgets import SelectionList
 
 from ofscraper.classes.table.fields.selectfield import SelectField
 from textual.widgets.selection_list import Selection
-
+import ofscraper.utils.settings as settings 
 
 class DownloadField(SelectField):
     DEFAULT_CSS = """
@@ -16,21 +17,17 @@ class DownloadField(SelectField):
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
+        dl_type = settings.get_settings().download_type
+        # If None, both are checked. If "normal", only normal is checked, etc.
+        normal_state = dl_type in ["normal", None]
+        protected_state = dl_type in ["protected", None]
+
         self._normal = Selection(
-            "Normal Download",
-            value="normal",
-            disabled=False,
-            id=f"{self.filter_name}_normal",
-            initial_state=True,
+            "Normal Download", value="normal", id=f"{self.filter_name}_normal", initial_state=normal_state
         )
         self._protected = Selection(
-            "Protected Download",
-            value="protected",
-            disabled=False,
-            id=f"{self.filter_name}_protected",
-            initial_state=True,
+            "Protected Download", value="protected", id=f"{self.filter_name}_protected", initial_state=protected_state
         )
-
     def compose(self):
         yield SelectionList(self._normal, self._protected)
 

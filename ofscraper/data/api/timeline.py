@@ -298,7 +298,7 @@ async def scrape_timeline_posts(
 
                 new_ts = batch[-1]["postedAtPrecise"]
 
-                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(
+                if str(new_ts) == str(current_timestamp) or float(new_ts) > max(
                     required_ids
                 ):
                     break

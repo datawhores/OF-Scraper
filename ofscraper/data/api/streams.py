@@ -249,11 +249,10 @@ async def scrape_stream_posts(
                     break
 
                 new_ts = batch[-1].get("postedAtPrecise")
-                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(
+                if str(new_ts) == str(current_timestamp) or float(new_ts) > max(
                     required_ids
                 ):
                     break
-
                 current_timestamp = new_ts
 
         except Exception as E:

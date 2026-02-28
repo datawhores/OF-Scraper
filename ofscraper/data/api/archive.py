@@ -322,11 +322,10 @@ async def scrape_archived_posts(
                 new_ts = batch[-1]["postedAtPrecise"]
 
                 # SAFETY CHECK: Prevent stuck API or boundary overshoot
-                if str(new_ts) == str(current_timestamp) or float(new_ts) < min(
+                if str(new_ts) == str(current_timestamp) or float(new_ts) > max(
                     required_ids
                 ):
                     break
-
                 current_timestamp = new_ts
 
         except Exception as E:

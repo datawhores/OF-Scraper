@@ -68,6 +68,8 @@ force = click.option(
     "-fo",
     "--force",
     "--forced",
+    "--forced-scan",
+    "--force-scan",
     help="Force retrieval of new posts info from API",
     is_flag=True,
     default=False,

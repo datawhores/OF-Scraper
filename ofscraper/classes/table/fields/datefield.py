@@ -1,8 +1,8 @@
 import re
-
 import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Input
+import ofscraper.utils.settings as settings # Reconnect to truth
 
 
 class DateField(Container):
@@ -13,12 +13,11 @@ class DateField(Container):
 
     #maxDate{
         width:50%;
-
     }
+    
     DateField{
-    row-span:2;
+        row-span:2;
     }
-
     """
 
     def __init__(self, name: str) -> None:
@@ -30,6 +29,22 @@ class DateField(Container):
         with Horizontal():
             yield Input(placeholder="Earliest Date", id="minDate")
             yield Input(placeholder="Latest Date", id="maxDate")
+
+    def on_mount(self):
+        """
+        Self-Aware Logic: Maps 'post_date' to settings 'posted_after' / 'posted_before'
+        Runs immediately after the widget is drawn.
+        """
+        # Map filter_name to the config prefix (e.g., 'post_date' becomes 'posted')
+        prefix = "posted" if self.filter_name == "post_date" else self.filter_name
+        
+        min_val = getattr(settings.get_settings(), f"{prefix}_after", None)
+        max_val = getattr(settings.get_settings(), f"{prefix}_before", None)
+
+        if min_val:
+            self.update_min_val(min_val)
+        if max_val:
+            self.update_max_val(max_val)
 
     def update_table_val(self, val):
         val = self.convertString(val)
@@ -49,9 +64,9 @@ class DateField(Container):
     def update_max_val(self, val):
         val = self.convertString(val)
         if val != "":
-            self.query("#maxDate").value = arrow.get(val).format("YYYY.MM.DD")
+            self.query_one("#maxDate").value = arrow.get(val).format("YYYY.MM.DD")
         else:
-            self.query("#maxDate").value = ""
+            self.query_one("#maxDate").value = ""
 
     def reset(self):
         for ele in self.query(Input):
@@ -59,7 +74,7 @@ class DateField(Container):
 
     def convertString(self, val):
         val = str(val)
-        match = re.search("[0-9-/\.]+", val)
+        match = re.search(r"[0-9-/\.]+", val)
         if not match:
             return ""
         return match.group(0)
