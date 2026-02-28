@@ -576,7 +576,6 @@ class Media(base.base):
             text = f"{date_str} {self.text or self.filename}"
         return text
 
-
     @async_cached_property
     async def _video_adaptation_set(self):
         """Finds and caches the first video/mp4 AdaptationSet."""
@@ -689,7 +688,7 @@ class Media(base.base):
         }
 
     def normal_quality_helper(self):
-        if self.mediatype.capitalize()  != "Videos":
+        if self.mediatype.capitalize() != "Videos":
             return "source"
 
         allowed = quality.get_allowed_qualities()
@@ -713,7 +712,7 @@ class Media(base.base):
 
     async def _get_final_filename_async(self):
         filename = self.filename or str(self.id)
-        if self.mediatype.capitalize()  == "Videos":
+        if self.mediatype.capitalize() == "Videos":
             filename = re.sub("_[a-z0-9]+$", "", filename)
             quality_placeholder = await self.selected_quality_placeholder
             filename = f"{filename}_{quality_placeholder}"

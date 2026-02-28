@@ -48,7 +48,7 @@ class TimeField(Container):
         # Dynamically map the name (e.g., 'length') to settings (e.g., 'length_min')
         min_val = getattr(settings.get_settings(), f"{self.filter_name}_min", None)
         max_val = getattr(settings.get_settings(), f"{self.filter_name}_max", None)
-        
+
         if min_val is not None:
             self.update_table_min(min_val)
         if max_val is not None:

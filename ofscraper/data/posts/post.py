@@ -266,7 +266,9 @@ async def process_profile(username) -> list:
         # We no longer need a manual loop to map keys here.
         # We simply initialize Post objects with the already-hardened data.
         posts_array = [
-            posts_.Post(data, model_id=info[2], username=username, responsetype=profile.API)
+            posts_.Post(
+                data, model_id=info[2], username=username, responsetype=profile.API
+            )
             for data in standardized_dicts
         ]
         return posts_array, profile.API
@@ -275,6 +277,7 @@ async def process_profile(username) -> list:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         return [], profile.API
+
 
 @free.space_checker
 @run

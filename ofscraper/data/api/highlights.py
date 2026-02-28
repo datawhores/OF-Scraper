@@ -20,7 +20,7 @@ import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import  trace_progress_log,trace_log_raw
+from ofscraper.data.api.common.logs.logs import trace_progress_log, trace_log_raw
 
 log = logging.getLogger("shared")
 API_S = "Stories"
@@ -166,7 +166,9 @@ async def process_task_get_highlight_list(generators):
     progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
     log.debug(
-    common_logs.FINAL_COUNT_ITEM.format('Highlight List', len(highlightLists),"highlights")
+        common_logs.FINAL_COUNT_ITEM.format(
+            "Highlight List", len(highlightLists), "highlights"
+        )
     )
     return highlightLists
 
@@ -204,7 +206,8 @@ async def process_task_highlights(generators):
         )
         if batch:
             new_posts = [
-                p for p in batch
+                p
+                for p in batch
                 if p.get("id") not in seen and not seen.add(p.get("id"))
             ]
             highlightResponse.extend(new_posts)
@@ -216,7 +219,9 @@ async def process_task_highlights(generators):
     )
     trace_log_raw(f"{API_H} lists posts final", highlightResponse, final_count=True)
     log.debug(
-        common_logs.FINAL_COUNT_POST.format('Highlight List Posts',{len(highlightResponse)})
+        common_logs.FINAL_COUNT_POST.format(
+            "Highlight List Posts", {len(highlightResponse)}
+        )
     )
     return highlightResponse
 
@@ -278,6 +283,7 @@ def get_highlightList(data):
             return [x.get("id") for x in ele]
     return []
 
+
 async def get_individual_highlights(id, c):
     """
     Compatibility wrapper for individual highlight fetching.
@@ -286,6 +292,7 @@ async def get_individual_highlights(id, c):
     async for batch in scrape_highlights_from_list(c, id):
         return batch
     return []
+
 
 async def get_individual_stories(id, c):
     """

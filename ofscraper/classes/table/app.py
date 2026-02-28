@@ -39,7 +39,7 @@ class InputApp(App):
     # Main
     def __call__(self, *args, **kwargs):
         """
-        Entry point for the TUI. Captures external data and resets 
+        Entry point for the TUI. Captures external data and resets
         internal state variables before launching the application loop.
         Args:
             table_data (list): The raw data (models/posts) used to populate the UI.
@@ -74,7 +74,6 @@ class InputApp(App):
         self.init_table()
         # Link the shared logger to the 'OutConsole' widget to display logs in real-time
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
-
 
     # events
     def on_data_table_header_selected(self, event):
@@ -297,7 +296,7 @@ class InputApp(App):
                 self.query_one("#data_table_hidden")._data[ele] for ele in key_order
             ]
             for name in get_col_names():
-                if name in {"number", "download_cart",'other_posts_with_media'}:
+                if name in {"number", "download_cart", "other_posts_with_media"}:
                     continue
 
                 try:
@@ -326,9 +325,6 @@ class InputApp(App):
                 self.query_one(f"#{ele}").reset()
             except:
                 continue
-
-
-
 
     # download_filters
     def init_download_filter(self):

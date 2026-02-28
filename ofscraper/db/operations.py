@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import logging
@@ -53,7 +53,8 @@ log = logging.getLogger("shared")
 async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
     await make_post_table_changes(
         filter(
-            lambda x: x.responsetype.capitalize() in {"Timeline", "Pinned", "Archived", "Streams"},
+            lambda x: x.responsetype.capitalize()
+            in {"Timeline", "Pinned", "Archived", "Streams"},
             posts,
         ),
         model_id=model_id,
@@ -65,7 +66,9 @@ async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
         username=username,
     )
     await make_stories_table_changes(
-        filter(lambda x: x.responsetype.capitalize() in {"Stories", "Highlights"}, posts),
+        filter(
+            lambda x: x.responsetype.capitalize() in {"Stories", "Highlights"}, posts
+        ),
         model_id=model_id,
         username=username,
     )

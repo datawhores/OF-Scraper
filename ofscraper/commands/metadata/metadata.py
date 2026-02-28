@@ -131,7 +131,9 @@ class MetadataCommandManager(CommandManager):
         )
 
         # Mark this user as processed for the metadata activity
-        manager.Manager.current_model_manager.mark_as_processed(username, activity="metadata")
+        manager.Manager.current_model_manager.mark_as_processed(
+            username, activity="metadata"
+        )
 
     async def _get_metadata_for_user(self, c, ele):
         """

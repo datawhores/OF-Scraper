@@ -87,33 +87,36 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
         raise E
 
 
-
 def parse_profile(profile: dict) -> tuple:
     # Identify valid media URLs from the raw profile dict
-    media_urls = list(filter(None, [
-        profile.get("avatar"),
-        profile.get("header"),
-        profile.get("profile")
-    ]))
+    media_urls = list(
+        filter(
+            None, [profile.get("avatar"), profile.get("header"), profile.get("profile")]
+        )
+    )
 
     output = []
     for ele in media_urls:
         # Standardizing structure and casing for hardening
-        output.append({
-            "id": xxh128(ele).hexdigest(),
-            "postedAt": profile.get("joinDate"),
-            "text": profile.get("about"),
-            "responsetype": "Profile",  # Capitalized
-            "mediatype": "Photo",      # Capitalized
-            "value": "Free",           # Hardened value for price filtering
-            "media": [{
-                "id": xxh128(ele[:-1]).hexdigest(),
-                "type": "photo",
-                "canView": True,
-                "source": {"source": ele},
-                "createdAt": profile.get("joinDate"),
-            }]
-        })
+        output.append(
+            {
+                "id": xxh128(ele).hexdigest(),
+                "postedAt": profile.get("joinDate"),
+                "text": profile.get("about"),
+                "responsetype": "Profile",  # Capitalized
+                "mediatype": "Photo",  # Capitalized
+                "value": "Free",  # Hardened value for price filtering
+                "media": [
+                    {
+                        "id": xxh128(ele[:-1]).hexdigest(),
+                        "type": "photo",
+                        "canView": True,
+                        "source": {"source": ele},
+                        "createdAt": profile.get("joinDate"),
+                    }
+                ],
+            }
+        )
 
     # Keep info tuple consistent for existing profile info prints
     info = (

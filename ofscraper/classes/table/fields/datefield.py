@@ -2,7 +2,7 @@ import re
 import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Input
-import ofscraper.utils.settings as settings # Reconnect to truth
+import ofscraper.utils.settings as settings  # Reconnect to truth
 
 
 class DateField(Container):
@@ -37,7 +37,7 @@ class DateField(Container):
         """
         # Map filter_name to the config prefix (e.g., 'post_date' becomes 'posted')
         prefix = "posted" if self.filter_name == "post_date" else self.filter_name
-        
+
         min_val = getattr(settings.get_settings(), f"{prefix}_after", None)
         max_val = getattr(settings.get_settings(), f"{prefix}_before", None)
 

@@ -334,7 +334,9 @@ class MainDownloadManager(DownloadManager):
                 hashdata=await common.get_hash(path_to_file),
                 size=placeholderObj.size,
             )
-        await set_profile_cache(ele,common_globals.thread) # Mark profile as cached after successful download
+        await set_profile_cache(
+            ele, common_globals.thread
+        )  # Mark profile as cached after successful download
         ele.add_filepath(placeholderObj.trunicated_filepath)
         self._after_download_script(path_to_file)
 

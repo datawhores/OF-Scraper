@@ -70,8 +70,10 @@ def print_start_message():
     message = cache.get("OFSCRAPER_MESSAGE")
     if message:
         return message
-    with  BareSession.get_bare_session(url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD",
-method="get") as sess:
+    with BareSession.get_bare_session(
+        url="https://raw.githubusercontent.com/datawhores/messages/main/ofscraper.MD",
+        method="get",
+    ) as sess:
         data = re.sub("\n", "", sess.text)
         if not data:
             return
@@ -81,7 +83,9 @@ method="get") as sess:
 
 def print_latest_version():
     log = logging.getLogger("shared")
-    with  BareSession.get_bare_session(url="https://pypi.org/pypi/ofscraper/json",method="get") as sess:
+    with BareSession.get_bare_session(
+        url="https://pypi.org/pypi/ofscraper/json", method="get"
+    ) as sess:
         data = sess.json()
         if not data:
             return

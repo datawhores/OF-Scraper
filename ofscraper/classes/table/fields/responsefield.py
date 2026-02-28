@@ -83,7 +83,7 @@ class ResponseField(SelectField):
 
     def update_table_val(self, val):
         self.query_one(SelectionList).deselect_all()
-        val=val.capitalize()
+        val = val.capitalize()
         if val == "Pinned":
             self.query_one(SelectionList).select(self._pinned)
         elif val == "Archived":

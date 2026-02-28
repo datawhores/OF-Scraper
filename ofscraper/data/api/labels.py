@@ -96,7 +96,8 @@ async def process_tasks_labels(generators):
 
         if batch:
             new_labels = [
-                label for label in batch
+                label
+                for label in batch
                 if label.get("id") not in seen and not seen.add(label.get("id"))
             ]
             log.debug(
@@ -176,8 +177,15 @@ async def process_tasks_get_posts_for_labels(generators, labels):
 
     # Detailed summary counts
     log.debug(
-        common_logs.FINAL_COUNT_POST.format('All Labels Content',
-            len([item['id'] for value in responseDict.values() for item in value.get('posts', [])])
+        common_logs.FINAL_COUNT_POST.format(
+            "All Labels Content",
+            len(
+                [
+                    item["id"]
+                    for value in responseDict.values()
+                    for item in value.get("posts", [])
+                ]
+            ),
         )
     )
     log.debug(
@@ -201,7 +209,9 @@ async def scrape_labels(c, model_id, offset=0):
     while True:
         url = of_env.getattr("labelsEP").format(model_id, current_offset)
         task = None
-        log.debug(f"trying to access label names with url:{url}  offset:{current_offset}")
+        log.debug(
+            f"trying to access label names with url:{url}  offset:{current_offset}"
+        )
         try:
             task = progress_utils.api.add_job_task(
                 f"labels offset -> {current_offset}", visible=True
@@ -211,14 +221,18 @@ async def scrape_labels(c, model_id, offset=0):
                     break
 
                 data = await r.json_()
-                log.debug(f"successfully access label names with url:{url}  offset:{current_offset}")
-                
+                log.debug(
+                    f"successfully access label names with url:{url}  offset:{current_offset}"
+                )
+
                 media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
                 batch = media_lists[0] if media_lists else []
 
                 log.debug(f"offset:{current_offset} -> labels names found {len(batch)}")
-                log.debug(f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined')}")
-                
+                log.debug(
+                    f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined')}"
+                )
+
                 trace_progress_log(f"{API} names requests", data)
 
                 if not batch:
@@ -246,7 +260,9 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             model_id, current_offset, label["id"]
         )
         task = None
-        log.debug(f"trying to access label content with url:{url}  offset:{current_offset}")
+        log.debug(
+            f"trying to access label content with url:{url}  offset:{current_offset}"
+        )
         try:
             task = progress_utils.api.add_job_task(
                 f": getting posts from label -> {label['name']}", visible=True
@@ -256,13 +272,19 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
                     break
 
                 data = await r.json_()
-                log.debug(f"successfully access label content with url:{url}  offset:{current_offset}")
-                
+                log.debug(
+                    f"successfully access label content with url:{url}  offset:{current_offset}"
+                )
+
                 media_lists = list(filter(lambda x: isinstance(x, list), data.values()))
                 batch = media_lists[0] if media_lists else []
 
-                log.debug(f"offset:{current_offset} -> labelled posts found {len(batch)}")
-                log.debug(f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined')}")
+                log.debug(
+                    f"offset:{current_offset} -> labelled posts found {len(batch)}"
+                )
+                log.debug(
+                    f"offset:{current_offset} -> hasMore value in json {data.get('hasMore','undefined')}"
+                )
 
                 trace_progress_log(f"{API} content requests", data)
 

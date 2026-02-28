@@ -2,7 +2,8 @@ from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
-import ofscraper.utils.settings as settings # Bring in the source of truth
+import ofscraper.utils.settings as settings  # Bring in the source of truth
+
 
 class SelectField(Widget):
     DEFAULT_CSS = """
@@ -16,10 +17,10 @@ class SelectField(Widget):
         name = name.lower()
         super().__init__(id=name, classes=classes)
         self.filter_name = name
-        
+
         # 1. Dynamically fetch the setting (e.g., settings.unlocked or settings.downloaded)
         setting_val = getattr(settings.get_settings(), self.filter_name, None)
-        
+
         # 2. Determine initial states
         true_state = (setting_val is True) or (setting_val is None)
         false_state = (setting_val is False) or (setting_val is None)

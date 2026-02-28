@@ -104,10 +104,15 @@ def get_profile_path(name=None):
     """
     Determines the correct profile path based on a priority order.
     """
-    profile_name = name or settings.get_settings().profile or profile_data.get_current_config_profile()
+    profile_name = (
+        name
+        or settings.get_settings().profile
+        or profile_data.get_current_config_profile()
+    )
     profile = get_config_home() / profile_name
     # Sanitize and return the final path, matching the original function's behavior
     return pathlib.Path(tools.profile_name_fixer(str(profile)))
+
 
 def get_save_location(config=None):
     if config is False:
