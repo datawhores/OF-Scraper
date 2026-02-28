@@ -183,7 +183,6 @@ class Post(base.base):
             return True
         else:
             return False
-l() if sel
     @property
     def opened(self):
         return 1 if self.post.get("isOpened") else 0
@@ -316,7 +315,7 @@ l() if sel
             response = data.responsetype().get(response_key) 
             # 4. Fallback: if no custom mapping exists, use the original type capitalized
             if response in (None, ""):
-                return self.responsetype.capitalize()
+                return self.responsetype.cap
             
             # 5. Return the mapped value capitalized (e.g., "messages" -> "Messages")
             return response.capitalize() 
