@@ -73,7 +73,7 @@ class MetaDataManager:
             effected = prevData != await prev_download_media_data(
                 ele, model_id=model_id, username=username
             )
-        return ele.mediatype.capitalize() if effected else "Forced_skipped"
+        return ele.mediatype if effected else "Forced_skipped"
 
     def _metadata_downloaded_helper(self, placeholderObj, prevData):
         if settings.get_settings().metadata == "check":
