@@ -315,7 +315,7 @@ class Post(base.base):
             response = data.responsetype().get(response_key) 
             # 4. Fallback: if no custom mapping exists, use the original type capitalized
             if response in (None, ""):
-                return self.responsetype.cap
+                return self.responsetype.capitalize()
             
             # 5. Return the mapped value capitalized (e.g., "messages" -> "Messages")
             return response.capitalize() 
