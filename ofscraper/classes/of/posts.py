@@ -302,21 +302,25 @@ l() if sel
     @property
     def modified_responsetype(self):
         if self.archived:
-            if not bool(data.get_archived_responsetype()):
-                return "Archived"
-            return data.get_archived_responsetype()
+            # Check if user has a custom Archived label, otherwise default to "Archived"
+            return data.get_archived_responsetype() or "Archived" 
         else:
-            response_key = self.responsetype
-            response_key = (
-                "timeline"
-                if response_key.capitalize() in {"Post", "Posts"}
-                else response_key
-            )
-            response = data.responsetype().get(response_key)
+            # 1. Normalize the key to lowercase for dictionary lookup
+            response_key = self.responsetype.lower() 
+            
+            # 2. Handle the "Post/Posts" alias normalization
+            if response_key in {"post", "posts"}:
+                response_key = "timeline"
+                
+            # 3. Lookup in the lowercase config dictionary
+            response = data.responsetype().get(response_key) 
+            
+            # 4. Fallback: if no custom mapping exists, use the original type capitalized
             if response in (None, ""):
                 return self.responsetype.capitalize()
-            else:
-                return response.capitalize()
+            
+            # 5. Return the mapped value capitalized (e.g., "messages" -> "Messages")
+            return response.capitalize() 
 
     def _apply_media_filters(self, media: list) -> list:
         """
