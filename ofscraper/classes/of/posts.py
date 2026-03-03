@@ -183,6 +183,7 @@ class Post(base.base):
             return True
         else:
             return False
+
     @property
     def opened(self):
         return 1 if self.post.get("isOpened") else 0
@@ -302,23 +303,23 @@ class Post(base.base):
     def modified_responsetype(self):
         if self.archived:
             # Check if user has a custom Archived label, otherwise default to "Archived"
-            return data.get_archived_responsetype() or "Archived" 
+            return data.get_archived_responsetype() or "Archived"
         else:
             # 1. Normalize the key to lowercase for dictionary lookup
-            response_key = self.responsetype.lower() 
-            
+            response_key = self.responsetype.lower()
+
             # 2. Handle the "Post/Posts" alias normalization
             if response_key in {"post", "posts"}:
                 response_key = "timeline"
-                
+
             # 3. Lookup in the lowercase config dictionary
-            response = data.responsetype().get(response_key) 
+            response = data.responsetype().get(response_key)
             # 4. Fallback: if no custom mapping exists, use the original type capitalized
             if response in (None, ""):
                 return self.responsetype.capitalize()
-            
+
             # 5. Return the mapped value capitalized (e.g., "messages" -> "Messages")
-            return response.capitalize() 
+            return response.capitalize()
 
     def _apply_media_filters(self, media: list) -> list:
         """

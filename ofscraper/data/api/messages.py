@@ -30,7 +30,7 @@ from ofscraper.db.operations_.messages import (
     get_messages_post_info,
     get_newest_message_date,
     mark_message_as_deleted,
-    get_deleted_messages_ids
+    get_deleted_messages_ids,
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
@@ -42,11 +42,13 @@ log = logging.getLogger("shared")
 @run
 async def get_messages(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
-    
+
     time_log(username, after)
     post_id = post_id or []
-    
-    if len(post_id) == 0 or len(post_id) > of_env.getattr("MAX_MESSAGES_INDIVIDUAL_SEARCH"):
+
+    if len(post_id) == 0 or len(post_id) > of_env.getattr(
+        "MAX_MESSAGES_INDIVIDUAL_SEARCH"
+    ):
         splitArrays, anchor_id = await get_split_array(model_id, username, after)
         generators = get_tasks(splitArrays, anchor_id, c, model_id, username, after)
         data = await process_tasks(generators)
@@ -55,12 +57,14 @@ async def get_messages(model_id, username, c=None, post_id=None):
 
     update_check(data, model_id, after, API)
     return data
+
+
 async def get_old_messages(model_id, username):
     if not settings.get_settings().api_cache_disabled:
         oldmessages = await get_messages_post_info(model_id=model_id, username=username)
     else:
         oldmessages = []
-        
+
     oldmessages = list(filter(lambda x: x is not None, oldmessages))
     seen = set()
     oldmessages = [
@@ -133,7 +137,9 @@ async def process_tasks(generators):
             trace_progress_log(f"{API} task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    log.debug(f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x: x.get('id'), responseArray))}")
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x: x.get('id'), responseArray))}"
+    )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Messages", len(responseArray)))
     return responseArray
@@ -143,30 +149,44 @@ async def get_split_array(model_id, username, after):
     oldmessages = await get_old_messages(model_id, username)
     if len(oldmessages) == 0:
         return [], None
-        
+
     before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
-    
+
     # Sort descending (Newest first)
-    postsDataArray = sorted(oldmessages, key=lambda x: arrow.get(x.get("created_at") or 0).float_timestamp, reverse=True)
-    
+    postsDataArray = sorted(
+        oldmessages,
+        key=lambda x: arrow.get(x.get("created_at") or 0).float_timestamp,
+        reverse=True,
+    )
+
     # Read the cache from Oldest to Newest. Find the first message that is NEWER than our 'before' limit.
     # This guarantees the API sweeps perfectly over the 'before' boundary without missing a gap.
-    anchor_id = next((m.get("post_id") for m in reversed(postsDataArray) if float(m.get("created_at") or 0) >= before), None)
+    anchor_id = next(
+        (
+            m.get("post_id")
+            for m in reversed(postsDataArray)
+            if float(m.get("created_at") or 0) >= before
+        ),
+        None,
+    )
 
     # Filter out anything older than 'after' OR newer than 'before'
-    filteredArray = [x for x in postsDataArray if after <= float(x.get("created_at") or 0) <= before]
+    filteredArray = [
+        x for x in postsDataArray if after <= float(x.get("created_at") or 0) <= before
+    ]
 
     min_posts = max(
         len(oldmessages) // of_env.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
         of_env.getattr("MIN_PAGE_POST_COUNT"),
     )
-    
+
     splitArrays = [
         filteredArray[i : i + min_posts]
         for i in range(0, len(filteredArray), min_posts)
     ]
-    
+
     return splitArrays, anchor_id
+
 
 def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
     tasks = []
@@ -175,54 +195,81 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
     if len(splitArrays) == 0:
         tasks.append(
             scrape_messages(
-                c, model_id, username, 
-                message_id=anchor_id, 
-                is_last_chunk=True, 
-                after=after
+                c,
+                model_id,
+                username,
+                message_id=anchor_id,
+                is_last_chunk=True,
+                after=after,
             )
         )
         return tasks
 
-    # Scenarios 2 & 3: Dynamic Chunking 
+    # Scenarios 2 & 3: Dynamic Chunking
     for i, chunk in enumerate(splitArrays):
-        is_first_chunk = (i == 0)
-        is_final_chunk = (i == len(splitArrays) - 1)
-        
-        # The first chunk uses the teleport anchor. 
+        is_first_chunk = i == 0
+        is_final_chunk = i == len(splitArrays) - 1
+
+        # The first chunk uses the teleport anchor.
         # Subsequent chunks use the ID of the OLDEST message in the previous chunk.
-        start_id = anchor_id if is_first_chunk else splitArrays[i - 1][-1].get("post_id")
-        start_timestamp = arrow.now().float_timestamp if is_first_chunk else float(splitArrays[i - 1][-1].get("created_at"))
-        
+        start_id = (
+            anchor_id if is_first_chunk else splitArrays[i - 1][-1].get("post_id")
+        )
+        start_timestamp = (
+            arrow.now().float_timestamp
+            if is_first_chunk
+            else float(splitArrays[i - 1][-1].get("created_at"))
+        )
+
         tasks.append(
             scrape_messages(
-                c, model_id, username,
+                c,
+                model_id,
+                username,
                 message_id=start_id,
                 start_timestamp=start_timestamp,
-                required_posts=[{"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")} for ele in chunk],
+                required_posts=[
+                    {"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")}
+                    for ele in chunk
+                ],
                 is_last_chunk=is_final_chunk,
-                after=after
+                after=after,
             )
         )
 
     return tasks
 
-async def scrape_messages(c, model_id, username, message_id=None, start_timestamp=None, required_posts=None, is_last_chunk=False, after=0):
+
+async def scrape_messages(
+    c,
+    model_id,
+    username,
+    message_id=None,
+    start_timestamp=None,
+    required_posts=None,
+    is_last_chunk=False,
+    after=0,
+):
     required_posts = required_posts or []
     expected_missing = [p for p in required_posts]
     required_ids = {p["post_id"] for p in required_posts}
-    
+
     # Anchor point for the Inverted Ghost Trap
     start_anchor = start_timestamp if start_timestamp else arrow.now().float_timestamp
-    all_ghosts_found = [] 
-    
+    all_ghosts_found = []
+
     current_message_id = message_id
     has_more = True
 
     try:
         while has_more:
-            ep = of_env.getattr("messagesNextEP") if current_message_id else of_env.getattr("messagesEP")
+            ep = (
+                of_env.getattr("messagesNextEP")
+                if current_message_id
+                else of_env.getattr("messagesEP")
+            )
             url = ep.format(model_id, current_message_id)
-            
+
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.error(f"Messages API Error: {r.status} for {url}")
@@ -239,12 +286,21 @@ async def scrape_messages(c, model_id, username, message_id=None, start_timestam
                     break
 
                 # Extract timestamps and IDs
-                batch_timestamps = [float(arrow.get(x.get("createdAt") or x.get("postedAt")).float_timestamp) for x in batch]
-                min_ts = min(batch_timestamps) # The oldest message in this batch
+                batch_timestamps = [
+                    float(
+                        arrow.get(
+                            x.get("createdAt") or x.get("postedAt")
+                        ).float_timestamp
+                    )
+                    for x in batch
+                ]
+                min_ts = min(batch_timestamps)  # The oldest message in this batch
                 batch_ids = {x["id"] for x in batch}
 
                 # Clear found IDs
-                expected_missing = [p for p in expected_missing if p["post_id"] not in batch_ids]
+                expected_missing = [
+                    p for p in expected_missing if p["post_id"] not in batch_ids
+                ]
                 for ele in batch:
                     required_ids.discard(ele["id"])
 
@@ -258,7 +314,11 @@ async def scrape_messages(c, model_id, username, message_id=None, start_timestam
 
                 if ghosts_in_batch:
                     all_ghosts_found.extend(ghosts_in_batch)
-                    expected_missing = [p for p in expected_missing if p["post_id"] not in ghosts_in_batch]
+                    expected_missing = [
+                        p
+                        for p in expected_missing
+                        if p["post_id"] not in ghosts_in_batch
+                    ]
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
@@ -282,8 +342,12 @@ async def scrape_messages(c, model_id, username, message_id=None, start_timestam
         log.traceback_(traceback.format_exc())
     finally:
         if all_ghosts_found:
-            log.info(f"Worker finished. Flagging {len(all_ghosts_found)} ghost messages in database.")
-            await mark_message_as_deleted(post_ids=all_ghosts_found, model_id=model_id, username=username)
+            log.info(
+                f"Worker finished. Flagging {len(all_ghosts_found)} ghost messages in database."
+            )
+            await mark_message_as_deleted(
+                post_ids=all_ghosts_found, model_id=model_id, username=username
+            )
 
 
 async def get_individual_messages_post(model_id, postid, c):
@@ -297,20 +361,25 @@ async def get_individual_messages_post(model_id, postid, c):
 
 
 async def get_after(model_id, username):
-    
+
     prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
-        return max(float(prechecks),  arrow.get("2000").float_timestamp)
+        return max(float(prechecks), arrow.get("2000").float_timestamp)
 
     curr = await get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         return arrow.get("2000").float_timestamp
 
-    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
-    deleted_messages = await get_deleted_messages_ids(model_id=model_id, username=username)
+    curr_downloaded = await get_media_ids_downloaded_model(
+        model_id=model_id, username=username
+    )
+    deleted_messages = await get_deleted_messages_ids(
+        model_id=model_id, username=username
+    )
 
     filtered_items = [
-        x for x in curr
+        x
+        for x in curr
         if x.get("downloaded") != 1
         and x.get("media_id") not in curr_downloaded
         and x.get("post_id") not in deleted_messages
@@ -324,11 +393,17 @@ async def get_after(model_id, username):
     unique_missing = {}
     for item in filtered_items:
         mid = item.get("media_id")
-        if mid not in unique_missing or arrow.get(item.get("posted_at") or 0) > arrow.get(unique_missing[mid].get("posted_at") or 0):
+        if mid not in unique_missing or arrow.get(
+            item.get("posted_at") or 0
+        ) > arrow.get(unique_missing[mid].get("posted_at") or 0):
             unique_missing[mid] = item
 
-    missing_items = sorted(list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0))
-    return max(float(missing_items[0]["posted_at"] or 0), arrow.get("2000").float_timestamp)
+    missing_items = sorted(
+        list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
+    )
+    return max(
+        float(missing_items[0]["posted_at"] or 0), arrow.get("2000").float_timestamp
+    )
 
 
 def time_log(username, after):

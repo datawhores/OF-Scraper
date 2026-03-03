@@ -17,7 +17,6 @@ from ofscraper.classes.table.compose import composer
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
 
-
 log = logging.getLogger("shared")
 app = None
 row_queue = queue.Queue()

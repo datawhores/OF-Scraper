@@ -22,7 +22,6 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.settings as settings
 
-
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 API = "USER_LIST"

@@ -214,6 +214,8 @@ AND model_id = ?;
 unlockedMediaCheck = """
 SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=(1) AND downloaded=(0)
 """
+
+
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
@@ -767,8 +769,12 @@ async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwar
         data, model_id=model_id, username=username, db_path=db_path
     )
 
+
 @wrapper.operation_wrapper_async
 def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(unlockedMediaCheck, [model_id])
-        return [{"media_id": dict(row)["media_id"], "post_id": dict(row)["post_id"]} for row in cur.fetchall()]
+        return [
+            {"media_id": dict(row)["media_id"], "post_id": dict(row)["post_id"]}
+            for row in cur.fetchall()
+        ]

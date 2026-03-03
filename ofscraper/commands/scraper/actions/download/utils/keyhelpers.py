@@ -23,7 +23,6 @@ from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
 
-
 log = None
 
 

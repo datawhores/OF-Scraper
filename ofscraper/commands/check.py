@@ -50,7 +50,6 @@ import ofscraper.managers.manager as manager
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.main.close.final.final import final_action
 
-
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
 

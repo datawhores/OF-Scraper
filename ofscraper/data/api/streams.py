@@ -46,7 +46,9 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     time_log(username, after)
     post_id = post_id or []
-    if len(post_id) == 0 or len(post_id) > of_env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
+    if len(post_id) == 0 or len(post_id) > of_env.getattr(
+        "MAX_STREAMS_INDIVIDUAL_SEARCH"
+    ):
         splitArrays = await get_split_array(model_id, username, after)
         generators = get_tasks(splitArrays, c, model_id, username, after)
         data = await process_tasks_batch(generators)
@@ -118,7 +120,9 @@ async def process_tasks_batch(generators):
             trace_progress_log(f"{API} task", new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    log.debug(f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x: x.get('id'), responseArray))}")
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x: x.get('id'), responseArray))}"
+    )
     trace_log_raw(f"{API} final", responseArray, final_count=True)
     log.debug(common_logs.FINAL_COUNT_POST.format("Streams", len(responseArray)))
     return responseArray
@@ -133,7 +137,12 @@ async def get_split_array(model_id, username, after):
         of_env.getattr("MIN_PAGE_POST_COUNT"),
     )
     postsDataArray = sorted(oldstreams, key=lambda x: x.get("created_at"))
-    filteredArray = list(filter(lambda x: arrow.get(x.get("created_at")).float_timestamp >= after, postsDataArray))
+    filteredArray = list(
+        filter(
+            lambda x: arrow.get(x.get("created_at")).float_timestamp >= after,
+            postsDataArray,
+        )
+    )
 
     splitArrays = [
         filteredArray[i : i + min_posts]
@@ -148,39 +157,54 @@ def get_tasks(splitArrays, c, model_id, username, after):
     if len(splitArrays) == 0:
         tasks.append(
             scrape_stream_posts(
-                c, model_id, username, 
-                timestamp=after, 
-                is_last_chunk=True, 
-                offset=True
+                c, model_id, username, timestamp=after, is_last_chunk=True, offset=True
             )
         )
         return tasks
 
     first_known_post = splitArrays[0][0]
     first_known_timestamp = float(first_known_post.get("created_at"))
-    
+
     if float(after) < first_known_timestamp:
-        log.debug(f"Spawning Bridge Worker to cover gap from {after} to {first_known_timestamp}")
+        log.debug(
+            f"Spawning Bridge Worker to cover gap from {after} to {first_known_timestamp}"
+        )
         tasks.append(
             scrape_stream_posts(
-                c, model_id, username,
+                c,
+                model_id,
+                username,
                 timestamp=after,
-                required_posts=[{"post_id": first_known_post.get("post_id"), "timestamp": first_known_timestamp}],
+                required_posts=[
+                    {
+                        "post_id": first_known_post.get("post_id"),
+                        "timestamp": first_known_timestamp,
+                    }
+                ],
                 offset=True,
             )
         )
 
     for i, chunk in enumerate(splitArrays):
-        is_first_chunk = (i == 0)
-        is_final_chunk = (i == len(splitArrays) - 1)
-        
-        start_timestamp = chunk[0].get("created_at") if is_first_chunk else splitArrays[i - 1][-1].get("created_at")
-        
+        is_first_chunk = i == 0
+        is_final_chunk = i == len(splitArrays) - 1
+
+        start_timestamp = (
+            chunk[0].get("created_at")
+            if is_first_chunk
+            else splitArrays[i - 1][-1].get("created_at")
+        )
+
         tasks.append(
             scrape_stream_posts(
-                c, model_id, username,
+                c,
+                model_id,
+                username,
                 timestamp=start_timestamp,
-                required_posts=[{"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")} for ele in chunk],
+                required_posts=[
+                    {"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")}
+                    for ele in chunk
+                ],
                 is_last_chunk=is_final_chunk,
                 offset=is_first_chunk or is_final_chunk,
             )
@@ -189,18 +213,26 @@ def get_tasks(splitArrays, c, model_id, username, after):
     return tasks
 
 
-async def scrape_stream_posts(c, model_id, username, timestamp=None, required_posts=None, is_last_chunk=False, offset=False):
+async def scrape_stream_posts(
+    c,
+    model_id,
+    username,
+    timestamp=None,
+    required_posts=None,
+    is_last_chunk=False,
+    offset=False,
+):
     required_posts = required_posts or []
     expected_missing = [p for p in required_posts]
     required_ids = {p["post_id"] for p in required_posts}
-    
+
     before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
     start_anchor = float(timestamp) if timestamp else 0
-    all_ghosts_found = [] 
-    
+    all_ghosts_found = []
+
     current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
     has_more = True
-    
+
     try:
         while has_more:
             url = (
@@ -208,7 +240,7 @@ async def scrape_stream_posts(c, model_id, username, timestamp=None, required_po
                 if current_timestamp
                 else of_env.getattr("streamsEP").format(model_id)
             )
-            
+
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.error(f"Streams API Error: {r.status} for {url}")
@@ -224,7 +256,9 @@ async def scrape_stream_posts(c, model_id, username, timestamp=None, required_po
                 max_ts = max(batch_timestamps)
                 batch_ids = {x["id"] for x in batch}
 
-                expected_missing = [p for p in expected_missing if p["post_id"] not in batch_ids]
+                expected_missing = [
+                    p for p in expected_missing if p["post_id"] not in batch_ids
+                ]
                 for ele in batch:
                     required_ids.discard(ele["id"])
 
@@ -235,7 +269,11 @@ async def scrape_stream_posts(c, model_id, username, timestamp=None, required_po
 
                 if ghosts_in_batch:
                     all_ghosts_found.extend(ghosts_in_batch)
-                    expected_missing = [p for p in expected_missing if p["post_id"] not in ghosts_in_batch]
+                    expected_missing = [
+                        p
+                        for p in expected_missing
+                        if p["post_id"] not in ghosts_in_batch
+                    ]
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
@@ -253,27 +291,36 @@ async def scrape_stream_posts(c, model_id, username, timestamp=None, required_po
         log.traceback(traceback.format_exc())
     finally:
         if all_ghosts_found:
-            log.info(f"Worker finished. Flagging {len(all_ghosts_found)} ghost streams in database.")
-            await mark_post_as_deleted(post_ids=all_ghosts_found, model_id=model_id, username=username)
+            log.info(
+                f"Worker finished. Flagging {len(all_ghosts_found)} ghost streams in database."
+            )
+            await mark_post_as_deleted(
+                post_ids=all_ghosts_found, model_id=model_id, username=username
+            )
 
 
 async def get_after(model_id, username):
     prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
-        return max(arrow.get(prechecks).float_timestamp, arrow.get("2000").float_timestamp)
-        
+        return max(
+            arrow.get(prechecks).float_timestamp, arrow.get("2000").float_timestamp
+        )
+
     curr = await get_streams_media(model_id=model_id, username=username)
     if len(curr) == 0:
         return arrow.get("2000").float_timestamp
-        
-    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
+
+    curr_downloaded = await get_media_ids_downloaded_model(
+        model_id=model_id, username=username
+    )
     deleted_posts = await get_deleted_post_ids(model_id=model_id, username=username)
 
     filtered_items = [
-        x for x in curr
+        x
+        for x in curr
         if x.get("downloaded") != 1
         and x.get("media_id") not in curr_downloaded
-        and x.get("post_id") not in deleted_posts 
+        and x.get("post_id") not in deleted_posts
         and x.get("unlocked") != 0
     ]
 
@@ -284,10 +331,14 @@ async def get_after(model_id, username):
     unique_missing = {}
     for item in filtered_items:
         mid = item.get("media_id")
-        if mid not in unique_missing or arrow.get(item.get("posted_at") or 0) > arrow.get(unique_missing[mid].get("posted_at") or 0):
+        if mid not in unique_missing or arrow.get(
+            item.get("posted_at") or 0
+        ) > arrow.get(unique_missing[mid].get("posted_at") or 0):
             unique_missing[mid] = item
 
-    missing_items = sorted(list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0))
+    missing_items = sorted(
+        list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
+    )
     return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
 
 

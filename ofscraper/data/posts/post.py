@@ -33,8 +33,12 @@ import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.system.free as free
 from ofscraper.data.api.common.cache.write import set_after_checks
-from ofscraper.commands.utils.strings import (all_paid_model_id_str, all_paid_str)
-from ofscraper.db.operations_.media import (batch_mediainsert,get_unlocked_media_ids,batch_set_media_downloaded)
+from ofscraper.commands.utils.strings import all_paid_model_id_str, all_paid_str
+from ofscraper.db.operations_.media import (
+    batch_mediainsert,
+    get_unlocked_media_ids,
+    batch_set_media_downloaded,
+)
 from ofscraper.db.operations_.profile import (
     check_profile_table_exists,
     get_profile_info,
@@ -69,10 +73,10 @@ async def clean_stray_media(username, model_id, postcollection):
     # 1. Get the exact post and media IDs the API just returned
     scraped_post_ids = {post.id for post in postcollection.posts}
     scraped_media_ids = {media.id for media in postcollection.all_media}
-    
+
     # 2. Grab all undownloaded/unlocked media from the DB
     db_media = await get_unlocked_media_ids(model_id=model_id, username=username)
-    
+
     strays_to_lock = []
     for row in db_media:
         # If the DB media belongs to a post we JUST scraped...
@@ -80,12 +84,16 @@ async def clean_stray_media(username, model_id, postcollection):
             # ...but the media ID is NOT in the API response, it's a ghost.
             if row["media_id"] not in scraped_media_ids:
                 strays_to_lock.append({"media_id": row["media_id"]})
-                
+
     # 3. Lock the strays permanently
     if strays_to_lock:
-        log.info(f"Auto-Stray Cleanup: Found {len(strays_to_lock)} partially deleted media items. Locking them in database.")
+        log.info(
+            f"Auto-Stray Cleanup: Found {len(strays_to_lock)} partially deleted media items. Locking them in database."
+        )
         # Note: batch_set_media_downloaded is a synchronous wrapper in your codebase, so we call it directly without 'await'
         batch_set_media_downloaded(strays_to_lock, model_id=model_id, username=username)
+
+
 @free.space_checker
 async def process_paid_post(model_id, username, c):
     try:

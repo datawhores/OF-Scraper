@@ -211,7 +211,7 @@ class Media(base.base):
 
     @property
     def canview(self):
-        if self.responsetype== "Profile":
+        if self.responsetype == "Profile":
             return True
         return (
             self._media.get("canView", False)

@@ -17,7 +17,6 @@ from ofscraper.utils.string import parse_safe
 import ofscraper.managers.manager as manager
 from ofscraper.scripts.naming_script import naming_script
 
-
 log = logging.getLogger("shared")
 
 
