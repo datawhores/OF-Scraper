@@ -43,7 +43,7 @@ from ofscraper.commands.scraper.actions.download.managers.downloadmanager import
 )
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
-from ofscraper.db.operations_.media import download_media_update
+from ofscraper.db.operations_.media import mark_media_as_downloaded
 import ofscraper.utils.dates as dates
 import ofscraper.utils.system.system as system
 from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
@@ -325,7 +325,7 @@ class MainDownloadManager(DownloadManager):
             )
 
         if ele.id:
-            await download_media_update(
+            await mark_media_as_downloaded(
                 ele,
                 filepath=path_to_file,
                 model_id=model_id,

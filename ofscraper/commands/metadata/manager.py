@@ -21,7 +21,7 @@ import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
-    download_media_update,
+    mark_media_as_downloaded,
     prev_download_media_data,
 )
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
@@ -60,7 +60,7 @@ class MetaDataManager:
                 )
                 or {}
             )
-            await download_media_update(
+            await mark_media_as_downloaded(
                 ele,
                 filename=self._metadata_file_helper(placeholderObj, prevData),
                 directory=self._metadata_dir_helper(placeholderObj, prevData),

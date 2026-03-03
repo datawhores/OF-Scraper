@@ -23,7 +23,7 @@ import ofscraper.utils.settings as settings
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 import ofscraper.utils.system.free as system
-from ofscraper.db.operations_.media import download_media_update
+from ofscraper.db.operations_.media import mark_media_as_downloaded
 from ofscraper.scripts.skip_download_script import skip_download_script
 from ofscraper.scripts.after_download_script import after_download_script
 
@@ -131,7 +131,7 @@ class DownloadManager:
             raise Exception(s)
 
     async def _force_download(self, ele, username, model_id):
-        await download_media_update(
+        await mark_media_as_downloaded(
             ele,
             filepath=None,
             model_id=model_id,

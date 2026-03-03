@@ -44,7 +44,7 @@ from ofscraper.commands.scraper.actions.download.managers.downloadmanager import
 )
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
-from ofscraper.db.operations_.media import download_media_update
+from ofscraper.db.operations_.media import mark_media_as_downloaded
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.utils.dates as dates
 from ofscraper.utils.system.subprocess import run
@@ -363,7 +363,7 @@ class AltDownloadManager(DownloadManager):
                 f"{common_logs.get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
             )
         if ele.id:
-            await download_media_update(
+            await mark_media_as_downloaded(
                 ele,
                 filepath=sharedPlaceholderObj.trunicated_filepath,
                 model_id=model_id,
