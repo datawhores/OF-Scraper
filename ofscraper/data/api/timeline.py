@@ -308,7 +308,6 @@ async def scrape_timeline_posts(
     try:
         while has_more:
             async with c.requests_async(url=url) as r:
-                # CRITICAL FIX: Safe exit on bad API responses
                 if not (200 <= r.status < 300):
                     log.error(f"Timeline API Error: {r.status} for {url}")
                     break
