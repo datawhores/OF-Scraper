@@ -49,7 +49,6 @@ async def get_timeline_posts(model_id, username, c=None, post_id=None):
         "MAX_TIMELINE_INDIVIDUAL_SEARCH"
     ):
         splitArrays = await get_split_array(model_id, username, after)
-        # ADDED: username is now passed into get_tasks
         tasks = get_tasks(splitArrays, c, model_id, username, after)
         data = await process_tasks(tasks)
     elif len(post_id) <= of_env.getattr("MAX_TIMELINE_INDIVIDUAL_SEARCH"):
