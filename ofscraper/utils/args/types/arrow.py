@@ -13,7 +13,7 @@ class ArrowType(click.ParamType):
         if not out:
             return out
         try:
-            t = arrow.get(out)
+            t = arrow.get(str(out))
         except arrow.parser.ParserError:
             try:
                 x = out
