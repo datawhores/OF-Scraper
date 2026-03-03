@@ -135,7 +135,7 @@ async def get_oldtimeline(model_id, username):
 
 
 async def get_split_array(model_id, username, after):
-    oldtimeline = await get_oldtimeline(model_id, username,after)
+    oldtimeline = await get_oldtimeline(model_id, username)
     if len(oldtimeline) == 0:
         return []
     min_posts = max(
