@@ -16,9 +16,9 @@ def get_after_pre_checks(model_id, api):
     elif not settings.get_settings().auto_after:
         log.debug(f"{api}: auto-after is disabled using 0")
         return 0
-    elif read_full_after_scan_check(model_id, api):
-        log.debug(f"{api}: full scan has been trigger")
-        return 0
+    # elif read_full_after_scan_check(model_id, api):
+    #     log.debug(f"{api}: full scan has been trigger")
+    #     return 0
     # scan action
     for setting in settings.get_settings().actions:
         if setting in {"like", "unlike"}:
