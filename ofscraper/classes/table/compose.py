@@ -11,7 +11,6 @@ from textual.widgets import Button, ContentSwitcher, Rule, Static
 from ofscraper.classes.table.fields.datefield import DateField
 from ofscraper.classes.table.fields.mediafield import MediaField
 from ofscraper.classes.table.fields.downloadfield import DownloadField
-
 from ofscraper.classes.table.fields.numfield import NumField, PostiveNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
 from ofscraper.classes.table.fields.responsefield import ResponseField
@@ -58,7 +57,11 @@ def composer():
                             markup=True,
                         )
                         yield Static(
-                            "[bold blue]Add to Cart[/bold blue]: Click cell in 'download cart' Column",
+                            "[bold blue]Cart (Current Page)[/bold blue]: 'A' or Click Header",
+                            markup=True,
+                        )
+                        yield Static(
+                            "[bold blue]Cart (All Filtered)[/bold blue]: 'Ctrl+A'",
                             markup=True,
                         )
                 yield Rule()
@@ -70,7 +73,6 @@ def composer():
                 yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
             with VerticalGroup(id="table_main"):
                 yield DataTable(id="data_table")
-                yield DataTable(id="data_table_hidden")
 
             with Sidebar(id="download_option_sidebar", classes="-hidden"):
                 yield Static("Values are change right away", shrink=True, markup=True)
