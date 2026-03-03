@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS posts (
     opened BOOLEAN,
 	created_at TIMESTAMP, 
     model_id INTEGER, 
+    is_deleted BOOLEAN DEFAULT 0, -- NEW COLUMN
 	PRIMARY KEY (id), 
 	UNIQUE (post_id,model_id)
 )
@@ -48,12 +49,34 @@ CREATE TABLE IF NOT EXISTS posts (
 postInsert = """INSERT INTO 'posts'(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id)
 VALUES (?,?,?,?,?,?,?,?,?,?);"""
+
+postInsertTransition = """INSERT INTO 'posts'(
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted)
+VALUES (?,?,?,?,?,?,?,?,?,?,?);"""
+
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0
 WHERE post_id = ? and model_id=(?);"""
-timelinePostInfo = """
-SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
+
+postIgnoreGhost = """
+UPDATE posts
+SET is_deleted = 1
+WHERE post_id = (?) AND model_id = (?);
 """
+
+timelinePostInfo = """
+SELECT created_at,post_id FROM posts 
+WHERE archived=(0) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+"""
+archivedPostInfo = """
+SELECT created_at,post_id FROM posts 
+WHERE archived=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+"""
+streamsPostInfo = """
+SELECT created_at,post_id FROM posts 
+WHERE stream=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+"""
+
 postsSelectTransition = """
 SELECT post_id, text, price, paid, archived, created_at,
     CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'model_id')
@@ -71,10 +94,14 @@ SELECT post_id, text, price, paid, archived, created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'opened')
             THEN opened
             ELSE NULL
-       END AS opened
+       END AS opened,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'is_deleted')
+            THEN is_deleted
+            ELSE 0
+       END AS is_deleted
        FROM posts;
-
 """
+
 postsDrop = """
 drop table posts;
 """
@@ -90,7 +117,9 @@ streamsPostInfo = """
 SELECT created_at,post_id FROM posts where stream=(1) and model_id=(?)
 """
 
-
+deletedPostsCheck = """
+SELECT post_id FROM posts WHERE is_deleted = 1 AND model_id = (?)
+"""
 @wrapper.operation_wrapper_async
 def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
@@ -115,28 +144,16 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
         conn.commit()
 
 
-@wrapper.operation_wrapper_async
-def write_post_table_transition(
-    inputData: list, model_id=None, username=None, conn=None, **kwargs
-):
+def write_post_table_transition(inputData: list, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         ordered_keys = (
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "pinned",
-            "stream",
-            "opened",
-            "created_at",
-            "model_id",
+            "post_id", "text", "price", "paid", "archived", "pinned",
+            "stream", "opened", "created_at", "model_id", "is_deleted"
         )
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(postInsert, insertData)
+        cur.executemany(postInsertTransition, insertData)
         conn.commit()
-
-
+        
 @wrapper.operation_wrapper_async
 def update_posts_table(posts: list, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
@@ -188,9 +205,7 @@ def get_all_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 
 
 @wrapper.operation_wrapper_async
-def get_all_posts_transition(
-    model_id=None, username=None, conn=None, database_model=None, **kwargs
-) -> list:
+def get_all_posts_transition(model_id=None, username=None, conn=None, database_model=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsSelectTransition)
         data = [dict(row) for row in cur.fetchall()]
@@ -199,11 +214,10 @@ def get_all_posts_transition(
                 row,
                 pinned=row.get("pinned"),
                 model_id=row.get("model_id") or database_model,
+                is_deleted=row.get("is_deleted"),
             )
             for row in data
         ]
-
-
 @wrapper.operation_wrapper_async
 def drop_posts_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -290,7 +304,26 @@ def add_column_post_opened(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
+@wrapper.operation_wrapper_async
+def mark_post_as_deleted( post_ids,username=None,conn=None,model_id=None, **kwargs):
+    if not post_ids:
+        return
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = [[post_id, model_id] for post_id in post_ids]
+        curr.executemany(postIgnoreGhost, insertData)
+        conn.commit()
 
+@wrapper.operation_wrapper_async
+def add_column_post_is_deleted(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'is_deleted') THEN 1 ELSE 0 END AS alter_required;")
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN is_deleted BOOLEAN DEFAULT 0;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
 
 @wrapper.operation_wrapper_async
 def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
@@ -388,3 +421,9 @@ async def get_youngest_timeline_date(model_id=None, username=None, **kwargs):
     data = await media.get_timeline_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"]
+
+@wrapper.operation_wrapper_async
+def get_deleted_post_ids(model_id=None, username=None, conn=None, **kwargs) -> set:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(deletedPostsCheck, [model_id])
+        return set([dict(row)["post_id"] for row in cur.fetchall()])

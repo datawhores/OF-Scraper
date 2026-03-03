@@ -19,6 +19,8 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "media_duration",
         "posts_stream",
         "posts_opened",
+        "posts_is_deleted",
+        "messages_is_deleted"
     ]
 
     groupB = [

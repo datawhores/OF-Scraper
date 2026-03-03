@@ -39,6 +39,7 @@ archived BOOLEAN,
 created_at TIMESTAMP,
 user_id INTEGER,
 model_id INTEGER,
+is_deleted BOOLEAN DEFAULT 0,
 PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
@@ -58,7 +59,11 @@ SELECT post_id, text, price, paid, archived, created_at, user_id,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
-       END AS model_id
+       END AS model_id,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'is_deleted')
+            THEN is_deleted
+            ELSE 0
+       END AS is_deleted
 FROM messages;
 """
 messagesDrop = """
@@ -67,7 +72,15 @@ drop table messages;
 messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
 """
+messageIgnoreGhost = """
+UPDATE messages
+SET is_deleted = 1
+WHERE post_id = (?) AND model_id = (?);
+"""
 
+deletedMessagesCheck = """
+SELECT post_id FROM messages WHERE is_deleted = 1 AND model_id = (?)
+"""
 
 @wrapper.operation_wrapper_async
 def create_message_table(
@@ -237,7 +250,35 @@ async def get_oldest_message_date(model_id=None, username=None, **kwargs):
     return last_item["posted_at"]
 
 
-async def get_youngest_message_date(model_id=None, username=None, **kwargs):
+async def get_newest_message_date(model_id=None, username=None, **kwargs):
     data = await media.get_messages_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"] or 0))[-1]
     return last_item["posted_at"]
+@wrapper.operation_wrapper_async
+def mark_message_as_deleted(post_ids, model_id=None, username=None, conn=None, **kwargs):
+    if not post_ids:
+        return
+    log.debug(f"Flagging the following message post_ids as deleted for {username}: {post_ids}")
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = [[post_id, model_id] for post_id in post_ids]
+        curr.executemany(messageIgnoreGhost, insertData)
+        conn.commit()
+
+@wrapper.operation_wrapper_async
+def get_deleted_messages_ids(model_id=None, username=None, conn=None, **kwargs) -> set:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(deletedMessagesCheck, [model_id])
+        return set([dict(row)["post_id"] for row in cur.fetchall()])
+
+@wrapper.operation_wrapper_async
+def add_column_message_is_deleted(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'is_deleted') THEN 1 ELSE 0 END AS alter_required;")
+            if cur.fetchone()[0] == 0:
+                log.info("Adding is_deleted column to messages table")
+                cur.execute("ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e

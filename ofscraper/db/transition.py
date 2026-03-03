@@ -29,6 +29,7 @@ from ofscraper.db.operations_.media import (
 from ofscraper.db.operations_.messages import (
     add_column_messages_ID,
     rebuild_messages_table,
+    add_column_message_is_deleted
 )
 from ofscraper.db.operations_.others import (
     add_column_other_ID,
@@ -43,6 +44,8 @@ from ofscraper.db.operations_.posts import (
     add_column_post_pinned,
     add_column_post_stream,
     rebuild_posts_table,
+    add_column_post_is_deleted
+
 )
 from ofscraper.db.operations_.profile import rebuild_profiles_table
 from ofscraper.db.operations_.stories import (
@@ -108,6 +111,13 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         await add_flag_schema(
             "media_unlocked", model_id=model_id, username=username, db_path=db_path
         )
+    if "posts_is_deleted" in missing:
+        await add_column_post_is_deleted(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "posts_is_deleted", model_id=model_id, username=username, db_path=db_path
+        )
     if "posts_pinned" in missing:
         await add_column_post_pinned(
             model_id=model_id, username=username, db_path=db_path
@@ -169,7 +179,13 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         await add_flag_schema(
             "labels_model_id", model_id=model_id, username=username, db_path=db_path
         )
-
+    if "messages_is_deleted" in missing:
+            await add_column_message_is_deleted(
+                model_id=model_id, username=username, db_path=db_path
+            )
+            await add_flag_schema(
+                "messages_is_deleted", model_id=model_id, username=username, db_path=db_path
+            )
 
 async def modify_tables_constraints_and_columns(
     model_id=None, username=None, db_path=None, **kwargs

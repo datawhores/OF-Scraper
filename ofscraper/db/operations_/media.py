@@ -8,8 +8,6 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-              >>>>>>> main
-45
 
 """
 
@@ -30,27 +28,28 @@ log = logging.getLogger("shared")
 
 mediaCreate = """
 CREATE TABLE IF NOT EXISTS medias (
-	id INTEGER NOT NULL, 
-	media_id INTEGER, 
-	post_id INTEGER NOT NULL, 
-	link VARCHAR, 
-	directory VARCHAR, 
-	filename VARCHAR, 
-	size INTEGER, 
-	api_type VARCHAR, 
-	media_type VARCHAR, 
-	preview INTEGER,
-	linked BOOL,
-	downloaded BOOL,
-	created_at TIMESTAMP, 
+    id INTEGER NOT NULL, 
+    media_id INTEGER, 
+    post_id INTEGER NOT NULL, 
+    link VARCHAR, 
+    directory VARCHAR, 
+    filename VARCHAR, 
+    size INTEGER, 
+    api_type VARCHAR, 
+    media_type VARCHAR, 
+    preview INTEGER,
+    linked BOOL,
+    downloaded BOOL,
+    created_at TIMESTAMP, 
     posted_at TIMESTAMP,
     duration VARCHAR,
     unlocked BOOL,
-	hash VARCHAR,
+    hash VARCHAR,
     model_id INTEGER,
-	PRIMARY KEY (id), 
-	UNIQUE (media_id,model_id,post_id)
+    PRIMARY KEY (id), 
+    UNIQUE (media_id,model_id,post_id)
 );"""
+
 mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
 media_type,preview,linked,downloaded,created_at,unlocked,
@@ -62,16 +61,17 @@ CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted
             THEN posted_at
             ELSE NULL
 END AS posted_at,
-        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
             THEN hash
             ELSE NULL
-       END AS hash,
-        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
+END AS hash,
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
             THEN duration
             ELSE NULL
-       END AS duration
+END AS duration
 FROM medias;
 """
+
 mediaDrop = """
 drop table medias;
 """
@@ -79,6 +79,8 @@ mediaUpdateAPI = """Update 'medias'
 SET
 media_id=?,post_id=?,link=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
+
+
 mediaUpdateDownload = """Update 'medias'
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
@@ -124,7 +126,7 @@ created_at,posted_at,model_id,duration,unlocked)
 mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
-media_type,preview,link,
+media_type,preview,linked,
 downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
@@ -158,14 +160,14 @@ SELECT media_id, post_id FROM medias where downloaded=(1) or unlocked=(1)
 """
 getTimelineMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
@@ -173,7 +175,7 @@ FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 
 getPinnedMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
@@ -181,21 +183,21 @@ FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
 
 getStoriesMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocke,duration
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('stories') and model_id=(?)
 """
 getHighlightsMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('highlights') and model_id=(?)
 """
 getStreamsMedia = """
 SELECT
-media_id,post_id,link,directory
+media_id,post_id,link,directory,
 filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
@@ -206,11 +208,12 @@ media_id, post_id, link, directory,
 filename, size, api_type, media_type,
 preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked,duration
 FROM medias
-WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
-AND model_id = ?;  -- Prepared statement placeholder
+WHERE LOWER(api_type) IN ('message', 'messages')
+AND model_id = ?;
 """
-
-
+unlockedMediaCheck = """
+SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=(1) AND downloaded=(0)
+"""
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
@@ -378,7 +381,7 @@ def get_dupe_media_files(
 
 
 @wrapper.operation_wrapper_async
-def download_media_update(
+def mark_media_as_downloaded(
     media,
     model_id=None,
     username=None,
@@ -763,3 +766,9 @@ async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwar
     await write_media_table_transition(
         data, model_id=model_id, username=username, db_path=db_path
     )
+
+@wrapper.operation_wrapper_async
+def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(unlockedMediaCheck, [model_id])
+        return [{"media_id": dict(row)["media_id"], "post_id": dict(row)["post_id"]} for row in cur.fetchall()]
