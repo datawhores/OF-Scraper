@@ -37,5 +37,5 @@ def redownload_prompt() -> int:
     if answer:
         args.force_all = True
         args.no_api_cache = True
-        args.after = arrow.get(2000)
+        args.after = arrow.get("2000")
     return args

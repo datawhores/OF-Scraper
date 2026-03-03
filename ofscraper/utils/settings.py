@@ -930,7 +930,7 @@ def merged_settings():
 
     if args.redownload:
         merged.force_all = True
-        merged.after = arrow.get(2000)
+        merged.after = arrow.get("2000")
         merged.before = arrow.now().shift(days=1)
 
     return merged

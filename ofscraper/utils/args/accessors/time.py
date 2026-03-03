@@ -35,7 +35,7 @@ def get_download_before():
 
 def get_download_after():
     args = settings.get_args()
-    arrow.get(args.download_after or 2000)
+    arrow.get(args.download_after or "2000")
 
 
 def get_like_before():
@@ -44,7 +44,7 @@ def get_like_before():
 
 
 def get_like_after():
-    return arrow.get(settings.get_settings().like_after or 2000)
+    return arrow.get(settings.get_settings().like_after or "2000")
 
 
 def get_now():
