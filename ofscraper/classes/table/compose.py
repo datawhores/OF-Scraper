@@ -30,47 +30,35 @@ def composer():
         yield Button("DataTable", id="table")
         yield Button("Console", id="console")
 
+    # =================================================================
+    # ALWAYS VISIBLE GLOBAL TRACKERS (Condensed)
+    # =================================================================
+    yield Static("", id="db_info_bar", markup=True)
+    yield Static("", id="view_info_bar", markup=True)
+    yield Static("", id="global_cart_info", markup=True)
+    yield Rule()
+
     with ContentSwitcher(initial="table_page"):
         with VerticalScroll(id="table_page"):
-            with Container(id="table_header"):
-                with Horizontal():
-                    with Vertical(classes="table_info"):
-                        yield Static(
-                            "[bold blue]Toggle Search Sidebar[/bold blue]: Ctrl+S",
-                            markup=True,
-                        )
-                        yield Static(
-                            "[bold blue]Toggle Page Selection Sidebar[/bold blue]: Ctrl+T",
-                            markup=True,
-                        )
-                        yield Static(
-                            "[bold blue]Toggle Download Filter Sidebar[/bold blue]: Ctrl+D",
-                            markup=True,
-                        )
-                    yield Rule(orientation="vertical")
-                    with Vertical(classes="table_info"):
-                        yield Static(
-                            "[bold blue]Navigate Table[/bold blue]: Arrows", markup=True
-                        )
-                        yield Static(
-                            "[bold blue]Filter Table via Cell[/bold blue]: ; or '",
-                            markup=True,
-                        )
-                        yield Static(
-                            "[bold blue]Cart (Current Page)[/bold blue]: 'A' or Click Header",
-                            markup=True,
-                        )
-                        yield Static(
-                            "[bold blue]Cart (All Filtered)[/bold blue]: 'Ctrl+A'",
-                            markup=True,
-                        )
-                yield Rule()
-                for _ in range(3):
-                    yield Static("", classes="search_info", shrink=True, markup=True)
-            yield Rule()
+            
+            # =================================================================
+            # ULTRA-CONDENSED SINGLE ROW INSTRUCTIONS (CRASH FIXED)
+            # =================================================================
+            with Horizontal(id="table_info_header"):
+                yield Static(
+                    "[bold blue]UI:[/bold blue] Search(Ctrl+S) Page(Ctrl+T) DL(Ctrl+D) | [bold blue]Table:[/bold blue] Nav(Arrows) Filter(; or ')",
+                    markup=True,
+                )
+                yield Rule(orientation="vertical")
+                yield Static(
+                    "[bold blue]Cart:[/bold blue] Pg(A) All(Ctrl+A) U-Pg(U) U-All(Ctrl+U) | [gray]Cycle: Smart->Force->Clear[/gray]",
+                    markup=True,
+                )
+            
             with HorizontalGroup(id="data"):
                 yield Button("Reset", id="reset")
                 yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
+                
             with VerticalGroup(id="table_main"):
                 yield DataTable(id="data_table")
 
@@ -124,5 +112,6 @@ def composer():
                         yield StrInput(id=ele)
                     yield Rule()
                     yield Button("Filter", id="filter2")
+                    
         with Vertical(id="console_page"):
             yield OutConsole(id="console_page", classes="-hidden")

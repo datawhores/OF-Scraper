@@ -746,32 +746,47 @@ async def row_gather(username, model_id):
         raise Exception("No postcollection object found")
     media = collection.all_unique_media
     out = []
-    for count, ele in enumerate(
-        sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
-    ):
+    log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
+    try:
+        sorted_media = sorted(media, key=lambda x: x.date, reverse=True)
+    except Exception:
+        # Fallback just in case the dates are poorly formatted
+        sorted_media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
+
+    for count, ele in enumerate(sorted_media):
+        is_unlocked = unlocked_helper(ele)
+        is_downloaded = (ele.id, ele.post_id) in downloaded
+        post_media_len = len(ele._post.post_media)
+        
+        if is_downloaded:
+            cart_state = "[downloaded]"
+        elif not is_unlocked:
+            cart_state = "Not Unlocked"
+        else:
+            cart_state = "[]"
+
         out.append(
             {
                 "index": count + 1,
                 "number": count + 1,
-                "download_cart": checkmarkhelper(ele),
+                "download_cart": cart_state,
                 "username": username,
-                "downloaded": (ele.id, ele.post_id) in downloaded,
-                "unlocked": unlocked_helper(ele),
+                "downloaded": is_downloaded,
+                "unlocked": is_unlocked,  
                 "download_type": download_type_helper(ele),
                 "other_posts_with_media": collection.posts_with_media_id(ele.id),
-                "post_media_count": len(ele._post.post_media),
+                "post_media_count": post_media_len,  
                 "mediatype": ele.mediatype.capitalize(),
                 "post_date": datehelper(ele.formatted_postdate),
-                "media": len(ele._post.post_media),
+                "media": post_media_len,  
                 "length": ele.numeric_duration,
                 "responsetype": ele.responsetype.capitalize(),
-                "price": (
-                    "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price)
-                ),
+                "price": "Free" if ele._post.price == 0 else f"{ele._post.price:.2f}",
                 "post_id": ele.post_id,
                 "media_id": ele.id,
                 "text": ele.post.db_sanitized_text,
             }
         )
+        
     ROWS = ROWS or []
     ROWS.extend(out)

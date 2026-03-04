@@ -29,6 +29,8 @@ class InputApp(App):
         ("ctrl+d", "toggle_download_sidebar"),
         ("a", "select_current_page", "Select Current Page"),
         ("ctrl+a", "select_all_filtered", "Select All Filtered"),
+        ("u", "select_unique_current_page", "Select Unique Current Page"),
+        ("ctrl+u", "select_unique_all_filtered", "Select Unique All Filtered"),
     ]
     CSS = CSS
 
@@ -58,7 +60,7 @@ class InputApp(App):
     def on_data_table_header_selected(self, event):
         key = re.sub(" ", "_", event.label.plain).lower()
         if key == "download_cart":
-            self.action_select_current_page() # Default header click to current page only
+            self.action_select_current_page()
         else:
             self.update_table_sort(key)
             self.update_search_info()
@@ -68,18 +70,14 @@ class InputApp(App):
         if col_name == "download_cart":
             row_key = event.cell_key.row_key.value
             
-            # Update the Native Data State
             for row in self._filtered_rows:
                 if str(row["index"]) == row_key:
                     current = row["download_cart"]
-                    if current == "[]":
+                    if current in {"[]", "[downloaded]", "[failed]"}:
                         row["download_cart"] = "[added]"
                     elif current == "[added]":
-                        row["download_cart"] = "[]"
-                    elif current in ["[downloaded]", "[failed]"]:
-                        row["download_cart"] = "[added]"
+                        row["download_cart"] = "[]" 
                     
-                    # Update UI directly for instant feedback
                     styled_text = Text(row["download_cart"], style="bold light_goldenrod2")
                     self.table.update_cell_at_coord(event.coordinate, styled_text)
                     break
@@ -131,58 +129,109 @@ class InputApp(App):
             ele.toggle_hidden()
         self.query_one("#download_option_sidebar").toggle_hidden()
 
+    # --- Standard Cart Actions (All Duplicates Included) ---
     def action_select_current_page(self) -> None:
-        """
-        Toggles only the items currently visible on the active page.
-        """
-        valid_states = {"[]", "[added]", "[downloaded]", "[failed]"}
         rows = self._filtered_rows
         num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
-        
-        # Safe page boundary math
         total_pages = max((len(rows) + num_page - 1) // num_page, 1)
         page = min(int(self.query_one("#page_input").value) or 1, total_pages)
-        
         start = (page - 1) * num_page
         current_page_rows = rows[start : start + num_page]
 
-        if not current_page_rows:
+        self._run_3_state_selection(current_page_rows)
+
+    def action_select_all_filtered(self) -> None:
+        self._run_3_state_selection(self._filtered_rows)
+
+    def _run_3_state_selection(self, rows_to_evaluate: list):
+        if not rows_to_evaluate:
             return
 
-        all_selected = True
-        for row in current_page_rows:
-            if row["download_cart"] == "[]":
-                all_selected = False
-                break
+        eligible_rows = [row for row in rows_to_evaluate if row["download_cart"] not in {"[downloading]", "Not Unlocked"}]
+        if not eligible_rows:
+            return
 
-        new_val = "[]" if all_selected else "[added]"
+        has_empty = any(row["download_cart"] == "[]" for row in eligible_rows)
+        has_downloaded = any(row["download_cart"] in {"[downloaded]", "[failed]"} for row in eligible_rows)
 
-        for row in current_page_rows:
-            if row["download_cart"] in valid_states:
-                row["download_cart"] = new_val
+        if has_empty:
+            for row in eligible_rows:
+                if row["download_cart"] == "[]":
+                    row["download_cart"] = "[added]"
+        elif has_downloaded:
+            for row in eligible_rows:
+                if row["download_cart"] in {"[downloaded]", "[failed]"}:
+                    row["download_cart"] = "[added]"
+        else:
+            for row in eligible_rows:
+                if row["download_cart"] == "[added]":
+                    row["download_cart"] = "[]" 
 
         self.set_page()
         self.update_cart_info()
 
-    def action_select_all_filtered(self) -> None:
-        """
-        Modifies the underlying dicts across all pages instantly (Ctrl+A).
-        """
-        valid_states = {"[]", "[added]", "[downloaded]", "[failed]"}
-        
-        all_selected = True
-        for row in self._filtered_rows:
-            if row["download_cart"] == "[]":
-                all_selected = False
-                break
-                
-        new_val = "[]" if all_selected else "[added]"
-        
-        for row in self._filtered_rows:
-            if row["download_cart"] in valid_states:
-                row["download_cart"] = new_val
-                
-        self.set_page() 
+    # --- Unique Cart Actions (Only 1 per media_id) ---
+    def action_select_unique_current_page(self) -> None:
+        rows = self._filtered_rows
+        num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
+        total_pages = max((len(rows) + num_page - 1) // num_page, 1)
+        page = min(int(self.query_one("#page_input").value) or 1, total_pages)
+        start = (page - 1) * num_page
+        current_page_rows = rows[start : start + num_page]
+
+        self._run_unique_selection(current_page_rows)
+
+    def action_select_unique_all_filtered(self) -> None:
+        self._run_unique_selection(self._filtered_rows)
+
+    def _run_unique_selection(self, rows_to_evaluate: list):
+        if not rows_to_evaluate:
+            return
+
+        eligible_rows = [row for row in rows_to_evaluate if row["download_cart"] not in {"[downloading]", "Not Unlocked"}]
+        if not eligible_rows:
+            return
+
+        eval_row_ids = {id(row) for row in eligible_rows}
+        all_added_media_ids = {row["media_id"] for row in self.table_data if row["download_cart"] in {"[added]", "[downloading]"}}
+        outside_added_media_ids = {row["media_id"] for row in self.table_data if row["download_cart"] in {"[added]", "[downloading]"} and id(row) not in eval_row_ids}
+
+        needs_state_1 = any(
+            row["download_cart"] == "[]" and row["media_id"] not in all_added_media_ids
+            for row in eligible_rows
+        )
+        needs_state_2 = any(
+            row["download_cart"] in {"[downloaded]", "[failed]"} and row["media_id"] not in all_added_media_ids
+            for row in eligible_rows
+        )
+        has_added_in_pool = any(row["download_cart"] == "[added]" for row in eligible_rows)
+
+        seen_media_ids = outside_added_media_ids.copy()
+
+        if needs_state_1:
+            for row in eligible_rows:
+                if row["download_cart"] == "[]":
+                    if row["media_id"] not in seen_media_ids:
+                        row["download_cart"] = "[added]"
+                        seen_media_ids.add(row["media_id"])
+                elif row["download_cart"] == "[added]":
+                    seen_media_ids.add(row["media_id"])
+                    
+        elif needs_state_2:
+            for row in eligible_rows:
+                if row["download_cart"] in {"[downloaded]", "[failed]", "[added]"}:
+                    if row["media_id"] not in seen_media_ids:
+                        row["download_cart"] = "[added]"
+                        seen_media_ids.add(row["media_id"])
+                    else:
+                        row["download_cart"] = "[]" 
+                        
+        elif has_added_in_pool:
+            for row in eligible_rows:
+                if row["download_cart"] == "[added]":
+                    row["download_cart"] = "[]" 
+
+        self.set_page()
         self.update_cart_info()
 
     # --- Cart Management ---
@@ -199,6 +248,20 @@ class InputApp(App):
         for ele in cart:
             row_queue.put(ele)
         log.info(f"Number of Downloads sent to queue {len(cart)}")
+
+    def update_cell_state(self, row_key, new_state, style):
+        """Allows background threads to safely update the table state and UI"""
+        for row in self.table_data:
+            if str(row["index"]) == str(row_key):
+                row["download_cart"] = new_state
+                break
+        
+        try:
+            self.table.update_cell_at_key(str(row_key), "download_cart", Text(new_state, style=style))
+        except Exception:
+            pass
+            
+        self.update_cart_info()
 
     # --- Native Python Sorting ---
     def init_sort(self):
@@ -308,11 +371,8 @@ class InputApp(App):
             self.table.clear()
             rows = self._filtered_rows
             num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
-            
-            # FIXED PAGINATION MATH
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
             page = min(int(self.query_one("#page_input").value) or 1, total_pages)
-            
             start = (page - 1) * num_page
             
             for count, row_dict in enumerate(rows[start : start + num_page]):
@@ -327,6 +387,7 @@ class InputApp(App):
         self.init_download_filter()
         self.set_page()
         self.update_search_info()
+        self.update_cart_info()  # Ensure cart is drawn immediately
 
     def _insert_visible_table(self):
         table = self.table
@@ -341,26 +402,38 @@ class InputApp(App):
 
     # --- Stats ---
     def update_search_info(self):
-        page = self.query_one("#page").integer_input.value
-        num_page = self.query_one("#num_per_page").integer_input.value
+        page = self.query_one("#page_input").value or START_PAGE
+        num_page = self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE
         sort_key = self._sortkey or "number"
         reverse = str(self._reverse)
-        self.query(".search_info")[0].update(
-            f"[bold blue]Page Info[/bold blue]: \[Page: {page}] \[Num_per_page: {num_page}] [Total With Filters: {len(self._filtered_rows)}] [Total: {len(self.table_data)}]"
-        )
-        self.query(".search_info")[1].update(
-            f"[bold blue]Sort Info[/bold blue]: \[Sort: {sort_key}] \[Reversed: {reverse}]"
-        )
-        if len(self._filtered_rows) == 0:
-            self.query(".search_info")[2].update(
-                "[bold blue]Additional Info[/bold blue]: All Items Filtered"
+
+        total_items = len(self.table_data)
+        unlocked_items = sum(1 for row in self.table_data if row.get("unlocked") is True)
+        downloaded_items = sum(1 for row in self.table_data if row.get("downloaded") is True)
+        filtered_items = len(self._filtered_rows)
+
+        try:
+            self.query_one("#db_info_bar").update(
+                f"[bold blue]Database[/bold blue]: \[Total: {total_items}] \[Unlocked: {unlocked_items}] \[Downloaded: {downloaded_items}] \[Filtered: {filtered_items}]"
             )
+            
+            filter_warning = " | [bold red]All Items Filtered[/bold red]" if filtered_items == 0 else ""
+            self.query_one("#view_info_bar").update(
+                f"[bold blue]View State[/bold blue]: \[Page: {page}] \[Per Page: {num_page}] | [bold blue]Sort[/bold blue]: \[{sort_key.title()}] \[Reverse: {reverse}]{filter_warning}"
+            )
+        except:
+            pass
 
     def update_cart_info(self):
-        download_cart = sum(1 for row in self.table_data if row["download_cart"] == "[added]")
-        self.query(".search_info")[2].update(
-            f"[bold blue]Items in Cart[/bold blue]: {download_cart}"
-        )
+        in_cart = sum(1 for row in self.table_data if row["download_cart"] == "[added]")
+        downloading = sum(1 for row in self.table_data if row["download_cart"] == "[downloading]")
+        
+        try:
+            self.query_one("#global_cart_info").update(
+                f"[bold blue]Cart[/bold blue]: \[Queued: {in_cart}] \[Downloading: {downloading}]"
+            )
+        except:
+            pass
 
     @property
     def table(self):

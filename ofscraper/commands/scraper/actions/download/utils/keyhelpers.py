@@ -18,7 +18,7 @@ from ofscraper.commands.scraper.actions.utils.retries import (
     get_cmd_download_req_retries,
 )
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
-from ofscraper.utils.system.subprocess import run
+from ofscraper.utils.system.subprocess import async_run
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
@@ -62,7 +62,7 @@ async def un_encrypt(item, c, ele, input_=None):
         log.debug(
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
         )
-        r = run(
+        r = await async_run(
             [
                 get_ffmpeg(),
                 "-decryption_key",

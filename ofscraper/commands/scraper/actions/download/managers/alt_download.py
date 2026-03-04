@@ -326,6 +326,7 @@ class AltDownloadManager(DownloadManager):
                 "-movflags",
                 "use_metadata_tags",
                 str(temp_path),
+                "-y",
             ],
             name="ffmpeg",
             level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),

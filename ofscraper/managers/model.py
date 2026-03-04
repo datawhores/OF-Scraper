@@ -140,7 +140,12 @@ class ModelManager:
         Otherwise, it uses interactive logic to confirm or get a new selection.
         """
         # --- Step 1: Normalize Input ---
-        activities_to_process = self._get_activities(settings.get_settings().actions)
+        # FIX: Explicitly append 'metadata' if we are in metadata mode
+        actions = list(settings.get_settings().actions or [])
+        if settings.get_settings().command == "metadata":
+            actions.append("metadata")
+            
+        activities_to_process = self._get_activities(actions)
         final_selection = []
         self._load_all_subs_if_needed()
 
@@ -187,6 +192,7 @@ class ModelManager:
             self.state.set_queue(act, [model.name for model in final_selection])
 
         return final_selection
+        
     def get_models_from_prompt(self):
         while True:
             self.setfilter()
