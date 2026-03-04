@@ -7,4 +7,3 @@ DYNAMIC_OPTIONS = [
     "xagler",
     "rafa",
 ]
-METADATA_OPTIONS = ["complete", "update", "check"]

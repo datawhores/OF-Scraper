@@ -1,6 +1,7 @@
 import os
 import pathlib
 import json  # Import json for parsing if you decide to allow dict/list overrides via env vars
+import ofscraper.utils.const as const
 
 
 def load_main_config():
@@ -38,6 +39,7 @@ def load_main_config():
     # KEY_DEFAULT: Default key mode for content decryption.
     # Default: "cdrm"
     config["KEY_DEFAULT"] = os.getenv("OFSC_KEY_DEFAULT", "cdrm")
+    config["KEY_OPTIONS"] = const.KEY_OPTIONS
 
     # FILE_SIZE_MAX_DEFAULT: Default maximum file size allowed (bytes, 0 for no limit).
     # Default: 0

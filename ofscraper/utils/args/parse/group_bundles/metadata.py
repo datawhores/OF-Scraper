@@ -1,7 +1,6 @@
 import cloup as click
 from click.exceptions import UsageError
 
-from ofscraper.utils.const import METADATA_OPTIONS
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
 )
@@ -37,6 +36,8 @@ from ofscraper.utils.args.parse.groups.post_filter import (
 
 
 from ofscraper.utils.args.helpers.hide_args import hide_metadata_mode
+
+METADATA_OPTIONS = ["complete", "update", "check"]
 
 
 def metadata_args(func):
