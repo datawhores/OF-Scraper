@@ -5,23 +5,12 @@ import traceback
 import pathlib
 from typing import Union
 
-
 import ofscraper.utils.settings as settings
-from ofscraper.utils.system.subprocess import run
+from ofscraper.utils.system.subprocess import async_run # Changed to async_run
 import ofscraper.utils.of_env.of_env as env
 
 
-def after_download_script(final_path: Union[str, pathlib.Path]):
-    """
-    Executes a user-defined script after a download is complete, passing the final file path.
-
-    This function retrieves the path to the user script from the application settings.
-    It then invokes this script as a subprocess, passing the `final_path` of the
-    downloaded file as a command-line argument.
-
-    Args:
-        final_path (str): The absolute path to the downloaded file.
-    """
+async def after_download_script(final_path: Union[str, pathlib.Path]): # Made async
     final_path = str(final_path)
     log = logging.getLogger("shared")
     script_path = settings.get_settings().after_download_script
@@ -41,34 +30,26 @@ def after_download_script(final_path: Union[str, pathlib.Path]):
     )
 
     try:
-        run(
-            [script_path],  # Pass final_path as a command-line argument
+        # Now using the timeout-protected async_run we built earlier
+        await async_run(
+            [script_path],  
             capture_output=True,
             input=final_path,
             text=True,
-            check=True,  # Will raise CalledProcessError for non-zero exit codes
+            check=True,  
             level=env.getattr("AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
             name="after download script",
+            timeout=600 # 10 minute safety timeout
         )
         log.info(f"Successfully ran after download script for '{final_path}'.")
 
     except FileNotFoundError:
-        log.error(
-            f"After download script executable not found: '{script_path}'. "
-            "Please ensure the path is correct and the script has execute permissions."
-        )
+        log.error(f"After download script executable not found: '{script_path}'.")
     except subprocess.CalledProcessError as e:
-        log.error(
-            f"After download script failed for '{final_path}' with exit code {e.returncode}: '{script_path}'"
-        )
-        if e.stdout.strip():
-            log.error(f"Stdout:\n{e.stdout.strip()}")
-        if e.stderr.strip():
-            log.error(f"Stderr:\n{e.stderr.strip()}")
+        log.error(f"After download script failed for '{final_path}' with exit code {e.returncode}: '{script_path}'")
+        if e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
     except Exception as e:
-        log.critical(
-            f"An unexpected error occurred while running after download script for '{final_path}' with script '{script_path}': {e}",
-            exc_info=True,
-        )
+        log.critical(f"Error running after download script for '{final_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())

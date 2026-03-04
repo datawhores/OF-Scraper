@@ -41,7 +41,7 @@ async def get_text_process(username, ele):
         )
         async with aiofiles.open(placeholderObj.filepath, "w") as p:
             await p.writelines(wrapped_text)
-        after_download_script(placeholderObj.filepath)
+        await after_download_script(placeholderObj.filepath)
     except Exception as E:
         log.traceback_(f"{E}")
         log.traceback_(f"{traceback.format_exc()}")

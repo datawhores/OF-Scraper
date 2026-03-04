@@ -1,16 +1,3 @@
-r"""
-
- _______  _______         _______  _______  _______  _______  _______  _______  _______
-(  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
-| (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
-| |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
-| |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
-| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
-(_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-
-"""
-
 import asyncio
 import pathlib
 import traceback
@@ -88,6 +75,10 @@ class MainDownloadManager(DownloadManager):
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
         ).init()
+        
+        # Reset attempt counter to prevent 11/10 display bug
+        common_globals.attempt.set(0)
+
         async for _ in download_retry():
             with _:
                 try:
@@ -216,12 +207,6 @@ class MainDownloadManager(DownloadManager):
         await self._download_fileobject_writer_streamer(
             r, ele, tempholderObj, placeholderObj, total
         )
-        # if total > env.getattr("MAX_READ_SIZE"):
-
-        # else:
-        #     await self._download_fileobject_writer_reader(
-        #         r, ele, tempholderObj, placeholderObj, total
-        #     )
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
@@ -249,7 +234,7 @@ class MainDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(  # Renamed function as per user's prompt
+    async def _download_fileobject_writer_streamer( 
         self, res, ele, tempholderObj, placeholderObj, total
     ):
         task1 = await self._add_download_job_task(
@@ -308,7 +293,13 @@ class MainDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
         )
-        common_paths.moveHelper(temp, path_to_file, ele)
+        
+        # Thread executor for disk I/O move operation
+        await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(common_paths.moveHelper, temp, path_to_file, ele)
+        )
+        
         (
             common_paths.addGlobalDir(placeholderObj.filedir)
             if system.get_parent_process()
@@ -319,7 +310,11 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
             )
-            common_paths.set_time(path_to_file, newDate)
+            # Thread executor for disk I/O timestamp operation
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.thread,
+                partial(common_paths.set_time, path_to_file, newDate)
+            )
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
             )
@@ -334,11 +329,11 @@ class MainDownloadManager(DownloadManager):
                 hashdata=await common.get_hash(path_to_file),
                 size=placeholderObj.size,
             )
-        await set_profile_cache(
-            ele, common_globals.thread
-        )  # Mark profile as cached after successful download
+        await set_profile_cache(ele, common_globals.thread)
         ele.add_filepath(placeholderObj.trunicated_filepath)
-        self._after_download_script(path_to_file)
+        
+        # Await the new async script
+        await self._after_download_script(path_to_file)
 
         return ele.mediatype, total
 

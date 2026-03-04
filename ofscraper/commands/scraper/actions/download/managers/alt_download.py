@@ -1,16 +1,3 @@
-r"""
-
- _______  _______         _______  _______  _______  _______  _______  _______  _______
-(  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
-| (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
-| |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
-| |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
-| (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
-(_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-
-"""
-
 import asyncio
 import pathlib
 import re
@@ -47,7 +34,7 @@ import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.db.operations_.media import mark_media_as_downloaded
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.utils.dates as dates
-from ofscraper.utils.system.subprocess import run
+from ofscraper.utils.system.subprocess import async_run
 import ofscraper.utils.system.system as system
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.utils.cache.cache as cache
@@ -102,6 +89,9 @@ class AltDownloadManager(DownloadManager):
         ).init()
         item["path"] = placeholderObj.tempfilepath
         item["total"] = None
+
+        _attempt = self._alt_attempt_get(item)
+        _attempt.set(0)
 
         async for _ in download_retry():
             with _:
@@ -186,7 +176,6 @@ class AltDownloadManager(DownloadManager):
                 stream=True,
                 headers=headers,
                 params=params,
-                # action=[FORCED_NEW,SIGN] if env.getattr("ALT_FORCE_KEY") else None
             ) as l:
                 item["total"] = int(l.headers.get("content-length"))
                 total = item["total"]
@@ -220,18 +209,12 @@ class AltDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
-        finally:
-            common_globals.sem.release()
 
     async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
         )
         await self._download_fileobject_writer_streamer(ele, total, l, placeholderObj)
-        # if total > env.getattr("MAX_READ_SIZE"):
-
-        # else:
-        #     await self._download_fileobject_writer_reader(ele, total, l, placeholderObj)
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
         )
@@ -314,7 +297,9 @@ class AltDownloadManager(DownloadManager):
         ).init()
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
-        t = run(
+        
+        # Async run FFmpeg with the -y flag
+        t = await async_run(
             [
                 get_ffmpeg(),
                 "-i",
@@ -331,7 +316,9 @@ class AltDownloadManager(DownloadManager):
             name="ffmpeg",
             level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
         )
-        if t.stderr.decode().find("Output") == -1:
+        
+        # Fallback error check if stderr is captured and Output is missing
+        if t.stderr and t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
@@ -346,23 +333,33 @@ class AltDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
         )
-        common_paths.moveHelper(
-            temp_path, sharedPlaceholderObj.trunicated_filepath, ele
+        
+        # Thread executor for disk I/O move operation
+        await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(common_paths.moveHelper, temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
         )
+        
         (
             common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
             if system.get_parent_process()
             else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
         )
+        
         if ele.postdate:
             newDate = dates.convert_local_time(ele.postdate)
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
             )
-            common_paths.set_time(sharedPlaceholderObj.trunicated_filepath, newDate)
+            # Thread executor for disk I/O timestamp operation
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.thread,
+                partial(common_paths.set_time, sharedPlaceholderObj.trunicated_filepath, newDate)
+            )
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
             )
+            
         if ele.id:
             await mark_media_as_downloaded(
                 ele,
@@ -375,7 +372,9 @@ class AltDownloadManager(DownloadManager):
             )
         ele.add_filepath(sharedPlaceholderObj.trunicated_filepath)
 
-        self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
+        # Await the new async script
+        await self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
+        
         return ele.mediatype, video["total"] + audio["total"]
 
     async def _resume_data_handler_alt(self, data, item, ele, placeholderObj):
