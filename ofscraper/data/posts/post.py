@@ -15,6 +15,7 @@ import asyncio
 import logging
 import traceback
 from functools import partial
+import arrow
 
 import ofscraper.data.api.archive as archive
 import ofscraper.data.api.highlights as highlights
@@ -509,9 +510,29 @@ def process_single_task(func):
 async def process_tasks(model_id, username, ele, c=None):
     tasks = []
 
+    # 1. Access the 'Single Source of Truth' for settings
+    # We pull the toggle from settings and the grace period from environment defaults
+    skip_enabled = settings.get_settings().skip_unavailable_content
+    grace_days = of_env.getattr("EXPIRED_GRACE_DEFAULT") or 2
+    grace_period_seconds = grace_days * 86400
+
+    # 2. Calculate Expiration Status
+    is_expired = not ele.active
+    
+    # Using 'final_expired' which returns the float timestamp of expiration
+    past_grace = False
+    if is_expired and ele.final_expired > 0:
+        current_time = arrow.now().float_timestamp
+        past_grace = (current_time - ele.final_expired) > grace_period_seconds
+
+    # 3. Determine if we should skip "Wall" content
+    # Skip if: Toggle is ON AND Account is Expired AND we are beyond the grace period
+    skip_wall = skip_enabled and is_expired and past_grace
+
     like_area = get_like_area()
     download_area = get_download_area()
     final_post_areas = get_final_posts_area()
+    
     max_count = max(
         min(
             of_env.getattr("API_MAX_AREAS"),
@@ -524,38 +545,15 @@ async def process_tasks(model_id, username, ele, c=None):
     postcollection = PostCollection(username=username, model_id=model_id)
 
     with progress_utils.setup_live("api"):
+        # --- PERMANENTLY UNLOCKED / METADATA AREAS ---
+        # These are always scanned because purchased content and profile info 
+        # remain accessible after expiration.
         if "Profile" in final_post_areas:
             tasks.append(
                 asyncio.create_task(
                     process_single_task(partial(process_profile, username))(sem=sem)
                 )
             )
-        if "Pinned" in final_post_areas:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_pinned_posts, model_id, username, c)
-                    )(sem=sem)
-                )
-            )
-
-        if "Timeline" in final_post_areas:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_timeline_posts, model_id, username, c=c)
-                    )(sem=sem)
-                )
-            )
-        if "Archived" in final_post_areas:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_archived_posts, model_id, username, c=c)
-                    )(sem=sem)
-                )
-            )
-
         if "Purchased" in final_post_areas:
             tasks.append(
                 asyncio.create_task(
@@ -573,47 +571,82 @@ async def process_tasks(model_id, username, ele, c=None):
                 )
             )
 
-        if "Highlights" in final_post_areas:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_highlights, model_id, username, c)
-                    )(sem=sem)
-                )
-            )
-
-        if "Stories" in final_post_areas:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_stories, model_id, username, c)
-                    )(sem=sem)
-                )
-            )
-
-        if "Labels" in final_post_areas and ele.active:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(partial(process_labels, model_id, username, c))(
-                        sem=sem
+        # --- "WALL" CONTENT AREAS ---
+        # These are skipped if the account is expired beyond the grace period.
+        if not skip_wall:
+            if "Pinned" in final_post_areas:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_pinned_posts, model_id, username, c)
+                        )(sem=sem)
                     )
                 )
-            )
 
-        if "Streams" in final_post_areas and ele.active:
-            tasks.append(
-                asyncio.create_task(
-                    process_single_task(
-                        partial(process_streamed_posts, model_id, username, c)
-                    )(sem=sem)
+            if "Timeline" in final_post_areas:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_timeline_posts, model_id, username, c=c)
+                        )(sem=sem)
+                    )
                 )
-            )
+            
+            if "Archived" in final_post_areas:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_archived_posts, model_id, username, c=c)
+                        )(sem=sem)
+                    )
+                )
+
+            if "Highlights" in final_post_areas:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_highlights, model_id, username, c)
+                        )(sem=sem)
+                    )
+                )
+
+            if "Stories" in final_post_areas:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_stories, model_id, username, c)
+                        )(sem=sem)
+                    )
+                )
+
+            if "Labels" in final_post_areas and ele.active:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(partial(process_labels, model_id, username, c))(
+                            sem=sem
+                        )
+                    )
+                )
+
+            if "Streams" in final_post_areas and ele.active:
+                tasks.append(
+                    asyncio.create_task(
+                        process_single_task(
+                            partial(process_streamed_posts, model_id, username, c)
+                        )(sem=sem)
+                    )
+                )
+        else:
+            log.info(f"Skipping wall/post APIs for {username} (Expired > {grace_days} days)")
+
+        # Gather results and add to postcollection
         for result in asyncio.as_completed(tasks):
             try:
                 posts, area = await result
                 area_title = area.capitalize()
                 actions_for_this_batch = []
                 command = settings.get_settings().command
+                
                 if command == "metadata":
                     actions_for_this_batch.append("metadata")
                 else:
@@ -621,18 +654,11 @@ async def process_tasks(model_id, username, ele, c=None):
                         actions_for_this_batch.append("like")
                     if area_title in download_area:
                         actions_for_this_batch.append("download")
-                    # You can add the text action here as well
                     if settings.get_settings().text:
                         actions_for_this_batch.append("text")
 
-                # 2. If any actions were determined, add the posts to the collection.
                 if actions_for_this_batch:
                     postcollection.add_posts(posts, actions=actions_for_this_batch)
-                else:
-                    # This else now correctly captures all cases where no actions were matched.
-                    log.debug(
-                        f"Posts from area '{area_title}' with command '{command}' did not match any action criteria."
-                    )
             except Exception as E:
                 log.debug(E)
     return postcollection

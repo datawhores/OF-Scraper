@@ -108,25 +108,15 @@ def load_general_config():
         os.getenv("OFSC_LARGE_TRACE_CHUNK_SIZE", "100")
     )
 
-    # --- Disclaimers (Long text, best as internal constant unless specific JSON override is designed) ---
-    # disclaimers: List of legal disclaimers.
-    # If provided via environment, expect a JSON string representing a list of strings.
-    disclaimers_env = os.getenv("OFSC_DISCLAIMERS")
-    if disclaimers_env:
-        try:
-            config["disclaimers"] = json.loads(disclaimers_env)
-        except json.JSONDecodeError:
-            print(
-                f"Warning: OFSC_DISCLAIMERS environment variable is not valid JSON. Using default disclaimers."
-            )
-            config["disclaimers"] = [
-                "This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.",
-                "This tool is for educational purposes only and is not intended for actual use. Should you choose to actually use it you accept all consequences and agree that you are not using it to redistribute content or for any other action that will cause loss of revenue to creators or platforms scraped.",
-            ]
-    else:
-        config["disclaimers"] = [
-            "This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.",
-            "This tool is for educational purposes only and is not intended for actual use. Should you choose to actually use it you accept all consequences and agree that you are not using it to redistribute content or for any other action that will cause loss of revenue to creators or platforms scraped.",
-        ]
 
+
+    # SKIP_UNAVAILABLE_DEFAULT: Default to True (Yes)
+    config["SKIP_UNAVAILABLE_DEFAULT"] = os.getenv(
+        "OFSC_SKIP_UNAVAILABLE_DEFAULT", "True"
+    ).lower() in ("true", "1")
+
+    # EXPIRED_GRACE_DEFAULT: Default to 2 days
+    config["EXPIRED_GRACE_DEFAULT"] = int(
+        os.getenv("OFSC_EXPIRED_GRACE_DEFAULT", "2")
+    )
     return config

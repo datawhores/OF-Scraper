@@ -1,4 +1,5 @@
 import os
+import ofscraper.utils.const as const
 
 
 def load_dynamic_rules_config():
@@ -22,13 +23,8 @@ def load_dynamic_rules_config():
             opt.strip() for opt in dynamic_options_env.split(",")
         ]
     else:
-        config["DYNAMIC_OPTIONS"] = [
-            "manual",
-            "generic",
-            "xagler",
-            "rafa",
-            "datawhores",
-        ]
+        config["DYNAMIC_OPTIONS"] = const.DYNAMIC_OPTIONS
+
 
     # DYNAMIC_OPTIONS_ALL: Comprehensive list of all dynamic rule options including aliases.
     # This list is derived from DYNAMIC_OPTIONS, so it should be built after DYNAMIC_OPTIONS is set.

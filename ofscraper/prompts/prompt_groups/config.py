@@ -16,6 +16,8 @@ from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
+from humanfriendly import parse_size
+
 
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
@@ -27,7 +29,7 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
-from humanfriendly import parse_size
+
 
 
 console = Console()
@@ -95,6 +97,7 @@ def funct(prompt_):
     [Advanced Options]
     code-execution: allow eval on custom_val
     dynamic-mode-default: source of signed header values
+    skip_unavailable_content: whether to skip content from expired subscriptions that is unavailable for download
     downloadbars: toggle for download-bars
     cache-mode: cache type for Disk Cache
     rotate_logs: toggle for rotating logs
@@ -348,11 +351,6 @@ def script_config():
     return final
 
 
-    out.update(answer)
-    config = config_file.open_config()
-    config.update(out)
-    final = schema.get_current_config_schema({"config": config})
-    return final
 def cdm_config():
     out = {}
     answer = promptClasses.batchConverter(
@@ -362,7 +360,7 @@ def cdm_config():
                 "name": "key-mode-default",
                 "message": "Select default key mode for decryption",
                 "default": data.get_key_mode(),
-                "choices": const.KEY_OPTIONS,
+                "choices": of_env.getattr("KEY_OPTIONS"),
             },
             {
                 "type": "filepath",
@@ -547,7 +545,7 @@ def advanced_config() -> dict:
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
-                "choices": const.DYNAMIC_OPTIONS,
+                "choices": of_env.getattr("DYNAMIC_OPTIONS"),
             },
             {
                 "type": "list",
@@ -555,6 +553,13 @@ def advanced_config() -> dict:
                 "message": "sqlite should be fine unless your using a network drive\nSee https://grantjenks.com/docs/diskcache/tutorial.html#caveats ",
                 "default": data.cache_mode_helper(),
                 "choices": ["sqlite", "json", "disabled", "api_disabled"],
+            },
+            {
+                "type": "list",
+                "name": "skip_unavailable_content",
+                "message": "Skip timeline/story scans for expired accounts?",
+                "default": data.get_skip_unavailable_content(),
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "list",
