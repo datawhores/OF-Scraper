@@ -73,7 +73,7 @@ class tempFilePlaceholder(basePlaceholder):
         # remove for now
         # if env.getattr("ALLOW_DUPE_MEDIA"):
         #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
-        script_name = naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele)
         if not script_name:
             self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
         else:
@@ -158,7 +158,7 @@ class Placeholders(basePlaceholder):
     async def init(self, create=True):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name = naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele)
         if not script_name:
             self._filepath = paths.truncate(pathlib.Path(dir, file))
         else:
@@ -367,7 +367,7 @@ class Textholders(basePlaceholder):
     async def init(self, create=True):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name = naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele)
         if not script_name:
             self._filepath = paths.truncate(pathlib.Path(dir, file))
         else:

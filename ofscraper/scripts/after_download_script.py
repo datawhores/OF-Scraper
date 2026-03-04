@@ -6,11 +6,11 @@ import pathlib
 from typing import Union
 
 import ofscraper.utils.settings as settings
-from ofscraper.utils.system.subprocess import async_run # Changed to async_run
+from ofscraper.utils.system.subprocess import async_run
 import ofscraper.utils.of_env.of_env as env
 
 
-async def after_download_script(final_path: Union[str, pathlib.Path]): # Made async
+async def after_download_script(final_path: Union[str, pathlib.Path]): 
     final_path = str(final_path)
     log = logging.getLogger("shared")
     script_path = settings.get_settings().after_download_script
@@ -30,26 +30,44 @@ async def after_download_script(final_path: Union[str, pathlib.Path]): # Made as
     )
 
     try:
-        # Now using the timeout-protected async_run we built earlier
-        await async_run(
+        # Run the script asynchronously and capture the output
+        result = await async_run(
             [script_path],  
             capture_output=True,
-            input=final_path,
+            input=final_path,  # Pipe the file path into stdin
             text=True,
             check=True,  
             level=env.getattr("AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
             name="after download script",
-            timeout=600 # 10 minute safety timeout
+            timeout=600 
         )
+
+        # --- Explicitly log stdout/stderr mirroring other scripts ---
+        if result:
+            stdout_output = result.stdout.strip() if result.stdout else ""
+            stderr_output = result.stderr.strip() if result.stderr else ""
+            
+            if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
+                if stdout_output:
+                    log.log(
+                        env.getattr("SCRIPT_OUTPUT_SUBPROCCESS_LEVEL"),
+                        f"After download script stdout for '{final_path}':\n{stdout_output}",
+                    )
+                if stderr_output:
+                    log.log(
+                        env.getattr("SCRIPT_OUTPUT_SUBPROCCESS_LEVEL"),
+                        f"After download script stderr for '{final_path}':\n{stderr_output}",
+                    )
+
         log.info(f"Successfully ran after download script for '{final_path}'.")
 
     except FileNotFoundError:
-        log.error(f"After download script executable not found: '{script_path}'.")
+        log.error(f"After download script executable not found: '{script_path}'. Please ensure the path is correct and the script has execute permissions.")
     except subprocess.CalledProcessError as e:
         log.error(f"After download script failed for '{final_path}' with exit code {e.returncode}: '{script_path}'")
-        if e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
-        if e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
+        if e.stdout and e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr and e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
     except Exception as e:
-        log.critical(f"Error running after download script for '{final_path}': {e}", exc_info=True)
+        log.critical(f"An unexpected error occurred while running after download script for '{final_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())

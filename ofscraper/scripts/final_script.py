@@ -62,6 +62,7 @@ def final_script():
             check=True,  # Raise CalledProcessError if script exits with non-zero status
             level=env.getattr("FINAL_SCRIPT_SUBPROCESS_LEVEL"),
             name="Final script",
+            timeout=1800  # Set a timeout of 30 minutes to prevent hanging
         )
         log.debug("Final script ran successfully via stdin.")
 

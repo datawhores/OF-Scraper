@@ -13,6 +13,7 @@ def run(
     capture_output=None,
     level=None,
     name=None,
+    timeout=600, 
     **kwargs,
 ):
     """
@@ -21,61 +22,44 @@ def run(
     """
     log = log or logging.getLogger("shared")
 
-    # The command and its arguments are in the first element of the 'args' tuple
     cmd_args = list(args[0])
 
-    # Check if the command is a Python script
-    if (
-        cmd_args
-        and isinstance(cmd_args[0], str)
-        and cmd_args[0].lower().endswith(".py")
-    ):
-        # Prepend the path to the current Python executable.
+    if (cmd_args and isinstance(cmd_args[0], str) and cmd_args[0].lower().endswith(".py")):
         cmd_args.insert(0, sys.executable)
 
-    # Provide a default name for logging if not supplied
     name = name or " ".join(cmd_args)
 
-    # Correctly initialize the log level
     if level is None:
         level = int(of_env.getattr("LOG_SUBPROCESS_LEVEL", "0"))
 
-    # Reassemble the arguments for subprocess.run
     final_args = (cmd_args,) + args[1:]
 
-    # Set up standard streams
     stdout = stdout if stdout else subprocess.PIPE
     stderr = stderr if stderr else subprocess.PIPE
     if capture_output:
-        stdout = None  # Let subprocess.run handle piping when capturing
+        stdout = None  
         stderr = None
 
-    # Execute the command
-    t = subprocess.run(
-        *final_args,
-        stdout=stdout,
-        stderr=stderr,
-        capture_output=capture_output,
-        **kwargs,
-    )
+    try:
+        t = subprocess.run(
+            *final_args,
+            stdout=stdout,
+            stderr=stderr,
+            capture_output=capture_output,
+            timeout=timeout,
+            **kwargs,
+        )
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"Subprocess {name} timed out after {timeout} seconds.")
 
-    # Conditional logging (level 0 means OFF)
     if level == 0:
         return t
 
     if t.stdout:
-        output = (
-            t.stdout.decode(errors="ignore")
-            if isinstance(t.stdout, bytes)
-            else t.stdout
-        )
+        output = t.stdout.decode(errors="ignore") if isinstance(t.stdout, bytes) else t.stdout
         log.log(level, f"{name} stdout: {output.strip()}")
     if t.stderr:
-        error = (
-            t.stderr.decode(errors="ignore")
-            if isinstance(t.stderr, bytes)
-            else t.stderr
-        )
+        error = t.stderr.decode(errors="ignore") if isinstance(t.stderr, bytes) else t.stderr
         log.log(level, f"{name} stderr: {error.strip()}")
 
     return t
@@ -86,12 +70,17 @@ async def async_run(
     log=None,
     level=None,
     name=None,
-    timeout=600, # 10 Minute strict timeout limit
+    timeout=600, 
+    capture_output=False,
+    input=None,
+    text=False,
+    check=False,
     **kwargs,
 ):
     """
-    Asynchronously executes a command without blocking the main event loop,
-    ideal for heavy I/O tasks like FFmpeg inside Docker containers.
+    Asynchronously executes a command without blocking the main event loop.
+    Reads streams natively to avoid 'communicate()' closing stdin prematurely, 
+    ensuring stdout is ALWAYS perfectly captured.
     """
     log = log or logging.getLogger("shared")
     cmd_args = list(args[0])
@@ -104,22 +93,68 @@ async def async_run(
     if level is None:
         level = int(of_env.getattr("LOG_SUBPROCESS_LEVEL", "0"))
 
-    process = await asyncio.create_subprocess_exec(
-        *cmd_args,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        **kwargs
-    )
+    if capture_output:
+        kwargs["stdout"] = asyncio.subprocess.PIPE
+        kwargs["stderr"] = asyncio.subprocess.PIPE
+
+    if input is not None:
+        kwargs["stdin"] = asyncio.subprocess.PIPE
+        if text and isinstance(input, str):
+            input = input.encode("utf-8")
+
+    process = await asyncio.create_subprocess_exec(*cmd_args, **kwargs)
+
+    async def _read_stream(stream):
+        if stream is None:
+            return b""
+        return await stream.read()
+
+    async def _feed_stdin(stream, data):
+        if stream is None or data is None:
+            return
+        try:
+            stream.write(data)
+            await stream.drain()
+        except Exception:
+            pass # Silently swallow Broken Pipe errors if script ignores stdin
+        finally:
+            try:
+                stream.close()
+            except Exception:
+                pass
 
     try:
-        # Wait for process to finish, but throw exception if it exceeds timeout
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+        # 1. Start feeding stdin in the background
+        if input is not None:
+            asyncio.create_task(_feed_stdin(process.stdin, input))
+        
+        # 2. Read stdout and stderr concurrently
+        out_task = asyncio.create_task(_read_stream(process.stdout))
+        err_task = asyncio.create_task(_read_stream(process.stderr))
+        
+        # 3. Wait for the process to exit, bounded by timeout
+        await asyncio.wait_for(process.wait(), timeout=timeout)
+        
+        # 4. Gather the exact output
+        stdout = await out_task
+        stderr = await err_task
+
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
         raise TimeoutError(f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed.")
 
-    # Mock the return object to perfectly match standard subprocess.run 
+    if text:
+        if stdout is not None:
+            stdout = stdout.decode("utf-8", errors="ignore")
+        if stderr is not None:
+            stderr = stderr.decode("utf-8", errors="ignore")
+
+    if check and process.returncode != 0:
+        raise subprocess.CalledProcessError(
+            process.returncode, cmd_args, output=stdout, stderr=stderr
+        )
+
     class ProcessResult:
         def __init__(self, returncode, stdout, stderr):
             self.returncode = returncode
@@ -132,10 +167,10 @@ async def async_run(
         return t
 
     if t.stdout:
-        output = t.stdout.decode(errors="ignore") if isinstance(t.stdout, bytes) else t.stdout
-        log.log(level, f"{name} stdout: {output.strip()}")
+        output_str = t.stdout if isinstance(t.stdout, str) else t.stdout.decode(errors="ignore")
+        log.log(level, f"{name} stdout: {output_str.strip()}")
     if t.stderr:
-        error = t.stderr.decode(errors="ignore") if isinstance(t.stderr, bytes) else t.stderr
-        log.log(level, f"{name} stderr: {error.strip()}")
+        error_str = t.stderr if isinstance(t.stderr, str) else t.stderr.decode(errors="ignore")
+        log.log(level, f"{name} stderr: {error_str.strip()}")
 
     return t

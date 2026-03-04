@@ -5,13 +5,13 @@ import traceback
 import arrow
 import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as config_data
-from ofscraper.utils.system.subprocess import run
+from ofscraper.utils.system.subprocess import async_run # Changed to async_run
 import ofscraper.utils.of_env.of_env as env
 from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
 
 
-def naming_script(dir, file, ele):
+async def naming_script(dir, file, ele): # Made async
     log = logging.getLogger("shared")
 
     if not settings.get_settings().naming_script:
@@ -63,44 +63,33 @@ def naming_script(dir, file, ele):
                 }
             )
         else:
-            # Optional: Handle cases where 'ele' is an unexpected type.
             log.error(f"Unsupported type for naming script: {type(ele)}")
             return
 
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
 
-        result = run(
+        # Await the new async runner
+        result = await async_run(
             [script_path],
-            input=input_json_str,  # Pass the JSON string as stdin
+            input=input_json_str,  
             capture_output=True,
-            text=True,  # Decode stdout/stderr as text
-            check=True,  # Raise CalledProcessError for non-zero exit codes
+            text=True,  
+            check=True,  
             level=env.getattr("NAMING_SCRIPT_SUBPROCESS_LEVEL"),
             name="naming script",
         )
         log.debug("Naming script ran successfully via stdin.")
-        return result.stdout.strip()
+        return result.stdout.strip() if result and result.stdout else None
 
     except FileNotFoundError:
-        log.error(
-            f"Naming script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
-        )
+        log.error(f"Naming script executable not found: '{script_path}'.")
     except subprocess.CalledProcessError as e:
-        log.error(
-            f"Naming script failed with exit code {e.returncode}: '{script_path}'"
-        )
-        log.error(f"Naming script stdout:\n{e.stdout.strip()}")
-        log.error(f"Naming script stderr:\n{e.stderr.strip()}")
+        log.error(f"Naming script failed with exit code {e.returncode}: '{script_path}'")
+        if e.stdout and e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr and e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
     except json.JSONDecodeError as e:
         log.error(f"Failed to serialize payload to JSON for naming script: {e}")
     except Exception as e:
-        log.critical(
-            f"An unexpected error occurred while running naming script '{script_path}': {e}",
-            exc_info=True,
-        )
-        log.critical(
-            f"An unexpected error occurred while running final script with script '{script_path}': {e}",
-            exc_info=True,
-        )
+        log.critical(f"An unexpected error occurred while running naming script '{script_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())

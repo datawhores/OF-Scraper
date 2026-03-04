@@ -70,6 +70,7 @@ def after_download_action_script(username, media, posts=None, action=None):
             check=True,  # Raise CalledProcessError if script exits with non-zero status
             name="after download action script",
             level=env.getattr("AFTER_DOWNLOAD_ACTION_SCRIPT_SUBPROCESS_LEVEL"),
+            timeout=1800
         )
         log.debug(
             f"After download action script ran successfully for {processed_username} via stdin."

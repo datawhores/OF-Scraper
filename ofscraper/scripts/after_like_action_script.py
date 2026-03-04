@@ -69,6 +69,7 @@ def after_like_action_script(username, media, posts=None, action=None):
             check=True,  # Raise CalledProcessError if script exits with non-zero status
             name="after like action script",
             level=env.getattr("AFTER_LIKE_ACTION_SCRIPT_SUBPROCESS_LEVEL"),
+            timeout=1800
         )
         log.debug(
             f"After like action script ran successfully for {processed_username} via stdin."
