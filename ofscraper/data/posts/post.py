@@ -637,7 +637,7 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
         else:
-            log.info(f"Skipping wall/post APIs for {username} (Expired > {grace_days} days)")
+            log.info(f"Skipping timeline/story APIs for {username} (Expired > {grace_days} days)")
 
         # Gather results and add to postcollection
         for result in asyncio.as_completed(tasks):
