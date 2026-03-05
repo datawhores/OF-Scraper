@@ -31,8 +31,8 @@ class InputApp(App):
         ("ctrl+a", "select_all_filtered", "Select All Filtered"),
         ("u", "select_unique_current_page", "Select Unique Current Page"),
         ("ctrl+u", "select_unique_all_filtered", "Select Unique All Filtered"),
-        ("e", "select_page_undownloaded", "Select Page Undownloaded"),
-        ("ctrl+e", "select_all_undownloaded", "Select All Undownloaded"),
+        ("k", "select_page_undownloaded", "Select Page Undownloaded"),
+        ("ctrl+k", "select_all_undownloaded", "Select All Undownloaded"),
     ]
     CSS = CSS
 
@@ -56,6 +56,8 @@ class InputApp(App):
 
     def on_ready(self) -> None:
         self.init_table()
+        # Initialize the dynamic header labels
+        self.update_toggle_labels()
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
 
     # --- UI Events ---
@@ -96,9 +98,11 @@ class InputApp(App):
         elif event.button.id in ["filter", "filter2"]:
             self.query_one("#options_sidebar").toggle_hidden()
             self.filter_table()
+            self.update_toggle_labels()
         elif event.button.id in ["page_enter", "page_enter2"]:
             self.query_one("#page_option_sidebar").toggle_hidden()
             self.filter_table()
+            self.update_toggle_labels()
         elif event.button.id in ["console", "table"]:
             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"
 
@@ -110,28 +114,47 @@ class InputApp(App):
             cursor_coordinate = table.cursor_coordinate
             _, col = cursor_coordinate
             if len(table.ordered_rows) == 0:
-                return("ctrl+e", "select_all_undownloaded", "Select All Undownloaded"),
+                return
             col_name = table.ordered_columns_keys[col]
             if col_name not in {"other_posts_with_media", "download_cart"}:
                 self.update_input(col_name, table.get_cell_at(cursor_coordinate))
 
-    # --- Actions ---
+    # --- Sidebar Actions ---
     def action_toggle_options_sidebar(self) -> None:
         for ele in filter(lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")):
             ele.toggle_hidden()
         self.query_one("#options_sidebar").toggle_hidden()
+        self.update_toggle_labels()
 
     def action_toggle_page_sidebar(self) -> None:
         for ele in filter(lambda x: x.id != "page_option_sidebar", self.query("Sidebar.-show")):
             ele.toggle_hidden()
         self.query_one("#page_option_sidebar").toggle_hidden()
+        self.update_toggle_labels()
 
     def action_toggle_download_sidebar(self) -> None:
         for ele in filter(lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")):
             ele.toggle_hidden()
         self.query_one("#download_option_sidebar").toggle_hidden()
+        self.update_toggle_labels()
 
-    # --- Standard Cart Actions (All Duplicates Included) ---
+    def update_toggle_labels(self) -> None:
+        """Updates the Sidebar Status column while keeping the keybind reminders."""
+        opt_open = self.query_one("#options_sidebar").has_class("-show")
+        page_open = self.query_one("#page_option_sidebar").has_class("-show")
+        dl_open = self.query_one("#download_option_sidebar").has_class("-show")
+
+        self.query_one("#label_opt_sidebar").update(
+            f"Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
+        )
+        self.query_one("#label_page_sidebar").update(
+            f"Page Menu:     [bold cyan]Ctrl+T[/bold cyan] [bold]({'Open' if page_open else 'Closed'})[/bold]"
+        )
+        self.query_one("#label_dl_sidebar").update(
+            f"Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
+        )
+
+    # --- Standard Cart Actions ---
     def action_select_current_page(self) -> None:
         rows = self._filtered_rows
         num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
@@ -144,15 +167,6 @@ class InputApp(App):
 
     def action_select_all_filtered(self) -> None:
         self._run_3_state_selection(self._filtered_rows)
-    def action_select_all_undownloaded(self) -> None:
-        """Selects every filtered item that is not marked as downloaded in the DB."""
-        for row in self._filtered_rows:
-            # Check the actual database 'downloaded' flag, not the cart state
-            if not row["downloaded"] and row["download_cart"] == "[]":
-                row["download_cart"] = "[added]"
-        
-        self.set_page() # Refresh view
-        self.update_cart_info()
 
     def action_select_page_undownloaded(self) -> None:
         """Selects items on the CURRENT page that are not in the database."""
@@ -165,6 +179,15 @@ class InputApp(App):
         current_page_rows = rows[start : start + num_page]
 
         for row in current_page_rows:
+            if not row["downloaded"] and row["download_cart"] == "[]":
+                row["download_cart"] = "[added]"
+        
+        self.set_page() 
+        self.update_cart_info()
+
+    def action_select_all_undownloaded(self) -> None:
+        """Selects every filtered item that is not marked as downloaded in the DB."""
+        for row in self._filtered_rows:
             if not row["downloaded"] and row["download_cart"] == "[]":
                 row["download_cart"] = "[added]"
         
@@ -198,7 +221,7 @@ class InputApp(App):
         self.set_page()
         self.update_cart_info()
 
-    # --- Unique Cart Actions (Only 1 per media_id) ---
+    # --- Unique Cart Actions ---
     def action_select_unique_current_page(self) -> None:
         rows = self._filtered_rows
         num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
@@ -224,19 +247,12 @@ class InputApp(App):
         all_added_media_ids = {row["media_id"] for row in self.table_data if row["download_cart"] in {"[added]", "[downloading]"}}
         outside_added_media_ids = {row["media_id"] for row in self.table_data if row["download_cart"] in {"[added]", "[downloading]"} and id(row) not in eval_row_ids}
 
-        needs_state_1 = any(
-            row["download_cart"] == "[]" and row["media_id"] not in all_added_media_ids
-            for row in eligible_rows
-        )
-        needs_state_2 = any(
-            row["download_cart"] in {"[downloaded]", "[failed]"} and row["media_id"] not in all_added_media_ids
-            for row in eligible_rows
-        )
-        has_added_in_pool = any(row["download_cart"] == "[added]" for row in eligible_rows)
-
         seen_media_ids = outside_added_media_ids.copy()
 
-        if needs_state_1:
+        if needs_state_1 := any(
+            row["download_cart"] == "[]" and row["media_id"] not in all_added_media_ids
+            for row in eligible_rows
+        ):
             for row in eligible_rows:
                 if row["download_cart"] == "[]":
                     if row["media_id"] not in seen_media_ids:
@@ -245,7 +261,10 @@ class InputApp(App):
                 elif row["download_cart"] == "[added]":
                     seen_media_ids.add(row["media_id"])
                     
-        elif needs_state_2:
+        elif needs_state_2 := any(
+            row["download_cart"] in {"[downloaded]", "[failed]"} and row["media_id"] not in all_added_media_ids
+            for row in eligible_rows
+        ):
             for row in eligible_rows:
                 if row["download_cart"] in {"[downloaded]", "[failed]", "[added]"}:
                     if row["media_id"] not in seen_media_ids:
@@ -254,7 +273,7 @@ class InputApp(App):
                     else:
                         row["download_cart"] = "[]" 
                         
-        elif has_added_in_pool:
+        elif any(row["download_cart"] == "[added]" for row in eligible_rows):
             for row in eligible_rows:
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]" 
@@ -278,7 +297,6 @@ class InputApp(App):
         log.info(f"Number of Downloads sent to queue {len(cart)}")
 
     def update_cell_state(self, row_key, new_state, style):
-        """Allows background threads to safely update the table state and UI"""
         for row in self.table_data:
             if str(row["index"]) == str(row_key):
                 row["download_cart"] = new_state
@@ -291,7 +309,7 @@ class InputApp(App):
             
         self.update_cart_info()
 
-    # --- Native Python Sorting ---
+    # --- Sorting ---
     def init_sort(self):
         self._reverse = settings.get_settings().desc or False
         self._sortkey = settings.get_settings().db_sort or "number"
@@ -334,7 +352,7 @@ class InputApp(App):
         elif self._sortkey == key and self._reverse:
             self._reverse = False
 
-    # --- Native Python Filtering ---
+    # --- Filtering ---
     def init_filtered_rows(self):
         self._filter_runner()
 
@@ -354,7 +372,6 @@ class InputApp(App):
                     log.debug(f"Error filtering {name}: {str(E)}")
             self._filtered_rows = filter_rows
 
-    # --- Inputs ---
     def update_input(self, col_name, value):
         try:
             value = value.plain if isinstance(value, Text) else value
@@ -415,7 +432,7 @@ class InputApp(App):
         self.init_download_filter()
         self.set_page()
         self.update_search_info()
-        self.update_cart_info()  # Ensure cart is drawn immediately
+        self.update_cart_info()
 
     def _insert_visible_table(self):
         table = self.table
@@ -428,7 +445,7 @@ class InputApp(App):
             width = 30 if ele == "other_posts_with_media" else width
             table.add_column(re.sub("_", " ", ele).title(), key=str(ele), width=width)
 
-    # --- Stats ---
+    # --- Stats & View Bars ---
     def update_search_info(self):
         page = self.query_one("#page_input").value or START_PAGE
         num_page = self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE

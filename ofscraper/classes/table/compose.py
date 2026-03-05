@@ -1,9 +1,4 @@
-from textual.containers import (
-    Container,
-    Horizontal,
-    Vertical,
-    VerticalGroup,
-)
+from textual.containers import Container, Horizontal, Vertical, VerticalGroup
 from textual.widgets import Button, ContentSwitcher, Rule, Static
 
 from ofscraper.classes.table.fields.datefield import DateField
@@ -21,11 +16,19 @@ from ofscraper.classes.table.sections.sidebar import Sidebar
 from ofscraper.classes.table.sections.table import DataTableExtended as DataTable
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE, START_PAGE
 from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
+import ofscraper.utils.settings as settings
 
 
 def composer():
     # =================================================================
-    # ROW 1: Expanded 3-Column Header (Trackers | Page Info | Full Instructions)
+    # TOP TABS: Switch Views
+    # =================================================================
+    with Horizontal(id="tabs_row"):
+        yield Button("DataTable", id="table")
+        yield Button("Console", id="console")
+
+    # =================================================================
+    # HEADER: 4-Column Info (Trackers | Page Info | Toggles | Shortcuts)
     # =================================================================
     with Horizontal(id="header_top_row"):
         
@@ -42,26 +45,31 @@ def composer():
 
         yield Rule(orientation="vertical", classes="header_divider")
 
-        # Column 3: Full Keyboard Instructions (No Abbreviations)
+        # Column 3: Toggles Status
+        with Vertical(id="toggles_column"):
+            yield Static("[bold blue]Sidebar Controls:[/bold blue]", markup=True)
+            yield Static("Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold](Closed)[/bold]", id="label_opt_sidebar", markup=True)
+            yield Static("Page Menu:     [bold cyan]Ctrl+T[/bold cyan] [bold](Closed)[/bold]", id="label_page_sidebar", markup=True)
+            yield Static("Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold](Closed)[/bold]", id="label_dl_sidebar", markup=True)
+            yield Static("[bold blue]Table:[/bold blue] Navigate (Arrows) | Quick Filter (; or ')", id="table_nav_hint", markup=True)
+        yield Rule(orientation="vertical", classes="header_divider")
+
+        # Column 4: Full Keyboard Instructions (No Abbreviations)
         with Vertical(id="instructions_column"):
             yield Static(
-                "[bold blue]General:[/bold blue] Search (Ctrl+S) | Page (Ctrl+T) | Download (Ctrl+D)\n"
-                "[bold blue]Table:[/bold blue] Navigate (Arrows) | Quick Filter (; or ')\n"
                 "[bold blue]Cart_Selection:[/bold blue] Add Page (A) | Add All Filtered (Ctrl+A)\n"
-                "[bold blue]Cart_Selection:[/bold blue] Add Unique Page (U) | Add All Unique Filtered (Ctrl+U)\n"
-                "[bold green]Cart_New Only: [/bold green] Add Page (E) | Add All Filtered (Ctrl+E)\n",
-               id="table_instructions",
+                "[bold blue]Cart_Unique:[/bold blue] Add Unique Page (U) | Add All Unique (Ctrl+U)\n"
+                "[bold green]Cart_New Only:[/bold green] Add Page (K) | Add All Filtered (Ctrl+K)\n",
+                id="table_instructions",
                 markup=True,
             )
 
     yield Rule()
 
     # =================================================================
-    # ROW 2: Primary Action Buttons
+    # ACTION BUTTONS: Modify/Submit Data
     # =================================================================
     with Horizontal(id="button_row"):
-        yield Button("DataTable", id="table")
-        yield Button("Console", id="console")
         yield Button("Reset Filters", id="reset")
         yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
 
