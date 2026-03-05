@@ -156,7 +156,7 @@ SELECT media_id, post_id FROM medias
 """
 
 allPostIDDLCheck = """
-SELECT media_id, post_id FROM medias where downloaded=(1) or unlocked=(1)
+SELECT media_id, post_id FROM medias where downloaded=(1)
 """
 getTimelineMedia = """
 SELECT
