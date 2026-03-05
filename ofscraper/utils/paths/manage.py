@@ -28,7 +28,13 @@ def copy_path(source, dst):
         logging.getLogger("shared").debug("failed to copy with copy2 using copy")
         logging.getLogger("shared").traceback_(e)
         logging.getLogger("shared").traceback_(traceback.format_exc())
-        shutil.copy(source, dst)
+        try:
+            shutil.copy(source, dst)
+        except OSError:
+            logging.getLogger("shared").debug(
+                "failed to copy with copy, falling back to copyfile"
+            )
+            shutil.copyfile(source, dst)
     except Exception as e:
         raise e
 
