@@ -2,9 +2,7 @@ from textual.containers import (
     Container,
     Horizontal,
     Vertical,
-    VerticalScroll,
     VerticalGroup,
-    HorizontalGroup,
 )
 from textual.widgets import Button, ContentSwitcher, Rule, Static
 
@@ -26,38 +24,49 @@ from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
 
 
 def composer():
-    with HorizontalGroup(id="buttons"):
-        yield Button("DataTable", id="table")
-        yield Button("Console", id="console")
+    # =================================================================
+    # ROW 1: Expanded 3-Column Header (Trackers | Page Info | Full Instructions)
+    # =================================================================
+    with Horizontal(id="header_top_row"):
+        
+        # Column 1: Database & Cart Status
+        with Vertical(id="trackers_column"):
+            yield Static("", id="db_info_bar", markup=True)
+            yield Static("", id="global_cart_info", markup=True)
 
-    # =================================================================
-    # ALWAYS VISIBLE GLOBAL TRACKERS (Condensed)
-    # =================================================================
-    yield Static("", id="db_info_bar", markup=True)
-    yield Static("", id="view_info_bar", markup=True)
-    yield Static("", id="global_cart_info", markup=True)
+        yield Rule(orientation="vertical", classes="header_divider")
+
+        # Column 2: Current Page & Sorting State
+        with Vertical(id="page_info_column"):
+            yield Static("", id="view_info_bar", markup=True)
+
+        yield Rule(orientation="vertical", classes="header_divider")
+
+        # Column 3: Full Keyboard Instructions (No Abbreviations)
+        with Vertical(id="instructions_column"):
+            yield Static(
+                "[bold blue]General:[/bold blue] Search (Ctrl+S) | Page (Ctrl+T) | Download (Ctrl+D)\n"
+                "[bold blue]Table:[/bold blue] Navigate (Arrows) | Quick Filter (; or ')\n"
+                "[bold blue]Cart_Selection:[/bold blue] Add Page (A) | Add All Filtered (Ctrl+A)\n"
+                "[bold blue]Cart_Selection:[/bold blue] Add Unique Page (U) | Add All Unique Filtered (Ctrl+U)\n"
+                "[bold green]Cart_New Only: [/bold green] Add Page (E) | Add All Filtered (Ctrl+E)\n",
+               id="table_instructions",
+                markup=True,
+            )
+
     yield Rule()
 
+    # =================================================================
+    # ROW 2: Primary Action Buttons
+    # =================================================================
+    with Horizontal(id="button_row"):
+        yield Button("DataTable", id="table")
+        yield Button("Console", id="console")
+        yield Button("Reset Filters", id="reset")
+        yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
+
     with ContentSwitcher(initial="table_page"):
-        with VerticalScroll(id="table_page"):
-            
-            # =================================================================
-            # ULTRA-CONDENSED SINGLE ROW INSTRUCTIONS (CRASH FIXED)
-            # =================================================================
-            with Horizontal(id="table_info_header"):
-                yield Static(
-                    "[bold blue]UI:[/bold blue] Search(Ctrl+S) Page(Ctrl+T) DL(Ctrl+D) | [bold blue]Table:[/bold blue] Nav(Arrows) Filter(; or ')",
-                    markup=True,
-                )
-                yield Rule(orientation="vertical")
-                yield Static(
-                    "[bold blue]Cart:[/bold blue] Pg(A) All(Ctrl+A) U-Pg(U) U-All(Ctrl+U) | [gray]Cycle: Smart->Force->Clear[/gray]",
-                    markup=True,
-                )
-            
-            with HorizontalGroup(id="data"):
-                yield Button("Reset", id="reset")
-                yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
+        with Vertical(id="table_page"):
                 
             with VerticalGroup(id="table_main"):
                 yield DataTable(id="data_table")

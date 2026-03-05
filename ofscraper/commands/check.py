@@ -758,9 +758,8 @@ async def row_gather(username, model_id):
         is_downloaded = (ele.id, ele.post_id) in downloaded
         post_media_len = len(ele._post.post_media)
         
-        if is_downloaded:
-            cart_state = "[downloaded]"
-        elif not is_unlocked:
+      
+        if not is_unlocked:
             cart_state = "Not Unlocked"
         else:
             cart_state = "[]"

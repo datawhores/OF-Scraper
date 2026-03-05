@@ -4,35 +4,68 @@ Widgets = """
     }
     Screen {
         layers: sidebar;
-        overflow-y: hidden;
-        overflow-x: hidden;
+        overflow: hidden;
     }
     Button {
         height: 3;
         margin: 0 1; 
     }
+    
+    /* The flexible header section */
+    #header_top_row {
+        height: auto; 
+        min-height: 7;
+        margin-bottom: 0;
+        layout: horizontal; 
+    }
+    
+    /* Three equal columns */
+    #trackers_column, #page_info_column, #instructions_column {
+        width: 1fr; 
+        height: 100%;
+    }
+    
+    /* Center columns vertically */
+    #trackers_column, #page_info_column {
+        content-align: left middle;
+    }
+
+    #instructions_column {
+        content-align: left top;
+        padding-left: 1; 
+    }
+    
+    .header_divider {
+        height: 100%;
+        margin: 0 1;
+    }
+    
+    #table_instructions {
+        text-align: left;
+        width: 100%;
+    }
+    
+    Rule {
+        margin: 0;
+    }
+    
+    #button_row {
+        height: 3;
+        margin-top: 1;
+        margin-bottom: 1;
+    }
 """
 
 Table = """
     #data_table {
-        margin-top: 1;
-        height: 100%;
-        min-height: 20; /* Prevents the table from collapsing to 0 height */
+        margin-top: 0;
+        height: 1fr;
+        min-height: 20; 
     }
 
     #table_main {
-        height: 100%; /* Forces the container to take up the remaining screen */
+        height: 1fr; 
         min-height: 20;
-    }
-
-    #table_info_header {
-        height: auto;
-        margin-bottom: 1;
-    }
-
-    .table_info {
-        width: 1fr;
-        padding: 0 2;
     }
 """
 

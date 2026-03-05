@@ -31,6 +31,8 @@ class InputApp(App):
         ("ctrl+a", "select_all_filtered", "Select All Filtered"),
         ("u", "select_unique_current_page", "Select Unique Current Page"),
         ("ctrl+u", "select_unique_all_filtered", "Select Unique All Filtered"),
+        ("e", "select_page_undownloaded", "Select Page Undownloaded"),
+        ("ctrl+e", "select_all_undownloaded", "Select All Undownloaded"),
     ]
     CSS = CSS
 
@@ -108,7 +110,7 @@ class InputApp(App):
             cursor_coordinate = table.cursor_coordinate
             _, col = cursor_coordinate
             if len(table.ordered_rows) == 0:
-                return
+                return("ctrl+e", "select_all_undownloaded", "Select All Undownloaded"),
             col_name = table.ordered_columns_keys[col]
             if col_name not in {"other_posts_with_media", "download_cart"}:
                 self.update_input(col_name, table.get_cell_at(cursor_coordinate))
@@ -142,6 +144,32 @@ class InputApp(App):
 
     def action_select_all_filtered(self) -> None:
         self._run_3_state_selection(self._filtered_rows)
+    def action_select_all_undownloaded(self) -> None:
+        """Selects every filtered item that is not marked as downloaded in the DB."""
+        for row in self._filtered_rows:
+            # Check the actual database 'downloaded' flag, not the cart state
+            if not row["downloaded"] and row["download_cart"] == "[]":
+                row["download_cart"] = "[added]"
+        
+        self.set_page() # Refresh view
+        self.update_cart_info()
+
+    def action_select_page_undownloaded(self) -> None:
+        """Selects items on the CURRENT page that are not in the database."""
+        rows = self._filtered_rows
+        num_page = int(self.query_one("#num_per_page_input").value or AMOUNT_PER_PAGE)
+        total_pages = max((len(rows) + num_page - 1) // num_page, 1)
+        page = min(int(self.query_one("#page_input").value) or 1, total_pages)
+        
+        start = (page - 1) * num_page
+        current_page_rows = rows[start : start + num_page]
+
+        for row in current_page_rows:
+            if not row["downloaded"] and row["download_cart"] == "[]":
+                row["download_cart"] = "[added]"
+        
+        self.set_page() 
+        self.update_cart_info()
 
     def _run_3_state_selection(self, rows_to_evaluate: list):
         if not rows_to_evaluate:
