@@ -56,15 +56,15 @@ class ResponseField(SelectField):
             initial_state=True,
         )
         self._streams = Selection(
-            "Stream",
-            value="Stream",
+            "Streams",
+            value="Streams",
             disabled=False,
             id=f"{self.filter_name}_stream",
             initial_state=True,
         )
         self._messages = Selection(
-            "Message",
-            value="Message",
+            "Messages",
+            value="Messages",
             disabled=False,
             id=f"{self.filter_name}_message",
             initial_state=True,
