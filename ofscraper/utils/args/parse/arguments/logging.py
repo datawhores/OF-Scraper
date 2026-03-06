@@ -6,7 +6,7 @@ log_level_option = click.option(
     "log_level",
     help="Set log file level",
     type=click.Choice(
-        ["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
+        ["OFF", "LOW", "NORMAL", "DEBUG", "TRACE"],
         case_sensitive=False,
     ),
     default=None,
@@ -19,7 +19,7 @@ discord_log_level_option = click.option(
     "discord_level",
     help="Set discord log level",
     type=click.Choice(
-        ["OFF", "STATS", "LOW", "NORMAL"],
+        ["OFF", "LOW", "NORMAL"],
         case_sensitive=False,
     ),
     default="OFF",
@@ -32,7 +32,7 @@ console_output_level_option = click.option(
     "output_level",
     help="Set console output log level",
     type=click.Choice(
-        ["PROMPT", "STATS", "LOW", "NORMAL", "DEBUG"],
+        ["PROMPT", "LOW", "NORMAL", "DEBUG"],
         case_sensitive=False,
     ),
     default="NORMAL",
