@@ -85,43 +85,53 @@ class DataTableExtended(DataTable):
 
 
 def get_styled(row):
-        styled_row = []
-        for key in get_col_names():
-            if key in ["length","post_date"]:
-                styled_row.append(
-                    Text(str(row[key]), style="bold deep_sky_blue1")
-                )
-            elif key =="download_cart":
-                styled_row.append(
-                    Text(str(row[key]), style="bold light_goldenrod2")
-                )
-            elif key=="text":
-                styled_row.append(
-                    Text(str(row[key]), style="bold dark_sea_green1")
-                )
-            elif  key=="number":
-                styled_row.append(
-                    Text(str(row[key]), style="bold bright_white")
-                )
-                
-            elif isinstance(row[key],str):
-                styled_row.append(
-                    Text(str(row[key]), style="bold medium_spring_green")
-                )
-            elif isinstance(row[key],bool):
-                styled_row.append(
-                    Text(str(row[key]), style="bold plum1")
-                )
-            elif isinstance(row[key],(int,list)):
-                styled_row.append(
-                    Text(str(row[key]), style="bold bright_white")
-                )
-        
+    styled_row = []
+    for key in get_col_names():
+        if key in ["length","post_date"]:
+            styled_row.append(
+                Text(str(row[key]), style="bold deep_sky_blue1")
+            )
+        elif key =="download_cart":
+            val = str(row[key])
+            if val == "[downloaded]":
+                style = "bold green"
+            elif val == "[failed]":
+                style = "bold red"
+            elif val == "[skipped]":
+                style = "bold bright_yellow"
+            elif val == "[downloading]":
+                style = "bold dark_orange"
             else:
-                styled_row.append(Text(row[key]), style="bold white")
-        return styled_row
-
-
+                style = "bold light_goldenrod2" # For [], [added], and Not Unlocked
+            
+            styled_row.append(
+                Text(val, style=style)
+            )
+        elif key=="text":
+            styled_row.append(
+                Text(str(row[key]), style="bold dark_sea_green1")
+            )
+        elif  key=="number":
+            styled_row.append(
+                Text(str(row[key]), style="bold bright_white")
+            )
+            
+        elif isinstance(row[key],str):
+            styled_row.append(
+                Text(str(row[key]), style="bold medium_spring_green")
+            )
+        elif isinstance(row[key],bool):
+            styled_row.append(
+                Text(str(row[key]), style="bold plum1")
+            )
+        elif isinstance(row[key],(int,list)):
+            styled_row.append(
+                Text(str(row[key]), style="bold bright_white")
+            )
+    
+        else:
+            styled_row.append(Text(row[key]), style="bold white")
+    return styled_row
 
 
     

@@ -17,4 +17,4 @@ def read_one_good_scan_check(model_id, api):
 
 def read_check_mode(model_id, api):
     api = api.lower()
-    return cache.get(f"{api}_v2_check_{model_id}", default=[])
+    return cache.get(f"{api}_v2_check_{model_id}", default=None)

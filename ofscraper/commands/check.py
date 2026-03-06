@@ -150,7 +150,6 @@ def _process_user_batch(
     Processes all media items for a single user's batch.
     """
     if _process_user_batch.counter == 0:
-        # Simplified CDM check
         log.info("Performing first-run CDM check...")
         if not network.check_cdm():
             log.info("CDM check raised an error. This check will not be repeated.")
@@ -160,47 +159,63 @@ def _process_user_batch(
 
     operations.table_init_create(model_id=model_id, username=username)
 
-    for i, media in enumerate(media_list):
-        key = row_list[i][0]  # Get the original key for UI updates
-        post = post_list[i]
+    for i in range(len(media_list)):
+        key = row_list[i][0]  
+        
+        # DYNAMIC FETCH: Grab the absolute newest media object from the collection.
+        try:
+            fresh_collection = check_user_dict[model_id]["collection"]
+            media = fresh_collection.find_media_item(media_list[i].id) or media_list[i]
+            post = media.post
+        except Exception:
+            media = media_list[i]
+            post = post_list[i]
 
         log.info(f"Attempting to download: {media.filename} for {username}")
 
-        # Retry logic for each item
-        for attempt in range(2):  # 0 for first try, 1 for retry
+        for attempt in range(2):  
             try:
-                values = process_dicts(username, model_id, media, post)
+                # Wrap in a list beforehand to guarantee reference integrity
+                target_media = [media]
+                values = process_dicts(username, model_id, target_media, [post])
+                
                 if values is None or values[-1] == 1:
                     raise Exception("Download failed based on process_dicts result")
+
+                # THE VITAL FIX: The object inside `target_media` was just mutated by the 
+                # asyncio consumer. We MUST overwrite the master lists with this exact object 
+                # so the stats manager and scripts see the size and success markers!
+                media_list[i] = target_media[0]
+                post_list[i] = target_media[0].post
 
                 # Success cases
                 if values[-2] == 1:
                     log.info(f"Download skipped: {media.filename}")
-                    app.app.table.update_cell_at_key(
-                        key,
-                        "download_cart",
-                        Text("[skipped]", style="bold bright_yellow"),
-                    )
+                    app.app.update_cell_state(key, "[skipped]", "bold bright_yellow")
                 else:
                     log.info(f"Download finished: {media.filename}")
-                    app.app.table.update_cell_at_key(
-                        key, "download_cart", Text("[downloaded]", style="bold green")
-                    )
+                    app.app.update_cell_state(key, "[downloaded]", "bold green")
 
-                break  # Exit retry loop on success
+                break  
 
             except Exception as e:
                 log.warning(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
-                if attempt == 0:  # If first attempt failed
+                if attempt == 0:  
                     log.info("Refreshing data and retrying...")
                     data_refill(model_id)
-                    time.sleep(1)  # Small delay before retry
-                else:  # If second attempt also failed
+                    time.sleep(1)  
+                    
+                    # Re-fetch the fresh object for the retry attempt
+                    try:
+                        fresh_collection = check_user_dict[model_id]["collection"]
+                        media = fresh_collection.find_media_item(media.id) or media
+                        post = media.post
+                        log.info(f"Successfully retrieved fresh URL for {media.filename}")
+                    except Exception:
+                        pass
+                else:  
                     log.error(f"Download failed permanently for {media.filename}.")
-                    app.app.table.update_cell_at_key(
-                        key, "download_cart", Text("[failed]", style="bold red")
-                    )
-
+                    app.app.update_cell_state(key, "[failed]", "bold red")
 
 # Initialize counter on the function object
 _process_user_batch.counter = 0
@@ -320,26 +335,23 @@ async def post_check_retriver(forced=False):
                 )
                 if "Timeline" in areas:
                     oldtimeline = read_check(model_id, timeline.API)
-                    if len(oldtimeline) > 0 and not forced:
+                    if oldtimeline is not None and not forced:
                         timeline_data = oldtimeline
                     else:
-                        timeline_data = await timeline.get_timeline_posts(
-                            model_id, user_name, c=c
-                        )
+                        timeline_data = await timeline.get_timeline_posts(model_id, user_name, c=c)
                         set_check(timeline_data, model_id, timeline.API)
+                        
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
-                    if len(oldarchive) > 0 and not forced:
+                    if oldarchive is not None and not forced:
                         archived_data = oldarchive
                     else:
-                        archived_data = await archived.get_archived_posts(
-                            model_id, user_name, c=c
-                        )
+                        archived_data = await archived.get_archived_posts(model_id, user_name, c=c)
                         set_check(archived_data, model_id, archived.API)
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
-                    if len(oldpinned) > 0 and not forced:
+                    if oldpinned is not None and not forced:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
@@ -347,37 +359,35 @@ async def post_check_retriver(forced=False):
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
-                    if len(oldlabels) > 0 and not forced:
+                    if oldlabels is not None and not forced:
                         labels_data = oldlabels
                     else:
                         labels_resp = await labels.get_labels(model_id, c=c)
                         await operations.make_label_table_changes(
-                            labels_resp,
-                            model_id=model_id,
-                            username=user_name,
-                            posts=False,
+                            labels_resp, model_id=model_id, username=user_name, posts=False
                         )
-                        labels_data = [
-                            post
-                            for label in labels_resp
-                            for post in label.get("posts", [])
-                        ]
+                        labels_data = [post for label in labels_resp for post in label.get("posts", [])]
                         set_check(labels_data, model_id, labels.API)
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
-                    if len(oldstreams) > 0 and not forced:
+                    if oldstreams is not None and not forced:
                         streams_data = oldstreams
                     else:
-                        streams_resp = await streams.get_streams_posts(
-                            model_id, user_name, c=c
-                        )
-                        streams_data = [
-                            post
-                            for streams in streams_resp
-                            for post in streams.get("posts", [])
-                        ]
+                        streams_resp = await streams.get_streams_posts(model_id, user_name, c=c)
+                        streams_data = [post for streams in streams_resp for post in streams.get("posts", [])]
                         set_check(streams_data, model_id, streams.API)
+
+
+
+
+
+
+
+
+
+
+
 
                 await operations.make_post_table_changes(
                     all_posts=pinned_data
@@ -492,23 +502,26 @@ async def message_check_retriver(forced=False):
                 f"({of_env.getattr('NUMBER_REGEX')}+)", item
             ) or re.search(f"^({of_env.getattr('NUMBER_REGEX')}+)$", item)
             name_match = re.search(f"^{of_env.getattr('USERNAME_REGEX')}+$", item)
+            
             if num_match:
                 model_id = num_match.group(1)
                 user_name = profile.scrape_profile(model_id)["username"]
             elif name_match:
                 user_name = name_match.group(0)
                 model_id = profile.get_id(user_name)
+                
             if model_id and user_name:
                 log.info(f"Getting Messages/Paid content for {user_name}")
                 await operations.table_init_create(
                     model_id=model_id, username=user_name
                 )
-                # messages
+                
+                # --- Messages ---
                 messages = None
                 oldmessages = read_check(model_id, messages_.API)
-                log.debug(f"Number of messages in cache {len(oldmessages)}")
+                log.debug(f"Number of messages in cache {len(oldmessages or [])}")
 
-                if len(oldmessages) > 0 and not forced:
+                if oldmessages is not None and not forced:
                     messages = oldmessages
                 else:
                     messages = await messages_.get_messages(model_id, user_name, c=c)
@@ -521,20 +534,22 @@ async def message_check_retriver(forced=False):
                     message_posts_array, model_id=model_id, username=user_name
                 )
 
-                oldpaid = read_check(model_id, paid_.API) or []
+                # --- Paid Content ---
+                oldpaid = read_check(model_id, paid_.API)
                 paid = None
-                # paid content
-                if len(oldpaid) > 0 and not forced:
+                
+                if oldpaid is not None and not forced:
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
                     set_check(paid, model_id, paid_.API)
+                    
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
+                
                 final_post_array = paid_posts_array + message_posts_array
                 yield user_name, model_id, final_post_array
-
 
 def purchase_checker():
     purchase_checker_runner()
@@ -577,7 +592,7 @@ async def purchase_check_retriver(forced=False):
             oldpaid = read_check(model_id, paid_.API)
             paid = None
 
-            if len(oldpaid) > 0 and not forced:
+            if oldpaid is not None and not forced:
                 paid = oldpaid
             elif user_name == of_env.getattr("DELETED_MODEL_PLACEHOLDER"):
                 paid_user_dict = await paid_.get_all_paid_posts()
@@ -653,7 +668,7 @@ async def process_post_media(username, model_id, posts_array):
     )
     collection = check_user_dict[model_id]["collection"]
     collection: PostCollection
-    collection.add_posts(posts_array)
+    collection.add_posts(posts_array,overwrite=True)
     media = collection.all_unique_media
     await insert_media(username, model_id, media)
     return media
@@ -673,7 +688,7 @@ async def get_paid_ids(model_id, user_name):
     oldpaid = read_check(model_id, paid_.API)
     paid = None
 
-    if len(oldpaid) > 0 and not settings.get_settings().force:
+    if oldpaid is not None and not settings.get_settings().force:
         paid = oldpaid
     else:
         async with manager.Manager.session.aget_ofsession(
@@ -758,11 +773,16 @@ async def row_gather(username, model_id):
         is_downloaded = (ele.id, ele.post_id) in downloaded
         post_media_len = len(ele._post.post_media)
         
-      
-        if not is_unlocked:
+        if is_downloaded:
+            cart_state = "[downloaded]"
+        elif not is_unlocked:
             cart_state = "Not Unlocked"
         else:
             cart_state = "[]"
+
+        all_posts_with_this_media = collection.posts_with_media_id(ele.id)
+        other_posts = [p for p in all_posts_with_this_media if p != ele.post_id]
+
 
         out.append(
             {
@@ -773,7 +793,7 @@ async def row_gather(username, model_id):
                 "downloaded": is_downloaded,
                 "unlocked": is_unlocked,  
                 "download_type": download_type_helper(ele),
-                "other_posts_with_media": collection.posts_with_media_id(ele.id),
+                "other_posts_with_media": other_posts,  
                 "post_media_count": post_media_len,  
                 "mediatype": ele.mediatype.capitalize(),
                 "post_date": datehelper(ele.formatted_postdate),
@@ -788,4 +808,5 @@ async def row_gather(username, model_id):
         )
         
     ROWS = ROWS or []
-    ROWS.extend(out)
+    ROWS.extend(out)        
+  
