@@ -90,7 +90,7 @@ async def process_tasks_batch(generators):
                 await queue.put(batch)
         except Exception as E:
             log.traceback_(E)
-            log.traceback(traceback.format_exc())
+            log.traceback_(traceback.format_exc())
         finally:
             await queue.put(None)
 
@@ -287,7 +287,7 @@ async def scrape_stream_posts(
 
     except Exception as E:
         log.traceback_(E)
-        log.traceback(traceback.format_exc())
+        log.traceback_(traceback.format_exc())
     finally:
         if all_ghosts_found:
             log.info(
