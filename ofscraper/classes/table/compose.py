@@ -16,7 +16,6 @@ from ofscraper.classes.table.sections.sidebar import Sidebar
 from ofscraper.classes.table.sections.table import DataTableExtended as DataTable
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE, START_PAGE
 from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
-import ofscraper.utils.settings as settings
 
 
 def composer():
@@ -52,14 +51,16 @@ def composer():
             yield Static("Page Menu:     [bold cyan]Ctrl+T[/bold cyan] [bold](Closed)[/bold]", id="label_page_sidebar", markup=True)
             yield Static("Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold](Closed)[/bold]", id="label_dl_sidebar", markup=True)
             yield Static("[bold blue]Table:[/bold blue] Navigate (Arrows) | Quick Filter (; or ')", id="table_nav_hint", markup=True)
+            
         yield Rule(orientation="vertical", classes="header_divider")
 
-        # Column 4: Full Keyboard Instructions (No Abbreviations)
+        # Column 4: Full Keyboard Instructions (Shift & Clear Actions)
         with Vertical(id="instructions_column"):
             yield Static(
-                "[bold blue]Cart_Selection:[/bold blue] Add Page (A) | Add All Filtered (Ctrl+A)\n"
-                "[bold blue]Cart_Unique:[/bold blue] Add Unique Page (U) | Add All Unique (Ctrl+U)\n"
-                "[bold green]Cart_New Only:[/bold green] Add Page (K) | Add All Filtered (Ctrl+K)\n",
+                "[bold blue]Cart_Add:[/bold blue] Page (a) | All Filtered ([bold cyan]Shift+A[/bold cyan])\n"
+                "[bold blue]Cart_Unique:[/bold blue] Page (u) | All Unique ([bold cyan]Shift+U[/bold cyan])\n"
+                "[bold green]Cart_New Only:[/bold green] Page (e) | All New ([bold cyan]Shift+E[/bold cyan])\n"
+                "[bold red]Clear Cart:[/bold red] Page (c) | All Filtered ([bold cyan]Shift+C[/bold cyan]) | Nuke (x)",
                 id="table_instructions",
                 markup=True,
             )
