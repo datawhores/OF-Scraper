@@ -289,7 +289,7 @@ def binary_config():
                 "option_instruction": """
 Certain content requires decryption to process please provide the full path to ffmpeg
 """,
-                "default": settings.get_ffmpeg(),
+                "default": settings.get_settings().ffmpeg,
             },
         ],
         altx=funct,
