@@ -121,7 +121,7 @@ class CommandManager:
                 areas=",".join(final_post_areas), name=username, active=active
             )
         )
-        status_text = "Active" if user.active else "Expired"
+        status_text = "[green]🟢 Active[/green]" if user.active else "[red]🔴 Expired[/red]"
         expire_date = user.expired_string or "Unknown Date"
 
         log.warning(f"[{username}] Subscription: {status_text}")
