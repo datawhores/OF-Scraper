@@ -24,10 +24,9 @@ log = logging.getLogger("shared")
 def print_sign_status():
     status = getstatus()
     if status == "UP":
-        console.get_shared_console().print("Status - [bold green]UP[/bold green]")
+        console.get_shared_console().print("Status - [bold green]🟢 UP[/bold green]")
     else:
-        console.get_shared_console().print("Status - [bold red]DOWN[/bold red]")
-
+        console.get_shared_console().print("Status - [bold red]🔴 DOWN[/bold red]")
 
 def getstatus():
     if settings.get_settings().anon:
