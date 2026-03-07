@@ -76,7 +76,7 @@ def get_ffmpeg() -> str:
     log.debug("Searching for a valid FFmpeg binary...")
 
     # Step 1: Check the path from settings. (UNCOMMENTED)
-    path_from_settings = settings.get_ffmpeg()
+    path_from_settings = settings.get_settings().ffmpeg
     log.debug(f"Checking settings for ffmpeg path. Found: '{path_from_settings}'")
     if _is_valid_ffmpeg(path_from_settings):
         _ffmpeg_path = path_from_settings
