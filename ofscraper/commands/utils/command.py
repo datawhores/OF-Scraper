@@ -18,7 +18,6 @@ import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
-
 class CommandManager:
     def __init__(self):
         pass
@@ -105,19 +104,19 @@ class CommandManager:
         final_post_areas = areas.get_final_posts_area()
         length = manager.Manager.current_model_manager.get_num_all_selected_models()
         count = progress_tasks.get_user_task_obj().completed
-        logging.getLogger("shared").warning(
+        log.warning(
             progress_str.format(count=count + 1, length=length)
         )
-        logging.getLogger("shared").warning(data_str.format(name=username))
+        log.warning(data_str.format(name=username))
         if of_env.getattr("SHOW_AVATAR") and avatar:
-            logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
+            log.warning(avatar_str.format(avatar=avatar))
         progress_updater.activity.update_task(
             description=area_str.format(
                 areas=",".join(final_post_areas), name=username, active=active
             ),
             visible=True,
         )
-        logging.getLogger("shared").info(
+        log.info(
             area_str.format(
                 areas=",".join(final_post_areas), name=username, active=active
             )
@@ -125,10 +124,8 @@ class CommandManager:
         status_text = "Active" if user.active else "Expired"
         expire_date = user.expired_string or "Unknown Date"
 
-        logging.getLogger("shared").warning(
-            f"[{username}] Subscription: {status_text}\n"
-            f"[{username}] Expiration Date: {expire_date}"
-        )
+        log.warning(f"[{username}] Subscription: {status_text}")
+        log.warning(f"[{username}] Expiration Date: {expire_date}")
 
     def _avatar_helper(self, ele):
         avatar = ele.avatar
@@ -137,7 +134,7 @@ class CommandManager:
             and avatar
             and settings.get_settings().userfirst
         ):
-            logging.getLogger("shared").warning(avatar_str.format(avatar=avatar))
+            log.warning(avatar_str.format(avatar=avatar))
 
     @property
     def run_action(self):

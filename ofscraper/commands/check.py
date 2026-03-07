@@ -163,10 +163,8 @@ def _process_user_batch(
         model_obj = manager.Manager.current_model_manager.get_model(username)
         status_text = "Active" if model_obj.active else "Expired"
         expire_date = model_obj.expired_string or "Unknown Date"
-        log.warning(
-            f"[{username}] Subscription: {status_text}\n"
-            f"[{username}] Expiration Date: {expire_date}"
-        )
+        log.warning(f"[{username}] Subscription: {status_text}")
+        log.warning(f"[{username}] Expiration Date: {expire_date}")
     except Exception as e:
         log.debug(f"Could not print subscription status for {username}: {e}")
     for i in range(len(media_list)):
