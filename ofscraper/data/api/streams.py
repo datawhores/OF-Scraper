@@ -242,7 +242,7 @@ async def scrape_stream_posts(
 
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Streams API Error: {r.status} for {url}")
+                    log.debug(f"Streams API Error: {r.status} for {url}")
                     break
 
                 data = await r.json_()

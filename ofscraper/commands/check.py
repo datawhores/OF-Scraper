@@ -9,6 +9,7 @@ from copy import deepcopy
 from functools import partial
 
 from collections import defaultdict
+from ofscraper.utils.args.callbacks.arguments import username
 from rich.text import Text
 
 
@@ -81,7 +82,7 @@ def process_download_queue():
                 user_cart[model_id]["username"] = username  # Store username once
 
             except Exception as e:
-                log.error(f"Error processing row from queue: {e}")
+                log.debug(f"Error processing row from queue: {e}")
                 log.traceback_(traceback.format_exc())
 
         # 2. PROCESS: Loop through each user's batch and process their items
@@ -104,7 +105,7 @@ def process_download_queue():
                 )
 
             except Exception as e:
-                log.error(
+                log.info(
                     f"An error occurred while processing the batch for {username}."
                 )
                 log.traceback_(e)
@@ -158,7 +159,16 @@ def _process_user_batch(
     _process_user_batch.counter += 1
 
     operations.table_init_create(model_id=model_id, username=username)
-
+    try:
+        model_obj = manager.Manager.current_model_manager.get_model(username)
+        status_text = "Active" if model_obj.active else "Expired"
+        expire_date = model_obj.expired_string or "Unknown Date"
+        log.warning(
+            f"[{username}] Subscription: {status_text}\n"
+            f"[{username}] Expiring date: {expire_date}"
+        )
+    except Exception as e:
+        log.debug(f"Could not print subscription status for {username}: {e}")
     for i in range(len(media_list)):
         key = row_list[i][0]  
         
@@ -182,9 +192,6 @@ def _process_user_batch(
                 if values is None or values[-1] == 1:
                     raise Exception("Download failed based on process_dicts result")
 
-                # THE VITAL FIX: The object inside `target_media` was just mutated by the 
-                # asyncio consumer. We MUST overwrite the master lists with this exact object 
-                # so the stats manager and scripts see the size and success markers!
                 media_list[i] = target_media[0]
                 post_list[i] = target_media[0].post
 
@@ -199,9 +206,9 @@ def _process_user_batch(
                 break  
 
             except Exception as e:
-                log.warning(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
+                log.debug(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
                 if attempt == 0:  
-                    log.info("Refreshing data and retrying...")
+                    log.debug("Refreshing data and retrying...")
                     data_refill(model_id)
                     time.sleep(1)  
                     
@@ -214,7 +221,7 @@ def _process_user_batch(
                     except Exception:
                         pass
                 else:  
-                    log.error(f"Download failed permanently for {media.filename}.")
+                    log.info(f"Download failed for {media.filename}.")
                     app.app.update_cell_state(key, "[failed]", "bold red")
 
 # Initialize counter on the function object

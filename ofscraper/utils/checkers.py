@@ -16,7 +16,7 @@ def check_auth():
     while status != "UP":
         status = init.getstatus()
         if status != "UP":
-            log.warning("Auth Failed")
+            log.info("Auth Failed")
             make.make_auth(auth=auth_file.read_auth())
         break
 

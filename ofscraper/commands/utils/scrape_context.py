@@ -25,7 +25,7 @@ def scrape_context_manager():
     # reset stream if needed
     # Before yield as the enter method
     start = datetime.now()
-    log.warning(
+    log.info(
         """
 ==============================                            
 [bold] starting script [/bold]
@@ -34,7 +34,7 @@ def scrape_context_manager():
     )
     yield
     end = datetime.now()
-    log.warning(
+    log.info(
         f"""
 ===========================
 [bold] Script Finished [/bold]

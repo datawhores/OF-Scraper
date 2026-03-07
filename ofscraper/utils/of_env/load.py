@@ -63,17 +63,17 @@ def load_env_files(values: list[str] | None):
 
         except FileNotFoundError:
             # Let the caller handle this exception
-            log.error(f"Environment file not found: '{file_path}'")
+            log.info(f"Environment file not found: '{file_path}'")
             raise
         except (json.JSONDecodeError, yaml.YAMLError, ValueError) as e:
             # Raise a new, more informative error that includes the file path
-            log.error(f"Error parsing environment file '{file_path}': {e}")
+            log.info(f"Error parsing environment file '{file_path}': {e}")
             raise ValueError(
                 f"Error parsing environment file '{file_path}': {e}"
             ) from e
         except Exception as e:
             # Catch any other unexpected errors and add context before raising
-            log.error(f"An unexpected error occurred while loading '{file_path}': {e}")
+            log.info(f"An unexpected error occurred while loading '{file_path}': {e}")
             raise RuntimeError(
                 f"An unexpected error occurred while loading '{file_path}': {e}"
             ) from e

@@ -187,7 +187,7 @@ class MergeDatabase:
 
             except Exception as E:
                 failures.update({ele: {"path": str(ele), "reason": E}})
-                log.warning(f"Issue getting required info for {ele}")
+                log.info(f"Issue getting required info for {ele}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
         log.info(

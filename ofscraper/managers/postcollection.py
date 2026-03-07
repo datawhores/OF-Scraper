@@ -284,7 +284,7 @@ class PostCollection:
         elif isinstance(item, (Post, dict)):
             post_to_process = item
         else:
-            log.warning(f"Skipping item of invalid type: {type(item)}")
+            log.info(f"Skipping item of invalid type: {type(item)}")
             return None
 
         post_id = (
@@ -294,7 +294,7 @@ class PostCollection:
         )
 
         if not post_id:
-            log.warning(
+            log.info(
                 f"Skipping item because it's missing an 'id': {post_to_process}"
             )
             return None

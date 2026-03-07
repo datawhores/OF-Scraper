@@ -105,7 +105,7 @@ class MetadataCommandManager(CommandManager):
 
         username = ele.name
         model_id = ele.id
-        log.warning(
+        log.info(
             f"Performing metadata update for [bold]{username}[/bold]\n"
             f"Subscription Active: {ele.active}"
         )

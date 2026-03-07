@@ -50,15 +50,16 @@ def getLevel(input_):
     """
     if input_ in {"WARNING", "ERROR", "INFO", "DEBUG", "TRACE", "CRITICAL"}:
         return input_
-    # for levels with different names
+    
     return {
         "OFF": 100,
-        "PROMPT": "ERROR",
+        "PROMPT": "ERROR", 
         "LOW": "WARNING",
-        "WARN": "WARNING",
         "NORMAL": "INFO",
-    }.get(input_, 100)
+        #Alias Warning
+        "WARN": "WARNING",
 
+    }.get(input_, 100)
 
 def getNumber(input_):
     input_ = getLevel(input_.upper())

@@ -47,6 +47,7 @@ async def scrape_stories(c, user_id):
         )
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
+                log.debug(f"Stories API Error: {r.status} for {url}")
                 return
             stories = await r.json_()
             stories = stories if isinstance(stories, list) else []
@@ -237,6 +238,8 @@ async def scrape_highlight_list(c, user_id, offset=0):
             )
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
+                    log.debug(f"Highlights List API Error: {r.status} for {url}")
+
                     break
                 resp_data = await r.json_()
                 data = get_highlightList(resp_data)
@@ -261,6 +264,7 @@ async def scrape_highlights_from_list(c, id):
         task = progress_utils.api.add_job_task(f"[Highlights] ID -> {id}", visible=True)
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
+                log.debug(f"Highlights API Error: {r.status} for {url}")
                 return
             resp_data = await r.json_()
             stories = (

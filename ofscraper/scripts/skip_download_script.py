@@ -14,12 +14,12 @@ async def skip_download_script(total, ele): # Made async
     log = logging.getLogger("shared")
 
     if not settings.get_settings().skip_download_script:
-        log.debug("Download skip script is disabled via settings. Skipping execution.")
+        log.info("Download skip script is disabled via settings. Skipping execution.")
         return False
 
     script_path = settings.get_settings().skip_download_script
     if not script_path or not os.path.exists(script_path):
-        log.error(
+        log.info(
             f"Download skip script path is invalid or not configured: '{script_path}'. Aborting script execution."
         )
         return False
@@ -28,7 +28,7 @@ async def skip_download_script(total, ele): # Made async
         processed_media = ele.media
         processed_post = ele.post.post
 
-        log.debug(
+        log.info(
             f"Running download skip script for {ele.username} (media_id: {ele.id}, post_id: {ele.post_id})"
         )
 
@@ -71,25 +71,25 @@ async def skip_download_script(total, ele): # Made async
                 )
         should_skip = (stdout_output.lower() == "false") or (stdout_output == "")
         if should_skip:
-            log.debug(f"Download skip script instructed to SKIP download for {ele.username} (media_id: {ele.id}).")
+            log.info(f"Download skip script instructed to SKIP download for {ele.username} (media_id: {ele.id}).")
         else:
-            log.debug(f"Download skip script instructed to PROCEED with download for {ele.username} (media_id: {ele.id}).")
+            log.info(f"Download skip script instructed to PROCEED with download for {ele.username} (media_id: {ele.id}).")
 
         return should_skip 
 
     except FileNotFoundError:
-        log.error(f"Download skip script executable not found: '{script_path}'.")
+        log.info(f"Download skip script executable not found: '{script_path}'.")
         return False 
     except subprocess.CalledProcessError as e:
-        log.error(f"Download skip script failed for {ele.username} with exit code {e.returncode}: '{script_path}'")
-        if e.stdout and e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
-        if e.stderr and e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
+        log.info(f"Download skip script failed for {ele.username} with exit code {e.returncode}: '{script_path}'")
+        if e.stdout and e.stdout.strip(): log.debug(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr and e.stderr.strip(): log.debug(f"Stderr:\n{e.stderr.strip()}")
         return False
     except json.JSONDecodeError as e:
-        log.error(f"Failed to serialize payload to JSON for download skip script for {ele.username}: {e}")
+        log.info(f"Failed to serialize payload to JSON for download skip script for {ele.username}: {e}")
         return False
     except Exception as e:
-        log.critical(f"An unexpected error occurred while running download skip script for {ele.username} with script '{script_path}': {e}", exc_info=True)
+        log.info(f"An unexpected error occurred while running download skip script for {ele.username} with script '{script_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         return False

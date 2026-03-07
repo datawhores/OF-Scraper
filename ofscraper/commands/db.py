@@ -277,7 +277,7 @@ class DBManager:
         add_other_handler(log)
         dictionaries = self.media
         if len(self.media) == 0:
-            self.log.error("All media filter out")
+            self.log.info("All media filter out")
             return
         # Get the unique keys from all dictionaries
         keys = set()
@@ -289,7 +289,7 @@ class DBManager:
         #  log the header row with column names
         header_row = "|".join(f"{key:^20}" for key in keys)
         value = f"|{'=' * 20}|{header_row}|{'-' * 20}|"
-        log.warning(value)
+        log.info(value)
         # add to table
         for key in keys:
             table.add_column(key, justify="center")
@@ -298,7 +298,7 @@ class DBManager:
             # Print the data rows
             row_data = [str(dictionary.get(key, "")) for key in keys]
             row = "|".join(f"{str(value):^20}" for value in row_data)
-            log.warning(f"|{' ' * 20}|{row}|{'-' * 20}|")
+            log.info(f"|{' ' * 20}|{row}|{'-' * 20}|")
             # add to table
             table.add_row(*row_data)
         console.get_console().print(table)

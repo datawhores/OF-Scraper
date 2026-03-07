@@ -244,7 +244,7 @@ async def scrape_archived_posts(
 
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Archived API Error: {r.status} for {url}")
+                    log.debug(f"Archived API Error: {r.status} for {url}")
                     break
 
                 data = await r.json_()

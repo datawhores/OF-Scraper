@@ -51,7 +51,7 @@ def check_uniquename():
 
 def unique_name_warning():
     if not check_uniquename():
-        log.warning(
+        log.info(
             "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
             "

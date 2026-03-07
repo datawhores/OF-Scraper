@@ -272,12 +272,12 @@ async def scrape_messages(
 
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Messages API Error: {r.status} for {url}")
+                    log.debug(f"Messages API Error: {r.status} for {url}")
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
-                    log.error(f"API returned unexpected format (not a dict) for {url}")
+                    log.debug(f"API returned unexpected format (not a dict) for {url}")
                     break
 
                 batch = data.get("list", [])
@@ -354,6 +354,7 @@ async def get_individual_messages_post(model_id, postid, c):
     url = of_env.getattr("messageSPECIFIC").format(model_id, postid)
     async with c.requests_async(url=url) as r:
         if not (200 <= r.status < 300):
+            log.debug(f"Individual Messages API Error: {r.status} for {url}")
             return {"error": True}
         data = await r.json_()
         posts = data.get("list", [])

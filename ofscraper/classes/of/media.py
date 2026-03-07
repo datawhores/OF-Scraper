@@ -425,8 +425,7 @@ class Media(base.base):
             filename = self.file_cleanup(filename)
             filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
-            log.error(f"Error cleaning filename: {e}")
-
+            log.debug(f"Error cleaning filename: {e}")
         return filename
 
     @property
@@ -721,6 +720,6 @@ class Media(base.base):
             filename = self.file_cleanup(filename)
             filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
-            log.error(f"Error creating final filename: {e}")
+            log.debug(f"Error creating final filename: {e}")
 
         return filename

@@ -122,6 +122,13 @@ class CommandManager:
                 areas=",".join(final_post_areas), name=username, active=active
             )
         )
+        status_text = "Active" if user.active else "Expired"
+        expire_date = user.expired_string or "Unknown Date"
+
+        logging.getLogger("shared").warning(
+            f"[{username}] Subscription: {status_text}\n"
+            f"[{username}] Expiring date: {expire_date}"
+        )
 
     def _avatar_helper(self, ele):
         avatar = ele.avatar

@@ -309,7 +309,7 @@ async def scrape_timeline_posts(
         while has_more:
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Timeline API Error: {r.status} for {url}")
+                    log.debug(f"Timeline API Error: {r.status} for {url}")
                     break
 
                 response_json = await r.json_()

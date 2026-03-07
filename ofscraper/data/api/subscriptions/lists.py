@@ -149,7 +149,7 @@ async def scrape_for_list(c, offset=0):
                 current_offset += len(out_list)
 
         except asyncio.TimeoutError:
-            log.error(f"Task timed out {url}")
+            log.debug(f"Task timed out {url}")
             break
         except Exception as E:
             log.traceback_(E)
@@ -261,7 +261,7 @@ async def scrape_list_members(c, item, offset=0):
                     current_offset += len(users)
 
         except asyncio.TimeoutError:
-            log.error(f"Task timed out {url}")
+            log.debug(f"Task timed out {url}")
             break
         except Exception as E:
             log.traceback_(E)

@@ -60,7 +60,7 @@ def write_config(updated_config):
 
 
 def auto_update_config(config: dict) -> dict:
-    log.warning("Auto updating config...")
+    log.info("Auto updating config...")
     new_config = schema.get_current_config_schema(config)
     write_config(new_config)
     return new_config

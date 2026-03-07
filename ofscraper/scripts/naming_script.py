@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 import subprocess
 import traceback
 import arrow
@@ -18,11 +19,13 @@ async def naming_script(dir, file, ele): # Made async
         return
 
     script_path = settings.get_settings().naming_script
-    if not script_path:
-        log.error("Naming script path is not configured. Aborting naming script.")
+    if not script_path or not os.path.exists(script_path):
+        log.info(
+            f"naming script path is invalid or not configured: '{script_path}'. Aborting final script."
+        )
         return
 
-    log.debug(f"Attempting to run naming script: {script_path}")
+    log.info(f"Attempting to run naming script: {script_path}")
 
     try:
         payload_data = {
@@ -63,7 +66,7 @@ async def naming_script(dir, file, ele): # Made async
                 }
             )
         else:
-            log.error(f"Unsupported type for naming script: {type(ele)}")
+            log.info(f"Unsupported type for naming script: {type(ele)}")
             return
 
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)
@@ -78,18 +81,18 @@ async def naming_script(dir, file, ele): # Made async
             level=env.getattr("NAMING_SCRIPT_SUBPROCESS_LEVEL"),
             name="naming script",
         )
-        log.debug("Naming script ran successfully via stdin.")
+        log.info("Naming script ran successfully via stdin.")
         return result.stdout.strip() if result and result.stdout else None
 
     except FileNotFoundError:
-        log.error(f"Naming script executable not found: '{script_path}'.")
+        log.info(f"Naming script executable not found: '{script_path}'.")
     except subprocess.CalledProcessError as e:
-        log.error(f"Naming script failed with exit code {e.returncode}: '{script_path}'")
-        if e.stdout and e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
-        if e.stderr and e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
+        log.info(f"Naming script failed with exit code {e.returncode}: '{script_path}'")
+        if e.stdout and e.stdout.strip(): log.debug(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr and e.stderr.strip(): log.debug(f"Stderr:\n{e.stderr.strip()}")
     except json.JSONDecodeError as e:
-        log.error(f"Failed to serialize payload to JSON for naming script: {e}")
+        log.info(f"Failed to serialize payload to JSON for naming script: {e}")
     except Exception as e:
-        log.critical(f"An unexpected error occurred while running naming script '{script_path}': {e}", exc_info=True)
+        log.info(f"An unexpected error occurred while running naming script '{script_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())

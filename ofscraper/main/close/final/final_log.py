@@ -23,8 +23,8 @@ def final_log(data):
     if of_env.getattr("SHOW_RESULTS_LOG"):
         # give time for last long to show
         time.sleep(2)
-        log.warning("\n\n\n")
-        log.warning("[bold yellow]Final Results Logs[/bold yellow]")
+        log.info("\n\n\n")
+        log.info("[bold yellow]Final Results Logs[/bold yellow]")
         flattened_list = []
         [
             (
@@ -37,7 +37,7 @@ def final_log(data):
         for record in flattened_list:
             if record == None:
                 continue
-            log.warning(record)
-        log.warning("\n\n\n")
+            log.info(record)
+        log.info("\n\n\n")
         # give time for last long to process
         time.sleep(3)

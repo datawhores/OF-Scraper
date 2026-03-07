@@ -27,8 +27,8 @@ def printStartValues():
         print_start_message()
         print_latest_version()
     except Exception as e:
-        log.error(f"Error while printing start values: {e}")
-        log.error(traceback.format_exc())
+        log.debug(f"Error while printing start values: {e}")
+        log.debug(traceback.format_exc())
     time.sleep(3)
 
 
@@ -93,18 +93,18 @@ def print_latest_version():
         url = data["info"]["project_url"]
 
         if re.search(new_version, __version__):
-            log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
+            log.warning("[bold yellow]OF-Scraper up to date[/bold yellow]")
         elif __version__ == "0.0.0":
-            log.error(
+            log.warning(
                 "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
             )
         elif ".dev" in __version__:
-            log.error("[bold yellow]OF-Scraper up to date[/bold yellow]")
+            log.warning("[bold yellow]OF-Scraper up to date[/bold yellow]")
         else:
-            log.error(
+            log.warning(
                 f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
             )
-            log.error(f"[bold yellow]project url: {url}[/bold yellow]")
+            log.warning(f"[bold yellow]project url: {url}[/bold yellow]")
 
 
 def discord_warning():

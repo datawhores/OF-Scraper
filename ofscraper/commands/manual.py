@@ -42,7 +42,7 @@ def manual_download(urls=None):
 
         url_dicts = process_urls(urls)
         if not url_dicts:
-            log.warning("No valid data found from the provided URLs.")
+            log.info("No valid data found from the provided URLs.")
             return
 
         with progress_utils.setup_live("manual"):
@@ -61,7 +61,7 @@ def manual_download(urls=None):
             log.debug(f"Total posts found: {len(all_posts)}")
 
             if not all_media and not all_posts:
-                log.warning("No media or posts were found to process.")
+                log.info("No media or posts were found to process.")
                 return
             # Set user data for models that will be processed
             set_user_data(url_dicts)
@@ -128,7 +128,7 @@ def process_urls(urls):
 
             model_id, post_id, api_type = get_info(url)
             if not api_type:
-                log.warning(f"Could not determine type for URL: {url}")
+                log.info(f"Could not determine type for URL: {url}")
                 continue
 
             # Get user info first if available
@@ -141,7 +141,7 @@ def process_urls(urls):
             # Fetch data using the mapped function
             fetch_func = API_MAP.get(api_type)
             if not fetch_func:
-                log.warning(f"No fetch function defined for API type: {api_type}")
+                log.info(f"No fetch function defined for API type: {api_type}")
                 continue
 
             # Use partial for functions that need model_id
@@ -150,14 +150,14 @@ def process_urls(urls):
 
             value = fetch_func(post_id)
             if not value or value.get("error"):
-                log.warning(f"Failed to get data for URL {url}")
+                log.info(f"Failed to get data for URL {url}")
                 continue
 
             # For unknown types, extract user info from the response
             if api_type == "unknown":
                 username, model_id = get_profile_helper(value)
                 if not username:
-                    log.warning(f"Could not find user info for post ID {post_id}")
+                    log.info(f"Could not find user info for post ID {post_id}")
                     continue
 
             # Initialize collection if it doesn't exist

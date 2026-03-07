@@ -218,6 +218,8 @@ async def scrape_labels(c, model_id, offset=0):
             )
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
+                    log.debug(f"Labels API Error: {r.status} for {url}")
+
                     break
 
                 data = await r.json_()
@@ -269,6 +271,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
             )
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
+                    log.debug(f"Labels Post API Error: {r.status} for {url}")
                     break
 
                 data = await r.json_()

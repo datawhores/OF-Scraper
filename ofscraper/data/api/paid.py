@@ -108,12 +108,12 @@ async def scrape_paid(c, username, offset=0):
 
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Paid API Error at offset {current_offset}: {r.status}")
+                    log.debug(f"Paid API Error at offset {current_offset}: {r.status}")
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
-                    log.error(
+                    log.debug(
                         f"API returned unexpected format at offset {current_offset}"
                     )
                     break
@@ -141,7 +141,7 @@ async def scrape_paid(c, username, offset=0):
                 current_offset = new_offset
 
         except Exception as E:
-            log.error(f"Failed scrape paid offset {current_offset}")
+            log.info(f"Failed scrape paid offset {current_offset}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
@@ -240,7 +240,7 @@ async def scrape_all_paid(c, offset=0, required=None):
             )
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(
+                    log.debug(
                         f"Global Paid API Error at offset {current_offset}: {r.status}"
                     )
                     break
@@ -276,7 +276,7 @@ async def scrape_all_paid(c, offset=0, required=None):
                 current_offset = new_offset
 
         except Exception as E:
-            log.error(f"Scrape all paid failed at offset {current_offset}")
+            log.info(f"Scrape all paid failed at offset {current_offset}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break

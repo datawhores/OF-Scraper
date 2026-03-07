@@ -20,12 +20,12 @@ async def after_download_script(final_path: Union[str, pathlib.Path]):
         return
 
     if not os.path.exists(script_path):
-        log.error(
+        log.info(
             f"After download script path is invalid: '{script_path}'. Aborting execution."
         )
         return
 
-    log.debug(
+    log.info(
         f"Running after download script for '{final_path}' with script: {script_path}"
     )
 
@@ -62,12 +62,12 @@ async def after_download_script(final_path: Union[str, pathlib.Path]):
         log.info(f"Successfully ran after download script for '{final_path}'.")
 
     except FileNotFoundError:
-        log.error(f"After download script executable not found: '{script_path}'. Please ensure the path is correct and the script has execute permissions.")
+        log.info(f"After download script executable not found: '{script_path}'. Please ensure the path is correct and the script has execute permissions.")
     except subprocess.CalledProcessError as e:
-        log.error(f"After download script failed for '{final_path}' with exit code {e.returncode}: '{script_path}'")
-        if e.stdout and e.stdout.strip(): log.error(f"Stdout:\n{e.stdout.strip()}")
-        if e.stderr and e.stderr.strip(): log.error(f"Stderr:\n{e.stderr.strip()}")
+        log.info(f"After download script failed for '{final_path}' with exit code {e.returncode}: '{script_path}'")
+        if e.stdout and e.stdout.strip(): log.debug(f"Stdout:\n{e.stdout.strip()}")
+        if e.stderr and e.stderr.strip(): log.debug(f"Stderr:\n{e.stderr.strip()}")
     except Exception as e:
-        log.critical(f"An unexpected error occurred while running after download script for '{final_path}': {e}", exc_info=True)
+        log.info(f"An unexpected error occurred while running after download script for '{final_path}': {e}", exc_info=True)
         log.traceback_(e)
         log.traceback_(traceback.format_exc())

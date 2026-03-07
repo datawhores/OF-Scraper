@@ -120,7 +120,7 @@ async def scrape_pinned_posts(c, model_id, offset=0):
             )
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Pinned API Error: {r.status}")
+                    log.debug(f"Pinned API Error: {r.status}")
                     break
 
                 data = await r.json_()

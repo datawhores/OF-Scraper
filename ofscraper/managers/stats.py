@@ -290,7 +290,7 @@ class StatsManager:
         )
 
         if summary_string:
-            log.error("\n\n--- Final Stats Summary ---" + summary_string)
+            log.warning("\n\n--- Final Stats Summary ---" + summary_string)
 
     def print_summary_by_activity(self):
         """Builds a complete summary string grouped by activity and logs it once."""
@@ -321,7 +321,7 @@ class StatsManager:
                 )
                 output_lines.append(f"{formatted_prefix} {stat_obj}")
 
-        log.error("\n".join(output_lines))
+        log.warning("\n".join(output_lines))
 
     def print_user_activity_summary(
         self, username: str, activity: Union[str, EActivity], ignore_missing=False
@@ -346,7 +346,7 @@ class StatsManager:
 
             # Build the final output string and log it once
             output_string = f"{formatted_prefix} {stat_obj}\n"
-            log.error(output_string)
+            log.warning(output_string)
 
         except KeyError as err:
             if not ignore_missing:

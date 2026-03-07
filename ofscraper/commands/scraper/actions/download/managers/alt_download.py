@@ -263,13 +263,13 @@ class AltDownloadManager(DownloadManager):
                         break  # Exit loop when no more chunks
         except asyncio.TimeoutError:
             # This catches the timeout for the entire async with block
-            common_globals.log.warning(
+            common_globals.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!"
             )
             return  # Exit the function on timeout
         except Exception as E:
             # Catch other potential exceptions during file operations or chunk iteration
-            common_globals.log.error(
+            common_globals.log.info(
                 f"An error occurred during download for {ele}: {E}"
             )
             raise E  # Re-raise the exception after logging
@@ -279,12 +279,12 @@ class AltDownloadManager(DownloadManager):
                 try:
                     await fileobject.close()
                 except Exception as E:
-                    common_globals.log.error(f"Error closing file for {ele}: {E}")
+                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
                     raise E  # Re-raise if closing fails
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
-                common_globals.log.error(
+                common_globals.log.debug(
                     f"Error removing download job task for {ele}: {E}"
                 )
                 raise E  # Re-raise if task removal fails

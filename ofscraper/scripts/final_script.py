@@ -18,12 +18,12 @@ def final_script():
 
     script_path = settings.get_settings().post_script
     if not script_path or not os.path.exists(script_path):
-        log.error(
+        log.info(
             f"Post script path is invalid or not configured: '{script_path}'. Aborting final script."
         )
         return
 
-    log.debug(f"Attempting to run final script: {script_path}")
+    log.info(f"Attempting to run final script: {script_path}")
 
     try:
         model_manager = manager.Manager.current_model_manager
@@ -64,21 +64,21 @@ def final_script():
             name="Final script",
             timeout=1800  # Set a timeout of 30 minutes to prevent hanging
         )
-        log.debug("Final script ran successfully via stdin.")
+        log.info("Final script ran successfully via stdin.")
 
     # 4. Add comprehensive error handling
     except FileNotFoundError:
-        log.error(
-            f"Post script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
+        log.info(
+            f"Final script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
         )
     except subprocess.CalledProcessError as e:
-        log.error(f"Post script failed with exit code {e.returncode}: '{script_path}'")
-        log.error(f"Post script stdout:\n{e.stdout.strip()}")
-        log.error(f"Post script stderr:\n{e.stderr.strip()}")
+        log.info(f"Final script failed with exit code {e.returncode}: '{script_path}'")
+        log.debug(f"Final script stdout:\n{e.stdout.strip()}")
+        log.debug(f"Final script stderr:\n{e.stderr.strip()}")
     except json.JSONDecodeError as e:
-        log.error(f"Failed to serialize payload to JSON for final script: {e}")
+        log.info(f"Failed to serialize payload to JSON for final script: {e}")
     except Exception as e:
-        log.critical(
+        log.info(
             f"An unexpected error occurred while running final script with script '{script_path}': {e}",
             exc_info=True,
         )

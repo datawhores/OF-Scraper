@@ -154,7 +154,7 @@ async def process_task(generators):
                     ]
                     output.extend(users)
         except Exception as E:
-            log.error("Failed in subscription processing loop")
+            log.debug("Failed in subscription processing loop")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             continue
@@ -173,7 +173,7 @@ async def scrape_subscriptions_active(c, offset=0):
             log.debug(f"usernames active offset {current_offset}")
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Subscription API Error: {r.status}")
+                    log.debug(f"Subscription API Error: {r.status}")
                     break
 
                 response = await r.json_()
@@ -188,7 +188,7 @@ async def scrape_subscriptions_active(c, offset=0):
                 current_offset += len(subscriptions)
 
         except asyncio.TimeoutError:
-            log.error(f"Task timed out {url}")
+            log.debug(f"Task timed out {url}")
             break
         except Exception as E:
             log.traceback_(E)
@@ -208,7 +208,7 @@ async def scrape_subscriptions_disabled(c, offset=0):
             log.debug(f"usernames offset expired {current_offset}")
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
-                    log.error(f"Subscription API Error: {r.status}")
+                    log.debug(f"Subscription API Error: {r.status}")
                     break
 
                 response = await r.json_()
@@ -223,7 +223,7 @@ async def scrape_subscriptions_disabled(c, offset=0):
                 current_offset += len(subscriptions)
 
         except asyncio.TimeoutError:
-            log.error(f"Task timed out {url}")
+            log.debug(f"Task timed out {url}")
             break
         except Exception as E:
             log.traceback_(E)

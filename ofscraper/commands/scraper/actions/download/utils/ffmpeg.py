@@ -38,14 +38,14 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             log.info(f"Validation successful: Found valid FFmpeg binary at '{path}'")
             return True
         else:
-            log.warning(
+            log.info(
                 f"Path '{path}' is executable, but output did not confirm it's FFmpeg."
             )
             log.debug(f"Full output from '{path}':\n{output}")
             return False
 
     except (OSError, subprocess.SubprocessError):
-        log.error(
+        log.debug(
             f"Execution failed for binary at '{path}'. It may be incompatible or corrupt.",
             exc_info=True,
         )
@@ -96,7 +96,7 @@ def get_ffmpeg() -> str:
     except ImportError:
         log.debug("'pyffmpeg' not installed. Skipping.")
     except Exception:
-        log.error(
+        log.debug(
             "The 'pyffmpeg' library is installed but failed to provide a valid binary.",
             exc_info=True,
         )
