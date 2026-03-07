@@ -386,7 +386,7 @@ def modify_sort_prompt(args):
                 "choices": [
                     Choice("name", "By Name"),
                     Choice("subscribed", "Subscribed Date"),
-                    Choice("expired", "Expiring Date"),
+                    Choice("expired", "Expiration Date"),
                     Choice("last-seen", "Last Seen"),
                     Choice("current-price", "Current Price"),
                     Choice("promo-price", "Promotional Price"),

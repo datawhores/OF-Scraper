@@ -165,7 +165,7 @@ def _process_user_batch(
         expire_date = model_obj.expired_string or "Unknown Date"
         log.warning(
             f"[{username}] Subscription: {status_text}\n"
-            f"[{username}] Expiring date: {expire_date}"
+            f"[{username}] Expiration Date: {expire_date}"
         )
     except Exception as e:
         log.debug(f"Could not print subscription status for {username}: {e}")

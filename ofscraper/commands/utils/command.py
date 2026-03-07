@@ -127,7 +127,7 @@ class CommandManager:
 
         logging.getLogger("shared").warning(
             f"[{username}] Subscription: {status_text}\n"
-            f"[{username}] Expiring date: {expire_date}"
+            f"[{username}] Expiration Date: {expire_date}"
         )
 
     def _avatar_helper(self, ele):
