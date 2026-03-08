@@ -47,27 +47,35 @@ class AltDownloadManager(DownloadManager):
         await common_globals.sem.acquire()
         try:
             common_globals.log.debug(
-                f"{get_medialog(ele)} Downloading with protected media downloader"
+                f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
             )
 
             sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
             common_globals.log.debug(
-                f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+                f"{common_logs.get_medialog(ele)} download url:  {common_logs.get_url_log(ele)}"
             )
 
             audio = await ele.mpd_audio
             video = await ele.mpd_video
             path_to_file_logger(sharedPlaceholderObj, ele)
 
-            audio = await self._alt_download_downloader(audio, c, ele)
-            video = await self._alt_download_downloader(video, c, ele)
-            ele.add_size(audio["total"] + video["total"])
+            # Only attempt to download tracks that actually exist
+            if audio:
+                audio = await self._alt_download_downloader(audio, c, ele)
+            if video:
+                video = await self._alt_download_downloader(video, c, ele)
+
+            # Safely calculate total size
+            audio_size = audio["total"] if audio else 0
+            video_size = video["total"] if video else 0
+            ele.add_size(audio_size + video_size)
 
             post_result = await self._media_item_post_process_alt(
                 audio, video, ele, username, model_id
             )
             if post_result:
                 return post_result
+                
             await self._media_item_keys_alt(c, audio, video, ele)
 
             return await self._handle_result_alt(
@@ -75,7 +83,7 @@ class AltDownloadManager(DownloadManager):
             )
         finally:
             common_globals.sem.release()
-
+    
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
         placeholderObj = await placeholder.tempFilePlaceholder(
@@ -275,24 +283,32 @@ class AltDownloadManager(DownloadManager):
                 )
                 raise E
 
-    async def _handle_result_alt(self, sharedPlaceholderObj, ele, audio, video, username, model_id):
+    async def _handle_result_alt(
+        self, sharedPlaceholderObj, ele, audio, video, username, model_id
+    ):
         tempPlaceholder = await placeholder.tempFilePlaceholder(
             ele, f"temp_{ele.id or await ele.final_filename}.mp4"
         ).init()
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
         
+        # Dynamically build FFmpeg command based on available tracks
+        ffmpeg_cmd = [get_ffmpeg()]
+        if video:
+            ffmpeg_cmd.extend(["-i", str(video["path"])])
+        if audio:
+            ffmpeg_cmd.extend(["-i", str(audio["path"])])
+            
+        ffmpeg_cmd.extend([
+            "-c", "copy",
+            "-movflags", "use_metadata_tags",
+            str(temp_path),
+            "-y",
+        ])
+        
         # Async run FFmpeg with the -y flag
         t = await async_run(
-            [
-                get_ffmpeg(),
-                "-i", str(video["path"]),
-                "-i", str(audio["path"]),
-                "-c", "copy",
-                "-movflags", "use_metadata_tags",
-                str(temp_path),
-                "-y",
-            ],
+            ffmpeg_cmd,
             name="ffmpeg",
             level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
         )
@@ -303,14 +319,19 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}")
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}")
 
-        video["path"].unlink(missing_ok=True)
-        audio["path"].unlink(missing_ok=True)
+        # Clean up temp tracks
+        if video:
+            video["path"].unlink(missing_ok=True)
+        if audio:
+            audio["path"].unlink(missing_ok=True)
 
-        expected_duration = ele.duration
-        if not verify_media_integrity(temp_path, expected_duration):
-            common_globals.log.warning(f"DRM Merge failed integrity check for {ele.id}: {temp_path}")
-            temp_path.unlink(missing_ok=True)
-            raise Exception("Merged DRM video failed integrity check")
+        # --- NEW INTEGRITY CHECK ---
+        if ele.mediatype.lower() in {"videos", "audios"} and (ele.protected or settings.get_settings().verify_all_integrity):
+            expected_duration = ele.duration
+            if not verify_media_integrity(temp_path, expected_duration):
+                common_globals.log.warning(f"DRM Merge failed integrity check for {ele.id}: {temp_path}")
+                temp_path.unlink(missing_ok=True)
+                raise Exception("Merged DRM media failed integrity check")
         # ---------------------------
 
         common_globals.log.debug(
@@ -334,13 +355,9 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
             )
-            # Thread executor for disk I/O timestamp operation
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(common_paths.set_time, sharedPlaceholderObj.trunicated_filepath, newDate)
-            )
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
             )
             
         if ele.id:
@@ -355,10 +372,11 @@ class AltDownloadManager(DownloadManager):
             )
         ele.add_filepath(sharedPlaceholderObj.trunicated_filepath)
 
-        # Await the new async script
         await self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
         
-        return ele.mediatype, video["total"] + audio["total"]
+        audio_total = audio["total"] if audio else 0
+        video_total = video["total"] if video else 0
+        return ele.mediatype, video_total + audio_total
 
     async def _resume_data_handler_alt(self, data, item, ele, placeholderObj):
         common_globals.log.debug(
@@ -425,29 +443,41 @@ class AltDownloadManager(DownloadManager):
         return item["path"].absolute().stat().st_size
 
     async def _media_item_post_process_alt(self, audio, video, ele, username, model_id):
-        if (audio["total"] + video["total"]) == 0:
+        audio_total = audio["total"] if audio else 0
+        video_total = video["total"] if video else 0
+        
+        if (audio_total + video_total) == 0:
             if ele.mediatype.capitalize() != "Forced_skipped":
                 await self._force_download(ele, username, model_id)
             return ele.mediatype, 0
+            
         for m in [audio, video]:
-            m["total"] = self._get_item_total(m)
+            if m is not None:
+                m["total"] = self._get_item_total(m)
 
         for m in [audio, video]:
-            if not isinstance(m, dict):
-                return m
-            await self._size_checker(m["path"], ele, m["total"])
+            if m is not None:
+                if not isinstance(m, dict):
+                    return m
+                await self._size_checker(m["path"], ele, m["total"])
+
+
+
+
+
+
 
     async def _media_item_keys_alt(self, c, audio, video, ele):
         async for _ in download_retry():
             with _:
                 try:
                     for item in [audio, video]:
-                        item = await keyhelpers.un_encrypt(item, c, ele)
+                        if item is not None:
+                            item = await keyhelpers.un_encrypt(item, c, ele)
                 except Exception as E:
                     common_globals.log.traceback_(E)
                     common_globals.log.traceback_(traceback.format_exc())
                     raise E
-
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
         task1 = progress_updater.download.add_job_task(
