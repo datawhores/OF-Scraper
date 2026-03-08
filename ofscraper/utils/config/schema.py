@@ -27,6 +27,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "auto_resume": data.get_part_file_clean(config=config),
             "system_free_min": data.get_system_freesize(config=config),
             "max_post_count": data.get_max_post_count(config=config),
+            "verify_all_integrity": data.get_verify_all_integrity(config=config),
         },
         "binary_options": {
             "ffmpeg": data.get_ffmpeg(config=config),

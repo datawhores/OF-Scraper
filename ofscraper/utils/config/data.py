@@ -613,3 +613,9 @@ def get_skip_unavailable_content(config=None):
         return of_env.getattr("SKIP_UNAVAILABLE_DEFAULT")
     val = config.get("skip_unavailable_content") or config.get("advanced_options", {}).get("skip_unavailable_content")
     return val if val is not None else of_env.getattr("SKIP_UNAVAILABLE_DEFAULT")
+@wrapper.config_reader
+def get_verify_all_integrity(config=None):
+    if config is False:
+        return of_env.getattr("VERIFY_ALL_INTEGRITY")
+    val = config.get("verify_all_integrity") or config.get("download_options", {}).get("verify_all_integrity")
+    return val if val is not None else of_env.getattr("VERIFY_ALL_INTEGRITY")

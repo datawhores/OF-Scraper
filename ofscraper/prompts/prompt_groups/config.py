@@ -61,6 +61,7 @@ def funct(prompt_):
     length_max: max length of media, only applies to videos
     filter: which media types to download
     auto_resume: toggle for resuming downloads
+    verify_all_integrity: checks video integrity for all downloads, protected are always checked
     system_free_min: stops downloads when bypass
     -----------------------------------
     [Binary Options]
@@ -184,6 +185,14 @@ Enter 0 to disable
                 "message": "Enable auto file resume",
                 "option_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
                 "default": data.get_part_file_clean(),
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
+            },
+            {
+                "type": "list",
+                "name": "verify_all_integrity",
+                "message": "Verify the integrity of ALL downloaded videos (not just DRM)?",
+                "option_instruction": "Uses ffprobe to ensure video duration matches the API. This guarantees file health but slightly slows down massive scrapes.",
+                "default": data.get_verify_all_integrity(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
         ],

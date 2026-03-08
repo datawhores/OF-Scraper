@@ -131,6 +131,7 @@ def merged_settings():
     merged.system_free_min = args.system_free_min or config_data.get_system_freesize()
     merged.max_post_count = args.max_count or config_data.get_max_post_count()
     merged.mediatypes = args.mediatypes or config_data.get_filter()
+    merged.verify_all_integrity = config_data.get_verify_all_integrity()
     
     dl_limit = args.download_limit or (config_data.get_download_limit() if hasattr(config_data, "get_download_limit") else 0)
     merged.download_limit = max(dl_limit, 1024) if dl_limit else dl_limit

@@ -4,45 +4,40 @@ import re
 import traceback
 from functools import partial
 
-
 import aiofiles
 import arrow
 import psutil
 from humanfriendly import format_size
 
+# External OF-Scraper Utilities
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.of_env.of_env as of_env
-from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
-
-from ofscraper.commands.scraper.actions.utils.params import get_alt_params
-from ofscraper.commands.scraper.actions.utils.log import get_medialog
-from ofscraper.commands.scraper.actions.utils.log import (
-    get_url_log,
-    path_to_file_logger,
-    temp_file_logger,
-)
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
-from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
-from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
-import ofscraper.utils.auth.request as auth_requests
-from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
-    DownloadManager,
-)
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
-from ofscraper.db.operations_.media import mark_media_as_downloaded
-import ofscraper.commands.scraper.actions.utils.general as common
-import ofscraper.utils.dates as dates
-from ofscraper.utils.system.subprocess import async_run
-import ofscraper.utils.system.system as system
-import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
+from ofscraper.commands.scraper.actions.utils.log import get_medialog, get_url_log, path_to_file_logger, temp_file_logger
+from ofscraper.commands.scraper.actions.utils.params import get_alt_params
+import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
+import ofscraper.utils.dates as dates
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
+from ofscraper.utils.system.subprocess import async_run
+from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
+
+# Download Specific Utilities
+from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+from ofscraper.commands.scraper.actions.download.utils.retries import download_retry, get_download_retries
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size, get_chunk_timeout
+from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
+import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
-import ofscraper.utils.of_env.of_env as env
+
+# Media Objects
 from ofscraper.classes.of.media import Media
+from ofscraper.db.operations_.media import mark_media_as_downloaded
 
 
 class AltDownloadManager(DownloadManager):
@@ -55,7 +50,6 @@ class AltDownloadManager(DownloadManager):
                 f"{get_medialog(ele)} Downloading with protected media downloader"
             )
 
-            # Removed redundant download_retry loop here as it is handled in sub-methods
             sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
             common_globals.log.debug(
                 f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
@@ -220,7 +214,6 @@ class AltDownloadManager(DownloadManager):
         )
 
     async def _download_fileobject_writer_reader(self, ele, total, res, placeholderObj):
-
         task1 = await self._add_download_job_task(
             ele, total=total, placeholderObj=placeholderObj
         )
@@ -230,7 +223,6 @@ class AltDownloadManager(DownloadManager):
         except Exception as E:
             raise E
         finally:
-            # Close file if needed
             try:
                 await fileobject.close()
             except Exception as E:
@@ -240,10 +232,7 @@ class AltDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(
-        self, ele, total, res, placeholderObj
-    ):
-
+    async def _download_fileobject_writer_streamer(self, ele, total, res, placeholderObj):
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = None  # Initialize to None for finally block
         try:
@@ -262,36 +251,31 @@ class AltDownloadManager(DownloadManager):
                     except StopAsyncIteration:
                         break  # Exit loop when no more chunks
         except asyncio.TimeoutError:
-            # This catches the timeout for the entire async with block
             common_globals.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!"
             )
-            return  # Exit the function on timeout
+            return
         except Exception as E:
-            # Catch other potential exceptions during file operations or chunk iteration
             common_globals.log.info(
                 f"An error occurred during download for {ele}: {E}"
             )
-            raise E  # Re-raise the exception after logging
+            raise E
         finally:
-            # Close file if needed
-            if fileobject:  # Ensure fileobject was successfully opened
+            if fileobject:  
                 try:
                     await fileobject.close()
                 except Exception as E:
                     common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E  # Re-raise if closing fails
+                    raise E
             try:
                 await self._remove_download_job_task(task1, ele)
             except Exception as E:
                 common_globals.log.debug(
                     f"Error removing download job task for {ele}: {E}"
                 )
-                raise E  # Re-raise if task removal fails
+                raise E
 
-    async def _handle_result_alt(
-        self, sharedPlaceholderObj, ele, audio, video, username, model_id
-    ):
+    async def _handle_result_alt(self, sharedPlaceholderObj, ele, audio, video, username, model_id):
         tempPlaceholder = await placeholder.tempFilePlaceholder(
             ele, f"temp_{ele.id or await ele.final_filename}.mp4"
         ).init()
@@ -302,33 +286,32 @@ class AltDownloadManager(DownloadManager):
         t = await async_run(
             [
                 get_ffmpeg(),
-                "-i",
-                str(video["path"]),
-                "-i",
-                str(audio["path"]),
-                "-c",
-                "copy",
-                "-movflags",
-                "use_metadata_tags",
+                "-i", str(video["path"]),
+                "-i", str(audio["path"]),
+                "-c", "copy",
+                "-movflags", "use_metadata_tags",
                 str(temp_path),
                 "-y",
             ],
             name="ffmpeg",
-            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
+            level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
         )
         
         # Fallback error check if stderr is captured and Output is missing
         if t.stderr and t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
-            )
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
-            )
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}")
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}")
 
         video["path"].unlink(missing_ok=True)
         audio["path"].unlink(missing_ok=True)
+
+        expected_duration = ele.duration
+        if not verify_media_integrity(temp_path, expected_duration):
+            common_globals.log.warning(f"DRM Merge failed integrity check for {ele.id}: {temp_path}")
+            temp_path.unlink(missing_ok=True)
+            raise Exception("Merged DRM video failed integrity check")
+        # ---------------------------
 
         common_globals.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"

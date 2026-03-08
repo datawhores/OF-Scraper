@@ -118,5 +118,9 @@ def load_download_config():
     config["PROFILE_FORCE_KEY"] = (
         os.getenv("PROFILE_FORCE_KEY", "False").lower() == "true"
     )
-
+    # VERIFY_ALL_INTEGRITY: Verify duration of all downloaded videos using ffprobe
+    # Default: False
+    config["VERIFY_ALL_INTEGRITY"] = (
+        os.getenv("OFSC_VERIFY_ALL_INTEGRITY", "False").lower() in ("true", "1")
+    )
     return config

@@ -38,6 +38,10 @@ def load_system_config():
     config["FFMPEG_SUBPROCESS_LEVEL"] = int(
         os.getenv("OFSC_FFMPEG_SUBPROCESS_LEVEL", "0")
     )
+    # Set log level for FFprobe operations
+    config["FFPROBE_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_FFPROBE_SUBPROCESS_LEVEL", "0")
+    )
 
     # Free Space
     config["DISK_SPACE_CHECK_PATH"] = os.getenv("OFSC_DISK_SPACE_CHECK_PATH", "/")
