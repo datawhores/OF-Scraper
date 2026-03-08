@@ -34,7 +34,7 @@ def scrape_context_manager():
     )
     yield
     end = datetime.now()
-    log.info(
+    log.warning(
         f"""
 ===========================
 [bold] Script Finished [/bold]
