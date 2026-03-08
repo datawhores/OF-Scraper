@@ -156,7 +156,11 @@ class Media(base.base):
             return "Videos"
         elif media_type == "forced_skipped":
             return "Forced_skipped"
+        elif media_type in {"audio", "audios"}:
+            return "Audios"
         else:
+            if media_type.endswith("s"):
+                return media_type.capitalize()
             return f"{media_type}s".capitalize()
 
     @property
@@ -524,7 +528,7 @@ class Media(base.base):
 
     @property
     def protected(self):
-        if self.mediatype not in {"Videos", "Texts"}:
+        if self.mediatype not in {"Videos", "Texts","Audios"}:
             return False
         if self.media_source.get("source"):
             return False

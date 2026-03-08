@@ -19,7 +19,7 @@ from ofscraper.commands.scraper.actions.utils.retries import (
 )
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import async_run
-from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
+from ofscraper.utils.system.ffmpeg import get_ffmpeg
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
 

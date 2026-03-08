@@ -25,7 +25,6 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
@@ -45,7 +44,7 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
-from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
+from ofscraper.utils.system.ffmpeg import get_ffmpeg
 
 # Media Objects
 from ofscraper.classes.of.media import Media
@@ -345,18 +344,13 @@ class AltDownloadManager(DownloadManager):
         if audio:
             audio["path"].unlink(missing_ok=True)
 
-        # --- NEW INTEGRITY CHECK ---
-        if ele.mediatype.lower() in {"videos", "audios"} and (
-            ele.protected or settings.get_settings().verify_all_integrity
-        ):
-            expected_duration = ele.duration
-            if not verify_media_integrity(temp_path, expected_duration):
-                common_globals.log.warning(
-                    f"DRM Merge failed integrity check for {ele.id}: {temp_path}"
-                )
-                temp_path.unlink(missing_ok=True)
-                raise Exception("Merged DRM media failed integrity check")
-        # ---------------------------
+        expected_duration = ele.duration
+        if not verify_media_integrity(temp_path, expected_duration):
+            common_globals.log.warning(
+                f"DRM Merge failed integrity check for {ele.id}: {temp_path}"
+            )
+            temp_path.unlink(missing_ok=True)
+            raise Exception("Merged DRM media failed integrity check")
 
         common_globals.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
