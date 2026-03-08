@@ -15,7 +15,11 @@ import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
-from ofscraper.commands.scraper.actions.utils.log import get_medialog, get_url_log, path_to_file_logger, temp_file_logger
+from ofscraper.commands.scraper.actions.utils.log import (
+    get_medialog,
+    path_to_file_logger,
+    temp_file_logger,
+)
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
@@ -28,9 +32,17 @@ from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
 
 # Download Specific Utilities
-from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
-from ofscraper.commands.scraper.actions.download.utils.retries import download_retry, get_download_retries
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size, get_chunk_timeout
+from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
+    DownloadManager,
+)
+from ofscraper.commands.scraper.actions.download.utils.retries import (
+    download_retry,
+    get_download_retries,
+)
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_size,
+    get_chunk_timeout,
+)
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 from ofscraper.commands.scraper.actions.download.utils.ffmpeg import get_ffmpeg
@@ -75,7 +87,7 @@ class AltDownloadManager(DownloadManager):
             )
             if post_result:
                 return post_result
-                
+
             await self._media_item_keys_alt(c, audio, video, ele)
 
             return await self._handle_result_alt(
@@ -83,7 +95,7 @@ class AltDownloadManager(DownloadManager):
             )
         finally:
             common_globals.sem.release()
-    
+
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()
         placeholderObj = await placeholder.tempFilePlaceholder(
@@ -240,7 +252,9 @@ class AltDownloadManager(DownloadManager):
             except Exception as E:
                 raise E
 
-    async def _download_fileobject_writer_streamer(self, ele, total, res, placeholderObj):
+    async def _download_fileobject_writer_streamer(
+        self, ele, total, res, placeholderObj
+    ):
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = None  # Initialize to None for finally block
         try:
@@ -264,12 +278,10 @@ class AltDownloadManager(DownloadManager):
             )
             return
         except Exception as E:
-            common_globals.log.info(
-                f"An error occurred during download for {ele}: {E}"
-            )
+            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
         finally:
-            if fileobject:  
+            if fileobject:
                 try:
                     await fileobject.close()
                 except Exception as E:
@@ -291,33 +303,41 @@ class AltDownloadManager(DownloadManager):
         ).init()
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
-        
+
         # Dynamically build FFmpeg command based on available tracks
         ffmpeg_cmd = [get_ffmpeg()]
         if video:
             ffmpeg_cmd.extend(["-i", str(video["path"])])
         if audio:
             ffmpeg_cmd.extend(["-i", str(audio["path"])])
-            
-        ffmpeg_cmd.extend([
-            "-c", "copy",
-            "-movflags", "use_metadata_tags",
-            str(temp_path),
-            "-y",
-        ])
-        
+
+        ffmpeg_cmd.extend(
+            [
+                "-c",
+                "copy",
+                "-movflags",
+                "use_metadata_tags",
+                str(temp_path),
+                "-y",
+            ]
+        )
+
         # Async run FFmpeg with the -y flag
         t = await async_run(
             ffmpeg_cmd,
             name="ffmpeg",
             level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
         )
-        
+
         # Fallback error check if stderr is captured and Output is missing
         if t.stderr and t.stderr.decode().find("Output") == -1:
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}")
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}")
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
+            )
+            common_globals.log.debug(
+                f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
+            )
 
         # Clean up temp tracks
         if video:
@@ -326,10 +346,14 @@ class AltDownloadManager(DownloadManager):
             audio["path"].unlink(missing_ok=True)
 
         # --- NEW INTEGRITY CHECK ---
-        if ele.mediatype.lower() in {"videos", "audios"} and (ele.protected or settings.get_settings().verify_all_integrity):
+        if ele.mediatype.lower() in {"videos", "audios"} and (
+            ele.protected or settings.get_settings().verify_all_integrity
+        ):
             expected_duration = ele.duration
             if not verify_media_integrity(temp_path, expected_duration):
-                common_globals.log.warning(f"DRM Merge failed integrity check for {ele.id}: {temp_path}")
+                common_globals.log.warning(
+                    f"DRM Merge failed integrity check for {ele.id}: {temp_path}"
+                )
                 temp_path.unlink(missing_ok=True)
                 raise Exception("Merged DRM media failed integrity check")
         # ---------------------------
@@ -337,19 +361,24 @@ class AltDownloadManager(DownloadManager):
         common_globals.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
         )
-        
+
         # Thread executor for disk I/O move operation
         await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
-            partial(common_paths.moveHelper, temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
+            partial(
+                common_paths.moveHelper,
+                temp_path,
+                sharedPlaceholderObj.trunicated_filepath,
+                ele,
+            ),
         )
-        
+
         (
             common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
             if system.get_parent_process()
             else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
         )
-        
+
         if ele.postdate:
             newDate = dates.convert_local_time(ele.postdate)
             common_globals.log.debug(
@@ -357,9 +386,13 @@ class AltDownloadManager(DownloadManager):
             )
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(common_paths.set_time, sharedPlaceholderObj.trunicated_filepath, newDate)
+                partial(
+                    common_paths.set_time,
+                    sharedPlaceholderObj.trunicated_filepath,
+                    newDate,
+                ),
             )
-            
+
         if ele.id:
             await mark_media_as_downloaded(
                 ele,
@@ -373,7 +406,7 @@ class AltDownloadManager(DownloadManager):
         ele.add_filepath(sharedPlaceholderObj.trunicated_filepath)
 
         await self._after_download_script(sharedPlaceholderObj.trunicated_filepath)
-        
+
         audio_total = audio["total"] if audio else 0
         video_total = video["total"] if video else 0
         return ele.mediatype, video_total + audio_total
@@ -445,12 +478,12 @@ class AltDownloadManager(DownloadManager):
     async def _media_item_post_process_alt(self, audio, video, ele, username, model_id):
         audio_total = audio["total"] if audio else 0
         video_total = video["total"] if video else 0
-        
+
         if (audio_total + video_total) == 0:
             if ele.mediatype.capitalize() != "Forced_skipped":
                 await self._force_download(ele, username, model_id)
             return ele.mediatype, 0
-            
+
         for m in [audio, video]:
             if m is not None:
                 m["total"] = self._get_item_total(m)
@@ -460,12 +493,6 @@ class AltDownloadManager(DownloadManager):
                 if not isinstance(m, dict):
                     return m
                 await self._size_checker(m["path"], ele, m["total"])
-
-
-
-
-
-
 
     async def _media_item_keys_alt(self, c, audio, video, ele):
         async for _ in download_retry():
@@ -478,6 +505,7 @@ class AltDownloadManager(DownloadManager):
                     common_globals.log.traceback_(E)
                     common_globals.log.traceback_(traceback.format_exc())
                     raise E
+
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
         pathstr = str(placeholderObj.tempfilepath)
         task1 = progress_updater.download.add_job_task(

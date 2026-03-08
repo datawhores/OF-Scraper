@@ -30,14 +30,11 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
 
-
-
 console = Console()
 
 
 def funct(prompt_):
-    console.print(
-        """
+    console.print("""
     For more Details => https://of-scraper.gitbook.io/of-scraper/config-options
     
     [General Options]
@@ -117,8 +114,7 @@ def funct(prompt_):
     ======================================================
     
     PRESS ENTER TO RETURN
-    """
-    )
+    """)
     prompt("")
     return prompt_
 
@@ -336,7 +332,7 @@ def script_config():
                 "default": data.get_naming_script() or "",
                 "option_instruction": "Leave empty to skip the naming script",
             },
-              {
+            {
                 "type": "input",
                 "name": "after_download_script",
                 "message": "Script that runs after download complete",
@@ -511,14 +507,13 @@ Enter 0 for no minimum
                 "default": str(data.get_filesize_min()),
                 "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
             },
-                       {
+            {
                 "type": "list",
                 "name": "block_ads",
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
                 "message": "Do you want to auto block post with advertisment words:\n",
                 "default": data.get_block_ads(),
             },
-
             {
                 "type": "checkbox",
                 "name": "filter",

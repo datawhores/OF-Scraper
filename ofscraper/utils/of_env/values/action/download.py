@@ -120,7 +120,7 @@ def load_download_config():
     )
     # VERIFY_ALL_INTEGRITY: Verify duration of all downloaded videos using ffprobe
     # Default: False
-    config["VERIFY_ALL_INTEGRITY"] = (
-        os.getenv("OFSC_VERIFY_ALL_INTEGRITY", "False").lower() in ("true", "1")
-    )
+    config["VERIFY_ALL_INTEGRITY"] = os.getenv(
+        "OFSC_VERIFY_ALL_INTEGRITY", "False"
+    ).lower() in ("true", "1")
     return config

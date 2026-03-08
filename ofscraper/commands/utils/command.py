@@ -18,6 +18,7 @@ import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
+
 class CommandManager:
     def __init__(self):
         pass
@@ -104,9 +105,7 @@ class CommandManager:
         final_post_areas = areas.get_final_posts_area()
         length = manager.Manager.current_model_manager.get_num_all_selected_models()
         count = progress_tasks.get_user_task_obj().completed
-        log.warning(
-            progress_str.format(count=count + 1, length=length)
-        )
+        log.warning(progress_str.format(count=count + 1, length=length))
         log.warning(data_str.format(name=username))
         if of_env.getattr("SHOW_AVATAR") and avatar:
             log.warning(avatar_str.format(avatar=avatar))
@@ -121,7 +120,9 @@ class CommandManager:
                 areas=",".join(final_post_areas), name=username, active=active
             )
         )
-        status_text = "[green]🟢 Active[/green]" if user.active else "[red]🔴 Expired[/red]"
+        status_text = (
+            "[green]🟢 Active[/green]" if user.active else "[red]🔴 Expired[/red]"
+        )
         expire_date = user.expired_string or "Unknown Date"
 
         log.warning(f"[{username}] Subscription: {status_text}")

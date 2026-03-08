@@ -50,7 +50,9 @@ def get_current_config_schema(config: dict = None) -> dict:
         },
         "advanced_options": {
             "dynamic-mode-default": data.get_dynamic(config=config),
-            "skip_unavailable_content": data.get_skip_unavailable_content(config=config),
+            "skip_unavailable_content": data.get_skip_unavailable_content(
+                config=config
+            ),
             "downloadbars": data.get_show_downloadprogress(config=config),
             "cache-mode": data.cache_mode_helper(config=config),
             "rotate_logs": data.get_rotate_logs(config=config),

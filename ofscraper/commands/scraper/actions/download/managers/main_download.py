@@ -21,9 +21,17 @@ from ofscraper.utils.system.ffprobe import verify_media_integrity
 from ofscraper.utils.cache.profile import set_profile_cache
 
 # Download Specific Utilities
-from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
-from ofscraper.commands.scraper.actions.download.utils.retries import download_retry, get_download_retries
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size, get_chunk_timeout
+from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
+    DownloadManager,
+)
+from ofscraper.commands.scraper.actions.download.utils.retries import (
+    download_retry,
+    get_download_retries,
+)
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_size,
+    get_chunk_timeout,
+)
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 
 # Media Objects
@@ -67,7 +75,7 @@ class MainDownloadManager(DownloadManager):
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
         ).init()
-        
+
         # Reset attempt counter to prevent 11/10 display bug
         common_globals.attempt.set(0)
 
@@ -222,7 +230,7 @@ class MainDownloadManager(DownloadManager):
             except Exception:
                 pass
 
-    async def _download_fileobject_writer_streamer( 
+    async def _download_fileobject_writer_streamer(
         self, res, ele, tempholderObj, placeholderObj, total
     ):
         task1 = await self._add_download_job_task(
@@ -249,12 +257,10 @@ class MainDownloadManager(DownloadManager):
             )
             return
         except Exception as E:
-            common_globals.log.info(
-                f"An error occurred during download for {ele}: {E}"
-            )
+            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
         finally:
-            if fileobject:  
+            if fileobject:
                 try:
                     await fileobject.close()
                 except Exception as E:
@@ -271,32 +277,37 @@ class MainDownloadManager(DownloadManager):
     async def _handle_result_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result
         path_to_file = placeholderObj.trunicated_filepath
-        
+
         # 1. Check that the file size matches the API reported size
         await self._size_checker(temp, ele, total)
-        
+
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
         )
 
         # 2. Video Integrity Check (Optional for Standard Downloads)
-        if ele.mediatype.lower() in {"videos","audios"} and settings.get_settings().verify_all_integrity:
+        if (
+            ele.mediatype.lower() in {"videos", "audios"}
+            and settings.get_settings().verify_all_integrity
+        ):
             expected_duration = ele.duration
             if not verify_media_integrity(temp, expected_duration):
-                common_globals.log.warning(f"Removing corrupted/truncated standard video: {temp}")
+                common_globals.log.warning(
+                    f"Removing corrupted/truncated standard video: {temp}"
+                )
                 pathlib.Path(temp).unlink(missing_ok=True)
                 raise Exception("Standard video failed duration integrity check")
 
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
         )
-        
+
         # 3. Move the verified file to final path
         await asyncio.get_event_loop().run_in_executor(
             common_globals.thread,
-            partial(common_paths.moveHelper, temp, path_to_file, ele)
+            partial(common_paths.moveHelper, temp, path_to_file, ele),
         )
-        
+
         (
             common_paths.addGlobalDir(placeholderObj.filedir)
             if system.get_parent_process()
@@ -308,7 +319,7 @@ class MainDownloadManager(DownloadManager):
             newDate = dates.convert_local_time(ele.postdate)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
-                partial(common_paths.set_time, path_to_file, newDate)
+                partial(common_paths.set_time, path_to_file, newDate),
             )
 
         # 5. Mark as Downloaded in Database
@@ -322,10 +333,10 @@ class MainDownloadManager(DownloadManager):
                 hashdata=await common.get_hash(path_to_file),
                 size=placeholderObj.size,
             )
-            
+
         await set_profile_cache(ele, common_globals.thread)
         ele.add_filepath(placeholderObj.trunicated_filepath)
-        
+
         # 6. Run Post-Download Scripts
         await self._after_download_script(path_to_file)
 
@@ -350,13 +361,17 @@ class MainDownloadManager(DownloadManager):
             f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
         )
         resume_size = self._get_resume_size(tempholderObj)
-        common_globals.log.debug(f"{common_logs.get_medialog(ele)} resume_size: {resume_size}")
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} resume_size: {resume_size}"
+        )
 
     async def _resume_data_handler_main(self, data, ele, tempholderObj):
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
         )
-        common_globals.log.debug(f"{common_logs.get_medialog(ele)} Data from cache{data}")
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} Data from cache{data}"
+        )
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
         )

@@ -12,7 +12,7 @@ def getattr(val):
     Order of precedence: Environment Variable > Custom Config > Default Config.
     """
     # Load all settings if not already loaded
-    config_dict = get_all_configs() 
+    config_dict = get_all_configs()
     # 1. Check Environment Variable
     env_val = os.environ.get(val)
     if env_val is not None:
