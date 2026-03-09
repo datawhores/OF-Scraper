@@ -12,7 +12,7 @@ from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
 def add_other_handler(log, clear=True):
     if clear:
         log.handlers.clear()
-    format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
+    format = r" %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()

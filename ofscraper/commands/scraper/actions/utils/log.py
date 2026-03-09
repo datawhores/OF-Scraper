@@ -19,7 +19,7 @@ def path_to_file_logger(placeholderObj, ele, innerlog=None):
     safe_filepath = re.escape(str(placeholderObj.filepath))
     safe_trunicated_filepath = re.escape(str(placeholderObj.trunicated_filepath))
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
+        fr"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
     )
     innerlog.debug(
         f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path from config {safe_filepath}"
@@ -39,7 +39,7 @@ def temp_file_logger(placeholderObj, ele, innerlog=None):
 
 def get_url_log(ele):
     url = ele.url or ele.mpd
-    url = re.sub("/\w{5}\w+", "/{hidden}", url)
+    url = re.sub(r"/\w{5}\w+", "/{hidden}", url)
     if ele.url:
         url = re.sub(ele.filename, "{hidden}", url)
     return url

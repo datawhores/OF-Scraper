@@ -55,7 +55,7 @@ async def un_encrypt(item, c, ele, input_=None):
         key = key.strip()
         log.debug(f"{get_medialog(ele)} retrive new key: {key}")
         newpath = pathlib.Path(
-            re.sub("\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
+            re.sub(r"\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE)
         )
         ffmpeg_key = get_ffmpeg_key(key)
         log.debug(f"{get_medialog(ele)} got ffmpeg key {ffmpeg_key}")

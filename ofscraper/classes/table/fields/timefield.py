@@ -66,7 +66,7 @@ class TimeField(Container):
             minutes = (val % 3600) // 60
             seconds = val % 60
 
-        elif val != "N/A" and val != "N\A":
+        elif val != "N/A" and val != "N\\A":
             valArray = val.split(":")
             hours, minutes, seconds = valArray
         else:
@@ -112,7 +112,7 @@ class TimeField(Container):
             ["h:m:s"],
         )
         compare_value = arrow.get(
-            "0:0:0" if value in {"N\A", "N/A"} else value, ["h:m:s"]
+            "0:0:0" if value in {"N\\A", "N/A"} else value, ["h:m:s"]
         )
 
         if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):

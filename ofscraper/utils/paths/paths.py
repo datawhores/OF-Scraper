@@ -46,7 +46,7 @@ def temp_cleanup():
         if root is None:
             return
         for file in filter(
-            lambda x: re.search("\.part$|^temp_", str(x)) is not None,
+            lambda x: re.search(r"\.part$|^temp_", str(x)) is not None,
             pathlib.Path(root).glob("**/*"),
         ):
             file.unlink(missing_ok=True)
@@ -72,7 +72,7 @@ def _windows_truncateHelper(path):
     dir = path.parent
     file = path.name
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
-        "\.[a-z4]*$", path.name, re.IGNORECASE
+        r"\.[a-z4]*$", path.name, re.IGNORECASE
     )
     if match:
         ext = match.group(0)
@@ -106,7 +106,7 @@ def _mac_truncateHelper(path):
     if len(str(path)) <= of_env.getattr("MAC_MAX_PATH"):
         return path
     dir = path.parent
-    match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
+    match = re.search(r"_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
         "\.[a-z4]*$", path.name, re.IGNORECASE
     )
     ext = match.group(0) if match else ""
@@ -122,8 +122,8 @@ def _mac_truncateHelper(path):
 def _linux_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
-    match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
-        "\.[a-z4]*$", path.name, re.IGNORECASE
+    match = re.search(r"_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
+        r"\.[a-z4]*$", path.name, re.IGNORECASE
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
