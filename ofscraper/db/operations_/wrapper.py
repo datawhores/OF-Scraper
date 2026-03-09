@@ -18,48 +18,54 @@ _DB_POOL = ThreadPoolExecutor(max_workers=1)
 
 def operation_wrapper_async(func: abc.Callable):
     async def inner(*args, **kwargs):
-        conn = None
         loop = asyncio.get_event_loop()
         # Use the env variable 'DATABASE_TIMEOUT' (default 300s)
         db_timeout = of_env.getattr("DATABASE_TIMEOUT")
 
-        try:
-            database_path = pathlib.Path(
-                kwargs.get("db_path", None)
-                or placeholder.databasePlaceholder().databasePathHelper(
-                    kwargs.get("model_id"), kwargs.get("username")
+        # Define the actual work to be executed safely inside the single-worker thread pool
+        def _db_work():
+            conn = None
+            try:
+                database_path = pathlib.Path(
+                    kwargs.get("db_path", None)
+                    or placeholder.databasePlaceholder().databasePathHelper(
+                        kwargs.get("model_id"), kwargs.get("username")
+                    )
                 )
-            )
-            database_path.parent.mkdir(parents=True, exist_ok=True)
+                database_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Apply the user-configurable timeout here
-            conn = sqlite3.connect(
-                database_path, check_same_thread=False, timeout=db_timeout
-            )
-            conn.execute("PRAGMA journal_mode=WAL;")          
-            conn.execute("PRAGMA synchronous=NORMAL;")        
-            
-            # Limit memory-mapping to 256MB
-            conn.execute("PRAGMA mmap_size=268435456;")       
-            
-            # Give SQLite exactly 32MB of RAM for its active cache
-            conn.execute("PRAGMA cache_size=-32768;")         
-            
-            conn.row_factory = sqlite3.Row
+                # Apply the user-configurable timeout here
+                conn = sqlite3.connect(
+                    database_path, check_same_thread=False, timeout=db_timeout
+                )
+                conn.execute("PRAGMA journal_mode=WAL;")          
+                conn.execute("PRAGMA synchronous=NORMAL;")        
+                
+                # Limit memory-mapping to 256MB
+                conn.execute("PRAGMA mmap_size=268435456;")       
+                
+                # Give SQLite exactly 32MB of RAM for its active cache
+                conn.execute("PRAGMA cache_size=-32768;")         
+                
+                conn.row_factory = sqlite3.Row
 
-            return await loop.run_in_executor(
-                _DB_POOL, partial(func, *args, **kwargs, conn=conn)
-            )
+                # Execute the database logic
+                return func(*args, **kwargs, conn=conn)
 
-        except Exception as E:
-            log.debug(f"Database operation failed: {E}")
-            raise E
-        finally:
-            if conn:
-                conn.close()
+            except Exception as E:
+                log.debug(f"Database operation failed: {E}")
+                raise E
+            finally:
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+
+        # Submit the entire connection block to the safe pool
+        return await loop.run_in_executor(_DB_POOL, _db_work)
 
     return inner
-
 
 def operation_wrapper(func: abc.Callable):
     def inner(*args, **kwargs):
