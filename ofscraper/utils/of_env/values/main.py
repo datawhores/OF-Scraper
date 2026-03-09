@@ -148,11 +148,20 @@ def load_main_config():
         "OFSC_INFINITE_LOOP_DEFAULT", "False"
     ).lower() in ("true", "1")
 
-    # ENABLE_AUTO_AFTER_DEFAULT: Whether auto-after processing is enabled by default.
-    # Default: False
-    config["ENABLE_AUTO_AFTER_DEFAULT"] = os.getenv(
-        "OFSC_ENABLE_AUTO_AFTER_DEFAULT", "False"
-    ).lower() in ("true", "1")
+    # INCREMENTAL_DOWNLOADS_DEFAULT: Whether auto-after processing is enabled by default.
+    # Default: 
+    incremental_envs = [
+        os.getenv("OFSC_INCREMENTAL_DOWNLOADS_DEFAULT"),
+        os.getenv("OFSC_ENABLE_AUTO_AFTER_DEFAULT")
+    ]
+    
+    # Find the first environment variable that is actually set (not None)
+    active_env_val = next((val for val in incremental_envs if val is not None), None)
+    if active_env_val is not None:
+        config["INCREMENTAL_DOWNLOADS_DEFAULT"] = active_env_val.lower() in ("true", "1")
+    else:
+        config["INCREMENTAL_DOWNLOADS_DEFAULT"] = True
+   
 
     # DEFAULT_USER_LIST: Default user list to use.
     # Default: "main"

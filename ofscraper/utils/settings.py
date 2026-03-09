@@ -186,8 +186,8 @@ def merged_settings():
     merged.auto_resume = (
         False if args.no_auto_resume else config_data.get_part_file_clean()
     )
-    merged.auto_after = (
-        False if merged.cached_disabled else config_data.get_enable_after()
+    merged.incremental_downloads = (
+        False if merged.cached_disabled else config_data.get_incremental_downloads()
     )
     merged.logs_expire_time = config_data.get_logs_expire()
     merged.ssl_verify = config_data.get_ssl_verify()

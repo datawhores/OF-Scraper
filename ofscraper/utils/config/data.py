@@ -151,11 +151,12 @@ def get_InfiniteLoop(config=None):
 
 
 @wrapper.config_reader
-def get_enable_after(config=None):
+def get_incremental_downloads(config=None):
     if config is False:
-        return of_env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
-    val = config.get("enable_auto_after") or config.get("advanced_options", {}).get("enable_auto_after")
-    return val if val is not None else of_env.getattr("ENABLE_AUTO_AFTER_DEFAULT")
+        return of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
+    val =config.get("incremental_downloads") or config.get("advanced_options", {}).get("incremental_downloads") \
+    or config.get("advanced_options", {}).get("enable_auto_after")
+    return val if val is not None else of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
 
 
 @wrapper.config_reader
