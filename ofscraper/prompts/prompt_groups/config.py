@@ -106,7 +106,7 @@ def funct(prompt_):
     enable_auto_after: whether to dynamically set --after: default True
     default_user_list: default user list for --action
     default_black_list: default black list for --action
-    logs_expire_time: max age in days for a log before it is autodelete
+    logs_expire_time: max age in hours for a log before it is autodelete
     remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
