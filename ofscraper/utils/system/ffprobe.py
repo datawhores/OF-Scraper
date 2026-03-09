@@ -95,11 +95,17 @@ def verify_media_integrity(file_path, expected_duration_seconds=None):
         # 3.0s allows for worst-case API rounding plus FFmpeg audio padding,
         # while still catching actually dropped DASH segments (usually 3-4s each).
         if diff > 3.0:
-            log.warning(
+            log.debug(
                 f"Integrity Check Failed: {pathlib.Path(file_path).name}\n"
                 f"Expected: {expected_duration_seconds}s | Actual: {actual_duration:.2f}s "
                 f"| Diff: {diff:.2f}s (Limit: 3.0s)"
             )
             return False
+        
+    log.debug(
+        f"Integrity Check Succeed: {pathlib.Path(file_path).name}\n"
+        f"Expected: {expected_duration_seconds}s | Actual: {actual_duration:.2f}s "
+        f"| Diff: {diff:.2f}s (Limit: 3.0s)"
+    )
             
     return True
