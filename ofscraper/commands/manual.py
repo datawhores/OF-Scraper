@@ -103,7 +103,8 @@ def manual_download(urls=None):
         raise e
 
 
-def process_urls(urls):
+@run
+async def process_urls(urls):
     """
     Parses URLs, fetches data, and organizes it by model.
     This version is refactored to be data-driven and reduce repetition.
@@ -116,61 +117,71 @@ def process_urls(urls):
         "msg": messages_.get_individual_messages_post,
         "msg2": messages_.get_individual_messages_post,
         "highlights": highlights_.get_individual_highlights,
-        "stories": highlights_.get_individual_stories,  # Assumed function
+        "stories": highlights_.get_individual_stories, 
         "unknown": unknown_type_helper,
     }
 
     with progress_utils.setup_live("api"):
-        for url in url_helper(urls):
-            progress_updater.activity.update_task(
-                description=post_str_manual.format(url=url), visible=True
-            )
-
-            model_id, post_id, api_type = get_info(url)
-            if not api_type:
-                log.info(f"Could not determine type for URL: {url}")
-                continue
-
-            # Get user info first if available
-            username = None
-            if model_id:
-                user_data = profile.scrape_profile(model_id)
-                model_id = user_data.get("id")
-                username = user_data.get("username")
-
-            # Fetch data using the mapped function
-            fetch_func = API_MAP.get(api_type)
-            if not fetch_func:
-                log.info(f"No fetch function defined for API type: {api_type}")
-                continue
-
-            # Use partial for functions that need model_id
-            if api_type in {"msg", "msg2"}:
-                fetch_func = partial(fetch_func, model_id)
-
-            value = fetch_func(post_id)
-            if not value or value.get("error"):
-                log.info(f"Failed to get data for URL {url}")
-                continue
-
-            # For unknown types, extract user info from the response
-            if api_type == "unknown":
-                username, model_id = get_profile_helper(value)
-                if not username:
-                    log.info(f"Could not find user info for post ID {post_id}")
-                    continue
-
-            # Initialize collection if it doesn't exist
-            if out_dict[model_id]["collection"] is None:
-                out_dict[model_id]["collection"] = PostCollection(
-                    username=username, model_id=model_id
+        # Open a single async session pool for all manual URLs
+        async with manager.Manager.session.aget_ofsession(
+            sem_count=of_env.getattr("API_REQ_CHECK_MAX")
+        ) as c:
+            for url in url_helper(urls):
+                progress_updater.activity.update_task(
+                    description=post_str_manual.format(url=url), visible=True
                 )
 
-            # Add the fetched post to the collection
-            out_dict[model_id]["collection"].add_posts(value)
+                model_id, post_id, api_type = get_info(url)
+                if not api_type:
+                    log.info(f"Could not determine type for URL: {url}")
+                    continue
+
+                # Get user info first if available
+                username = None
+                if model_id:
+                    user_data = profile.scrape_profile(model_id)
+                    model_id = user_data.get("id")
+                    username = user_data.get("username")
+
+                # Fetch data using the mapped function
+                fetch_func = API_MAP.get(api_type)
+                if not fetch_func:
+                    log.info(f"No fetch function defined for API type: {api_type}")
+                    continue
+
+                # Use partial for functions that need model_id
+                if api_type in {"msg", "msg2"}:
+                    fetch_func = partial(fetch_func, model_id)
+
+                # --- EXECUTE THE FETCH CORRECTLY BASED ON ASYNC/SYNC ---
+                if api_type == "post":
+                    value = fetch_func(post_id)
+                elif api_type == "unknown":
+                    value = await fetch_func(post_id)
+                else:
+                    value = await fetch_func(post_id, c)
+
+                if not value or value.get("error"):
+                    log.info(f"Failed to get data for URL {url}")
+                    continue
+
+                # For unknown types, extract user info from the response
+                if api_type == "unknown":
+                    username, model_id = get_profile_helper(value)
+                    if not username:
+                        log.info(f"Could not find user info for post ID {post_id}")
+                        continue
+
+                # Initialize collection if it doesn't exist
+                if out_dict[model_id]["collection"] is None:
+                    out_dict[model_id]["collection"] = PostCollection(
+                        username=username, model_id=model_id
+                    )
+
+                # Add the fetched post to the collection
+                out_dict[model_id]["collection"].add_posts(value)
 
     return out_dict
-
 
 def get_info(url):
     """
