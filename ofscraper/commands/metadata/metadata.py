@@ -105,9 +105,7 @@ class MetadataCommandManager(CommandManager):
 
         username = ele.name
         model_id = ele.id
-        log.info(
-            f"Performing metadata update for [bold]{username}[/bold]"
-        )
+        log.info(f"Performing metadata update for [bold]{username}[/bold]")
 
         # Ensure the user's database table exists
         await operations.table_init_create(model_id=model_id, username=username)

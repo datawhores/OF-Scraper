@@ -9,6 +9,7 @@ from ofscraper.utils.logs.classes.handlers.discord import (
 
 from ofscraper.utils.logs.classes.handlers.file import StreamHandlerMulti
 
+
 def add_other_handler(log, clear=True):
     if clear:
         log.handlers.clear()
@@ -42,8 +43,10 @@ def add_other_handler(log, clear=True):
         log.addHandler(fh2)
     return log
 
+
 def getstreamHandlers(name=None):
     return [
-        h for h in logging.getLogger(name or "shared").handlers
+        h
+        for h in logging.getLogger(name or "shared").handlers
         if isinstance(h, StreamHandlerMulti)
     ]

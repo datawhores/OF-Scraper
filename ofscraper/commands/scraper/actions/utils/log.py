@@ -19,7 +19,7 @@ def path_to_file_logger(placeholderObj, ele, innerlog=None):
     safe_filepath = re.escape(str(placeholderObj.filepath))
     safe_trunicated_filepath = re.escape(str(placeholderObj.trunicated_filepath))
     innerlog.debug(
-        fr"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
+        rf"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
     )
     innerlog.debug(
         f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path from config {safe_filepath}"
@@ -27,6 +27,7 @@ def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog.debug(
         f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path trunicated from config {safe_trunicated_filepath}"
     )
+
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log

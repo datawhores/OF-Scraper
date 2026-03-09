@@ -39,7 +39,9 @@ def get_filesize_max(config=None):
             or config.get("download_options", {}).get("file_size_limit")
             or config.get("content_filter_options", {}).get("file_size_max")
         )
-        final_size = size if size is not None else of_env.getattr("FILE_SIZE_MAX_DEFAULT")
+        final_size = (
+            size if size is not None else of_env.getattr("FILE_SIZE_MAX_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -55,7 +57,9 @@ def get_filesize_min(config=None):
             or config.get("download_options", {}).get("file_size_min")
             or config.get("content_filter_options", {}).get("file_size_min")
         )
-        final_size = size if size is not None else of_env.getattr("FILE_SIZE_MIN_DEFAULT")
+        final_size = (
+            size if size is not None else of_env.getattr("FILE_SIZE_MIN_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -90,8 +94,12 @@ def get_system_freesize(config=None):
     if config is False:
         return of_env.getattr("SYSTEM_FREEMIN_DEFAULT")
     try:
-        size = config.get("system_free_min") or config.get("download_options", {}).get("system_free_min")
-        final_size = size if size is not None else of_env.getattr("SYSTEM_FREEMIN_DEFAULT")
+        size = config.get("system_free_min") or config.get("download_options", {}).get(
+            "system_free_min"
+        )
+        final_size = (
+            size if size is not None else of_env.getattr("SYSTEM_FREEMIN_DEFAULT")
+        )
         return parse_size(str(final_size))
     except (ValueError, TypeError):
         return 0
@@ -124,8 +132,12 @@ def get_textlength(config=None):
     if config is False:
         return of_env.getattr("TEXTLENGTH_DEFAULT")
     try:
-        length = config.get("textlength") or config.get("file_options", {}).get("textlength")
-        final_length = length if length is not None else of_env.getattr("TEXTLENGTH_DEFAULT")
+        length = config.get("textlength") or config.get("file_options", {}).get(
+            "textlength"
+        )
+        final_length = (
+            length if length is not None else of_env.getattr("TEXTLENGTH_DEFAULT")
+        )
         return int(final_length)
     except (ValueError, TypeError):
         return of_env.getattr("TEXTLENGTH_DEFAULT")
@@ -146,7 +158,9 @@ def get_date(config=None):
 def get_InfiniteLoop(config=None):
     if config is False:
         return of_env.getattr("INFINITE_LOOP_DEFAULT")
-    val = config.get("infinite_loop_action_mode") or config.get("advanced_options", {}).get("infinite_loop_action_mode")
+    val = config.get("infinite_loop_action_mode") or config.get(
+        "advanced_options", {}
+    ).get("infinite_loop_action_mode")
     return val if val is not None else of_env.getattr("INFINITE_LOOP_DEFAULT")
 
 
@@ -154,8 +168,11 @@ def get_InfiniteLoop(config=None):
 def get_incremental_downloads(config=None):
     if config is False:
         return of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
-    val =config.get("incremental_downloads") or config.get("advanced_options", {}).get("incremental_downloads") \
-    or config.get("advanced_options", {}).get("enable_auto_after")
+    val = (
+        config.get("incremental_downloads")
+        or config.get("advanced_options", {}).get("incremental_downloads")
+        or config.get("advanced_options", {}).get("enable_auto_after")
+    )
     return val if val is not None else of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
 
 
@@ -163,7 +180,9 @@ def get_incremental_downloads(config=None):
 def get_default_userlist(config=None):
     if config is False:
         return of_env.getattr("DEFAULT_USER_LIST") or []
-    val = config.get("default_user_list") or config.get("advanced_options", {}).get("default_user_list")
+    val = config.get("default_user_list") or config.get("advanced_options", {}).get(
+        "default_user_list"
+    )
     return val or of_env.getattr("DEFAULT_USER_LIST") or []
 
 
@@ -171,7 +190,9 @@ def get_default_userlist(config=None):
 def get_default_blacklist(config=None):
     if config is False:
         return of_env.getattr("DEFAULT_BLACK_LIST") or []
-    val = config.get("default_black_list") or config.get("advanced_options", {}).get("default_black_list")
+    val = config.get("default_black_list") or config.get("advanced_options", {}).get(
+        "default_black_list"
+    )
     return val or of_env.getattr("DEFAULT_BLACK_LIST") or []
 
 
@@ -179,7 +200,9 @@ def get_default_blacklist(config=None):
 def get_logs_expire(config=None):
     if not config:
         return 0
-    val = config.get("logs_expire_time") or config.get("advanced_options", {}).get("logs_expire_time")
+    val = config.get("logs_expire_time") or config.get("advanced_options", {}).get(
+        "logs_expire_time"
+    )
     return int(val) if val is not None else 0
 
 
@@ -187,7 +210,9 @@ def get_logs_expire(config=None):
 def get_ssl_verify(config=None):
     if not config:
         return of_env.getattr("SSL_VALIDATION_DEFAULT")
-    val = config.get("ssl_verify") or config.get("advanced_options", {}).get("ssl_verify")
+    val = config.get("ssl_verify") or config.get("advanced_options", {}).get(
+        "ssl_verify"
+    )
     return val if val is not None else of_env.getattr("SSL_VALIDATION_DEFAULT")
 
 
@@ -281,8 +306,12 @@ def get_download_limit(config=None):
     if config is False:
         return of_env.getattr("DOWNLOAD_LIMIT_DEFAULT")
     try:
-        limit = config.get("download_limit") or config.get("performance_options", {}).get("download_limit")
-        final_limit = limit if limit is not None else of_env.getattr("DOWNLOAD_LIMIT_DEFAULT")
+        limit = config.get("download_limit") or config.get(
+            "performance_options", {}
+        ).get("download_limit")
+        final_limit = (
+            limit if limit is not None else of_env.getattr("DOWNLOAD_LIMIT_DEFAULT")
+        )
         return parse_size(str(final_limit))
     except (ValueError, TypeError):
         return 0
@@ -313,7 +342,9 @@ def get_filter(config=None):
         or config.get("download_options", {}).get("filter")
         or config.get("content_filter_options", {}).get("filter")
     )
-    final_filter = filter_val if filter_val is not None else of_env.getattr("FILTER_DEFAULT")
+    final_filter = (
+        filter_val if filter_val is not None else of_env.getattr("FILTER_DEFAULT")
+    )
     if isinstance(final_filter, str):
         return [x.capitalize().strip() for x in final_filter.split(",")]
     elif isinstance(final_filter, list):
@@ -459,7 +490,9 @@ def get_client_id(config=None):
 def get_key_mode(config=None):
     if config is False:
         return of_env.getattr("KEY_DEFAULT")
-    value = config.get("key-mode-default") or config.get("cdm_options", {}).get("key-mode-default")
+    value = config.get("key-mode-default") or config.get("cdm_options", {}).get(
+        "key-mode-default"
+    )
     final_value = value if value is not None else of_env.getattr("KEY_DEFAULT")
     return (
         final_value.lower()
@@ -472,7 +505,9 @@ def get_key_mode(config=None):
 def get_dynamic(config=None):
     if config is False:
         return of_env.getattr("DYNAMIC_RULE_DEFAULT")
-    value = config.get("dynamic-mode-default") or config.get("advanced_options", {}).get("dynamic-mode-default")
+    value = config.get("dynamic-mode-default") or config.get(
+        "advanced_options", {}
+    ).get("dynamic-mode-default")
     final_value = value if value is not None else of_env.getattr("DYNAMIC_RULE_DEFAULT")
     return (
         final_value.lower()
@@ -485,7 +520,9 @@ def get_dynamic(config=None):
 def get_part_file_clean(config=None):
     if config is False:
         return of_env.getattr("RESUME_DEFAULT")
-    val = config.get("auto_resume") or config.get("download_options", {}).get("auto_resume")
+    val = config.get("auto_resume") or config.get("download_options", {}).get(
+        "auto_resume"
+    )
     if val is not None:
         return val
     legacy_val = config.get("partfileclean")
@@ -499,7 +536,9 @@ def get_download_semaphores(config=None):
     if config is False:
         return of_env.getattr("DOWNLOAD_SEM_DEFAULT")
     try:
-        sem = config.get("download_sems") or config.get("performance_options", {}).get("download_sems")
+        sem = config.get("download_sems") or config.get("performance_options", {}).get(
+            "download_sems"
+        )
         final_sem = sem if sem is not None else of_env.getattr("DOWNLOAD_SEM_DEFAULT")
         return int(final_sem)
     except (ValueError, TypeError):
@@ -510,7 +549,9 @@ def get_download_semaphores(config=None):
 def get_show_downloadprogress(config=None):
     if config is False:
         return of_env.getattr("PROGRESS_DEFAULT")
-    val = config.get("downloadbars") or config.get("advanced_options", {}).get("downloadbars")
+    val = config.get("downloadbars") or config.get("advanced_options", {}).get(
+        "downloadbars"
+    )
     return val if val is not None else of_env.getattr("PROGRESS_DEFAULT")
 
 
@@ -527,7 +568,9 @@ def cache_mode_helper(config=None):
         return of_env.getattr("CACHEDEFAULT")
     if config is None:
         config = config_file.open_config()
-    data = config.get("cache-mode") or config.get("advanced_options", {}).get("cache-mode")
+    data = config.get("cache-mode") or config.get("advanced_options", {}).get(
+        "cache-mode"
+    )
     final_data = data if data is not None else of_env.getattr("CACHEDEFAULT")
     if final_data in {"sqlite", "json", "disabled"}:
         return final_data
@@ -539,7 +582,9 @@ def cache_mode_helper(config=None):
 def get_rotate_logs(config=None):
     if config is False:
         return of_env.getattr("ROTATE_DEFAULT")
-    value = config.get("rotate_logs") or config.get("advanced_options", {}).get("rotate_logs")
+    value = config.get("rotate_logs") or config.get("advanced_options", {}).get(
+        "rotate_logs"
+    )
     return value if value is not None else of_env.getattr("ROTATE_DEFAULT")
 
 
@@ -547,7 +592,9 @@ def get_rotate_logs(config=None):
 def get_sanitizeDB(config=None):
     if config is False:
         return of_env.getattr("SANITIZE_DB_DEFAULT")
-    val = config.get("sanitize_text") or config.get("advanced_options", {}).get("sanitize_text")
+    val = config.get("sanitize_text") or config.get("advanced_options", {}).get(
+        "sanitize_text"
+    )
     return val if val is not None else of_env.getattr("SANITIZE_DB_DEFAULT")
 
 
@@ -555,7 +602,9 @@ def get_sanitizeDB(config=None):
 def get_textType(config=None):
     if config is False:
         return of_env.getattr("TEXT_TYPE_DEFAULT")
-    value = config.get("text_type_default") or config.get("file_options", {}).get("text_type_default")
+    value = config.get("text_type_default") or config.get("file_options", {}).get(
+        "text_type_default"
+    )
     final_value = value if value is not None else of_env.getattr("TEXT_TYPE_DEFAULT")
     return (
         final_value
@@ -576,7 +625,9 @@ def get_TempDir(config=None):
 def get_truncation(config=None):
     if config is False:
         return of_env.getattr("TRUNCATION_DEFAULT")
-    val = config.get("truncation_default") or config.get("file_options", {}).get("truncation_default")
+    val = config.get("truncation_default") or config.get("file_options", {}).get(
+        "truncation_default"
+    )
     return val if val is not None else of_env.getattr("TRUNCATION_DEFAULT")
 
 
@@ -585,8 +636,12 @@ def get_max_post_count(config=None):
     if config is False:
         return of_env.getattr("MAX_COUNT_DEFAULT")
     try:
-        count = config.get("max_post_count") or config.get("download_options", {}).get("max_post_count")
-        final_count = count if count is not None else of_env.getattr("MAX_COUNT_DEFAULT")
+        count = config.get("max_post_count") or config.get("download_options", {}).get(
+            "max_post_count"
+        )
+        final_count = (
+            count if count is not None else of_env.getattr("MAX_COUNT_DEFAULT")
+        )
         return int(final_count)
     except (ValueError, TypeError):
         return of_env.getattr("MAX_COUNT_DEFAULT")
@@ -596,7 +651,9 @@ def get_max_post_count(config=None):
 def get_hash(config=None):
     if config is False:
         return of_env.getattr("HASHED_DEFAULT")
-    val = config.get("remove_hash_match") or config.get("advanced_options", {}).get("remove_hash_match")
+    val = config.get("remove_hash_match") or config.get("advanced_options", {}).get(
+        "remove_hash_match"
+    )
     return val if val is not None else of_env.getattr("HASHED_DEFAULT")
 
 
@@ -604,7 +661,9 @@ def get_hash(config=None):
 def get_block_ads(config=None):
     if config is False:
         return of_env.getattr("BLOCKED_ADS_DEFAULT")
-    val = config.get("block_ads") or config.get("content_filter_options", {}).get("block_ads")
+    val = config.get("block_ads") or config.get("content_filter_options", {}).get(
+        "block_ads"
+    )
     return val if val is not None else of_env.getattr("BLOCKED_ADS_DEFAULT")
 
 
@@ -612,11 +671,17 @@ def get_block_ads(config=None):
 def get_skip_unavailable_content(config=None):
     if config is False:
         return of_env.getattr("SKIP_UNAVAILABLE_DEFAULT")
-    val = config.get("skip_unavailable_content") or config.get("advanced_options", {}).get("skip_unavailable_content")
+    val = config.get("skip_unavailable_content") or config.get(
+        "advanced_options", {}
+    ).get("skip_unavailable_content")
     return val if val is not None else of_env.getattr("SKIP_UNAVAILABLE_DEFAULT")
+
+
 @wrapper.config_reader
 def get_verify_all_integrity(config=None):
     if config is False:
         return of_env.getattr("VERIFY_ALL_INTEGRITY")
-    val = config.get("verify_all_integrity") or config.get("download_options", {}).get("verify_all_integrity")
+    val = config.get("verify_all_integrity") or config.get("download_options", {}).get(
+        "verify_all_integrity"
+    )
     return val if val is not None else of_env.getattr("VERIFY_ALL_INTEGRITY")

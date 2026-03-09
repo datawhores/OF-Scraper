@@ -131,11 +131,11 @@ def get_ffprobe() -> str | None:
     # 1. Check the cache first!
     if _ffprobe_path:
         return _ffprobe_path
-        
+
     # If we already searched and failed, don't search again
     if _ffprobe_checked:
         return None
-        
+
     # Mark that we are actively performing the check
     _ffprobe_checked = True
 
@@ -148,7 +148,7 @@ def get_ffprobe() -> str | None:
     ffprobe_dir = os.path.dirname(ffmpeg_path)
     ffprobe_name = "ffprobe.exe" if ffmpeg_path.lower().endswith(".exe") else "ffprobe"
     bundled_ffprobe = os.path.join(ffprobe_dir, ffprobe_name)
-    
+
     if os.path.exists(bundled_ffprobe):
         _ffprobe_path = bundled_ffprobe
         return _ffprobe_path
@@ -158,6 +158,8 @@ def get_ffprobe() -> str | None:
     if system_ffprobe:
         _ffprobe_path = system_ffprobe
         return _ffprobe_path
-        
-    log.debug("Found ffmpeg, but could not locate ffprobe. Will rely on ffmpeg fallback.")
+
+    log.debug(
+        "Found ffmpeg, but could not locate ffprobe. Will rely on ffmpeg fallback."
+    )
     return None

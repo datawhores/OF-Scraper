@@ -528,7 +528,7 @@ class Media(base.base):
 
     @property
     def protected(self):
-        if self.mediatype not in {"Videos", "Texts","Audios"}:
+        if self.mediatype not in {"Videos", "Texts", "Audios"}:
             return False
         if self.media_source.get("source"):
             return False

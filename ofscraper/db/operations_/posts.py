@@ -145,6 +145,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
         cur.executemany(postInsert, insertData)
         conn.commit()
 
+
 @wrapper.operation_wrapper_async
 def write_post_table_transition(
     inputData: list, model_id=None, username=None, conn=None, **kwargs

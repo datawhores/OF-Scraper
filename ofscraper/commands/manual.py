@@ -117,7 +117,7 @@ async def process_urls(urls):
         "msg": messages_.get_individual_messages_post,
         "msg2": messages_.get_individual_messages_post,
         "highlights": highlights_.get_individual_highlights,
-        "stories": highlights_.get_individual_stories, 
+        "stories": highlights_.get_individual_stories,
         "unknown": unknown_type_helper,
     }
 
@@ -182,6 +182,7 @@ async def process_urls(urls):
                 out_dict[model_id]["collection"].add_posts(value)
 
     return out_dict
+
 
 def get_info(url):
     """

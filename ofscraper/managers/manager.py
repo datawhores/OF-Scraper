@@ -17,14 +17,20 @@ import ofscraper.utils.settings as settings
 
 
 # Forward declarations for type hinting to prevent circular imports
-class StatsManager: 
-    pass
-class ProfileManager: 
-    pass
-class SessionHandler: 
+class StatsManager:
     pass
 
+
+class ProfileManager:
+    pass
+
+
+class SessionHandler:
+    pass
+
+
 Manager = None
+
 
 def start_manager():
     global Manager
@@ -35,9 +41,9 @@ def start_manager():
 
 class mainManager:
     def __init__(self) -> None:
-        self._stats_manager:Union[None, StatsManager] = None
-        self._profile_manager:Union[None, ProfileManager]=None
-        self._session:Union[None, SessionHandler]=None
+        self._stats_manager: Union[None, StatsManager] = None
+        self._profile_manager: Union[None, ProfileManager] = None
+        self._session: Union[None, SessionHandler] = None
 
     def start(self):
         self.initLogs()
@@ -46,7 +52,6 @@ class mainManager:
         self.pick()
         exit_manager.shutdown()
 
-
     @property
     def profile_manager(self) -> ProfileManager:
         """
@@ -54,6 +59,7 @@ class mainManager:
         """
         if self._profile_manager is None:
             from ofscraper.managers.profile import ProfileManager
+
             self._profile_manager = ProfileManager()
         return self._profile_manager
 
@@ -64,6 +70,7 @@ class mainManager:
         """
         if self._session is None:
             from ofscraper.managers.sessionHandler import SessionHandler
+
             self._session = SessionHandler()
         return self._session
 
@@ -76,6 +83,7 @@ class mainManager:
         if self._stats_manager is None:
             # Import is moved inside the property, delaying it until first access
             from ofscraper.managers.stats import StatsManager
+
             self._stats_manager = StatsManager()
         return self._stats_manager
 
@@ -97,8 +105,7 @@ class mainManager:
             actions.main()
 
     def print_name(self):
-        console.get_shared_console().print(
-            r""" 
+        console.get_shared_console().print(r""" 
     _______  _______         _______  _______  _______  _______  _______  _______  _______ 
     (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
     | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
@@ -109,8 +116,7 @@ class mainManager:
     (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                                                                     
 
-    """
-        )
+    """)
 
     def initLogs(self):
         if len(system.get_dupe_ofscraper()) > 0:

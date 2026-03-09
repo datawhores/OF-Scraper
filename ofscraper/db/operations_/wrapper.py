@@ -38,15 +38,15 @@ def operation_wrapper_async(func: abc.Callable):
                 conn = sqlite3.connect(
                     database_path, check_same_thread=False, timeout=db_timeout
                 )
-                conn.execute("PRAGMA journal_mode=WAL;")          
-                conn.execute("PRAGMA synchronous=NORMAL;")        
-                
+                conn.execute("PRAGMA journal_mode=WAL;")
+                conn.execute("PRAGMA synchronous=NORMAL;")
+
                 # Limit memory-mapping to 256MB
-                conn.execute("PRAGMA mmap_size=268435456;")       
-                
+                conn.execute("PRAGMA mmap_size=268435456;")
+
                 # Give SQLite exactly 32MB of RAM for its active cache
-                conn.execute("PRAGMA cache_size=-32768;")         
-                
+                conn.execute("PRAGMA cache_size=-32768;")
+
                 conn.row_factory = sqlite3.Row
 
                 # Execute the database logic
@@ -67,6 +67,7 @@ def operation_wrapper_async(func: abc.Callable):
 
     return inner
 
+
 def operation_wrapper(func: abc.Callable):
     def inner(*args, **kwargs):
         conn = None
@@ -84,17 +85,17 @@ def operation_wrapper(func: abc.Callable):
             conn = sqlite3.connect(
                 database_path, check_same_thread=True, timeout=db_timeout
             )
-    
-            conn.execute("PRAGMA journal_mode=WAL;")          
-            conn.execute("PRAGMA synchronous=NORMAL;")        
-            
+
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+
             # 2. The RAM-Safe Speed Boosters
             # Limit memory-mapping to 256MB so we don't choke a 2GB RAM system
-            conn.execute("PRAGMA mmap_size=268435456;")       
-            
+            conn.execute("PRAGMA mmap_size=268435456;")
+
             # Give SQLite exactly 32MB of RAM for its active cache
-            conn.execute("PRAGMA cache_size=-32768;")         
-            
+            conn.execute("PRAGMA cache_size=-32768;")
+
             conn.row_factory = sqlite3.Row
             return func(*args, **kwargs, conn=conn)
 
