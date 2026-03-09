@@ -106,8 +106,7 @@ class MetadataCommandManager(CommandManager):
         username = ele.name
         model_id = ele.id
         log.info(
-            f"Performing metadata update for [bold]{username}[/bold]\n"
-            f"Subscription Active: {ele.active}"
+            f"Performing metadata update for [bold]{username}[/bold]"
         )
 
         # Ensure the user's database table exists

@@ -61,7 +61,7 @@ def get_media_duration(file_path):
             except Exception as e:
                 log.debug(f"ffprobe failed for {file_path}, trying ffmpeg fallback. Error: {e}")
         
-        # Attempt 2: The Hacker Way (ffmpeg Fallback)
+        # Attempt 2:  (ffmpeg Fallback)
         ffmpeg_path = get_ffmpeg()
         duration = _get_duration_ffmpeg(file_path, ffmpeg_path)
         if duration is not None:
