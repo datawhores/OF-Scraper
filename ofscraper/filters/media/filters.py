@@ -34,6 +34,7 @@ def dupefiltermedia(media):
                 output[item.id] = item
             elif item.canview and not output[item.id].canview:
                 output[item.id] = item
+    log.debug(f"Number of media after removing duplicated media_ids {len(output.values())}")
     return list(output.values())
 
 
@@ -167,7 +168,7 @@ def previous_download_filter(medialist, username=None, model_id=None):
             f"Number of unique media ids in database for {username}: {len(media_ids)}"
         )
         medialist = seperate.separate_by_id(medialist, media_ids)
-        log.debug(f"Number of new media_ids after dupe ids removed: {len(medialist)}")
+        log.debug(f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}")
         medialist = seperate.seperate_avatars(medialist)
         log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)}")
@@ -178,7 +179,7 @@ def previous_download_filter(medialist, username=None, model_id=None):
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )
         medialist = seperate.separate_by_id(medialist, media_ids)
-        log.debug(f"Number of new media_ids after dupe ids removed: {len(medialist)}")
+        log.debug(f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}")
         medialist = seperate.seperate_avatars(medialist)
         log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)} ")
