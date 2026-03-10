@@ -362,7 +362,7 @@ class sessionManager:
             self._last_auth_warn_date = arrow.now()
 
     def _handle_error(self, E: Exception, exceptions: list):
-        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504):
+        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504,503):
             self._rate_limit_sleeper.toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
@@ -372,7 +372,7 @@ class sessionManager:
             time.sleep(8)
 
     async def _async_handle_error(self, E: Exception, exceptions: list):
-        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504):
+        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504,503):
             await self._rate_limit_sleeper.async_toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
