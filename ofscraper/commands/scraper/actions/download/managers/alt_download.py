@@ -90,7 +90,6 @@ class AltDownloadManager(DownloadManager):
             return await self._handle_result_alt(
                 sharedPlaceholderObj, ele, audio, video, username, model_id
             )
-        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after release: {common_globals.sem._value}")
 
     async def _alt_download_downloader(self, item, c, ele):
         self._downloadspace()

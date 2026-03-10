@@ -42,19 +42,9 @@ from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.managers.postcollection import PostCollection
+from ofscraper.utils.gather import gather_and_raise
 
 log = logging.getLogger("shared")
-
-
-def _handle_consumer_exception(task):
-    """Handle exceptions from consumer tasks."""
-    try:
-        if task.exception():
-            logging.getLogger("shared").debug(
-                f"Consumer task failed with exception: {task.exception()}"
-            )
-    except (asyncio.CancelledError, asyncio.InvalidStateError):
-        pass
 
 
 class MetadataCommandManager(CommandManager):
@@ -259,10 +249,7 @@ async def process_dicts(username, model_id, medialist):
                     asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
-                # Add exception callback to detect any unhandled exceptions
-                for task in consumers:
-                    task.add_done_callback(_handle_consumer_exception)
-                await asyncio.gather(*consumers, return_exceptions=True)
+                await gather_and_raise(consumers)
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():
                 raise E
