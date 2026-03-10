@@ -536,13 +536,18 @@ class sessionManager:
                                 read=read_timeout or self._read_timeout,
                             ),
                         )
-
                         if not r.ok and r.status_code != 404:
+                            error_text = r.text_()
                             log.debug(f"[bold]failed: [bold] {r.url}")
                             log.debug(f"[bold]status: [bold] {r.status_code}")
-                            log.debug(f"[bold]response text [/bold]: {r.text_()}")
+                            log.debug(f"[bold]response text [/bold]: {error_text}")
                             log.debug(f"response headers {dict(r.headers)}")
                             log.debug(f"requests headers {dict(r.request.headers)}")
+                            
+                            if r.status_code == 503 and "maintenance" in error_text.lower():
+                                log.warning("🚨 OnlyFans is currently undergoing maintenance! Aborting to prevent IP ban.")
+                                raise SystemExit("OnlyFans Maintenance detected.")
+
                             r.raise_for_status()
 
                     except Exception as E:
@@ -626,12 +631,17 @@ class sessionManager:
                     )
 
                     if not r.ok and r.status_code != 404:
+                        error_text = await r.text_()
                         self._log.debug(f"[bold]failed: [bold] {r.url}")
                         self._log.debug(f"[bold]status: [bold] {r.status_code}")
                         self._log.debug(
-                            f"[bold]response text [/bold]: {await r.text_()}"
+                            f"[bold]response text [/bold]: {error_text}"
                         )
                         self._log.debug(f"response headers {dict(r.headers)}")
+                        if r.status_code == 503 and "maintenance" in error_text.lower():
+                            self._log.warning("🚨 OnlyFans is currently undergoing maintenance! Aborting to prevent IP ban.")
+                            # Raising SystemExit bypasses the Tenacity retry loop and shuts down safely
+                            raise SystemExit("OnlyFans Maintenance detected.")
                         r.raise_for_status()
 
                     self._sem.release()
