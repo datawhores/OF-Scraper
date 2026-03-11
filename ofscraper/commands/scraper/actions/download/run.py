@@ -71,7 +71,7 @@ async def consumer(aws, task1, medialist, lock):
                     ele.mark_download_succeeded()
                 elif media_type == "skipped":
                     common_globals.skipped += 1
-                    ele.mark_metadata_failed()
+                    ele.mark_download_failed()
                 elif media_type == "forced_skipped":
                     ele.mark_download_skipped()
                     common_globals.forced_skipped += 1
