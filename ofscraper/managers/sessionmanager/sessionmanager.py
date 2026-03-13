@@ -41,6 +41,7 @@ def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     elif isinstance(exception, httpx.HTTPStatusError):
         status_code = getattr(exception.response, "status_code", None)
     return status_code in numbers
+
 class BareSession:
     @staticmethod
     @contextmanager
@@ -49,11 +50,12 @@ class BareSession:
             response.raise_for_status()
             response.read()
             yield response
+
 class SessionSleep:
     """
     Manages dynamic sleep intervals to handle API rate-limiting.
     """
-
+    # ... (Keep your existing SessionSleep code exactly as it is) ...
     def __init__(
         self,
         sleep: Optional[float] = None,
@@ -68,38 +70,14 @@ class SessionSleep:
         self._last_date = arrow.now()
         self._alock = asyncio.Lock()
         self._lock = threading.Lock()
-        self._init_sleep = (
-            sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
-        )
-        self._min_sleep = (
-            min_sleep if min_sleep is not None else of_env.getattr("SESSION_SLEEP_MIN")
-        )
-        # set sleep to min sleep always
+        self._init_sleep = sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
+        self._min_sleep = min_sleep if min_sleep is not None else of_env.getattr("SESSION_SLEEP_MIN")
         self._sleep = self._min_sleep
-
-        self._difmin = (
-            difmin
-            if difmin is not None
-            else of_env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
-        )
-        self._max_sleep = (
-            max_sleep if max_sleep is not None else of_env.getattr("SESSION_SLEEP_MAX")
-        )
-        self._increase_factor = (
-            increase_factor
-            if increase_factor is not None
-            else of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR")
-        )
-        self._decay_threshold = (
-            decay_threshold
-            if decay_threshold is not None
-            else of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD")
-        )
-        self._decay_factor = (
-            decay_factor
-            if decay_factor is not None
-            else of_env.getattr("SESSION_SLEEP_DECAY_FACTOR")
-        )
+        self._difmin = difmin if difmin is not None else of_env.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        self._max_sleep = max_sleep if max_sleep is not None else of_env.getattr("SESSION_SLEEP_MAX")
+        self._increase_factor = increase_factor if increase_factor is not None else of_env.getattr("SESSION_SLEEP_INCREASE_FACTOR")
+        self._decay_threshold = decay_threshold if decay_threshold is not None else of_env.getattr("SESSION_SLEEP_DECAY_THRESHOLD")
+        self._decay_factor = decay_factor if decay_factor is not None else of_env.getattr("SESSION_SLEEP_DECAY_FACTOR")
         self.error_name = error_name or ""
 
     def _maybe_decay_sleep(self):
@@ -117,15 +95,11 @@ class SessionSleep:
         async with self._alock:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep <= self._min_sleep:
-            logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value"
-            )
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value")
             await asyncio.sleep(self._min_sleep)
             return True
         elif self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors"
-            )
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to recent {self.error_name} errors")
             await asyncio.sleep(self._sleep)
             return True
         return False
@@ -134,15 +108,11 @@ class SessionSleep:
         with self._lock:
             self._maybe_decay_sleep()
         if self._sleep and self._sleep <= self._min_sleep:
-            logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value"
-            )
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._min_sleep:.2f} seconds] due to {self.error_name} min sleep value")
             time.sleep(self._min_sleep)
             return True
         elif self._sleep and self._sleep > 0:
-            logging.getLogger("shared").debug(
-                f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} recent errors"
-            )
+            logging.getLogger("shared").debug(f"SessionSleep: Waiting [{self._sleep:.2f} seconds] due to {self.error_name} recent errors")
             time.sleep(self._sleep)
             return True
         return False
@@ -151,22 +121,14 @@ class SessionSleep:
         log = logging.getLogger("shared")
         if not self._sleep:
             self._sleep = self._init_sleep if self._init_sleep > 0 else 1
-            log.debug(
-                f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error"
-            )
-        elif (
-            arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin
-        ):
-            log.debug(
-                f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last {self.error_name} error was less than {self._difmin}s ago"
-            )
+            log.debug(f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error")
+        elif (arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin):
+            log.debug(f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last {self.error_name} error was less than {self._difmin}s ago")
             return
         else:
             new_sleep = self._sleep * self._increase_factor
             self._sleep = min(new_sleep, self._max_sleep)
-            log.debug(
-                f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds] due to {self.error_name} error"
-            )
+            log.debug(f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds] due to {self.error_name} error")
         self._last_date = arrow.now()
 
     def reset_sleep(self):
@@ -193,7 +155,7 @@ class sessionManager:
 
     def __init__(
         self,
-        # --- Standard session parameters ---
+        # ... (Keep your existing __init__ parameters and assignments) ...
         connect_timeout: Optional[int] = None,
         total_timeout: Optional[int] = None,
         read_timeout: Optional[int] = None,
@@ -213,17 +175,14 @@ class sessionManager:
         sem: Optional[asyncio.Semaphore] = None,
         sync_sem_count: Optional[int] = None,
         sync_sem: Optional[threading.Semaphore] = None,
-        # --- Parameters for SessionSleep objects---
         forbidden_sleeper: Optional[SessionSleep] = None,
         rate_limit_sleeper: Optional[SessionSleep] = None,
-        # --- Parameters for the 429/504 Rate Limit Sleeper ---
         rate_limit_sleep: Optional[float] = None,
         rate_limit_difmin: Optional[int] = None,
         rate_limit_max_sleep: Optional[float] = None,
         rate_limit_decay_threshold: Optional[float] = None,
         rate_limit_decay_factor: Optional[float] = None,
         rate_limit_increase_factor: Optional[float] = None,
-        # --- Parameters for the 403 Forbidden Sleeper ---
         forbidden_sleep: Optional[float] = None,
         forbidden_difmin: Optional[int] = None,
         forbidden_max_sleep: Optional[float] = None,
@@ -231,76 +190,21 @@ class sessionManager:
         forbidden_decay_factor: Optional[float] = None,
         forbidden_increase_factor: Optional[float] = None,
     ):
-        self._connect_timeout = (
-            connect_timeout
-            if connect_timeout is not None
-            else of_env.getattr("CONNECT_TIMEOUT")
-        )
-        self._total_timeout = (
-            total_timeout
-            if total_timeout is not None
-            else of_env.getattr("TOTAL_TIMEOUT")
-        )
-        self._read_timeout = (
-            read_timeout
-            if read_timeout is not None
-            else of_env.getattr("OF_READ_TIMEOUT")
-        )
-        self._pool_connect_timeout = (
-            pool_timeout
-            if pool_timeout is not None
-            else of_env.getattr("POOL_CONNECT_TIMEOUT")
-        )
-        self._connect_limit = (
-            limit if limit is not None else of_env.getattr("MAX_CONNECTIONS")
-        )
-        self._keep_alive = (
-            keep_alive if keep_alive is not None else of_env.getattr("KEEP_ALIVE")
-        )
-        self._keep_alive_exp = (
-            keep_alive_exp
-            if keep_alive_exp is not None
-            else of_env.getattr("KEEP_ALIVE_EXP")
-        )
+        self._connect_timeout = connect_timeout if connect_timeout is not None else of_env.getattr("CONNECT_TIMEOUT")
+        self._total_timeout = total_timeout if total_timeout is not None else of_env.getattr("TOTAL_TIMEOUT")
+        self._read_timeout = read_timeout if read_timeout is not None else of_env.getattr("OF_READ_TIMEOUT")
+        self._pool_connect_timeout = pool_timeout if pool_timeout is not None else of_env.getattr("POOL_CONNECT_TIMEOUT")
+        self._connect_limit = limit if limit is not None else of_env.getattr("MAX_CONNECTIONS")
+        self._keep_alive = keep_alive if keep_alive is not None else of_env.getattr("KEEP_ALIVE")
+        self._keep_alive_exp = keep_alive_exp if keep_alive_exp is not None else of_env.getattr("KEEP_ALIVE_EXP")
         self._proxy = proxy if proxy is not None else of_env.getattr("PROXY")
-
-        self._sem = sem or asyncio.BoundedSemaphore(
-            sem_count
-            if sem_count is not None
-            else of_env.getattr("SESSION_MANAGER_SEM_DEFAULT")
-        )
-        self._sync_sem = sync_sem or threading.Semaphore(
-            sync_sem_count
-            if sync_sem_count is not None
-            else of_env.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
-        )
-
-        self._retries = (
-            retries
-            if retries is not None
-            else of_env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        )
-        self._wait_min = (
-            wait_min
-            if wait_min is not None
-            else of_env.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
-        )
-        self._wait_max = (
-            wait_max
-            if wait_max is not None
-            else of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT")
-        )
-        self._wait_min_exponential = (
-            wait_min_exponential
-            if wait_min_exponential is not None
-            else of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
-        )
-        self._wait_max_exponential = (
-            wait_max_exponential
-            if wait_max_exponential is not None
-            else of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
-        )
-
+        self._sem = sem or asyncio.BoundedSemaphore(sem_count if sem_count is not None else of_env.getattr("SESSION_MANAGER_SEM_DEFAULT"))
+        self._sync_sem = sync_sem or threading.Semaphore(sync_sem_count if sync_sem_count is not None else of_env.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
+        self._retries = retries if retries is not None else of_env.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
+        self._wait_min = wait_min if wait_min is not None else of_env.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
+        self._wait_max = wait_max if wait_max is not None else of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT")
+        self._wait_min_exponential = wait_min_exponential if wait_min_exponential is not None else of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
+        self._wait_max_exponential = wait_max_exponential if wait_max_exponential is not None else of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
         self._log = log or logging.getLogger("shared")
 
         if rate_limit_sleeper:
@@ -319,50 +223,24 @@ class sessionManager:
             self._forbidden_sleeper = forbidden_sleeper
         else:
             self._forbidden_sleeper = SessionSleep(
-                sleep=(
-                    forbidden_sleep
-                    if forbidden_sleep is not None
-                    else of_env.getattr("SESSION_403_SLEEP_INIT")
-                ),
-                difmin=(
-                    forbidden_difmin
-                    if forbidden_difmin is not None
-                    else of_env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF")
-                ),
-                max_sleep=(
-                    forbidden_max_sleep
-                    if forbidden_max_sleep is not None
-                    else of_env.getattr("SESSION_403_SLEEP_MAX")
-                ),
-                decay_threshold=(
-                    forbidden_decay_threshold
-                    if forbidden_decay_threshold is not None
-                    else of_env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD")
-                ),
-                decay_factor=(
-                    forbidden_decay_factor
-                    if forbidden_decay_factor is not None
-                    else of_env.getattr("SESSION_403_SLEEP_DECAY_FACTOR")
-                ),
-                increase_factor=(
-                    forbidden_increase_factor
-                    if forbidden_increase_factor is not None
-                    else of_env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR")
-                ),
+                sleep=(forbidden_sleep if forbidden_sleep is not None else of_env.getattr("SESSION_403_SLEEP_INIT")),
+                difmin=(forbidden_difmin if forbidden_difmin is not None else of_env.getattr("SESSION_403_SLEEP_INCREASE_TIME_DIFF")),
+                max_sleep=(forbidden_max_sleep if forbidden_max_sleep is not None else of_env.getattr("SESSION_403_SLEEP_MAX")),
+                decay_threshold=(forbidden_decay_threshold if forbidden_decay_threshold is not None else of_env.getattr("SESSION_403_SLEEP_DECAY_THRESHOLD")),
+                decay_factor=(forbidden_decay_factor if forbidden_decay_factor is not None else of_env.getattr("SESSION_403_SLEEP_DECAY_FACTOR")),
+                increase_factor=(forbidden_increase_factor if forbidden_increase_factor is not None else of_env.getattr("SESSION_403_SLEEP_INCREASE_FACTOR")),
             )
         self._session: Union[httpx.AsyncClient, httpx.Client, None] = None
         self._async: bool = True
         self._last_auth_warn_date = arrow.now()
 
     def print_auth_warning(self, E: Exception):
-        if (arrow.now() - self._last_auth_warn_date).total_seconds() > of_env.getattr(
-            "AUTH_WARNING_TIMEOUT"
-        ):
+        if (arrow.now() - self._last_auth_warn_date).total_seconds() > of_env.getattr("AUTH_WARNING_TIMEOUT"):
             print_auth_warning(E)
             self._last_auth_warn_date = arrow.now()
 
     def _handle_error(self, E: Exception, exceptions: list):
-        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504,503):
+        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
             self._rate_limit_sleeper.toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
@@ -372,7 +250,7 @@ class sessionManager:
             time.sleep(8)
 
     async def _async_handle_error(self, E: Exception, exceptions: list):
-        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504,503):
+        if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
             await self._rate_limit_sleeper.async_toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
@@ -381,31 +259,38 @@ class sessionManager:
             self.print_auth_warning(E)
             await asyncio.sleep(8)
 
+    def _get_ssl_context(self):
+        """
+        Translates the user's config into the required SSL format.
+        Tiers: 'false' -> False, 'default' -> standard SSLContext, 'custom' -> custom context.
+        """
+        ssl_setting = str(settings.get_settings().ssl_verify).lower()
+        
+        # Tier 1: Disabled
+        if ssl_setting in {"false", "0", "none", ""}:
+            return False
+            
+        # Tier 2: Default SSL (Standard)
+        elif ssl_setting == "default":
+            ssl_context = ssl.create_default_context()
+            ssl_context.post_handshake_auth = True
+            return ssl_context
+            
+        # Tier 3: Custom (Fingerprint hardening)
+        else:
+            return create_custom_ssl_context()
+
     def _set_session(self, async_=True):
         if self._session:
             return
+            
+        ssl_context = self._get_ssl_context()
+            
         if async_:
-            # self._session = httpx.AsyncClient(
-            #     http2=True,
-            #     transport=AiohttpTransport(
-            #         proxy=self._proxy,
-            #         limits=httpx.Limits(
-            #         max_keepalive_connections=self._keep_alive,
-            #         max_connections=self._connect_limit,
-            #         keepalive_expiry=self._keep_alive_exp,
-            #     ),
-
-            #     ),
-            # )
-
             self._session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(
                     limit=self._connect_limit,
-                    ssl=(
-                        False
-                        if not settings.get_settings().ssl_verify
-                        else create_custom_ssl_context()
-                    ),
+                    ssl=ssl_context,  # Passed to TCPConnector
                 ),
                 timeout=aiohttp.ClientTimeout(
                     total=self._total_timeout,
@@ -414,11 +299,11 @@ class sessionManager:
                     sock_read=self._read_timeout,
                 ),
             )
-
         else:
             self._session = httpx.Client(
                 http2=True,
                 proxy=self._proxy,
+                verify=ssl_context,  # Added verify param to support HTTPX sync fallback
                 limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
@@ -509,11 +394,7 @@ class sessionManager:
                         else:
                             self._forbidden_sleeper.do_sleep()
 
-                        if (
-                            SIGN in actions
-                            or FORCED_NEW in actions
-                            or HEADERS in actions
-                        ):
+                        if (SIGN in actions or FORCED_NEW in actions or HEADERS in actions):
                             headers = self._create_headers(
                                 headers, url, SIGN in actions, FORCED_NEW in actions
                             )
@@ -627,7 +508,7 @@ class sessionManager:
                         params=params,
                         json=json,
                         data=data,
-                        ssl=ssl.create_default_context(cafile=certifi.where()),
+                        ssl=self._get_ssl_context()  
                     )
 
                     if not r.ok and r.status_code != 404:
@@ -640,7 +521,6 @@ class sessionManager:
                         self._log.debug(f"response headers {dict(r.headers)}")
                         if r.status_code == 503 and "maintenance" in error_text.lower():
                             self._log.warning("🚨 OnlyFans is currently undergoing maintenance! Aborting to prevent IP ban.")
-                            # Raising SystemExit bypasses the Tenacity retry loop and shuts down safely
                             raise SystemExit("OnlyFans Maintenance detected.")
                         r.raise_for_status()
 
@@ -671,7 +551,6 @@ class sessionManager:
         return t
 
     async def _aio_funct(self, method, *args, **kwargs):
-        # public function forces context manager use
         r = await self._session._request(method, *args, **kwargs)
         r.text_ = r.text
         r.json_ = r.json

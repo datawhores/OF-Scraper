@@ -619,7 +619,8 @@ def advanced_config() -> dict:
                 "type": "input",
                 "name": "default_user_list",
                 "message": "Default User Lists",
-                "default": data.get_default_userlist(),
+                "default": prompt_validators.format_list(data.get_default_userlist()),
+                "filter": prompt_validators.parse_list,
                 "option_instruction": """
 A comma seperated list of userlists to set as default when retriving users
 Main user list with all active+expired users can be called main or ofscraper.main
@@ -632,7 +633,8 @@ List are case insensitive\n
                 "type": "input",
                 "name": "default_black_list",
                 "message": "Default User Black Lists",
-                "default": data.get_default_blacklist(),
+                "default": prompt_validators.format_list(data.get_default_blacklist()),
+                "filter": prompt_validators.parse_list,
                 "option_instruction": """
 A comma seperated list of userlists to set as black listed
 Main user list with all active+expired users can be called main or ofscraper.main
@@ -646,7 +648,7 @@ List are case insensitive\n
                 "name": "logs_expire_time",
                 "float_allowed": True,
                 "message": "Logs expire Time",
-                "default": data.get_logs_expire() or 0,
+                "default": str(data.get_logs_expire() or 0),
                 "option_instruction": """
 Logs will auto delete after the selected amount of time has passed
 If value is 'None' or '0' no logs will be touched
@@ -664,10 +666,23 @@ If value is 'None' or '0' no logs will be touched
                 ],
             },
             {
+                "type": "list",
+                "name": "ssl_verify",
+                "message": "Choose SSL Validation Mode",
+                "default": data.get_ssl_verify(),
+                "choices": [
+                    Choice("custom", "Custom (Fingerprint hardening - Recommended)"),
+                    Choice("default", "Default (Standard Python SSL)"),
+                    Choice("false", "False (Disable SSL Validation"),
+                ],
+                "option_instruction": "Custom bypasses advanced API blocks. Default uses standard SSL. False disables validation entirely",
+            },
+            {
                 "type": "input",
                 "name": "env_files",
                 "message": "Files used to import env variables",
-                "default": data.get_env_files(),
+                "default": prompt_validators.format_list(data.get_env_files()),
+                "filter": prompt_validators.parse_list,
             },
         ],
         altx=funct,
@@ -678,7 +693,6 @@ If value is 'None' or '0' no logs will be touched
     config.update(out)
     final = schema.get_current_config_schema(config)
     return final
-
 
 def response_type() -> dict:
     out = {}

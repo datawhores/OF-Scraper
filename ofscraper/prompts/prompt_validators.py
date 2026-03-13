@@ -346,3 +346,25 @@ must be discord webhook -> example: https://discord.com/api/webhooks/{numeric}/{
     """
         ).strip(),
     )
+
+def format_list(val):
+    """Safely converts lists/tuples/strings into a comma-separated string for the prompt"""
+    try:
+        if isinstance(val, str):
+            return val
+        if isinstance(val, (list, tuple, set)):
+            return ",".join(str(x) for x in val)
+    except Exception:
+        pass
+    return ""
+
+def parse_list(val):
+    """Safely converts the string the user types back into a list for config.json"""
+    try:
+        if not val:
+            return []
+        if isinstance(val, str):
+            return [x.strip() for x in val.split(",") if x.strip()]
+    except Exception:
+        pass
+    return val
