@@ -4,7 +4,6 @@ import pathlib
 import sqlite3
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.context.exit as exit
