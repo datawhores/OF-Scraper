@@ -1,4 +1,3 @@
-import ofscraper.data.api.me as me
 import ofscraper.utils.console as console
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.profiles.data as profile_data
@@ -16,7 +15,7 @@ def parse_user():
 
 
 def get_id():
-    profile = me.scrape_user()
+    profile = profile_data.get_my_info()
     return profile.get("id", "id_unknown")
 
 

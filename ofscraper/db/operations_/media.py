@@ -778,3 +778,12 @@ def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) ->
             {"media_id": dict(row)["media_id"], "post_id": dict(row)["post_id"]}
             for row in cur.fetchall()
         ]
+@wrapper.operation_wrapper
+def get_media_ids_downloaded_model_sync(model_id=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(allDLModelIDCheck, [model_id])
+        return set([dict(row)["media_id"] for row in cur.fetchall()])
+
+
+@wrapper.operation_wrapper_async
+def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
