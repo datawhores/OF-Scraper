@@ -27,11 +27,10 @@ log = logging.getLogger("shared")
 # user_id==modes.id cause of legacy
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
-    
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
 	username VARCHAR NOT NULL,
-	PRIMARY KEY (id)
+	PRIMARY KEY (id),                     
     UNIQUE (user_id,username)
 )
 """
@@ -39,8 +38,8 @@ modelsCreate = """
 CREATE TABLE IF NOT EXISTS models (
 	id INTEGER NOT NULL,
 	model_id INTEGER NOT NULL,
+	PRIMARY KEY (id),                     
 	UNIQUE (model_id)
-	PRIMARY KEY (id)
 )
 """
 userNameList = """

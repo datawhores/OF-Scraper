@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS labels (
 	type VARCHAR, 
 	post_id INTEGER, 
     model_id INTEGER,
-	PRIMARY KEY (id)
+	PRIMARY KEY (id),                     
     UNIQUE (post_id,label_id,model_id)
 )
 """
@@ -81,7 +81,16 @@ def create_labels_table(
 def write_labels_table(
     label: dict, posts: dict, model_id=None, username=None, conn=None, **kwargs
 ):
-    with contextlib.closing(conn.cursor()) as curr:
+    with contCREATE TABLE IF NOT EXISTS labels (
+	id INTEGER NOT NULL, 
+    label_id INTEGER,
+	name VARCHAR, 
+	type VARCHAR, 
+	post_id INTEGER, 
+    model_id INTEGER,
+	PRIMARY KEY (id),                     -- ADD COMMA HERE
+    UNIQUE (post_id,label_id,model_id)
+)extlib.closing(conn.cursor()) as curr:
         insertData = list(
             map(
                 lambda post: (
