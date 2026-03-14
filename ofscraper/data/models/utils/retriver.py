@@ -16,28 +16,36 @@ async def get_models(all_main_models: bool = False) -> list:
     Get user's subscriptions. Can be forced to fetch all models.
     """
     activity.update_task(description="Getting subscriptions")
+    parsed_subscriptions = []
+    
     # if the anon flag is on force individual
     if settings.get_settings().anon:
-        return await get_via_individual()
-    # actions for if anon flag is falses
-    count = get_sub_count()
-    if all_main_models:
-        return await get_via_main_list(count)
-    # --- Existing logic for when all_main_models is False ---
-    if not bool(settings.get_settings().usernames):
-        return await get_via_list(count)
-    elif "ALL" in settings.get_settings().usernames:
-        return await get_via_list(count)
-    elif settings.get_settings().username_search == "indvidual":
-        return await get_via_individual()
-    elif settings.get_settings().username_search == "list":
-        return await get_via_list(count)
-    elif (sum(count) // 12) >= len(settings.get_settings().usernames):
-        return await get_via_individual()
+        parsed_subscriptions = await get_via_individual()
     else:
-        return await get_via_list(count)
-
-
+        # actions for if anon flag is falses
+        count = get_sub_count()
+        if all_main_models:
+            parsed_subscriptions = await get_via_main_list(count)
+        # --- Existing logic for when all_main_models is False ---
+        elif not bool(settings.get_settings().usernames):
+            parsed_subscriptions = await get_via_list(count)
+        elif "ALL" in settings.get_settings().usernames:
+            parsed_subscriptions = await get_via_list(count)
+        elif settings.get_settings().username_search == "indvidual":
+            parsed_subscriptions = await get_via_individual()
+        elif settings.get_settings().username_search == "list":
+            parsed_subscriptions = await get_via_list(count)
+        elif (sum(count) // 12) >= len(settings.get_settings().usernames):
+            parsed_subscriptions = await get_via_individual()
+        else:
+            parsed_subscriptions = await get_via_list(count)
+            
+    # Log the final list of all retrieved usernames
+    logging.getLogger("shared").debug(
+        f"Final retrieved models ({len(parsed_subscriptions)}): {[model.name for model in parsed_subscriptions]}"
+    )
+    
+    return parsed_subscriptions
 async def get_via_main_list(count):
     out = []
     active_subscriptions = await subscriptions.get_all_subscriptions(count[0])
