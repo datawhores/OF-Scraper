@@ -1,5 +1,9 @@
 import ssl
 import logging
+import random
+import hashlib
+from ofscraper.utils.profiles.data import get_active_profile
+
 
 log = logging.getLogger("shared")
 
@@ -33,10 +37,7 @@ def create_custom_ssl_context(
     apply_common_opts: bool = True,  # Applies OP_NO_SSLv*, OP_NO_TLSv1*, OP_NO_COMPRESSION
 ) -> ssl.SSLContext:
     """
-    Creates and configures a custom SSLContext with more abstracted modifications.
-
-    If no cipher_suite_string is given and reorder_default_ciphers_enabled is False,
-    the SSLContext will use OpenSSL's default ciphers.
+    Creates and configures a custom SSLContext with profile-stable cipher reordering.
     """
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
@@ -55,27 +56,32 @@ def create_custom_ssl_context(
         context.options = options
 
     # --- Configure Ciphers ---
-    # Start with the manual input (usually None)
     effective_cipher_string = cipher_suite_string
 
     if not effective_cipher_string and reorder_default_ciphers_enabled:
+        # Import here to avoid circular dependencies
+        
+        # 1. Use the active profile as a seed for stable fingerprints
+        profile_name = get_active_profile() or "default_profile"
+        
+        # 2. Generate a stable integer from the profile name string
+        seed_int = int(hashlib.sha256(profile_name.encode()).hexdigest(), 16)
+        
+        # 3. Use a local Random instance to avoid affecting global state
+        rng = random.Random(seed_int)
+        
         default_ciphers = get_default_cipher_names()
         if len(default_ciphers) >= 2:
-            swapped_ciphers = list(default_ciphers)  # Make a mutable copy
-            swapped_ciphers[0], swapped_ciphers[1] = (
-                swapped_ciphers[1],
-                swapped_ciphers[0],
-            )
-            effective_cipher_string = ":".join(swapped_ciphers)
+            shuffled_ciphers = list(default_ciphers)
+            rng.shuffle(shuffled_ciphers)
+            effective_cipher_string = ":".join(shuffled_ciphers)
             log.debug(
-                f"Harden: Reordered default ciphers. New order: {swapped_ciphers[0]}, {swapped_ciphers[1]}"
+                f"Harden: Applied profile-stable TLS fingerprint for profile: {profile_name}"
             )
         else:
-            log.debug(
-                "Warning: Could not reorder default ciphers (list too short)."
-            )
+            log.debug("Warning: Could not reorder default ciphers (list too short).")
 
-    # FIX: Apply the cipher string if it was either provided or generated
+    # Apply the cipher string if it was either provided or generated
     if effective_cipher_string:
         try:
             context.set_ciphers(effective_cipher_string)
@@ -84,7 +90,6 @@ def create_custom_ssl_context(
                 f"Warning: Could not set ciphers '{effective_cipher_string}': {e}."
             )
     else:
-        # hits only if reordering is disabled and no suite string provided
         log.debug(
             "Info: Using OpenSSL default ciphers for the configured TLS versions."
         )
@@ -102,7 +107,6 @@ def create_custom_ssl_context(
                 f"Warning: Could not set custom elliptic curves '{elliptic_curves_string}': {e}"
             )
 
-    # --- Standard Verification Settings ---
     context.check_hostname = check_hostname
     context.verify_mode = verify_mode
     if load_default_ca_certs:
