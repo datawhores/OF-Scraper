@@ -777,6 +777,7 @@ def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) ->
             for row in cur.fetchall()
         ]
 
+
 @wrapper.operation_wrapper
 def get_media_ids_downloaded_model_sync(model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:

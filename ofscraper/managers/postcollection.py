@@ -295,9 +295,7 @@ class PostCollection:
         )
 
         if not post_id:
-            log.info(
-                f"Skipping item because it's missing an 'id': {post_to_process}"
-            )
+            log.info(f"Skipping item because it's missing an 'id': {post_to_process}")
             return None
 
         # Perform the core logic of adding/updating the post

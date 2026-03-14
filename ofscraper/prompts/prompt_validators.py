@@ -163,11 +163,9 @@ def dirformatvalidator():
 
     return validatorCallableHelper(
         callable,
-        inspect.cleandoc(
-            """
+        inspect.cleandoc("""
 Improper syntax or invalid placeholder
-"""
-        ).strip(),
+""").strip(),
         move_cursor_to_end=True,
     )
 
@@ -214,11 +212,9 @@ def fileformatvalidator():
 
     return validatorCallableHelper(
         callable,
-        inspect.cleandoc(
-            """
+        inspect.cleandoc("""
 Improper syntax or invalid placeholder
-"""
-        ).strip(),
+""").strip(),
         move_cursor_to_end=True,
     )
 
@@ -273,12 +269,10 @@ def like_area_validator_posts():
 
     return validatorCallableHelper(
         callable,
-        inspect.cleandoc(
-            """
+        inspect.cleandoc("""
 You must select at least one of the following Timeline,Pinned, Archived
 When like/unlike is action is on
-"""
-        ).strip(),
+""").strip(),
         move_cursor_to_end=True,
     )
 
@@ -320,11 +314,9 @@ def metadatavalidator():
 
     return validatorCallableHelper(
         callable,
-        inspect.cleandoc(
-            """
+        inspect.cleandoc("""
 Improper syntax or invalid placeholder
-"""
-        ).strip(),
+""").strip(),
         move_cursor_to_end=True,
     )
 
@@ -340,12 +332,11 @@ def DiscordValidator():
 
     return validatorCallableHelper(
         callable,
-        inspect.cleandoc(
-            """
+        inspect.cleandoc("""
 must be discord webhook -> example: https://discord.com/api/webhooks/{numeric}/{alphanumeric}
-    """
-        ).strip(),
+    """).strip(),
     )
+
 
 def format_list(val):
     """Safely converts lists/tuples/strings into a comma-separated string for the prompt"""
@@ -357,6 +348,7 @@ def format_list(val):
     except Exception:
         pass
     return ""
+
 
 def parse_list(val):
     """Safely converts the string the user types back into a list for config.json"""

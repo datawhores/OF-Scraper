@@ -35,7 +35,9 @@ def dupefiltermedia(media):
                 output[item.id] = item
             elif item.canview and not output[item.id].canview:
                 output[item.id] = item
-    log.debug(f"Number of media after removing duplicated media_ids {len(output.values())}")
+    log.debug(
+        f"Number of media after removing duplicated media_ids {len(output.values())}"
+    )
     return list(output.values())
 
 
@@ -152,17 +154,17 @@ def final_media_sort(media):
 
 def previous_download_filter(medialist, username=None, model_id=None):
     log.info("reading database to retrive previous downloads")
-    
+
     # sort to key order same
     medialist = sorted(
         medialist, key=lambda item: (item.post.date, item.id, item.count)
     )
-    
+
     # Early Exit if forcing all
     if settings.get_settings().force_all:
         log.info("forcing all media to be downloaded")
         return medialist
-        
+
     # Determine the pool of already downloaded media
     if settings.get_settings().force_model_unique:
         log.info(f"Downloading unique media for model: {username}")
@@ -178,14 +180,16 @@ def previous_download_filter(medialist, username=None, model_id=None):
         log.debug(
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )
-        
+
     # Apply the filters to whichever pool we selected above
     medialist = separate.separate_by_id(medialist, media_ids)
-    log.debug(f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}")
-    
+    log.debug(
+        f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}"
+    )
+
     medialist = separate.seperate_avatars(medialist)
     log.debug("Removed previously downloaded avatars/headers")
-    
+
     log.debug(f"Final Number of media to download {len(medialist)} ")
     return medialist
 
@@ -205,6 +209,7 @@ def post_id_filter(media):
 
 
 # post filters
+
 
 def posts_date_filter(media):
     if settings.get_settings().before:
@@ -325,19 +330,23 @@ def seperate_self(media):
     if not of_env.getattr("FILTER_SELF_MEDIA"):
         log.debug("FILTER_SELF_MEDIA is disabled. Skipping self-media filtering.")
         return media
-        
+
     my_id = me_util.get_id()
     initial_length = len(media)
-    
+
     log.info("Filtering out media created by your own account...")
-    
+
     # Keep only media where the poster's ID does not match your own ID
     filtered_data = list(filter(lambda x: x.post.fromuser != my_id, media))
-    
+
     removed_count = initial_length - len(filtered_data)
     if removed_count > 0:
-        log.debug(f"Removed {removed_count} media items belonging to your own account (ID: {my_id}).")
-        
-    log.debug(f"Number of media items remaining after self-filtering: {len(filtered_data)}")
-    
+        log.debug(
+            f"Removed {removed_count} media items belonging to your own account (ID: {my_id})."
+        )
+
+    log.debug(
+        f"Number of media items remaining after self-filtering: {len(filtered_data)}"
+    )
+
     return filtered_data

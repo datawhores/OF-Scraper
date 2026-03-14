@@ -694,6 +694,7 @@ If value is 'None' or '0' no logs will be touched
     final = schema.get_current_config_schema(config)
     return final
 
+
 def response_type() -> dict:
     out = {}
     answer = promptClasses.batchConverter(

@@ -210,16 +210,16 @@ def get_logs_expire(config=None):
 def get_ssl_verify(config=None):
     if not config:
         return of_env.getattr("SSL_VALIDATION_DEFAULT")
-    
+
     # 1. Safely check for the key (avoiding 'or' so we don't accidentally skip a literal False)
     val = config.get("ssl_verify")
     if val is None:
         val = config.get("advanced_options", {}).get("ssl_verify")
-        
+
     # 2. Legacy Migration: Convert JSON booleans (True/False) to the new default
     if isinstance(val, bool):
         return "custom"
-        
+
     return val if val is not None else of_env.getattr("SSL_VALIDATION_DEFAULT")
 
 
