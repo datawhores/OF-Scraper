@@ -26,15 +26,16 @@ import ofscraper.utils.settings as settings
 
 console = Console()
 log = logging.getLogger("shared")
+
 labelsCreate = """
 CREATE TABLE IF NOT EXISTS labels (
-	id INTEGER NOT NULL, 
+    id INTEGER NOT NULL, 
     label_id INTEGER,
-	name VARCHAR, 
-	type VARCHAR, 
-	post_id INTEGER, 
+    name VARCHAR, 
+    type VARCHAR, 
+    post_id INTEGER, 
     model_id INTEGER,
-	PRIMARY KEY (id),                     
+    PRIMARY KEY (id),                     
     UNIQUE (post_id,label_id,model_id)
 )
 """
@@ -46,6 +47,7 @@ VALUES ( ?,?,?,?,?);"""
 labelUpdate = """Update 'labels'
 SET label_id=?,name=?,type=?,post_id=?,model_id=?
 WHERE label_id=(?) and model_id=(?) and post_id=(?);"""
+
 labelPostsID = """
 SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
@@ -81,16 +83,7 @@ def create_labels_table(
 def write_labels_table(
     label: dict, posts: dict, model_id=None, username=None, conn=None, **kwargs
 ):
-    with contCREATE TABLE IF NOT EXISTS labels (
-	id INTEGER NOT NULL, 
-    label_id INTEGER,
-	name VARCHAR, 
-	type VARCHAR, 
-	post_id INTEGER, 
-    model_id INTEGER,
-	PRIMARY KEY (id),                     -- ADD COMMA HERE
-    UNIQUE (post_id,label_id,model_id)
-)extlib.closing(conn.cursor()) as curr:
+    with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
             map(
                 lambda post: (
