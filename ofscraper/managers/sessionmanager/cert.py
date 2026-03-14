@@ -1,5 +1,6 @@
 import ssl
 import logging
+
 log = logging.getLogger("shared")
 
 def get_default_cipher_names():
@@ -18,7 +19,7 @@ def get_default_cipher_names():
 def create_custom_ssl_context(
     # --- Cipher Configuration ---
     cipher_suite_string: str = None,
-    reorder_default_ciphers_enabled: bool = False,  # If True, swaps the first two default ciphers.
+    reorder_default_ciphers_enabled: bool = True, 
     # Ignored if cipher_suite_string is provided.
     # --- TLS Version Configuration ---
     min_tls_version: ssl.TLSVersion = ssl.TLSVersion.TLSv1_2,
@@ -35,8 +36,7 @@ def create_custom_ssl_context(
     Creates and configures a custom SSLContext with more abstracted modifications.
 
     If no cipher_suite_string is given and reorder_default_ciphers_enabled is False,
-    the SSLContext will use OpenSSL's default ciphers for the configured TLS versions
-    and options.
+    the SSLContext will use OpenSSL's default ciphers.
     """
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
@@ -53,11 +53,9 @@ def create_custom_ssl_context(
         if hasattr(ssl, "OP_NO_COMPRESSION"):  # Python 3.3+
             options |= ssl.OP_NO_COMPRESSION
         context.options = options
-    else:
-        # User might want to set options manually or rely on PROTOCOL_TLS_CLIENT defaults only
-        pass
 
     # --- Configure Ciphers ---
+    # Start with the manual input (usually None)
     effective_cipher_string = cipher_suite_string
 
     if not effective_cipher_string and reorder_default_ciphers_enabled:
@@ -70,39 +68,38 @@ def create_custom_ssl_context(
             )
             effective_cipher_string = ":".join(swapped_ciphers)
             log.debug(
-                f"  Info: Reordered default ciphers. New order example: {swapped_ciphers[0]}, {swapped_ciphers[1]}"
+                f"Harden: Reordered default ciphers. New order: {swapped_ciphers[0]}, {swapped_ciphers[1]}"
             )
         else:
             log.debug(
-                "  Warning: Could not reorder default ciphers (list too short). Using OpenSSL defaults for ciphers."
+                "Warning: Could not reorder default ciphers (list too short)."
             )
-            # effective_cipher_string remains None
 
+    # FIX: Apply the cipher string if it was either provided or generated
     if effective_cipher_string:
         try:
             context.set_ciphers(effective_cipher_string)
         except ssl.SSLError as e:
             log.debug(
-                f"  Warning: Could not set ciphers '{effective_cipher_string}': {e}. OpenSSL may use its defaults."
+                f"Warning: Could not set ciphers '{effective_cipher_string}': {e}."
             )
     else:
-        # No specific cipher string provided or generated, OpenSSL will use its defaults
-        # for the configured protocol (PROTOCOL_TLS_CLIENT) and options.
+        # hits only if reordering is disabled and no suite string provided
         log.debug(
-            "  Info: Using OpenSSL default ciphers for the configured TLS versions and options."
+            "Info: Using OpenSSL default ciphers for the configured TLS versions."
         )
 
     # --- Configure Elliptic Curves ---
     if elliptic_curves_string:
         try:
             context.set_ecdh_curve(elliptic_curves_string)
-        except AttributeError:  # Older Python/OpenSSL might not have this
+        except AttributeError:  
             log.debug(
-                "  Warning: set_ecdh_curve is not available on this Python/OpenSSL version."
+                "Warning: set_ecdh_curve is not available on this Python/OpenSSL version."
             )
         except ssl.SSLError as e:
             log.debug(
-                f"  Warning: Could not set custom elliptic curves '{elliptic_curves_string}': {e}"
+                f"Warning: Could not set custom elliptic curves '{elliptic_curves_string}': {e}"
             )
 
     # --- Standard Verification Settings ---
@@ -111,15 +108,7 @@ def create_custom_ssl_context(
     if load_default_ca_certs:
         try:
             context.load_default_certs(ssl.Purpose.SERVER_AUTH)
-        except Exception as e:  # Catches FileNotFoundError etc.
-            log.debug(
-                f"  Warning: Could not load default CAcerts: {e}. Manual CA loading might be needed (e.g., using certifi)."
-            )
-            # Example for systems needing certifi:
-            # import certifi
-            # try:
-            #     context.load_verify_locations(cafile=certifi.where())
-            # except Exception as cert_e:
-            #     log.debug(f"  Warning: Could not load certifi CAcerts: {cert_e}")
+        except Exception as e:
+            log.debug(f"Warning: Could not load default CAcerts: {e}.")
 
     return context
