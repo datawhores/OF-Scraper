@@ -6,8 +6,8 @@ from functools import partial
 import aiofiles
 import psutil
 from humanfriendly import format_size
+import aiohttp
 
-# External OF-Scraper Utilities
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -20,7 +20,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 from ofscraper.utils.cache.profile import set_profile_cache
 
-# Download Specific Utilities
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
 )
@@ -34,7 +33,6 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 
-# Media Objects
 from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
 
@@ -76,7 +74,6 @@ class MainDownloadManager(DownloadManager):
             ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
         ).init()
 
-        # Reset attempt counter to prevent 11/10 display bug
         common_globals.attempt.set(0)
 
         async for _ in download_retry():
@@ -150,15 +147,17 @@ class MainDownloadManager(DownloadManager):
         try:
             resume_size = self._get_resume_size(tempholderObj)
             headers = self._get_resume_header(resume_size, total)
-            # reset total
             total = None
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
+            
             async with c.requests_async(
                 url=ele.url,
                 stream=True,
                 headers=headers,
+                total_timeout=None,               
+                read_timeout=get_chunk_timeout(),
             ) as r:
                 total = int(r.headers["content-length"])
                 data = {
@@ -236,26 +235,27 @@ class MainDownloadManager(DownloadManager):
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
-        fileobject = None  # Initialize to None for finally block
+        fileobject = None
         try:
-            # Use asyncio.timeout as a context manager for the entire download process
-            async with asyncio.timeout(None):
-                fileobject = await aiofiles.open(
-                    tempholderObj.tempfilepath, "ab"
-                ).__aenter__()
-                chunk_iter = res.iter_chunked(get_chunk_size())
-                while True:
-                    try:
-                        chunk = await chunk_iter.__anext__()
-                        await fileobject.write(chunk)
-                        send_chunk_msg(ele, total, tempholderObj)
-                    except StopAsyncIteration:
-                        break  # Exit loop when no more chunks
-        except asyncio.TimeoutError:
+            fileobject = await aiofiles.open(
+                tempholderObj.tempfilepath, "ab"
+            ).__aenter__()
+            chunk_iter = res.iter_chunked(get_chunk_size())
+            
+            while True:
+                try:
+                    chunk = await chunk_iter.__anext__()
+                    await fileobject.write(chunk)
+                    send_chunk_msg(ele, total, tempholderObj)
+                except StopAsyncIteration:
+                    break 
+                    
+        # Catch native aiohttp socket read timeouts
+        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
-                f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {(get_chunk_timeout())} seconds or download timed out!"
+                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )
-            return
+            raise Exception("Chunk download timed out") 
         except Exception as E:
             common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
@@ -388,7 +388,6 @@ class MainDownloadManager(DownloadManager):
         )
         placeholderObj = await placeholder.Placeholders(ele, content_type).init()
 
-        # other
         check = None
         if await self._check_forced_skip(ele, total) == 0:
             total = 0

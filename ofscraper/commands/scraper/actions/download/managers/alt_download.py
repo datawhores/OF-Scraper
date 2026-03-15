@@ -8,8 +8,8 @@ import aiofiles
 import arrow
 import psutil
 from humanfriendly import format_size
+import aiohttp
 
-# External OF-Scraper Utilities
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -30,7 +30,6 @@ from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
 
-# Download Specific Utilities
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
 )
@@ -46,7 +45,6 @@ from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
 
-# Media Objects
 from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
 
@@ -184,11 +182,14 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
             )
+            -
             async with c.requests_async(
                 url=url,
                 stream=True,
                 headers=headers,
                 params=params,
+                total_timeout=None,  
+                read_timeout=get_chunk_timeout(), 
             ) as l:
                 item["total"] = int(l.headers.get("content-length"))
                 total = item["total"]
@@ -255,27 +256,27 @@ class AltDownloadManager(DownloadManager):
         self, ele, total, res, placeholderObj
     ):
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None  # Initialize to None for finally block
+        fileobject = None
         try:
-            # Use asyncio.timeout as a context manager for the entire download process
-            async with asyncio.timeout(None):
-                fileobject = await aiofiles.open(
-                    placeholderObj.tempfilepath, "ab"
-                ).__aenter__()
-                chunk_iter = res.iter_chunked(get_chunk_size())
+            fileobject = await aiofiles.open(
+                placeholderObj.tempfilepath, "ab"
+            ).__aenter__()
+            chunk_iter = res.iter_chunked(get_chunk_size())
 
-                while True:
-                    try:
-                        chunk = await chunk_iter.__anext__()
-                        await fileobject.write(chunk)
-                        send_chunk_msg(ele, total, placeholderObj)
-                    except StopAsyncIteration:
-                        break  # Exit loop when no more chunks
-        except asyncio.TimeoutError:
+            while True:
+                try:
+                    chunk = await chunk_iter.__anext__()
+                    await fileobject.write(chunk)
+                    send_chunk_msg(ele, total, placeholderObj)
+                except StopAsyncIteration:
+                    break  # Exit loop when no more chunks
+                    
+        # Catch native aiohttp socket read timeouts
+        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
-                f"{common_logs.get_medialog(ele)}⚠️ No chunk received in {get_chunk_timeout()} seconds or download timed out!"
+                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )
-            return
+            raise Exception("Chunk download timed out")
         except Exception as E:
             common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
