@@ -180,6 +180,9 @@ async def scrape_subscriptions_active(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    log.debug(
+                        f"active subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
+                    )
                     yield subscriptions
 
                 if response.get("hasMore") is not True or not subscriptions:
@@ -215,6 +218,9 @@ async def scrape_subscriptions_disabled(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    log.debug(
+                        f"expired subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
+                    )
                     yield subscriptions
 
                 if response.get("hasMore") is not True or not subscriptions:
