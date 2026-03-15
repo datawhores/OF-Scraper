@@ -321,7 +321,7 @@ class DBManager:
             media_id = dictionary["media_id"]
             if media_id not in seen_media_ids:
                 seen_media_ids.add(media_id)
-            deduped_dictionaries.append(dictionary)
+                deduped_dictionaries.append(dictionary)
         self.media = deduped_dictionaries
 
     def write_to_csv(self):

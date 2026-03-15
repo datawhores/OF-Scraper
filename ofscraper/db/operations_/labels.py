@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS labels (
 	type VARCHAR, 
 	post_id INTEGER, 
     model_id INTEGER,
-	PRIMARY KEY (id)
+	PRIMARY KEY (id),
     UNIQUE (post_id,label_id,model_id)
 )
 """
