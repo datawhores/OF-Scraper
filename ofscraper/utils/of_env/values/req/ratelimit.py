@@ -6,9 +6,6 @@ def load_ratelimit_config():
     Loads comprehensive rate-limit configurations from environment variables
     with sensible default values. This is the single source of truth for all
     backoff and sleeper-related settings.
-
-    Returns:
-        A dictionary containing all loaded rate-limit configuration settings.
     """
     config = {}
 
@@ -27,7 +24,7 @@ def load_ratelimit_config():
     config["SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
-    config["SESSION_MIN_SLEEP"] = float(os.getenv("OFSC_SESSION_MIN_SLEEP", "2"))
+    config["SESSION_MIN_SLEEP"] = float(os.getenv("OFSC_SESSION_MIN_SLEEP", "0.5"))
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 403 Forbidden Errors) ---
     config["SESSION_403_SLEEP_INIT"] = float(
@@ -71,6 +68,7 @@ def load_ratelimit_config():
     config["DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR"] = float(
         os.getenv("OFSC_DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
+    # UNCHANGED: Downloading files takes time inherently, so 0 is safe here.
     config["DOWNLOAD_SESSION_MIN_SLEEP"] = float(
         os.getenv("OFSC_DOWNLOAD_SESSION_MIN_SLEEP", "0")
     )
@@ -118,7 +116,7 @@ def load_ratelimit_config():
         os.getenv("OFSC_CDM_SESSION_SLEEP_DECAY_FACTOR", "1.5")
     )
     config["CDM_SESSION_MIN_SLEEP"] = float(
-        os.getenv("OFSC_CDM_SESSION_MIN_SLEEP", "4")
+        os.getenv("OFSC_CDM_SESSION_MIN_SLEEP", "1.0")
     )
 
     # --- Dynamic Session Sleep Configuration (For CDM: 403 Forbidden Errors) ---
@@ -210,7 +208,7 @@ def load_ratelimit_config():
         os.getenv("OFSC_METADATA_SESSION_SLEEP_DECAY_FACTOR", "2")
     )
     config["METADATA_SESSION_MIN_SLEEP"] = float(
-        os.getenv("OFSC_METADATA_SESSION_MIN_SLEEP", "2")
+        os.getenv("OFSC_METADATA_SESSION_MIN_SLEEP", "0.5")
     )
 
     # --- Dynamic Session Sleep Configuration (For Metadata: 403 Forbidden Errors) ---

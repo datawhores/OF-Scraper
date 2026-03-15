@@ -5,7 +5,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
 
-
 log = logging.getLogger("shared")
 
 
@@ -120,6 +119,7 @@ class PostCollection:
         all_media = self._get_prepared_media_from_download_candidates()
 
         log.info("Applying final 'download' mode filters to media list...")
+        all_media = helpers.seperate_self(all_media)
         all_media = helpers.dupefiltermedia(all_media)
         all_media = helpers.previous_download_filter(
             all_media, username=self.username, model_id=self.model_id
@@ -137,6 +137,7 @@ class PostCollection:
         all_media = self._get_prepared_media_for_metadata()
 
         log.info("Applying final 'metadata' mode filters to media list...")
+        all_media = helpers.seperate_self(all_media)
         all_media = helpers.previous_download_filter(
             all_media, username=self.username, model_id=self.model_id
         )
@@ -294,9 +295,7 @@ class PostCollection:
         )
 
         if not post_id:
-            log.info(
-                f"Skipping item because it's missing an 'id': {post_to_process}"
-            )
+            log.info(f"Skipping item because it's missing an 'id': {post_to_process}")
             return None
 
         # Perform the core logic of adding/updating the post

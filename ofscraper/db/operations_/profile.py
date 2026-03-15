@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import contextlib
@@ -27,7 +27,6 @@ log = logging.getLogger("shared")
 # user_id==modes.id cause of legacy
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
-    
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
 	username VARCHAR NOT NULL,
@@ -39,8 +38,8 @@ modelsCreate = """
 CREATE TABLE IF NOT EXISTS models (
 	id INTEGER NOT NULL,
 	model_id INTEGER NOT NULL,
-	UNIQUE (model_id),
-	PRIMARY KEY (id)
+	PRIMARY KEY (id),                     
+	UNIQUE (model_id)
 )
 """
 userNameList = """

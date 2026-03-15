@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import contextlib
@@ -26,13 +26,14 @@ import ofscraper.utils.settings as settings
 
 console = Console()
 log = logging.getLogger("shared")
+
 labelsCreate = """
 CREATE TABLE IF NOT EXISTS labels (
-	id INTEGER NOT NULL, 
+    id INTEGER NOT NULL, 
     label_id INTEGER,
-	name VARCHAR, 
-	type VARCHAR, 
-	post_id INTEGER, 
+    name VARCHAR, 
+    type VARCHAR, 
+    post_id INTEGER, 
     model_id INTEGER,
 	PRIMARY KEY (id),
     UNIQUE (post_id,label_id,model_id)
@@ -46,6 +47,7 @@ VALUES ( ?,?,?,?,?);"""
 labelUpdate = """Update 'labels'
 SET label_id=?,name=?,type=?,post_id=?,model_id=?
 WHERE label_id=(?) and model_id=(?) and post_id=(?);"""
+
 labelPostsID = """
 SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
