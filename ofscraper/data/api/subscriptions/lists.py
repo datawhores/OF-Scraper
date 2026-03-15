@@ -125,7 +125,7 @@ async def scrape_for_list(c, offset=0):
                 visible=True,
             )
             async with c.requests_async(url=url) as r:
-                data = await r.json()
+                data = await r.json_()
                 out_list = data["list"] or []
                 log.debug(
                     f"offset:{current_offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
@@ -232,7 +232,7 @@ async def scrape_list_members(c, item, offset=0):
 
             async with c.requests_async(url=url) as r:
                 log_id = f"offset:{current_offset} list:{item.get('name')} =>"
-                data = await r.json()
+                data = await r.json_()
                 users = data.get("list") or []
 
                 log.debug(f"{log_id} -> names found {len(users)}")

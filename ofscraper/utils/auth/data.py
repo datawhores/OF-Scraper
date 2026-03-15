@@ -61,7 +61,7 @@ def get_user_agent(auth):
 def fix_val(value):
     value = value or ""
     value = value.strip()
-    re.sub("^ +", "", value)
+    value = re.sub("^ +", "", value)
     value = re.sub(" +$", "", value)
     value = re.sub("\n+", "", value)
     return value

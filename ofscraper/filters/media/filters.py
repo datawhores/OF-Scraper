@@ -139,16 +139,16 @@ def unviewable_media_filter(media):
 
 def final_media_sort(media):
     media_sort = settings.get_settings().mediasort
-    reversed = settings.get_settings().media_desc
+    is_reversed = settings.get_settings().media_desc
     log.debug(f"Using download sort {media_sort}")
     if media_sort == "random":
         random.shuffle(media)
-    if media_sort == "date" and reversed:
-        media = reversed(media)
+    if media_sort == "date" and is_reversed:
+        media = list(reversed(media))
     if media_sort == "text":
-        media = sorted(media, key=lambda x: x.text, reverse=reversed)
+        media = sorted(media, key=lambda x: x.text, reverse=is_reversed)
     elif media_sort == "filename":
-        media = sorted(media, key=lambda x: x.filename, reverse=reversed)
+        media = sorted(media, key=lambda x: x.filename, reverse=is_reversed)
     return media
 
 

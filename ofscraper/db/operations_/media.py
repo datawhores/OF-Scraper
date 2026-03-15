@@ -91,7 +91,7 @@ mediaDupeHashesMedia = """
 WITH x AS (
     SELECT hash, size
     FROM medias
-    WHERE hash IS NOT NULL AND size IS NOT NULL AND media_type = ?
+    WHERE hash IS NOT NULL AND size IS NOT NULL AND (media_type = ?)
 )
 SELECT hash
 FROM x

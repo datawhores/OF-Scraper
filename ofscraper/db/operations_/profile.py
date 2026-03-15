@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
 	username VARCHAR NOT NULL,
-	PRIMARY KEY (id),                     
+	PRIMARY KEY (id),
     UNIQUE (user_id,username)
 )
 """

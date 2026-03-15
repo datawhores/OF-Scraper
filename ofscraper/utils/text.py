@@ -45,6 +45,7 @@ async def get_text_process(username, ele):
     except Exception as E:
         log.traceback_(f"{E}")
         log.traceback_(f"{traceback.format_exc()}")
+        return
     if placeholderObj.filepath.exists():
         ele.mark_text_downloaded(True)
     else:
