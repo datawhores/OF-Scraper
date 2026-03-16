@@ -40,8 +40,9 @@ from ofscraper.db.operations_.media import mark_media_as_downloaded
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
-        try:
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots before: {common_globals.sem._value}")
+        async with common_globals.sem:
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after acquire: {common_globals.sem._value}")
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with normal downloader"
             )
@@ -64,9 +65,7 @@ class MainDownloadManager(DownloadManager):
                 return ele.mediatype.capitalize(), 0
 
             return await self._handle_result_main(result, ele, username, model_id)
-
-        finally:
-            common_globals.sem.release()
+        common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Semaphore slots after release: {common_globals.sem._value}")
 
     async def _main_download_downloader(self, c, ele):
         self._downloadspace()
@@ -214,20 +213,13 @@ class MainDownloadManager(DownloadManager):
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
 
-        fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         try:
-            await fileobject.write(await r.read_())
-        except Exception as E:
-            raise E
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file: {tempholderObj.tempfilepath}")
+            async with aiofiles.open(tempholderObj.tempfilepath, "ab") as fileobject:
+                await fileobject.write(await r.read_())
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed: {tempholderObj.tempfilepath}")
         finally:
-            try:
-                await fileobject.close()
-            except Exception:
-                pass
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception:
-                pass
+            await self._remove_download_job_task(task1, ele)
 
     async def _download_fileobject_writer_streamer(
         self, res, ele, tempholderObj, placeholderObj, total
@@ -235,21 +227,20 @@ class MainDownloadManager(DownloadManager):
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
-        fileobject = None
         try:
-            fileobject = await aiofiles.open(
-                tempholderObj.tempfilepath, "ab"
-            ).__aenter__()
-            chunk_iter = res.iter_chunked(get_chunk_size())
-            
-            while True:
-                try:
-                    chunk = await chunk_iter.__anext__()
-                    await fileobject.write(chunk)
-                    send_chunk_msg(ele, total, tempholderObj)
-                except StopAsyncIteration:
-                    break 
-                    
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] Opening file for streaming: {tempholderObj.tempfilepath}")
+            async with aiofiles.open(tempholderObj.tempfilepath, "ab") as fileobject:
+                chunk_iter = res.iter_chunked(get_chunk_size())
+
+                while True:
+                    try:
+                        chunk = await chunk_iter.__anext__()
+                        await fileobject.write(chunk)
+                        send_chunk_msg(ele, total, tempholderObj)
+                    except StopAsyncIteration:
+                        break  # Exit loop when no more chunks
+            common_globals.log.trace(f"{get_medialog(ele)} [RESOURCE] File closed after streaming: {tempholderObj.tempfilepath}")
+
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
@@ -260,19 +251,7 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
         finally:
-            if fileobject:
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.debug(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E
+            await self._remove_download_job_task(task1, ele)
 
     async def _handle_result_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result
