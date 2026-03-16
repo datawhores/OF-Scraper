@@ -187,8 +187,8 @@ class AltDownloadManager(DownloadManager):
                 stream=True,
                 headers=headers,
                 params=params,
-                total_timeout=None,  
-                read_timeout=get_chunk_timeout(), 
+                total_timeout=None,
+                read_timeout=get_chunk_timeout(),
             ) as l:
                 item["total"] = int(l.headers.get("content-length"))
                 total = item["total"]
@@ -269,7 +269,7 @@ class AltDownloadManager(DownloadManager):
                     send_chunk_msg(ele, total, placeholderObj)
                 except StopAsyncIteration:
                     break  # Exit loop when no more chunks
-                    
+
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
