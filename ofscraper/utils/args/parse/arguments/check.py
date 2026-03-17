@@ -58,6 +58,8 @@ user_option = click.option(
     "-u",
     "--usernames",
     "--username",
+    "--users",
+    "--user",
     "check_usernames",
     help="Scan stories/highlights via username(s)",
     default=None,
