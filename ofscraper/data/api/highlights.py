@@ -165,7 +165,7 @@ async def process_task_get_highlight_list(generators):
             highlightLists.extend(new_posts)
 
     progress_utils.api.remove_overall_task(page_task)
-    trace_log_raw(f"{API_H} list final", get_highlight_list, final_count=True)
+    trace_log_raw(f"{API_H} list final", highlightLists, final_count=True)
     log.debug(
         common_logs.FINAL_COUNT_ITEM.format(
             "Highlight List", len(highlightLists), "highlights"
