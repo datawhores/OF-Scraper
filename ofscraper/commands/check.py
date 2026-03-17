@@ -47,7 +47,6 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.actions.download.download import process_dicts
-import ofscraper.managers.manager as manager
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.main.close.final.final import final_action
 
@@ -654,7 +653,7 @@ async def stories_check_retriver(forced=False):
         for user_name in settings.get_settings().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
-            user_dict[model_id] = user_dict.get(user_name, [])
+            user_dict[model_id] = user_dict.get(model_id, [])
             await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
             highlights_ = await highlights.get_highlight_post(model_id, c=c)

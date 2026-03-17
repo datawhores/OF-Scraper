@@ -58,14 +58,14 @@ def get_posts_for_like(post):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    output = list(filter(lambda x: x.opened, posts))
+    output = list(filter(lambda x: not x.favorited, posts))
 
     log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
 def filter_for_favorited(posts: list) -> list:
-    output = list(filter(lambda x: x.opened, posts))
+    output = list(filter(lambda x: x.favorited, posts))
 
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output

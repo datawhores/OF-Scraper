@@ -55,7 +55,7 @@ class basePlaceholder:
     def add_no_underline(self):
         items = list(self._variables.items())
         for key, val in items:
-            if key.find("_"):
+            if "_" in key:
                 new_key = key.replace("_", "")
                 self._variables.update({new_key: val})
 
@@ -142,7 +142,7 @@ class databasePlaceholder(basePlaceholder):
 
     @metadata.setter
     def metadata(self, input):
-        self._matadata = input
+        self._metadata = input
 
 
 class Placeholders(basePlaceholder):
@@ -270,7 +270,7 @@ class Placeholders(basePlaceholder):
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
-            f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+            f"model_id:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         out = None
         if ele.responsetype.capitalize() == "Profile":
@@ -478,7 +478,7 @@ class Textholders(basePlaceholder):
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
-            f"modelid:{model_id}  filename placeholders {filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items()))}"
+            f"model_id:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         out = None
         if ele.responsetype.capitalize() == "Profile":
