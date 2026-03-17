@@ -198,7 +198,7 @@ async def process_tasks_all_paid(generators):
             await queue.put(None)
 
     workers = [asyncio.create_task(producer(g)) for g in generators]
-    active_workers = len(workers)
+    active_workeget_paidrs = len(workers)
 
     while active_workers > 0:
         batch = await queue.get()

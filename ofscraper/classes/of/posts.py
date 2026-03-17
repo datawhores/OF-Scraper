@@ -216,7 +216,10 @@ class Post(base.base):
     def responsetype(self):
         # Prioritize the internal explicit type if set
         if self._responsetype:
-            return str(self._responsetype).capitalize()
+            res_type = str(self._responsetype).capitalize()
+            if res_type == "Message":
+                return "Messages"
+            return res_type
 
         # Check boolean flags
         if self.pinned:
@@ -230,8 +233,10 @@ class Post(base.base):
         raw_type = self.post.get("responseType")
         if raw_type == "post":
             return "Timeline"
+        elif raw_type == "message":
+            return "Messages"
 
-        # Capitalize the raw type (e.g., "message" -> "Message")
+        # Capitalize the raw type
         return str(raw_type).capitalize() if raw_type else "Unknown"
 
     @property

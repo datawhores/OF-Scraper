@@ -362,7 +362,11 @@ class InputApp(App):
                     continue
                 try:
                     filter_node = self.query_one(f"#{name}")
-                    filter_rows = [row for row in filter_rows if filter_node.compare(str(row.get(name, "")))]
+                    filter_rows2 = [row for row in filter_rows if filter_node.compare(str(row.get(name, "")))]
+                    if len(filter_rows2)==0:
+                        pass
+                    filter_rows=filter_rows2
+
                 except Exception as E:
                     log.debug(f"Error filtering {name}: {str(E)}")
             self._filtered_rows = filter_rows
