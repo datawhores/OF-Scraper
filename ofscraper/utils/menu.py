@@ -84,10 +84,9 @@ def profile_menu_helper(result_profiles_prompt):
     if result_profiles_prompt == "default":
         # Change profiles
         profiles_manage.change_default_profile()
-    if result_profiles_prompt == "active":
+    elif result_profiles_prompt == "active":
         # Change profiles
         profiles_manage.change_active_profile()
-    
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()

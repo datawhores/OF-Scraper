@@ -40,7 +40,7 @@ def get_download_area():
 
 def finalize_choice(all_choices, post):
     out = set(post)
-    if ("Labels*" or "Labels+") in post:
+    if "Labels*" in post or "Labels+" in post:
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")
