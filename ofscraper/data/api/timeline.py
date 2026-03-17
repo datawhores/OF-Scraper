@@ -34,7 +34,7 @@ from ofscraper.db.operations_.posts import (
 )
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
-
+import ofscraper.utils.const as const
 log = logging.getLogger("shared")
 API = "Timeline"
 
@@ -223,7 +223,6 @@ def get_tasks(splitArrays, c, model_id, username, after):
 
     return tasks
 
-
 async def get_after(model_id, username):
     prechecks = get_after_pre_checks(model_id, API)
     if prechecks is not None:
@@ -240,7 +239,10 @@ async def get_after(model_id, username):
     )
     deleted_posts = await get_deleted_post_ids(model_id=model_id, username=username)
 
-    # 1. Filter out what we already have or know is dead
+    active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
+    active_media_mapped = {const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media}
+
+    # 1. Filter out what we already have, what is dead, OR what we don't want
     filtered_items = [
         x
         for x in curr
@@ -248,6 +250,7 @@ async def get_after(model_id, username):
         and x.get("media_id") not in curr_downloaded
         and x.get("post_id") not in deleted_posts
         and x.get("unlocked") != 0
+        and const.MEDIA_ALIASES.get(str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()) in active_media_mapped
     ]
 
     # If nothing is missing, grab the youngest date to look for brand new posts
@@ -271,7 +274,6 @@ async def get_after(model_id, username):
         list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
     )
     return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
-
 
 async def scrape_timeline_posts(
     c,

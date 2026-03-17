@@ -7,3 +7,16 @@ DYNAMIC_OPTIONS = [
     "xagler",
     "rafa",
 ]
+
+MEDIA_ALIASES = {
+    "photo": "images",
+    "photos": "images",
+    "image": "images",
+    "images": "images",
+    "audio": "audios",
+    "audios": "audios",
+    "video": "videos",
+    "videos": "videos",
+    "gif": "videos",
+    "gifs": "videos",
+}
