@@ -15,9 +15,11 @@ posts_option = click.option(
     "--posts",
     "--post",
     "posts",
-    help="""
-    Select areas for batch actions (comma or space separated).
-    """,
+   help=(
+        "Select areas for batch actions (comma or space separated). "
+        "Note: 'all' excludes labels. To include them, use 'all,labels' "
+        "or specific tags like 'labels+' or 'labels*'."
+    ),
     default=[],
     required=False,
     type=MultiChoicePost(
@@ -89,6 +91,7 @@ download_area_option = click.option(
             "Messages",
             "Timeline",
             "Pinned",
+            "Stories",
             "Purchased",
             "Profile",
             "Streams",
@@ -163,33 +166,21 @@ text_option = click.option(
     "-t",
     "--text",
     "--download-text",
-    "download_text",
-    type=MultiChoicePost(
-        [
-            "Highlights",
-            "All",
-            "Archived",
-            "Messages",
-            "Timeline",
-            "Pinned",
-            "Streams",
-            "Stories",
-            "Purchased",
-            "Profile",
-            "Labels",
-            "Labels+",
-            "Labels*",
-        ],
-        case_sensitive=False,
-    ),
-    callback=StringSplitParseTitle,
-    help="""
-    Download Text files
-    options are based on the --mediatype option
-    """,
-    default="",
+    "text",
+    is_flag=True,
+    default=False,
+    help="Download text files alongside media",
 )
 
+text_only_option = click.option(
+    "-tx",
+    "--text-only",
+    "--download-text-only",
+    "text_only",
+    is_flag=True,
+    default=False,
+    help="Download ONLY text files, skipping all media",
+)
 
 scrape_paid_option = click.option(
     "-sp",

@@ -209,6 +209,15 @@ class PostCollection:
         posts_for_text = helpers.post_text_filter(posts_for_text)
         posts_for_text = helpers.post_neg_text_filter(posts_for_text)
         posts_for_text = helpers.mass_msg_filter(posts_for_text)
+        
+        # --- NEW LOGIC: Strict Media Linkage ---
+        # By default, mediatypes contains all 3: ['Images', 'Audios', 'Videos']
+        # If the length is less than 3, the user explicitly filtered for a specific media type.
+        # We drop any posts that don't actually contain surviving media matching their filter!
+        active_media_types = settings.get_settings().mediatypes or []
+        if len(active_media_types) < 3: 
+            posts_for_text = [p for p in posts_for_text if len(p.media) > 0]
+
         posts_for_text = helpers.final_post_sort(posts_for_text)
 
         log.info(
