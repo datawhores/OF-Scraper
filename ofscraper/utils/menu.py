@@ -11,7 +11,6 @@ import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.managers.manager as manager
 
-
 log = logging.getLogger("shared")
 count = 0
 
