@@ -37,7 +37,7 @@ def select_areas(actions=None, reset=False):
     actions = actions or args.actions or {}
     if "download" in actions and reset:
         reset_download()
-    elif ("like" or "unlike") in actions and reset:
+    elif ("like" in actions or "unlike" in actions) and reset:
         reset_like()
     settings.update_args(args)
     set_post_area(actions)
