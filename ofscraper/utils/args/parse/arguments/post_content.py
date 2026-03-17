@@ -89,7 +89,6 @@ download_area_option = click.option(
             "Messages",
             "Timeline",
             "Pinned",
-            "Stsettings.get_settings().download_areaories",
             "Purchased",
             "Profile",
             "Streams",
