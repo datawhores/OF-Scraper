@@ -15,7 +15,7 @@ posts_option = click.option(
     "--posts",
     "--post",
     "posts",
-   help=(
+    help=(
         "Select areas for batch actions (comma or space separated). "
         "Note: 'all' excludes labels. To include them, use 'all,labels' "
         "or specific tags like 'labels+' or 'labels*'."
