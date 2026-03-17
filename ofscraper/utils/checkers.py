@@ -4,7 +4,6 @@ import ofscraper.data.api.init as init
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.auth.make as make
 
-
 log = logging.getLogger("shared")
 
 
@@ -18,6 +17,3 @@ def check_auth():
             make.make_auth(auth=auth_file.read_auth())
         else:
             break
-
-
-

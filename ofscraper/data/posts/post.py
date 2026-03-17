@@ -484,7 +484,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
     # 2. Calculate Expiration Status
     is_expired = not ele.active
-    
+
     # Using 'final_expired' which returns the float timestamp of expiration
     past_grace = False
     if is_expired and ele.final_expired > 0:
@@ -498,7 +498,7 @@ async def process_tasks(model_id, username, ele, c=None):
     like_area = get_like_area()
     download_area = get_download_area()
     final_post_areas = get_final_posts_area()
-    
+
     max_count = max(
         min(
             of_env.getattr("API_MAX_AREAS"),
@@ -512,7 +512,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
     with progress_utils.setup_live("api"):
         # --- PERMANENTLY UNLOCKED / METADATA AREAS ---
-        # These are always scanned because purchased content and profile info 
+        # These are always scanned because purchased content and profile info
         # remain accessible after expiration.
         if "Profile" in final_post_areas:
             tasks.append(
@@ -557,7 +557,7 @@ async def process_tasks(model_id, username, ele, c=None):
                         )(sem=sem)
                     )
                 )
-            
+
             if "Archived" in final_post_areas:
                 tasks.append(
                     asyncio.create_task(
@@ -588,9 +588,9 @@ async def process_tasks(model_id, username, ele, c=None):
             if "Labels" in final_post_areas and ele.active:
                 tasks.append(
                     asyncio.create_task(
-                        process_single_task(partial(process_labels, model_id, username, c))(
-                            sem=sem
-                        )
+                        process_single_task(
+                            partial(process_labels, model_id, username, c)
+                        )(sem=sem)
                     )
                 )
 
@@ -603,7 +603,9 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
         else:
-            log.info(f"Skipping timeline/story APIs for {username} (Expired > {grace_days} days)")
+            log.info(
+                f"Skipping timeline/story APIs for {username} (Expired > {grace_days} days)"
+            )
 
         # Gather results and add to postcollection
         for result in asyncio.as_completed(tasks):
@@ -612,7 +614,7 @@ async def process_tasks(model_id, username, ele, c=None):
                 area_title = area.capitalize()
                 actions_for_this_batch = []
                 command = settings.get_settings().command
-                
+
                 if command == "metadata":
                     actions_for_this_batch.append("metadata")
                 else:
