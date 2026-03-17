@@ -39,7 +39,7 @@ post_filter_options_tuple = (
     timed_only_option,
     scrape_paid_option,
     text_option,
-    text_only_option
+    text_only_option,
 )
 # Create the option group
 post_filter_options = click.option_group(
