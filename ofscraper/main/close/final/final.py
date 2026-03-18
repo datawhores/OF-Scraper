@@ -19,4 +19,5 @@ import ofscraper.managers.manager as manager
 def final_action():
     final_script()
     manager.Manager.stats_manager.print_summary_by_activity()
+    manager.Manager._stats_manager.print_global_summary()
     printEndValues()

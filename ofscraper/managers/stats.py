@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from typing import Union
 from rich.markup import escape
+from humanfriendly import format_size
 from ofscraper.managers.utils.state import EActivity, string_to_activity
 
 from ofscraper.classes.of.posts import Post
@@ -278,20 +279,6 @@ class StatsManager:
         self.print_user_activity_summary(
             username, activity, ignore_missing=ignore_missing
         )
-
-    def print_all_summary(self):
-        """Builds a complete summary string grouped by user and logs it once."""
-        if not self._stats:
-            return
-
-        summary_string = "".join(
-            self._get_user_summary_string(username)
-            for username in sorted(self._stats.keys())
-        )
-
-        if summary_string:
-            log.warning("\n\n--- Final Stats Summary ---" + summary_string)
-
     def print_summary_by_activity(self):
         """Builds a complete summary string grouped by activity and logs it once."""
         if not self._stats:
@@ -392,8 +379,6 @@ class StatsManager:
             for key in keys_to_delete:
                 del user_activities[key]
 
-        log.info("All Scrape Activity statistics have been cleared.")
-
     def clear_activity_stats(self, activity: Union[str, EActivity]):
         """
         Removes all stat entries for a specific activity across all users.
@@ -465,7 +450,7 @@ class StatsManager:
                 stat_obj.skipped_count += 1
             elif media.metadata_succeeded is False:
                 stat_obj.failed_count += 1
-            elif media.metadata_succeeded is True:  # Changed
+            elif media.metadata_succeeded is True: 
                 mtype = media.mediatype.lower()
                 if mtype == "videos":
                     stat_obj.changed_video += 1
@@ -519,7 +504,7 @@ class StatsManager:
                 EActivity.ScrapeActivity.UNLIKE,
             ]:
                 self._stats[username][activity_enum] = LikeStats(
-                    name=f"Action {activity_name}d"
+                    name=f"Action {activity_name}"
                 )
             else:  # Default for DOWNLOAD and SCRAPE_PAID_DOWNLOAD
                 self._stats[username][activity_enum] = DownloadStats(
@@ -527,3 +512,77 @@ class StatsManager:
                 )
 
         return self._stats[username][activity_enum]
+    
+    def print_global_summary(self):
+        """Builds and logs a grand total summary across all models and activities."""
+        if not self._stats:
+            return
+
+        # 1. Setup Aggregators
+        dl_vids = dl_auds = dl_pics = dl_skip = dl_fail = dl_bytes = 0
+        meta_vids = meta_auds = meta_pics = meta_unchanged = meta_fail = 0
+        text_count = text_skip = text_fail = 0
+
+        # 2. Accumulate Totals from all users in the defaultdict 
+        for username, activity_dict in self._stats.items():
+            for activity, stat_obj in activity_dict.items():
+                
+                if isinstance(stat_obj, DownloadStats):
+                    dl_vids += stat_obj.video_count
+                    dl_auds += stat_obj.audio_count
+                    dl_pics += stat_obj.photo_count
+                    dl_skip += stat_obj.skipped_count
+                    dl_fail += stat_obj.failed_count
+                    dl_bytes += stat_obj.total_bytes
+                    
+                elif isinstance(stat_obj, MetadataStats):
+                    meta_vids += stat_obj.changed_video
+                    meta_auds += stat_obj.changed_audio
+                    meta_pics += stat_obj.changed_photo
+                    meta_unchanged += stat_obj.unchanged_count
+                    meta_fail += stat_obj.failed_count
+                    
+                elif isinstance(stat_obj, TextStats):
+                    text_count += stat_obj.text_count
+                    text_skip += stat_obj.skipped_count
+                    text_fail += stat_obj.failed_count
+
+
+        # 4. Build the Output String
+        output_lines = [
+            "\n" + "=" * 50,
+            "📊 GLOBAL RUN TOTALS (ALL MODELS)",
+            "=" * 50
+        ]
+
+        if any([dl_vids, dl_auds, dl_pics, dl_skip, dl_fail]):
+            total_dl = dl_vids + dl_auds + dl_pics
+            output_lines.append("\n--- MEDIA DOWNLOADS ---")
+            output_lines.append(f" ➜ TOTAL ITEMS: {total_dl}")
+            output_lines.append(f" ➜ TOTAL DATA:  {format_size(dl_bytes)}")
+            output_lines.append(f" ➜ VIDEOS:      {dl_vids} downloaded")
+            output_lines.append(f" ➜ AUDIOS:      {dl_auds} downloaded")
+            output_lines.append(f" ➜ IMAGES:      {dl_pics} downloaded")
+            output_lines.append(f" ➜ SKIPPED:     {dl_skip} overall")
+            output_lines.append(f" ➜ FAILED:      {dl_fail} overall")
+
+        if any([meta_vids, meta_auds, meta_pics, meta_unchanged, meta_fail]):
+            total_meta = meta_vids + meta_auds + meta_pics
+            output_lines.append("\n--- METADATA UPDATES ---")
+            output_lines.append(f" ➜ TOTAL CHANGED: {total_meta}")
+            output_lines.append(f" ➜ VIDEOS:        {meta_vids} changed")
+            output_lines.append(f" ➜ AUDIOS:        {meta_auds} changed")
+            output_lines.append(f" ➜ IMAGES:        {meta_pics} changed")
+            output_lines.append(f" ➜ UNCHANGED:     {meta_unchanged} overall")
+            output_lines.append(f" ➜ FAILED:        {meta_fail} overall")
+
+        if any([text_count, text_skip, text_fail]):
+            output_lines.append("\n--- TEXT / MESSAGES ---")
+            output_lines.append(f" ➜ SAVED:   {text_count}")
+            output_lines.append(f" ➜ SKIPPED: {text_skip}")
+            output_lines.append(f" ➜ FAILED:  {text_fail}")
+
+        output_lines.append("\n" + "=" * 50 + "\n")
+
+        # 5. Log the final warning block
+        log.warning("\n".join(output_lines))
