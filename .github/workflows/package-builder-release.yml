@@ -251,6 +251,7 @@ jobs:
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
 
   # --- DISCORD TEST JOB ---
+# --- DISCORD TEST JOB ---
   discord_test_announcement:
     name: Discord Test Announcement
     needs: [determine_tags_and_versions]
@@ -268,13 +269,14 @@ jobs:
             echo "Version $VERSION is not a standard release. Skipping."
             exit 0
           fi
-
-          BODY=$(gh release view "v$VERSION" --json body --jq '.body')
-
+          
+          # FIXED: Explicitly tell 'gh' which repo to look at
+          BODY=$(gh release view "v$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          
           python3 -c "
           import os, requests
           content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
-
+          
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
               
@@ -299,13 +301,14 @@ jobs:
             echo "Version $VERSION is not a standard release. Skipping."
             exit 0
           fi
-
-          BODY=$(gh release view "v$VERSION" --json body --jq '.body')
-
+          
+          # FIXED: Explicitly tell 'gh' which repo to look at
+          BODY=$(gh release view "v$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          
           python3 -c "
           import os, requests
           content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
-
+          
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
               
