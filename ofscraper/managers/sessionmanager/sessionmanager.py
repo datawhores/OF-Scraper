@@ -239,8 +239,6 @@ class sessionManager:
         retries: Optional[int] = None,
         wait_min: Optional[int] = None,
         wait_max: Optional[int] = None,
-        wait_min_exponential: Optional[int] = None,
-        wait_max_exponential: Optional[int] = None,
         log: Optional[logging.Logger] = None,
         sem: Optional[asyncio.Semaphore] = None,
         sync_sem_count: Optional[int] = None,
@@ -316,16 +314,6 @@ class sessionManager:
             wait_max
             if wait_max is not None
             else of_env.getattr("OF_MAX_WAIT_SESSION_DEFAULT")
-        )
-        self._wait_min_exponential = (
-            wait_min_exponential
-            if wait_min_exponential is not None
-            else of_env.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
-        )
-        self._wait_max_exponential = (
-            wait_max_exponential
-            if wait_max_exponential is not None
-            else of_env.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
         )
         self._log = log or logging.getLogger("shared")
 
@@ -621,18 +609,16 @@ class sessionManager:
         exceptions = exceptions or []
         retries = kwargs.get("retries") or self._retries
         wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max = kwargs.get("wait_max_exponential") or self._wait_max_exponential
+        wait_max = kwargs.get("wait_max") or self._wait_max
 
         async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
             reraise=True,
-            before=lambda x: (
-                self._log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
-                if x.attempt_number > 1
-                else None
-            ),
+            before_sleep=lambda retry_state: (
+            self._log.debug(f"Request failed for {url}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})")
+)
         ):
             with _:
                 await self._sem.acquire()

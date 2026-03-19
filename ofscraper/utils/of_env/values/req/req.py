@@ -13,12 +13,12 @@ def load_network_config():
 
     # --- Connection and Timeout Configuration ---
     # CONNECT_TIMEOUT: Connection timeout for general network operations (seconds).
-    # Default: 35
-    config["CONNECT_TIMEOUT"] = int(os.getenv("OFSC_CONNECT_TIMEOUT", "35"))
+    # Default: 15
+    config["CONNECT_TIMEOUT"] = int(os.getenv("OFSC_CONNECT_TIMEOUT", "15"))
 
     # POOL_CONNECT_TIMEOUT: Connection timeout for pooled connections (seconds).
-    # Default: 60
-    config["POOL_CONNECT_TIMEOUT"] = int(os.getenv("OFSC_POOL_CONNECT_TIMEOUT", "60"))
+    # Default: 15
+    config["POOL_CONNECT_TIMEOUT"] = int(os.getenv("OFSC_POOL_CONNECT_TIMEOUT", "15"))
 
     # MAX_CONNECTIONS: Maximum number of simultaneous network connections.
     # Default: 200
@@ -95,8 +95,8 @@ def load_network_config():
     )
 
     # CHUNK_TIMEOUT_SEC: Timeout for individual chunk downloads (seconds).
-    # Default: 120
-    config["CHUNK_TIMEOUT_SEC"] = int(os.getenv("OFSC_CHUNK_TIMEOUT_SEC", "120"))
+    # Default: 30
+    config["CHUNK_TIMEOUT_SEC"] = int(os.getenv("OFSC_CHUNK_TIMEOUT_SEC", "30"))
 
     # --- Semaphore and Concurrency Configuration ---
     # REQ_SEMAPHORE_MULTI: Semaphore limit for multiple requests.
@@ -151,21 +151,9 @@ def load_network_config():
     )
 
     # OF_MAX_WAIT_SESSION_DEFAULT: Maximum wait time for session operations (seconds).
-    # Default: 6
+    # Default: 3
     config["OF_MAX_WAIT_SESSION_DEFAULT"] = float(
-        os.getenv("OFSC_MAX_WAIT_SESSION_DEFAULT", "6")
-    )
-
-    # OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT: Minimum wait for exponential backoff in sessions (seconds).
-    # Default: 16
-    config["OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"] = float(
-        os.getenv("OFSC_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT", "16")
-    )
-
-    # OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT: Maximum wait for exponential backoff in sessions (seconds).
-    # Default: 128
-    config["OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"] = float(
-        os.getenv("OFSC_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT", "128")
+        os.getenv("OFSC_MAX_WAIT_SESSION_DEFAULT", "3")
     )
 
     # OF_NUM_RETRIES_SESSION_DEFAULT: Number of retries for session operations.
@@ -179,16 +167,16 @@ def load_network_config():
     config["OF_MIN_WAIT_API"] = float(os.getenv("OFSC_MIN_WAIT_API", "2"))
 
     # OF_MAX_WAIT_API: Maximum wait time for API calls (seconds).
-    # Default: 6
-    config["OF_MAX_WAIT_API"] = float(os.getenv("OFSC_MAX_WAIT_API", "6"))
+    # Default: 3
+    config["OF_MAX_WAIT_API"] = float(os.getenv("OFSC_MAX_WAIT_API", "3"))
 
     # OF_AUTH_MIN_WAIT: Minimum wait time for authentication operations (seconds).
     # Default: 3
     config["OF_AUTH_MIN_WAIT"] = float(os.getenv("OFSC_AUTH_MIN_WAIT", "3"))
 
     # OF_AUTH_MAX_WAIT: Maximum wait time for authentication operations (seconds).
-    # Default: 10
-    config["OF_AUTH_MAX_WAIT"] = float(os.getenv("OFSC_AUTH_MAX_WAIT", "10"))
+    # Default: 3
+    config["OF_AUTH_MAX_WAIT"] = float(os.getenv("OFSC_AUTH_MAX_WAIT", "3"))
 
     # DOWNLOAD_NUM_TRIES_REQ: Number of download retries for requests.
     # Default: 5
