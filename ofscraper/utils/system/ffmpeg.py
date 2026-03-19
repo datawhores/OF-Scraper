@@ -18,7 +18,8 @@ _ffprobe_checked: bool = False
 
 def _is_valid_ffmpeg(path: str | None) -> bool:
     """
-    Checks if a given path is a real, executable FFmpeg binary. Logs the process.
+    Checks if a given path is a real, executable FFmpeg binary and validates
+    that its version is >= 6 and < 8 for DRM compatibility. Logs the process.
     """
     if not path or not shutil.which(path):
         log.debug(f"Path '{path}' is not a valid or executable file.")
@@ -38,6 +39,21 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
         output = result.stdout + result.stderr
 
         if re.search(r"ffmpeg version", output, re.IGNORECASE):
+            # Extract the major version number (e.g., "ffmpeg version 6.1.1" -> "6")
+            version_match = re.search(r"ffmpeg version\s+([0-9]+)\.", output, re.IGNORECASE)
+            
+            if version_match:
+                major_version = int(version_match.group(1))
+                if major_version < 6 or major_version >= 8:
+                    log.warning(
+                        f"⚠️ Invalid FFmpeg version {major_version}.x detected at '{path}'.\n"
+                        f"DRM decryption requires FFmpeg version >= 6 and < 8.\n"
+                        f"Skipping this binary and looking for an alternative..."
+                    )
+                    return False
+            else:
+                log.debug(f"Could not parse strict semantic version from '{path}' (likely a git/custom build). Allowing it to pass.")
+
             log.info(f"Validation successful: Found valid FFmpeg binary at '{path}'")
             return True
         else:
@@ -53,7 +69,6 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             exc_info=True,
         )
         return False
-
 
 def get_ffmpeg() -> str:
     """
