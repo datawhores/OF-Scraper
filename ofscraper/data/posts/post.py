@@ -593,7 +593,7 @@ async def process_tasks(model_id, username, ele, c=None):
                 )
         else:
             log.info(
-                f"Skipping wall APIs for {username} (Account is inactive and past grace period)"
+                f"Skipping wall/story APIs for {username} (Account is inactive and past grace period)"
             )
 
         # Gather results and add to postcollection
