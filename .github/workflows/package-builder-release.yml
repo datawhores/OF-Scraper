@@ -25,15 +25,15 @@ on:
         required: true
         type: boolean
         default: false
-      # --- NEW DISCORD TOGGLES ---
-      discord:
-        description: "Publish to Discord? (t/f)"
+      # --- DISCORD TOGGLES ---
+      discord_main:
+        description: "Publish to Main Release Channel? (t/f)"
         required: true
         type: boolean
         default: false
-      test_discord:
-        description: "Send to Secret Test Channel instead of Main Release Channel?"
-        required: false
+      discord_test:
+        description: "Publish to Secret Test Channel? (t/f)"
+        required: true
         type: boolean
         default: false
 
@@ -43,18 +43,18 @@ env:
   ACTIONS_STEP_DEBUG: true
 
 permissions:
-  contents: write # Needed for checkout, creating releases
-  packages: write # Needed for pushing to GHCR/Docker Hub
-  id-token: write # For OIDC, used by cosign, and CRUCIAL for GHCR authentication
-  actions: write # Needed for gh CLI to upload/download workflow artifacts (for retries)
+  contents: write
+  packages: write
+  id-token: write
+  actions: write
 
 jobs:
   determine_tags_and_versions:
     name: Determine Release Info and Tagging Logic
     runs-on: ubuntu-latest
     permissions:
-      actions: read # Needed to list workflow runs and jobs
-      contents: read # For checkout
+      actions: read
+      contents: read
     outputs:
       long_hash: ${{ steps.release_info.outputs.long_hash }}
       short_hash: ${{ steps.release_info.outputs.short_hash }}
@@ -63,7 +63,7 @@ jobs:
       is_dev_release: ${{ steps.release_info.outputs.is_dev_release }}
       commit_timestamp: ${{ steps.release_info.outputs.commit_timestamp }}
     steps:
-      - name: Checkout Code (Optional Version or Current Branch)
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.version || github.ref }}
@@ -250,52 +250,64 @@ jobs:
       should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
 
-  # --- NEW DISCORD ANNOUNCEMENT JOB ---
-  discord_announcement:
-    name: Discord Release Post
+  # --- DISCORD TEST JOB ---
+  discord_test_announcement:
+    name: Discord Test Announcement
     needs: [determine_tags_and_versions]
-    # Only fire if manual discord toggle is on OR it's a stable release going to PIP
-    if: ${{ inputs.discord == true || (needs.determine_tags_and_versions.outputs.is_stable_release == 'true' && inputs.pip == true) }}
+    # Only fires if the test box is explicitly checked
+    if: ${{ inputs.discord_test == true }}
     runs-on: ubuntu-latest
     steps:
-      - name: Route and Send Release Info
+      - name: Send to Test Channel
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
-          # The Two Secret Webhooks needed
-          WEBHOOK_RELEASE: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
           WEBHOOK_TEST: ${{ secrets.DISCORD_TEST_WEBHOOK }}
         run: |
-          # 1. Regex Guard: Only 3.13.x or 3.14.x clean versions (prevents +build noise)
           if [[ ! "$VERSION" =~ ^3\.(13|14)\.[0-9]+$ ]]; then
-            echo "Version $VERSION is not a standard stable release. Skipping Discord post."
+            echo "Version $VERSION is not a standard release. Skipping."
             exit 0
           fi
 
-          # 2. Clean Routing Logic (Test vs Release)
-          if [ "${{ inputs.test_discord }}" = "true" ]; then
-            TARGET_URL=$WEBHOOK_TEST
-            echo "Routing to TEST channel."
-          else
-            TARGET_URL=$WEBHOOK_RELEASE
-            echo "Routing to RELEASE channel."
-          fi
-
-          # 3. Fetch Release Body and Post
           BODY=$(gh release view "v$VERSION" --json body --jq '.body')
 
           python3 -c "
           import os, requests
-          url = os.getenv('TARGET_URL')
-          ver = os.getenv('VERSION')
-          body = os.getenv('BODY')
+          content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
 
-          # Format the content
-          content = f'# Release {ver}\n{body}'
-
-          # Stay under Discord's 2000 character limit
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
+              
+          requests.post(os.getenv('WEBHOOK_TEST'), json={'content': content})
+          "
 
-          requests.post(url, json={'content': content})
+  # --- DISCORD MAIN RELEASE JOB ---
+  discord_main_announcement:
+    name: Discord Release Announcement
+    needs: [determine_tags_and_versions]
+    # Fires if manual main box is checked OR it's a stable automated PIP release
+    if: ${{ inputs.discord_main == true || (needs.determine_tags_and_versions.outputs.is_stable_release == 'true' && inputs.pip == true) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to Main Channel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+          WEBHOOK_RELEASE: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+        run: |
+          if [[ ! "$VERSION" =~ ^3\.(13|14)\.[0-9]+$ ]]; then
+            echo "Version $VERSION is not a standard release. Skipping."
+            exit 0
+          fi
+
+          BODY=$(gh release view "v$VERSION" --json body --jq '.body')
+
+          python3 -c "
+          import os, requests
+          content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
+
+          if len(content) > 1900:
+              content = content[:1900] + '\n\n... [Changelog Truncated]'
+              
+          requests.post(os.getenv('WEBHOOK_RELEASE'), json={'content': content})
           "
