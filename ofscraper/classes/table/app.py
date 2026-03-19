@@ -351,7 +351,7 @@ class InputApp(App):
             if key == "length":
                 return (
                     arrow.get(x.get("length", "0:0:0"), ["h:m:s"]).timestamp()
-                    if x.get("length") not in {"N/A", "N\\A"}
+                    if x.get("length") not in {"N/A", "N\A"}
                     else 0
                 )
             if key == "post_date":

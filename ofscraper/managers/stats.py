@@ -94,7 +94,7 @@ class TextStats:
             if self.failed_count > 0
             else f"{self.failed_count} failed"
         )
-        return f"\\[{text_str}, {skipped_str}, {failed_str}]"
+        return f"\[{text_str}, {skipped_str}, {failed_str}]"
 
     @property
     def has_changes(self):
@@ -162,7 +162,7 @@ class DownloadStats:
         )
         return (
             f"({size_str}) ({downloads_str} "
-            f"\\[{videos_str}, {audios_str}, {photos_str}], "
+            f"\[{videos_str}, {audios_str}, {photos_str}], "
             f"{skipped_str}, {failed_str})"
         )
 
