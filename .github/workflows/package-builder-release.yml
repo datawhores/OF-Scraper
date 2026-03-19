@@ -84,6 +84,7 @@ jobs:
   determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic
     needs: [determine_tags_and_versions]
+    if: ${{ inputs.docker }} 
     runs-on: ubuntu-latest
     permissions:
       actions: read
