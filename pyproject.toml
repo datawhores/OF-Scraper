@@ -14,7 +14,7 @@ dependencies = [
   "async-property~=0.2.2",
   "browser-cookie3==0.19.1",
   "bs4~=0.0.2",
-  "certifi~=2024.2.2",
+  "certifi>=2024.2.2,<2024.8.0",
   "cloup~=3.0.5",
   "dill~=0.3.8",
   "diskcache~=5.6.3",
