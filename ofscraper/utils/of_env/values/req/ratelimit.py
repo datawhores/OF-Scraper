@@ -28,7 +28,7 @@ def load_ratelimit_config():
 
     # --- Dynamic Session Sleep Configuration (For Standard API: 403 Forbidden Errors) ---
     config["SESSION_403_SLEEP_INIT"] = float(
-        os.getenv("OFSC_SESSION_403_SLEEP_INIT", "8")
+        os.getenv("OFSC_SESSION_403_SLEEP_INIT", "15")
     )
     config["SESSION_403_SLEEP_INCREASE_TIME_DIFF"] = float(
         os.getenv("OFSC_SESSION_403_SLEEP_INCREASE_TIME_DIFF", "60")
@@ -75,7 +75,7 @@ def load_ratelimit_config():
 
     # --- Dynamic Session Sleep Configuration (For Downloads: 403 Forbidden Errors) ---
     config["DOWNLOAD_SESSION_403_SLEEP_INIT"] = float(
-        os.getenv("OFSC_DOWNLOAD_SESSION_403_SLEEP_INIT", "4")
+        os.getenv("OFSC_DOWNLOAD_SESSION_403_SLEEP_INIT", "15")
     )
     config["DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF"] = float(
         os.getenv("OFSC_DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF", "80")
