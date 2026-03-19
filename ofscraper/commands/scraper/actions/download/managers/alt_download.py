@@ -369,8 +369,6 @@ class AltDownloadManager(DownloadManager):
 
         (
             common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
-            if system.get_parent_process()
-            else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
         )
 
         if ele.postdate:

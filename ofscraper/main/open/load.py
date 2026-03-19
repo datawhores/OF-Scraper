@@ -38,7 +38,7 @@ def settings_loader():
 
 
 def setdate():
-    dates.resetLogDateVManager()
+    dates.resetLogDate()
 
 
 def setLogger():

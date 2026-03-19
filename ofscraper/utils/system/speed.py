@@ -1,110 +1,48 @@
-import traceback
-import logging
+import os
 import psutil
 import arrow
-from ofscraper.utils.system.system import get_all_ofscrapers_processes
+import logging
+import traceback
 
-DOWNLOAD_OBJ = None
-
+# Global state for the single process
+_previous_stats = None
+_previous_time = None
+_previous_speed = 0
 
 def get_download_speed():
-    global DOWNLOAD_OBJ
-    if not DOWNLOAD_OBJ:
-        pids = list(map(lambda x: x.pid, get_all_ofscrapers_processes()))
-        DOWNLOAD_OBJ = MultiProcessDownloadSpeed(pids)
-    return DOWNLOAD_OBJ.speed
-
-
-def add_pids_to_download_obj(pids):
-    global DOWNLOAD_OBJ
-    if not DOWNLOAD_OBJ:
-        named_pids = list(map(lambda x: x.pid, get_all_ofscrapers_processes()))
-        DOWNLOAD_OBJ = MultiProcessDownloadSpeed(named_pids)
-    DOWNLOAD_OBJ.pids = list(set(DOWNLOAD_OBJ.pids + list(pids)))
-
-
-class MultiProcessDownloadSpeed:
     """
-    This class calculates the total download speed (received bytes per second)
-    for a list of processes.
-
-    Args:
-        pids: A list of process IDs (pids) to track download information for.
+    Calculates the disk write speed (bytes per second) of the current process.
     """
+    global _previous_stats, _previous_time, _previous_speed
+    try:
+        # Only check the current process
+        process = psutil.Process(os.getpid())
+        curr_stats = process.io_counters()
+        curr_time = arrow.now().float_timestamp
 
-    def __init__(self, pids):
-        self._pids = pids
-        self.previous_stats = {
-            pid: None for pid in pids
-        }  # Stores previous stats per pid
-        self.previous_time = {pid: None for pid in pids}
-        self.previous_speed = {
-            pid: 0 for pid in pids
-        }  # Stores previous time of measurement
-        self._speed = None
-        self.previous_run = None
+        # Initialize on first run
+        if not _previous_time or not _previous_stats:
+            _previous_stats = curr_stats
+            _previous_time = curr_time
+            return 0
 
-    @property
-    def pids(self):
-        return self._pids
+        # Return cached speed if less than 1.5 seconds have passed (prevents CPU spam)
+        if curr_time - _previous_time < 1.5:
+            return _previous_speed
 
-    @pids.setter
-    def pids(self, pids):
-        self._pids = pids
-        self.previous_stats = {pid: self.previous_stats.get(pid) for pid in pids}
-        self.previous_time = {pid: self.previous_time.get(pid) for pid in pids}
-        self.previous_speed = {pid: self.previous_speed.get(pid, 0) for pid in pids}
+        # Calculate new speed
+        bytes_written = curr_stats.write_bytes - _previous_stats.write_bytes
+        time_elapsed = curr_time - _previous_time
+        new_speed = bytes_written / time_elapsed if time_elapsed > 0 else _previous_speed
+        
+        # Update cache
+        _previous_stats = curr_stats
+        _previous_time = curr_time
+        _previous_speed = new_speed
 
-    @property
-    def speed(self):
-        """
-        Calculates and returns the total download speed (received bytes per second)
-        for all processes in the pids list.
+        return new_speed
 
-        Returns:
-          The total download speed in bytes per second,
-          or None if any process is not found or network info unavailable.
-        """
-        try:
-            # Get current network interface stats
-
-            # Calculate total received bytes since last call
-            total_bytes_second = 0
-            for pid in self._pids:
-                try:
-                    if pid is None:
-                        continue
-                    if not psutil.pid_exists(pid):
-                        continue  # Check if process is still running
-                    process = psutil.Process(pid)
-                    curr_stats = process.io_counters()
-                    curr_time = arrow.now().float_timestamp
-
-                    if not self.previous_time.get(pid) or not self.previous_stats.get(
-                        pid
-                    ):
-                        self.previous_stats[pid] = curr_stats
-                        self.previous_time[pid] = curr_time
-                        continue
-                    previous_stats = self.previous_stats[pid]
-                    previous_time = self.previous_time[pid]
-                    previous_speed = self.previous_speed[pid]
-                    if curr_time - previous_time < 1.5:
-                        total_bytes_second = total_bytes_second + previous_speed
-                    else:
-                        self.previous_stats[pid] = curr_stats  # Update previous stats
-                        self.previous_time[pid] = curr_time  # Update time stats
-                        new_speed = (
-                            curr_stats.write_bytes - previous_stats.write_bytes
-                        ) / (curr_time - previous_time) or previous_speed
-                        total_bytes_second = total_bytes_second + new_speed
-                        self.previous_speed[pid] = new_speed
-
-                except Exception as E:
-                    logging.getLogger("shared").traceback_(E)
-                    logging.getLogger("shared").traceback_(traceback.format_exc())
-
-            return total_bytes_second
-        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            print(f"Error getting download speed: {e}")
-            return None
+    except Exception as E:
+        logging.getLogger("shared").traceback_(E)
+        logging.getLogger("shared").traceback_(traceback.format_exc())
+        return 0

@@ -16,9 +16,6 @@ from .values.prompts import (
 
 # Placeholder imports for files where specific constants weren't previously specified,
 # but which exist in your tree. You'll need to define these functions in their files.
-from .values.rich import (
-    load_rich_config,
-)  # Assuming rich.py has a load_rich_config() function
 from .values.system import (
     load_system_config,
 )  # Assuming system.py has a load_system_config() function
@@ -94,7 +91,6 @@ def get_all_configs(forced=False):
     all_settings.update(load_live_display_config())
     all_settings.update(load_log_config())
     all_settings.update(load_prompts_config())
-    all_settings.update(load_rich_config())
     all_settings.update(load_system_config())
     all_settings.update(load_expiry_config())
 

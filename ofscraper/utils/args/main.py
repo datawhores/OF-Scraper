@@ -46,11 +46,10 @@ def parse_args():
         main.program.add_command(metadata.metadata, "metadata")
         main.program.add_command(db.db, "db")
 
-        filter_str = r"\b(multiprocessing|pipe_handle|fork|parent_pid)\b"
         result = main.program(
             standalone_mode=False,
             prog_name="OF-Scraper",
-            args=[text for text in sys.argv if not re.search(filter_str, text)][1:],
+            args=sys.argv[1:],
         )
         if result == 0:
             sys.exit()

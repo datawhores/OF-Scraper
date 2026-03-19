@@ -310,8 +310,7 @@ class MainDownloadManager(DownloadManager):
 
         (
             common_paths.addGlobalDir(placeholderObj.filedir)
-            if system.get_parent_process()
-            else common_paths.addLocalDir(placeholderObj.filedir)
+    
         )
 
         # 4. Set File Dates

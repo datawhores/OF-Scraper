@@ -29,7 +29,6 @@ import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
 import ofscraper.utils.settings as settings
-from ofscraper.utils.logs.logger import flushlogs
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
@@ -75,7 +74,6 @@ class scraperManager(CommandManager):
         data = await self._gather_user_first_data(
             userdata, session, self._get_users_data_user_first
         )
-        flushlogs()
         await self._execute_user_first_actions(data, self._execute_user_action)
         progress_updater.activity.update_task(description="Finished Action Mode")
 
@@ -157,7 +155,6 @@ class scraperManager(CommandManager):
     @exit.exit_wrapper
     @run_async
     async def _process_users_actions_normal(self, userdata=None, session=None):
-        flushlogs()
         progress_updater.activity.update_user(
             description="Users with Actions Completed",
             total=manager.Manager.current_model_manager.get_num_scrape_selected_models(),

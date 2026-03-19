@@ -15,7 +15,6 @@ from datetime import datetime
 
 import arrow
 
-import ofscraper.utils.manager as manager
 
 dateNow = None
 dateDict = None
@@ -56,18 +55,6 @@ def get_current_time():
     return arrow.get(tzinfo="UTC").to("local").float_timestamp
 
 
-def setLogDateVManager(dateDict_=None):
-    global dateDict
-    if dateDict_:
-        dateDict = dateDict_
-    elif not getLogDate():
-        setDateNow()
-        dateDict = {
-            "day": dateNow.format("YYYY-MM-DD"),
-            "now": dateNow.format("YYYY-MM-DD_HH.mm.ss"),
-        }
-    setLogDate(dateDict)
-    manager.update_dict(dateDict)
 
 
 def getLogDate():
@@ -91,10 +78,6 @@ def getLogDateVManager():
     return dateDict
 
 
-def resetLogDateVManager():
-    global dateDict
-    dateDict = None
-    setLogDateVManager()
 
 
 def resetLogDate():

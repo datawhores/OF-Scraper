@@ -9,11 +9,11 @@ import tenacity
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.of_env.of_env as of_env  # Added for env vars
+import ofscraper.utils.of_env.of_env as of_env 
 
 log = logging.getLogger("shared")
 
-# Shared pool to serialize DB access and prevent thread thrashing
+# Shared pool with 1 worker to serialize DB writes and prevent "database is locked" errors
 _DB_POOL = ThreadPoolExecutor(max_workers=1)
 
 
@@ -22,7 +22,7 @@ def operation_wrapper_async(func: abc.Callable):
         loop = asyncio.get_event_loop()
         db_timeout = of_env.getattr("DATABASE_TIMEOUT")
 
-        # Wrap the inner DB work with Tenacity to handle multiprocess deadlocks gracefully
+        # Wrap the inner DB work with Tenacity to handle async/thread collisions gracefully
         @tenacity.retry(
             retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
             wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
@@ -68,7 +68,7 @@ def operation_wrapper_async(func: abc.Callable):
                     except Exception:
                         pass
 
-        # Submit the safe retry block to the pool
+        # Submit the safe retry block to the single-worker pool
         return await loop.run_in_executor(_DB_POOL, _db_work)
 
     return inner
