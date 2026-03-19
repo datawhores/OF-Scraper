@@ -2,7 +2,6 @@ import re
 import ofscraper.utils.paths.common as paths
 from typing import Any
 
-
 # --- Default Patterns (Regex or Plain Text) ---
 _DEFAULT_PATTERNS = {
     # Redacts API keys and session tokens (Fixed to stop at whitespace)

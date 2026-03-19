@@ -159,7 +159,7 @@ jobs:
           source .venv/bin/activate
           hatch build
         shell: bash
-      
+
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
@@ -283,19 +283,19 @@ jobs:
 
           # 3. Fetch Release Body and Post
           BODY=$(gh release view "v$VERSION" --json body --jq '.body')
-          
+
           python3 -c "
           import os, requests
           url = os.getenv('TARGET_URL')
           ver = os.getenv('VERSION')
           body = os.getenv('BODY')
-          
+
           # Format the content
           content = f'# Release {ver}\n{body}'
-          
+
           # Stay under Discord's 2000 character limit
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
-          
+
           requests.post(url, json={'content': content})
           "

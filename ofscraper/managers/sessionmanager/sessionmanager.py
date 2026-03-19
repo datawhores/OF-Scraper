@@ -617,8 +617,10 @@ class sessionManager:
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
             reraise=True,
             before_sleep=lambda retry_state: (
-            self._log.debug(f"Request failed for {url}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})")
-)
+                self._log.debug(
+                    f"Request failed for {url}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})"
+                )
+            ),
         ):
             with _:
                 await self._sem.acquire()
