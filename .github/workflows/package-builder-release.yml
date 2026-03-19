@@ -43,10 +43,10 @@ env:
   ACTIONS_STEP_DEBUG: true
 
 permissions:
-  contents: write
-  packages: write
-  id-token: write
-  actions: write
+  contents: write 
+  packages: write 
+  id-token: write 
+  actions: write 
 
 jobs:
   determine_tags_and_versions:
@@ -159,7 +159,7 @@ jobs:
           source .venv/bin/activate
           hatch build
         shell: bash
-
+      
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
@@ -254,7 +254,6 @@ jobs:
   discord_test_announcement:
     name: Discord Test Announcement
     needs: [determine_tags_and_versions]
-    # Only fires if the test box is explicitly checked
     if: ${{ inputs.discord_test == true }}
     runs-on: ubuntu-latest
     steps:
@@ -270,10 +269,13 @@ jobs:
             exit 0
           fi
           
-          # Fetch the body
-          BODY=$(gh release view "$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          # 1. Guarantee the tag starts with exactly one 'v' for the GitHub CLI
+          TAG="v${VERSION#v}"
           
-          # Send to Discord using built-in Python libraries (no pip install needed)
+          # 2. EXPORT the body so the Python script can read it
+          export BODY=$(gh release view "$TAG" --repo ${{ github.repository }} --json body --jq '.body')
+          
+          # 3. Send to Discord using built-in Python libraries
           python3 -c "
           import os, json, urllib.request
           
@@ -297,7 +299,6 @@ jobs:
   discord_main_announcement:
     name: Discord Release Announcement
     needs: [determine_tags_and_versions]
-    # Fires if manual main box is checked OR it's a stable automated PIP release
     if: ${{ inputs.discord_main == true || (needs.determine_tags_and_versions.outputs.is_stable_release == 'true' && inputs.pip == true) }}
     runs-on: ubuntu-latest
     steps:
@@ -313,10 +314,13 @@ jobs:
             exit 0
           fi
           
-          # Fetch the body
-          BODY=$(gh release view "$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          # 1. Guarantee the tag starts with exactly one 'v' for the GitHub CLI
+          TAG="v${VERSION#v}"
           
-          # Send to Discord using built-in Python libraries
+          # 2. EXPORT the body so the Python script can read it
+          export BODY=$(gh release view "$TAG" --repo ${{ github.repository }} --json body --jq '.body')
+          
+          # 3. Send to Discord using built-in Python libraries
           python3 -c "
           import os, json, urllib.request
           
@@ -326,7 +330,6 @@ jobs:
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
               
-          # FIXED: Now correctly pointing to WEBHOOK_RELEASE
           webhook_url = os.getenv('WEBHOOK_RELEASE') 
           
           if webhook_url:
