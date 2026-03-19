@@ -666,7 +666,6 @@ class sessionManager:
                             )
                             raise SystemExit("OnlyFans Maintenance detected.")
                         r.raise_for_status()
-
                     self._sem.release()
                     yield r
                     return

@@ -5,10 +5,10 @@ from typing import Any
 
 # --- Default Patterns (Regex or Plain Text) ---
 _DEFAULT_PATTERNS = {
-    # Redacts API keys and session tokens
-    r"&Policy=[^&\"']+": "&Policy={hidden}",
-    r"&Signature=[^&\"']+": "&Signature={hidden}",
-    r"&Key-Pair-Id=[^&\"']+": "&Key-Pair-Id={hidden}",
+    # Redacts API keys and session tokens (Fixed to stop at whitespace)
+    r"&Policy=[^&\"'\s]+": "&Policy={hidden}",
+    r"&Signature=[^&\"'\s]+": "&Signature={hidden}",
+    r"&Key-Pair-Id=[^&\"'\s]+": "&Key-Pair-Id={hidden}",
     # Redacts common sensitive info
     r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "{ip_address}",  # IP Addresses
     r"\"sess\":\"[^\"]+\"": '"sess":"{hidden}"',  # Session tokens
