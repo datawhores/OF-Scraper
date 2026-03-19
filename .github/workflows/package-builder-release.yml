@@ -251,7 +251,7 @@ jobs:
       should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
 
-  # --- DISCORD TEST JOB ---
+# --- DISCORD TEST JOB ---
   discord_test_announcement:
     name: Discord Test Announcement
     needs: [determine_tags_and_versions]
@@ -264,24 +264,30 @@ jobs:
           VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
           WEBHOOK_TEST: ${{ secrets.DISCORD_TEST_WEBHOOK }}
         run: |
-          # Use the official project regex to validate the version
+          # Use your official regex to validate
           if [[ ! "$VERSION" =~ ^v?([0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?)$ ]]; then
-            echo "Version $VERSION does not match the official release format. Skipping."
+            echo "Version $VERSION does not match format. Skipping."
             exit 0
           fi
           
-          # 1. Guarantee the tag starts with exactly one 'v' for the GitHub CLI
-          TAG="v${VERSION#v}"
+          # 1. SMART TAG LOGIC: Try the version as-is, then try stripping the 'v'
+          # This handles both '3.14.5' and 'v3.14.5' automatically.
+          BODY=$(gh release view "$VERSION" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null || \
+                 gh release view "${VERSION#v}" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null)
           
-          # 2. EXPORT the body so the Python script can read it
-          export BODY=$(gh release view "$TAG" --repo ${{ github.repository }} --json body --jq '.body')
+          export BODY
           
-          # 3. Send to Discord using built-in Python libraries
+          # 2. Send to Discord
           python3 -c "
           import os, json, urllib.request
           
           clean_ver = os.getenv('VERSION').lstrip('v')
-          content = f'# Release {clean_ver}\n' + os.getenv('BODY', 'No release notes found.')
+          body_text = os.getenv('BODY')
+          
+          if not body_text or body_text.strip() == '':
+              body_text = '⚠️ No release notes found in GitHub Release description.'
+              
+          content = f'# Release {clean_ver}\n{body_text}'
           
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
@@ -292,8 +298,6 @@ jobs:
               data = json.dumps({'content': content}).encode('utf-8')
               req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
               urllib.request.urlopen(req)
-          else:
-              print('Webhook URL not found in environment.')
           "
 
   # --- DISCORD MAIN RELEASE JOB ---
@@ -309,24 +313,27 @@ jobs:
           VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
           WEBHOOK_RELEASE: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
         run: |
-          # Use the official project regex to validate the version
           if [[ ! "$VERSION" =~ ^v?([0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?)$ ]]; then
-            echo "Version $VERSION does not match the official release format. Skipping."
+            echo "Version $VERSION does not match format. Skipping."
             exit 0
           fi
           
-          # 1. Guarantee the tag starts with exactly one 'v' for the GitHub CLI
-          TAG="v${VERSION#v}"
+          # SMART TAG LOGIC
+          BODY=$(gh release view "$VERSION" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null || \
+                 gh release view "${VERSION#v}" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null)
           
-          # 2. EXPORT the body so the Python script can read it
-          export BODY=$(gh release view "$TAG" --repo ${{ github.repository }} --json body --jq '.body')
+          export BODY
           
-          # 3. Send to Discord using built-in Python libraries
           python3 -c "
           import os, json, urllib.request
           
           clean_ver = os.getenv('VERSION').lstrip('v')
-          content = f'# Release {clean_ver}\n' + os.getenv('BODY', 'No release notes found.')
+          body_text = os.getenv('BODY')
+          
+          if not body_text or body_text.strip() == '':
+              body_text = '⚠️ No release notes found in GitHub Release description.'
+              
+          content = f'# Release {clean_ver}\n{body_text}'
           
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
@@ -337,6 +344,4 @@ jobs:
               data = json.dumps({'content': content}).encode('utf-8')
               req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
               urllib.request.urlopen(req)
-          else:
-              print('Webhook URL not found in environment.')
           "
