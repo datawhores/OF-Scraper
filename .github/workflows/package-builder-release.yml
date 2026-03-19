@@ -251,7 +251,6 @@ jobs:
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
 
   # --- DISCORD TEST JOB ---
-# --- DISCORD TEST JOB ---
   discord_test_announcement:
     name: Discord Test Announcement
     needs: [determine_tags_and_versions]
@@ -265,22 +264,33 @@ jobs:
           VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
           WEBHOOK_TEST: ${{ secrets.DISCORD_TEST_WEBHOOK }}
         run: |
-          if [[ ! "$VERSION" =~ ^3\.(13|14)\.[0-9]+$ ]]; then
-            echo "Version $VERSION is not a standard release. Skipping."
+          # Use the official project regex to validate the version
+          if [[ ! "$VERSION" =~ ^v?([0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?)$ ]]; then
+            echo "Version $VERSION does not match the official release format. Skipping."
             exit 0
           fi
           
-          # FIXED: Explicitly tell 'gh' which repo to look at
-          BODY=$(gh release view "v$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          # Fetch the body
+          BODY=$(gh release view "$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
           
+          # Send to Discord using built-in Python libraries (no pip install needed)
           python3 -c "
-          import os, requests
-          content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
+          import os, json, urllib.request
+          
+          clean_ver = os.getenv('VERSION').lstrip('v')
+          content = f'# Release {clean_ver}\n' + os.getenv('BODY', 'No release notes found.')
           
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
               
-          requests.post(os.getenv('WEBHOOK_TEST'), json={'content': content})
+          webhook_url = os.getenv('WEBHOOK_TEST') 
+          
+          if webhook_url:
+              data = json.dumps({'content': content}).encode('utf-8')
+              req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+              urllib.request.urlopen(req)
+          else:
+              print('Webhook URL not found in environment.')
           "
 
   # --- DISCORD MAIN RELEASE JOB ---
@@ -297,20 +307,32 @@ jobs:
           VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
           WEBHOOK_RELEASE: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
         run: |
-          if [[ ! "$VERSION" =~ ^3\.(13|14)\.[0-9]+$ ]]; then
-            echo "Version $VERSION is not a standard release. Skipping."
+          # Use the official project regex to validate the version
+          if [[ ! "$VERSION" =~ ^v?([0-9]+\.[0-9]+(\.[0-9]+)?([-.][a-zA-Z0-9.]+)?)$ ]]; then
+            echo "Version $VERSION does not match the official release format. Skipping."
             exit 0
           fi
           
-          # FIXED: Explicitly tell 'gh' which repo to look at
-          BODY=$(gh release view "v$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
+          # Fetch the body
+          BODY=$(gh release view "$VERSION" --repo ${{ github.repository }} --json body --jq '.body')
           
+          # Send to Discord using built-in Python libraries
           python3 -c "
-          import os, requests
-          content = f'# Release {os.getenv(\"VERSION\")}\n' + os.getenv('BODY')
+          import os, json, urllib.request
+          
+          clean_ver = os.getenv('VERSION').lstrip('v')
+          content = f'# Release {clean_ver}\n' + os.getenv('BODY', 'No release notes found.')
           
           if len(content) > 1900:
               content = content[:1900] + '\n\n... [Changelog Truncated]'
               
-          requests.post(os.getenv('WEBHOOK_RELEASE'), json={'content': content})
+          # FIXED: Now correctly pointing to WEBHOOK_RELEASE
+          webhook_url = os.getenv('WEBHOOK_RELEASE') 
+          
+          if webhook_url:
+              data = json.dumps({'content': content}).encode('utf-8')
+              req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+              urllib.request.urlopen(req)
+          else:
+              print('Webhook URL not found in environment.')
           "
