@@ -367,9 +367,7 @@ class AltDownloadManager(DownloadManager):
             ),
         )
 
-        (
-            common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
-        )
+        (common_paths.addGlobalDir(sharedPlaceholderObj.filedir))
 
         if ele.postdate:
             newDate = dates.convert_local_time(ele.postdate)

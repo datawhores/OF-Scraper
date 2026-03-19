@@ -19,6 +19,7 @@ def set_eventloop():
     plat = platform.system()
     if plat == "Linux":
         import uvloop
+
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
@@ -39,6 +40,7 @@ def get_dupe_ofscraper():
     if found:
         log.debug(f"Duplicated Processes {found}")
     return found
+
 
 def setName():
     log = logging.getLogger("shared")

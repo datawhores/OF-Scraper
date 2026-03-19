@@ -43,7 +43,7 @@ def clearHandlers(name=None):
         except Exception as e:
             # Basic error handling (optional)
             print(f"Error closing handler: {str(e)}")
-    
+
     # Safely shut down the background queue listener to prevent orphaned threads
     if hasattr(other_logs, "log_queue_listener") and other_logs.log_queue_listener:
         other_logs.log_queue_listener.stop()

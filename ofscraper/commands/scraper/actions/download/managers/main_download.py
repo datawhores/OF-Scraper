@@ -151,12 +151,12 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
-            
+
             async with c.requests_async(
                 url=ele.url,
                 stream=True,
                 headers=headers,
-                total_timeout=None,               
+                total_timeout=None,
                 read_timeout=get_chunk_timeout(),
             ) as r:
                 total = int(r.headers["content-length"])
@@ -241,21 +241,21 @@ class MainDownloadManager(DownloadManager):
                 tempholderObj.tempfilepath, "ab"
             ).__aenter__()
             chunk_iter = res.iter_chunked(get_chunk_size())
-            
+
             while True:
                 try:
                     chunk = await chunk_iter.__anext__()
                     await fileobject.write(chunk)
                     send_chunk_msg(ele, total, tempholderObj)
                 except StopAsyncIteration:
-                    break 
-                    
+                    break
+
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
             common_globals.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )
-            raise Exception("Chunk download timed out") 
+            raise Exception("Chunk download timed out")
         except Exception as E:
             common_globals.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
@@ -308,10 +308,7 @@ class MainDownloadManager(DownloadManager):
             partial(common_paths.moveHelper, temp, path_to_file, ele),
         )
 
-        (
-            common_paths.addGlobalDir(placeholderObj.filedir)
-    
-        )
+        (common_paths.addGlobalDir(placeholderObj.filedir))
 
         # 4. Set File Dates
         if ele.postdate:

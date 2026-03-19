@@ -5,11 +5,11 @@ import sqlite3
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 
-import tenacity 
+import tenacity
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.of_env.of_env as of_env 
+import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")
 
@@ -27,7 +27,7 @@ def operation_wrapper_async(func: abc.Callable):
             retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
             wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
             stop=tenacity.stop_after_attempt(5),
-            reraise=True
+            reraise=True,
         )
         def _db_work():
             conn = None
@@ -43,7 +43,7 @@ def operation_wrapper_async(func: abc.Callable):
                 conn = sqlite3.connect(
                     database_path, check_same_thread=False, timeout=db_timeout
                 )
-                
+
                 # 1. Set the PRAGMAs FIRST (Configure the engine)
                 conn.execute("PRAGMA journal_mode=WAL;")
                 conn.execute("PRAGMA synchronous=NORMAL;")
@@ -80,7 +80,7 @@ def operation_wrapper(func: abc.Callable):
         retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
         wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
         stop=tenacity.stop_after_attempt(5),
-        reraise=True
+        reraise=True,
     )
     def inner(*args, **kwargs):
         conn = None
@@ -102,13 +102,13 @@ def operation_wrapper(func: abc.Callable):
             # 1. Set the PRAGMAs FIRST
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA synchronous=NORMAL;")
-            
+
             # The RAM-Safe Speed Boosters
             conn.execute("PRAGMA mmap_size=268435456;")
             conn.execute("PRAGMA cache_size=-32768;")
-            
+
             conn.row_factory = sqlite3.Row
-            
+
             conn.execute("BEGIN IMMEDIATE;")
 
             return func(*args, **kwargs, conn=conn)

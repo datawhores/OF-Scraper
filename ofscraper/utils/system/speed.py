@@ -9,6 +9,7 @@ _previous_stats = None
 _previous_time = None
 _previous_speed = 0
 
+
 def get_download_speed():
     """
     Calculates the disk write speed (bytes per second) of the current process.
@@ -33,8 +34,10 @@ def get_download_speed():
         # Calculate new speed
         bytes_written = curr_stats.write_bytes - _previous_stats.write_bytes
         time_elapsed = curr_time - _previous_time
-        new_speed = bytes_written / time_elapsed if time_elapsed > 0 else _previous_speed
-        
+        new_speed = (
+            bytes_written / time_elapsed if time_elapsed > 0 else _previous_speed
+        )
+
         # Update cache
         _previous_stats = curr_stats
         _previous_time = curr_time

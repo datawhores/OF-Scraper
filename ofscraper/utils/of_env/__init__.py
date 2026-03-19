@@ -48,8 +48,7 @@ from .values.req.req import (
     load_network_config,
 )  # From req/req.py (the "big one" with timeouts, semaphores etc.)
 from .values.req.ratelimit import load_ratelimit_config
-from.values.req.auth import load_auth_config
-
+from .values.req.auth import load_auth_config
 
 # Nested 'url' directory
 from .values.url.other_url import load_other_urls_config  # From url/other_url.py
@@ -114,8 +113,7 @@ def get_all_configs(forced=False):
     all_settings.update(load_mpd_config())
     all_settings.update(load_network_config())
     all_settings.update(load_ratelimit_config())
-    all_settings.update( load_auth_config())
-
+    all_settings.update(load_auth_config())
 
     # Nested 'url' directory
     all_settings.update(load_other_urls_config())
