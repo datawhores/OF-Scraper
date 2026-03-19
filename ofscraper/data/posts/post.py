@@ -477,26 +477,15 @@ async def process_tasks(model_id, username, ele, c=None):
     tasks = []
 
     # 1. Access the 'Single Source of Truth' for settings
-    # We pull the toggle from settings and the grace period from environment defaults
     skip_enabled = settings.get_settings().skip_unavailable_content
-    grace_days = of_env.getattr("EXPIRED_GRACE_DEFAULT") or 2
-    grace_period_seconds = grace_days * 86400
 
-    # 2. Calculate Expiration Status
-    is_expired = not ele.active
+    # 2. Simplified Wall Check
+    skip_wall = skip_enabled and not ele.active
 
-    # Using 'final_expired' which returns the float timestamp of expiration
-    past_grace = False
-    if is_expired and ele.final_expired > 0:
-        current_time = arrow.now().float_timestamp
-        past_grace = (current_time - ele.final_expired) > grace_period_seconds
-
-    # 3. Determine if we should skip "Wall" content
-    # Skip if: Toggle is ON AND Account is Expired AND we are beyond the grace period
-    skip_wall = skip_enabled and is_expired and past_grace
-
+    # 3. Area Selection Logic
     like_area = get_like_area()
     download_area = get_download_area()
+    final_post_areas = get_final_posts_area()
     final_post_areas = get_final_posts_area()
 
     max_count = max(

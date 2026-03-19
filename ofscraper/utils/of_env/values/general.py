@@ -115,8 +115,8 @@ def load_general_config():
         "OFSC_SKIP_UNAVAILABLE_DEFAULT", "True"
     ).lower() in ("true", "1")
 
-    # EXPIRED_GRACE_DEFAULT: Default to 2 days
+    # EXPIRED_GRACE_DEFAULT: Default to 1 day
     config["EXPIRED_GRACE_DEFAULT"] = int(
-        os.getenv("OFSC_EXPIRED_GRACE_DEFAULT", "2")
+        os.getenv("OFSC_EXPIRED_GRACE_DEFAULT", "1")
     )
     return config

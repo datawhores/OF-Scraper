@@ -1,6 +1,5 @@
 import arrow
-
-import ofscraper.utils.dates as dates
+import ofscraper.utils.of_env.of_env as of_env
 
 FORMAT = "YYYY-MM-DD"
 
@@ -125,12 +124,19 @@ class Model:
     # active subscription
     @property
     def active(self):
+        # 1. Permanent Active States
         if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
             return True
         elif self.renewed:
             return True
-        elif arrow.get(self.final_expired) > dates.getDateNow():
-            return True
+        # 2. Timestamp check with Grace Period
+        # We pull the grace window (default 2 days) from the environment
+        grace_days = of_env.getattr("EXPIRED_GRACE_DEFAULT")
+        grace_seconds = grace_days * 86400
+        if self.final_expired > 0:
+            # If the current time is less than (expiration + grace period).
+            # we treat it as active for filtering and scanning.
+            return (arrow.now().float_timestamp - self.final_expired) <= grace_seconds
         return False
 
     @property
