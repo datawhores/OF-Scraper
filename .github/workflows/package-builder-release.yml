@@ -20,11 +20,22 @@ on:
         description: "Publish to Docker Hub & GHCR (t/f)"
         required: true
         type: boolean
-      test_pypi: # NEW INPUT: For testing PyPI upload
+      test_pypi:
         description: "Perform a test upload to Test PyPI? (t/f)"
         required: true
         type: boolean
-        default: false # Default to false to prevent accidental test uploads
+        default: false
+      # --- NEW DISCORD TOGGLES ---
+      discord:
+        description: "Publish to Discord? (t/f)"
+        required: true
+        type: boolean
+        default: false
+      test_discord:
+        description: "Send to Secret Test Channel instead of Main Release Channel?"
+        required: false
+        type: boolean
+        default: false
 
 # Enable verbose debugging for the entire workflow
 env:
@@ -55,11 +66,11 @@ jobs:
       - name: Checkout Code (Optional Version or Current Branch)
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.version || github.ref }} # Checkout the specified tag/ref or default branch
-          fetch-depth: 0 # Needed for git log and tag comparisons
+          ref: ${{ inputs.version || github.ref }}
+          fetch-depth: 0
           fetch-tags: true
-          repository: ${{ github.repository }} # Explicitly pass the repository name (owner/repo)
-          github-server-url: ${{ github.server_url }} # Explicitly pass the GitHub server URL (https://github.com)
+          repository: ${{ github.repository }}
+          github-server-url: ${{ github.server_url }}
 
       - name: Make release_version.sh executable
         run: chmod +x ./scripts/release_version.sh
@@ -103,7 +114,6 @@ jobs:
           "${{ needs.determine_tags_and_versions.outputs.is_stable_release }}" \
           "${{ needs.determine_tags_and_versions.outputs.is_dev_release }}" \
           "${{ inputs.docker}}"
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -111,11 +121,11 @@ jobs:
 
   pypi:
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.pip}} # Runs for real PyPI if pip is true and test_pypi is false
+    if: ${{ inputs.pip }}
     runs-on: ubuntu-latest
     name: Publish to PyPI
     permissions:
-      id-token: write # Needed for OIDC authentication to PyPI (if using trusted publisher)
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,7 +163,7 @@ jobs:
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi }} # Using 'pypi' secret for main PyPI
+          TWINE_PASSWORD: ${{ secrets.pypi }}
         run: |
           source .venv/bin/activate
           twine upload "dist/*"
@@ -161,11 +171,11 @@ jobs:
 
   test_pypi_upload:
     needs: [determine_tags_and_versions]
-    if: ${{inputs.test_pypi }} # Runs for Test PyPI if pip is true and test_pypi is true
+    if: ${{ inputs.test_pypi }}
     runs-on: ubuntu-latest
     name: Publish to Test PyPI
     permissions:
-      id-token: write # Needed for OIDC authentication to Test PyPI
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -204,8 +214,8 @@ jobs:
       - name: Publish to Test PyPI with Twine
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi2 }} # Using 'pypi2' secret for Test PyPI
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ # Points to Test PyPI
+          TWINE_PASSWORD: ${{ secrets.pypi2 }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
         run: |
           source .venv/bin/activate
           twine upload "dist/*"
@@ -215,7 +225,7 @@ jobs:
     name: Build & Release Binaries
     needs: [determine_tags_and_versions]
     if: ${{ inputs.files }}
-    uses: ./.github/workflows/publish-release-binaries.yml # No @ref for local callable
+    uses: ./.github/workflows/publish-release-binaries.yml
     with:
       input_version: ${{ inputs.version }}
       package_version: ${{ needs.determine_tags_and_versions.outputs.package_version }}
@@ -224,8 +234,8 @@ jobs:
   call_docker_publish:
     name: Publish Docker Images
     needs: [determine_tags_and_versions, determine_docker_latest_logic]
-    if: ${{inputs.docker}} # This job should ONLY run if Docker publishing is requested.
-    uses: ./.github/workflows/publish-release-dockers.yml # No @ref for local callable
+    if: ${{ inputs.docker }}
+    uses: ./.github/workflows/publish-release-dockers.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -239,3 +249,53 @@ jobs:
       is_dev_release: ${{ fromJSON(needs.determine_tags_and_versions.outputs.is_dev_release) }}
       should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
+
+  # --- NEW DISCORD ANNOUNCEMENT JOB ---
+  discord_announcement:
+    name: Discord Release Post
+    needs: [determine_tags_and_versions]
+    # Only fire if manual discord toggle is on OR it's a stable release going to PIP
+    if: ${{ inputs.discord == true || (needs.determine_tags_and_versions.outputs.is_stable_release == 'true' && inputs.pip == true) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Route and Send Release Info
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.determine_tags_and_versions.outputs.package_version }}
+          # The Two Secret Webhooks needed
+          WEBHOOK_RELEASE: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          WEBHOOK_TEST: ${{ secrets.DISCORD_TEST_WEBHOOK }}
+        run: |
+          # 1. Regex Guard: Only 3.13.x or 3.14.x clean versions (prevents +build noise)
+          if [[ ! "$VERSION" =~ ^3\.(13|14)\.[0-9]+$ ]]; then
+            echo "Version $VERSION is not a standard stable release. Skipping Discord post."
+            exit 0
+          fi
+
+          # 2. Clean Routing Logic (Test vs Release)
+          if [ "${{ inputs.test_discord }}" = "true" ]; then
+            TARGET_URL=$WEBHOOK_TEST
+            echo "Routing to TEST channel."
+          else
+            TARGET_URL=$WEBHOOK_RELEASE
+            echo "Routing to RELEASE channel."
+          fi
+
+          # 3. Fetch Release Body and Post
+          BODY=$(gh release view "v$VERSION" --json body --jq '.body')
+          
+          python3 -c "
+          import os, requests
+          url = os.getenv('TARGET_URL')
+          ver = os.getenv('VERSION')
+          body = os.getenv('BODY')
+          
+          # Format the content
+          content = f'# Release {ver}\n{body}'
+          
+          # Stay under Discord's 2000 character limit
+          if len(content) > 1900:
+              content = content[:1900] + '\n\n... [Changelog Truncated]'
+          
+          requests.post(url, json={'content': content})
+          "
