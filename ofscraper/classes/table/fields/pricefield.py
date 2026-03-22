@@ -35,7 +35,8 @@ class PriceField(Horizontal):
         for ele in self.query(IntegerInput):
             ele.value = ""
     def compare(self, value):
-        if value.lower() == "free":
+        val_lower = str(value).lower()
+        if val_lower == "free":
             value = "0"
         maxvalue=float(self.query_one(f"#{self.filter_name}_max").value or 0)
         minvalue=float(self.query_one(f"#{self.filter_name}_min").value or 0) 
