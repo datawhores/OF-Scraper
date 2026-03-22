@@ -683,7 +683,7 @@ async def process_post_media(username, model_id, posts_array):
     collection = check_user_dict[model_id]["collection"]
     collection: PostCollection
     collection.add_posts(posts_array, overwrite=True)
-    media = collection.all_unique_media
+    media = collection.all_media
     await insert_media(username, model_id, media)
     return media
 
@@ -773,7 +773,7 @@ async def row_gather(username, model_id):
     collection = check_user_dict[model_id]["collection"]
     if not collection:
         raise Exception("No postcollection object found")
-    media = collection.all_unique_media
+    media = collection.all_media
     out = []
     log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
     try:
