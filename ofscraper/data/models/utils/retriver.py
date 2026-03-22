@@ -91,6 +91,8 @@ async def get_via_individual():
             "[bold red]No valid models found for the provided usernames. Skipping...[/bold red]"
         )
         return []
+    for model in models_objects:
+        logging.getLogger("shared").info(f"Successfully resolved target: [bold]{model.name}[/bold] (ID: {model.id})")
     return models_objects
 
 
