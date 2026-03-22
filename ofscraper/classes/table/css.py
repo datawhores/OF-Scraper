@@ -58,9 +58,9 @@ Widgets = """
     /* INLINE PAGINATION                         */
     /* ========================================= */
     .pagination_row {
-        height: 3;           
-        min-height: 3;       
-        max-height: 3;       
+        height: 4;           
+        min-height: 4;       
+        max-height: 4;       
         layout: horizontal;
         align: left middle;
         margin-top: 1; 
@@ -86,12 +86,28 @@ Widgets = """
         content-align: center middle;
     }
     
-    .page_input {
-        width: 14;
-        max-width: 14;
-        min-width: 10;
-        height: 3;         
+    .mini_label {
+        width: auto;
+        height: 3;
+        content-align: center middle;
+        margin-left: 2;
+        color: #888888; 
+    }
+
+    .page_input_small {
+        width: 10;
+        max-width: 10;
         margin: 0 1;
+    }
+
+    .page_input {
+        width: 10;
+        max-width: 12;
+        margin: 0 1;
+    }
+
+    .pagination_gap {
+        width: 4; 
     }
 """
 
@@ -147,30 +163,6 @@ CSS = (
     """
     #post_id, #media_id {
         column-span: 2;
-    }
-    .mini_label {
-        width: auto;
-        height: 3;
-        content-align: center middle;
-        margin-left: 2;
-        color: #888888; /* Dimmed text for labels */
-    }
-
-    .page_input_small {
-        width: 6;
-        max-width: 6;
-        height: 3;
-        margin: 0 1;
-    }
-
-    .page_input {
-        width: 10;
-        max-width: 10;
-        height: 3;
-        margin: 0 1;
-    }
-    .pagination_gap {
-        width: 4; /* Adjust this number for a larger or smaller gap */
     }
     """
     + Widgets

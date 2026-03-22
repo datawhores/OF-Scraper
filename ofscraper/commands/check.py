@@ -9,8 +9,6 @@ from copy import deepcopy
 from functools import partial
 
 from collections import defaultdict
-from ofscraper.utils.args.callbacks.arguments import username
-from rich.text import Text
 
 
 import arrow
@@ -129,17 +127,17 @@ def _get_data_from_row(row: dict):
     if not model_obj:
         raise Exception(f"Could not find model for username: {username}")
 
-    # Find the original, cached media object
-    cached_media = check_user_dict[model_obj.id]["collection"].find_media_item(media_id)
+    m_id = str(model_obj.id) 
+    
+    # Find the original, cached media object using the string key
+    cached_media = check_user_dict[m_id]["collection"].find_media_item(media_id)
     if not cached_media:
         raise Exception(f"No media data found for media_id {media_id} from {username}")
 
     # Create fresh, deep copies to work with.
-    # This ensures no state from a previous loop is carried over.
     fresh_media = deepcopy(cached_media)
     fresh_post = deepcopy(cached_media.post)
 
-    # The rest of the system will now use these fresh, stateless copies
     return fresh_media, fresh_post, username, model_obj.id
 
 
@@ -166,12 +164,15 @@ def _process_user_batch(
         log.warning(f"[{username}] Expiration Date: {expire_date}")
     except Exception as e:
         log.debug(f"Could not print subscription status for {username}: {e}")
+        
+    m_id = str(model_id)
+    
     for i in range(len(media_list)):
         key = row_list[i][0]
 
-        # DYNAMIC FETCH: Grab the absolute newest media object from the collection.
+        # DYNAMIC FETCH 1: Grab the absolute newest media object from the collection.
         try:
-            fresh_collection = check_user_dict[model_id]["collection"]
+            fresh_collection = check_user_dict[m_id]["collection"]
             media = fresh_collection.find_media_item(media_list[i].id) or media_list[i]
             post = media.post
         except Exception:
@@ -209,9 +210,9 @@ def _process_user_batch(
                     data_refill(model_id)
                     time.sleep(1)
 
-                    # Re-fetch the fresh object for the retry attempt
+                    # DYNAMIC FETCH 2: Inside the retry block
                     try:
-                        fresh_collection = check_user_dict[model_id]["collection"]
+                        fresh_collection = check_user_dict[m_id]["collection"]
                         media = fresh_collection.find_media_item(media.id) or media
                         post = media.post
                         log.info(
@@ -222,8 +223,6 @@ def _process_user_batch(
                 else:
                     log.info(f"Download failed for {media.filename}.")
                     app.app.update_cell_state(key, "[failed]", "bold red")
-
-
 # Initialize counter on the function object
 _process_user_batch.counter = 0
 
@@ -694,16 +693,15 @@ def url_helper():
 
 
 async def process_post_media(username, model_id, posts_array):
-    check_user_dict[model_id].setdefault(
-        "collection", PostCollection(username=username, model_id=model_id)
+    m_id = str(model_id)
+    check_user_dict[m_id].setdefault(
+        "collection", PostCollection(username=username, model_id=m_id)
     )
-    collection = check_user_dict[model_id]["collection"]
-    collection: PostCollection
+    collection = check_user_dict[m_id]["collection"]
     collection.add_posts(posts_array, overwrite=True)
     media = collection.all_media
     await insert_media(username, model_id, media)
     return media
-
 
 async def insert_media(username, model_id, media):
     await batch_mediainsert(
@@ -789,7 +787,8 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
-    collection = check_user_dict[model_id]["collection"]
+    m_id = str(model_id)
+    collection = check_user_dict[m_id]["collection"]
     if not collection:
         raise Exception("No postcollection object found")
     media = collection.all_media
