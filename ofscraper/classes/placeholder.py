@@ -436,16 +436,13 @@ class Textholders(basePlaceholder):
         self._variables.update({"config": config_file.open_config()})
         self._variables.update({"args": settings.get_args()})
 
+        sanitized_name = ele.text_trunicate(ele.file_sanitized_text)
+
         self._variables.update({"quality": "source"})
-        self._variables.update(
-            {"file_name": f"{ele.text_trunicate(ele.file_sanitized_text)}_source"}
-        )
-        self._variables.update(
-            {"original_filename": ele.text_trunicate(ele.file_sanitized_text)}
-        )
-        self._variables.update(
-            {"only_file_name": ele.text_trunicate(ele.file_sanitized_text)}
-        )
+        self._variables.update({"file_name": sanitized_name})
+        self._variables.update({"original_filename": sanitized_name})
+        self._variables.update({"only_file_name": sanitized_name})
+        self._variables.update({"only_filename": sanitized_name})
 
     @basePlaceholder.async_wrapper
     async def getmediadir(self, root=None, create=True):
