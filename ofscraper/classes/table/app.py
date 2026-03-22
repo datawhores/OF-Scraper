@@ -338,36 +338,40 @@ class InputApp(App):
 
     def _sort_runner(self, key):
         def sort_key_func(x):
-            if key == "number":
-                return int(x.get("number", 0))
-            if key == "post_media_count":
-                return int(x.get("post_media_count", 0))
-            if key == "price":
-                return (
-                    0
-                    if str(x.get("price")).lower() == "free"
-                    else float(x.get("price", 0))
-                )
-            if key == "length":
-                return (
-                    arrow.get(x.get("length", "0:0:0"), ["h:m:s"]).timestamp()
-                    if x.get("length") not in {"N/A", "N\A"}
-                    else 0
-                )
-            if key == "post_date":
-                return (
-                    arrow.get(x.get("post_date")).timestamp()
-                    if str(x.get("post_date")) != "Probably Deleted"
-                    else 0
-                )
-            if key in {"post_id", "media_id"}:
-                return int(x.get(key, 0))
-            if key == "other_posts_with_media":
-                return len(x.get("other_posts_with_media", []))
-            return str(x.get(key, ""))
+            is_empty = False
+            sort_val = 0
+            # 1. Extract the raw value and check if it's "Empty/Invalid"
+            raw_val = x.get(key)
+            if key == "length" and raw_val in {"N/A", "N\\A"}:
+                is_empty = True
+            elif key == "post_date" and str(raw_val) == "Probably Deleted":
+                is_empty = True
+            # 2. Parse the actual value if it IS valid
+            if not is_empty:
+                if key == "number":
+                    sort_val = int(raw_val or 0)
+                elif key == "post_media_count":
+                    sort_val = int(raw_val or 0)
+                elif key == "price":
+                    sort_val = 0 if str(raw_val).lower() == "free" else float(raw_val or 0)
+                elif key == "length":
+                    sort_val = arrow.get(raw_val or "0:0:0", ["h:m:s"]).timestamp()
+                elif key == "post_date":
+                    sort_val = arrow.get(raw_val).timestamp()
+                elif key in {"post_id", "media_id"}:
+                    sort_val = int(raw_val or 0)
+                elif key == "other_posts_with_media":
+                    sort_val = len(raw_val or [])
+                else:
+                    sort_val = str(raw_val or "")
+            if self._reverse:
+                group = 0 if is_empty else 1
+            else:
+                group = 1 if is_empty else 0
+            return (group, sort_val)
 
+        # Apply the native python sort using our custom tuple logic
         self.table_data.sort(key=sort_key_func, reverse=self._reverse)
-
     def set_reverse(self, key=None):
         if not self._sortkey:
             self._reverse = False
