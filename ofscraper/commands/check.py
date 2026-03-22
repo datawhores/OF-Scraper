@@ -752,7 +752,7 @@ def download_type_helper(ele):
         return "protected"
     elif ele.url:
         return "normal"
-    return "n/a"
+    return "unknown"
 
 
 def datehelper(date):
