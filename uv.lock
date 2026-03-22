@@ -1041,6 +1041,9 @@ dev = [
 docs = [
     { name = "sphinx-argparse" },
 ]
+ffmpeg = [
+    { name = "pyffmpeg" },
+]
 test = [
     { name = "coverage" },
     { name = "pytest" },
@@ -1048,11 +1051,6 @@ test = [
     { name = "pytest-mock" },
     { name = "random-emoji" },
     { name = "random-unicode-emoji" },
-]
-
-[package.dev-dependencies]
-ffmpeg = [
-    { name = "pyffmpeg" },
 ]
 
 [package.metadata]
@@ -1086,6 +1084,7 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = "~=3.0.43" },
     { name = "psutil", specifier = "~=5.9.8" },
     { name = "pycryptodome", specifier = "~=3.20.0" },
+    { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = ">=2.5.2.3.1" },
     { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pynumparser", specifier = "~=1.4.1" },
     { name = "pytest", marker = "extra == 'test'", specifier = "~=7.3.1" },
@@ -1109,9 +1108,6 @@ requires-dist = [
     { name = "xxhash", specifier = "~=3.4.1" },
 ]
 provides-extras = ["dev", "docs", "ffmpeg", "test"]
-
-[package.metadata.requires-dev]
-ffmpeg = [{ name = "pyffmpeg", specifier = ">=2.5.2.3.1" }]
 
 [[package]]
 name = "packaging"
