@@ -3,8 +3,7 @@ Widgets = """
         display: none;
     }
     
-    /* Forces inputs to take full width of the sidebar grid */
-    Widget {
+    Sidebar Widget {
         column-span: 4;
         row-span: 2;
     }
@@ -20,9 +19,6 @@ Widgets = """
         margin: 0 1; 
     }
 
-    /* ========================================= */
-    /* NEW TABS ROW                              */
-    /* ========================================= */
     #tabs_row {
         height: 3;
         margin-top: 1;
@@ -30,89 +26,107 @@ Widgets = """
     }
 
     /* ========================================= */
-    /* 4-COLUMN HEADER STYLING                   */
+    /* HEADER & PAGINATION STYLING               */
     /* ========================================= */
-    #header_top_row {
+    .header_top_row {
         height: auto; 
-        min-height: 8; 
         layout: horizontal;
         margin-bottom: 0;
     }
 
-    #trackers_column, #page_info_column, #toggles_column, #instructions_column {
+    .trackers_column, .page_info_column, .toggles_column, .info_column, .instructions_column {
         width: 1fr; 
-        height: 100%;
+        height: auto;
         content-align: left top;
     }
 
-    #instructions_column {
+    .instructions_column {
         width: 1.2fr;
         padding-left: 1;
     }
-
+    
     .header_divider {
         height: 100%;
         margin: 0 1;
     }
     
-    #table_instructions {
-        text-align: left;
-        width: 100%;
-    }
-
     Rule {
         margin: 0;
     }
 
-    #button_row {
-        height: 3;
-        margin-top: 1;
-        margin-bottom: 1;
+    /* ========================================= */
+    /* INLINE PAGINATION                         */
+    /* ========================================= */
+    .pagination_row {
+        height: 3;           
+        min-height: 3;       
+        max-height: 3;       
+        layout: horizontal;
+        align: left middle;
+        margin-top: 1; 
+        margin-bottom: 0;
+        width: 100%;
+    }
+    
+    .page_btn {
+        width: auto;
+        min-width: 3;
+        height: 3;           
+        margin: 0 1;
+    }
+
+    .page_btn:disabled {
+        display: none; 
+    }
+    
+    .page_label {
+        width: auto; 
+        height: 3;          
+        margin: 0 2;
+        content-align: center middle;
+    }
+    
+    .page_input {
+        width: 14;
+        max-width: 14;
+        min-width: 10;
+        height: 3;         
+        margin: 0 1;
     }
 """
 
 Table = """
-/* Tell the switcher and page to strictly fill remaining space */
     ContentSwitcher {
         height: 1fr;
     }
     
-    #table_page {
-        height: 100%;
-        width: 100%;
-    }
-
-    #table_main {
-        height: 100%; 
-        min-height: 20;
-    }
-    #data_table {
-        margin-top: 0;
-        height: 1fr;
-        min-height: 20; 
-    }
-
-    #table_main {
+    /* 1. Page Ceiling: Prevents headers from scrolling off-screen */
+    #table_page, #cart_page {
         height: 1fr; 
-        min-height: 20;
+        width: 100%;
+        layout: vertical;
+        overflow: hidden; 
     }
 
-    #table_info_header {
-        height: auto;
-        margin-bottom: 1;
+    /* 2. Container: Using 1fr here allows it to expand to fill the page,
+       while padding-bottom: 1 protects the horizontal scrollbar. */
+    #table_main, #cart_table_main {
+        height: 1fr;
+        width: 100%;
+        padding-bottom: 1; 
     }
-
-    .table_info {
-        width: 1fr;
-        padding: 0 2;
+    
+    /* 3. The Table: height: auto allows it to be small when empty.
+       margin: 1 adds a clean buffer around the grid. */
+    #data_table, #cart_data_table {
+        margin: 1;
+        height: auto; 
+        width: 100%;
     }
 """
 
 Options = """
-    /* ========================================= */
-    /* RESTORED ORIGINAL SIDEBAR SETTINGS        */
-    /* ========================================= */
-    #options_sidebar, #page_option_sidebar, #download_option_sidebar {
+    #options_sidebar, #download_option_sidebar {
         width: 45%;
         dock: left;
         layer: sidebar;
@@ -127,19 +141,36 @@ Options = """
         grid-size: 4 60;
         margin-top: 2;
     }
-
-    #page_option {
-        height: 120;
-        layout: grid;
-        grid-size: 4 50;
-        margin-top: 2;
-    }
 """
 
 CSS = (
     """
     #post_id, #media_id {
         column-span: 2;
+    }
+    .mini_label {
+        width: auto;
+        height: 3;
+        content-align: center middle;
+        margin-left: 2;
+        color: #888888; /* Dimmed text for labels */
+    }
+
+    .page_input_small {
+        width: 6;
+        max-width: 6;
+        height: 3;
+        margin: 0 1;
+    }
+
+    .page_input {
+        width: 10;
+        max-width: 10;
+        height: 3;
+        margin: 0 1;
+    }
+    .pagination_gap {
+        width: 4; /* Adjust this number for a larger or smaller gap */
     }
     """
     + Widgets
