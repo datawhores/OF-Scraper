@@ -9,7 +9,7 @@ class PriceField(Horizontal):
     row-span:1;
     }
 
-    IntegerInput{
+   PriceField IntegerInput {
     width:1fr;
     }
 
