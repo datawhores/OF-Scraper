@@ -36,7 +36,7 @@ def pagination_bar(prefix: str):
         yield Static("Per Page:", classes="mini_label")
         yield IntegerInput(placeholder="100", id=f"{prefix}_per_page_input", classes="page_input")
         yield Static("Page:", classes="mini_label")
-        yield IntegerInput(placeholder="Number", id=f"{prefix}_page_input", classes="page_input_small")
+        yield IntegerInput(placeholder="Num", id=f"{prefix}_page_input", classes="page_input_small")
         yield Button("Go", id=f"{prefix}_go", classes="page_btn")
 
 def composer():
