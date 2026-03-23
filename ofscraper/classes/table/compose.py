@@ -80,7 +80,7 @@ def composer():
                 # Column 1: DB and Cart Info
                 with Vertical(classes="trackers_column"):
                     yield Static("", id="db_info_bar", markup=True)
-                    yield Static("", id="global_cart_info", markup=True)
+                    yield Static("", classes="global_cart_info", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
                 
                 # Column 2: View & Filter Info (RESTORED!)
@@ -154,18 +154,16 @@ def composer():
         with Vertical(id="cart_page"):
             with Horizontal(classes="header_top_row"):
                 with Vertical(classes="info_column"):
-                    yield Static("", id="global_cart_info", markup=True)
                     yield Button(">> Send Downloads to OF-Scraper", id="send_downloads")
-                yield Rule(orientation="vertical", classes="header_divider")
-                with Vertical(classes="toggles_column"):
-                    yield Static("[bold blue]Download Toggles:[/bold blue]", markup=True)
-                    yield Checkbox("Download Text", id="cart_text_toggle")
-                    yield Checkbox("Text Only (Skip Media)", id="cart_text_only_toggle")
+                    yield Static("", classes="global_cart_info", markup=True)
+
+                yield Checkbox("Download Text", id="cart_text_toggle")
+                yield Checkbox("Text Only (Skip Media)", id="cart_text_only_toggle")
                 yield Rule(orientation="vertical", classes="header_divider")
                 with Vertical(classes="instructions_column"):
                     yield Static(
                         "[bold yellow]Cart Management:[/bold yellow]\n"
-                        "• [bold]Click any cell[/bold] to instantly remove that item from the cart.\n"
+                        "• [bold]Click '[added]'[/bold] to instantly remove that item from the cart.\n"
                         "• Press [bold cyan](c)[/bold cyan] to remove all items currently visible on this page.\n"
                         "• Press [bold cyan](x)[/bold cyan] or [bold cyan]Shift+C[/bold cyan] to NUKE the entire cart.",
                         markup=True,
