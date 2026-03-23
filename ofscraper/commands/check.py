@@ -787,13 +787,18 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
+    
     m_id = str(model_id)
-    collection = check_user_dict[m_id]["collection"]
+    collection = check_user_dict[m_id].get("collection")
+    
     if not collection:
         raise Exception("No postcollection object found")
+        
     media = collection.all_media
     out = []
+    
     log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
+    
     try:
         sorted_media = sorted(media, key=lambda x: x.date, reverse=True)
     except Exception:
@@ -804,11 +809,14 @@ async def row_gather(username, model_id):
         is_unlocked = unlocked_helper(ele)
         is_downloaded = (ele.id, ele.post_id) in downloaded
         post_media_len = len(ele._post.post_media)
+        dl_type = download_type_helper(ele) # Calculate once for efficiency
 
         if is_downloaded:
             cart_state = "[downloaded]"
         elif not is_unlocked:
             cart_state = "Not Unlocked"
+        elif dl_type == "unknown":
+            cart_state = "Unknown"
         else:
             cart_state = "[]"
 
@@ -823,7 +831,7 @@ async def row_gather(username, model_id):
                 "username": username,
                 "downloaded": is_downloaded,
                 "unlocked": is_unlocked,
-                "download_type": download_type_helper(ele),
+                "download_type": dl_type,
                 "other_posts_with_media": other_posts,
                 "post_media_count": post_media_len,
                 "mediatype": ele.mediatype.capitalize(),
