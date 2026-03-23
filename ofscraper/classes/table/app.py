@@ -684,7 +684,8 @@ class InputApp(App):
         downloading = sum(1 for row in self.table_data if row["download_cart"] == "[downloading]")
         try:
             cart_line = f"[bold blue]Cart:[/bold blue]      \[Queued: {in_cart}] \[Active: {downloading}]"
-            self.query_one("#global_cart_info").update(f"{cart_line}")
+            for widget in self.query(".global_cart_info"):
+                widget.update(cart_line)
         except:
             pass
 
