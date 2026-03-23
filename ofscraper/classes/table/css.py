@@ -53,6 +53,13 @@ Widgets = """
     Rule {
         margin: 0;
     }
+    #main_action_row {
+        height: 3;
+        min-height: 3;
+        max-height: 3;
+        margin-top: 1;
+        margin-bottom: 0;
+    }
 
     /* ========================================= */
     /* INLINE PAGINATION                         */

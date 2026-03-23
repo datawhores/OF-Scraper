@@ -93,7 +93,6 @@ def composer():
                     yield Static("[bold blue]Sidebar Controls:[/bold blue]", markup=True)
                     yield Static("Options Menu:  [bold cyan]Ctrl+S[/bold cyan]", id="label_opt_sidebar", markup=True)
                     yield Static("Download Menu: [bold cyan]Ctrl+D[/bold cyan]", id="label_dl_sidebar", markup=True)
-                    yield Button("Reset Filters", id="reset")
                 yield Rule(orientation="vertical", classes="header_divider")
     
                 # Column 4: Instructions
@@ -105,8 +104,12 @@ def composer():
                         "[bold red]Clear Cart:[/bold red] Page (c) | All Filtered ([bold cyan]Shift+C[/bold cyan]) | Nuke (x)",
                         id="table_instructions",
                         markup=True,
-                    )            
-                        # Inline Pagination
+                    )
+            with Horizontal(id="main_action_row"):
+                yield Button(">> Send Downloads to OF-Scraper", id="send_downloads_main")
+                yield Button("Reset Filters", id="reset")
+            
+            # Inline Pagination
             with Horizontal(classes="pagination_row"):
                 yield from pagination_bar("main")
 
@@ -163,7 +166,8 @@ def composer():
                 with Vertical(classes="instructions_column"):
                     yield Static(
                         "[bold yellow]Cart Management:[/bold yellow]\n"
-                        "• [bold]Click '[added]'[/bold] to instantly remove that item from the cart.\n"
+                        "• [bold]Click '\\[added]'[/bold] to instantly remove that item from the cart.\n"
+                        "• [bold]Click 'Download Cart'[/bold] (the column header) to clear this entire page.\n"
                         "• Press [bold cyan](c)[/bold cyan] to remove all items currently visible on this page.\n"
                         "• Press [bold cyan](x)[/bold cyan] or [bold cyan]Shift+C[/bold cyan] to NUKE the entire cart.",
                         markup=True,
