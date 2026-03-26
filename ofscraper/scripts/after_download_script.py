@@ -16,12 +16,12 @@ async def after_download_script(final_path: Union[str, pathlib.Path]):
     script_path = settings.get_settings().after_download_script
 
     if not script_path:
-        log.debug("After download script is not configured. Skipping.")
+        log.debug("After download script is not configured; skipping execution")
         return
 
-    if not os.path.exists(script_path):
+    elif not os.path.exists(script_path):
         log.info(
-            f"After download script path is invalid: '{script_path}'. Aborting execution."
+            f"After download script path is invalid: '{script_path}'. Aborting after download script."
         )
         return
 

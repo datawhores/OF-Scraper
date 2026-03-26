@@ -17,11 +17,17 @@ def after_download_action_script(username, media, posts=None, action=None):
     if not settings.get_settings().after_action_script:
         return
     script_path = settings.get_settings().after_action_script
-    if not script_path or not os.path.exists(script_path):
-        log.info(
-            f"After download action script path is invalid or not configured: '{script_path}'. Aborting after download action script."
+    if not script_path:
+        log.debug(
+            "After download action script is disabled ; skipping execution"
         )
         return
+    elif not os.path.exists(script_path):
+        log.info(
+            f"After download action script path is invalid: '{script_path}'. Aborting after download action script."
+        )
+        return
+
 
     userdata = manager.Manager.current_model_manager.get_model(username)
     if not userdata:

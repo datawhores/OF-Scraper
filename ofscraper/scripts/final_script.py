@@ -12,14 +12,13 @@ import ofscraper.utils.of_env.of_env as env
 
 def final_script():
     log = logging.getLogger("shared")
-    if not settings.get_settings().post_script:
-        log.debug("Final script skipped: post_script setting is disabled.")
+    script_path=settings.get_settings().post_script
+    if not script_path:
+        log.debug("Final script is disabled; skipping excution")
         return
-
-    script_path = settings.get_settings().post_script
-    if not script_path or not os.path.exists(script_path):
+    elif not os.path.exists(script_path):
         log.info(
-            f"Post script path is invalid or not configured: '{script_path}'. Aborting final script."
+            f"Post script path is invalid: '{script_path}'. Aborting final script."
         )
         return
 

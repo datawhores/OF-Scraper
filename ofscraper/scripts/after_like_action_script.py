@@ -14,14 +14,17 @@ import ofscraper.utils.of_env.of_env as env
 def after_like_action_script(username, media, posts=None, action=None):
     log = logging.getLogger("shared")
     action = action or "like"
-    if not settings.get_settings().after_action_script:
-        return
     script_path = settings.get_settings().after_action_script
-    if not script_path or not os.path.exists(script_path):
+
+    if not script_path:
+        log.debug("after like action script is disabled; skipping excution")
+        return
+    elif not os.path.exists(script_path):
         log.info(
-            f"After like action script path is invalid or not configured: '{script_path}'. Aborting after like action script."
+            f"After like action script path is invalid: '{script_path}'. Aborting after like action script."
         )
         return
+
 
     userdata = manager.Manager.current_model_manager.get_model(username)
     if not userdata:

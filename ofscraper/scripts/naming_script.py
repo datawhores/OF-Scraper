@@ -14,14 +14,17 @@ from ofscraper.classes.of.media import Media
 
 async def naming_script(dir, file, ele): # Made async
     log = logging.getLogger("shared")
+    script_path = settings.get_settings().naming_script
 
-    if not settings.get_settings().naming_script:
+    if not script_path:
+        log.debug(
+            "naming script is disabled via settings; skipping excution"
+        )
         return
 
-    script_path = settings.get_settings().naming_script
-    if not script_path or not os.path.exists(script_path):
+    elif not os.path.exists(script_path):
         log.info(
-            f"naming script path is invalid or not configured: '{script_path}'. Aborting final script."
+            f"naming script path is invalid: '{script_path}'. Aborting final script."
         )
         return
 
