@@ -8,7 +8,7 @@ from ofscraper.utils.args.types.choice import MutuallyExclusiveMultichoice
 daemon_option = click.option(
     "-d",
     "--daemon",
-    help="Run script in the background. Set value to minimum minutes between script runs. Overdue runs will run as soon as previous run finishes",
+    help="Run script in the background. Set value for how many minutes between script runs",
     type=float,
 )
 
