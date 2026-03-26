@@ -36,11 +36,11 @@ def load_system_config():
 
     # Set log level for FFmpeg operations
     config["FFMPEG_SUBPROCESS_LEVEL"] = int(
-        os.getenv("OFSC_FFMPEG_SUBPROCESS_LEVEL", "0")
+        os.getenv("OFSC_FFMPEG_SUBPROCESS_LEVEL", "10")
     )
     # Set log level for FFprobe operations
     config["FFPROBE_SUBPROCESS_LEVEL"] = int(
-        os.getenv("OFSC_FFPROBE_SUBPROCESS_LEVEL", "0")
+        os.getenv("OFSC_FFPROBE_SUBPROCESS_LEVEL", "10")
     )
 
     # Free Space
