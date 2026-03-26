@@ -42,6 +42,8 @@ def print_system_log():
     log = logging.getLogger("shared")
     # print info
     log.info(f"Log Level: {settings.get_settings().log_level}")
+    log.info(f"Output Level: {settings.get_settings().output_level}")
+    log.info(f"Discord Level: {settings.get_settings().discord_level}")
     log.info(f"version: {__version__}")
     log.debug(platform.platform())
     log.info(f"config path: {str(common_paths.get_config_path())}")
