@@ -102,16 +102,20 @@ def process_download_queue():
                 )
 
             except Exception as e:
-                log.info(
+                log.debug(
                     f"An error occurred while processing the batch for {username}."
                 )
                 log.traceback_(e)
 
         # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
-        final_action()
-        manager.Manager.current_model_manager.clear_queue("download")
-        manager.Manager.stats_manager.clear_activity_stats("download")
-        log.info("Download processing complete. Waiting for new items...")
+        try:
+            final_action()
+            manager.Manager.current_model_manager.clear_scrape_queues()
+            manager.Manager.stats_manager.clear_scraper_activity_stats()
+            log.info("Download processing complete. Waiting for new items...")
+        except Exception as e:
+            log.debug(f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}")
+            log.traceback_(traceback.format_exc())
 
 
 def _get_data_from_row(row: dict):
