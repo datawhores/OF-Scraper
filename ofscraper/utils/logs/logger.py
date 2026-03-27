@@ -36,18 +36,12 @@ def get_shared_logger(name=None):
 
 def clearHandlers(name=None):
     log = logging.getLogger(name or "shared")
-    for handler in log.handlers[:]:  # Iterate over a copy of the list
+    for handler in log.handlers[:]: 
         try:
             log.removeHandler(handler)
-            handler.close()  # Release resources (critical for file handlers)
+            handler.close() 
         except Exception as e:
-            # Basic error handling (optional)
-            print(f"Error closing handler: {str(e)}")
-
-    # Safely shut down the background queue listener to prevent orphaned threads
-    if hasattr(other_logs, "log_queue_listener") and other_logs.log_queue_listener:
-        other_logs.log_queue_listener.stop()
-        other_logs.log_queue_listener = None
+            pass
 
 
 def resetLogger():
