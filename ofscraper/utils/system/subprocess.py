@@ -4,6 +4,17 @@ import logging
 import asyncio
 import ofscraper.utils.of_env.of_env as of_env
 
+def _format_subprocess_output(text_output):
+    """
+    Sanitizes subprocess output. Crucial for FFmpeg, which uses \r to overwrite 
+    terminal lines, causing massive garbled strings in standard log files.
+    """
+    if not text_output:
+        return ""
+    if isinstance(text_output, bytes):
+        text_output = text_output.decode("utf-8", errors="ignore")
+    # Replace carriage returns with proper newlines so log files can read it
+    return text_output.replace("\r", "\n").strip()
 
 def run(
     *args,
@@ -16,12 +27,7 @@ def run(
     timeout=600, 
     **kwargs,
 ):
-    """
-    Executes a command, automatically using the current Python interpreter
-    for .py files.
-    """
     log = log or logging.getLogger("shared")
-
     cmd_args = list(args[0])
 
     if (cmd_args and isinstance(cmd_args[0], str) and cmd_args[0].lower().endswith(".py")):
@@ -29,38 +35,35 @@ def run(
 
     name = name or " ".join(cmd_args)
 
-    if level is None:
-        level = int(of_env.getattr("LOG_SUBPROCESS_LEVEL", "0"))
+    level = int(level) if level is not None else int(of_env.getattr("LOG_SUBPROCESS_LEVEL") or 0)
 
     final_args = (cmd_args,) + args[1:]
 
-    stdout = stdout if stdout else subprocess.PIPE
-    stderr = stderr if stderr else subprocess.PIPE
+    # If capture_output is True, subprocess.run handles the pipes automatically.
     if capture_output:
-        stdout = None  
-        stderr = None
+        kwargs["capture_output"] = True
+    else:
+        # If False, we respect whatever custom pipes were passed (or let them leak to terminal if None)
+        kwargs["stdout"] = stdout
+        kwargs["stderr"] = stderr
+    # -----------------------
 
     try:
         t = subprocess.run(
             *final_args,
-            stdout=stdout,
-            stderr=stderr,
-            capture_output=capture_output,
             timeout=timeout,
             **kwargs,
         )
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"Subprocess {name} timed out after {timeout} seconds.")
 
-    if level == 0:
+    if level <= 0:
         return t
 
-    if t.stdout:
-        output = t.stdout.decode(errors="ignore") if isinstance(t.stdout, bytes) else t.stdout
-        log.log(level, f"{name} stdout: {output.strip()}")
-    if t.stderr:
-        error = t.stderr.decode(errors="ignore") if isinstance(t.stderr, bytes) else t.stderr
-        log.log(level, f"{name} stderr: {error.strip()}")
+    if getattr(t, "stdout", None):
+        log.log(level, f"{name} stdout:\n{_format_subprocess_output(t.stdout)}")
+    if getattr(t, "stderr", None):
+        log.log(level, f"{name} stderr:\n{_format_subprocess_output(t.stderr)}")
 
     return t
 
@@ -167,10 +170,10 @@ async def async_run(
         return t
 
     if t.stdout:
-        output_str = t.stdout if isinstance(t.stdout, str) else t.stdout.decode(errors="ignore")
-        log.log(level, f"{name} stdout: {output_str.strip()}")
+        log.log(level, f"{name} stdout:\n{_format_subprocess_output(t.stdout)}")
     if t.stderr:
-        error_str = t.stderr if isinstance(t.stderr, str) else t.stderr.decode(errors="ignore")
-        log.log(level, f"{name} stderr: {error_str.strip()}")
+        log.log(level, f"{name} stderr:\n{_format_subprocess_output(t.stderr)}")
+
+    return t
 
     return t
