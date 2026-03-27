@@ -355,7 +355,7 @@ class InputApp(App):
         self.set_page()
         self.update_cart_info()
 
-# ==========================================
+    # ==========================================
     # --- Cart: Clear Actions ---
     # ==========================================
     def action_clear_current_page(self) -> None:
@@ -394,13 +394,16 @@ class InputApp(App):
 
     def action_clear_entire_cart(self) -> None:
         """Nukes everything currently marked as [added] in the global table."""
+        if self.is_sidebar_open: return
         for row in self.table_data:
             if row["download_cart"] == "[added]":
                 row["download_cart"] = "[]"
         
         self.set_page()
         self.update_cart_table()
-        self.update_cart_info()    # --- Rest of Table Logic ---
+        self.update_cart_info()    
+    
+    # --- Rest of Table Logic ---
     def add_to_row_queue(self):
         cart = []
         for row in self.table_data:
