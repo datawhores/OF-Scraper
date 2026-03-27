@@ -515,7 +515,7 @@ class ModelManager:
     def clear_scrape_queues(self) -> None:
         self.state.clear_scrape_queues()
 
-    def clear_all_queue(self) -> None:
+    def clear_all_queues(self) -> None:
         self.state.clear_all_queues()
 
     # =========================================================================
