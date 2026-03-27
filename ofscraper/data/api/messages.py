@@ -35,6 +35,7 @@ from ofscraper.db.operations_.messages import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.const as const
+from ofscraper.data.api.common.page import get_min_posts_batch
 
 
 API = "Messages"
@@ -177,10 +178,7 @@ async def get_split_array(model_id, username, after):
         x for x in postsDataArray if after <= float(x.get("created_at") or 0) <= before
     ]
 
-    min_posts = max(
-        len(oldmessages) // of_env.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
-        of_env.getattr("MIN_PAGE_POST_COUNT"),
-    )
+    min_posts = get_min_posts_batch(len(filteredArray), API)
 
     splitArrays = [
         filteredArray[i : i + min_posts]

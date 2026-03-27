@@ -36,6 +36,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 from ofscraper.data.api.common.timeline import process_posts_as_individual
 import ofscraper.utils.const as const
+from ofscraper.data.api.common.page import get_min_posts_batch
 
 
 API = "Streams"
@@ -133,10 +134,7 @@ async def get_split_array(model_id, username, after):
     oldstreams = await get_oldstreams(model_id, username)
     if len(oldstreams) == 0:
         return []
-    min_posts = max(
-        len(oldstreams) // of_env.getattr("REASONABLE_MAX_PAGE"),
-        of_env.getattr("MIN_PAGE_POST_COUNT"),
-    )
+    min_posts =get_min_posts_batch(len(oldstreams), API)
     postsDataArray = sorted(oldstreams, key=lambda x: x.get("created_at"))
     filteredArray = list(
         filter(

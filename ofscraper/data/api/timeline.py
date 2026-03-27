@@ -35,6 +35,8 @@ from ofscraper.db.operations_.posts import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.const as const
+from ofscraper.data.api.common.page import get_min_posts_batch
+
 log = logging.getLogger("shared")
 API = "Timeline"
 
@@ -140,10 +142,7 @@ async def get_split_array(model_id, username, after):
     oldtimeline = await get_oldtimeline(model_id, username)
     if len(oldtimeline) == 0:
         return []
-    min_posts = max(
-        len(oldtimeline) // of_env.getattr("REASONABLE_MAX_PAGE"),
-        of_env.getattr("MIN_PAGE_POST_COUNT"),
-    )
+    min_posts = get_min_posts_batch(len(oldtimeline), API)
     postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x["created_at"]))
     filteredArray = list(filter(lambda x: bool(x["created_at"]), postsDataArray))
     filteredArray = list(
