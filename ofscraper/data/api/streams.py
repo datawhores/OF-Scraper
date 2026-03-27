@@ -60,7 +60,7 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
 
 
 async def get_oldstreams(model_id, username):
-    if not settings.get_settings().api_cache_disabled:
+    if not settings.get_settings().api_cached_disabled:
         oldstreams = await get_streams_post_info(model_id=model_id, username=username)
     else:
         oldstreams = []

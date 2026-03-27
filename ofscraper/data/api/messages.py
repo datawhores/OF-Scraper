@@ -62,7 +62,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
 
 
 async def get_old_messages(model_id, username):
-    if not settings.get_settings().api_cache_disabled:
+    if not settings.get_settings().api_cached_disabled:
         oldmessages = await get_messages_post_info(model_id=model_id, username=username)
     else:
         oldmessages = []

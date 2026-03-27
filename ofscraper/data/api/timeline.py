@@ -117,7 +117,7 @@ async def process_tasks(generators):
 
 
 async def get_oldtimeline(model_id, username):
-    if not settings.get_settings().api_cache_disabled:
+    if not settings.get_settings().api_cached_disabled:
         oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )
