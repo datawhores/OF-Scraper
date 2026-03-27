@@ -1,5 +1,3 @@
-# ofscraper/data/api/common/pagination.py
-
 import logging
 import ofscraper.utils.of_env.of_env as of_env
 
