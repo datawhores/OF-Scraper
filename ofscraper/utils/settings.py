@@ -145,7 +145,7 @@ def merged_settings():
     merged.text_length = args.text_length or config_data.get_textlength()
     merged.size_max = args.size_max or config_data.get_filesize_max()
     merged.size_min = args.size_min or config_data.get_filesize_min()
-    merged.download_sems = args.downloadsem or config_data.get_download_semaphores()
+    merged.download_sems = args.download_sem or config_data.get_download_semaphores()
     merged.system_free_min = args.system_free_min or config_data.get_system_freesize()
     merged.max_post_count = args.max_count or config_data.get_max_post_count()
     merged.mediatypes = args.mediatypes or config_data.get_filter()

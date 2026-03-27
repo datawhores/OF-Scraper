@@ -24,11 +24,11 @@ download_sem_option = click.option(
     "-sd",
     "--downloadsem",
     "--downloadsems",
-    "--download-sems",
+    "--download-sems"
     "--download-sem",
     "--sems",
     "--sem",
-    "downloadsem",
+    "download_sem",
     help="Number of concurrent downloads per thread",
     default=None,
     type=int,
