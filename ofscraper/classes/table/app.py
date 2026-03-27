@@ -280,13 +280,13 @@ class InputApp(App):
     # --- Cart: Add Actions (Additive Only) ---
     # ==========================================
     def action_select_current_page(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
         self._add_items_to_cart(self._filtered_rows[start : start + num_page])
 
     def action_select_all_filtered(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         self._add_items_to_cart(self._filtered_rows)
 
     def _add_items_to_cart(self, rows_to_evaluate: list):
@@ -301,13 +301,13 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_unique_current_page(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
         self._run_unique_selection(self._filtered_rows[start : start + num_page])
 
     def action_select_unique_all_filtered(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         self._run_unique_selection(self._filtered_rows)
 
     def _run_unique_selection(self, rows_to_evaluate: list):
@@ -331,7 +331,7 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_page_undownloaded(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
 
@@ -345,7 +345,7 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_all_undownloaded(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
+        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
         for row in self._filtered_rows:
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
@@ -359,6 +359,7 @@ class InputApp(App):
     # --- Cart: Clear Actions ---
     # ==========================================
     def action_clear_current_page(self) -> None:
+        if self.is_sidebar_open: return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "table_page":
             num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
@@ -379,6 +380,7 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_clear_all_filtered(self) -> None:
+        if self.is_sidebar_open: return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "table_page":
             for row in self._filtered_rows:
@@ -717,5 +719,14 @@ class InputApp(App):
     @property
     def table(self):
         return self.query_one("#data_table")
+    @property
+    def is_sidebar_open(self) -> bool:
+        """Checks if any sidebar is currently visible."""
+        try:
+            opt_open = self.query_one("#options_sidebar").has_class("-show")
+            dl_open = self.query_one("#download_option_sidebar").has_class("-show")
+            return opt_open or dl_open
+        except Exception:
+            return False
 
 app = InputApp()
