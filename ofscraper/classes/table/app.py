@@ -40,11 +40,11 @@ class InputApp(App):
     def __init__(self, *args, **kwargs) -> None:
         self.sidebar = None
         self._filtered_rows = []
-        
+
         # Dedicated Pagination State
         self.main_page = 1
         self.cart_page = 1
-        
+
         super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -62,8 +62,8 @@ class InputApp(App):
 
     def on_ready(self) -> None:
         self.init_table()
-        self.init_cart_table()   
-        self.init_cart_toggles() 
+        self.init_cart_table()
+        self.init_cart_toggles()
         self.update_toggle_labels()
         self.set_active_tab("table")
         self.query_one("#main_per_page_input").value = str(AMOUNT_PER_PAGE)
@@ -88,7 +88,7 @@ class InputApp(App):
     def on_checkbox_changed(self, event: Checkbox.Changed):
         if event.checkbox.id not in ["cart_text_toggle", "cart_text_only_toggle"]:
             return
-            
+
         args = settings.get_args()
         if event.checkbox.id == "cart_text_toggle":
             args.text = event.checkbox.value
@@ -98,7 +98,7 @@ class InputApp(App):
             args.text_only = event.checkbox.value
             if event.checkbox.value and self.query_one("#cart_text_toggle").value:
                 self.query_one("#cart_text_toggle").value = False
-                
+
         settings.update_args(args)
 
     def on_data_table_cell_selected(self, event):
@@ -111,34 +111,38 @@ class InputApp(App):
                 for row in self._filtered_rows:
                     if str(row["index"]) == row_key:
                         # Prevent manually clicking locked or unknown media
-                        if row.get("download_type") == "unknown" or not row.get("unlocked"):
+                        if row.get("download_type") == "unknown" or not row.get(
+                            "unlocked"
+                        ):
                             break
-                            
+
                         current = row["download_cart"]
                         if current in {"[]", "[downloaded]", "[failed]"}:
                             row["download_cart"] = "[added]"
                         elif current == "[added]":
                             row["download_cart"] = "[]"
 
-                        styled_text = Text(row["download_cart"], style="bold light_goldenrod2")
+                        styled_text = Text(
+                            row["download_cart"], style="bold light_goldenrod2"
+                        )
                         table.update_cell_at_coord(event.coordinate, styled_text)
                         break
                 self.update_cart_info()
 
             elif table.id == "cart_data_table":
                 self.update_cell_state(row_key, "[]", "bold light_goldenrod2")
-                self.update_cart_table() 
+                self.update_cart_table()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         btn_id = event.button.id
-        
+
         # Tabs
         if btn_id in ["console", "table", "cart"]:
             if btn_id == "cart":
-                self.update_cart_table() 
+                self.update_cart_table()
             self.query_one(ContentSwitcher).current = f"{btn_id}_page"
             self.set_active_tab(btn_id)
-            
+
         # Top level controls
         elif btn_id == "reset":
             self.reset_table()
@@ -146,13 +150,13 @@ class InputApp(App):
             log.info("Adding Downloads to queue")
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
-            
+
         # Filter triggers
         elif btn_id in ["filter", "filter2"]:
             self.query_one("#options_sidebar").toggle_hidden()
             self.filter_table()
             self.update_toggle_labels()
-            
+
         # Pagination Logic
         elif btn_id in ["main_first", "main_prev", "main_next", "main_last", "main_go"]:
             self.handle_pagination("main", btn_id)
@@ -180,15 +184,21 @@ class InputApp(App):
 
     # --- Sidebars Actions ---
     def action_toggle_options_sidebar(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
-        for ele in filter(lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")):
+        if self.query_one(ContentSwitcher).current != "table_page":
+            return
+        for ele in filter(
+            lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")
+        ):
             ele.toggle_hidden()
         self.query_one("#options_sidebar").toggle_hidden()
         self.update_toggle_labels()
 
     def action_toggle_download_sidebar(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page": return
-        for ele in filter(lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")):
+        if self.query_one(ContentSwitcher).current != "table_page":
+            return
+        for ele in filter(
+            lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")
+        ):
             ele.toggle_hidden()
         self.query_one("#download_option_sidebar").toggle_hidden()
         self.update_toggle_labels()
@@ -198,8 +208,12 @@ class InputApp(App):
             opt_open = self.query_one("#options_sidebar").has_class("-show")
             dl_open = self.query_one("#download_option_sidebar").has_class("-show")
 
-            self.query_one("#label_opt_sidebar").update(f"Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]")
-            self.query_one("#label_dl_sidebar").update(f"Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]")
+            self.query_one("#label_opt_sidebar").update(
+                f"Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
+            )
+            self.query_one("#label_dl_sidebar").update(
+                f"Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
+            )
         except:
             pass
 
@@ -223,29 +237,33 @@ class InputApp(App):
         try:
             # .display = False completely removes the arrows from the screen!
             # We use > 1 so they only show up if you are on Page 2 or higher.
-            self.query_one(f"#{prefix}_first").display = (current_page > 1)
-            self.query_one(f"#{prefix}_prev").display = (current_page > 1)
-            
+            self.query_one(f"#{prefix}_first").display = current_page > 1
+            self.query_one(f"#{prefix}_prev").display = current_page > 1
+
             # We use < total_pages so they vanish when you hit the last page.
-            self.query_one(f"#{prefix}_next").display = (current_page < total_pages)
-            self.query_one(f"#{prefix}_last").display = (current_page < total_pages)
+            self.query_one(f"#{prefix}_next").display = current_page < total_pages
+            self.query_one(f"#{prefix}_last").display = current_page < total_pages
         except Exception as e:
             log.debug(f"Error updating pagination buttons: {e}")
 
     def handle_pagination(self, prefix, btn_id):
         # 1. Select the correct data source based on tab
-        rows = self._filtered_rows if prefix == "main" else [r for r in self.table_data if r.get("download_cart") == "[added]"]
-        
+        rows = (
+            self._filtered_rows
+            if prefix == "main"
+            else [r for r in self.table_data if r.get("download_cart") == "[added]"]
+        )
+
         per_page_node = self.query_one(f"#{prefix}_per_page_input")
         per_page_val = per_page_node.value
-        
+
         if per_page_val and str(per_page_val).isnumeric() and int(per_page_val) > 0:
             num_page = int(per_page_val)
         else:
             # If empty or invalid, force it back to 100
             num_page = AMOUNT_PER_PAGE
             per_page_node.value = str(AMOUNT_PER_PAGE)
-        
+
         # 3. Calculate Boundaries
         total_pages = max((len(rows) + num_page - 1) // num_page, 1)
         current_page = self.main_page if prefix == "main" else self.cart_page
@@ -265,7 +283,7 @@ class InputApp(App):
             target = target_node.value
             if target and str(target).isnumeric():
                 current_page = min(total_pages, max(1, int(target)))
-                target_node.value = "" # Clear the jump box after action
+                target_node.value = ""  # Clear the jump box after action
 
         # 5. Apply Changes
         current_page = min(total_pages, max(1, current_page))
@@ -280,17 +298,26 @@ class InputApp(App):
     # --- Cart: Add Actions (Additive Only) ---
     # ==========================================
     def action_select_current_page(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
         self._add_items_to_cart(self._filtered_rows[start : start + num_page])
 
     def action_select_all_filtered(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         self._add_items_to_cart(self._filtered_rows)
 
     def _add_items_to_cart(self, rows_to_evaluate: list):
-        if not rows_to_evaluate: return
+        if not rows_to_evaluate:
+            return
         for row in rows_to_evaluate:
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
@@ -301,26 +328,41 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_unique_current_page(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
         self._run_unique_selection(self._filtered_rows[start : start + num_page])
 
     def action_select_unique_all_filtered(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         self._run_unique_selection(self._filtered_rows)
 
     def _run_unique_selection(self, rows_to_evaluate: list):
-        if not rows_to_evaluate: return
+        if not rows_to_evaluate:
+            return
         eligible = [
-            r for r in rows_to_evaluate 
+            r
+            for r in rows_to_evaluate
             if r["download_cart"] in {"[]", "[downloaded]", "[failed]"}
             and r.get("download_type") != "unknown"
             and r.get("unlocked")
         ]
-        if not eligible: return
+        if not eligible:
+            return
 
-        global_cart_ids = {r["media_id"] for r in self.table_data if r["download_cart"] in {"[added]", "[downloading]"}}
+        global_cart_ids = {
+            r["media_id"]
+            for r in self.table_data
+            if r["download_cart"] in {"[added]", "[downloading]"}
+        }
         for row in eligible:
             m_id = row["media_id"]
             if m_id not in global_cart_ids:
@@ -331,7 +373,11 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_page_undownloaded(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
         start = (self.main_page - 1) * num_page
 
@@ -345,7 +391,11 @@ class InputApp(App):
         self.update_cart_info()
 
     def action_select_all_undownloaded(self) -> None:
-        if self.is_sidebar_open or self.query_one(ContentSwitcher).current != "table_page": return
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
         for row in self._filtered_rows:
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
@@ -359,28 +409,36 @@ class InputApp(App):
     # --- Cart: Clear Actions ---
     # ==========================================
     def action_clear_current_page(self) -> None:
-        if self.is_sidebar_open: return
+        if self.is_sidebar_open:
+            return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "table_page":
-            num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = int(
+                self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
+            )
             start = (self.main_page - 1) * num_page
             for row in self._filtered_rows[start : start + num_page]:
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
-                    
+
         elif active_tab == "cart_page":
-            cart_rows = [row for row in self.table_data if row.get("download_cart") == "[added]"]
-            num_page = int(self.query_one("#cart_per_page_input").value or AMOUNT_PER_PAGE)
+            cart_rows = [
+                row for row in self.table_data if row.get("download_cart") == "[added]"
+            ]
+            num_page = int(
+                self.query_one("#cart_per_page_input").value or AMOUNT_PER_PAGE
+            )
             start = (self.cart_page - 1) * num_page
             for row in cart_rows[start : start + num_page]:
                 row["download_cart"] = "[]"
-                
+
         self.set_page()
         self.update_cart_table()
         self.update_cart_info()
 
     def action_clear_all_filtered(self) -> None:
-        if self.is_sidebar_open: return
+        if self.is_sidebar_open:
+            return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "table_page":
             for row in self._filtered_rows:
@@ -390,19 +448,20 @@ class InputApp(App):
             self.update_cart_table()
             self.update_cart_info()
         elif active_tab == "cart_page":
-            self.action_clear_entire_cart() # Shift+C on the cart page nukes the cart
+            self.action_clear_entire_cart()  # Shift+C on the cart page nukes the cart
 
     def action_clear_entire_cart(self) -> None:
         """Nukes everything currently marked as [added] in the global table."""
-        if self.is_sidebar_open: return
+        if self.is_sidebar_open:
+            return
         for row in self.table_data:
             if row["download_cart"] == "[added]":
                 row["download_cart"] = "[]"
-        
+
         self.set_page()
         self.update_cart_table()
-        self.update_cart_info()    
-    
+        self.update_cart_info()
+
     # --- Rest of Table Logic ---
     def add_to_row_queue(self):
         cart = []
@@ -428,7 +487,9 @@ class InputApp(App):
                 break
 
         try:
-            self.table.update_cell_at_key(str(row_key), "download_cart", Text(new_state, style=style))
+            self.table.update_cell_at_key(
+                str(row_key), "download_cart", Text(new_state, style=style)
+            )
         except Exception:
             pass
 
@@ -459,14 +520,16 @@ class InputApp(App):
                 is_empty = True
             elif key == "post_date" and str(raw_val) == "Probably Deleted":
                 is_empty = True
-                
+
             if not is_empty:
                 if key == "number":
                     sort_val = int(raw_val or 0)
                 elif key == "post_media_count":
                     sort_val = int(raw_val or 0)
                 elif key == "price":
-                    sort_val = 0 if str(raw_val).lower() == "free" else float(raw_val or 0)
+                    sort_val = (
+                        0 if str(raw_val).lower() == "free" else float(raw_val or 0)
+                    )
                 elif key == "length":
                     sort_val = arrow.get(raw_val or "0:0:0", ["h:m:s"]).timestamp()
                 elif key == "post_date":
@@ -477,12 +540,12 @@ class InputApp(App):
                     sort_val = len(raw_val or [])
                 else:
                     sort_val = str(raw_val or "")
-                    
+
             if self._reverse:
                 group = 0 if is_empty else 1
             else:
                 group = 1 if is_empty else 0
-                
+
             return (group, sort_val)
 
         self.table_data.sort(key=sort_key_func, reverse=self._reverse)
@@ -513,7 +576,11 @@ class InputApp(App):
                     continue
                 try:
                     filter_node = self.query_one(f"#{name}")
-                    filter_rows2 = [row for row in filter_rows if filter_node.compare(str(row.get(name, "")))]
+                    filter_rows2 = [
+                        row
+                        for row in filter_rows
+                        if filter_node.compare(str(row.get(name, "")))
+                    ]
                     filter_rows = filter_rows2
                 except Exception as E:
                     log.debug(f"Error filtering {name}: {str(E)}")
@@ -533,7 +600,7 @@ class InputApp(App):
                 self.query_one(f"#{ele}").reset()
             except:
                 continue
-                
+
     # --- Cart Table Features ---
     def init_cart_table(self):
         self._insert_visible_table(self.query_one("#cart_data_table"))
@@ -547,23 +614,29 @@ class InputApp(App):
         try:
             cart_table = self.query_one("#cart_data_table")
             cart_table.clear()
-            
+
             # 1. Get all items currently in the cart
-            cart_rows = [row for row in self.table_data if row.get("download_cart") == "[added]"]
-            
+            cart_rows = [
+                row for row in self.table_data if row.get("download_cart") == "[added]"
+            ]
+
             # 2. Get the current "Per Page" value safely
             per_page_val = self.query_one("#cart_per_page_input").value
-            num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() else AMOUNT_PER_PAGE
-            
+            num_page = (
+                int(per_page_val)
+                if per_page_val and str(per_page_val).isnumeric()
+                else AMOUNT_PER_PAGE
+            )
+
             # 3. Calculate pagination boundaries
             total_pages = max((len(cart_rows) + num_page - 1) // num_page, 1)
-            
+
             # Boundary correction if items were removed and the current page no longer exists
             if self.cart_page > total_pages:
                 self.cart_page = total_pages
-                
+
             start = (self.cart_page - 1) * num_page
-            
+
             # 4. Add the rows to the table
             for count, row_dict in enumerate(cart_rows[start : start + num_page]):
                 styled_row = get_styled(row_dict)
@@ -571,19 +644,25 @@ class InputApp(App):
                 cart_table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
                 )
-                
+
             # 5. Update the UI text and disable/enable buttons dynamically
-            self.query_one("#cart_page_label").update(f"Page {self.cart_page} of {total_pages}")
+            self.query_one("#cart_page_label").update(
+                f"Page {self.cart_page} of {total_pages}"
+            )
             self.update_pagination_btns("cart", self.cart_page, total_pages)
-            
+
         except Exception as e:
             log.debug(f"Error updating cart table: {e}")
 
     def init_download_filter(self):
         if settings.get_settings().size_max:
-            self.query_one("#download_size_max").update_table_val(settings.get_settings().size_max)
+            self.query_one("#download_size_max").update_table_val(
+                settings.get_settings().size_max
+            )
         if settings.get_settings().size_min:
-            self.query_one("#download_size_min").update_table_val(settings.get_settings().size_min)
+            self.query_one("#download_size_min").update_table_val(
+                settings.get_settings().size_min
+            )
 
     def reset_table(self):
         self.reset_all_inputs()
@@ -614,17 +693,21 @@ class InputApp(App):
         with mutex:
             self.table.clear()
             rows = self._filtered_rows
-            
+
             # 1. Get the current "Per Page" value safely
             per_page_val = self.query_one("#main_per_page_input").value
-            num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() else AMOUNT_PER_PAGE
-            
+            num_page = (
+                int(per_page_val)
+                if per_page_val and str(per_page_val).isnumeric()
+                else AMOUNT_PER_PAGE
+            )
+
             # 2. Calculate pagination boundaries
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
-            
+
             if self.main_page > total_pages:
                 self.main_page = total_pages
-                
+
             start = (self.main_page - 1) * num_page
 
             # 3. Add the rows to the table
@@ -634,10 +717,12 @@ class InputApp(App):
                 self.table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
                 )
-                
+
             try:
-                self.query_one("#main_page_label").update(f"Page {self.main_page} of {total_pages}")
-                self.update_pagination_btns("main", self.main_page, total_pages) 
+                self.query_one("#main_page_label").update(
+                    f"Page {self.main_page} of {total_pages}"
+                )
+                self.update_pagination_btns("main", self.main_page, total_pages)
             except Exception:
                 pass
 
@@ -652,7 +737,7 @@ class InputApp(App):
 
     def _insert_visible_table(self, target_table=None):
         table = target_table if target_table is not None else self.table
-        table.clear(True) 
+        table.clear(True)
         table.fixed_rows = 0
         table.zebra_stripes = True
 
@@ -669,7 +754,7 @@ class InputApp(App):
             else:
                 label = base_label
 
-            table.add_column(label, key=str(ele), width=width)    
+            table.add_column(label, key=str(ele), width=width)
 
     def update_search_info(self):
         num_page = self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
@@ -678,20 +763,46 @@ class InputApp(App):
         clean_sort_name = re.sub("_", " ", sort_key).title()
 
         total_items = len(self.table_data)
-        unlocked_items = sum(1 for row in self.table_data if row.get("unlocked") is True)
+        unlocked_items = sum(
+            1 for row in self.table_data if row.get("unlocked") is True
+        )
 
         db_dl = sum(1 for row in self.table_data if row.get("downloaded") is True)
-        db_miss = sum(1 for row in self.table_data if row.get("unlocked") is True and not row.get("downloaded"))
+        db_miss = sum(
+            1
+            for row in self.table_data
+            if row.get("unlocked") is True and not row.get("downloaded")
+        )
 
-        undownloaded_rows = [row for row in self.table_data if row.get("unlocked") is True and not row.get("downloaded")]
-        unique_to_download = len(set(row.get("media_id") for row in undownloaded_rows if "media_id" in row))
+        undownloaded_rows = [
+            row
+            for row in self.table_data
+            if row.get("unlocked") is True and not row.get("downloaded")
+        ]
+        unique_to_download = len(
+            set(row.get("media_id") for row in undownloaded_rows if "media_id" in row)
+        )
 
         filtered_items = len(self._filtered_rows)
-        unique_items = len(set(row.get("media_id") for row in self._filtered_rows if "media_id" in row))
+        unique_items = len(
+            set(row.get("media_id") for row in self._filtered_rows if "media_id" in row)
+        )
 
-        vids = sum(1 for r in self._filtered_rows if str(r.get("mediatype")).lower() == "videos")
-        pics = sum(1 for r in self._filtered_rows if str(r.get("mediatype")).lower() == "images")
-        auds = sum(1 for r in self._filtered_rows if str(r.get("mediatype")).lower() == "audios")
+        vids = sum(
+            1
+            for r in self._filtered_rows
+            if str(r.get("mediatype")).lower() == "videos"
+        )
+        pics = sum(
+            1
+            for r in self._filtered_rows
+            if str(r.get("mediatype")).lower() == "images"
+        )
+        auds = sum(
+            1
+            for r in self._filtered_rows
+            if str(r.get("mediatype")).lower() == "audios"
+        )
 
         try:
             db_line_1 = f"[bold blue]Database:[/bold blue]  \\[Total: {total_items}] \\[Unlocked: {unlocked_items}]"
@@ -703,15 +814,21 @@ class InputApp(App):
             type_str = f"[bold blue]Media:[/bold blue]  \\[Vids: {vids}] \\[Pics: {pics}] \\[Aud: {auds}]"
 
             if filtered_items == 0:
-                self.query_one("#view_info_bar").update(f"{view_str}\n{filt_str}\n{type_str}\n[bold red]All Items Filtered Out[/bold red]")
+                self.query_one("#view_info_bar").update(
+                    f"{view_str}\n{filt_str}\n{type_str}\n[bold red]All Items Filtered Out[/bold red]"
+                )
             else:
-                self.query_one("#view_info_bar").update(f"{view_str}\n{filt_str}\n{type_str}")
+                self.query_one("#view_info_bar").update(
+                    f"{view_str}\n{filt_str}\n{type_str}"
+                )
         except:
             pass
 
     def update_cart_info(self):
         in_cart = sum(1 for row in self.table_data if row["download_cart"] == "[added]")
-        downloading = sum(1 for row in self.table_data if row["download_cart"] == "[downloading]")
+        downloading = sum(
+            1 for row in self.table_data if row["download_cart"] == "[downloading]"
+        )
         try:
             cart_line = f"[bold blue]Cart:[/bold blue]      \\[Queued: {in_cart}] \\[Active: {downloading}]"
             for widget in self.query(".global_cart_info"):
@@ -722,6 +839,7 @@ class InputApp(App):
     @property
     def table(self):
         return self.query_one("#data_table")
+
     @property
     def is_sidebar_open(self) -> bool:
         """Checks if any sidebar is currently visible."""
@@ -731,5 +849,6 @@ class InputApp(App):
             return opt_open or dl_open
         except Exception:
             return False
+
 
 app = InputApp()

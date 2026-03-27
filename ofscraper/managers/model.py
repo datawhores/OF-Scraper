@@ -73,10 +73,10 @@ class ModelManager:
         actions = list(settings.get_settings().actions or [])
         if settings.get_settings().command == "metadata":
             actions.append("metadata")
-            
+
         activities_to_process = self._get_activities(actions)
         final_selection = []
-        
+
         # Load all base data into memory first
         self._load_all_subs_if_needed()
 
@@ -89,21 +89,21 @@ class ModelManager:
             # INTERACTIVE MODE: Check if we have a leftover queue from a previous run
             existing_queued_users = [x.name for x in self.get_scrape_selected_models()]
             requires_new_selection = True
-            
+
             if existing_queued_users:
                 prompt_choice = None
                 while not prompt_choice:
-                        prompt_choice = prompts.reset_username_prompt()
-                        if prompt_choice == "No":
-                            requires_new_selection = False
-                        elif prompt_choice in {"Selection", "Selection_Strict"}:
-                            settings.resetUserSelect()
-                            if prompt_choice == "Selection":
-                                self._fetch_all_subs(force_refetch=True)
-                        else:
-                            console.get_shared_console().print(existing_queued_users)
-                            prompts.press_enter_to_continue()
-                            
+                    prompt_choice = prompts.reset_username_prompt()
+                    if prompt_choice == "No":
+                        requires_new_selection = False
+                    elif prompt_choice in {"Selection", "Selection_Strict"}:
+                        settings.resetUserSelect()
+                        if prompt_choice == "Selection":
+                            self._fetch_all_subs(force_refetch=True)
+                    else:
+                        console.get_shared_console().print(existing_queued_users)
+                        prompts.press_enter_to_continue()
+
             if requires_new_selection:
                 # Get a fresh selection. This leads down to the UI Menu.
                 final_selection = self._select_models_scraper()
@@ -129,8 +129,8 @@ class ModelManager:
     ) -> List[str]:
         """
         THE DIRECT INJECTION HIGHWAY:
-        Used primarily by 'Check' modes and specific automated actions. 
-        It bypasses menus and filters entirely. It takes the provided usernames/IDs, 
+        Used primarily by 'Check' modes and specific automated actions.
+        It bypasses menus and filters entirely. It takes the provided usernames/IDs,
         fetches their data if missing, and forces them straight into the processing queue.
         """
         with progress_utils.TemporaryTaskState(
@@ -138,7 +138,7 @@ class ModelManager:
         ):
             if not isinstance(usernames, list):
                 usernames = [usernames]
-                
+
             placeholder_prefix = of_env.getattr("DELETED_MODEL_PLACEHOLDER")
             username_set = set(usernames)
 
@@ -166,7 +166,7 @@ class ModelManager:
                     self._update_all_subs(fetched_models)
                 args.usernames = original_usernames
                 settings.update_args(args)
-                
+
             if placeholder_usernames:
                 log.info(
                     f"Creating placeholder models for: {', '.join(placeholder_usernames)}"
@@ -205,7 +205,6 @@ class ModelManager:
         else:
             log.info("Synchronization complete. No new models found.")
 
-
     # =========================================================================
     # 3. INTERACTIVE UI & FILTERING
     # =========================================================================
@@ -213,13 +212,13 @@ class ModelManager:
     def _select_models_scraper(self) -> List["Model"]:
         """
         SCRAPER-MODE ROUTER:
-        Internal selection logic called exclusively by 'prepare_scraper_activity' 
-        for main scraper operations. 
-        
+        Internal selection logic called exclusively by 'prepare_scraper_activity'
+        for main scraper operations.
+
         This method handles the decision tree for standard scraper runs:
         1. CLI Arguments: If '--username' is provided, it filters the current cache for matches.
         2. Daemon Mode: If running in the background, it uses previous or provided selections.
-        3. Interactive Prompt: If no explicit instructions exist, it launches the UI menu 
+        3. Interactive Prompt: If no explicit instructions exist, it launches the UI menu
            via 'retriver.get_selected_model'.
 
         Note: This is NOT used by 'add_models' (Check modes), which injects targets directly.
@@ -228,11 +227,13 @@ class ModelManager:
         is_daemon = settings.get_settings().daemon
 
         # Guard Clause 1: Daemon mode with a specific list of users.
-        if is_daemon and usernames and "ALL" not in usernames:  
+        if is_daemon and usernames and "ALL" not in usernames:
             allowed_names_and_ids = {str(x) for x in usernames}
             return [
-                model for model in self.all_subs 
-                if str(model.name) in allowed_names_and_ids or str(model.id) in allowed_names_and_ids
+                model
+                for model in self.all_subs
+                if str(model.name) in allowed_names_and_ids
+                or str(model.id) in allowed_names_and_ids
             ]
 
         # Guard Clause 2: Daemon mode with an existing selection and no new instructions.
@@ -252,17 +253,20 @@ class ModelManager:
             return [
                 model
                 for model in filtered_models.values()
-                if str(model.name) in allowed_names_and_ids or str(model.id) in allowed_names_and_ids
+                if str(model.name) in allowed_names_and_ids
+                or str(model.id) in allowed_names_and_ids
             ]
 
         # FINAL CASE: We must prompt for a selection.
         # This is where the interactive terminal UI menu is actually launched.
-        return retriver.get_selected_model(list(filtered_models.values()), existing_selection)
+        return retriver.get_selected_model(
+            list(filtered_models.values()), existing_selection
+        )
 
     def _filter_and_prompt_for_selection(self):
         """
         Applies active filters (like price, active status) to the loaded list.
-        If the filters are too strict and remove everyone, it forces the user 
+        If the filters are too strict and remove everyone, it forces the user
         to adjust the filters before proceeding.
         """
         while True:
@@ -281,17 +285,17 @@ class ModelManager:
     def setfilter(self):
         """Displays the interactive menu to modify filters."""
         prompt_actions = {
-                    "sort": prompts.modify_sort_prompt,
-                    "subtype": prompts.modify_subtype_prompt,
-                    "promo": prompts.modify_promo_prompt,
-                    "active": prompts.modify_active_prompt,
-                    "price": prompts.modify_prices_prompt,
-                    "list": prompts.modify_list_prompt,
+            "sort": prompts.modify_sort_prompt,
+            "subtype": prompts.modify_subtype_prompt,
+            "promo": prompts.modify_promo_prompt,
+            "active": prompts.modify_active_prompt,
+            "price": prompts.modify_prices_prompt,
+            "list": prompts.modify_list_prompt,
         }
         while True:
             self._print_filter_settings()
             choice = prompts.decide_filters_menu()
-            try:   
+            try:
                 if choice == "model_list":
                     break
                 original_args = settings.get_args()
@@ -303,13 +307,17 @@ class ModelManager:
                     new_args = resetUserFilters()
                 elif choice == "reset_list":
                     new_args.userlist = ["main"]
-                    new_args.blacklist = [""] 
+                    new_args.blacklist = [""]
                 elif choice == "rescan":
                     self._fetch_all_subs(force_refetch=True, reset=True)
 
                 if new_args:
-                    user_list_changed = set(original_args.userlist or []) != set(new_args.userlist or [])
-                    black_list_changed = set(original_args.blacklist or []) != set(new_args.blacklist or [])
+                    user_list_changed = set(original_args.userlist or []) != set(
+                        new_args.userlist or []
+                    )
+                    black_list_changed = set(original_args.blacklist or []) != set(
+                        new_args.blacklist or []
+                    )
 
                     settings.update_args(new_args)
                     if user_list_changed or black_list_changed:
@@ -357,12 +365,34 @@ class ModelManager:
         """Prints a readable summary of active filters to the console."""
         s = settings.get_settings()
         filter_attributes = [
-            "promo_price_min", "promo_price_max", "regular_price_min", "regular_price_max",
-            "current_price_min", "current_price_max", "renewal_price_min", "renewal_price_max",
-            "last_seen_before", "last_seen_after", "expired_before", "expired_after",
-            "subscribed_before", "subscribed_after", "sort", "desc", "userlist", "blacklist",
-            "current_price", "renewal_price", "regular_price", "promo_price", "last_seen",
-            "free_trial", "promo", "all_promo", "sub_status", "renewal",
+            "promo_price_min",
+            "promo_price_max",
+            "regular_price_min",
+            "regular_price_max",
+            "current_price_min",
+            "current_price_max",
+            "renewal_price_min",
+            "renewal_price_max",
+            "last_seen_before",
+            "last_seen_after",
+            "expired_before",
+            "expired_after",
+            "subscribed_before",
+            "subscribed_after",
+            "sort",
+            "desc",
+            "userlist",
+            "blacklist",
+            "current_price",
+            "renewal_price",
+            "regular_price",
+            "promo_price",
+            "last_seen",
+            "free_trial",
+            "promo",
+            "all_promo",
+            "sub_status",
+            "renewal",
         ]
 
         print("\n--- Active Filter Settings ---")
@@ -370,7 +400,7 @@ class ModelManager:
 
         for attr in filter_attributes:
             value = getattr(s, attr, None)
-            is_empty = not value  
+            is_empty = not value
             if attr == "desc":
                 is_empty = False
             if attr in {"blacklist", "userlist"} and isinstance(value, list):
@@ -385,7 +415,6 @@ class ModelManager:
         if not found_active_filter:
             print("No active filters set.")
         print("----------------------------\n")
-
 
     # =========================================================================
     # 4. API FETCHING & CACHING (The Engine Room)
@@ -437,7 +466,6 @@ class ModelManager:
             for ele in models:
                 self._all_subs_dict[ele.name] = ele
 
-
     # =========================================================================
     # 5. STATE RETRIEVAL (Reading the Queues)
     # =========================================================================
@@ -481,7 +509,6 @@ class ModelManager:
     def get_unprocessed(self, activity: Union[EActivity, str]) -> Set[str]:
         activity = self._get_activity(activity)
         return self.state.get_unprocessed(activity)
-
 
     # =========================================================================
     # 6. STATE MUTATION (Managing the Queues)

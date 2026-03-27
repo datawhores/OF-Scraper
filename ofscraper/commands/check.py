@@ -114,7 +114,9 @@ def process_download_queue():
             manager.Manager.stats_manager.clear_scraper_activity_stats()
             log.info("Download processing complete. Waiting for new items...")
         except Exception as e:
-            log.debug(f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}")
+            log.debug(
+                f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}"
+            )
             log.traceback_(traceback.format_exc())
 
 
@@ -131,8 +133,8 @@ def _get_data_from_row(row: dict):
     if not model_obj:
         raise Exception(f"Could not find model for username: {username}")
 
-    m_id = str(model_obj.id) 
-    
+    m_id = str(model_obj.id)
+
     # Find the original, cached media object using the string key
     cached_media = check_user_dict[m_id]["collection"].find_media_item(media_id)
     if not cached_media:
@@ -168,9 +170,9 @@ def _process_user_batch(
         log.warning(f"[{username}] Expiration Date: {expire_date}")
     except Exception as e:
         log.debug(f"Could not print subscription status for {username}: {e}")
-        
+
     m_id = str(model_id)
-    
+
     for i in range(len(media_list)):
         key = row_list[i][0]
 
@@ -227,6 +229,8 @@ def _process_user_batch(
                 else:
                     log.info(f"Download failed for {media.filename}.")
                     app.app.update_cell_state(key, "[failed]", "bold red")
+
+
 # Initialize counter on the function object
 _process_user_batch.counter = 0
 
@@ -349,7 +353,9 @@ async def post_check_retriver(forced=False):
                         log.info(f"[{user_name}] Using cache for {timeline.API}")
                         timeline_data = oldtimeline
                     else:
-                        log.info(f"[{user_name}] Fetching fresh data for {timeline.API}")
+                        log.info(
+                            f"[{user_name}] Fetching fresh data for {timeline.API}"
+                        )
                         timeline_data = await timeline.get_timeline_posts(
                             model_id, user_name, c=c
                         )
@@ -361,7 +367,9 @@ async def post_check_retriver(forced=False):
                         log.info(f"[{user_name}] Using cache for {archived.API}")
                         archived_data = oldarchive
                     else:
-                        log.info(f"[{user_name}] Fetching fresh data for {archived.API}")
+                        log.info(
+                            f"[{user_name}] Fetching fresh data for {archived.API}"
+                        )
                         archived_data = await archived.get_archived_posts(
                             model_id, user_name, c=c
                         )
@@ -707,6 +715,7 @@ async def process_post_media(username, model_id, posts_array):
     await insert_media(username, model_id, media)
     return media
 
+
 async def insert_media(username, model_id, media):
     await batch_mediainsert(
         media,
@@ -791,18 +800,18 @@ async def row_gather(username, model_id):
     downloaded = set(
         get_media_post_ids_downloaded(model_id=model_id, username=username)
     )
-    
+
     m_id = str(model_id)
     collection = check_user_dict[m_id].get("collection")
-    
+
     if not collection:
         raise Exception("No postcollection object found")
-        
+
     media = collection.all_media
     out = []
-    
+
     log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
-    
+
     try:
         sorted_media = sorted(media, key=lambda x: x.date, reverse=True)
     except Exception:
@@ -813,7 +822,7 @@ async def row_gather(username, model_id):
         is_unlocked = unlocked_helper(ele)
         is_downloaded = (ele.id, ele.post_id) in downloaded
         post_media_len = len(ele._post.post_media)
-        dl_type = download_type_helper(ele) # Calculate once for efficiency
+        dl_type = download_type_helper(ele)  # Calculate once for efficiency
 
         if is_downloaded:
             cart_state = "[downloaded]"
