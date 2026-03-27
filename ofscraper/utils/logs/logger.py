@@ -36,10 +36,10 @@ def get_shared_logger(name=None):
 
 def clearHandlers(name=None):
     log = logging.getLogger(name or "shared")
-    for handler in log.handlers[:]: 
+    for handler in log.handlers[:]:
         try:
             log.removeHandler(handler)
-            handler.close() 
+            handler.close()
         except Exception as e:
             pass
 

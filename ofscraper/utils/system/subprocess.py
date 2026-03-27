@@ -4,9 +4,10 @@ import logging
 import asyncio
 import ofscraper.utils.of_env.of_env as of_env
 
+
 def _format_subprocess_output(text_output):
     """
-    Sanitizes subprocess output. Crucial for FFmpeg, which uses \r to overwrite 
+    Sanitizes subprocess output. Crucial for FFmpeg, which uses \r to overwrite
     terminal lines, causing massive garbled strings in standard log files.
     """
     if not text_output:
@@ -16,6 +17,7 @@ def _format_subprocess_output(text_output):
     # Replace carriage returns with proper newlines so log files can read it
     return text_output.replace("\r", "\n").strip()
 
+
 def run(
     *args,
     log=None,
@@ -24,18 +26,26 @@ def run(
     capture_output=True,
     level=None,
     name=None,
-    timeout=600, 
+    timeout=600,
     **kwargs,
 ):
     log = log or logging.getLogger("shared")
     cmd_args = list(args[0])
 
-    if (cmd_args and isinstance(cmd_args[0], str) and cmd_args[0].lower().endswith(".py")):
+    if (
+        cmd_args
+        and isinstance(cmd_args[0], str)
+        and cmd_args[0].lower().endswith(".py")
+    ):
         cmd_args.insert(0, sys.executable)
 
     name = name or " ".join(cmd_args)
 
-    level = int(level) if level is not None else int(of_env.getattr("LOG_SUBPROCESS_LEVEL") or 0)
+    level = (
+        int(level)
+        if level is not None
+        else int(of_env.getattr("LOG_SUBPROCESS_LEVEL") or 0)
+    )
 
     final_args = (cmd_args,) + args[1:]
 
@@ -73,7 +83,7 @@ async def async_run(
     log=None,
     level=None,
     name=None,
-    timeout=600, 
+    timeout=600,
     capture_output=True,
     input=None,
     text=False,
@@ -82,13 +92,17 @@ async def async_run(
 ):
     """
     Asynchronously executes a command without blocking the main event loop.
-    Reads streams natively to avoid 'communicate()' closing stdin prematurely, 
+    Reads streams natively to avoid 'communicate()' closing stdin prematurely,
     ensuring stdout is ALWAYS perfectly captured.
     """
     log = log or logging.getLogger("shared")
     cmd_args = list(args[0])
 
-    if (cmd_args and isinstance(cmd_args[0], str) and cmd_args[0].lower().endswith(".py")):
+    if (
+        cmd_args
+        and isinstance(cmd_args[0], str)
+        and cmd_args[0].lower().endswith(".py")
+    ):
         cmd_args.insert(0, sys.executable)
 
     name = name or " ".join(cmd_args)
@@ -119,7 +133,7 @@ async def async_run(
             stream.write(data)
             await stream.drain()
         except Exception:
-            pass # Silently swallow Broken Pipe errors if script ignores stdin
+            pass  # Silently swallow Broken Pipe errors if script ignores stdin
         finally:
             try:
                 stream.close()
@@ -130,14 +144,14 @@ async def async_run(
         # 1. Start feeding stdin in the background
         if input is not None:
             asyncio.create_task(_feed_stdin(process.stdin, input))
-        
+
         # 2. Read stdout and stderr concurrently
         out_task = asyncio.create_task(_read_stream(process.stdout))
         err_task = asyncio.create_task(_read_stream(process.stderr))
-        
+
         # 3. Wait for the process to exit, bounded by timeout
         await asyncio.wait_for(process.wait(), timeout=timeout)
-        
+
         # 4. Gather the exact output
         stdout = await out_task
         stderr = await err_task
@@ -145,7 +159,9 @@ async def async_run(
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
-        raise TimeoutError(f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed.")
+        raise TimeoutError(
+            f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed."
+        )
 
     if text:
         if stdout is not None:
