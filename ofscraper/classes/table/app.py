@@ -355,7 +355,7 @@ class InputApp(App):
         self.set_page()
         self.update_cart_info()
 
-    # ==========================================
+# ==========================================
     # --- Cart: Clear Actions ---
     # ==========================================
     def action_clear_current_page(self) -> None:
@@ -366,17 +366,17 @@ class InputApp(App):
             for row in self._filtered_rows[start : start + num_page]:
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
-            self.set_page()
-            self.update_cart_info()
-            
+                    
         elif active_tab == "cart_page":
             cart_rows = [row for row in self.table_data if row.get("download_cart") == "[added]"]
             num_page = int(self.query_one("#cart_per_page_input").value or AMOUNT_PER_PAGE)
             start = (self.cart_page - 1) * num_page
             for row in cart_rows[start : start + num_page]:
                 row["download_cart"] = "[]"
-            self.update_cart_table()
-            self.update_cart_info()
+                
+        self.set_page()
+        self.update_cart_table()
+        self.update_cart_info()
 
     def action_clear_all_filtered(self) -> None:
         active_tab = self.query_one(ContentSwitcher).current
@@ -385,6 +385,7 @@ class InputApp(App):
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
             self.set_page()
+            self.update_cart_table()
             self.update_cart_info()
         elif active_tab == "cart_page":
             self.action_clear_entire_cart() # Shift+C on the cart page nukes the cart
@@ -395,15 +396,9 @@ class InputApp(App):
             if row["download_cart"] == "[added]":
                 row["download_cart"] = "[]"
         
-        active_tab = self.query_one(ContentSwitcher).current
-        if active_tab == "table_page":
-            self.set_page()
-        elif active_tab == "cart_page":
-            self.update_cart_table()
-            
-        self.update_cart_info()
-
-    # --- Rest of Table Logic ---
+        self.set_page()
+        self.update_cart_table()
+        self.update_cart_info()    # --- Rest of Table Logic ---
     def add_to_row_queue(self):
         cart = []
         for row in self.table_data:
