@@ -106,7 +106,10 @@ def merged_settings():
     )
     merged.cached_disabled = args.no_cache or cache_mode == "disabled"
     merged.api_cached_disabled = (
-        args.no_cache or args.no_api_cache or cache_mode == "api_disabled" or cache_mode == "disabled"
+        args.no_cache
+        or args.no_api_cache
+        or cache_mode == "api_disabled"
+        or cache_mode == "disabled"
     )
 
     # --- Basic Config Overrides ---

@@ -24,8 +24,7 @@ download_sem_option = click.option(
     "-sd",
     "--downloadsem",
     "--downloadsems",
-    "--download-sems"
-    "--download-sem",
+    "--download-sems" "--download-sem",
     "--sems",
     "--sem",
     "download_sem",

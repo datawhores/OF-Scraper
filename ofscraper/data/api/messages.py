@@ -37,7 +37,6 @@ from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_lo
 import ofscraper.utils.const as const
 from ofscraper.data.api.common.page import get_min_posts_batch
 
-
 API = "Messages"
 log = logging.getLogger("shared")
 
@@ -207,7 +206,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
 
     # Scenarios 2 & 3: Dynamic Chunking
     for i, chunk in enumerate(splitArrays):
-        
+
         # --- 1. Define the Start ID ---
         if i == 0:
             start_id = None  # Chunk 0: Teleport to the absolute newest message
@@ -215,7 +214,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
             start_id = anchor_id  # Chunk 1: Pick up at the cached anchor
         else:
             # Chunk 2+: Pick up at the tail of the previous chunk
-            start_id = splitArrays[i - 1][-1].get("post_id")  
+            start_id = splitArrays[i - 1][-1].get("post_id")
 
         # --- 2. Define the Start Timestamp ---
         start_timestamp = (
@@ -383,7 +382,9 @@ async def get_after(model_id, username):
     )
 
     active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
-    active_media_mapped = {const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media}
+    active_media_mapped = {
+        const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media
+    }
 
     filtered_items = [
         x
@@ -392,7 +393,10 @@ async def get_after(model_id, username):
         and x.get("media_id") not in curr_downloaded
         and x.get("post_id") not in deleted_messages
         and x.get("unlocked") != 0
-        and const.MEDIA_ALIASES.get(str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()) in active_media_mapped
+        and const.MEDIA_ALIASES.get(
+            str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()
+        )
+        in active_media_mapped
     ]
 
     if len(filtered_items) == 0:
@@ -413,6 +417,7 @@ async def get_after(model_id, username):
     return max(
         float(missing_items[0]["posted_at"] or 0), arrow.get("2000").float_timestamp
     )
+
 
 def time_log(username, after):
     log.info(

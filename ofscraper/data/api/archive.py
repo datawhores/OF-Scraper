@@ -316,7 +316,9 @@ async def get_after(model_id, username):
     deleted_posts = await get_deleted_post_ids(model_id=model_id, username=username)
 
     active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
-    active_media_mapped = {const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media}
+    active_media_mapped = {
+        const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media
+    }
 
     # 1. Filter out what we already have, what is dead, OR what we don't want
     filtered_items = [
@@ -326,7 +328,10 @@ async def get_after(model_id, username):
         and x.get("media_id") not in curr_downloaded
         and x.get("post_id") not in deleted_posts
         and x.get("unlocked") != 0
-        and const.MEDIA_ALIASES.get(str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()) in active_media_mapped
+        and const.MEDIA_ALIASES.get(
+            str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()
+        )
+        in active_media_mapped
     ]
 
     if len(filtered_items) == 0:
@@ -349,6 +354,7 @@ async def get_after(model_id, username):
         list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
     )
     return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
+
 
 def time_log(username, after):
     log.info(

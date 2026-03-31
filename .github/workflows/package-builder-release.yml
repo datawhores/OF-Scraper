@@ -43,10 +43,10 @@ env:
   ACTIONS_STEP_DEBUG: true
 
 permissions:
-  contents: write 
-  packages: write 
-  id-token: write 
-  actions: write 
+  contents: write
+  packages: write
+  id-token: write
+  actions: write
 
 jobs:
   determine_tags_and_versions:
@@ -84,7 +84,7 @@ jobs:
   determine_docker_latest_logic:
     name: Determine Docker Latest Tag Logic
     needs: [determine_tags_and_versions]
-    if: ${{ inputs.docker }} 
+    if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -160,7 +160,7 @@ jobs:
           source .venv/bin/activate
           hatch build
         shell: bash
-      
+
       - name: Publish to PyPI with Twine
         env:
           TWINE_USERNAME: __token__
@@ -251,7 +251,7 @@ jobs:
       should_apply_stable_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_stable_latest) }}
       should_apply_dev_latest: ${{ fromJSON(needs.determine_docker_latest_logic.outputs.should_apply_dev_latest) }}
 
-# --- DISCORD TEST JOB ---
+  # --- DISCORD TEST JOB ---
   discord_test_announcement:
     name: Discord Test Announcement
     needs: [determine_tags_and_versions]
@@ -271,32 +271,32 @@ jobs:
             echo "Version $VERSION does not match format. Skipping."
             exit 0
           fi
-          
+
           # SMART TAG LOGIC
           BODY=$(gh release view "$VERSION" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null || \
                  gh release view "${VERSION#v}" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null)
-          
+
           export BODY
-          
+
           python3 -c "
           import os, json, urllib.request
-          
+
           clean_ver = os.getenv('VERSION').lstrip('v')
           body_text = os.getenv('BODY')
           repo = os.getenv('REPO')
           tag = os.getenv('INPUT_VERSION') or os.getenv('VERSION')
-          
+
           if not body_text or body_text.strip() == '':
               body_text = '⚠️ No release notes found in GitHub Release description.'
               
           content = f'# Release {clean_ver}\n{body_text}'
-          
+
           if len(content) > 1900:
               release_url = f'https://github.com/{repo}/releases/tag/{tag}'
               content = content[:1800] + f'\n\n... **[Changelog Truncated]**\n🔗 **See the full changelog here:** {release_url}'
               
           webhook_url = os.getenv('WEBHOOK_TEST') 
-          
+
           if webhook_url:
               data = json.dumps({'content': content}).encode('utf-8')
               req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
@@ -322,32 +322,32 @@ jobs:
             echo "Version $VERSION does not match format. Skipping."
             exit 0
           fi
-          
+
           # SMART TAG LOGIC
           BODY=$(gh release view "$VERSION" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null || \
                  gh release view "${VERSION#v}" -R ${{ github.repository }} --json body --jq '.body' 2>/dev/null)
-          
+
           export BODY
-          
+
           python3 -c "
           import os, json, urllib.request
-          
+
           clean_ver = os.getenv('VERSION').lstrip('v')
           body_text = os.getenv('BODY')
           repo = os.getenv('REPO')
           tag = os.getenv('INPUT_VERSION') or os.getenv('VERSION')
-          
+
           if not body_text or body_text.strip() == '':
               body_text = '⚠️ No release notes found in GitHub Release description.'
               
           content = f'# Release {clean_ver}\n{body_text}'
-          
+
           if len(content) > 1900:
               release_url = f'https://github.com/{repo}/releases/tag/{tag}'
               content = content[:1800] + f'\n\n... **[Changelog Truncated]**\n🔗 **See the full changelog here:** {release_url}'
               
           webhook_url = os.getenv('WEBHOOK_RELEASE') 
-          
+
           if webhook_url:
               data = json.dumps({'content': content}).encode('utf-8')
               req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'})
