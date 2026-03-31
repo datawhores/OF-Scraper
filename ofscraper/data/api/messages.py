@@ -192,7 +192,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
     tasks = []
 
     # Scenario 1: Empty DB, or just hunting for brand new messages
-    if len(splitArrays) == 0:
+    if not splitArrays:
         tasks.append(
             scrape_messages(
                 c,
@@ -207,20 +207,24 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
 
     # Scenarios 2 & 3: Dynamic Chunking
     for i, chunk in enumerate(splitArrays):
-        is_first_chunk = i == 0
-        is_final_chunk = i == len(splitArrays) - 1
+        
+        # --- 1. Define the Start ID ---
+        if i == 0:
+            start_id = None  # Chunk 0: Teleport to the absolute newest message
+        elif i == 1:
+            start_id = anchor_id  # Chunk 1: Pick up at the cached anchor
+        else:
+            # Chunk 2+: Pick up at the tail of the previous chunk
+            start_id = splitArrays[i - 1][-1].get("post_id")  
 
-        # The first chunk uses the teleport anchor.
-        # Subsequent chunks use the ID of the OLDEST message in the previous chunk.
-        start_id = (
-            anchor_id if is_first_chunk else splitArrays[i - 1][-1].get("post_id")
-        )
+        # --- 2. Define the Start Timestamp ---
         start_timestamp = (
             arrow.now().float_timestamp
-            if is_first_chunk
+            if i == 0
             else float(splitArrays[i - 1][-1].get("created_at"))
         )
 
+        # --- 3. Build the Task ---
         tasks.append(
             scrape_messages(
                 c,
@@ -232,7 +236,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
                     {"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")}
                     for ele in chunk
                 ],
-                is_last_chunk=is_final_chunk,
+                is_last_chunk=(i == len(splitArrays) - 1),
                 after=after,
             )
         )
