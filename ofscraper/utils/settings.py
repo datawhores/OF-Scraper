@@ -97,6 +97,8 @@ def resetUserSelect():
 def merged_settings():
     args = read_args.retriveArgs()
     merged = deepcopy(args)
+    # --- FFMPEG---
+    merged.ffmpeg=config_data.get_ffmpeg()
 
     # --- Cache Logic ---
     cache_mode = (
