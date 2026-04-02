@@ -310,15 +310,12 @@ class AltDownloadManager(DownloadManager):
         if audio:
             inputs.append(ffmpeg_lib.input(str(audio["path"])))
 
-        stream = (
-            ffmpeg_lib.output(
-                *inputs,
-                str(temp_path),
-                c="copy",
-                movflags="use_metadata_tags",
-            )
-            .overwrite_output()
-        )
+        stream = ffmpeg_lib.output(
+            *inputs,
+            filename=str(temp_path),
+            c="copy",
+            extra_options={"movflags": "use_metadata_tags"},
+        ).overwrite_output()
 
         ffmpeg_cmd = get_ffmpeg()
         try:
@@ -328,7 +325,7 @@ class AltDownloadManager(DownloadManager):
                 capture_stdout=True,
                 capture_stderr=True,
             )
-        except ffmpeg_lib.Error as e:
+        except ffmpeg_lib.FFMpegExecuteError as e:
             stderr = e.stderr.decode() if e.stderr else str(e)
             common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg mux failed: {stderr}")
 
