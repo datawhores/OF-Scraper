@@ -4,8 +4,6 @@ import subprocess
 import re
 import logging
 
-import ffmpeg as ffmpeg_lib
-
 import ofscraper.utils.settings as settings
 import ofscraper.utils.of_env.of_env as env
 
@@ -22,9 +20,6 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
     """
     Checks if a given path is a real, executable FFmpeg binary and validates
     that its version is >= 6 for DRM compatibility. Logs the process.
-
-    Uses ffmpeg-python's probe to verify the binary works, then parses the
-    version string from ffmpeg.probe's format metadata.
     """
     if not path or not shutil.which(path):
         log.debug(f"Path '{path}' is not a valid or executable file.")

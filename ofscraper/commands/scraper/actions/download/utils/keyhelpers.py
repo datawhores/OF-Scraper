@@ -67,10 +67,10 @@ async def un_encrypt(item, c, ele, input_=None):
         stream = (
             ffmpeg_lib.input(
                 str(item["path"]),
-                decryption_key=ffmpeg_key,
+                extra_options={"decryption_key": ffmpeg_key},
             )
             .output(
-                str(newpath),
+                filename=str(newpath),
                 codec="copy",
             )
             .overwrite_output()
@@ -82,7 +82,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 capture_stdout=True,
                 capture_stderr=True,
             )
-        except ffmpeg_lib.Error as e:
+        except ffmpeg_lib.FFMpegExecuteError as e:
             stderr = e.stderr.decode() if e.stderr else str(e)
             log.debug(f"{get_medialog(ele)} ffmpeg decrypt stderr: {stderr}")
             await asyncio.get_event_loop().run_in_executor(

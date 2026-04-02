@@ -13,8 +13,8 @@ def _get_duration_probe(file_path, ffprobe_path):
     probe = ffmpeg_lib.probe(
         str(file_path),
         cmd=ffprobe_path,
-        v="error",
-        show_entries="format=duration",
+        show_format=True,
+        show_streams=False,
     )
     return float(probe["format"]["duration"])
 
@@ -50,7 +50,7 @@ def get_media_duration(file_path):
         if ffprobe_path:
             try:
                 return _get_duration_probe(file_path, ffprobe_path)
-            except (ffmpeg_lib.Error, KeyError, ValueError) as e:
+            except (ffmpeg_lib.FFMpegExecuteError, KeyError, ValueError) as e:
                 log.debug(
                     f"ffprobe failed for {file_path}, trying ffmpeg fallback. Error: {e}"
                 )
