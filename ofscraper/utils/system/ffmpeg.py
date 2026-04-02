@@ -3,8 +3,10 @@ import shutil
 import subprocess
 import re
 import logging
+
+import ffmpeg as ffmpeg_lib
+
 import ofscraper.utils.settings as settings
-from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 
 log = logging.getLogger("shared")
@@ -19,7 +21,10 @@ _ffprobe_checked: bool = False
 def _is_valid_ffmpeg(path: str | None) -> bool:
     """
     Checks if a given path is a real, executable FFmpeg binary and validates
-    that its version is >= 6 and < 8 for DRM compatibility. Logs the process.
+    that its version is >= 6 for DRM compatibility. Logs the process.
+
+    Uses ffmpeg-python's probe to verify the binary works, then parses the
+    version string from ffmpeg.probe's format metadata.
     """
     if not path or not shutil.which(path):
         log.debug(f"Path '{path}' is not a valid or executable file.")
@@ -27,27 +32,26 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
 
     log.debug(f"Running validation check on candidate path: {path}")
     try:
-        result = run(
+        proc = subprocess.run(
             [path, "-version"],
             capture_output=True,
             text=True,
             check=False,
             encoding="utf-8",
-            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-            name="ffmpeg",
+            timeout=10,
         )
-        output = result.stdout + result.stderr
+        output = proc.stdout + proc.stderr
 
         if re.search(r"ffmpeg version", output, re.IGNORECASE):
             # Extract the major version number (e.g., "ffmpeg version 6.1.1" -> "6")
             version_match = re.search(r"ffmpeg version\s+([0-9]+)\.", output, re.IGNORECASE)
-            
+
             if version_match:
                 major_version = int(version_match.group(1))
-                if major_version < 6 or major_version >= 8:
+                if major_version < 6:
                     log.warning(
-                        f"⚠️ Invalid FFmpeg version {major_version}.x detected at '{path}'.\n"
-                        f"DRM decryption requires FFmpeg version >= 6 and < 8.\n"
+                        f"⚠️ FFmpeg version {major_version}.x detected at '{path}'.\n"
+                        f"DRM decryption requires FFmpeg version >= 6.\n"
                         f"Skipping this binary and looking for an alternative..."
                     )
                     return False

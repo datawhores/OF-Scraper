@@ -25,8 +25,8 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
+import ffmpeg as ffmpeg_lib
 import ofscraper.utils.system.system as system
-from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
 
@@ -152,7 +152,7 @@ class AltDownloadManager(DownloadManager):
     async def _alt_download_sendreq(self, item, c, ele, placeholderObj):
         try:
             _attempt = self._alt_attempt_get(item)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
+            base_url = re.sub(r"[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
             url = f"{base_url}{item['origname']}"
             common_globals.log.debug(
                 f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
@@ -176,7 +176,7 @@ class AltDownloadManager(DownloadManager):
             total = None
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
+            base_url = re.sub(r"[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
             url = f"{base_url}{item['origname']}"
             headers = {"Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
             common_globals.log.debug(
@@ -303,40 +303,34 @@ class AltDownloadManager(DownloadManager):
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
 
-        # Dynamically build FFmpeg command based on available tracks
-        ffmpeg_cmd = [get_ffmpeg()]
+        # Dynamically build FFmpeg mux command based on available tracks
+        inputs = []
         if video:
-            ffmpeg_cmd.extend(["-i", str(video["path"])])
+            inputs.append(ffmpeg_lib.input(str(video["path"])))
         if audio:
-            ffmpeg_cmd.extend(["-i", str(audio["path"])])
+            inputs.append(ffmpeg_lib.input(str(audio["path"])))
 
-        ffmpeg_cmd.extend(
-            [
-                "-c",
-                "copy",
-                "-movflags",
-                "use_metadata_tags",
+        stream = (
+            ffmpeg_lib.output(
+                *inputs,
                 str(temp_path),
-                "-y",
-            ]
+                c="copy",
+                movflags="use_metadata_tags",
+            )
+            .overwrite_output()
         )
 
-        # Async run FFmpeg with the -y flag
-        t = await async_run(
-            ffmpeg_cmd,
-            name="ffmpeg",
-            level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-        )
-
-        # Fallback error check if stderr is captured and Output is missing
-        if t.stderr and t.stderr.decode().find("Output") == -1:
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
+        ffmpeg_cmd = get_ffmpeg()
+        try:
+            await asyncio.to_thread(
+                stream.run,
+                cmd=ffmpeg_cmd,
+                capture_stdout=True,
+                capture_stderr=True,
             )
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
-            )
+        except ffmpeg_lib.Error as e:
+            stderr = e.stderr.decode() if e.stderr else str(e)
+            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg mux failed: {stderr}")
 
         # Clean up temp tracks
         if video:
