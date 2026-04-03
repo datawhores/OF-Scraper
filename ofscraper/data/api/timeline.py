@@ -315,6 +315,7 @@ async def scrape_timeline_posts(
 
     try:
         while has_more:
+            log.debug(f"Fetching Timeline API: {url}")
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Timeline API Error: {r.status} for {url}")
@@ -326,6 +327,7 @@ async def scrape_timeline_posts(
 
                 if not batch:
                     break
+                log.debug(f"Received batch with {len(batch)} items.")
 
                 batch_timestamps = [float(x["postedAtPrecise"]) for x in batch]
                 max_ts = max(batch_timestamps)

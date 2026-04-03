@@ -272,6 +272,7 @@ async def scrape_messages(
                 else of_env.getattr("messagesEP")
             )
             url = ep.format(model_id, current_message_id)
+            log.debug(f"Fetching Messages API: {url}")
 
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):

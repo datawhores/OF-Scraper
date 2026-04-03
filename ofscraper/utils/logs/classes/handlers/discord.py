@@ -26,7 +26,7 @@ class DiscordHandler(logging.Handler):
 
         self._baseurl = data.get_discord()
         self._url = self._baseurl
-        self.chunk_size = 1000
+        self.chunk_size = 1500
 
         # --- Threading and Queue Setup ---
         self.queue = queue.Queue()
