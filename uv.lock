@@ -1087,7 +1087,7 @@ requires-dist = [
     { name = "pyffmpeg", marker = "extra == 'ffmpeg'", specifier = ">=2.5.2.3.1" },
     { name = "pyinstaller", marker = "extra == 'dev'" },
     { name = "pynumparser", specifier = "~=1.4.1" },
-    { name = "pytest", marker = "extra == 'test'", specifier = "~=7.3.1" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=7.3.1,<9.1.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = "~=4.1.0" },
     { name = "pytest-mock", marker = "extra == 'test'", specifier = "~=3.12.0" },
     { name = "pywidevine", specifier = "~=1.8.0" },
@@ -1422,17 +1422,18 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "7.3.2"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
+    { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/2a/07c65fdc40846ecb8a9dcda2c38fcb5a06a3e39d08d4a4960916431951cb/pytest-7.3.2.tar.gz", hash = "sha256:ee990a3cc55ba808b80795a79944756f315c67c12b56abd3ac993a7b8c17030b", size = 1338457, upload-time = "2023-06-10T19:28:53.107Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/d0/de969198293cdea22b3a6fb99a99aeeddb7b3827f0823b33c5dc0734bbe5/pytest-7.3.2-py3-none-any.whl", hash = "sha256:cdcbd012c9312258922f8cd3f1b62a6580fdced17db6014896053d47cddf9295", size = 320900, upload-time = "2023-06-10T19:28:50.763Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
