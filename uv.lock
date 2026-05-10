@@ -1028,6 +1028,7 @@ dependencies = [
     { name = "tenacity" },
     { name = "textual" },
     { name = "tqdm" },
+    { name = "typed-ffmpeg" },
     { name = "uvloop", marker = "sys_platform == 'linux' or sys_platform == 'linux2'" },
     { name = "win32-setctime" },
     { name = "xxhash" },
@@ -1103,6 +1104,7 @@ requires-dist = [
     { name = "tenacity", specifier = "~=8.2.3" },
     { name = "textual", specifier = "==1.0.0" },
     { name = "tqdm", specifier = "~=4.66.4" },
+    { name = "typed-ffmpeg", specifier = ">=3.11" },
     { name = "uvloop", marker = "sys_platform == 'linux' or sys_platform == 'linux2'", specifier = "~=0.21.0" },
     { name = "win32-setctime", specifier = "~=1.1.0" },
     { name = "xxhash", specifier = "~=3.4.1" },
@@ -1923,6 +1925,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/34/bef135b27fe1864993a5284ad001157ee9b5538e859ac90f5b0e8cc8c9ec/tqdm-4.66.6.tar.gz", hash = "sha256:4bdd694238bef1485ce839d67967ab50af8f9272aab687c0d7702a01da0be090", size = 169533, upload-time = "2024-10-28T12:49:58.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/73/02342de9c2d20922115f787e101527b831c0cffd2105c946c4a4826bcfd4/tqdm-4.66.6-py3-none-any.whl", hash = "sha256:223e8b5359c2efc4b30555531f09e9f2f3589bcd7fdd389271191031b49b7a63", size = 78326, upload-time = "2024-10-28T12:49:56.931Z" },
+]
+
+[[package]]
+name = "typed-ffmpeg"
+version = "3.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/9f/b8451850981c5d8f1cb828ddb8776490ca85ebdc9231d34e66f7b1438c4a/typed_ffmpeg-3.11.tar.gz", hash = "sha256:0a37a2803fe5a1e309fdca4f4377f06c5147d9032fcbb93a177a65195d2ce6f5", size = 646795, upload-time = "2026-01-21T05:43:18.238Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/97/ba/aa4635a8bc319dc5ff80965d807864ce4b25ebb59ba59dc0d8e2f0ef0b10/typed_ffmpeg-3.11-py3-none-any.whl", hash = "sha256:78b4d7b8613d9cee0a5517e8f0e7556c3e77e64498eac0f7fe082097d34fa412", size = 698409, upload-time = "2026-01-21T05:43:16.77Z" },
 ]
 
 [[package]]

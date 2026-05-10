@@ -5,6 +5,7 @@ import re
 import traceback
 from functools import partial
 
+import ffmpeg as ffmpeg_lib
 from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
@@ -18,7 +19,6 @@ from ofscraper.commands.scraper.actions.utils.retries import (
     get_cmd_download_req_retries,
 )
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
-from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
 import ofscraper.managers.manager as manager
 
@@ -63,42 +63,56 @@ async def un_encrypt(item, c, ele, input_=None):
         log.debug(
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
         )
-        r = await async_run(
-            [
-                get_ffmpeg(),
-                "-decryption_key",
-                ffmpeg_key,
-                "-i",
+        ffmpeg_cmd = get_ffmpeg()
+        stream = (
+            ffmpeg_lib.input(
                 str(item["path"]),
-                "-codec",
-                "copy",
-                str(newpath),
-                "-y",
-            ],
-            level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-            name="ffmpeg",
+                extra_options={"decryption_key": ffmpeg_key},
+            )
+            .output(
+                filename=str(newpath),
+                codec="copy",
+            )
+            .overwrite_output()
         )
-        if not pathlib.Path(newpath).exists():
-            log.debug(f"{get_medialog(ele)} ffmpeg {r.stderr.decode()}")
-            log.debug(f"{get_medialog(ele)} ffmpeg {r.stdout.decode()}")
+        try:
+            await asyncio.to_thread(
+                stream.run,
+                cmd=ffmpeg_cmd,
+                capture_stdout=True,
+                capture_stderr=True,
+            )
+        except ffmpeg_lib.FFMpegExecuteError as e:
+            stderr = e.stderr.decode() if e.stderr else str(e)
+            log.debug(f"{get_medialog(ele)} ffmpeg decrypt stderr: {stderr}")
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
                     cache.set, ele.license, None, expire=of_env.getattr("KEY_EXPIRY")
                 ),
             )
-            raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
-        else:
-            log.debug(f"{get_medialog(ele)} ffmpeg  decrypt success {newpath}")
-            pathlib.Path(item["path"]).unlink(missing_ok=True)
-            item["path"] = newpath
+            raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed") from e
+
+        if not pathlib.Path(newpath).exists():
+            log.debug(f"{get_medialog(ele)} ffmpeg produced no output file at {newpath}")
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
-                    cache.set, ele.license, key, expire=of_env.getattr("KEY_EXPIRY")
+                    cache.set, ele.license, None, expire=of_env.getattr("KEY_EXPIRY")
                 ),
             )
-            return item
+            raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed — output file missing")
+
+        log.debug(f"{get_medialog(ele)} ffmpeg decrypt success {newpath}")
+        pathlib.Path(item["path"]).unlink(missing_ok=True)
+        item["path"] = newpath
+        await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread,
+            partial(
+                cache.set, ele.license, key, expire=of_env.getattr("KEY_EXPIRY")
+            ),
+        )
+        return item
     except Exception as E:
         raise E
 

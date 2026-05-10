@@ -1,52 +1,41 @@
 import logging
 import pathlib
-import re
-from ofscraper.utils.system.subprocess import run
-import ofscraper.utils.of_env.of_env as env
 
-# Import both binaries!
+import ffmpeg as ffmpeg_lib
+
 from ofscraper.utils.system.ffmpeg import get_ffmpeg, get_ffprobe
 
 log = logging.getLogger("shared")
 
 
-def _get_duration_ffprobe(file_path, ffprobe_path):
-    """Primary method: Clean metadata extraction using ffprobe."""
-    cmd = [
-        ffprobe_path,
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "default=noprint_wrappers=1:nokey=1",
+def _get_duration_probe(file_path, ffprobe_path):
+    """Primary method: Clean metadata extraction using ffmpeg.probe()."""
+    probe = ffmpeg_lib.probe(
         str(file_path),
-    ]
-    result = run(
-        cmd,
+        cmd=ffprobe_path,
+        show_format=True,
+        show_streams=False,
+    )
+    return float(probe["format"]["duration"])
+
+
+def _get_duration_ffmpeg_probe(file_path, ffmpeg_path):
+    """Fallback method: Use ffmpeg.probe() pointed at the ffmpeg binary's sibling ffprobe,
+    or parse duration from a null-output transcode if ffprobe is unavailable."""
+    # ffmpeg.probe() requires ffprobe; if we don't have it, fall back to
+    # running ffmpeg -i and parsing the Duration line from stderr.
+    import subprocess
+    import re
+
+    proc = subprocess.run(
+        [ffmpeg_path, "-i", str(file_path)],
         capture_output=True,
         text=True,
-        check=True,
-        level=env.getattr("FFPROBE_SUBPROCESS_LEVEL"),
-        name="ffprobe",
-    )
-    return float(result.stdout.strip())
-
-
-def _get_duration_ffmpeg(file_path, ffmpeg_path):
-    """Fallback method: Regex scraping from ffmpeg stderr output."""
-    cmd = [ffmpeg_path, "-i", str(file_path)]
-    result = run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=False,  # Must be False because ffmpeg exits with code 1 here
-        level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-        name="ffmpeg",
+        check=False,
+        timeout=30,
     )
 
-    # FFmpeg prints metadata to stderr
-    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", result.stderr)
+    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", proc.stderr)
     if match:
         hours, minutes, seconds = match.groups()
         return (int(hours) * 3600) + (int(minutes) * 60) + float(seconds)
@@ -56,19 +45,19 @@ def _get_duration_ffmpeg(file_path, ffmpeg_path):
 def get_media_duration(file_path):
     """Gets media duration, preferring ffprobe but falling back to ffmpeg if needed."""
     try:
-        # Attempt 1: The Proper Way (ffprobe)
+        # Attempt 1: The Proper Way (ffmpeg.probe via ffprobe binary)
         ffprobe_path = get_ffprobe()
         if ffprobe_path:
             try:
-                return _get_duration_ffprobe(file_path, ffprobe_path)
-            except Exception as e:
+                return _get_duration_probe(file_path, ffprobe_path)
+            except (ffmpeg_lib.FFMpegExecuteError, KeyError, ValueError) as e:
                 log.debug(
                     f"ffprobe failed for {file_path}, trying ffmpeg fallback. Error: {e}"
                 )
 
-        # Attempt 2:  (ffmpeg Fallback)
+        # Attempt 2: ffmpeg -i fallback
         ffmpeg_path = get_ffmpeg()
-        duration = _get_duration_ffmpeg(file_path, ffmpeg_path)
+        duration = _get_duration_ffmpeg_probe(file_path, ffmpeg_path)
         if duration is not None:
             return duration
 
@@ -110,9 +99,8 @@ def verify_media_integrity(file_path, expected_duration_seconds=None):
             return False
 
     log.debug(
-        f"Integrity Check Succeed: {pathlib.Path(file_path).name}\n"
-        f"Expected: {expected_duration_seconds}s | Actual: {actual_duration:.2f}s "
-        f"| Diff: {diff:.2f}s (Limit: 3.0s)"
+        f"Integrity Check Passed: {pathlib.Path(file_path).name}\n"
+        f"Expected: {expected_duration_seconds}s | Actual: {actual_duration:.2f}s"
     )
 
     return True
