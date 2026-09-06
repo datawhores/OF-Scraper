@@ -152,8 +152,10 @@ class AltDownloadManager(DownloadManager):
     async def _alt_download_sendreq(self, item, c, ele, placeholderObj):
         try:
             _attempt = self._alt_attempt_get(item)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
-            url = f"{base_url}{item['origname']}"
+            mpd_path = ele.mpd.split("?")[0]
+            mpd_query = ("?" + ele.mpd.split("?", 1)[1]) if "?" in ele.mpd else ""
+            base_url = re.sub("[0-9a-z]*\.mpd$", "", mpd_path, re.IGNORECASE)
+            url = f"{base_url}{item['origname']}{mpd_query}"
             common_globals.log.debug(
                 f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
             )
@@ -176,8 +178,10 @@ class AltDownloadManager(DownloadManager):
             total = None
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
-            url = f"{base_url}{item['origname']}"
+            mpd_path = ele.mpd.split("?")[0]
+            mpd_query = ("?" + ele.mpd.split("?", 1)[1]) if "?" in ele.mpd else ""
+            base_url = re.sub("[0-9a-z]*\.mpd$", "", mpd_path, re.IGNORECASE)
+            url = f"{base_url}{item['origname']}{mpd_query}"
             headers = {"Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
