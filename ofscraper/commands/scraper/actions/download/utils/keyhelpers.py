@@ -21,7 +21,6 @@ from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
 import ofscraper.managers.manager as manager
-import ofscraper.utils.of_env.of_env as env
 
 log = None
 
@@ -76,7 +75,7 @@ async def un_encrypt(item, c, ele, input_=None):
                 str(newpath),
                 "-y",
             ],
-            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
+            level=of_env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
             name="ffmpeg",
         )
         if not pathlib.Path(newpath).exists():

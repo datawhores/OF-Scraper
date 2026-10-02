@@ -1,8 +1,10 @@
 import asyncio
 import contextvars
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 import aioprocessing
+import psutil
 import ofscraper.utils.console as console_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.logs.logger as logger
@@ -62,6 +64,13 @@ def main_globals():
     fileHashes = {}
     global log
     log = logger.get_shared_logger(name="ofscraper_download")
+
+    try:
+        process = psutil.Process(os.getpid())
+        num_fds = len(process.open_files())
+        log.trace(f"[RESOURCE] Download globals initialized | Open file descriptors: {num_fds}")
+    except Exception:
+        pass
 
 
 def mainProcessVariableInit():

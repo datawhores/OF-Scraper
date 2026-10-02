@@ -624,6 +624,7 @@ class sessionManager:
         ):
             with _:
                 await self._sem.acquire()
+                released = False
                 try:
                     if await self._rate_limit_sleeper.async_do_sleep():
                         pass
@@ -669,12 +670,14 @@ class sessionManager:
                             raise SystemExit("OnlyFans Maintenance detected.")
                         r.raise_for_status()
                     self._sem.release()
+                    released = True
                     yield r
-                    return
                 except Exception as E:
                     await self._async_handle_error(E, exceptions)
-                    self._sem.release()
                     raise E
+                finally:
+                    if not released:
+                        self._sem.release()
 
     @property
     def sleep(self):

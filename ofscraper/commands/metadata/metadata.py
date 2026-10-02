@@ -42,6 +42,7 @@ from ofscraper.commands.metadata.consumer import consumer
 from ofscraper.commands.metadata.desc import desc
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.managers.postcollection import PostCollection
+from ofscraper.utils.gather import gather_and_raise
 
 log = logging.getLogger("shared")
 
@@ -248,7 +249,7 @@ async def process_dicts(username, model_id, medialist):
                     asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
-                await asyncio.gather(*consumers)
+                await gather_and_raise(consumers)
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():
                 raise E

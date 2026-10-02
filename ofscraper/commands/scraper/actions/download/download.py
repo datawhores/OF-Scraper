@@ -27,6 +27,7 @@ from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
+from ofscraper.utils.gather import gather_and_raise
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
@@ -104,7 +105,7 @@ async def process_dicts(username, model_id, medialist, posts):
                     asyncio.create_task(consumer(aws, task1, medialist, lock))
                     for _ in range(concurrency_limit)
                 ]
-                await asyncio.gather(*consumers)
+                await gather_and_raise(consumers)
         except Exception as E:
             with exit.DelayedKeyboardInterrupt():
                 raise E

@@ -97,6 +97,8 @@ def resetUserSelect():
 def merged_settings():
     args = read_args.retriveArgs()
     merged = deepcopy(args)
+    # --- FFMPEG---
+    merged.ffmpeg=config_data.get_ffmpeg()
 
     # --- Cache Logic ---
     cache_mode = (
@@ -104,10 +106,12 @@ def merged_settings():
         if hasattr(config_data, "get_cache_mode")
         else of_env.getattr("CACHEDEFAULT")
     )
-    merged.cached_disabled = args.no_cache or args.no_api_cache
-    merged.cache_disabled = args.no_cache or cache_mode == "disabled"
+    merged.cached_disabled = args.no_cache or cache_mode == "disabled"
     merged.api_cached_disabled = (
-        args.no_cache or args.no_api_cache or cache_mode == "api_disabled"
+        args.no_cache
+        or args.no_api_cache
+        or cache_mode == "api_disabled"
+        or cache_mode == "disabled"
     )
 
     # --- Basic Config Overrides ---
@@ -145,7 +149,7 @@ def merged_settings():
     merged.text_length = args.text_length or config_data.get_textlength()
     merged.size_max = args.size_max or config_data.get_filesize_max()
     merged.size_min = args.size_min or config_data.get_filesize_min()
-    merged.download_sems = args.downloadsem or config_data.get_download_semaphores()
+    merged.download_sems = args.download_sem or config_data.get_download_semaphores()
     merged.system_free_min = args.system_free_min or config_data.get_system_freesize()
     merged.max_post_count = args.max_count or config_data.get_max_post_count()
     merged.mediatypes = args.mediatypes or config_data.get_filter()
