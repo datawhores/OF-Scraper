@@ -80,8 +80,7 @@ class MainDownloadManager(DownloadManager):
             with _:
                 try:
                     common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                    if common_globals.attempt.get() > 1:
-                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                    # the .part is kept on retry, _send_req_inner resumes it via Range
                     data = await self._get_data(ele)
                     total = None
                     placeholderObj = None
@@ -124,6 +123,10 @@ class MainDownloadManager(DownloadManager):
                     common_globals.log.traceback_(
                         f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                     )
+                    http_status = getattr(E, "status", None)
+                    if isinstance(E, aiohttp.ClientResponseError) and http_status == 416:
+                        # range not satisfiable, the .part does not match the file
+                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
                     raise E
 
     async def _main_download_sendreq(
@@ -146,7 +149,8 @@ class MainDownloadManager(DownloadManager):
     ):
         try:
             resume_size = self._get_resume_size(tempholderObj)
-            headers = self._get_resume_header(resume_size, total)
+            # open ended range: a cached total may be stale and would cut the file short
+            headers = {"Range": f"bytes={resume_size}-"} if resume_size else None
             total = None
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
@@ -158,8 +162,11 @@ class MainDownloadManager(DownloadManager):
                 headers=headers,
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
+                no_retry_status=(416,),
             ) as r:
-                total = int(r.headers["content-length"])
+                total, resume_size = self._full_total_from_response(
+                    r, resume_size, tempholderObj
+                )
                 data = {
                     "content-total": total,
                     "content-type": r.headers.get("content-type"),
@@ -183,7 +190,6 @@ class MainDownloadManager(DownloadManager):
                     total = 0
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:
-                    self._resume_cleaner(resume_size, total, tempholderObj.tempfilepath)
                     await self._download_fileobject_writer(
                         r, ele, tempholderObj, placeholderObj, total
                     )
@@ -193,6 +199,36 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             await self._total_change_helper(0)
             raise E
+
+    def _full_total_from_response(self, r, resume_size, tempholderObj):
+        """
+        Return (full file size, valid resume size) for a download response.
+        On a 206 content-length is only the remaining part, the full size
+        comes from Content-Range. A 200 means the server ignored the Range
+        header and sends the whole file, so the .part must start over.
+        """
+        content_length = int(r.headers["content-length"])
+        if r.status == 206:
+            content_range = r.headers.get("content-range", "")
+            # e.g. "bytes 1000-1999/2000"
+            try:
+                span, full = content_range.split(" ", 1)[1].split("/")
+                start = int(span.split("-")[0])
+            except (IndexError, ValueError):
+                raise Exception(f"invalid Content-Range header: {content_range!r}")
+            if start != resume_size:
+                pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                raise Exception(
+                    f"server resumed at byte {start}, expected {resume_size}"
+                )
+            total = int(full) if full != "*" else resume_size + content_length
+            return total, resume_size
+        if resume_size:
+            common_globals.log.debug(
+                "server ignored range request, restarting download from 0"
+            )
+            pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+        return content_length, 0
 
     async def _download_fileobject_writer(
         self, r, ele, tempholderObj, placeholderObj, total
