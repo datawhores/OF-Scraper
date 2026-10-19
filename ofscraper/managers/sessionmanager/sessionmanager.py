@@ -610,11 +610,24 @@ class sessionManager:
         retries = kwargs.get("retries") or self._retries
         wait_min = kwargs.get("wait_min") or self._wait_min
         wait_max = kwargs.get("wait_max") or self._wait_max
+        # statuses that retrying the same url can't fix (e.g. CDN 403 on a signed
+        # url bound to a stale IP); raise them right away so the caller can react
+        no_retry_status = set(kwargs.get("no_retry_status") or ())
+
+        def _should_retry(E):
+            if isinstance(E, (KeyboardInterrupt, SystemExit)):
+                return False
+            if (
+                isinstance(E, aiohttp.ClientResponseError)
+                and E.status in no_retry_status
+            ):
+                return False
+            return True
 
         async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
+            retry=tenacity.retry_if_exception(_should_retry),
             reraise=True,
             before_sleep=lambda retry_state: (
                 self._log.debug(
