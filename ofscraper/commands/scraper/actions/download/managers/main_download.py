@@ -32,6 +32,9 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
     get_chunk_timeout,
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_url,
+)
 
 from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
@@ -124,7 +127,10 @@ class MainDownloadManager(DownloadManager):
                         f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                     )
                     http_status = getattr(E, "status", None)
-                    if isinstance(E, aiohttp.ClientResponseError) and http_status == 416:
+                    if isinstance(E, aiohttp.ClientResponseError) and http_status == 403:
+                        # signed url is IP bound, fetch a fresh one for the next attempt
+                        await refresh_media_url(c, ele)
+                    elif isinstance(E, aiohttp.ClientResponseError) and http_status == 416:
                         # range not satisfiable, the .part does not match the file
                         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
                     raise E
@@ -162,7 +168,7 @@ class MainDownloadManager(DownloadManager):
                 headers=headers,
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
-                no_retry_status=(416,),
+                no_retry_status=(403, 416),
             ) as r:
                 total, resume_size = self._full_total_from_response(
                     r, resume_size, tempholderObj
