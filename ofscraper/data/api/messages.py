@@ -325,11 +325,16 @@ async def scrape_messages(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                if not is_last_chunk and len(required_ids) == 0:
+                # Boundary condition: this page reaches past the "after" date limit.
+                # Keep its in-range messages before stopping.
+                if min_ts < after:
+                    yield [x for x, ts in zip(batch, batch_timestamps) if ts >= after]
                     break
 
-                # Boundary condition: We hit our "after" date limit
-                if min_ts < after:
+                # This chunk has found all of its cached messages. Keep the page
+                # that contained them; the next chunk only starts below its tail.
+                if not is_last_chunk and len(required_ids) == 0:
+                    yield batch
                     break
 
                 # Prevent stuck loop
