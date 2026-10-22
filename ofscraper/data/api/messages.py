@@ -209,11 +209,10 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
 
         # --- 1. Define the Start ID ---
         if i == 0:
-            start_id = None  # Chunk 0: Teleport to the absolute newest message
-        elif i == 1:
-            start_id = anchor_id  # Chunk 1: Pick up at the cached anchor
+            # Chunk 0: start at the 'before' anchor if set, otherwise the newest message
+            start_id = anchor_id if settings.get_settings().before else None
         else:
-            # Chunk 2+: Pick up at the tail of the previous chunk
+            # Chunk 1+: Pick up at the tail of the previous chunk
             start_id = splitArrays[i - 1][-1].get("post_id")
 
         # --- 2. Define the Start Timestamp ---
