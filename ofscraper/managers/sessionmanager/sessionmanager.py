@@ -566,7 +566,9 @@ class sessionManager:
                             data=data,
                             timeout=httpx.Timeout(
                                 total_timeout or self._total_timeout,
-                                connect=connect_timeout,
+                                # the TLS handshake counts as connect time:
+                                # None here let a stalled handshake hang forever
+                                connect=connect_timeout or self._connect_timeout,
                                 pool=pool_connect_timeout or self._pool_connect_timeout,
                                 read=read_timeout or self._read_timeout,
                             ),
