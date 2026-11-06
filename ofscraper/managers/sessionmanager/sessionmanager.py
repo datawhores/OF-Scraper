@@ -625,6 +625,12 @@ class sessionManager:
         wait_min = kwargs.get("wait_min") or self._wait_min
         wait_max = kwargs.get("wait_max") or self._wait_max
 
+        # The retry loop only gets the response. The caller's code runs after
+        # it, at the yield below: an error there (e.g. a read timeout while
+        # streaming) must not land inside tenacity's attempt, which swallows
+        # every exception and would start a new request and yield again,
+        # leaving both responses' connections open.
+        r = None
         async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
@@ -682,13 +688,23 @@ class sessionManager:
                             )
                             raise SystemExit("OnlyFans Maintenance detected.")
                         r.raise_for_status()
-                    self._sem.release()
-                    yield r
-                    return
                 except Exception as E:
+                    if r is not None:
+                        r.close()
+                        r = None
                     await self._async_handle_error(E, exceptions)
-                    self._sem.release()
                     raise E
+                finally:
+                    self._sem.release()
+
+        try:
+            yield r
+        except BaseException:
+            # unread data stays in the socket buffer until the connection closes
+            r.close()
+            raise
+        else:
+            r.release()
 
     @property
     def sleep(self):
