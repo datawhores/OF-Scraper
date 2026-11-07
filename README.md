@@ -38,7 +38,7 @@ Upstream hasn't been updated since April 2026. This fork keeps it working:
 
 ## Install
 
-This fork is on PyPI as **`ofscraper-community`**. The command is still `ofscraper`.
+This fork is on PyPI as **`ofscraper-community`**. The command is still `ofscraper`. It needs Python 3.11 to 3.15, and protected (DRM) videos also need ffmpeg 6 or newer.
 
 **With uv (recommended)**
 
@@ -58,23 +58,6 @@ pipx install ofscraper-community
 pip install ofscraper-community
 ```
 
-**Already have `ofscraper` installed?** The `ofscraper` package on PyPI is upstream's old version, without these fixes. Both install the same `ofscraper` command, so remove the old one first:
-
-```
-pip uninstall ofscraper          # installed with pip
-uv tool uninstall ofscraper      # installed with uv, including this fork before it was on PyPI
-pipx uninstall ofscraper         # installed with pipx
-```
-
-Then install `ofscraper-community` as above. If pip already has both, uninstall both, then install `ofscraper-community` again.
-
-**Latest unreleased changes:** to get what's on `main` before it's released, install from this repo.
-
-```
-uv tool install --force git+https://github.com/cloakedkeys/OF-Scraper-Community
-pip install git+https://github.com/cloakedkeys/OF-Scraper-Community
-```
-
 **Without Python:** download the Windows, macOS or Linux build from the [latest release](https://github.com/cloakedkeys/OF-Scraper-Community/releases/latest).
 
 **Docker**
@@ -83,9 +66,34 @@ pip install git+https://github.com/cloakedkeys/OF-Scraper-Community
 docker pull ghcr.io/cloakedkeys/of-scraper-community:latest
 ```
 
-Python 3.11 to 3.15 is supported. Protected (DRM) videos also need ffmpeg 6 or newer.
+### Updating
 
-To update, run `uv tool upgrade ofscraper-community`, `pipx upgrade ofscraper-community` or `pip install -U ofscraper-community`. For a GitHub install, run the same install command again.
+```
+uv tool upgrade ofscraper-community
+pipx upgrade ofscraper-community
+pip install -U ofscraper-community
+```
+
+Use the one that matches how you installed it.
+
+### Switching from `ofscraper`
+
+The `ofscraper` package on PyPI is upstream's old version, without these fixes. It installs the same `ofscraper` command, so uninstall it first, using the tool you installed it with:
+
+- pip: `pip uninstall ofscraper`
+- uv (this includes the fork installed from GitHub before it was on PyPI): `uv tool uninstall ofscraper`
+- pipx: `pipx uninstall ofscraper`
+
+Then install `ofscraper-community` as above. If pip already has both, uninstall both, then install `ofscraper-community` again.
+
+### Unreleased changes
+
+To get what's on `main` before it's released, install from this repo. To update, run the same command again.
+
+```
+uv tool install --force git+https://github.com/cloakedkeys/OF-Scraper-Community
+pip install git+https://github.com/cloakedkeys/OF-Scraper-Community
+```
 
 ## Getting started
 
