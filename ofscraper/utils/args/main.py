@@ -1,6 +1,8 @@
 import re
 import sys
 
+import click
+
 import ofscraper.utils.args.mutators.write as write_args
 import ofscraper.utils.args.parse.commands.main as main
 import ofscraper.utils.args.parse.commands.manual as manual
@@ -58,6 +60,11 @@ def parse_args():
         d = AutoDotDict(args)
         write_args.setArgs(d)
         return d
+    except click.exceptions.ClickException as e:
+        # with standalone_mode=False click raises usage errors instead of
+        # printing them; print them the way click normally does
+        e.show()
+        sys.exit(e.exit_code)
     except SystemExit as e:
         if e.code != 0:
             raise
