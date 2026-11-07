@@ -5,6 +5,7 @@ from collections import OrderedDict
 import csv
 import arrow
 from rich.table import Table
+from rich.text import Text
 from rich import box
 from humanfriendly import format_size
 
@@ -300,7 +301,8 @@ class DBManager:
             row = "|".join(f"{str(value):^20}" for value in row_data)
             log.info(f"|{' ' * 20}|{row}|{'-' * 20}|")
             # add to table
-            table.add_row(*row_data)
+            # Text cells, so filenames and paths aren't read as markup
+            table.add_row(*(Text(value) for value in row_data))
         console.get_console().print(table)
 
     def dedup_by_media_id(self):

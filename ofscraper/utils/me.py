@@ -1,3 +1,5 @@
+from ofscraper.utils.markup import escape_text
+
 import ofscraper.utils.console as console
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.profiles.data as profile_data
@@ -20,4 +22,4 @@ def get_id():
 
 
 def print_user(name, username):
-    console.get_shared_console().print(f"Welcome, {name} | {username}")
+    console.get_shared_console().print(f"Welcome, {escape_text(name)} | {escape_text(username)}")

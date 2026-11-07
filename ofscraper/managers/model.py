@@ -1,6 +1,8 @@
 import logging
 from typing import Dict, List, Optional, Set, Union, Iterable
 
+from ofscraper.utils.markup import escape_text
+
 import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.filters.models.date as date_
 import ofscraper.filters.models.flags as flags
@@ -329,7 +331,7 @@ class ModelManager:
                         new_args = settings.get_args(copy=True)
 
             except Exception as e:
-                console.get_console().print(f"Exception in menu: {e}")
+                console.get_console().print(f"Exception in menu: {escape_text(e)}")
             settings.update_args(new_args)
 
     def get_models_from_prompt(self):
