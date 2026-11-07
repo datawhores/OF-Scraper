@@ -704,7 +704,10 @@ class sessionManager:
                         ssl=self._get_ssl_context(),
                     )
 
-                    if not r.ok and r.status_code != 404:
+                    # a 416 to a ranged request is an answer, not a failure:
+                    # the caller decides what to do with the part on disk
+                    range_refused = r.status_code == 416 and "Range" in (headers or {})
+                    if not r.ok and r.status_code != 404 and not range_refused:
                         error_text = await r.text_()
                         self._log.debug(f"[bold]failed: [bold] {r.url}")
                         self._log.debug(f"[bold]status: [bold] {r.status_code}")

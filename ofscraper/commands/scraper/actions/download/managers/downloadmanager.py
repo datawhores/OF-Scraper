@@ -28,6 +28,11 @@ from ofscraper.scripts.skip_download_script import skip_download_script
 from ofscraper.scripts.after_download_script import after_download_script
 
 
+class StartOver(Exception):
+    """A reply that can't continue the part on disk. The part has been deleted,
+    so the next request downloads the file from the start."""
+
+
 class DownloadManager:
     def __init__(self):
         self.total = None
@@ -62,8 +67,61 @@ class DownloadManager:
         return (
             None
             if not resume_size or not total
-            else {"Range": f"bytes={resume_size}-{total}"}
+            else {"Range": f"bytes={resume_size}-"}
         )
+
+    def _full_size_from_reply(self, r, resume_size, path, saved_total=None):
+        """Return (total, resume_size) for the reply to a request that may have
+        asked for a range.
+
+        A 206 reply carries only the missing bytes, so its Content-Length is the
+        size of that piece, not of the file. The full size comes from
+        Content-Range, or from the part on disk plus Content-Length. A server
+        that ignores Range answers 200 with the whole file, so the part on disk
+        is dropped and the download starts again from 0 instead of appending.
+
+        saved_total is the size saved when the part was started. If the reply
+        is for a file of another size (the file changed on the server, or the
+        part was written by an older version that saved the wrong size), or it
+        can't be lined up with the part at all, the part is deleted and
+        StartOver is raised so the caller downloads the file from the start.
+        """
+        length = r.headers.get("content-length")
+        length = int(length) if length is not None else None
+        if not resume_size:
+            return length, 0
+        content_range = (r.headers.get("content-range") or "").strip()
+        sent, _, full = content_range.removeprefix("bytes ").partition("/")
+        full = full.strip()
+        if r.status == 416:
+            # nothing left to send from resume_size on: the part isn't the
+            # start of the file the server has now
+            self._start_over(path, f"the server answered 416 ({content_range})")
+        if r.status != 206:
+            pathlib.Path(path).unlink(missing_ok=True)
+            return length, 0
+        start = sent.split("-")[0].strip()
+        if start and start != str(resume_size):
+            self._start_over(
+                path,
+                f"resume asked for bytes from {resume_size} but the server sent {content_range}",
+            )
+        if full.isdigit():
+            total = int(full)
+        elif length is not None:
+            total = resume_size + length
+        else:
+            self._start_over(path, "the reply doesn't give the file size")
+        if saved_total and total != int(saved_total):
+            self._start_over(
+                path,
+                f"the file is {total} bytes but the part was started from a {saved_total}-byte file",
+            )
+        return total, resume_size
+
+    def _start_over(self, path, reason):
+        pathlib.Path(path).unlink(missing_ok=True)
+        raise StartOver(f"can't resume, downloading from the start: {reason}")
 
     def _get_resume_size(
         self,

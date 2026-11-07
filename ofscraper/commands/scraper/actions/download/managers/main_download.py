@@ -22,6 +22,7 @@ from ofscraper.utils.cache.profile import set_profile_cache
 
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
+    StartOver,
 )
 from ofscraper.commands.scraper.actions.download.utils.retries import (
     download_retry,
@@ -133,9 +134,16 @@ class MainDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
             )
-            return await self._send_req_inner(
-                c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
-            )
+            try:
+                return await self._send_req_inner(
+                    c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
+                )
+            except StartOver as E:
+                # the part was deleted; ask for the whole file, without a range
+                common_globals.log.debug(f"{common_logs.get_medialog(ele)} {E}")
+                return await self._send_req_inner(
+                    c, ele, tempholderObj, placeholderObj=placeholderObj, total=None
+                )
         except OSError as E:
             raise E
         except Exception as E:
@@ -147,7 +155,7 @@ class MainDownloadManager(DownloadManager):
         try:
             resume_size = self._get_resume_size(tempholderObj)
             headers = self._get_resume_header(resume_size, total)
-            total = None
+            saved_total, total = total, None
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
@@ -159,7 +167,9 @@ class MainDownloadManager(DownloadManager):
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
             ) as r:
-                total = int(r.headers["content-length"])
+                total, resume_size = self._full_size_from_reply(
+                    r, resume_size, tempholderObj.tempfilepath, saved_total
+                )
                 data = {
                     "content-total": total,
                     "content-type": r.headers.get("content-type"),
