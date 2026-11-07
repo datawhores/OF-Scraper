@@ -253,28 +253,6 @@ class MainDownloadManager(DownloadManager):
         )
         return written
 
-    async def _download_fileobject_writer_reader(
-        self, r, ele, tempholderObj, placeholderObj, total
-    ):
-        task1 = await self._add_download_job_task(
-            ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
-        )
-
-        fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
-        try:
-            await fileobject.write(await r.read_())
-        except Exception as E:
-            raise E
-        finally:
-            try:
-                await fileobject.close()
-            except Exception:
-                pass
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception:
-                pass
-
     async def _download_fileobject_writer_streamer(
         self,
         res,
