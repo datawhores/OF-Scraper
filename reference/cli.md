@@ -24,7 +24,7 @@ Accepts 50 options. Its `--help` summary: Manually download media by providing a
 
 ofscraper msg_check -u ITEM... or -f FILE. Each item is a creator username, or any text containing a number, which is taken as the model id (e.g. a chat URL). Fetches the creator's messages and purchases (from the check cache unless --force; the cache expires after 3 days), writes them to user_data.db, and opens an interactive table of the media where unlocked rows can be queued for download; a background thread downloads them.
 
-Accepts 50 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 50 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `story_check`
 
@@ -992,11 +992,11 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
 - Scan posts via space or comma seperated list of urls
 
-#### `--file`
+#### `--file` (`file`)
 
 - **Also:** `-f`
 - **Dest:** `file` · **Type:** file; repeatable · **Default:** none
-- **Commands:** `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
+- **Commands:** `manual`, `msg_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 - Scan posts via a file with line-separated URL(s)
 
@@ -1007,6 +1007,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** `story_check`, `paid_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
 - Scan stories/highlights via username(s)
+
+#### `--file` (`file_usernames`)
+
+- **Also:** `-f`
+- **Dest:** `file_usernames` · **Type:** file; repeatable · **Default:** none
+- **Commands:** `story_check`, `paid_check`
+- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
+- Scan via a file with line-separated username(s)
 
 #### `--export`
 

@@ -580,7 +580,7 @@ async def message_check_retriver(forced=False):
                     paid = oldpaid
                 else:
                     log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
-                    paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                    paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                     set_check(paid, model_id, paid_.API)
 
                 paid_posts_array = list(
@@ -622,7 +622,7 @@ async def purchase_check_retriver(forced=False):
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for name in settings.get_settings().check_usernames:
+        for name in check_usernames():
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(model_id, [])
@@ -646,7 +646,7 @@ async def purchase_check_retriver(forced=False):
                 ]
             else:
                 log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
-                paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                 set_check(paid, model_id, paid_.API)
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             yield user_name, model_id, posts_array
@@ -679,7 +679,7 @@ async def stories_check_retriver(forced=False):
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for user_name in settings.get_settings().check_usernames:
+        for user_name in check_usernames():
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(model_id, [])
@@ -696,6 +696,14 @@ async def stories_check_retriver(forced=False):
                 map(lambda x: posts_.Post(x, model_id, user_name, "stories"), stories)
             )
             yield user_name, model_id, stories + highlights_
+
+
+def check_usernames():
+    # usernames from -u and from the files given with -f
+    current = settings.get_settings()
+    return list(current.check_usernames or []) + list(
+        getattr(current, "file_usernames", None) or []
+    )
 
 
 def url_helper():
@@ -739,7 +747,7 @@ async def get_paid_ids(model_id, user_name):
         async with manager.Manager.session.aget_ofsession(
             sem_count=of_env.getattr("API_REQ_CHECK_MAX")
         ) as c:
-            paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+            paid = await paid_.get_paid_posts(user_name, model_id, c=c)
             set_check(paid, model_id, paid_.API)
 
     media = await process_post_media(user_name, model_id, paid)
