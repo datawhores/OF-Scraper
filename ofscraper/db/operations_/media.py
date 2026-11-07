@@ -163,6 +163,11 @@ filename,size,api_type,media_type,
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
 FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
+getModelMediaStatus = """
+SELECT
+media_id,post_id,media_type,downloaded,unlocked
+FROM medias where model_id=(?)
+"""
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory,
@@ -657,6 +662,14 @@ def get_timeline_media(model_id=None, username=None, conn=None, **kwargs) -> lis
             dict(ele, posted_at=arrow.get(ele["posted_at"] or ele["created_at"] or 0))
             for ele in data
         ]
+
+
+@run
+@wrapper.operation_wrapper_async
+def get_model_media_status(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(getModelMediaStatus, [model_id])
+        return [dict(row) for row in cur.fetchall()]
 
 
 def update_media_table_via_api_helper(

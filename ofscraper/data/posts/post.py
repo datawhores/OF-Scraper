@@ -409,7 +409,9 @@ async def process_all_paid():
 @free.space_checker
 async def process_labels(model_id, username, c):
     try:
-        labelled_posts_ = await labels_api.get_labels(model_id, c=c)
+        labelled_posts_ = await labels_api.get_labels(
+            model_id, c=c, username=username
+        )
 
         labelled_posts_labels = list(
             map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
@@ -447,6 +449,8 @@ async def process_labels(model_id, username, c):
             labels_api.API,
         )
     except Exception as E:
+        # label rows weren't saved, so no label may be marked finished
+        labels_api.discard_finished_labels(model_id)
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
@@ -462,10 +466,16 @@ async def process_areas(ele, model_id, username, c=None):
             username=username,
             downloaded=False,
         )
+        # label and media rows are saved: finished label scans can be trusted
+        labels_api.commit_finished_labels(model_id)
         return postcollection
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
+    finally:
+        # anything not committed above (an error, or a cancelled pass) is
+        # dropped, so a later pass in the same process can't trust it
+        labels_api.discard_finished_labels(model_id)
 
 
 def process_single_task(func):
