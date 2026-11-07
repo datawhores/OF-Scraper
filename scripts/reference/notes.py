@@ -137,7 +137,7 @@ ENV = {
 }
 
 # the four SUPRESS_*_DISPLAY switches have no default to take a type from
-_SUPRESS = "Hides the {what} display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. Unset, the display follows `--output` and `--no-rich`."
+_SUPRESS = "Hides the {what} display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`."
 ENV.update({
     "SUPRESS_API_DISPLAY": _SUPRESS.format(what="API progress"),
     "SUPRESS_DOWNLOAD_DISPLAY": _SUPRESS.format(what="download progress"),
