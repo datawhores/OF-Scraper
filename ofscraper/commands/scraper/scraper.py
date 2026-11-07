@@ -32,6 +32,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
+import ofscraper.sites.fansly.live as live
 
 log = logging.getLogger("shared")
 
@@ -49,6 +50,9 @@ class scraperManager(CommandManager):
     @exit.exit_wrapper
     def runner(self, menu=False):
         check_auth(include_main_menu=menu)
+        if live.once_enabled():
+            # Fansly --live: record who is live now, then do the other actions
+            live.run_blocking(watch=False)
         with scrape_context_manager():
             with progress_utils.stop_live_screen(clear="all"):
                 with progress_utils.setup_live("main_activity"):
@@ -213,6 +217,7 @@ def daemon_process():
     actions.select_areas()
     wakeup = DaemonWakeup()
     wakeup.install()
+    live_thread = live.start_watch_thread() if live.watch_enabled() else None
     try:
         # The scheduler only queues jobs; the main thread runs them. As a
         # non-daemon thread it sat in jobqueue.join() forever and kept the
@@ -257,6 +262,8 @@ def daemon_process():
                 schedule.clear()
                 raise E
     finally:
+        if live_thread:
+            live_thread.stop()
         wakeup.restore()
 
 
@@ -288,14 +295,27 @@ def process_selected_areas():
             menu.update_count()
 
 
+def process_live_only():
+    """Fansly --live / --live-watch with no other action: only record livestreams."""
+    check_auth()
+    if live.once_enabled():
+        live.run_blocking(watch=False)
+    if live.watch_enabled():
+        live.run_blocking(watch=True)
+
+
 def scrapper():
     args = settings.get_args()
     if args.daemon:
-        if len(args.actions) == 0 and not args.scrape_paid:
+        if len(args.actions) == 0 and not args.scrape_paid and not live.enabled():
             prompts.action_prompt()
         daemon_process()
     elif len(args.actions) > 0 or args.scrape_paid:
         process_selected_areas()
+        if live.watch_enabled():
+            live.run_blocking(watch=True)
+    elif live.enabled():
+        process_live_only()
     elif len(args.actions) == 0:
         process_prompts()
 
