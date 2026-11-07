@@ -901,7 +901,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Disable cache and forces consecutive api scan
-- **Note:** Disables both the general cache and the API cache, and turns off incremental downloads. It's the only way to do so: `advanced_options.cache-mode` `disabled` doesn't work at present (#200).
+- **Note:** Disables both the general cache and the API cache, and turns off incremental downloads, for the run; `advanced_options.cache-mode` `disabled` does the same from config.json.
 
 #### `--no-api-cache`
 
@@ -910,7 +910,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Forces consecutive api scan
-- **Note:** Disables only the API response cache.
+- **Note:** Disables only the API response cache, like `advanced_options.cache-mode` `api_disabled`.
 
 #### `--key-mode`
 

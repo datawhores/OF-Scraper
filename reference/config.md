@@ -160,7 +160,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - **Default:** `6` · **Read by:** `get_download_semaphores()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default)
 - **CLI override:** `--downloadsem`
-- Number of downloads that run at the same time (the worker thread pool is twice this); must be at least 1. The --sem/-sd option overrides it.
+- Number of downloads that run at the same time (the worker thread pool is twice this); must be at least 1, and 0 or a negative number falls back to the default. The --sem/-sd option overrides it.
 
 ### `performance_options.download_limit`
 
@@ -216,7 +216,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - **Default:** `"digital"` · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default)
 - **CLI override:** `--dynamic-rules`
-- Which source of OnlyFans request-signing rules to use: datawhores, xagler, rafa, digitalcriminals (aliases dc, digital), generic (needs OFSC_DYNAMIC_GENERIC_URL) or manual (needs OFSC_DYNAMIC_RULE_MANUAL). Unknown values fall back to the default, and anything that yields no rule falls back to datawhores. The -dr/--dynamic-rules option overrides it.
+- Which source of OnlyFans request-signing rules to use: datawhores, xagler, rafa, digitalcriminals (aliases dc, digital, digitals), generic (needs OFSC_DYNAMIC_GENERIC_URL) or manual (needs OFSC_DYNAMIC_RULE_MANUAL). Unknown values fall back to the default with a warning in the log, and anything that yields no rule falls back to datawhores. The -dr/--dynamic-rules option overrides it.
 
 ### `advanced_options.skip_unavailable_content`
 
@@ -235,7 +235,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 
 - **Default:** `"sqlite"` · **Read by:** `cache_mode_helper()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`CACHEDEFAULT`](env.md#cachedefault)
-- Storage backend for the on-disk cache: 'sqlite' (pickled values, cache_sql folder) or 'json' (JSON values, cache_json folder). 'disabled' is accepted but does not currently disable the cache (it selects JSON storage in the cache_sql folder); use --no-cache to disable caching (#200). Other values fall back to the default.
+- Storage backend for the on-disk cache: 'sqlite' (pickled values, cache_sql folder) or 'json' (JSON values, cache_json folder). 'disabled' turns off the cache, the API cache and incremental downloads, like --no-cache; 'api_disabled' turns off only the API response cache, like --no-api-cache, and keeps sqlite storage. Other values fall back to the default.
 
 ### `advanced_options.rotate_logs`
 
@@ -272,21 +272,21 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - **Default:** `true` · **Read by:** `get_incremental_downloads()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default)
 - **Also reads:** `enable_auto_after`
-- When true and no --after is given, each area is scanned only from the newest previously scanned post instead of from the start; like/unlike actions and forced full scans still scan everything. Turned off for the run by --no-cache. Setting it to false in config.json currently has no effect: the getter treats false as missing and uses the default (#200).
+- When true and no --after is given, each area is scanned only from the newest previously scanned post instead of from the start; like/unlike actions and forced full scans still scan everything. Turned off for the run by --no-cache or cache-mode 'disabled'. The legacy key advanced_options.enable_auto_after is read when this key is missing.
 
 ### `advanced_options.default_user_list`
 
 - **Default:** `"main"` · **Read by:** `get_default_userlist()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DEFAULT_USER_LIST`](env.md#default_user_list)
 - **CLI override:** `--user_list`
-- OnlyFans user lists to select creators from when -ul/--user-list is not given; a list or comma-separated string. The reserved names ofscraper.main, ofscraper.active and ofscraper.expired mean all, active and expired subscriptions. Names are matched against lowercased list names.
+- OnlyFans user lists to select creators from when -ul/--user-list is not given; a list or comma-separated string. The reserved names ofscraper.main, ofscraper.active and ofscraper.expired mean all, active and expired subscriptions. Names are matched case-insensitively.
 
 ### `advanced_options.default_black_list`
 
 - **Default:** `[]` · **Read by:** `get_default_blacklist()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DEFAULT_BLACK_LIST`](env.md#default_black_list)
 - **CLI override:** `--black_list`
-- OnlyFans user lists whose members are excluded from selection when -bl/--black-list is not given; a list or comma-separated string. Names are matched against lowercased list names.
+- OnlyFans user lists whose members are excluded from selection when -bl/--black-list is not given; a list or comma-separated string. Names are matched case-insensitively.
 
 ### `advanced_options.logs_expire_time`
 
@@ -362,7 +362,7 @@ These values are the folder names that fill `{responsetype}` in `dir_format`. Ea
 
 - **Default:** `"Messages"` · **Read by:** `get_messages_progress_responsetype()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- Intended folder name for {responsetype} for messages; currently has no effect, because messages are looked up under the key 'messages' and so always get 'Messages' (#200).
+- Folder name used for {responsetype} for messages. The value is capitalized (only its first letter kept uppercase); empty falls back to the type name.
 
 ### `responsetype.archived`
 

@@ -11,6 +11,7 @@ r"""
 
 """
 
+import logging
 import threading
 import re
 from copy import deepcopy
@@ -103,6 +104,27 @@ def resetUserSelect():
     settings = setup_settings()
 
 
+_warned_dynamic_rule = None
+
+
+def _warn_rejected_dynamic_rule(args, used):
+    # get_dynamic() runs often and settings are merged several times a run,
+    # so the fallback is reported here, once for each rejected value
+    global _warned_dynamic_rule
+    if args.dynamic_rules:
+        return
+    configured = config_data.get_dynamic_configured()
+    if (
+        configured
+        and str(configured).lower() != used
+        and _warned_dynamic_rule != (configured, used)
+    ):
+        _warned_dynamic_rule = (configured, used)
+        logging.getLogger("shared").warning(
+            f"dynamic-mode-default '{configured}' is not accepted; using '{used}'"
+        )
+
+
 def merged_settings():
     args = read_args.retriveArgs()
     merged = deepcopy(args)
@@ -110,11 +132,8 @@ def merged_settings():
     merged.ffmpeg=config_data.get_ffmpeg() or of_env.getattr("FFMPEG_DEFAULT")
 
     # --- Cache Logic ---
-    cache_mode = (
-        config_data.get_cache_mode()
-        if hasattr(config_data, "get_cache_mode")
-        else of_env.getattr("CACHEDEFAULT")
-    )
+    # the mode name; get_cache_mode() returns the diskcache storage class
+    cache_mode = config_data.cache_mode_helper()
     merged.cached_disabled = args.no_cache or cache_mode == "disabled"
     merged.api_cached_disabled = (
         args.no_cache
@@ -131,6 +150,7 @@ def merged_settings():
     # --- Basic Config Overrides ---
     merged.key_mode = args.key_mode or config_data.get_key_mode()
     merged.dynamic_rules = args.dynamic_rules or config_data.get_dynamic()
+    _warn_rejected_dynamic_rule(args, merged.dynamic_rules)
     merged.download_bars = args.downloadbars or config_data.get_show_downloadprogress()
     merged.discord_level = args.discord_level or config_data.get_discord()
     merged.log_level = args.log_level or of_env.getattr("DEFAULT_LOG_LEVEL")
@@ -150,7 +170,8 @@ def merged_settings():
         if isinstance(out, str):
             out = out.split(",")
         if isinstance(out, list):
-            return [str(x).strip() for x in out if str(x).strip()]
+            # list names are matched lowercased, as the command line does
+            return [str(x).strip().lower() for x in out if str(x).strip()]
         return []
 
     merged.userlist = _listhelper(args.userlist or config_data.get_default_userlist())

@@ -37,8 +37,6 @@ def load_dynamic_rules_config():
         # Build default from base DYNAMIC_OPTIONS plus hardcoded aliases
         config["DYNAMIC_OPTIONS_ALL"] = config["DYNAMIC_OPTIONS"] + [
             "digitalcriminals",
-            "dv",
-            "dev",
             "dc",
             "digital",
             "digitals",

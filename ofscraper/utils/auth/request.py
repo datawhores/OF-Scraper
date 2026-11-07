@@ -67,7 +67,13 @@ def get_request_auth():
         auth = get_request_auth_xagler()
     elif (dynamic) in {"rafa"}:
         auth = get_request_auth_rafa()
-    elif (dynamic) in {"dc", "digital", "digitalcriminal", "digitalcriminals"}:
+    elif (dynamic) in {
+        "dc",
+        "digital",
+        "digitals",
+        "digitalcriminal",
+        "digitalcriminals",
+    }:
         auth = get_request_auth_digitalcriminals()
     if auth is None:
         auth = get_request_auth_datawhores()
