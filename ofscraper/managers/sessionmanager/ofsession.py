@@ -145,10 +145,19 @@ class download_session(sessionManager):
         **kwargs: Any,
     ) -> None:
         # --- Apply specialized defaults for download sessions ---
-        retries = kwargs.pop("retries", None) or get_download_req_retries()
-        wait_min = kwargs.pop("wait_min", None) or of_env.getattr("OF_MIN_WAIT_API")
-        wait_max = kwargs.pop("wait_max", None) or of_env.getattr("OF_MAX_WAIT_API")
-        read_timeout = kwargs.pop("read_timeout", None) or get_chunk_timeout()
+        # only None means "use the default": 0 retries or a 0 s wait is a value
+        retries = kwargs.pop("retries", None)
+        if retries is None:
+            retries = get_download_req_retries()
+        wait_min = kwargs.pop("wait_min", None)
+        if wait_min is None:
+            wait_min = of_env.getattr("OF_MIN_WAIT_API")
+        wait_max = kwargs.pop("wait_max", None)
+        if wait_max is None:
+            wait_max = of_env.getattr("OF_MAX_WAIT_API")
+        read_timeout = kwargs.pop("read_timeout", None)
+        if read_timeout is None:
+            read_timeout = get_chunk_timeout()
         log = kwargs.pop("log", None) or common_globals.log
         self.leaky_bucket = LeakyBucket(settings.get_settings().download_limit, 1)
 
@@ -163,6 +172,11 @@ class download_session(sessionManager):
             forbidden_sleeper=forbidden_sleeper,
             **kwargs,
         )
+        # A read timeout of 0 means no limit (None). aiohttp reads 0 that way,
+        # but httpx reads 0 as "fail at once". Set here, after the base class:
+        # a None passed to it means "use OF_READ_TIMEOUT".
+        if self._read_timeout == 0:
+            self._read_timeout = None
 
     @contextlib.asynccontextmanager
     async def requests_async(
