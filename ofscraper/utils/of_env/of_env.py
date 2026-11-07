@@ -3,6 +3,7 @@ import os
 
 
 from ofscraper.utils.of_env import get_all_configs
+import contextlib
 import os
 import json
 import logging
@@ -63,6 +64,30 @@ def getattr(val, default=None):
     if val in config_dict:  # Check if key exists in the aggregated settings
         return config_dict.get(val)
     return default
+
+
+@contextlib.contextmanager
+def builtin_defaults():
+    """
+    While the block runs, hide OFSC_* variables and variables named after a
+    setting, so getattr returns the built-in defaults. A new config.json is
+    written inside this, so environment values aren't saved as the user's
+    settings; they still apply at runtime once the block ends.
+    """
+    keys = set(get_all_configs())
+    hidden = {
+        name: value
+        for name, value in os.environ.items()
+        if name.startswith("OFSC_") or name in keys
+    }
+    for name in hidden:
+        del os.environ[name]
+    get_all_configs(forced=True)
+    try:
+        yield
+    finally:
+        os.environ.update(hidden)
+        get_all_configs(forced=True)
 
 
 def getkeys(forced=False):
