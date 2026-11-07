@@ -35,8 +35,8 @@ class StartOver(Exception):
 
 
 class ErrorReply(NoRetry):
-    """The server answered with an error status (a 404, say). Its body is an
-    error page, not the file: nothing is written, the part on disk is kept,
+    """The server answered with an error status (a 404, say), or with an
+    empty reply. Its body isn't the file: nothing is written, the part on disk is kept,
     and the item is left for the next run. Retrying now would only delete the
     part (each retry starts from an empty one), so it isn't retried."""
 
@@ -96,6 +96,14 @@ class DownloadManager:
         raises for most error statuses itself but hands a 404 back, and a 416
         to a ranged request, which _full_size_from_reply handles."""
         if 200 <= r.status < 300:
+            length = (r.headers.get("content-length") or "").strip()
+            if r.status == 204 or length == "0":
+                # an empty reply isn't the file either; as a 0-byte size it
+                # would read as "skipped" and be marked as downloaded (#267)
+                raise ErrorReply(
+                    f"{get_medialog(ele)} the server sent an empty reply "
+                    f"({r.status}), not downloaded"
+                )
             return
         if r.status == 416 and "Range" in (headers or {}):
             return
