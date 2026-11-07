@@ -683,7 +683,11 @@ class Media(base.base):
         for prot in adapt_set.content_protections:
             if prot.value is None:
                 kId = prot.pssh[0].pssh
-                sensitive.add_sensitive_pattern(kId, "pssh_code")
+                # escaped: a base64 PSSH can hold "+" and "/", which as a raw
+                # regex would break the pattern and every log line after it
+                sensitive.add_sensitive_pattern(
+                    re.compile(re.escape(str(kId))), "pssh_code"
+                )
                 break
 
         origname = f"{selected_repr.base_urls[0].base_url_value}"

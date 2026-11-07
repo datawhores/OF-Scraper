@@ -38,7 +38,13 @@ def getSenstiveDict() -> dict:
     """
     Returns a combined dictionary of default, user-added, and dynamic patterns.
     """
+    # Dicts keep insertion order, which is the order they're applied in:
+    # built-in rules, then patterns added during the session (exact values
+    # such as the session cookie or user id), then the home folder name last.
+    # The home folder name is short and could otherwise rewrite part of a
+    # secret so it no longer matches.
     combined_patterns = _DEFAULT_PATTERNS.copy()
+    combined_patterns.update(_USER_ADDED_PATTERNS)
 
     # --- Add Dynamic Patterns ---
     # These are generated based on the current user's specific info.
@@ -47,9 +53,6 @@ def getSenstiveDict() -> dict:
     profile_dir = paths.get_username()
     if profile_dir:
         # Escape the path for regex and replace it
-        combined_patterns[re.escape(str(profile_dir))] = "{home_directory}"
-
-    # Add any patterns the user added manually during the session
-    combined_patterns.update(_USER_ADDED_PATTERNS)
+        combined_patterns.setdefault(re.escape(str(profile_dir)), "{home_directory}")
 
     return combined_patterns
