@@ -21,7 +21,7 @@ Community fixes for the GUI patch go to `cjb900/OF-Scraper-GUI`.
 6. **Don't send OnlyFans credentials to third parties.** `--key-mode cdrm` posts the request headers, cookies included, to cdrm-project.com. Don't run a live cdrm decrypt without the maintainer's approval.
 
 ## Setup
-- **Python:** `requires-python` is `>=3.11, <3.16`. CI tests on 3.11 (the minimum) and 3.15.1. On 3.15, lz4 and faust-cchardet have no wheels and build from source, so a C compiler is needed (MSVC on Windows).
+- **Python:** `requires-python` is `>=3.11, <3.16`. CI tests on 3.11 (the minimum) and 3.15.2. On 3.15, lz4 and faust-cchardet have no wheels and build from source, so a C compiler is needed (MSVC on Windows).
 - **Environment:** `uv sync --python 3.15 --extra test` (or `--python 3.11` for the minimum) creates `.venv` from `uv.lock`. Don't change `uv.lock` unless you're changing dependencies; when you do, use `uv lock -P <package>` rather than a full upgrade.
 - **Parallel work:** use git worktrees, one per branch (e.g. `../ofs-wt/<name>`). Run code from a worktree with `PYTHONPATH=.` and the main checkout's venv.
 
@@ -61,7 +61,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python -c "from ofscraper.__ma
 - **From Git Bash on Windows:** set `MSYS_NO_PATHCONV=1`, or `-e VAR=/path` arguments get rewritten into Windows paths.
 
 ## CI
-- **Tests:** `codecov.yml` runs on pull requests and on pushes to `main` (Python 3.11 and 3.15.1). It installs with `uv sync --frozen` from `uv.lock`, so CI tests exactly the locked versions; a dependency change must update the lockfile.
+- **Tests:** `codecov.yml` runs on pull requests and on pushes to `main` (Python 3.11 and 3.15.2). It installs with `uv sync --frozen` from `uv.lock`, so CI tests exactly the locked versions; a dependency change must update the lockfile.
 - **Images and releases:** `commit_bundler.yml` and `docker-daily.yml` run on **pushes to `main` only**, building binaries (kept as workflow artifacts, not released) and pushing images to the fork's registries. PR branches get only the test workflow, so test a branch's binary or image locally.
 - **Releases:** pushing a version tag (`3.15.1` or `v3.15.1`) runs `commit_bundler.yml` for that tag and publishes one release named after it, with the binaries and generated notes. The binaries report the plain version, without a commit hash.
 - **Doc-only changes** (`*.md`, `docs/`, `media/`, `LICENSE`, issue templates) start no workflows. A push that also touches code runs everything as usual.
