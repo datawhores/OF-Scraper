@@ -50,7 +50,8 @@ def _console(monkeypatch):
 
 
 def _args(output="NORMAL", no_rich=False):
-    return SimpleNamespace(output=output, no_rich=no_rich)
+    # --output is stored as output_level
+    return SimpleNamespace(output_level=output, no_rich=no_rich)
 
 
 @pytest.mark.parametrize(

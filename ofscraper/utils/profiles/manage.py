@@ -14,7 +14,6 @@ from ofscraper.utils.markup import escape_text
 
 
 log = logging.getLogger("shared")
-console = console.shared_console
 currentData = None
 currentProfile = None
 
@@ -50,7 +49,8 @@ def create_profile():
         manager.Manager.profile_manager.switch_profile(name,permanent=True)
     if choice=="active":
         manager.Manager.profile_manager.switch_profile(name,permanent=False)
-    console.print(
+    # the answer to a prompt, so shown even when --output quiets the shared console
+    console.get_console().print(
         "[green]Successfully created[/green] {dir_name}".format(dir_name=escape_text(name))
     )
 

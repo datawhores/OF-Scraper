@@ -28,6 +28,7 @@ CLI = {
     "key_mode": "`cdrm` posts the request headers, cookies included, to cdrm-project.com. `manual` uses the local CDM files (`--private-key`, `--client-id`).",
     "quality": "The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.",
     "env_files": "Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.",
+    "output_level": "`LOW` and `PROMPT` hide status lines and the live progress screen. Errors and prompts still show. `LOW` also shows warnings; `PROMPT` shows only errors.",
 }
 
 # --------------------------------------------------------------------------

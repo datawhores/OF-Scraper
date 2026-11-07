@@ -103,7 +103,7 @@ class ModelManager:
                         if prompt_choice == "Selection":
                             self._fetch_all_subs(force_refetch=True)
                     else:
-                        console.get_shared_console().print(existing_queued_users)
+                        console.get_console().print(existing_queued_users)
                         prompts.press_enter_to_continue()
 
             if requires_new_selection:

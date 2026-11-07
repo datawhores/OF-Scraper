@@ -174,6 +174,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
 - Set console output log level
+- **Note:** `LOW` and `PROMPT` hide status lines and the live progress screen. Errors and prompts still show. `LOW` also shows warnings; `PROMPT` shows only errors.
 
 #### `--no-live-screen`
 

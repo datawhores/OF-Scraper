@@ -12,6 +12,8 @@ import ofscraper.utils.settings as settings
 
 def check_cdm():
     console = console_.get_shared_console()
+    # failures are shown even when --output quiets the shared console
+    alert = console_.get_console()
     log = logging.getLogger("shared")
 
     import ofscraper.sites as sites
@@ -45,7 +47,7 @@ def check_cdm():
                     )
                     return True
                 else:
-                    console.print(
+                    alert.print(
                         "[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
                     )
                     log.debug(f"[bold] cdm status[/bold]: {r.status}")
@@ -54,14 +56,14 @@ def check_cdm():
                     time.sleep(3.5)
                     return False
     except httpx.TimeoutException:
-        console.print(
+        alert.print(
             f"[red]CDM service {keymode} timed out and seems to be down\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
         )
         log.debug(traceback.format_exc())
         time.sleep(3.5)
 
     except Exception as E:
-        console.print(
+        alert.print(
             f"[red]CDM service {keymode} has an issue {E}\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
         )
         log.debug(traceback.format_exc())
