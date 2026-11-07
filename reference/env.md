@@ -28,10 +28,9 @@ by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, but only if
 the last per-creator reset). After `*_SLEEP_DECAY_THRESHOLD` seconds without a change
 the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`.
 `*_MIN_SLEEP` is also the minimum gap kept between requests. Before each
-request the rate-limit wait is checked first, and the 403 wait only when the
-rate-limit `*_MIN_SLEEP` is 0 and no rate-limit backoff is running. So at
-present the 403 values have no effect for kinds whose rate-limit `*_MIN_SLEEP`
-is above 0, including the standard API (#214).
+request the rate-limit wait runs first, then the 403 backoff if one is running.
+The 403 `*_MIN_SLEEP` gap is kept only when the rate-limit `*_MIN_SLEEP` is 0
+and no rate-limit backoff is running.
 
 ## Read directly from the environment
 
