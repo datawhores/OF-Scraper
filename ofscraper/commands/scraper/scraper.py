@@ -48,7 +48,7 @@ class scraperManager(CommandManager):
 
     @exit.exit_wrapper
     def runner(self, menu=False):
-        check_auth()
+        check_auth(include_main_menu=menu)
         with scrape_context_manager():
             with progress_utils.stop_live_screen(clear="all"):
                 with progress_utils.setup_live("main_activity"):
