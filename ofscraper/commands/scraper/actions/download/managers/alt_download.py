@@ -204,6 +204,7 @@ class AltDownloadManager(DownloadManager):
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
             ) as l:
+                self._check_status(l, ele, headers)
                 content_type = (l.headers.get("content-type") or "").lower()
                 try:
                     total, resume_size = self._full_size_from_reply(

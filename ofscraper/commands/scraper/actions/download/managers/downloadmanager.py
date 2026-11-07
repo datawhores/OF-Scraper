@@ -26,11 +26,19 @@ import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import mark_media_as_downloaded
 from ofscraper.scripts.skip_download_script import skip_download_script
 from ofscraper.scripts.after_download_script import after_download_script
+from ofscraper.commands.scraper.actions.download.utils.retries import NoRetry
 
 
 class StartOver(Exception):
     """A reply that can't continue the part on disk. The part has been deleted,
     so the next request downloads the file from the start."""
+
+
+class ErrorReply(NoRetry):
+    """The server answered with an error status (a 404, say). Its body is an
+    error page, not the file: nothing is written, the part on disk is kept,
+    and the item is left for the next run. Retrying now would only delete the
+    part (each retry starts from an empty one), so it isn't retried."""
 
 
 class DownloadManager:
@@ -82,6 +90,18 @@ class DownloadManager:
         if etag:
             return None if etag.startswith("W/") else etag
         return (r.headers.get("last-modified") or "").strip() or None
+
+    def _check_status(self, r, ele, headers):
+        """Raise ErrorReply for a reply that isn't the file. The session
+        raises for most error statuses itself but hands a 404 back, and a 416
+        to a ranged request, which _full_size_from_reply handles."""
+        if 200 <= r.status < 300:
+            return
+        if r.status == 416 and "Range" in (headers or {}):
+            return
+        raise ErrorReply(
+            f"{get_medialog(ele)} the server answered {r.status}, not downloaded"
+        )
 
     def _full_size_from_reply(self, r, resume_size, path, saved_total=None):
         """Return (total, resume_size) for the reply to a request that may have

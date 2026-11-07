@@ -174,6 +174,7 @@ class MainDownloadManager(DownloadManager):
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
             ) as r:
+                self._check_status(r, ele, headers)
                 total, resume_size = self._full_size_from_reply(
                     r, resume_size, tempholderObj.tempfilepath, saved_total
                 )

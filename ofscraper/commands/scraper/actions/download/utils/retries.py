@@ -6,6 +6,11 @@ import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 
 
+class NoRetry(Exception):
+    """A download failure that retrying in this run won't fix. The item isn't
+    marked as downloaded, so the next run tries again."""
+
+
 class download_retry(AsyncRetrying):
     def __init__(self, stop=None, wait=None, retry=None) -> None:
         stop = stop or stop_after_attempt(get_download_retries())
@@ -17,7 +22,7 @@ class download_retry(AsyncRetrying):
         # attempt swallows it, so it must not count as a failure
         retry = retry or retry_if_exception(
             lambda e: str(e) != of_env.getattr("SPACE_DOWNLOAD_MESSAGE")
-            and not isinstance(e, (KeyboardInterrupt, asyncio.CancelledError))
+            and not isinstance(e, (KeyboardInterrupt, asyncio.CancelledError, NoRetry))
         )
         
         def _log_retry(retry_state):
