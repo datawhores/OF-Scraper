@@ -39,11 +39,8 @@ def read_request_auth():
         "checksum_constant": "0",
     }
 
-    # *values, = get_request_auth()
-    result = get_request_auth()
-    if not result:
-        raise json.JSONDecodeError("No content")
-    (*values,) = result
+    # get_request_auth returns a checked rule or raises
+    (*values,) = get_request_auth()
 
     request_auth.update(zip(request_auth.keys(), values))
     return request_auth
@@ -207,7 +204,38 @@ def get_request_auth_digitalcriminals():
             return request_auth_helper_picker(content)
 
 
+class UnusableDynamicRule(Exception):
+    """The dynamic rule's content can't be used to sign requests."""
+
+
+RULE_KEYS = ["static_param", "format", "checksum_indexes", "checksum_constant"]
+SUFFIX_RULE_KEYS = [
+    "static_param",
+    "prefix",
+    "suffix",
+    "checksum_indexes",
+    "checksum_constant",
+]
+
+
+def check_rule(content):
+    if not isinstance(content, dict):
+        found = "null" if content is None else type(content).__name__
+        problem = f"expected a JSON object, got {found}"
+    else:
+        keys = SUFFIX_RULE_KEYS if content.get("suffix") else RULE_KEYS
+        missing = [key for key in keys if key not in content]
+        if not missing:
+            return
+        problem = f"missing {', '.join(missing)}"
+    raise UnusableDynamicRule(
+        f"The dynamic rule ({settings.get_settings().dynamic_rules}) is unusable: "
+        f"{problem}. Try another dynamic rule, or try again later."
+    )
+
+
 def request_auth_helper_picker(content):
+    check_rule(content)
     if content.get("suffix"):
         return request_auth_helper(content)
     else:

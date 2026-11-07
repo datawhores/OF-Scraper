@@ -21,6 +21,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console
 import ofscraper.utils.settings as settings
 from . import me
+from ofscraper.utils.auth.request import UnusableDynamicRule
 
 log = logging.getLogger("shared")
 
@@ -59,6 +60,8 @@ def unavailable_message(e: Exception) -> str | None:
             f"{_host(e)} returned {e.response.status_code}: the server had an "
             "error. Try again later."
         )
+    if isinstance(e, UnusableDynamicRule):
+        return str(e)
     if isinstance(e, json.JSONDecodeError):
         # the parse error doesn't say which request it came from
         return (
