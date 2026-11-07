@@ -1,4 +1,5 @@
-"""Database writes for stories, products, others and messages (#203).
+"""Database writes for stories, products, others and messages (#203), and the
+table rebuilds for posts, stories, media, labels and profiles (#224).
 
 Each test builds a real SQLite database in a temporary folder with the app's
 own create and migration code.
@@ -15,7 +16,12 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.merge as merge
 import ofscraper.db.operations as operations
+import ofscraper.db.operations_.labels as labels
+import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.others as others
+import ofscraper.db.operations_.posts as posts
+import ofscraper.db.operations_.profile as profile
+import ofscraper.db.operations_.stories as stories
 import ofscraper.db.utils.rebuild as rebuild
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.messages import (
@@ -47,6 +53,62 @@ MESSAGES = [
     (701, "kept message", 5, 1, 0, "2024-05-02T03:04:05+00:00", MODEL_ID, MODEL_ID, 0),
     (702, "deleted message", 0, 0, 0, "2024-06-02T03:04:05+00:00", MODEL_ID, MODEL_ID, 1),
 ]
+
+POST_COLS = [
+    "post_id", "text", "price", "paid", "archived", "pinned", "stream", "opened",
+    "created_at", "model_id", "is_deleted",
+]
+STORY_COLS = ["post_id", "text", "price", "paid", "archived", "created_at", "model_id"]
+MEDIA_COLS = [
+    "media_id", "post_id", "link", "directory", "filename", "size", "api_type",
+    "media_type", "preview", "linked", "downloaded", "created_at", "posted_at", "hash",
+    "model_id", "duration", "unlocked",
+]
+LABEL_COLS = ["label_id", "name", "type", "post_id", "model_id"]
+PROFILE_COLS = ["user_id", "username"]
+
+POSTS = [
+    (1001, "post one", 4, 1, 0, 1, 0, 1, "2024-01-03T03:04:05+00:00", MODEL_ID, 0),
+    (1002, "post two", 0, 0, 1, 0, 1, 0, "2024-02-03T03:04:05+00:00", MODEL_ID, 1),
+]
+STORIES = [
+    (1101, "story one", 0, 0, 0, "2024-03-03T03:04:05+00:00", MODEL_ID),
+    (1102, "story two", 2, 1, 1, "2024-04-03T03:04:05+00:00", MODEL_ID),
+]
+MEDIAS = [
+    (1201, 1001, "https://example.invalid/a.jpg", "/dl/a", "a.jpg", 123, "Posts",
+     "Images", 0, 1, 1, "2024-01-03T03:04:05+00:00", "2024-01-03T03:04:06+00:00",
+     "hash-a", MODEL_ID, None, 1),
+    (1202, 1002, "https://example.invalid/b.mp4", None, None, None, "Archived",
+     "Videos", 1, 0, 0, "2024-02-03T03:04:05+00:00", "2024-02-03T03:04:06+00:00",
+     None, MODEL_ID, "12.5", 0),
+]
+LABELS = [
+    (1301, "label one", "custom", 1001, MODEL_ID),
+    (1302, "label two", "custom", 1002, MODEL_ID),
+]
+PROFILES = [(MODEL_ID, USERNAME), (MODEL_ID, "dbmodel_renamed")]
+
+# table: module, columns, rows, the read the rebuild copies from, and a row the
+# new table rejects (a duplicate key unless noted)
+REBUILT_TABLES = {
+    "posts": (posts, POST_COLS, POSTS, "get_all_posts_transition", POSTS[0]),
+    "stories": (stories, STORY_COLS, STORIES, "get_all_stories_transition", STORIES[0]),
+    # media rows sharing a key are merged before the insert, so break NOT NULL instead
+    "medias": (
+        media, MEDIA_COLS, MEDIAS, "get_all_medias_transition",
+        (1203,) + (None,) + MEDIAS[0][2:],
+    ),
+    "labels": (labels, LABEL_COLS, LABELS, "get_all_labels_transition", LABELS[0]),
+    "profiles": (profile, PROFILE_COLS, PROFILES, "get_all_profiles", PROFILES[0]),
+}
+REBUILDS = {
+    "posts": lambda db: posts.rebuild_posts_table(db_path=db),
+    "stories": lambda db: stories.rebuild_stories_table(db_path=db),
+    "medias": lambda db: media.rebuild_media_table(db_path=db),
+    "labels": lambda db: labels.rebuild_labels_table(db_path=db),
+    "profiles": lambda db: profile.rebuild_profiles_table(db_path=db),
+}
 
 
 @pytest.fixture
@@ -238,6 +300,62 @@ def test_rebuild_keeps_views_on_the_table_working(tmp_path):
     assert rows(db, "others", OTHER_COLS) == OTHERS
     assert rows(db, "others_view", ["post_id"]) == [(601,), (602,)]
     assert "others_rebuild_new" not in tables(db)
+
+
+def columns(db, table):
+    with contextlib.closing(sqlite3.connect(db)) as conn:
+        return [r[1] for r in conn.execute(f"PRAGMA table_info('{table}')")]
+
+
+def seed(db, table):
+    _, cols, data, _, _ = REBUILT_TABLES[table]
+    if table == "profiles":
+        # new_database already wrote the first profile
+        insert(db, table, cols, data[1:])
+    else:
+        insert(db, table, cols, without_model_id(cols, data))
+
+
+def test_migration_rebuilds_keep_every_row_and_column(tmp_path):
+    db = tmp_path / "user_data.db"
+
+    async def run():
+        await new_database(db)
+        for table in REBUILT_TABLES:
+            seed(db, table)
+        before = {table: columns(db, table) for table in REBUILT_TABLES}
+        await modify_tables(db_path=db)
+        return before
+
+    before = asyncio.run(run())
+    for table, (_, cols, data, _, _) in REBUILT_TABLES.items():
+        assert rows(db, table, cols) == sorted(data), table
+        assert columns(db, table) == before[table], table
+    assert not [name for name in tables(db) if name.endswith("_rebuild_new")]
+
+
+@pytest.mark.parametrize("table", list(REBUILT_TABLES))
+def test_failed_rebuild_keeps_the_old_table_and_rows(tmp_path, monkeypatch, table):
+    db = tmp_path / "user_data.db"
+    module, cols, data, read, bad = REBUILT_TABLES[table]
+
+    async def good_then_bad_rows(**kwargs):
+        # the first row copies, the second makes the insert fail partway
+        return [dict(zip(cols, data[0])), dict(zip(cols, bad))]
+
+    async def run():
+        await new_database(db)
+        await modify_tables(db_path=db)
+        seed(db, table)
+        monkeypatch.setattr(module, read, good_then_bad_rows)
+        with pytest.raises(sqlite3.IntegrityError):
+            await REBUILDS[table](db)
+
+    asyncio.run(run())
+    assert table in tables(db)
+    expected = sorted(data) if table == "profiles" else without_model_id(cols, data)
+    assert rows(db, table, cols) == sorted(expected)
+    assert f"{table}_rebuild_new" not in tables(db)
 
 
 def test_merge_copies_products_others_and_messages(tmp_path, monkeypatch):

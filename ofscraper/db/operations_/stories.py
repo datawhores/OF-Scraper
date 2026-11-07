@@ -19,6 +19,7 @@ from rich.console import Console
 
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -55,9 +56,6 @@ SELECT post_id,text,price,paid,archived,created_at,
        END AS model_id
 FROM stories;
 
-"""
-storiesDrop = """
-drop table stories;
 """
 allStoriesCheck = """
 SELECT post_id FROM stories
@@ -97,23 +95,37 @@ def write_stories_table(
         conn.commit()
 
 
+def stories_transition_rows(inputData: list) -> list:
+    ordered_keys = [
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "created_at",
+        "model_id",
+    ]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+
+
 @wrapper.operation_wrapper_async
 def write_stories_table_transition(
     inputData: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = [
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "created_at",
-            "model_id",
-        ]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(storiesInsert, insertData)
+        cur.executemany(storiesInsert, stories_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_stories_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn,
+        "stories",
+        storiesCreate,
+        storiesInsert,
+        stories_transition_rows(inputData),
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -179,13 +191,6 @@ def add_column_stories_ID(conn=None, **kwargs):
             raise e
 
 
-@wrapper.operation_wrapper_async
-def drop_stories_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(storiesDrop)
-        conn.commit()
-
-
 async def rebuild_stories_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
@@ -196,10 +201,7 @@ async def rebuild_stories_table(model_id=None, username=None, db_path=None, **kw
         database_model=database_model,
         db_path=db_path,
     )
-
-    await drop_stories_table(model_id=model_id, username=username, db_path=db_path)
-    await create_stories_table(model_id=model_id, username=username, db_path=db_path)
-    await write_stories_table_transition(
+    await replace_stories_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 

@@ -22,6 +22,7 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -102,9 +103,6 @@ SELECT post_id, text, price, paid, archived, created_at,
        FROM posts;
 """
 
-postsDrop = """
-drop table posts;
-"""
 allPOSTCheck = """
 SELECT post_id FROM posts
 """
@@ -146,27 +144,37 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
         conn.commit()
 
 
+def posts_transition_rows(inputData: list) -> list:
+    ordered_keys = (
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "pinned",
+        "stream",
+        "opened",
+        "created_at",
+        "model_id",
+        "is_deleted",
+    )
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+
+
 @wrapper.operation_wrapper_async
 def write_post_table_transition(
     inputData: list, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = (
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "pinned",
-            "stream",
-            "opened",
-            "created_at",
-            "model_id",
-            "is_deleted",
-        )
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(postInsertTransition, insertData)
+        cur.executemany(postInsertTransition, posts_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_posts_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn, "posts", postCreate, postInsertTransition, posts_transition_rows(inputData)
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -235,13 +243,6 @@ def get_all_posts_transition(
             )
             for row in data
         ]
-
-
-@wrapper.operation_wrapper_async
-def drop_posts_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postsDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -386,9 +387,7 @@ async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwar
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_posts_table(model_id=model_id, username=username, db_path=db_path)
-    await create_post_table(model_id=model_id, username=username, db_path=db_path)
-    await write_post_table_transition(
+    await replace_posts_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 

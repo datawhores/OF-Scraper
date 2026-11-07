@@ -21,6 +21,7 @@ import ofscraper.classes.labels as labels_class
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.posts as post_
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -64,9 +65,6 @@ SELECT
     END AS model_id,
     name, type, post_id
 FROM labels;
-"""
-labelDrop = """
-drop table labels;
 """
 
 
@@ -124,15 +122,25 @@ def update_labels_table(
         conn.commit()
 
 
+def labels_transition_rows(inputData: list) -> list:
+    ordered_keys = ["label_id", "name", "type", "post_id", "model_id"]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+
+
 @wrapper.operation_wrapper_async
 def write_labels_table_transition(
     inputData: list, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        ordered_keys = ["label_id", "name", "type", "post_id", "model_id"]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        curr.executemany(labelInsert, insertData)
+        curr.executemany(labelInsert, labels_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_labels_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn, "labels", labelsCreate, labelInsert, labels_transition_rows(inputData)
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -159,13 +167,6 @@ def add_column_labels_ID(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Raise the error for handling
-
-
-@wrapper.operation_wrapper_async
-def drop_labels_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(labelDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -211,9 +212,7 @@ async def rebuild_labels_table(model_id=None, username=None, db_path=None, **kwa
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_labels_table(model_id=model_id, username=username, db_path=db_path)
-    await create_labels_table(model_id=model_id, username=username, db_path=db_path)
-    await write_labels_table_transition(
+    await replace_labels_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 
