@@ -25,6 +25,8 @@ def fail_auth_check(monkeypatch):
         lambda: SimpleNamespace(anon=False, output_level="NORMAL"),
     )
     monkeypatch.setattr(checkers.auth_file, "read_auth", lambda: {})
+    # the dynamic rule is fetched before /me; the errors here come from /me
+    monkeypatch.setattr(init.auth_requests, "get_request_auth", lambda: None)
     # traceback_ is added to loggers by the app's log setup
     monkeypatch.setattr(init.log, "traceback_", lambda *a, **k: None, raising=False)
 
