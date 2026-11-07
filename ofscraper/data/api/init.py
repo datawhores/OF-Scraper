@@ -76,7 +76,12 @@ def getstatus():
         # fetch the dynamic rule once, with its own retries. Otherwise each
         # retry of /me fetches it again, retries included
         auth_requests.get_request_auth()
-        me.scrape_user()
+        data = me.scrape_user()
+        # /me answers isAuth false when no one is logged in. That's a normal
+        # answer for anonymous runs, so it's only treated as bad auth here
+        if not data.get("isAuth"):
+            log.info("OnlyFans says this session isn't logged in")
+            return "DOWN"
         return "UP"
     except Exception as e:
         log.traceback_(e)
