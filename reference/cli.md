@@ -52,7 +52,7 @@ Accepts 85 options. Its `--help` summary: Uses API to modify db files without th
 
 ### `db`
 
-ofscraper db with user selection, area (-o) and media filters (type, size, length, downloaded, locked, preview, protected, post/media ids, dates), sorting and a hard limit. Reads media rows from each selected creator's user_data.db and prints them as a table; -ep/--export PATH also writes a .csv. Makes no API calls for the media itself. With several creators each one rewrites the same CSV path, so only the last creator's rows remain.
+ofscraper db with user selection, area (-o) and media filters (type, size, length, downloaded, locked, preview, protected, post/media ids, dates), sorting and a hard limit. Reads media rows from each selected creator's user_data.db and prints them as a table; -ep/--export PATH also writes a .csv. Makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV.
 
 Accepts 60 options. Its `--help` summary: Print information from the database.
 
