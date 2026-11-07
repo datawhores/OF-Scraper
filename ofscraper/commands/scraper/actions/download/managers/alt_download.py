@@ -33,6 +33,7 @@ import ofscraper.utils.live.updater as progress_updater
 
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
+    StartOver,
 )
 from ofscraper.commands.scraper.actions.download.utils.retries import (
     download_retry,
@@ -160,7 +161,13 @@ class AltDownloadManager(DownloadManager):
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
             )
-            return await self._send_req_inner(c, ele, item, placeholderObj)
+            try:
+                return await self._send_req_inner(c, ele, item, placeholderObj)
+            except StartOver as E:
+                # the part was deleted; ask for the whole track, without a range
+                common_globals.log.debug(f"{get_medialog(ele)} {E}")
+                item["total"] = None
+                return await self._send_req_inner(c, ele, item, placeholderObj)
         except OSError as E:
             raise E
         except Exception as E:
@@ -171,13 +178,17 @@ class AltDownloadManager(DownloadManager):
         try:
 
             resume_size = self._get_resume_size(placeholderObj)
-            headers = self._get_resume_header(resume_size, item["total"])
+            saved_total = item["total"]
+            headers = self._get_resume_header(resume_size, saved_total)
             # reset total
             total = None
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             url = _mpd_segment_url(ele.mpd, item["origname"])
-            headers = {"Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
+            headers = {
+                **(headers or {}),
+                "Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}",
+            }
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {url}"
             )
@@ -190,9 +201,10 @@ class AltDownloadManager(DownloadManager):
                 read_timeout=get_chunk_timeout(),
             ) as l:
                 content_type = (l.headers.get("content-type") or "").lower()
-                cl_raw = l.headers.get("content-length")
                 try:
-                    total = int(cl_raw) if cl_raw is not None else None
+                    total, resume_size = self._full_size_from_reply(
+                        l, resume_size, placeholderObj.tempfilepath, saved_total
+                    )
                 except (TypeError, ValueError):
                     total = None
                 item["total"] = total

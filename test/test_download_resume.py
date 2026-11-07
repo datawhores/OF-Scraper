@@ -4,7 +4,9 @@ Each test runs a downloader's request step against a local server, with the
 first R bytes of a file already in the .part. The normal downloader used to
 take the 206 reply's Content-Length (only the missing bytes) as the size of
 the whole file: with more than half on disk it deleted the .part, wrote only
-the end of the file and passed the size check.
+the end of the file and passed the size check. The DRM downloader built the
+Range header and then replaced it with only the Cookie, so it appended the
+whole file after the partial data and downloaded it again.
 
 A reply that doesn't fit the .part (a file of another size than the one the
 .part was started from, no size at all, or a 416) deletes the .part and
@@ -20,6 +22,7 @@ import pytest
 from aiohttp import ClientSession, web
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
+import ofscraper.commands.scraper.actions.download.managers.alt_download as ad
 import ofscraper.commands.scraper.actions.download.managers.downloadmanager as dm
 import ofscraper.commands.scraper.actions.download.managers.main_download as md
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -234,6 +237,84 @@ def test_main_416_restarts(tmp_path):
     # the whole file is on disk but the saved size is larger, so the server
     # has nothing to send from byte 1,000,000 on and answers 416
     total, data, seen, cached = _main_resume(tmp_path, T, cached_total=1_500_000)
+    assert seen == [f"bytes={T}-", None]
+    assert total == T
+    assert data == BODY
+    assert [c["content-total"] for c in cached] == [T]
+
+
+def _alt_resume(
+    tmp_path, monkeypatch, have, mode="range", cached_total=T, kind="video", body=BODY
+):
+    monkeypatch.setattr(
+        common_globals, "attempt2", SimpleNamespace(get=lambda *a: 1), raising=False
+    )
+    monkeypatch.setattr(ad, "send_chunk_msg", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "temp_file_logger", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "get_alt_params", lambda ele: {})
+    monkeypatch.setattr(ad, "_mpd_segment_url", lambda mpd, name: "x")
+    monkeypatch.setattr(ad, "get_medialog", lambda ele: "")
+    monkeypatch.setattr(ad.auth_requests, "get_cookies_str", lambda: "")
+    part = tmp_path / "v.part"
+    if have:
+        part.write_bytes(BODY[:have])
+    seen, cached = [], []
+    mgr = _manager(ad.AltDownloadManager, cached)
+    ph = SimpleNamespace(tempfilepath=part, trunicated_filepath=part)
+    ele = SimpleNamespace(mpd="x", hls_header="", id=1, username="u", filename="f")
+    item = {"origname": "v", "total": cached_total, "type": kind, "name": "v"}
+
+    async def run(c):
+        return await mgr._alt_download_sendreq(item, c, ele, ph)
+
+    item = asyncio.run(_serve(mode, seen, run, body))
+    return item["total"], part.read_bytes(), seen, cached
+
+
+@pytest.mark.parametrize("have", [300_000, 700_000])
+def test_drm_resume_appends_missing_bytes(tmp_path, monkeypatch, have):
+    total, data, seen, cached = _alt_resume(tmp_path, monkeypatch, have)
+    assert seen == [f"bytes={have}-"]
+    assert total == T
+    assert data == BODY
+    assert [c["content-total"] for c in cached] == [T]
+
+
+@pytest.mark.parametrize("have", [300_000, 700_000])
+def test_drm_server_ignores_range_restarts(tmp_path, monkeypatch, have):
+    total, data, seen, cached = _alt_resume(
+        tmp_path, monkeypatch, have, mode="ignore-range"
+    )
+    assert seen == [f"bytes={have}-"]
+    assert total == T
+    assert data == BODY
+    assert [c["content-total"] for c in cached] == [T]
+
+
+def test_drm_fresh_download(tmp_path, monkeypatch):
+    total, data, seen, cached = _alt_resume(tmp_path, monkeypatch, 0, cached_total=None)
+    assert seen == [None]
+    assert total == T
+    assert data == BODY
+    assert [c["content-total"] for c in cached] == [T]
+
+
+def test_drm_audio_file_changed_size_restarts(tmp_path, monkeypatch):
+    # the audio .part is the start of the old 1,000,000-byte track; the server
+    # now has a 1,200,000-byte track
+    total, data, seen, cached = _alt_resume(
+        tmp_path, monkeypatch, 300_000, kind="audio", body=BODY_NEW
+    )
+    assert seen == ["bytes=300000-", None]
+    assert total == len(BODY_NEW)
+    assert data == BODY_NEW
+    assert [c["content-total"] for c in cached] == [len(BODY_NEW)]
+
+
+def test_drm_416_restarts(tmp_path, monkeypatch):
+    total, data, seen, cached = _alt_resume(
+        tmp_path, monkeypatch, T, cached_total=1_500_000
+    )
     assert seen == [f"bytes={T}-", None]
     assert total == T
     assert data == BODY
