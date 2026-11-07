@@ -282,11 +282,13 @@ class sessionManager:
             if total_timeout is not None
             else of_env.getattr("TOTAL_TIMEOUT")
         )
+        # 0 means no limit (None), wherever it comes from: aiohttp reads 0
+        # that way, but httpx reads 0 as "fail at once"
         self._read_timeout = (
             read_timeout
             if read_timeout is not None
             else of_env.getattr("OF_READ_TIMEOUT")
-        )
+        ) or None
         self._pool_connect_timeout = (
             pool_timeout
             if pool_timeout is not None
