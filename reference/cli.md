@@ -113,7 +113,6 @@ Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
 - `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--force] | --csv FILE] [--data-dir DIR]`. Lists the usernames each creator account has had, from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder). `--add` appends a name. It works on OnlyFans databases only.
 - `scripts/determine_docker_stable_dev_tags.py`: CI helper. Asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.
 - `scripts/entry/`: Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.
-- `scripts/release_version.sh`: CI helper. Works out the release version from `INPUT_VERSION` or git tags, and whether it is a stable or dev release.
 - `scripts/retry_action.sh`: CI helper. Retries a command up to N times, with a sleep between attempts.
 
 ## `--action` modes
