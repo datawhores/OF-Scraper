@@ -367,8 +367,11 @@ def render_cli(notes):
     key_of_getter = {g: k for k, (g, _) in getters.items()}
     options = collect_options()
     headings = {}
+    same_dest = {}
     for entry in options:
         headings.setdefault(option_heading(entry["param"]), []).append(entry)
+        key = (option_heading(entry["param"]), entry["param"].name)
+        same_dest[key] = same_dest.get(key, 0) + 1
 
     main_cmd = command_objects()[""]
     action_param = next(p for p in main_cmd.params if p.name == "actions")
@@ -425,7 +428,11 @@ def render_cli(notes):
         for entry in [e for e in options if e["group"] == group]:
             param = entry["param"]
             heading = option_heading(param)
-            if len(headings[heading]) > 1:
+            if same_dest[(heading, param.name)] > 1:
+                # same option defined separately for different commands
+                where = ", ".join(command_label(c) for c in entry["commands"])
+                heading_text = f"`{heading}` ({where})"
+            elif len(headings[heading]) > 1:
                 heading_text = f"`{heading}` (`{param.name}`)"
             else:
                 heading_text = f"`{heading}`"
@@ -649,6 +656,19 @@ def env_description(key, comment, notes):
     return ""
 
 
+ENV_VALUES_DIR = "ofscraper/utils/of_env/values/"
+
+
+def env_section_title(section, notes):
+    if section in notes.ENV_SECTION_TITLES:
+        return notes.ENV_SECTION_TITLES[section]
+    m = re.fullmatch(r"Dynamic Session Sleep Configuration \(For (.+): (429/504 Rate Limiting|403 Forbidden Errors)\)", section)
+    if m:
+        kind = "rate limits (429, 504)" if m.group(2).startswith("429") else "403 errors"
+        return f"{m.group(1)}: {kind}"
+    return re.sub(r" Configuration$", "", section)
+
+
 def render_env(notes):
     from ofscraper.utils.of_env import get_all_configs
 
@@ -656,15 +676,23 @@ def render_env(notes):
     sources = env_sources()
     out = [HEADER, "# Environment defaults reference\n\n"]
     out.append(notes.ENV_INTRO.strip() + "\n\n")
-    files = []
+    found = []
     for key, (path, *_rest) in sources.items():
-        if path not in files:
-            files.append(path)
+        if path not in found:
+            found.append(path)
+    titles = {ENV_VALUES_DIR + name: title for name, title in notes.ENV_FILES.items()}
+    missing = [p for p in found if p not in titles]
+    if missing:
+        raise KeyError(f"notes.ENV_FILES has no title for: {', '.join(missing)}")
+    unused = [p for p in titles if p not in found]
+    if unused:
+        raise KeyError(f"notes.ENV_FILES lists files with no defaults: {', '.join(unused)}")
+    files = [p for p in titles if p in found]
     out.append("## Contents\n\n")
     out.append("- [Rate-limit and backoff settings](#rate-limit-and-backoff-settings)\n")
     out.append("- [Read directly from the environment](#read-directly-from-the-environment)\n")
     for path in files:
-        out.append(f"- [`{path}`](#{anchor(path)})\n")
+        out.append(f"- [{titles[path]}](#{anchor(titles[path])})\n")
     out.append("\n")
     out.append("## Rate-limit and backoff settings\n\n" + notes.ENV_SLEEPER.strip() + "\n\n")
     out.append("## Read directly from the environment\n\n")
@@ -679,14 +707,15 @@ def render_env(notes):
         )
     out.append("\n")
     for path in files:
-        out.append(f"## `{path}`\n\n")
+        out.append(f"## {titles[path]}\n\nDefined in `{path}`.\n\n")
         sections = []
         for key, (p, section, *_r) in sources.items():
             if p == path and section not in sections:
                 sections.append(section)
         for section in sections:
-            if section:
-                out.append(f"### {section}\n\n")
+            # a file with one section needs no subheading under its own title
+            if section and len(sections) > 1:
+                out.append(f"### {env_section_title(section, notes)}\n\n")
             out.append("| Key | Environment variable | Default | Description |\n|---|---|---|---|\n")
             for key, (p, s, envs, comment) in sources.items():
                 if p != path or s != section:

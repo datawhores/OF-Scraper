@@ -69,6 +69,51 @@ How the waits combine:
 Only the standard API session (`SESSION_403_*`) backs off on a 403. Downloads, CDM, likes, metadata, Discord and subscriptions never start a 403 backoff, because a 403 there is usually an expired link. Their `<KIND>_SESSION_403_*` values therefore have no effect. The one exception is `<KIND>_SESSION_403_MIN_SLEEP`, which is still kept as a gap under the rule above.
 """
 
+# env.md section titles, one per file in ofscraper/utils/of_env/values/
+# (path relative to that folder). The page lists sections in this order.
+ENV_FILES = {
+    "action/download.py": "Downloads",
+    "action/like.py": "Likes",
+    "action/metadata.py": "Metadata",
+    "req/req.py": "Connections, proxies and concurrency",
+    "req/ratelimit.py": "Rate-limit waits",
+    "req/api.py": "API limits and retries",
+    "req/mpd.py": "DRM manifests (MPD)",
+    "req/cdm.py": "CDM",
+    "req/auth.py": "Authentication",
+    "req/anon.py": "Anonymous requests",
+    "req/discord.py": "Discord",
+    "req/git.py": "Update checks",
+    "general.py": "Output and file handling",
+    "main.py": "General defaults",
+    "date.py": "Dates",
+    "time.py": "Expiry and timeouts",
+    "dynamic.py": "Dynamic rules",
+    "list.py": "List names",
+    "live.py": "Progress display",
+    "logger.py": "Logging",
+    "system.py": "Script log levels",
+    "prompts.py": "Menu choices",
+    "path/files.py": "File paths",
+    "path/general.py": "General paths",
+    "path/length.py": "Name and path lengths",
+    "path/bytes.py": "Character sizes",
+    "url/url.py": "OnlyFans API addresses",
+    "url/dynamic.py": "Dynamic rule addresses",
+    "url/other_url.py": "Other addresses",
+}
+
+# Subsection titles taken from the source comments that read badly as headings.
+# Anything not listed has a trailing " Configuration" removed.
+ENV_SECTION_TITLES = {
+    "Format String Defaults (These are often user-configurable, but have internal defaults)": "Format strings",
+    "Complex Defaults (Better as Python Constants, not environment variables)": "Fixed values",
+    "Force Key Configuration (Booleans)": "Forced keys",
+    "Miscellaneous": "Other",
+    "General Paths Configuration": "Temporary files",
+    "General Application Defaults": "Application",
+}
+
 # options merged_settings reads but that don't actually override the config
 # value, so they aren't listed as overrides or fallbacks
 NOT_MERGED = {"env_files"}

@@ -28,7 +28,7 @@ Each option lists these fields, when they apply: **Also** (other names), **Dest*
   - [Other options](#other-options)
   - [Table Filter Options](#table-filter-options)
   - [Content Options](#content-options)
-  - [metadata_options](#metadata_options)
+  - [Metadata Options](#metadata-options)
   - [Sorting for the table](#sorting-for-the-table)
 
 ## Commands
@@ -530,7 +530,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 - Filter by label
 
-#### `--mass-only` (`mass_msg`)
+#### `--mass-only` (main program)
 
 - **Also:** `-mm`, `-ms`, `--mass-skip`
 - **Dest:** `mass_msg` · **Type:** flag · **Default:** none
@@ -553,7 +553,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`, `ofscraper/utils/args/parse/group_bundles/metadata.py`
 - Scrape entire paid page (can take a very long time)
 
-#### `--text` (`text`)
+#### `--text` (main program)
 
 - **Also:** `-t`, `--download-text`
 - **Dest:** `text` · **Type:** flag · **Default:** off
@@ -561,7 +561,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Download text files alongside media
 
-#### `--text-only` (`text_only`)
+#### `--text-only` (main program)
 
 - **Also:** `-tx`, `--download-text-only`
 - **Dest:** `text_only` · **Type:** flag · **Default:** off
@@ -570,7 +570,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - Download ONLY text files, skipping all media
 - **Note:** Also turns on `--text`. Text files are written and media is skipped.
 
-#### `--mass-only` (`mass_msg`)
+#### `--mass-only` (`metadata`)
 
 - **Also:** `-mm`, `--mass-skip`
 - **Dest:** `mass_msg` · **Type:** flag · **Default:** none
@@ -1024,7 +1024,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 - Force retrieval of new posts info from API
 
-#### `--text` (`text`)
+#### `--text` (`manual`, `msg_check`, `paid_check`, `post_check`)
 
 - **Also:** `-tn`, `--download-text`
 - **Dest:** `text` · **Type:** flag · **Default:** off
@@ -1032,7 +1032,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Download Text files in addition to media
 
-#### `--text-only` (`text_only`)
+#### `--text-only` (`manual`, `msg_check`, `paid_check`, `post_check`)
 
 - **Also:** `-tp`, `--download-text-only`
 - **Dest:** `text_only` · **Type:** flag · **Default:** off
@@ -1131,7 +1131,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Select areas to check (multiple allowed, separated by spaces)
 
-### metadata_options
+### Metadata Options
 
 #### `--metadata`
 
