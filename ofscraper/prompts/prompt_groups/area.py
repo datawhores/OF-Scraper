@@ -25,7 +25,6 @@ def areas_prompt() -> list:
     args = settings.get_args()
     name = "value"
     message = None
-    print(args.command)
     if "like" in args.actions and len(args.like_area) == 0:
         message = "Which area(s) would you do you want to download and like"
     elif "unlike" in args.actions and len(args.like_area) == 0:
@@ -36,7 +35,8 @@ def areas_prompt() -> list:
         """Hint: Since you have Like or Unlike set
     You must select one or more of Timeline,Pinned,Archived, or Label
 """
-        if ("like" or "unlike") in args.actions and len(args.like_area) == 0
+        if ("like" in args.actions or "unlike" in args.actions)
+        and len(args.like_area) == 0
         else ""
     )
     answers = promptClasses.batchConverter(
