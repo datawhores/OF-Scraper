@@ -39,7 +39,7 @@ file_option = click.option(
     "--file",
     help="Scan posts via a file with line-separated URL(s)",
     default=None,
-    type=click.File(),
+    type=click.File(lazy=True),
     multiple=True,
     callback=FileCallback,
 )
@@ -51,7 +51,7 @@ file_username_option = click.option(
     "file_usernames",
     help="Scan via a file with line-separated username(s)",
     default=None,
-    type=click.File(),
+    type=click.File(lazy=True),
     multiple=True,
     callback=FileCallback,
 )

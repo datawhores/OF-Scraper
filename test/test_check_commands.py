@@ -3,8 +3,15 @@
 import ast
 import asyncio
 import contextlib
+import gc
+import io
 import pathlib
+import sys
+import warnings
 from types import SimpleNamespace
+
+import click
+import pytest
 
 import ofscraper.commands.check as check
 import ofscraper.utils.args.parse.commands.message as message
@@ -70,6 +77,37 @@ def test_story_check_reads_usernames_from_a_file(tmp_path):
     f.write_text("creator_one\n", encoding="utf-8")
     params, _ = _parse(story_cmd.story_check, ["-f", str(f)])
     assert set(params["file_usernames"]) == {"creator_one"}
+
+
+def _usage_error_warnings(command, args):
+    # a usage error after -f was read must not leave the file open (#220)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(click.UsageError):
+            _parse(command, args)
+        gc.collect()
+    return [w for w in caught if issubclass(w.category, ResourceWarning)]
+
+
+def test_paid_check_usage_error_closes_the_username_file(tmp_path):
+    f = tmp_path / "users.txt"
+    f.write_text("creator_one\n", encoding="utf-8")
+    assert _usage_error_warnings(paid_cmd.paid_check, ["-u", "a", "-f", str(f)]) == []
+
+
+def test_msg_check_usage_error_closes_the_url_file(tmp_path):
+    f = tmp_path / "urls.txt"
+    f.write_text("https://onlyfans.com/1/a\n", encoding="utf-8")
+    args = ["--url", "https://onlyfans.com/2/b", "-f", str(f)]
+    assert _usage_error_warnings(message.message_check, args) == []
+
+
+def test_check_file_from_stdin_is_read_and_left_open(monkeypatch):
+    stdin = io.StringIO("creator_one\ncreator_two\n")
+    monkeypatch.setattr(sys, "stdin", stdin)
+    params, _ = _parse(paid_cmd.paid_check, ["-f", "-"])
+    assert set(params["file_usernames"]) == {"creator_one", "creator_two"}
+    assert not stdin.closed
 
 
 def test_check_usernames_combines_u_and_f(monkeypatch):
