@@ -43,17 +43,22 @@ from the comment above each value in the source where there is one.
 """
 
 ENV_SLEEPER = """
-Requests back off when they get rate-limit (429/504) or 403 errors
+Requests back off when they get rate-limit (429/503/504) or 403 errors
 (`ofscraper/managers/sessionmanager/sleepers.py`, `SessionSleep` in
 `sessionmanager.py`). Each kind of request has its own set of values, named
 `<KIND>_SESSION_*` for rate limits and `<KIND>_SESSION_403_*` for 403s; the
-standard API uses `SESSION_*`. The first error sets the wait to `*_SLEEP_INIT`
-seconds. A later error multiplies it by `*_SLEEP_INCREASE_FACTOR`, up to
-`*_SLEEP_MAX`, but only if `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed
-since the last change. After `*_SLEEP_DECAY_THRESHOLD` seconds without a
-change the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`,
-which is also the minimum gap kept between requests. At present only the
-`SESSION_SLEEP_DECAY_*` values are used, for every kind of request (#198).
+standard API uses `SESSION_*`. The wait starts at `*_MIN_SLEEP`. If that is 0,
+the first error sets it to `*_SLEEP_INIT` seconds (or 1 if that is 0);
+otherwise the first error already multiplies it. Each error multiplies the wait
+by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, but only if
+`*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the last change (or since the program started or
+the last per-creator reset). After `*_SLEEP_DECAY_THRESHOLD` seconds without a change
+the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`.
+`*_MIN_SLEEP` is also the minimum gap kept between requests. Before each
+request the rate-limit wait is checked first, and the 403 wait only when the
+rate-limit `*_MIN_SLEEP` is 0 and no rate-limit backoff is running. So at
+present the 403 values have no effect for kinds whose rate-limit `*_MIN_SLEEP`
+is above 0, including the standard API (#214).
 """
 
 # options merged_settings reads but that don't actually override the config
@@ -72,6 +77,7 @@ ENV = {
     "profilesPromptChoices": "Menu entries of the interactive profile menu; not read from the environment.",
     "modelPrompt": "Menu entries for filtering and sorting the creator list interactively; not read from the environment.",
     "LOG_SUBPROCESS_LEVEL": "Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, still read.",
+    "MPD_SESSION_SLEEP_INIT": "Defined but not read anywhere; MPD requests use the standard `SESSION_*` values.",
     "DISK_SPACE_CHECK_PATH": "Path whose disk's free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It's not the save location unless you set it to be.",
 }
 
@@ -83,13 +89,13 @@ ENV_DIRECT = {
 
 # (regular expression for the key, description); the first match is used
 ENV_PATTERNS = [
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "First backoff wait, in seconds, after an error of this kind."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "Wait set by the first error of this kind when `*_MIN_SLEEP` is 0 (0 means 1 second); not used when `*_MIN_SLEEP` is above 0."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_TIME_DIFF", "Seconds that must pass since the last change before another error raises the wait."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_MAX", "Longest backoff wait, in seconds."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_FACTOR", "Each further error multiplies the wait by this."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without a change after which the wait shrinks. Only `SESSION_SLEEP_DECAY_THRESHOLD` is read at present (#198)."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_FACTOR", "The wait is divided by this when it shrinks. Only `SESSION_SLEEP_DECAY_FACTOR` is read at present (#198)."),
-    (r"[A-Z_]*SESSION(_403)?_MIN_SLEEP", "Smallest wait, and the minimum gap kept between requests, in seconds."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without a change after which the wait shrinks."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_FACTOR", "The wait is divided by this when it shrinks."),
+    (r"[A-Z_]*SESSION(_403)?_MIN_SLEEP", "Smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here."),
     (r"[A-Z_]+_SUBPROCESS_LEVEL", "Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key); 0 turns that output off."),
 ]
 
