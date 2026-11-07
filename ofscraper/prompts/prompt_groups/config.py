@@ -87,7 +87,7 @@ def funct(prompt_):
     [Performance Options]
     download_sems: number of downloads per processor/worker
     thread_count: number of processors/workers
-    download_limit: max download speed per second for each thread
+    download_limit: max download speed per second, shared by all downloads
     -----------------------------------
     [Content Filter Options]
     block_ads: use common key words to block ads
@@ -418,7 +418,7 @@ def performance_config():
             {
                 "type": "input",
                 "name": "download_limit",
-                "message": "Maximum download speed per second for  each thread: ",
+                "message": "Maximum download speed per second, shared by all downloads: ",
                 "validate": EmptyInputValidator(),
                 "option_instruction": """
                 Input can be int representing bytes
