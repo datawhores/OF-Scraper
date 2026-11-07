@@ -21,6 +21,7 @@ from rich.console import Console
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -48,8 +49,12 @@ messagesInsert = """INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id)
             VALUES (?, ?,?,?,?,?,?,?);"""
+messagesInsertTransition = """INSERT INTO 'messages'(
+post_id, text,price,paid,archived,
+created_at,user_id,model_id,is_deleted)
+            VALUES (?, ?,?,?,?,?,?,?,?);"""
 messagesUpdate = """UPDATE messages
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=0
 WHERE post_id = ? and model_id=(?);"""
 allMessagesCheck = """
 SELECT post_id FROM messages
@@ -65,9 +70,6 @@ SELECT post_id, text, price, paid, archived, created_at, user_id,
             ELSE 0
        END AS is_deleted
 FROM messages;
-"""
-messagesDrop = """
-drop table messages;
 """
 messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
@@ -137,24 +139,41 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
         conn.commit()
 
 
+def messages_transition_rows(inputData: list) -> list:
+    ordered_keys = [
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "created_at",
+        "user_id",
+        "model_id",
+        "is_deleted",
+    ]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+
+
 @wrapper.operation_wrapper_async
 def write_messages_table_transition(
     inputData: list, model_id=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = [
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "created_at",
-            "user_id",
-            "model_id",
-        ]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(messagesInsert, insertData)
+        cur.executemany(
+            messagesInsertTransition, messages_transition_rows(inputData)
+        )
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_messages_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn,
+        "messages",
+        messagesCreate,
+        messagesInsertTransition,
+        messages_transition_rows(inputData),
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -174,13 +193,6 @@ def get_all_messages_transition(
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
-
-
-@wrapper.operation_wrapper_async
-def drop_messages_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -224,9 +236,7 @@ async def rebuild_messages_table(model_id=None, username=None, db_path=None, **k
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_messages_table(model_id=model_id, username=username, db_path=db_path)
-    await create_message_table(model_id=model_id, username=username, db_path=db_path)
-    await write_messages_table_transition(
+    await replace_messages_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 
@@ -234,6 +244,7 @@ async def rebuild_messages_table(model_id=None, username=None, db_path=None, **k
 async def make_messages_table_changes(
     all_messages, model_id=None, username=None, **kwargs
 ):
+    all_messages = list(all_messages)
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))

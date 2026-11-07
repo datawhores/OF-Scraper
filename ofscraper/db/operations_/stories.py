@@ -207,8 +207,11 @@ async def rebuild_stories_table(model_id=None, username=None, db_path=None, **kw
 async def make_stories_table_changes(
     all_stories: dict, model_id=None, username=None, conn=None, **kwargs
 ):
-    all_stories_filtered = filter(
-        lambda x: x.responsetype.capitalize() in {"Stories", "Highlights"}, all_stories
+    all_stories_filtered = list(
+        filter(
+            lambda x: x.responsetype.capitalize() in {"Stories", "Highlights"},
+            all_stories,
+        )
     )
 
     curr_id = set(await get_all_stories_ids(model_id=model_id, username=username))

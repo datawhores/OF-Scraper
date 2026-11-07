@@ -56,7 +56,7 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 
 One row per direct message seen in the chat with the creator, from either side.
 
-**Written by:** make_messages_table_changes (ofscraper/db/operations_/messages.py) runs when the Messages area is scraped (ofscraper/data/posts/post.py process_messages), and from manual/url mode and the check command. New message ids are INSERTed; existing rows are UPDATEd only under the metadata command. The messages scanner (ofscraper/data/api/messages.py) sets is_deleted=1 for messages it expected but the API skipped past; unlike posts, an update does not reset is_deleted. Migration rebuilds the table once; the Merge Databases menu copies rows in. No DELETEs. Unique key: UNIQUE (post_id, model_id). Application-side INSERT-or-UPDATE based on existing message ids.
+**Written by:** make_messages_table_changes (ofscraper/db/operations_/messages.py) runs when the Messages area is scraped (ofscraper/data/posts/post.py process_messages), and from manual/url mode and the check command. New message ids are INSERTed; existing rows are UPDATEd (and is_deleted reset to 0) only under the metadata command. The messages scanner (ofscraper/data/api/messages.py) sets is_deleted=1 for messages it expected but the API skipped past. Migration rebuilds the table once, in one transaction that keeps every column including is_deleted; the Merge Databases menu copies rows in, is_deleted included. No DELETEs. Unique key: UNIQUE (post_id, model_id). Application-side INSERT-or-UPDATE based on existing message ids.
 
 **Unique:** (`post_id`, `model_id`)
 
@@ -90,7 +90,7 @@ The creator account ids whose data is stored in this database.
 
 Legacy table for content outside the main areas; created and migrated, but no current code path writes rows to it.
 
-**Written by:** Only created (create_others_table), rebuilt once by migration (rebuild_others_table) and copied by the Merge Databases menu. No scrape, download or command inserts rows, so it is normally empty. As with products, its transition reader omits post_id and its writer passes 6 values for 7 placeholders, so a rebuild or merge of a non-empty table would fail. Unique key: UNIQUE (post_id, model_id).
+**Written by:** Only created (create_others_table), rebuilt once by migration (rebuild_others_table) and copied by the Merge Databases menu. No scrape, download or command inserts rows, so it is normally empty. As with products, the rebuild copies every row into the new table in one transaction before the old one is dropped. Unique key: UNIQUE (post_id, model_id).
 
 **Unique:** (`post_id`, `model_id`)
 
@@ -132,7 +132,7 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 
 Legacy table for paid products; created and migrated, but no current code path writes rows to it.
 
-**Written by:** Only created (create_products_table), rebuilt once by migration (rebuild_products_table) and copied by the Merge Databases menu (ofscraper/db/operations_/others.py, ofscraper/db/merge.py). No scrape, download or command inserts rows, so it is normally empty. Its transition reader does not select post_id and its writer passes 6 values for 8 placeholders, so a rebuild or merge of a non-empty table would fail. Unique key: UNIQUE (post_id, model_id).
+**Written by:** Only created (create_products_table), rebuilt once by migration (rebuild_products_table) and copied by the Merge Databases menu (ofscraper/db/operations_/others.py, ofscraper/db/merge.py). No scrape, download or command inserts rows, so it is normally empty. The rebuild copies every row into the new table in one transaction before the old one is dropped. Unique key: UNIQUE (post_id, model_id).
 
 **Unique:** (`post_id`, `model_id`)
 
@@ -179,7 +179,7 @@ Key/value markers recording which schema migrations have run on this file, plus 
 
 One row per story or highlight story seen for the creator.
 
-**Written by:** make_stories_table_changes (ofscraper/db/operations_/stories.py) runs when the Stories or Highlights areas are scraped (ofscraper/data/posts/post.py), and from manual/url mode and the check command. New ids are INSERTed. The function is meant to UPDATE existing rows under the metadata command, but it reads one filter iterator twice, so the update list is always empty and existing story rows are never updated. Migration rebuilds the table once; the Merge Databases menu copies rows in. No DELETEs. Unique key: UNIQUE (post_id, model_id). Application-side insert of ids not already present.
+**Written by:** make_stories_table_changes (ofscraper/db/operations_/stories.py) runs when the Stories or Highlights areas are scraped (ofscraper/data/posts/post.py), and from manual/url mode and the check command. New ids are INSERTed; existing rows are UPDATEd only under the metadata command. Migration rebuilds the table once; the Merge Databases menu copies rows in. No DELETEs. Unique key: UNIQUE (post_id, model_id). Application-side insert of ids not already present.
 
 **Unique:** (`post_id`, `model_id`)
 
