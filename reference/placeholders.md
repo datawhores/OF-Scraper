@@ -38,7 +38,7 @@ attribute or key access: `{modelObj.name}`, `{args.posts}`, and, because
 | `{modelObj}` |  |  | yes | yes | yes | Object: the creator's model (ofscraper/classes/of/models.py) from the model manager, used with attribute access, e.g. {modelObj.name}, {modelObj.id}, {modelObj.final_current_price}; None if the creator isn't loaded, so attribute access then fails. |
 | `{model_id}` | `{modelid}` | yes | yes | yes | yes | The creator's numeric account id (OnlyFans ids are short; Fansly ids are 18-digit snowflakes). Default metadata path is {configpath}/{profile}/.data/{model_id}. |
 | `{model_username}` | `{modelusername}` | yes | yes | yes | yes | The creator's username (lower-cased by the media/post objects for dir and file names). |
-| `{my_id}` | `{myid}` | yes | yes | yes | yes | Despite the name, this is the logged-in account's display NAME (profile 'name', UTF-16 encoded by me.parse_user), not its numeric id; 'anon' in anonymous mode. (#206) |
+| `{my_id}` | `{myid}` | yes | yes | yes | yes | The logged-in account's numeric id; 'anon' in anonymous mode. |
 | `{my_username}` | `{myusername}` | yes | yes | yes | yes | Username of the logged-in account; 'anon' in anonymous mode. |
 | `{only_file_name}` | `{onlyfilename}` |  | yes | yes | yes | Like {file_name} but without the video quality suffix; for text files the sanitised post text. |
 | `{only_filename}` | `{onlyfilename}` |  | yes | yes | yes | Same value as {only_file_name}. |

@@ -260,6 +260,7 @@ def test_site_name_placeholder(fansly_profile, monkeypatch):
     import ofscraper.classes.placeholder as placeholder
 
     monkeypatch.setattr(placeholder.me, "parse_user", lambda: ("1", "me"))
+    monkeypatch.setattr(placeholder.me, "get_id", lambda: 1)
     monkeypatch.setattr(placeholder.profile_data, "get_active_profile", lambda: "main_profile")
     monkeypatch.setattr(placeholder.common_paths, "get_save_location", lambda *a, **k: "/data")
     monkeypatch.setattr(placeholder.common_paths, "get_config_home", lambda: "/cfg")

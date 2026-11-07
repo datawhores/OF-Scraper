@@ -186,6 +186,7 @@ def path_env(monkeypatch, tmp_path):
     monkeypatch.setattr(placeholder.Placeholders, "add_common_variables", fake_common)
     monkeypatch.setattr(placeholder.Textholders, "add_common_variables", fake_common)
     monkeypatch.setattr(placeholder.me, "parse_user", lambda: ("1", "me"))
+    monkeypatch.setattr(placeholder.me, "get_id", lambda: 1)
     monkeypatch.setattr(placeholder.profile_data, "get_active_profile", lambda: "main_profile")
     monkeypatch.setattr(placeholder.common_paths, "get_config_home", lambda: tmp_path / "cfg")
     monkeypatch.setattr(

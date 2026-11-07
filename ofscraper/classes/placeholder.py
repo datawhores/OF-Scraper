@@ -61,7 +61,8 @@ class basePlaceholder:
         self._ele = None
 
     def create_variables_base(self):
-        my_id, my_username = me.parse_user()
+        _, my_username = me.parse_user()
+        my_id = "anon" if settings.get_settings().anon else me.get_id()
         # {save_location} and {root} share the media folder's site root, so a
         # metadata path built from them can't reach an OnlyFans user_data.db
         save_location = site_save_location()

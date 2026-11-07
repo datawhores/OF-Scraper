@@ -129,7 +129,7 @@ PLACEHOLDERS = {
     "profile": "Name of the active profile, e.g. main_profile.",
     "site_name": "Name of the site being scraped (sites.site_name()), e.g. the Fansly name on Fansly runs; usually written {sitename}.",
     "save_location": "The configured save location; on Fansly runs it is '<save location>/Fansly'. Same value as {root} but as the configured string.",
-    "my_id": "Despite the name, this is the logged-in account's display NAME (profile 'name', UTF-16 encoded by me.parse_user), not its numeric id; 'anon' in anonymous mode. (#206)",
+    "my_id": "The logged-in account's numeric id; 'anon' in anonymous mode.",
     "my_username": "Username of the logged-in account; 'anon' in anonymous mode.",
     "root": "Pathlib.Path of {save_location} (the media root, Fansly subfolder included).",
     "username": "The creator's username. In dir_format, file_format and text files it also exists, as the underscore-free alias of {user_name} (same value).",
