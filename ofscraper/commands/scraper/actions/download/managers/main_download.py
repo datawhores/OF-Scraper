@@ -175,6 +175,7 @@ class MainDownloadManager(DownloadManager):
                 read_timeout=get_chunk_timeout(),
             ) as r:
                 self._check_status(r, ele, headers)
+                asked = resume_size
                 total, resume_size = self._full_size_from_reply(
                     r, resume_size, tempholderObj.tempfilepath, saved_total
                 )
@@ -195,7 +196,6 @@ class MainDownloadManager(DownloadManager):
                 common_globals.log.debug(
                     f"{common_logs.get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await self._set_data(ele, data)
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = content_type or common.get_unknown_content_type(ele)
                 if not placeholderObj:
@@ -204,15 +204,27 @@ class MainDownloadManager(DownloadManager):
                     ).init()
                 common_logs.path_to_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
+                    if asked and not resume_size:
+                        # a whole-file reply to a resume: the part is stale
+                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                    await self._set_data(ele, data)
                     total = 0
                     return (total, tempholderObj.tempfilepath, placeholderObj)
                 elif total != resume_size:
                     self._resume_cleaner(resume_size, total, tempholderObj.tempfilepath)
-                    await self._download_fileobject_writer(
-                        r, ele, tempholderObj, placeholderObj, total
+                    # the part and its saved size and validator are replaced
+                    # only once the reply's first bytes arrive (#271)
+                    written = await self._download_fileobject_writer(
+                        r,
+                        ele,
+                        tempholderObj,
+                        placeholderObj,
+                        total,
+                        resume_size,
+                        partial(self._set_data, ele, data),
                     )
                     if total is None:
-                        total = self._size_written(ele, tempholderObj.tempfilepath)
+                        total = self._size_written(ele, written)
                     await self._total_change_helper(total)
             await self._size_checker(tempholderObj.tempfilepath, ele, total)
             return (total, tempholderObj.tempfilepath, placeholderObj)
@@ -221,17 +233,25 @@ class MainDownloadManager(DownloadManager):
             raise E
 
     async def _download_fileobject_writer(
-        self, r, ele, tempholderObj, placeholderObj, total
+        self,
+        r,
+        ele,
+        tempholderObj,
+        placeholderObj,
+        total,
+        resume_size=0,
+        on_first_chunk=None,
     ):
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
         )
-        await self._download_fileobject_writer_streamer(
-            r, ele, tempholderObj, placeholderObj, total
+        written = await self._download_fileobject_writer_streamer(
+            r, ele, tempholderObj, placeholderObj, total, resume_size, on_first_chunk
         )
         common_globals.log.debug(
             f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
+        return written
 
     async def _download_fileobject_writer_reader(
         self, r, ele, tempholderObj, placeholderObj, total
@@ -256,22 +276,40 @@ class MainDownloadManager(DownloadManager):
                 pass
 
     async def _download_fileobject_writer_streamer(
-        self, res, ele, tempholderObj, placeholderObj, total
+        self,
+        res,
+        ele,
+        tempholderObj,
+        placeholderObj,
+        total,
+        resume_size=0,
+        on_first_chunk=None,
     ):
+        """Write the reply to the part and return the bytes written. The part
+        is opened on the first chunk: appended to when resuming, else
+        replaced from 0. Until then the part on disk is left as it was, so a
+        reply with no data doesn't cost it (#271). on_first_chunk runs once
+        the first chunk is written."""
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
         fileobject = None
+        written = 0
         try:
-            fileobject = await aiofiles.open(
-                tempholderObj.tempfilepath, "ab"
-            ).__aenter__()
             chunk_iter = res.iter_chunked(get_chunk_size())
 
             while True:
                 try:
                     chunk = await chunk_iter.__anext__()
+                    first = fileobject is None
+                    if first:
+                        fileobject = await aiofiles.open(
+                            tempholderObj.tempfilepath, "ab" if resume_size else "wb"
+                        ).__aenter__()
                     await fileobject.write(chunk)
+                    written += len(chunk)
+                    if first and on_first_chunk:
+                        await on_first_chunk()
                     send_chunk_msg(ele, total, tempholderObj)
                 except StopAsyncIteration:
                     break
@@ -299,6 +337,7 @@ class MainDownloadManager(DownloadManager):
                     f"Error removing download job task for {ele}: {E}"
                 )
                 raise E
+        return written
 
     async def _handle_result_main(self, result, ele, username, model_id):
         total, temp, placeholderObj = result

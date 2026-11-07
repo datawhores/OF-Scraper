@@ -118,8 +118,10 @@ class DownloadManager:
         A 206 reply carries only the missing bytes, so its Content-Length is the
         size of that piece, not of the file. The full size comes from
         Content-Range, or from the part on disk plus Content-Length. A server
-        that ignores Range answers 200 with the whole file, so the part on disk
-        is dropped and the download starts again from 0 instead of appending.
+        that ignores Range answers 200 with the whole file, so the download
+        starts again from 0 instead of appending: resume_size comes back as 0,
+        and the writer replaces the part once the reply's first bytes arrive.
+        Until then the part is kept, so an empty reply doesn't lose it (#271).
 
         saved_total is the size saved when the part was started. If the reply
         is for a file of another size (the file changed on the server, or the
@@ -141,7 +143,6 @@ class DownloadManager:
             # start of the file the server has now
             self._start_over(path, f"the server answered 416 ({content_range})")
         if r.status != 206:
-            pathlib.Path(path).unlink(missing_ok=True)
             return length, 0
         start = sent.split("-")[0].strip()
         if start and start != str(resume_size):
@@ -247,12 +248,12 @@ class DownloadManager:
     async def _after_download_script(self, filepath):
         await after_download_script(filepath)
 
-    def _size_written(self, ele, path):
+    def _size_written(self, ele, size):
         """The size of a file whose reply didn't say how big it was (no
-        Content-Length, chunked). The transfer's own end-of-data marks the end
-        of the file, so what was written is the file. An empty reply is an
-        error, not a 0-byte file: 0 means "skipped" to the callers."""
-        size = pathlib.Path(path).stat().st_size if pathlib.Path(path).exists() else 0
+        Content-Length, chunked): the bytes the writer wrote from 0. The
+        transfer's own end-of-data marks the end of the file, so what was
+        written is the file. An empty reply is an error, not a 0-byte file: 0
+        means "skipped" to the callers."""
         if not size:
             raise Exception(
                 f"{get_medialog(ele)} the server sent no data and no file size"

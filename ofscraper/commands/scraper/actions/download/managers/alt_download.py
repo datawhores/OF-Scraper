@@ -204,6 +204,7 @@ class AltDownloadManager(DownloadManager):
             ) as l:
                 self._check_status(l, ele, headers)
                 content_type = (l.headers.get("content-type") or "").lower()
+                asked = resume_size
                 try:
                     total, resume_size = self._full_size_from_reply(
                         l, resume_size, placeholderObj.tempfilepath, saved_total
@@ -245,19 +246,31 @@ class AltDownloadManager(DownloadManager):
                 common_globals.log.debug(
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
-                await self._set_data(ele, item, data)
-
                 temp_file_logger(placeholderObj, ele)
                 if await self._check_forced_skip(ele, total) == 0:
+                    if asked and not resume_size:
+                        # a whole-file reply to a resume: the part is stale
+                        pathlib.Path(placeholderObj.tempfilepath).unlink(
+                            missing_ok=True
+                        )
+                    await self._set_data(ele, item, data)
                     item["total"] = 0
                     total = item["total"]
                     return item
                 elif total != resume_size:
-                    await self._download_fileobject_writer(
-                        total, l, ele, placeholderObj, item
+                    # the part and its saved size and validator are replaced
+                    # only once the reply's first bytes arrive (#271)
+                    written = await self._download_fileobject_writer(
+                        total,
+                        l,
+                        ele,
+                        placeholderObj,
+                        item,
+                        resume_size,
+                        partial(self._set_data, ele, item, data),
                     )
                     if total is None:
-                        total = self._size_written(ele, placeholderObj.tempfilepath)
+                        total = self._size_written(ele, written)
                         item["total"] = total
                     await self._total_change_helper(total)
 
@@ -267,14 +280,19 @@ class AltDownloadManager(DownloadManager):
             await self._total_change_helper(0)
             raise E
 
-    async def _download_fileobject_writer(self, total, l, ele, placeholderObj, item):
+    async def _download_fileobject_writer(
+        self, total, l, ele, placeholderObj, item, resume_size=0, on_first_chunk=None
+    ):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
         )
-        await self._download_fileobject_writer_streamer(ele, total, l, placeholderObj)
+        written = await self._download_fileobject_writer_streamer(
+            ele, total, l, placeholderObj, resume_size, on_first_chunk
+        )
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
         )
+        return written
 
     async def _download_fileobject_writer_reader(self, ele, total, res, placeholderObj):
         task1 = await self._add_download_job_task(
@@ -296,20 +314,31 @@ class AltDownloadManager(DownloadManager):
                 raise E
 
     async def _download_fileobject_writer_streamer(
-        self, ele, total, res, placeholderObj
+        self, ele, total, res, placeholderObj, resume_size=0, on_first_chunk=None
     ):
+        """Write the reply to the part and return the bytes written. The part
+        is opened on the first chunk: appended to when resuming, else
+        replaced from 0. Until then the part on disk is left as it was, so a
+        reply with no data doesn't cost it (#271). on_first_chunk runs once
+        the first chunk is written."""
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
         fileobject = None
+        written = 0
         try:
-            fileobject = await aiofiles.open(
-                placeholderObj.tempfilepath, "ab"
-            ).__aenter__()
             chunk_iter = res.iter_chunked(get_chunk_size())
 
             while True:
                 try:
                     chunk = await chunk_iter.__anext__()
+                    first = fileobject is None
+                    if first:
+                        fileobject = await aiofiles.open(
+                            placeholderObj.tempfilepath, "ab" if resume_size else "wb"
+                        ).__aenter__()
                     await fileobject.write(chunk)
+                    written += len(chunk)
+                    if first and on_first_chunk:
+                        await on_first_chunk()
                     send_chunk_msg(ele, total, placeholderObj)
                 except StopAsyncIteration:
                     break  # Exit loop when no more chunks
@@ -337,6 +366,7 @@ class AltDownloadManager(DownloadManager):
                     f"Error removing download job task for {ele}: {E}"
                 )
                 raise E
+        return written
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
