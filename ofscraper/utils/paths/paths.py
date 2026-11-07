@@ -46,7 +46,8 @@ def temp_cleanup():
         if root is None:
             return
         for file in filter(
-            lambda x: re.search(r"\.part$|^temp_", str(x)) is not None,
+            lambda x: x.is_file()
+            and re.search(r"\.part$|^temp_", x.name) is not None,
             pathlib.Path(root).glob("**/*"),
         ):
             file.unlink(missing_ok=True)
