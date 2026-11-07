@@ -16,6 +16,8 @@ import re
 import traceback
 
 import ofscraper.managers.manager as manager
+import ofscraper.sites as sites
+import ofscraper.sites.fansly.me as fansly_me
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.logs.utils.sensitive as sensitive
 
@@ -35,6 +37,8 @@ def _name_pattern(value):
 
 
 def scrape_user():
+    if sites.is_fansly():
+        return fansly_me.scrape_user()
     with manager.Manager.session.get_ofsession() as c:
         return _scraper_user_helper(c)
 

@@ -16,6 +16,8 @@ import tenacity
 import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
+import ofscraper.sites as sites
+import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
@@ -484,12 +486,19 @@ class sessionManager:
 
     def _create_headers(self, headers, url, sign, forced):
         headers = headers or {}
+        if sites.is_fansly():
+            # Fansly: token and signed bundle on API calls only, never on CDN
+            # files; no OnlyFans headers or signing at all
+            headers.update(fansly_headers.make_headers(url))
+            return headers
         headers.update(auth_requests.make_headers())
         if sign:
             auth_requests.create_sign(url, headers)
         return headers
 
     def _create_cookies(self):
+        if sites.is_fansly():
+            return None
         return auth_requests.add_cookies()
 
     def reset_sleep(self):

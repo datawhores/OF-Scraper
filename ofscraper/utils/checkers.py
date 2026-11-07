@@ -1,6 +1,7 @@
 import logging
 
 import ofscraper.data.api.init as init
+import ofscraper.sites as sites
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.auth.make as make
 
@@ -18,6 +19,10 @@ class AuthCheckLeft(Exception):
 def check_auth(include_main_menu=False):
     status = None
     log.info("checking auth status")
+    if sites.is_fansly():
+        import ofscraper.sites.fansly.auth as fansly_auth
+
+        fansly_auth.load()
     while status != "UP":
         status = init.getstatus()
         if status == "UNAVAILABLE":
@@ -26,6 +31,9 @@ def check_auth(include_main_menu=False):
             raise AuthCheckUnavailable("couldn't check the auth, see the error above")
         if status != "UP":
             log.info("Auth Failed")
+            if sites.is_fansly():
+                fansly_auth.make_auth()
+                continue
             _, choice = make.make_auth(
                 auth=auth_file.read_auth(), include_main_menu=include_main_menu
             )

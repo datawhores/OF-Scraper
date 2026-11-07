@@ -4,6 +4,7 @@ import pathlib
 import re
 import arrow
 
+import ofscraper.sites as sites
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
@@ -29,7 +30,7 @@ class basePlaceholder:
         self._variables = {
             "config_path": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),
-            "site_name": "Onlyfans",
+            "site_name": sites.site_name(),
             "save_location": common_paths.get_save_location(),
             "my_id": my_id,
             "my_username": my_username,

@@ -114,6 +114,11 @@ def merged_settings():
         or cache_mode == "disabled"
     )
 
+    # --- Site: --site for this run, else the profile's site.json, else OnlyFans ---
+    import ofscraper.sites as sites
+
+    merged.site = sites.resolve_site(args)
+
     # --- Basic Config Overrides ---
     merged.key_mode = args.key_mode or config_data.get_key_mode()
     merged.dynamic_rules = args.dynamic_rules or config_data.get_dynamic()

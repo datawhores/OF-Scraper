@@ -14,6 +14,11 @@ def check_cdm():
     console = console_.get_shared_console()
     log = logging.getLogger("shared")
 
+    import ofscraper.sites as sites
+
+    if sites.is_fansly():
+        # Fansly video has no DRM, so there is no CDM to check
+        return True
     keymode = settings.get_settings().key_mode
     console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
     if keymode == "manual":

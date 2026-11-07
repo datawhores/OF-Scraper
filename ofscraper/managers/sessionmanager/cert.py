@@ -20,6 +20,33 @@ def get_default_cipher_names():
     return [c["name"] for c in temp_ctx.get_ciphers()]
 
 
+def _fansly_seed():
+    """
+    Seed for a Fansly profile, or None for OnlyFans (unchanged path).
+
+    The OnlyFans auth reader prompts when auth.json is missing, so a Fansly
+    profile must not reach it. The seed is a hash of the Fansly session id,
+    read without prompting; the raw id is never used, since the seed's start
+    is logged.
+    """
+    import ofscraper.sites as sites
+
+    if not sites.is_fansly():
+        return None
+    from ofscraper.sites.fansly import auth as fansly_auth
+
+    try:
+        fauth = fansly_auth.read_auth()
+    except Exception:
+        fauth = {}
+    sid = fansly_auth.session_id(fauth.get("authorization_token")) or fauth.get(
+        "device_id"
+    )
+    if not sid:
+        return "fansly_default_seed"
+    return "fansly_" + hashlib.sha256(str(sid).encode()).hexdigest()[:16]
+
+
 def create_custom_ssl_context(
     # --- Cipher Configuration ---
     cipher_suite_string: str = None,
@@ -43,8 +70,10 @@ def create_custom_ssl_context(
 
     # 1. Determine Identity for Logging Cache
     try:
-        auth = auth_requests.auth_file.read_auth()
-        user_seed = str(auth.get("auth_id") or auth.get("username") or "default_seed")
+        user_seed = _fansly_seed()
+        if user_seed is None:
+            auth = auth_requests.auth_file.read_auth()
+            user_seed = str(auth.get("auth_id") or auth.get("username") or "default_seed")
     except Exception:
         user_seed = f"fallback_seed_{getpass.getuser()}"
 
