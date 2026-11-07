@@ -63,7 +63,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python -c "from ofscraper.__ma
 ## CI
 - **Tests:** `codecov.yml` runs on pull requests and on pushes to `main` (Python 3.11 and 3.15.2). It installs with `uv sync --frozen` from `uv.lock`, so CI tests exactly the locked versions; a dependency change must update the lockfile.
 - **Images and releases:** `commit_bundler.yml` and `docker-daily.yml` run on **pushes to `main` only**, building binaries (kept as workflow artifacts, not released) and pushing images to the fork's registries. PR branches get only the test workflow, so test a branch's binary or image locally.
-- **Releases:** pushing a version tag (`3.15.1` or `v3.15.1`) runs `commit_bundler.yml` for that tag and publishes one release named after it, with the binaries and generated notes. The binaries report the plain version, without a commit hash.
+- **Releases:** pushing a version tag (`3.15.1` or `v3.15.1`) runs `commit_bundler.yml` for that tag and publishes one release named after it, with the binaries and generated notes. The binaries report the plain version, without a commit hash. The same run then publishes the package to PyPI as `ofscraper-community` (trusted publishing, environment `pypi`). A PyPI version can't be replaced, so push only one tag form per release: both forms would run it twice and the second upload fails.
 - **Doc-only changes** (`*.md`, `docs/`, `media/`, `LICENSE`, issue templates) start no workflows. A push that also touches code runs everything as usual.
 - **If a check fails with no steps run, read its annotation.** A billing or spending-limit refusal isn't a code failure. Report it, and run the test job locally on the PR head instead.
 
