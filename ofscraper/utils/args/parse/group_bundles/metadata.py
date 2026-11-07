@@ -20,10 +20,12 @@ from ofscraper.utils.args.parse.groups.download import (
 from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
 from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
 
+from ofscraper.utils.args.parse.arguments.post_content import (
+    metadata_mass_msg_option,
+)
 from ofscraper.utils.args.parse.groups.post_filter import (
     filter_option,
     label_option,
-    mass_msg_option,
     neg_filter_option,
     posts_option,
     timed_only_option,
@@ -119,7 +121,7 @@ It also uses a new filename if one is available
         neg_filter_option,
         post_sort_option,
         timed_only_option,
-        mass_msg_option,
+        metadata_mass_msg_option,
         post_id_filter_option,
         download_type_option,
         help=post_filter_options_help,

@@ -275,6 +275,19 @@ mass_msg_option = click.option(
     required=False,
 )
 
+# metadata uses -ms for --mark-stray-locked, so its copy has no -ms short flag
+metadata_mass_msg_option = click.option(
+    "-mm",
+    "--mass-only/--mass-skip",
+    "mass_msg",
+    help="""
+    \b
+    Flag for enabling/disabling mass content or promos
+    [select one --mass-only or --mass-skip]""",
+    default=None,
+    required=False,
+)
+
 timed_only_option = click.option(
     "-ok/-sk",
     "--only-timed/--skip-timed",

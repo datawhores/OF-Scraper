@@ -490,11 +490,12 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 - Filter by label
 
-#### `--mass-only`
+#### `--mass-only` (`mass_msg`)
 
 - **Also:** `-mm`, `-ms`, `--mass-skip`
 - **Dest:** `mass_msg` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`
+- **Commands:** main program
+- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 - Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
 
 #### `--only-timed`
@@ -528,6 +529,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Download ONLY text files, skipping all media
 - **Note:** Also turns on `--text`: text files are written and media is skipped.
+
+#### `--mass-only` (`mass_msg`)
+
+- **Also:** `-mm`, `--mass-skip`
+- **Dest:** `mass_msg` · **Type:** flag · **Default:** none
+- **Commands:** `metadata`
+- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
+- Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
 
 ### Automation Options
 
