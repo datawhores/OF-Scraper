@@ -375,13 +375,26 @@ def render_cli(notes):
 
     out = [HEADER, "# Command-line reference\n\n"]
     out.append(
-        "Every command and option the CLI accepts, built from the click program in"
-        " `ofscraper/utils/args/`. Option names, types, defaults and help text come from"
-        " the option definitions. **Config fallback** means the value is taken from"
-        " `config.json` when the option isn't given (`ofscraper/utils/settings.py`"
-        " `merged_settings`). See [README.md](README.md) for how options, `config.json`"
-        " and environment variables combine.\n\n"
+        "Every command and option the CLI accepts. The page is built from the click"
+        " program in `ofscraper/utils/args/`. Option names, types, defaults and help text"
+        " come from the option definitions.\n\n"
+        "Each option lists these fields, when they apply: **Also** (other names),"
+        " **Dest**, **Type**, **Default**, **Commands** (which commands accept it),"
+        " **Config fallback**, **Defined in**, then its help text and any **Note**."
+        " **Config fallback** means the option's value comes from that `config.json` key"
+        " when the option isn't given (`merged_settings` in"
+        " `ofscraper/utils/settings.py`). [README.md](README.md) explains how options,"
+        " `config.json` and environment variables combine.\n\n"
     )
+    groups = []
+    for entry in options:
+        if entry["group"] not in groups:
+            groups.append(entry["group"])
+    out.append("## Contents\n\n")
+    out.append("- [Commands](#commands)\n- [`--action` modes](#--action-modes)\n- [Options](#options)\n")
+    for group in groups:
+        out.append(f"  - [{group}](#{anchor(group)})\n")
+    out.append("\n")
     out.append("## Commands\n\n")
     out.append("Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.\n\n")
     for name, cmd in command_objects().items():
@@ -407,10 +420,6 @@ def render_cli(notes):
     for choice in action_param.type.choices:
         out.append(f"- `{choice}`: {notes.ACTIONS[choice].strip()}\n")
     out.append("\n## Options\n\n")
-    groups = []
-    for entry in options:
-        if entry["group"] not in groups:
-            groups.append(entry["group"])
     for group in groups:
         out.append(f"### {group}\n\n")
         for entry in [e for e in options if e["group"] == group]:
@@ -508,17 +517,25 @@ def render_config(notes):
     out = [HEADER, "# `config.json` reference\n\n"]
     out.append(
         "Every key `config.json` holds, in the order the file is written"
-        " (`ofscraper/utils/config/schema.py`). Defaults are what a new config gets."
-        " `auto_update_config` rebuilds the file from these getters and writes it back,"
-        " so older key names listed below are read once and then saved under the"
+        " (`ofscraper/utils/config/schema.py`). Defaults are what a new config gets.\n\n"
+        "Each key lists these fields, when they apply: **Default**, **Read by** (the"
+        " getter), **Default from** (the environment default behind it), **Also reads**"
+        " (older key names), **CLI override**, then a description."
+        " `auto_update_config` rebuilds the file from the getters and writes it back."
+        " So the getter reads an older key name once, and the file is saved under the"
         " current name. **CLI override** means a command-line option takes precedence"
-        " for that run (`ofscraper/utils/settings.py` `merged_settings`).\n\n"
+        " for that run (`merged_settings` in `ofscraper/utils/settings.py`).\n\n"
     )
     sections = []
     for key in defaults:
         section = key.split(".")[0] if "." in key else "Top level"
         if section not in sections:
             sections.append(section)
+    out.append("## Contents\n\n")
+    for section in sections:
+        label = section if section == "Top level" else f"`{section}`"
+        out.append(f"- [{label}](#{anchor(section)})\n")
+    out.append("\n")
     for section in sections:
         out.append(f"## {section if section == 'Top level' else '`' + section + '`'}\n\n")
         if section == "responsetype":
@@ -639,11 +656,21 @@ def render_env(notes):
     sources = env_sources()
     out = [HEADER, "# Environment defaults reference\n\n"]
     out.append(notes.ENV_INTRO.strip() + "\n\n")
+    files = []
+    for key, (path, *_rest) in sources.items():
+        if path not in files:
+            files.append(path)
+    out.append("## Contents\n\n")
+    out.append("- [Rate-limit and backoff settings](#rate-limit-and-backoff-settings)\n")
+    out.append("- [Read directly from the environment](#read-directly-from-the-environment)\n")
+    for path in files:
+        out.append(f"- [`{path}`](#{anchor(path)})\n")
+    out.append("\n")
     out.append("## Rate-limit and backoff settings\n\n" + notes.ENV_SLEEPER.strip() + "\n\n")
     out.append("## Read directly from the environment\n\n")
     out.append(
-        "These are read with `os.getenv` where they're used, not through"
-        " `of_env.getattr`, so only the variable itself sets them.\n\n"
+        "The app reads these with `os.getenv` where it uses them, not through"
+        " `of_env.getattr`. Only the variable itself sets them.\n\n"
         "| Variable | Default | Read in | Description |\n|---|---|---|---|\n"
     )
     for name, (path, default) in direct_env().items():
@@ -651,10 +678,6 @@ def render_env(notes):
             f"| `{name}` | {cell(code(default))} | `{path}` | {cell(notes.ENV_DIRECT[name].strip())} |\n"
         )
     out.append("\n")
-    files = []
-    for key, (path, *_rest) in sources.items():
-        if path not in files:
-            files.append(path)
     for path in files:
         out.append(f"## `{path}`\n\n")
         sections = []
@@ -807,6 +830,7 @@ def render_database(notes):
         "The tables and columns below are what a new database has after"
         " `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables`"
         " run. The create statements are in `ofscraper/db/operations_/`.\n\n"
+        "Tables: " + ", ".join(f"[`{n}`](#{anchor(n)})" for n in tables) + ".\n\n"
     )
     for name, (columns, indexes) in tables.items():
         note = notes.TABLES[name]

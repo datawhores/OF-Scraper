@@ -2,7 +2,34 @@
 
 # Command-line reference
 
-Every command and option the CLI accepts, built from the click program in `ofscraper/utils/args/`. Option names, types, defaults and help text come from the option definitions. **Config fallback** means the value is taken from `config.json` when the option isn't given (`ofscraper/utils/settings.py` `merged_settings`). See [README.md](README.md) for how options, `config.json` and environment variables combine.
+Every command and option the CLI accepts. The page is built from the click program in `ofscraper/utils/args/`. Option names, types, defaults and help text come from the option definitions.
+
+Each option lists these fields, when they apply: **Also** (other names), **Dest**, **Type**, **Default**, **Commands** (which commands accept it), **Config fallback**, **Defined in**, then its help text and any **Note**. **Config fallback** means the option's value comes from that `config.json` key when the option isn't given (`merged_settings` in `ofscraper/utils/settings.py`). [README.md](README.md) explains how options, `config.json` and environment variables combine.
+
+## Contents
+
+- [Commands](#commands)
+- [`--action` modes](#--action-modes)
+- [Options](#options)
+  - [Program Options](#program-options)
+  - [Logging Options](#logging-options)
+  - [Download Options](#download-options)
+  - [Media Filters Options](#media-filters-options)
+  - [Filename Modification Options](#filename-modification-options)
+  - [Posts Filters Options](#posts-filters-options)
+  - [Automation Options](#automation-options)
+  - [User Selection Options](#user-selection-options)
+  - [User List Filter Options](#user-list-filter-options)
+  - [Advanced User List Filter Options](#advanced-user-list-filter-options)
+  - [Model Sort & Processing Order Options](#model-sort--processing-order-options)
+  - [Advanced Search & Processing Options](#advanced-search--processing-options)
+  - [Program Scripts](#program-scripts)
+  - [Advanced Program Options](#advanced-program-options)
+  - [Other options](#other-options)
+  - [Table Filter Options](#table-filter-options)
+  - [Content Options](#content-options)
+  - [metadata_options](#metadata_options)
+  - [Sorting for the table](#sorting-for-the-table)
 
 ## Commands
 
@@ -10,55 +37,68 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-No subcommand. Entry is ofscraper/__main__.py, then Manager.pick() calls commands/scraper/scraper.main(): it cleans temp files and the DB, checks the CDM, then: with --daemon, prompts for actions if none were given and reruns on a schedule; with --action or --scrape-paid, runs those actions once (repeating with prompts if the infinite-loop config is on); with only Fansly --live/--live-watch, records livestreams; otherwise opens the interactive menu (Action, Auth (edit auth.json), Config (edit config.json), Profile, Merge databases, Quit). Reads auth.json and config.json from the profile, writes media under save_location and rows to each creator's user_data.db.
+Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
+
+- With `--daemon`, it prompts for actions if none were given, then reruns on a schedule.
+- With `--action` or `--scrape-paid`, it runs those actions once. It repeats with prompts if the infinite-loop config is on.
+- With only Fansly `--live` or `--live-watch`, it records livestreams.
+- Otherwise it opens the interactive menu: Action, Auth (edit `auth.json`), Config (edit `config.json`), Profile, Merge databases and Quit.
+
+The run reads `auth.json` and `config.json` from the profile. It writes media under `save_location` and rows to each creator's `user_data.db`.
 
 Accepts 101 options. Its `--help` summary: OF-Scraper Options.
 
 ### `manual`
 
-ofscraper manual -u URL... or -f FILE (one is required). Downloads specific posts given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids; a bare id is looked up on the timeline, then in that creator's purchases. Forces force_all, so existing files are downloaded again; writes posts and media to the creator's user_data.db and media under save_location, then runs the after-download script.
+`ofscraper manual -u URL...` or `-f FILE` (one is required). Downloads specific posts, given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids. A bare id is looked up on the timeline, then in that creator's purchases. It forces `force_all`, so existing files are downloaded again. It writes posts and media to the creator's `user_data.db` and media under `save_location`, then runs the after-download script.
 
 Accepts 50 options. Its `--help` summary: Manually download media by providing a list of urls or IDs.
 
 ### `msg_check`
 
-ofscraper msg_check -u ITEM... or -f FILE. Each item is a creator username, or any text containing a number, which is taken as the model id (e.g. a chat URL). Fetches the creator's messages and purchases (from the check cache unless --force; the cache expires after 3 days), writes them to user_data.db, and opens an interactive table of the media where unlocked rows can be queued for download; a background thread downloads them.
+`ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, or any text containing a number, which is taken as the model id (for example a chat URL). It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
 Accepts 50 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `story_check`
 
-ofscraper story_check -u USERNAME... (or -f). Fetches the creators' stories and highlights from the API (no check cache), writes them to user_data.db and opens the same downloadable media table.
+`ofscraper story_check -u USERNAME...` (or `-f`). Fetches the creators' stories and highlights from the API, without the check cache. It writes them to `user_data.db` and opens the same downloadable media table.
 
 Accepts 48 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `paid_check`
 
-ofscraper paid_check -u USERNAME_OR_ID... (or -f). Fetches each creator's purchased content (check cache unless --force; a deleted creator, named DELETED_MODEL_PLACEHOLDER, is read from all purchases), writes it to user_data.db and opens the media table.
+`ofscraper paid_check -u USERNAME_OR_ID...` (or `-f`). Fetches each creator's purchased content, writes it to `user_data.db` and opens the media table. The content comes from the check cache unless you pass `--force`. A deleted creator, named `DELETED_MODEL_PLACEHOLDER`, is read from all purchases.
 
 Accepts 50 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `post_check`
 
-ofscraper post_check -u URL_OR_USERNAME... or -f FILE. Takes onlyfans.com/<username> URLs or bare usernames, fetches the areas in --check-area (default Timeline, Pinned, Archived, Streams; Labels also available) from the check cache unless --force, writes them to user_data.db and opens the media table. All check commands set force_all and after=0.
+`ofscraper post_check -u URL_OR_USERNAME...` or `-f FILE`. Takes `onlyfans.com/<username>` URLs or bare usernames. It fetches the areas in `--check-area` (default Timeline, Pinned, Archived and Streams; Labels is also available), writes them to `user_data.db` and opens the media table. The areas come from the check cache unless you pass `--force`. All check commands set `force_all` and `after=0`.
 
 Accepts 52 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `metadata`
 
-ofscraper metadata --metadata check|update|complete with the usual user and area options (--scrape-paid takes a mode too). Uses the API to update the creators' user_data.db without downloading: check refreshes metadata fields only; update also sets download status and file names from the files actually on disk; complete marks media downloaded and takes a new filename if there is one. --mark-stray marks DB media missing from the scrape (within --after/--before) as locked; --anon uses anonymous credentials.
+`ofscraper metadata --metadata check|update|complete`, with the usual user and area options (`--scrape-paid` takes a mode too). It uses the API to update the creators' `user_data.db` without downloading. The modes differ as follows:
+
+- `check` refreshes metadata fields only.
+- `update` also sets download status and file names from the files actually on disk.
+- `complete` marks media downloaded and takes a new filename if there is one.
+
+`--mark-stray` marks database media that are missing from the scrape (within `--after` and `--before`) as locked. `--anon` uses anonymous credentials.
 
 Accepts 85 options. Its `--help` summary: Uses API to modify db files without the need for downloading.
 
 ### `db`
 
-ofscraper db with user selection, area (-o) and media filters (type, size, length, downloaded, locked, preview, protected, post/media ids, dates), sorting and a hard limit. Reads media rows from each selected creator's user_data.db and prints them as a table; -ep/--export PATH also writes a .csv. Makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV.
+`ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV.
 
 Accepts 60 options. Its `--help` summary: Print information from the database.
 
 ### `recover_collisions` (separate entry point)
 
-python -m ofscraper.commands.recover_collisions DB [--apply] [--undo FILE] [--path-root DIR] (argparse, not part of the CLI; see COLLISION_RECOVERY.md). Offline, for one creator's user_data.db: finds recorded paths shared by different media and prints a JSON report; --apply resets downloaded=0 for those media and writes a JSON undo file beside the database; --undo FILE previews or, with --apply, restores those flags. Never touches media files and doesn't contact OnlyFans.
+`python -m ofscraper.commands.recover_collisions DB [--apply] [--undo FILE] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). It works offline on one creator's `user_data.db` and finds recorded paths that different media share. It prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews the restore of those flags, or with `--apply` performs it. It never touches media files and doesn't contact OnlyFans.
 
 Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
 
@@ -69,20 +109,20 @@ Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
 
 ### Scripts in `scripts/`
 
-- `scripts/commit_version.sh`: CI helper: works out the commit-based version string, hashes and push type from git for the build workflows.
-- `scripts/creator_names.py`: python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--force] | --csv FILE] [--data-dir DIR]: lists the usernames each creator account has had, from the profiles table of every <data-dir>/<model_id>/user_data.db (default the main profile's .data folder); --add appends a name. OnlyFans databases only.
-- `scripts/determine_docker_stable_dev_tags.py`: CI helper: asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.
-- `scripts/entry/`: Docker internals: entrypoint.sh, lib_user_setup.sh, lib_paths.sh and lib_permissions.sh set up the container user, data and config paths and permissions, then start the app.
-- `scripts/release_version.sh`: CI helper: works out the release version from INPUT_VERSION or git tags and whether it is a stable or dev release.
-- `scripts/retry_action.sh`: CI helper: retries a command up to N times with a sleep between attempts.
+- `scripts/commit_version.sh`: CI helper. Works out the commit-based version string, hashes and push type from git for the build workflows.
+- `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--force] | --csv FILE] [--data-dir DIR]`. Lists the usernames each creator account has had, from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder). `--add` appends a name. It works on OnlyFans databases only.
+- `scripts/determine_docker_stable_dev_tags.py`: CI helper. Asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.
+- `scripts/entry/`: Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.
+- `scripts/release_version.sh`: CI helper. Works out the release version from `INPUT_VERSION` or git tags, and whether it is a stable or dev release.
+- `scripts/retry_action.sh`: CI helper. Retries a command up to N times, with a sleep between attempts.
 
 ## `--action` modes
 
 The main program's `--action` (`-a`) picks what a non-interactive run does; without it, the interactive menu asks. Values can be combined (e.g. `download,like`).
 
-- `unlike`: Removes likes from already-liked posts in the selected like areas, the same way as like. Runs like.process_unlike; can't be combined with like.
-- `like`: Likes (favorites) posts in the selected like areas that aren't liked yet, one request at a time with a random sleep between requests (MIN/MAX_SLEEP_DURATION_LIKE); a post that toggles the wrong way is toggled again. Runs like.process_like, then the after-like action script; the code warns that OnlyFans allows about 1000 likes per hour.
-- `download`: Scrapes the selected areas (--posts) for each selected creator and downloads the media that pass the filters into save_location using dir_format and file_format, recording them in the creator's user_data.db; with --text (or --text-only) it also writes post text to .txt files. Runs downloader() in commands/scraper/actions/download, then the after-download action script.
+- `unlike`: Removes likes from already-liked posts in the selected like areas, the same way as `like`. It runs `like.process_unlike`. It can't be combined with `like`.
+- `like`: Likes (favorites) posts in the selected like areas that aren't liked yet. It sends one request at a time, with a random sleep between requests (`MIN/MAX_SLEEP_DURATION_LIKE`). A post that toggles the wrong way is toggled again. It runs `like.process_like`, then the after-like action script. The code warns that OnlyFans allows about 1000 likes per hour.
+- `download`: Scrapes the selected areas (`--posts`) for each selected creator. It downloads the media that pass the filters into `save_location`, using `dir_format` and `file_format`, and records them in the creator's `user_data.db`. With `--text` (or `--text-only`) it also writes post text to `.txt` files. It runs `downloader()` in `commands/scraper/actions/download`, then the after-download action script.
 
 ## Options
 
@@ -124,7 +164,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 - Path to a custom environment variables file (.env).
-- **Note:** Loaded before settings are built, instead of `advanced_options.env_files` (not in addition to it).
+- **Note:** Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.
 
 ### Logging Options
 
@@ -171,7 +211,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Config fallback:** `download_options.auto_resume`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 - Cleanup temp .part files (removes resume ability)
-- **Note:** Overrides `download_options.auto_resume` to off for the run.
+- **Note:** Turns `download_options.auto_resume` off for the run.
 
 #### `--downloadbars`
 
@@ -199,7 +239,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Config fallback:** `performance_options.download_limit`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 - Maximum download speed per second can parse Human readable string '10MB' or int representing bytes per second
-- **Note:** Values below 1024 bytes per second are raised to 1024. The limit is shared by all downloads in the run.
+- **Note:** Values below 1024 bytes per second are raised to 1024. All downloads in the run share the limit.
 
 ### Media Filters Options
 
@@ -209,7 +249,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `quality` · **Type:** one of `240`, `720`, `source` · **Default:** none
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- **Note:** The lowest video quality to accept: the smallest available quality at or above it is downloaded, and `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without it, `source` is used.
+- **Note:** The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.
 
 #### `--mediatype`
 
@@ -328,7 +368,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 - Forces scanning and redownloading of all files in selected post types
-- **Note:** Sets `force_all`, `--after 2000` and `--before` tomorrow for the run, so every item is scanned and downloaded again (`merged_settings`).
+- **Note:** Sets `force_all`, `--after 2000` and `--before` tomorrow for the run. Every item is scanned and downloaded again. The merge happens in `merged_settings`.
 
 #### `--preview`
 
@@ -528,7 +568,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Download ONLY text files, skipping all media
-- **Note:** Also turns on `--text`: text files are written and media is skipped.
+- **Note:** Also turns on `--text`. Text files are written and media is skipped.
 
 #### `--mass-only` (`mass_msg`)
 
@@ -910,7 +950,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Disable cache and forces consecutive api scan
-- **Note:** Disables both the general cache and the API cache, and turns off incremental downloads, for the run; `advanced_options.cache-mode` `disabled` does the same from config.json.
+- **Note:** Disables both the general cache and the API cache for the run, and turns off incremental downloads. Setting `advanced_options.cache-mode` to `disabled` in `config.json` does the same.
 
 #### `--no-api-cache`
 
@@ -919,7 +959,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Forces consecutive api scan
-- **Note:** Disables only the API response cache, like `advanced_options.cache-mode` `api_disabled`.
+- **Note:** Disables only the API response cache. Setting `advanced_options.cache-mode` to `api_disabled` does the same.
 
 #### `--key-mode`
 
@@ -929,7 +969,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Config fallback:** `cdm_options.key-mode-default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Key mode for decrypting content
-- **Note:** `cdrm` posts request headers, cookies included, to cdrm-project.com; `manual` uses the local CDM files (`--private-key`, `--client-id`).
+- **Note:** `cdrm` posts the request headers, cookies included, to cdrm-project.com. `manual` uses the local CDM files (`--private-key`, `--client-id`).
 
 #### `--private-key`
 
@@ -999,7 +1039,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 - Download Text files, but skip download media
-- **Note:** Also turns on `--text`: text files are written and media is skipped.
+- **Note:** Also turns on `--text`. Text files are written and media is skipped.
 
 #### `--url`
 
