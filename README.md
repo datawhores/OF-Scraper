@@ -13,9 +13,10 @@ A community-maintained fork of [datawhores/OF-Scraper](https://github.com/datawh
 [![codecov](https://codecov.io/gh/cloakedkeys/OF-Scraper-Community/branch/main/graph/badge.svg)](https://codecov.io/gh/cloakedkeys/OF-Scraper-Community)
 [![Python 3.11 to 3.15](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.15-3776ab?logo=python&logoColor=white)](#install)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/cloakedkeys/OF-Scraper-Community/pkgs/container/of-scraper-community)
+[![Docs](https://img.shields.io/badge/docs-gitbook-00a8e8?logo=gitbook&logoColor=white)](https://cloakedkeys.gitbook.io/ofsc)
 [![License: MIT](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](LICENSE)
 
-[Install](#install) · [Getting started](#getting-started) · [FAQ](#faq) · [Reference](reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
+[Install](#install) · [Getting started](#getting-started) · [Docs](https://cloakedkeys.gitbook.io/ofsc) · [FAQ](#faq) · [Reference](reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
 
 </div>
 
@@ -68,7 +69,7 @@ To update, run the same install command again.
 
 Run `ofscraper` and follow the prompts. The first run asks for your auth details and creates a config file in `~/.config/ofscraper/`.
 
-The [upstream documentation](https://of-scraper.gitbook.io/of-scraper) covers setup, auth, config options and commands. It still applies to this fork, apart from the install steps above. For the exact behaviour of this fork, see the [reference](reference/README.md).
+📖 **[Read the docs](https://cloakedkeys.gitbook.io/ofsc)** for setup, auth, config options, commands and the full [technical reference](https://cloakedkeys.gitbook.io/ofsc/reference).
 
 ## FAQ
 
@@ -94,7 +95,7 @@ Usually an auth problem, so check the auth answer above first. Then check you ha
 
 These videos need a CDM to decrypt them.
 
-- Set up `cdm_options` in your config. See the [CDM guide](https://of-scraper.gitbook.io/of-scraper/cdm-options).
+- Set up `cdm_options` in your config. See the [CDM guide](https://cloakedkeys.gitbook.io/ofsc/cdm-options).
 - Install ffmpeg 6 or newer and put its full path in `binary_options` → `ffmpeg`.
 - Paths copied with Windows' "Copy as path" (with quotes) work.
 

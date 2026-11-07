@@ -1,6 +1,6 @@
 # OF-Scraper reference
 
-This reference covers everything the program can be told to do. It is written for coding agents (and people) who need an answer without tracing the code. The user docs (the `docs` submodule) are upstream's and don't cover this fork's additions.
+This reference covers everything the program can be told to do. It is written for coding agents (and people) who need an answer without tracing the code. The user guide is at [cloakedkeys.gitbook.io/ofsc](https://cloakedkeys.gitbook.io/ofsc).
 
 | File | Covers |
 |---|---|

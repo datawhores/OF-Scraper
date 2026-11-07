@@ -46,7 +46,7 @@ def model_details(prompt_):
         Original Any Promo Price: [bold deep_sky_blue2]{selected.lowest_promo_all}[/bold deep_sky_blue2]   [Lowest of Any Promotional Price]
         =======================================================================================================================================
         
-        [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+        [italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
         ---------------------------------------------------------------------------------------------------------------------------------------
         Final Current Price: [bold deep_sky_blue2]{selected.final_current_price}[/bold deep_sky_blue2]   [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ def price_info(prompt_):
             f"""
 ========================================================================================================================================
 
-[italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+[italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
 current_price => [bold deep_sky_blue2]{settings.get_settings().current_price if settings.get_settings().current_price else 'paid and free'}[/bold deep_sky_blue2]
@@ -254,7 +254,7 @@ last-seen-before => [bold deep_sky_blue2]{settings.get_settings().last_seen_befo
 last-seen-after => [bold deep_sky_blue2]{settings.get_settings().last_seen_after}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-[italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+[italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
 current_price => [bold deep_sky_blue2]{settings.get_settings().current_price if settings.get_settings().current_price else 'paid and free'}[/bold deep_sky_blue2]

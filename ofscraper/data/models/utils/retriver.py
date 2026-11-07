@@ -71,7 +71,7 @@ async def get_via_list(count):
         count[1], account="expired"
     )
     console.get_shared_console().print(
-        "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
+        "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://cloakedkeys.gitbook.io/ofsc/faq[/yellow]"
     )
 
     other_subscriptions = await lists.get_otherlist()
@@ -87,7 +87,7 @@ async def get_via_list(count):
 async def get_via_individual():
     out = await individual.get_subscription()
     console.get_shared_console().print(
-        "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
+        "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://cloakedkeys.gitbook.io/ofsc/faq[/yellow]"
     )
     models_objects = list(map(lambda x: models.Model(x), out))
 

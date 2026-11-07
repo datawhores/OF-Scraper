@@ -35,7 +35,7 @@ console = Console()
 
 def funct(prompt_):
     console.print("""
-    For more Details => https://of-scraper.gitbook.io/of-scraper/config-options
+    For more Details => https://cloakedkeys.gitbook.io/ofsc/getting-started/config-options
     
     [General Options]
     main_profile: default profile attached to config

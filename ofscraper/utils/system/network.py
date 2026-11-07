@@ -23,7 +23,7 @@ def check_cdm():
     console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
     if keymode == "manual":
         console.print(
-            "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]"
+            "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/yellow]"
         )
         return True
     elif keymode == "cdrm":
@@ -41,12 +41,12 @@ def check_cdm():
                 if r.ok or (keymode == "cdrm" and r.status == 405):
                     console.print("[green] CDM service seems to be working\n[/green]")
                     console.print(
-                        "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]"
+                        "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/yellow]"
                     )
                     return True
                 else:
                     console.print(
-                        "[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
+                        "[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
                     )
                     log.debug(f"[bold] cdm status[/bold]: {r.status}")
                     log.debug(f"[bold]  cdm text [/bold]: {r.text_()}")
@@ -55,14 +55,14 @@ def check_cdm():
                     return False
     except httpx.TimeoutException:
         console.print(
-            f"[red]CDM service {keymode} timed out and seems to be down\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
+            f"[red]CDM service {keymode} timed out and seems to be down\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
         )
         log.debug(traceback.format_exc())
         time.sleep(3.5)
 
     except Exception as E:
         console.print(
-            f"[red]CDM service {keymode} has an issue {E}\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
+            f"[red]CDM service {keymode} has an issue {E}\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/red]"
         )
         log.debug(traceback.format_exc())
         time.sleep(3.5)
