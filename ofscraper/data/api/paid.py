@@ -149,7 +149,7 @@ async def scrape_paid(c, username, offset=0):
         except Exception as E:
             log.warning(
                 f"Purchased scan for {username} failed at offset {current_offset}: "
-                f"{E!r}. Purchases may be incomplete."
+                f"{type(E).__name__}: {E}. Purchases may be incomplete."
             )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
@@ -292,7 +292,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         except Exception as E:
             log.warning(
                 f"Purchased scan (all models) failed at offset {current_offset}: "
-                f"{E!r}. Purchases may be incomplete."
+                f"{type(E).__name__}: {E}. Purchases may be incomplete."
             )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())

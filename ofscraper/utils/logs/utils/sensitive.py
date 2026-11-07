@@ -11,6 +11,10 @@ _DEFAULT_PATTERNS = {
     # Redacts common sensitive info
     r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "{ip_address}",  # IP Addresses
     r"\"sess\":\"[^\"]+\"": '"sess":"{hidden}"',  # Session tokens
+    # The request-signing header, as a header dict or JSON shows it
+    # ('sign': '...'). It changes on every request, so it can't be
+    # registered by value the way the session cookie is.
+    r"(['\"](?i:sign)['\"]\s*:\s*['\"])[^'\"]+": r"\g<1>{sign}",
 }
 
 # This dictionary will be populated at runtime by your add_sensitive_pattern function

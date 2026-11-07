@@ -163,6 +163,83 @@ def test_an_empty_display_name_masks_nothing():
     assert out.endswith("a line with spaces")
 
 
+XBC = "fake.xbc+value/with?regex*chars"
+
+
+@pytest.mark.parametrize("formatter", [LogFileFormatter, DiscordFormatter])
+@pytest.mark.parametrize(
+    "line",
+    [
+        "requests headers " + str({"x-bc": XBC, "user-agent": "ua"}),
+        '{"x-bc": "' + XBC + '"}',
+    ],
+)
+def test_xbc_is_masked_once_auth_is_read(fake_auth, formatter, line):
+    # x-bc is an auth.json credential sent as a header on every request (#243)
+    fake_auth["x-bc"] = XBC
+    auth_file.read_auth()
+    out = formatted(formatter(), line)
+    assert XBC not in out
+    assert "{x-bc}" in out
+    assert "LOGGING ERROR" not in out
+
+
+def test_a_short_xbc_masks_nothing(fake_auth):
+    fake_auth["x-bc"] = "bc"
+    auth_file.read_auth()
+    assert list(sensitive._USER_ADDED_PATTERNS.values()) == ["{sess}"]
+
+
+SIGN = "41:0123456789abcdef0123456789abcdef01234567:1a2:6618"
+
+
+@pytest.mark.parametrize("formatter", [LogFileFormatter, DiscordFormatter])
+@pytest.mark.parametrize(
+    "line",
+    [
+        "requests headers " + str({"sign": SIGN, "time": "1700000000123"}),
+        '{"sign": "' + SIGN + '"}',
+        "headers " + str({"Sign": SIGN}),
+    ],
+)
+def test_sign_header_is_masked(formatter, line):
+    # the signature changes per request, so it's masked by its header name
+    out = formatted(formatter(), line)
+    assert SIGN not in out
+    assert "{sign}" in out
+    assert "1700000000123" in out or "time" not in line
+    assert "LOGGING ERROR" not in out
+
+
+def test_sign_rule_leaves_other_text_alone():
+    line = "design: 'x' signed in, sign of the times"
+    out = formatted(LogFileFormatter(), line)
+    assert out.endswith(line)
+
+
+def test_failed_request_repr_shows_no_credentials(fake_auth):
+    # the leak in #243: an aiohttp error's repr holds the request headers
+    from aiohttp import ClientResponseError, RequestInfo
+    from multidict import CIMultiDict, CIMultiDictProxy
+    from yarl import URL
+
+    fake_auth["x-bc"] = XBC
+    auth_file.read_auth()
+    url = URL("https://example.invalid/api2/v2/posts/paid")
+    headers = CIMultiDictProxy(
+        CIMultiDict(
+            {"x-bc": XBC, "sign": SIGN, "Cookie": f"auth_id=1; sess={SESS}"}
+        )
+    )
+    error = ClientResponseError(
+        RequestInfo(url, "GET", headers, url), (), status=429, message="Too Many Requests"
+    )
+    out = formatted(LogFileFormatter(), f"scan failed: {error!r}")
+    for secret in (XBC, SIGN, SESS):
+        assert secret not in out
+    assert "LOGGING ERROR" not in out
+
+
 def test_empty_sess_registers_nothing(fake_auth):
     fake_auth["sess"] = ""
     auth_file.read_auth()

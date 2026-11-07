@@ -59,17 +59,24 @@ MIN_SECRET_LENGTH = 8
 
 
 def hide_secrets(auth):
-    """Mask the session cookie wherever it appears in a log line.
+    """Mask the session cookie and the x-bc value wherever they appear in a
+    log line.
 
-    Request headers are logged when a request fails, and the cookie header
-    holds ``sess=<value>``. Registering the value itself covers every form it
-    is logged in (cookie header, dict repr, JSON).
+    Request headers are logged when a request fails: the cookie header holds
+    ``sess=<value>`` and the ``x-bc`` header holds the auth.json value.
+    Registering the values themselves covers every form they are logged in
+    (cookie header, dict repr, JSON).
     """
-    sess = auth.get("sess") if isinstance(auth, dict) else None
-    # a real session value is long; a stray short one (e.g. a placeholder)
-    # would mask ordinary words in every log line
-    if sess and len(str(sess)) >= MIN_SECRET_LENGTH:
-        sensitive.add_sensitive_pattern(re.compile(re.escape(str(sess))), "{sess}")
+    if not isinstance(auth, dict):
+        return
+    for key, replacement in (("sess", "{sess}"), ("x-bc", "{x-bc}")):
+        value = auth.get(key)
+        # a real value is long; a stray short one (e.g. a placeholder)
+        # would mask ordinary words in every log line
+        if value and len(str(value)) >= MIN_SECRET_LENGTH:
+            sensitive.add_sensitive_pattern(
+                re.compile(re.escape(str(value))), replacement
+            )
 
 
 def edit_auth():
