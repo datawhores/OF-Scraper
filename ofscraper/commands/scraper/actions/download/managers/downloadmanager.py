@@ -63,12 +63,25 @@ class DownloadManager:
             await update_total(new_total - self.total)
             self.total = new_total
 
-    def _get_resume_header(self, resume_size, total):
-        return (
-            None
-            if not resume_size or not total
-            else {"Range": f"bytes={resume_size}-"}
-        )
+    def _get_resume_header(self, resume_size, total, validator=None):
+        if not resume_size or not total:
+            return None
+        headers = {"Range": f"bytes={resume_size}-"}
+        if validator:
+            # if the file isn't the one the part was started from, the server
+            # sends all of it (200) instead of the rest (206)
+            headers["If-Range"] = validator
+        return headers
+
+    def _validator(self, r):
+        """What identifies this version of the file, for If-Range: a strong
+        ETag, else Last-Modified. A weak ETag can't be used in If-Range, and
+        a date mustn't be sent there when the server has an ETag, even a weak
+        one (RFC 9110, 13.1.5), so then there's none."""
+        etag = (r.headers.get("etag") or "").strip()
+        if etag:
+            return None if etag.startswith("W/") else etag
+        return (r.headers.get("last-modified") or "").strip() or None
 
     def _full_size_from_reply(self, r, resume_size, path, saved_total=None):
         """Return (total, resume_size) for the reply to a request that may have
@@ -186,6 +199,18 @@ class DownloadManager:
                 f"{get_medialog(ele)} {format_size(total)} under size min"
             )
             return 0
+
+    def _check_same_file(self, r, resume_size, path, saved_validator):
+        """After a 206 (resume_size set), start over if the reply's ETag or
+        Last-Modified isn't the one saved with the part. If-Range should have
+        made the server send the whole new file, but a server that ignores it
+        sends the rest of the new file instead."""
+        validator = self._validator(r)
+        if resume_size and saved_validator and validator and validator != saved_validator:
+            self._start_over(
+                path,
+                f"the file changed on the server ({saved_validator} -> {validator})",
+            )
 
     def _downloadspace(self):
         if not system.check_free_size():

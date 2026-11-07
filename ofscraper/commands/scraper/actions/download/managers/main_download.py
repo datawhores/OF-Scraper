@@ -85,6 +85,7 @@ class MainDownloadManager(DownloadManager):
                         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
                     data = await self._get_data(ele)
                     total = None
+                    validator = (data or {}).get("validator")
                     placeholderObj = None
                     status = False
                     if data:
@@ -103,6 +104,7 @@ class MainDownloadManager(DownloadManager):
                                 tempholderObj,
                                 placeholderObj=placeholderObj,
                                 total=total,
+                                validator=validator,
                             )
                         except Exception as E:
                             raise E
@@ -128,7 +130,7 @@ class MainDownloadManager(DownloadManager):
                     raise E
 
     async def _main_download_sendreq(
-        self, c, ele, tempholderObj, placeholderObj=None, total=None
+        self, c, ele, tempholderObj, placeholderObj=None, total=None, validator=None
     ):
         try:
             common_globals.log.debug(
@@ -136,7 +138,12 @@ class MainDownloadManager(DownloadManager):
             )
             try:
                 return await self._send_req_inner(
-                    c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
+                    c,
+                    ele,
+                    tempholderObj,
+                    placeholderObj=placeholderObj,
+                    total=total,
+                    validator=validator,
                 )
             except StartOver as E:
                 # the part was deleted; ask for the whole file, without a range
@@ -150,11 +157,11 @@ class MainDownloadManager(DownloadManager):
             raise E
 
     async def _send_req_inner(
-        self, c, ele, tempholderObj, placeholderObj=None, total=None
+        self, c, ele, tempholderObj, placeholderObj=None, total=None, validator=None
     ):
         try:
             resume_size = self._get_resume_size(tempholderObj)
-            headers = self._get_resume_header(resume_size, total)
+            headers = self._get_resume_header(resume_size, total, validator)
             saved_total, total = total, None
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
@@ -170,9 +177,15 @@ class MainDownloadManager(DownloadManager):
                 total, resume_size = self._full_size_from_reply(
                     r, resume_size, tempholderObj.tempfilepath, saved_total
                 )
+                self._check_same_file(
+                    r, resume_size, tempholderObj.tempfilepath, validator
+                )
                 data = {
                     "content-total": total,
                     "content-type": r.headers.get("content-type"),
+                    # the validator of the reply that started the part: a
+                    # resume keeps the saved one
+                    "validator": validator if resume_size else self._validator(r),
                 }
 
                 common_globals.log.debug(

@@ -11,15 +11,21 @@ whole file after the partial data and downloaded it again.
 A reply that doesn't fit the .part (a file of another size than the one the
 .part was started from, no size at all, or a 416) deletes the .part and
 downloads the file again from the start.
+
+A resume sends If-Range with the ETag or Last-Modified of the reply that
+started the .part, so a file that changed but kept its size comes back whole
+(200) instead of being joined to the old start (#259).
 """
 
 import asyncio
 import contextlib
+import contextvars
 import logging
 from types import SimpleNamespace
 
 import pytest
 from aiohttp import ClientSession, web
+from tenacity import AsyncRetrying, stop_after_attempt
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
 import ofscraper.commands.scraper.actions.download.managers.alt_download as ad
@@ -36,14 +42,29 @@ BODY = bytes(i % 251 for i in range(T))
 BODY_NEW = bytes((i * 7) % 253 for i in range(1_200_000))  # the file, changed
 
 
-def _handler(mode, seen, body=BODY):
+def _handler(mode, seen, body=BODY, validator=None, if_ranges=None):
+    """validator: the ETag and/or Last-Modified headers the server sends for
+    its current file. A Range with an If-Range that isn't one of them gets the
+    whole file (200), as RFC 9110 says."""
     size = len(body)
+    validator = validator or {}
 
     async def handler(request):
         rng = request.headers.get("Range")
         seen.append(rng)
+        if_range = request.headers.get("If-Range")
+        if if_ranges is not None:
+            if_ranges.append(if_range)
+        if (
+            if_range is not None
+            and if_range not in validator.values()
+            and mode != "ignore-if-range"
+        ):
+            rng = None
         if not rng or mode == "ignore-range":
-            return web.Response(status=200, body=body, content_type="video/mp4")
+            return web.Response(
+                status=200, body=body, headers=validator, content_type="video/mp4"
+            )
         start, end = rng.split("=")[1].split("-")
         start = int(start)
         if start >= size:
@@ -60,7 +81,7 @@ def _handler(mode, seen, body=BODY):
             await resp.write(body[start : end + 1])
             await resp.write_eof()
             return resp
-        headers = {}
+        headers = dict(validator)
         if mode != "no-content-range":
             headers["Content-Range"] = f"bytes {start}-{end}/{size}"
         return web.Response(
@@ -124,9 +145,9 @@ def _manager(module_class, cached):
     return mgr
 
 
-async def _serve(mode, seen, run, body=BODY):
+async def _serve(mode, seen, run, body=BODY, validator=None, if_ranges=None):
     app = web.Application()
-    app.router.add_get("/f", _handler(mode, seen, body))
+    app.router.add_get("/f", _handler(mode, seen, body, validator, if_ranges))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "127.0.0.1", 0)
@@ -319,6 +340,204 @@ def test_drm_416_restarts(tmp_path, monkeypatch):
     assert total == T
     assert data == BODY
     assert [c["content-total"] for c in cached] == [T]
+
+
+BODY_SAME_SIZE = bytes((i * 7) % 253 for i in range(T))  # changed, same size
+LM = "Wed, 21 Oct 2026 07:28:00 GMT"
+
+
+def _retry_once(monkeypatch, module):
+    monkeypatch.setattr(
+        module,
+        "download_retry",
+        lambda: AsyncRetrying(stop=stop_after_attempt(1), reraise=True),
+    )
+    monkeypatch.setattr(module, "get_download_retries", lambda: 1)
+
+
+def _main_download(
+    tmp_path, monkeypatch, saved, body=BODY, validator=None, mode="range"
+):
+    """The whole normal download step, from the reply data saved by the run
+    that started the .part (300,000 bytes of BODY) to the finished .part."""
+    part = tmp_path / "f.part"
+    part.write_bytes(BODY[:300_000])
+    _retry_once(monkeypatch, md)
+    monkeypatch.setattr(
+        common_globals, "attempt", contextvars.ContextVar("a", default=0), raising=False
+    )
+
+    class _Placeholder:
+        def __init__(self, *a):
+            pass
+
+        async def init(self):
+            return SimpleNamespace(
+                tempfilepath=part, trunicated_filepath=tmp_path / "f.mp4"
+            )
+
+    monkeypatch.setattr(md.placeholder, "tempFilePlaceholder", _Placeholder)
+    monkeypatch.setattr(md.placeholder, "Placeholders", _Placeholder)
+    seen, if_ranges, cached = [], [], []
+    mgr = _manager(md.MainDownloadManager, cached)
+    mgr._downloadspace = lambda: None
+
+    async def _get_data(ele):
+        return saved
+
+    mgr._get_data = _get_data
+    ele = SimpleNamespace(url="x", id=1, post_id=1, username="u", filename="f")
+
+    async def run(c):
+        return await mgr._main_download_downloader(c, ele)
+
+    total, _, _ = asyncio.run(_serve(mode, seen, run, body, validator, if_ranges))
+    return total, part.read_bytes(), seen, if_ranges, cached
+
+
+def test_main_changed_file_same_size_starts_over(tmp_path, monkeypatch):
+    # #259: the file changed but kept its size. The If-Range from the first
+    # reply's ETag makes the server send the new file whole, instead of its
+    # end being added to the start of the old one.
+    saved = {"content-total": T, "content-type": "video/mp4", "validator": '"v1"'}
+    total, data, seen, if_ranges, cached = _main_download(
+        tmp_path, monkeypatch, saved, BODY_SAME_SIZE, {"ETag": '"v2"'}
+    )
+    assert seen == ["bytes=300000-"]
+    assert if_ranges == ['"v1"']
+    assert total == T
+    assert data == BODY_SAME_SIZE
+    assert [c["validator"] for c in cached] == ['"v2"']
+
+
+def test_main_unchanged_file_resumes_with_last_modified(tmp_path, monkeypatch):
+    # a server with no ETag: Last-Modified goes in If-Range
+    saved = {"content-total": T, "content-type": "video/mp4", "validator": LM}
+    total, data, seen, if_ranges, cached = _main_download(
+        tmp_path, monkeypatch, saved, BODY, {"Last-Modified": LM}
+    )
+    assert seen == ["bytes=300000-"]
+    assert if_ranges == [LM]
+    assert total == T
+    assert data == BODY
+    assert [c["validator"] for c in cached] == [LM]
+
+
+def test_main_weak_etag_sends_no_if_range(tmp_path, monkeypatch):
+    # a weak ETag can't go in If-Range, and a date mustn't go there when the
+    # server has an ETag, so nothing is saved or sent
+    saved = {"content-total": T, "content-type": "video/mp4", "validator": None}
+    total, data, seen, if_ranges, cached = _main_download(
+        tmp_path, monkeypatch, saved, BODY, {"ETag": 'W/"v1"', "Last-Modified": LM}
+    )
+    assert seen == ["bytes=300000-"]
+    assert if_ranges == [None]
+    assert data == BODY
+    assert [c["validator"] for c in cached] == [None]
+
+
+def test_main_saved_data_without_validator_resumes_as_before(tmp_path, monkeypatch):
+    # saved by an older version, or the server sent no ETag or Last-Modified.
+    # The 206's ETag isn't saved: the part's start was never checked against it
+    saved = {"content-total": T, "content-type": "video/mp4"}
+    total, data, seen, if_ranges, cached = _main_download(
+        tmp_path, monkeypatch, saved, BODY, {"ETag": '"v1"'}
+    )
+    assert seen == ["bytes=300000-"]
+    assert if_ranges == [None]
+    assert total == T
+    assert data == BODY
+    assert [c["validator"] for c in cached] == [None]
+
+
+def test_main_server_ignoring_if_range_starts_over(tmp_path, monkeypatch):
+    # the server sends the rest of the new file (206) despite If-Range, but
+    # its ETag shows the file changed: the part is dropped and the new file
+    # downloaded whole, and only then is its ETag saved
+    saved = {"content-total": T, "content-type": "video/mp4", "validator": '"v1"'}
+    total, data, seen, if_ranges, cached = _main_download(
+        tmp_path,
+        monkeypatch,
+        saved,
+        BODY_SAME_SIZE,
+        {"ETag": '"v2"'},
+        mode="ignore-if-range",
+    )
+    assert seen == ["bytes=300000-", None]
+    assert if_ranges == ['"v1"', None]
+    assert total == T
+    assert data == BODY_SAME_SIZE
+    assert [c["validator"] for c in cached] == ['"v2"']
+
+
+@pytest.mark.parametrize(
+    "mode, requests",
+    [
+        ("range", ["bytes=300000-"]),
+        # a 206 despite If-Range: its ETag shows the change, so start over
+        ("ignore-if-range", ["bytes=300000-", None]),
+    ],
+)
+def test_drm_changed_file_same_size_starts_over(tmp_path, monkeypatch, mode, requests):
+    part = tmp_path / "v.part"
+    part.write_bytes(BODY[:300_000])
+    _retry_once(monkeypatch, ad)
+    for name in ("attempt", "attempt2"):
+        monkeypatch.setattr(
+            common_globals, name, contextvars.ContextVar(name, default=0), raising=False
+        )
+    monkeypatch.setattr(ad, "send_chunk_msg", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "temp_file_logger", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "get_alt_params", lambda ele: {})
+    monkeypatch.setattr(ad, "_mpd_segment_url", lambda mpd, name: "x")
+    monkeypatch.setattr(ad, "get_medialog", lambda ele: "")
+    monkeypatch.setattr(ad.auth_requests, "get_cookies_str", lambda: "")
+
+    class _Placeholder:
+        def __init__(self, *a):
+            pass
+
+        async def init(self):
+            return SimpleNamespace(tempfilepath=part, trunicated_filepath=part)
+
+    monkeypatch.setattr(ad.placeholder, "tempFilePlaceholder", _Placeholder)
+    seen, if_ranges, cached = [], [], []
+    mgr = _manager(ad.AltDownloadManager, cached)
+    mgr._downloadspace = lambda: None
+
+    async def _get_data(ele, item):
+        return {"content-total": T, "content-type": "video/mp4", "validator": '"v1"'}
+
+    mgr._get_data = _get_data
+    ele = SimpleNamespace(mpd="x", hls_header="", id=1, username="u", filename="f")
+    item = {"origname": "v", "type": "audio", "name": "v"}
+
+    async def run(c):
+        return await mgr._alt_download_downloader(item, c, ele)
+
+    item = asyncio.run(
+        _serve(mode, seen, run, BODY_SAME_SIZE, {"ETag": '"v2"'}, if_ranges)
+    )
+    assert seen == requests
+    assert if_ranges == ['"v1"', None][: len(requests)]
+    assert item["total"] == T
+    assert part.read_bytes() == BODY_SAME_SIZE
+    assert [c["validator"] for c in cached] == ['"v2"']
+
+
+@pytest.mark.parametrize(
+    "headers, expected",
+    [
+        ({"etag": '"v1"', "last-modified": LM}, '"v1"'),
+        ({"etag": 'W/"v1"', "last-modified": LM}, None),
+        ({"etag": 'W/"v1"'}, None),
+        ({"last-modified": LM}, LM),
+        ({}, None),
+    ],
+)
+def test_validator_prefers_a_strong_etag(headers, expected):
+    r = SimpleNamespace(headers=headers)
+    assert dm.DownloadManager()._validator(r) == expected
 
 
 def _session_get(monkeypatch, headers):
