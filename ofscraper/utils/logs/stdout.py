@@ -1,7 +1,5 @@
 # logs stdout logs via a shared queue
 
-from rich.logging import RichHandler
-
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.classes.classes as log_class
 from ofscraper.utils.logs.classes.handlers.text import TextHandler
@@ -19,7 +17,7 @@ def add_stdout_handler(log, clear=True, rich_array=None):
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
-    sh = RichHandler(
+    sh = log_class.SafeRichHandler(
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
@@ -36,7 +34,7 @@ def add_stdout_handler(log, clear=True, rich_array=None):
     log.addHandler(tx)
 
     if settings.get_settings().output_level in {"DEBUG"}:
-        sh2 = RichHandler(
+        sh2 = log_class.SafeRichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
             markup=True,
