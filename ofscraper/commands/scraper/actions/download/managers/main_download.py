@@ -81,8 +81,8 @@ class MainDownloadManager(DownloadManager):
             with _:
                 try:
                     common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                    if common_globals.attempt.get() > 1:
-                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                    # a retry keeps the part and resumes it (#268): the saved
+                    # size checks it, as on the next run
                     data = await self._get_data(ele)
                     total = None
                     validator = (data or {}).get("validator")

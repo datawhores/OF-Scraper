@@ -112,10 +112,8 @@ class AltDownloadManager(DownloadManager):
                 try:
                     _attempt = self._alt_attempt_get(item)
                     _attempt.set(_attempt.get(0) + 1)
-                    if _attempt.get() > 1:
-                        pathlib.Path(placeholderObj.tempfilepath).unlink(
-                            missing_ok=True
-                        )
+                    # a retry keeps the part and resumes it (#268): the saved
+                    # size checks it, as on the next run
                     data = await self._get_data(ele, item)
                     status = False
                     if data:
