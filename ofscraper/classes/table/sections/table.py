@@ -130,7 +130,7 @@ def get_styled(row):
             )
     
         else:
-            styled_row.append(Text(row[key]), style="bold white")
+            styled_row.append(Text(str(row[key]), style="bold white"))
     return styled_row
 
 

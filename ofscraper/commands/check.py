@@ -775,7 +775,9 @@ def texthelper(text):
 
 
 def unlocked_helper(ele):
-    return ele.canview
+    # canview can be None when OnlyFans sends canView: null; the table
+    # shows that as locked, like the cart cell does
+    return bool(ele.canview)
 
 
 def download_type_helper(ele):
