@@ -23,6 +23,7 @@ import arrow
 
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache.cache as cache
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
@@ -56,6 +57,7 @@ def get_request_auth():
     ) < of_env.getattr("THIRTY_EXPIRY"):
         return curr_auth
     dynamic = settings.get_settings().dynamic_rules
+    dynamic = const.DYNAMIC_ALIASES.get(dynamic, dynamic)
     auth = None
     if of_env.getattr("DYNAMIC_RULE_MANUAL") and dynamic in {"manual"}:
         auth = get_request_auth_dynamic_rule_manual()
@@ -67,13 +69,7 @@ def get_request_auth():
         auth = get_request_auth_xagler()
     elif (dynamic) in {"rafa"}:
         auth = get_request_auth_rafa()
-    elif (dynamic) in {
-        "dc",
-        "digital",
-        "digitals",
-        "digitalcriminal",
-        "digitalcriminals",
-    }:
+    elif (dynamic) in {"digitalcriminals"}:
         auth = get_request_auth_digitalcriminals()
     if auth is None:
         auth = get_request_auth_datawhores()

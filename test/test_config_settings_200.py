@@ -176,6 +176,7 @@ def test_every_accepted_dynamic_alias_picks_its_rule(monkeypatch):
         "dc": "digitalcriminals",
         "digital": "digitalcriminals",
         "digitals": "digitalcriminals",
+        "digitalcriminal": "digitalcriminals",
         "manual": "manual",
         "generic": "generic",
     }

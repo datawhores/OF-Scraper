@@ -216,7 +216,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - **Default:** `"digital"` · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default)
 - **CLI override:** `--dynamic-rules`
-- Which source of OnlyFans request-signing rules to use: datawhores, xagler, rafa, digitalcriminals (aliases dc, digital, digitals), generic (needs OFSC_DYNAMIC_GENERIC_URL) or manual (needs OFSC_DYNAMIC_RULE_MANUAL). Unknown values fall back to the default with a warning in the log, and anything that yields no rule falls back to datawhores. The -dr/--dynamic-rules option overrides it.
+- Which source of OnlyFans request-signing rules to use: datawhores, xagler, rafa, digitalcriminals (aliases dc, digital, digitals, digitalcriminal; the config menu lists and saves it as digital), generic (needs OFSC_DYNAMIC_GENERIC_URL) or manual (needs OFSC_DYNAMIC_RULE_MANUAL). Unknown values fall back to the default with a warning in the log, and anything that yields no rule falls back to datawhores. The -dr/--dynamic-rules option overrides it.
 
 ### `advanced_options.skip_unavailable_content`
 

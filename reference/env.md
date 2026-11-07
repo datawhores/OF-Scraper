@@ -130,7 +130,7 @@ These are read with `os.getenv` where they're used, not through `of_env.getattr`
 |---|---|---|---|
 | <a id="dynamic_rule_manual"></a>`DYNAMIC_RULE_MANUAL` | `OFSC_DYNAMIC_RULE_MANUAL` | `None` | The specific manual dynamic rule to use. Defaults to None. |
 | <a id="dynamic_options"></a>`DYNAMIC_OPTIONS` | `OFSC_DYNAMIC_OPTIONS` | a list of 6 items (see the source) | List of available dynamic rule options. |
-| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 12 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
+| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 13 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
 | <a id="dynamic_rule_default"></a>`DYNAMIC_RULE_DEFAULT` | `OFSC_DYNAMIC_RULE_DEFAULT` | `'digital'` | The default dynamic rule when none is specified. |
 
 ## `ofscraper/utils/of_env/values/general.py`
