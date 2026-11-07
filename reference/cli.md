@@ -943,7 +943,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 #### `--dynamic-rules`
 
 - **Also:** `-dr`, `--dynamic-rule`
-- **Dest:** `dynamic_rules` · **Type:** one of `digitalcriminals`, `manual`, `generic`, `datawhores`, `xagler`, `rafa` · **Default:** none
+- **Dest:** `dynamic_rules` · **Type:** one of `digitalcriminals`, `manual`, `generic`, `datawhores`, `xagler`, `rafa`, `dc`, `digital`, `digitals`, `digitalcriminal` · **Default:** none
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `advanced_options.dynamic-mode-default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
