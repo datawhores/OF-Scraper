@@ -58,7 +58,15 @@ pipx install ofscraper-community
 pip install ofscraper-community
 ```
 
-> **Note:** the `ofscraper` package on PyPI is upstream's last release and doesn't have these fixes. Both packages provide the `ofscraper` command and Python package, so installing both into the same environment with plain pip makes them overwrite each other. Run `pip uninstall ofscraper` before installing `ofscraper-community`. If you already have both, uninstall both and then install `ofscraper-community` again. `uv tool` and `pipx` keep the two packages apart, but both still install a command called `ofscraper`. If you installed this fork before it was on PyPI, remove the old install first with `uv tool uninstall ofscraper` (or `pipx uninstall ofscraper`), then install `ofscraper-community`.
+**Already have `ofscraper` installed?** The `ofscraper` package on PyPI is upstream's old version, without these fixes. Both install the same `ofscraper` command, so remove the old one first:
+
+```
+pip uninstall ofscraper          # installed with pip
+uv tool uninstall ofscraper      # installed with uv, including this fork before it was on PyPI
+pipx uninstall ofscraper         # installed with pipx
+```
+
+Then install `ofscraper-community` as above. If pip already has both, uninstall both, then install `ofscraper-community` again.
 
 **Latest unreleased changes:** to get what's on `main` before it's released, install from this repo.
 
