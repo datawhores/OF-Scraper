@@ -130,7 +130,7 @@ def get_ffmpeg() -> str:
     raise FileNotFoundError(
         "A valid FFmpeg executable could not be found.\n"
         "Please add FFmpeg to your system's PATH, specify its location in your settings, "
-        "or install the 'ffmpeg' extra ('pip install ofscraper[ffmpeg]')"
+        "or install the 'ffmpeg' extra ('pip install ofscraper-community[ffmpeg]')"
     )
 
 

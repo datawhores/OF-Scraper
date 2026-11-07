@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="media/icon.png" alt="OF-Scraper-Community" width="140">
+<img src="https://raw.githubusercontent.com/cloakedkeys/OF-Scraper-Community/main/media/icon.png" alt="OF-Scraper-Community" width="140">
 
 # OF-Scraper-Community
 
@@ -14,15 +14,14 @@ A community-maintained fork of [datawhores/OF-Scraper](https://github.com/datawh
 [![Python 3.11 to 3.15](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.15-3776ab?logo=python&logoColor=white)](#install)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/cloakedkeys/OF-Scraper-Community/pkgs/container/of-scraper-community)
 [![Docs](https://img.shields.io/badge/docs-gitbook-00a8e8?logo=gitbook&logoColor=white)](https://cloakedkeys.gitbook.io/ofsc)
-[![License: MIT](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/LICENSE)
 
-[Install](#install) · [Getting started](#getting-started) · [Docs](https://cloakedkeys.gitbook.io/ofsc) · [FAQ](#faq) · [Reference](reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
+[Install](#install) · [Getting started](#getting-started) · [Docs](https://cloakedkeys.gitbook.io/ofsc) · [FAQ](#faq) · [Reference](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
 
 </div>
 
 ---
 
-> [!IMPORTANT]
 > **OF-Scraper can't get past paywalls.** You need a subscription to a creator, and you can only download what your account can already see.
 
 ## Why this fork
@@ -35,21 +34,36 @@ Upstream hasn't been updated since April 2026. This fork keeps it working:
 | 🌐 **Fansly** | Posts, messages, purchases and livestreams, alongside OnlyFans. |
 | 🐍 **Python 3.11 to 3.15** | Tested in CI on the oldest and newest supported versions. |
 | 🛠️ **Bug fixes** | Dozens of reported bugs fixed, with tests that guard them. See the [releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases). |
-| 📖 **Full reference** | Every command, option, setting and database table [documented](reference/README.md). |
+| 📖 **Full reference** | Every command, option, setting and database table [documented](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md). |
 
 ## Install
 
-Install from this repo. The `ofscraper` package on PyPI is upstream's last release and doesn't have these fixes.
+This fork is on PyPI as **`ofscraper-community`**. The command is still `ofscraper`.
 
 **With uv (recommended)**
 
 ```
-uv tool install --force git+https://github.com/cloakedkeys/OF-Scraper-Community
+uv tool install ofscraper-community
+```
+
+**With pipx**
+
+```
+pipx install ofscraper-community
 ```
 
 **With pip**
 
 ```
+pip install ofscraper-community
+```
+
+> **Note:** the `ofscraper` package on PyPI is upstream's last release and doesn't have these fixes. Both packages provide the `ofscraper` command and Python package, so installing both into the same environment with plain pip makes them overwrite each other. Run `pip uninstall ofscraper` before installing `ofscraper-community`. If you already have both, uninstall both and then install `ofscraper-community` again. `uv tool` and `pipx` keep the two packages apart, but both still install a command called `ofscraper`. If you installed this fork before it was on PyPI, remove the old install first with `uv tool uninstall ofscraper` (or `pipx uninstall ofscraper`), then install `ofscraper-community`.
+
+**Latest unreleased changes:** to get what's on `main` before it's released, install from this repo.
+
+```
+uv tool install --force git+https://github.com/cloakedkeys/OF-Scraper-Community
 pip install git+https://github.com/cloakedkeys/OF-Scraper-Community
 ```
 
@@ -63,7 +77,7 @@ docker pull ghcr.io/cloakedkeys/of-scraper-community:latest
 
 Python 3.11 to 3.15 is supported. Protected (DRM) videos also need ffmpeg 6 or newer.
 
-To update, run the same install command again.
+To update, run `uv tool upgrade ofscraper-community`, `pipx upgrade ofscraper-community` or `pip install -U ofscraper-community`. For a GitHub install, run the same install command again.
 
 ## Getting started
 
@@ -132,7 +146,7 @@ That's upstream's PyPI version, which is older than this fork. Version 3.15.0 an
 <details>
 <summary><b>Two files saved with the same name overwrote each other</b></summary>
 
-Newer versions save the second one as `name_<media_id>` instead. To recover files lost to this in older versions, see [Collision Recovery](COLLISION_RECOVERY.md).
+Newer versions save the second one as `name_<media_id>` instead. To recover files lost to this in older versions, see [Collision Recovery](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/COLLISION_RECOVERY.md).
 
 </details>
 

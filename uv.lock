@@ -1545,7 +1545,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ofscraper"
+name = "ofscraper-community"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
