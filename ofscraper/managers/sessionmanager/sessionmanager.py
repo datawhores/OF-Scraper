@@ -85,7 +85,7 @@ class SessionSleep:
             sleep if sleep is not None else of_env.getattr("SESSION_SLEEP_INIT")
         )
         self._min_sleep = (
-            min_sleep if min_sleep is not None else of_env.getattr("SESSION_SLEEP_MIN")
+            min_sleep if min_sleep is not None else of_env.getattr("SESSION_MIN_SLEEP")
         )
         self._sleep = self._min_sleep
         self._difmin = (
@@ -356,6 +356,7 @@ class sessionManager:
                     if forbidden_sleep is not None
                     else of_env.getattr("SESSION_403_SLEEP_INIT")
                 ),
+                min_sleep=of_env.getattr("SESSION_403_MIN_SLEEP"),
                 difmin=(
                     forbidden_difmin
                     if forbidden_difmin is not None
