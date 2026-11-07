@@ -3,6 +3,7 @@ import os
 
 
 from ofscraper.utils.of_env import get_all_configs
+from ofscraper.utils.of_env.values.live import OPTIONAL_BOOLS
 import contextlib
 import os
 import json
@@ -50,8 +51,11 @@ def getattr(val, default=None):
     if env_val is not None:
         if val not in config_dict:
             return env_val
+        current = config_dict[val]
+        if current is None and val in OPTIONAL_BOOLS:
+            current = False  # a switch with no default: convert as a bool
         try:
-            return _as_type_of(env_val, config_dict[val])
+            return _as_type_of(env_val, current)
         except (TypeError, ValueError) as E:
             # once per key and value: settings are read again and again
             if (val, env_val) not in _warned:

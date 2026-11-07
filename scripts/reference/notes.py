@@ -135,6 +135,15 @@ ENV = {
     "DISK_SPACE_CHECK_PATH": "The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be.",
 }
 
+# the four SUPRESS_*_DISPLAY switches have no default to take a type from
+_SUPRESS = "Hides the {what} display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. Unset, the display follows `--output` and `--no-rich`."
+ENV.update({
+    "SUPRESS_API_DISPLAY": _SUPRESS.format(what="API progress"),
+    "SUPRESS_DOWNLOAD_DISPLAY": _SUPRESS.format(what="download progress"),
+    "SUPRESS_SUBSCRIPTION_DISPLAY": _SUPRESS.format(what="subscription progress"),
+    "SUPRESS_LIKE_DISPLAY": _SUPRESS.format(what="like progress"),
+})
+
 # variables read with os.getenv outside ofscraper/utils/of_env/values
 ENV_DIRECT = {
     "OFSC_FANSLY_API_BASE": "Base URL of the Fansly API that Fansly requests go to.",
