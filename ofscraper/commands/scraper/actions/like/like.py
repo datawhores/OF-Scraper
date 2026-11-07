@@ -167,5 +167,6 @@ def _like_request(c, id, model_id):
     ) as r:
         try:
             return r.json_()["isFavorite"], r.json_()["id"]
-        except:
-            return None
+        except Exception:
+            # an unreadable response: the callers treat None as a failed toggle
+            return None, id
