@@ -60,7 +60,7 @@ class TimeField(Container):
 
     def update_table_min(self, val):
         minLenthInputs = list(self.query_one("#minContainer").query(IntegerInput))
-        if isinstance(val, int) or str(val).isnumeric():
+        if isinstance(val, (int, float)) or str(val).isnumeric():
             val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60
@@ -76,7 +76,7 @@ class TimeField(Container):
 
     def update_table_max(self, val):
         maxLenthInputs = list(self.query_one("#maxContainer").query(IntegerInput))
-        if isinstance(val, int) or str(val).isnumeric():
+        if isinstance(val, (int, float)) or str(val).isnumeric():
             val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60

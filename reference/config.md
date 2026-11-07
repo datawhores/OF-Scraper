@@ -175,7 +175,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 
 - **Default:** `false` · **Read by:** `get_block_ads()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default)
-- When true, posts whose text matches a built-in advertising regex (#ad, giveaway, shoutout, promo and similar) are excluded, added on top of any --neg-filter patterns. A -ba/--block-ads option is defined but not attached to any command, so the CLI rejects it (#201).
+- When true, posts whose text matches a built-in advertising regex (#ad, giveaway, shoutout, promo and similar) are excluded, added on top of any --neg-filter patterns. `-ba`/`--block-ads` turns it on for one run.
 
 ### `content_filter_options.file_size_max`
 
@@ -303,7 +303,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 
 - **Default:** `[]` · **Read by:** `get_env_files()` in `ofscraper/utils/config/data.py`
 - **Also reads:** `script_options`, `scripts`
-- List of .env, .yaml/.yml or .json files whose values are loaded as environment variables (OFSC_* overrides) before settings are built; later files override earlier ones. Before them, a .env file found by python-dotenv, which searches upward from `ofscraper/utils/of_env/` (from the working folder only in the standalone binaries, the REPL or a debugger), is loaded. The --env-files option isn't loaded at present (#201).
+- List of .env, .yaml/.yml or .json files whose values are loaded as environment variables (OFSC_* overrides) before settings are built; later files override earlier ones. Before them, a .env file found by python-dotenv, which searches upward from `ofscraper/utils/of_env/` (from the working folder only in the standalone binaries, the REPL or a debugger), is loaded. `--env-files` replaces this list for one run.
 
 ## `script_options`
 

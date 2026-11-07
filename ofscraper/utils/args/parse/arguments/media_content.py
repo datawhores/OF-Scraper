@@ -62,16 +62,16 @@ media_id_filter = click.option(
 length_max = click.option(
     "-lx",
     "--length-max",
-    help="max duration in seconds only effects videos and audios",
+    help="max duration in seconds (whole number, e.g. 90); only applies to videos",
     required=False,
-    type=parse_size,
+    type=click.IntRange(min=0),
 )
 length_min = click.option(
     "-lm",
     "--length-min",
-    help="min duration in seconds only effects videos and audios",
+    help="min duration in seconds (whole number, e.g. 90); only applies to videos",
     required=False,
-    type=parse_size,
+    type=click.IntRange(min=0),
 )
 
 

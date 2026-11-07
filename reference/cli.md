@@ -12,7 +12,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 No subcommand. Entry is ofscraper/__main__.py, then Manager.pick() calls commands/scraper/scraper.main(): it cleans temp files and the DB, checks the CDM, then: with --daemon, prompts for actions if none were given and reruns on a schedule; with --action or --scrape-paid, runs those actions once (repeating with prompts if the infinite-loop config is on); with only Fansly --live/--live-watch, records livestreams; otherwise opens the interactive menu (Action, Auth (edit auth.json), Config (edit config.json), Profile, Merge databases, Quit). Reads auth.json and config.json from the profile, writes media under save_location and rows to each creator's user_data.db.
 
-Accepts 100 options. Its `--help` summary: OF-Scraper Options.
+Accepts 101 options. Its `--help` summary: OF-Scraper Options.
 
 ### `manual`
 
@@ -124,7 +124,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 - Path to a custom environment variables file (.env).
-- **Note:** Not loaded at present: `setup_settings` loads only `advanced_options.env_files` and nothing reads the merged value of this option (#201).
+- **Note:** Loaded before settings are built, instead of `advanced_options.env_files` (not in addition to it).
 
 ### Logging Options
 
@@ -241,20 +241,20 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 #### `--length-max`
 
 - **Also:** `-lx`
-- **Dest:** `length_max` · **Type:** text, parsed by `parse_size` · **Default:** none
+- **Dest:** `length_max` · **Type:** integer range · **Default:** none
 - **Commands:** all
 - **Config fallback:** `content_filter_options.length_max`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- max duration in seconds only effects videos and audios
+- max duration in seconds (whole number, e.g. 90); only applies to videos
 
 #### `--length-min`
 
 - **Also:** `-lm`
-- **Dest:** `length_min` · **Type:** text, parsed by `parse_size` · **Default:** none
+- **Dest:** `length_min` · **Type:** integer range · **Default:** none
 - **Commands:** all
 - **Config fallback:** `content_filter_options.length_min`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- min duration in seconds only effects videos and audios
+- min duration in seconds (whole number, e.g. 90); only applies to videos
 
 #### `--media-id`
 
@@ -473,6 +473,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 - Filter posts to exclude those matching regex (case-styensitive if uppercase characters included) uses raw python string
+
+#### `--block-ads`
+
+- **Also:** `-ba`
+- **Dest:** `block_ads` · **Type:** flag · **Default:** off
+- **Commands:** main program
+- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
+- Filter posts with regex to block posts with common words for advertisements
 
 #### `--label`
 

@@ -55,6 +55,14 @@ def update_settings():
         settings = setup_settings()
 
 
+def chosen_env_files(args):
+    """--env-files if given, else config.json's env_files, as a list of paths."""
+    value = getattr(args, "env_files", None) or config_data.get_env_files()
+    if isinstance(value, str):
+        return [x for x in re.split(r",| ", value) if x.strip()]
+    return [str(x).strip() for x in value] if value else []
+
+
 def get_settings():
     global settings
     if not settings:
@@ -67,7 +75,8 @@ def get_settings():
 def setup_settings():
     # 1. PRE-SCAN: Get the list of .env files from config before doing anything else
     # We call the raw config reader directly so we don't trigger a full merge yet
-    env_files = config_data.get_env_files()
+    # --env-files replaces the config's list
+    env_files = chosen_env_files(get_args())
 
     # 2. LOAD: Initialize the environment so of_env.getattr works correctly
     load_env_files(env_files)
@@ -128,7 +137,8 @@ def merged_settings():
     merged.trunicate = False if args.original else config_data.get_truncation()
 
     # --- Ad Blocking & Filters ---
-    neg = args.neg_filter or []
+    # a copy: appending to the args list grew it on every settings rebuild
+    neg = list(args.neg_filter or [])
     if args.block_ads or config_data.get_block_ads():
         neg.append(ads.get_ad_key_words())
     merged.neg_filter = neg
@@ -212,14 +222,7 @@ def merged_settings():
     )
 
     # --- Environment Files ---
-    env_out = args.env_files or (
-        config_data.get_env_files() if hasattr(config_data, "get_env_files") else []
-    )
-    merged.env_files = (
-        [x for x in re.split(r",| ", env_out) if x.strip()]
-        if isinstance(env_out, str)
-        else ([str(x).strip() for x in env_out] if env_out else [])
-    )
+    merged.env_files = chosen_env_files(args)
 
     # --- CLI Overrides ---
     merged.text = args.text or args.text_only
