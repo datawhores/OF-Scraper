@@ -1,0 +1,12 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+version: 1
+site:
+  title: OF-Scraper-Community
+  structure:
+    - type: space
+      key: space-reference
+      title: Technical Reference
+      path: reference
+      default: true
+      content:
+        directory: ./reference
