@@ -53,11 +53,18 @@ otherwise the first error already multiplies it. Each error multiplies the wait
 by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, but only if
 `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the last change (or since the program started or
 the last per-creator reset). After `*_SLEEP_DECAY_THRESHOLD` seconds without a change
-the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`.
-`*_MIN_SLEEP` is also the minimum gap kept between requests. Before each
+the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`; once it
+would drop below 0.5 seconds it goes straight to `*_MIN_SLEEP` and the backoff
+ends. `*_MIN_SLEEP` is also the minimum gap kept between requests. Before each
 request the rate-limit wait runs first, then the 403 backoff if one is running.
 The 403 `*_MIN_SLEEP` gap is kept only when the rate-limit `*_MIN_SLEEP` is 0
 and no rate-limit backoff is running.
+
+Only the standard API session (`SESSION_403_*`) backs off on a 403. Downloads,
+CDM, likes, metadata, Discord and subscriptions never start a 403 backoff (a
+403 there is usually an expired link), so their `<KIND>_SESSION_403_*` values
+have no effect, except that `<KIND>_SESSION_403_MIN_SLEEP` is still kept as a
+gap under the rule above.
 """
 
 # options merged_settings reads but that don't actually override the config

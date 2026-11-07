@@ -33,6 +33,9 @@ SIGN = "get_sign"
 COOKIES = "get_cookies_str"
 HEADERS = "create_header"
 
+# A backoff that decays below this many seconds ends (drops to *_MIN_SLEEP)
+BACKOFF_FLOOR = 0.5
+
 
 def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     """Utility to check if an exception's status code matches given numbers."""
@@ -118,6 +121,9 @@ class SessionSleep:
             return
         if (arrow.now() - self._last_date).total_seconds() > self._decay_threshold:
             new_sleep = self._sleep / self._decay_factor
+            # Dividing never reaches 0, so end the backoff once it gets small
+            if new_sleep < BACKOFF_FLOOR:
+                new_sleep = self._min_sleep
             self._sleep = max(self._min_sleep, new_sleep)
             self._last_date = arrow.now()
             logging.getLogger("shared").debug(
