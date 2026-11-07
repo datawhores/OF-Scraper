@@ -521,10 +521,10 @@ class sessionManager:
     ) -> Generator[httpx.Response, None, None]:
         actions = actions or []
         exceptions = exceptions or []
-        log = kwargs.get("log") or self._log
-        retries = kwargs.get("retries") or self._retries
-        wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max = kwargs.get("wait_max") or self._wait_max
+        log = log or self._log
+        retries = retries if retries is not None else self._retries
+        wait_min = wait_min if wait_min is not None else self._wait_min
+        wait_max = wait_max if wait_max is not None else self._wait_max
 
         for _ in Retrying(
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
@@ -625,9 +625,9 @@ class sessionManager:
     ) -> AsyncGenerator[httpx.Response, None]:
         actions = actions or []
         exceptions = exceptions or []
-        retries = kwargs.get("retries") or self._retries
-        wait_min = kwargs.get("wait_min") or self._wait_min
-        wait_max = kwargs.get("wait_max") or self._wait_max
+        retries = retries if retries is not None else self._retries
+        wait_min = wait_min if wait_min is not None else self._wait_min
+        wait_max = wait_max if wait_max is not None else self._wait_max
 
         # The retry loop only gets the response. The caller's code runs after
         # it, at the yield below: an error there (e.g. a read timeout while
