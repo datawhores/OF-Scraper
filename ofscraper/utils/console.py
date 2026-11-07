@@ -35,7 +35,28 @@ theme = Theme(
     }
 )
 
-quiet = low_output() is True
+class SharedConsole(Console):
+    """
+    The shared console is quiet when the output options ask for low output.
+    Those options come from the command line, which must not be parsed when
+    the package is imported (a program importing ofscraper has its own
+    arguments), so they're read when the console is used, not when it's made.
+    Assigning ``quiet`` overrides the options from then on.
+    """
+
+    _quiet_override = None
+
+    @property
+    def quiet(self):
+        if self._quiet_override is not None:
+            return self._quiet_override
+        return low_output() is True
+
+    @quiet.setter
+    def quiet(self, value):
+        self._quiet_override = value
+
+
 shared_console = None
 
 other_console = None
@@ -50,7 +71,7 @@ def get_console():
 def get_shared_console():
     global shared_console
     if not shared_console:
-        shared_console = Console(theme=theme, quiet=quiet, markup=True)
+        shared_console = SharedConsole(theme=theme, quiet=None, markup=True)
 
     return shared_console
 

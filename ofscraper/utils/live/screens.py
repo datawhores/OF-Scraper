@@ -47,7 +47,7 @@ def stop_live_screen(clear=False):
 
 SCREENS = {
     "download": {
-        "layout": get_download_group(),
+        "layout": get_download_group,
         "clear": "download",
         "suppress": "SUPRESS_DOWNLOAD_DISPLAY",
     },
@@ -101,8 +101,13 @@ def setup_live(screen_name: str, revert=True, clear=True):
     # Use the 'clear' instruction from the config only if the flag is True
     clear_instruction = config.get("clear") if clear else None
 
+    layout = config["layout"]
+    if layout is get_download_group:
+        # built on first use: it reads the settings, which mustn't happen at import
+        layout = layout()
+
     return ProgressLayoutManager(
-        layout=config["layout"],
+        layout=layout,
         clear_on_exit=clear_instruction,  # Pass the final instruction
         supress_key=config.get("suppress"),
         revert=revert,
@@ -121,11 +126,10 @@ class ProgressLayoutManager:
     def __enter__(self):
         self.previous_layout = self.live.renderable
         if self.supress_key:
-            console_.get_shared_console().quiet = (
-                of_env.getattr(self.supress_key)
-                if of_env.getattr(self.supress_key) is not None
-                else console_.get_shared_console().quiet
-            )
+            # unset leaves quiet following the output options
+            supress = of_env.getattr(self.supress_key)
+            if supress is not None:
+                console_.get_shared_console().quiet = supress
         if not self.live.is_started:
             self.live.start()
         self.live.update(self.layout, refresh=True)
