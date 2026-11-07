@@ -217,7 +217,7 @@ class AltDownloadManager(DownloadManager):
                         f"{get_medialog(ele)} DRM segment returned playlist "
                         f"content-type={content_type!r} url={url}"
                     )
-                if not total or total <= 0:
+                if total is not None and total <= 0:
                     raise Exception(
                         f"{get_medialog(ele)} DRM segment empty size "
                         f"(content-type={content_type or 'unknown'}, url={url})"
@@ -245,6 +245,9 @@ class AltDownloadManager(DownloadManager):
                     await self._download_fileobject_writer(
                         total, l, ele, placeholderObj, item
                     )
+                    if total is None:
+                        total = self._size_written(ele, placeholderObj.tempfilepath)
+                        item["total"] = total
                     await self._total_change_helper(total)
 
             await self._size_checker(placeholderObj.tempfilepath, ele, total)

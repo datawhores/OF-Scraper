@@ -88,6 +88,8 @@ class DownloadManager:
         """
         length = r.headers.get("content-length")
         length = int(length) if length is not None else None
+        if length is None and 200 <= r.status < 300 and r.status != 206:
+            self._require_chunked(r, path)
         if not resume_size:
             return length, 0
         content_range = (r.headers.get("content-range") or "").strip()
@@ -123,6 +125,23 @@ class DownloadManager:
         pathlib.Path(path).unlink(missing_ok=True)
         raise StartOver(f"can't resume, downloading from the start: {reason}")
 
+    def _require_chunked(self, r, path):
+        """A reply with no Content-Length is only taken if it's chunked: a
+        chunked transfer marks its own end, so a cut-off one fails. A reply
+        that just ends when the connection closes can't be told apart from
+        one cut off halfway, so it fails before anything is written, and
+        the part on disk is left as it was."""
+        encoding = (r.headers.get("transfer-encoding") or "").lower()
+        if "chunked" in encoding:
+            return
+        message = (
+            f"{pathlib.Path(path).name}: the server sent no file size and didn't "
+            "send the file chunked, so a cut-off download can't be detected; "
+            "not downloaded, the .part is kept"
+        )
+        common_globals.log.info(message)
+        raise Exception(message)
+
     def _get_resume_size(
         self,
         tempholderObj,
@@ -139,7 +158,8 @@ class DownloadManager:
     def _resume_cleaner(self, resume_size, total, path):
         if not resume_size:
             return 0
-        elif resume_size > total:
+        elif total is None or resume_size > total:
+            # with no saved size there's nothing to check the part against
             pathlib.Path(path).unlink(missing_ok=True)
             return 0
         return resume_size
@@ -173,6 +193,18 @@ class DownloadManager:
 
     async def _after_download_script(self, filepath):
         await after_download_script(filepath)
+
+    def _size_written(self, ele, path):
+        """The size of a file whose reply didn't say how big it was (no
+        Content-Length, chunked). The transfer's own end-of-data marks the end
+        of the file, so what was written is the file. An empty reply is an
+        error, not a 0-byte file: 0 means "skipped" to the callers."""
+        size = pathlib.Path(path).stat().st_size if pathlib.Path(path).exists() else 0
+        if not size:
+            raise Exception(
+                f"{get_medialog(ele)} the server sent no data and no file size"
+            )
+        return size
 
     async def _size_checker(self, path, ele, total, name=None):
         name = name or ele.filename
