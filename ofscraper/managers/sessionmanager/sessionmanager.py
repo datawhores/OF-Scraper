@@ -638,7 +638,11 @@ class sessionManager:
         async for _ in AsyncRetrying(
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
+            # a cancel (Ctrl+C, a timeout around the call) stops the request:
+            # tenacity's attempt swallows it, so it must not count as a failure
+            retry=retry_if_not_exception_type(
+                (KeyboardInterrupt, SystemExit, asyncio.CancelledError)
+            ),
             reraise=True,
             before_sleep=lambda retry_state: (
                 self._log.debug(

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_random
 
@@ -12,9 +13,11 @@ class download_retry(AsyncRetrying):
             min=of_env.getattr("OF_MIN_WAIT_API"),
             max=of_env.getattr("OF_MAX_WAIT_API"),
         )
+        # a cancel (Ctrl+C, a cancelled task) stops the download: tenacity's
+        # attempt swallows it, so it must not count as a failure
         retry = retry or retry_if_exception(
             lambda e: str(e) != of_env.getattr("SPACE_DOWNLOAD_MESSAGE")
-            and not isinstance(e, KeyboardInterrupt)
+            and not isinstance(e, (KeyboardInterrupt, asyncio.CancelledError))
         )
         
         def _log_retry(retry_state):
