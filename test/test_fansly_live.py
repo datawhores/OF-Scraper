@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import threading
 from types import SimpleNamespace
+from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlopen
 
@@ -341,8 +342,13 @@ def hls(segments):
 
 async def http_text(url):
     def get():
-        with urlopen(url, timeout=10) as r:
-            return r.read().decode()
+        try:
+            with urlopen(url, timeout=10) as r:
+                return r.read().decode()
+        except HTTPError as e:
+            # an HTTPError is an open response too; Python 3.14+ warns if it isn't closed
+            e.close()
+            raise
 
     return await asyncio.to_thread(get)
 
