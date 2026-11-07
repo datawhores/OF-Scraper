@@ -434,6 +434,10 @@ class Media(base.base):
 
     @property
     def preview(self):
+        # Fansly marks previews per item, not per post
+        fansly = self._media.get("fansly")
+        if fansly is not None:
+            return 1 if fansly.get("isPreview") else 0
         return 1 if self.post.preview else 0
 
     @property

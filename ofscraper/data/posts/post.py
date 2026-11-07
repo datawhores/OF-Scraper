@@ -29,6 +29,8 @@ import ofscraper.data.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
+import ofscraper.sites as sites
+from ofscraper.sites.fansly import scrape as fansly_scrape
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
@@ -99,7 +101,10 @@ async def clean_stray_media(username, model_id, postcollection):
 @free.space_checker
 async def process_paid_post(model_id, username, c):
     try:
-        paid_content = await paid.get_paid_posts(username, model_id, c=c)
+        if sites.is_fansly():
+            paid_content = await fansly_scrape.get_paid_posts(model_id, username, c=c)
+        else:
+            paid_content = await paid.get_paid_posts(username, model_id, c=c)
         paid_content = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, responsetype="Paid"),
@@ -120,7 +125,10 @@ async def process_paid_post(model_id, username, c):
 @free.space_checker
 async def process_messages(model_id, username, c):
     try:
-        messages_ = await messages.get_messages(
+        get_messages = (
+            fansly_scrape.get_messages if sites.is_fansly() else messages.get_messages
+        )
+        messages_ = await get_messages(
             model_id, username, c=c, post_id=settings.get_settings().post_id
         )
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
@@ -188,7 +196,12 @@ async def process_highlights(model_id, username, c):
 @free.space_checker
 async def process_timeline_posts(model_id, username, c):
     try:
-        timeline_posts = await timeline.get_timeline_posts(
+        get_timeline_posts = (
+            fansly_scrape.get_timeline_posts
+            if sites.is_fansly()
+            else timeline.get_timeline_posts
+        )
+        timeline_posts = await get_timeline_posts(
             model_id, username, c=c, post_id=settings.get_settings().post_id
         )
 
@@ -508,6 +521,11 @@ async def process_tasks(model_id, username, ele, c=None):
     download_area = get_download_area()
     final_post_areas = get_final_posts_area()
     final_post_areas = get_final_posts_area()
+    if sites.is_fansly():
+        skipped = [a for a in final_post_areas if a not in fansly_scrape.AREAS]
+        if skipped:
+            log.info(f"Not available for Fansly yet, skipping: {', '.join(skipped)}")
+        final_post_areas = [a for a in final_post_areas if a in fansly_scrape.AREAS]
 
     max_count = max(
         min(

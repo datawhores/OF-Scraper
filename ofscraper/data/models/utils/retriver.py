@@ -5,6 +5,8 @@ import ofscraper.data.api.subscriptions.lists as lists
 import ofscraper.data.api.subscriptions.subscriptions as subscriptions
 import ofscraper.classes.of.models as models
 import ofscraper.prompts.prompts as prompts
+import ofscraper.sites as sites
+from ofscraper.sites.fansly import scrape as fansly_scrape
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
 from ofscraper.utils.live.updater import activity
@@ -17,7 +19,11 @@ async def get_models(all_main_models: bool = False) -> list:
     """
     activity.update_task(description="Getting subscriptions")
     parsed_subscriptions = []
-    
+
+    if sites.is_fansly():
+        found = await fansly_scrape.get_models(settings.get_settings().usernames)
+        return list(map(lambda x: models.Model(x), found))
+
     # if the anon flag is on force individual
     if settings.get_settings().anon:
         parsed_subscriptions = await get_via_individual()

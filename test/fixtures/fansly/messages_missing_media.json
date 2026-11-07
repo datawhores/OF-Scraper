@@ -1,0 +1,137 @@
+{
+ "success": true,
+ "response": [
+  {
+   "id": "100000000000000265",
+   "accountId": "100000000000000053",
+   "mediaId": "100000000000000267",
+   "previewId": null,
+   "permissionFlags": 0,
+   "price": 0,
+   "createdAt": 1717434852,
+   "deletedAt": null,
+   "deleted": false,
+   "permissions": {
+    "permissionFlags": [
+     {
+      "id": "100000000000000268",
+      "accountMediaId": "100000000000000269",
+      "type": 0,
+      "flags": 5,
+      "price": 0,
+      "metadata": "{\"1\":\"{\\\"price\\\":9990}\",\"4\":\"{\\\"subscriptionTierId\\\":\\\"\\\",\\\"before\\\":0,\\\"after\\\":0}\"}",
+      "validAfter": null,
+      "validBefore": null,
+      "verificationFlags": 0,
+      "verificationMetadata": "{\"4\":\"{\\\"errors\\\":[]}\"}"
+     }
+    ],
+    "accountPermissionFlags": {
+     "flags": 0,
+     "metadata": "{}"
+    }
+   },
+   "likeCount": 0,
+   "media": {
+    "id": "100000000000000267",
+    "type": 1,
+    "status": 1,
+    "accountId": "100000000000000053",
+    "mimetype": "image/jpeg",
+    "flags": 298,
+    "location": "/100000000000000053/100000000000000267.jpeg",
+    "width": 1179,
+    "height": 2086,
+    "metadata": "{\"dominant\":{\"r\":216,\"g\":232,\"b\":232},\"resolutionMode\":2}",
+    "updatedAt": 1717434443,
+    "createdAt": 1717434442,
+    "variants": [
+     {
+      "id": "100000000000000270",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000270.jpeg",
+      "width": 1080,
+      "height": 1910,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434443,
+      "locations": []
+     },
+     {
+      "id": "100000000000000271",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000271.jpeg",
+      "width": 720,
+      "height": 1274,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434443,
+      "locations": []
+     },
+     {
+      "id": "100000000000000272",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000272.jpeg",
+      "width": 480,
+      "height": 850,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434443,
+      "locations": []
+     },
+     {
+      "id": "100000000000000273",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000273.jpeg",
+      "width": 360,
+      "height": 636,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434443,
+      "locations": []
+     },
+     {
+      "id": "100000000000000274",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000274.jpeg",
+      "width": 240,
+      "height": 424,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434442,
+      "locations": []
+     },
+     {
+      "id": "100000000000000275",
+      "type": 3,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000053/100000000000000275.jpeg",
+      "width": 240,
+      "height": 424,
+      "metadata": "{\"resolutionMode\":2}",
+      "updatedAt": 1717434442,
+      "locations": []
+     }
+    ],
+    "variantHash": {},
+    "locations": []
+   },
+   "purchased": false,
+   "whitelisted": false,
+   "accountPermissionFlags": 0,
+   "access": false
+  }
+ ]
+}

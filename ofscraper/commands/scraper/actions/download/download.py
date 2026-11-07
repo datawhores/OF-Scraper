@@ -9,7 +9,7 @@ from ofscraper.commands.utils.strings import (
 )
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.config.data as config_data
-import ofscraper.utils.paths.common as common_paths
+import ofscraper.classes.placeholder as placeholder
 from ofscraper.utils.string import format_safe
 from ofscraper.utils.markup import escape_text
 
@@ -34,10 +34,11 @@ def save_path_str(username=None, model_id=None):
     """The "Saving files to ..." progress line. The path is filled in first
     and escaped after, so brackets in it or in the filled-in names show as
     they are."""
+    # the site's media root: <save location>/Fansly on Fansly runs
     path = format_safe(
         str(
             pathlib.Path(
-                common_paths.get_save_location(),
+                placeholder.site_save_location(),
                 config_data.get_dirformat(),
                 config_data.get_fileformat(),
             )

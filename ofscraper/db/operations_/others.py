@@ -176,6 +176,30 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None, **kwargs):
         conn.commit()
 
 
+siteInsert = """
+INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
+VALUES ('site', ?);
+"""
+siteSelect = """
+SELECT flag_value FROM schema_flags WHERE flag_name = 'site';
+"""
+
+
+@wrapper.operation_wrapper_async
+def write_site_flag(site, model_id=None, username=None, conn=None, **kwargs):
+    """Record which site the database belongs to (only written for non-OnlyFans sites)."""
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(siteInsert, [site])
+        conn.commit()
+
+
+@wrapper.operation_wrapper
+def get_site_flag(model_id=None, username=None, conn=None, db_path=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        row = cur.execute(siteSelect).fetchone()
+        return row[0] if row else None
+
+
 @wrapper.operation_wrapper_async
 def get_all_others_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
