@@ -665,7 +665,8 @@ def env_section_title(section, notes):
     m = re.fullmatch(r"Dynamic Session Sleep Configuration \(For (.+): (429/504 Rate Limiting|403 Forbidden Errors)\)", section)
     if m:
         kind = "rate limits (429, 504)" if m.group(2).startswith("429") else "403 errors"
-        return f"{m.group(1)}: {kind}"
+        who = {"Like Operations": "Likes"}.get(m.group(1), m.group(1))
+        return f"{who}: {kind}"
     return re.sub(r" Configuration$", "", section)
 
 
@@ -683,10 +684,10 @@ def render_env(notes):
     titles = {ENV_VALUES_DIR + name: title for name, title in notes.ENV_FILES.items()}
     missing = [p for p in found if p not in titles]
     if missing:
-        raise KeyError(f"notes.ENV_FILES has no title for: {', '.join(missing)}")
+        raise ValueError(f"notes.ENV_FILES has no title for: {', '.join(missing)}")
     unused = [p for p in titles if p not in found]
     if unused:
-        raise KeyError(f"notes.ENV_FILES lists files with no defaults: {', '.join(unused)}")
+        raise ValueError(f"notes.ENV_FILES lists files with no defaults: {', '.join(unused)}")
     files = [p for p in titles if p in found]
     out.append("## Contents\n\n")
     out.append("- [Rate-limit and backoff settings](#rate-limit-and-backoff-settings)\n")

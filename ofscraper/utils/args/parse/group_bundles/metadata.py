@@ -14,6 +14,7 @@ from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 from ofscraper.utils.args.parse.groups.download import (
+    download_options_desc,
     download_options_help,
     download_options_tuple,
 )
@@ -127,7 +128,7 @@ It also uses a new filename if one is available
         help=post_filter_options_help,
     )
     @click.option_group(
-        "Metadata Options", *download_options_tuple, help=download_options_help
+        download_options_desc, *download_options_tuple, help=download_options_help
     )
     @user_select_options
     @userlist_options

@@ -24,14 +24,14 @@ The values shown are the defaults with no environment variables set. Paths under
 - [Likes](#likes)
 - [Metadata](#metadata)
 - [Connections, proxies and concurrency](#connections-proxies-and-concurrency)
-- [Rate-limit waits](#rate-limit-waits)
+- [Rate-limit values per request type](#rate-limit-values-per-request-type)
 - [API limits and retries](#api-limits-and-retries)
 - [DRM manifests (MPD)](#drm-manifests-mpd)
 - [CDM](#cdm)
 - [Authentication](#authentication)
 - [Anonymous requests](#anonymous-requests)
 - [Discord](#discord)
-- [Update checks](#update-checks)
+- [Dynamic rule downloads](#dynamic-rule-downloads)
 - [Output and file handling](#output-and-file-handling)
 - [General defaults](#general-defaults)
 - [Dates](#dates)
@@ -40,10 +40,10 @@ The values shown are the defaults with no environment variables set. Paths under
 - [List names](#list-names)
 - [Progress display](#progress-display)
 - [Logging](#logging)
-- [Script log levels](#script-log-levels)
+- [Subprocess log levels and free-space check](#subprocess-log-levels-and-free-space-check)
 - [Menu choices](#menu-choices)
 - [File paths](#file-paths)
-- [General paths](#general-paths)
+- [Filename generation and temp files](#filename-generation-and-temp-files)
 - [Name and path lengths](#name-and-path-lengths)
 - [Character sizes](#character-sizes)
 - [OnlyFans API addresses](#onlyfans-api-addresses)
@@ -162,7 +162,7 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 | <a id="keep_alive"></a>`KEEP_ALIVE` | `OFSC_KEEP_ALIVE` | `20` | Keep-alive duration for connections (seconds). |
 | <a id="keep_alive_exp"></a>`KEEP_ALIVE_EXP` | `OFSC_KEEP_ALIVE_EXP` | `10` | Keep-alive expiration duration (seconds). |
 
-### Proxy
+### Proxies
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
@@ -218,7 +218,7 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 |---|---|---|---|
 | <a id="message_sleep_default"></a>`MESSAGE_SLEEP_DEFAULT` | `OFSC_MESSAGE_SLEEP_DEFAULT` | `0` | Default sleep duration for messages (seconds). |
 
-## Rate-limit waits
+## Rate-limit values per request type
 
 Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
@@ -294,7 +294,7 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 | <a id="cdm_session_403_sleep_decay_factor"></a>`CDM_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_CDM_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="cdm_session_403_min_sleep"></a>`CDM_SESSION_403_MIN_SLEEP` | `OFSC_CDM_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
-### Like Operations: rate limits (429, 504)
+### Likes: rate limits (429, 504)
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
@@ -306,7 +306,7 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 | <a id="like_session_sleep_decay_factor"></a>`LIKE_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_LIKE_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="like_session_min_sleep"></a>`LIKE_SESSION_MIN_SLEEP` | `OFSC_LIKE_SESSION_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
-### Like Operations: 403 errors
+### Likes: 403 errors
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
@@ -487,7 +487,7 @@ Defined in `ofscraper/utils/of_env/values/req/discord.py`.
 | <a id="discord_max_wait"></a>`DISCORD_MAX_WAIT` | `OFSC_DISCORD_MAX_WAIT` | `5.0` | Maximum wait time for Discord operations (seconds). |
 | <a id="discord_num_tries"></a>`DISCORD_NUM_TRIES` | `OFSC_DISCORD_NUM_TRIES` | `3` | Number of retries for Discord operations. |
 
-## Update checks
+## Dynamic rule downloads
 
 Defined in `ofscraper/utils/of_env/values/req/git.py`.
 
@@ -676,7 +676,7 @@ Defined in `ofscraper/utils/of_env/values/logger.py`.
 | <a id="forced_thread_timeout"></a>`FORCED_THREAD_TIMEOUT` | `OFSC_FORCED_THREAD_TIMEOUT` | `5` | Timeout for forced thread termination in logging (seconds). |
 | <a id="logname"></a>`logname` | `OFSC_LOGNAME` | `'ofscraper'` | Base name for the logger. |
 
-## Script log levels
+## Subprocess log levels and free-space check
 
 Defined in `ofscraper/utils/of_env/values/system.py`.
 
@@ -747,7 +747,7 @@ Defined in `ofscraper/utils/of_env/values/path/files.py`.
 | <a id="mainprofile"></a>`mainProfile` | `OFSC_MAIN_PROFILE_NAME` | `'main_profile'` | Name of the main profile directory/file |
 | <a id="requestauth"></a>`requestAuth` | `OFSC_REQUEST_AUTH_FILE_NAME` | `'request_auth.json'` | Name of the request authentication JSON file |
 
-## General paths
+## Filename generation and temp files
 
 Defined in `ofscraper/utils/of_env/values/path/general.py`.
 
