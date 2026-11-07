@@ -29,8 +29,12 @@ def rule_host_replies(monkeypatch):
         raise AuthPrompted
 
     monkeypatch.setattr(checkers.make, "make_auth", make_auth)
-    # /me signs its request, which needs the rule
-    monkeypatch.setattr(init.me, "scrape_user", auth_requests.read_request_auth)
+    # /me signs its request, which needs the rule, and answers isAuth true
+    def scrape_user():
+        auth_requests.read_request_auth()
+        return {"isAuth": True}
+
+    monkeypatch.setattr(init.me, "scrape_user", scrape_user)
 
     def set_reply(content):
         @contextmanager
