@@ -58,6 +58,9 @@ class MergeDatabase:
         """
         This method is called when the object is used like a function.
         """
+        # check the source before anything is created or backed up in the target
+        if not pathlib.Path(old_db_folder).is_dir():
+            raise FileNotFoundError(f"Merge source folder not found: {old_db_folder}")
         self._new_db = self.get_new_db(new_db_path)
         self._old_db_folder = old_db_folder
         await self._data_initializer()
@@ -151,8 +154,6 @@ class MergeDatabase:
     async def merge_database(self):
         old_root_folder = pathlib.Path(self._old_db_folder)
         new_db_path = pathlib.Path(self._new_db)
-        if not pathlib.Path(old_root_folder).is_dir():
-            raise FileNotFoundError("Path is not dir")
         new_db_path.parent.mkdir(exist_ok=True, parents=True)
         failures = {}
         success = {}
