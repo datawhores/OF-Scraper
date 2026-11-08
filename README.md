@@ -31,7 +31,7 @@ Upstream hasn't been updated since April 2026. This fork keeps it working:
 | | |
 |---|---|
 | 🔐 **DRM video** | Protected videos download and decrypt again, with ffmpeg 6, 7 and 8+. |
-| 🌐 **Fansly** | Posts, messages, purchases and livestreams, alongside OnlyFans. |
+| 🌐 **Fansly** | Posts, messages, purchases, labels (profile walls) and livestreams, alongside OnlyFans. |
 | 🐍 **Python 3.11 to 3.15** | Tested in CI on the oldest and newest supported versions. |
 | 🛠️ **Bug fixes** | Dozens of reported bugs fixed, with tests that guard them. See the [releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases). |
 | 📖 **Full reference** | Every command, option, setting and database table [documented](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md). |

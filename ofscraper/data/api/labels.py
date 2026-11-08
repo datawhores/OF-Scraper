@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+import contextlib
 import logging
 import traceback
 from types import SimpleNamespace
@@ -32,6 +33,8 @@ from ofscraper.db.operations_.media import (
 from ofscraper.db.operations_.posts import get_deleted_post_ids
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.const as const
+import ofscraper.sites as sites
+from ofscraper.sites.fansly import scrape as fansly_scrape
 
 log = logging.getLogger("shared")
 API = "Labels"
@@ -80,7 +83,9 @@ def discard_finished_labels(model_id):
 
 
 async def get_labels_data(model_id, c=None):
-    generators = [scrape_labels(c, model_id)]
+    # on Fansly a label is a wall (a named tab on the creator's profile)
+    names = fansly_scrape.label_names if sites.is_fansly() else scrape_labels
+    generators = [names(c, model_id)]
     return await process_tasks_labels(generators)
 
 
@@ -373,6 +378,13 @@ async def scrape_labels(c, model_id, offset=0):
 
 
 async def scrape_posts_labels(c, label, model_id, offset=0, known=None, track=False):
+    if sites.is_fansly():
+        async with contextlib.aclosing(
+            scrape_posts_walls(c, label, model_id, known=known, track=track)
+        ) as walls:
+            async for item in walls:
+                yield item
+        return
     current_offset = offset
     known = known or set()
     # Marked incomplete until paging reaches its end and the run has saved
@@ -442,6 +454,41 @@ async def scrape_posts_labels(c, label, model_id, offset=0, known=None, track=Fa
         finally:
             if task:
                 progress_utils.api.remove_job_task(task)
+    if finished and track:
+        mark_label_finished(model_id, label["id"])
+
+
+async def scrape_posts_walls(c, label, model_id, known=None, track=False):
+    """Fansly: a wall's posts, paged like the timeline with its ``wallId``.
+
+    Same stop and "finished" rules as ``scrape_posts_labels``.
+    """
+    known = known or set()
+    if track:
+        cache.set(label_complete_key(model_id, label["id"]), False)
+    finished = False
+    task = progress_utils.api.add_job_task(
+        f": getting posts from label -> {label['name']}", visible=True
+    )
+    try:
+        async with contextlib.aclosing(
+            fansly_scrape.label_pages(c, label, model_id)
+        ) as pages:
+            async for batch in pages:
+                log.debug(f"wall {label['id']} -> labelled posts found {len(batch)}")
+                trace_progress_log(f"{API} content requests", batch)
+                yield label, batch
+                if known and all(str(post.get("id")) in known for post in batch):
+                    log.debug(
+                        f"every post already recorded for label {label['id']}, stopping"
+                    )
+                    break
+        finished = True
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+    finally:
+        progress_utils.api.remove_job_task(task)
     if finished and track:
         mark_label_finished(model_id, label["id"])
 

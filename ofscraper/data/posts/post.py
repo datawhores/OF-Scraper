@@ -621,6 +621,10 @@ async def process_tasks(model_id, username, ele, c=None):
                         )(sem=sem)
                     )
                 )
+            elif "Labels" in final_post_areas:
+                log.info(
+                    f"Skipping labels for {username}: labels are only scraped for active subscriptions"
+                )
 
             if "Streams" in final_post_areas and ele.active:
                 tasks.append(

@@ -14,7 +14,7 @@ from ofscraper.sites.fansly import api, normalize
 log = logging.getLogger("shared")
 
 # the post areas Fansly supports; others are skipped for Fansly profiles
-AREAS = ("Timeline", "Messages", "Purchased")
+AREAS = ("Timeline", "Messages", "Purchased", "Labels")
 
 
 @contextlib.asynccontextmanager
@@ -57,6 +57,25 @@ async def get_messages(model_id, username, c=None, post_id=None):
         found = [m for m in found if str(m["id"]) in {str(x) for x in post_id}]
     log.debug(f"Fansly messages: {len(found)} for {username}")
     return found
+
+
+async def label_names(c, model_id):
+    """The creator's walls as labels, in one batch (``labels.scrape_labels``'s form)."""
+    async with _session(c) as c:
+        walls, has_main_wall = await api.walls(c, model_id)
+        found = normalize.labels(walls, has_main_wall=has_main_wall)
+    log.debug(f"Fansly walls as labels: {[x['id'] for x in found]}")
+    yield found
+
+
+async def label_pages(c, label, model_id):
+    """One wall's posts, a timeline page at a time, newest first."""
+    async with _session(c) as c:
+        async with contextlib.aclosing(
+            api.timeline_pages(c, model_id, wall_id=label["id"])
+        ) as pages:
+            async for page in pages:
+                yield page
 
 
 async def get_paid_posts(model_id, username, c=None):

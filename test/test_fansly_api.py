@@ -368,7 +368,7 @@ def test_fansly_skips_areas_it_does_not_support(fansly, monkeypatch):
     monkeypatch.setattr(post.progress_utils, "setup_live", lambda *a, **k: contextlib.nullcontext())
     ele = SimpleNamespace(active=True)
     asyncio.run(post.process_tasks(CREATOR_ID, CREATOR, ele))
-    assert sorted(called) == ["messages", "paid_post", "timeline_posts"]
+    assert sorted(called) == ["labels", "messages", "paid_post", "timeline_posts"]
 
 
 def test_models_come_from_fansly_accounts(fansly, monkeypatch):

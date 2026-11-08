@@ -80,7 +80,8 @@ Upstream's docs don't cover these:
 
 - **Fansly** as a second site:
   - `--site`, the profile's `site.json` and `fansly_auth.json`.
-  - Fansly posts, messages and purchases.
+  - Fansly posts, messages and purchases (`-o timeline,messages,purchased`).
+  - Fansly labels (`-o labels`, `labels+`, `labels*`): each wall, a named tab on the creator's profile, is a label. The main "Posts" wall is the whole timeline, so it's skipped. With the default `dir_format`, wall posts are saved with the timeline and their labels are recorded in the `labels` table. Add `{label}` to `dir_format` for a folder per wall. Other areas (pinned, archived, stories, highlights, streams, profile) are skipped on Fansly.
   - HLS/DASH video.
   - Livestream recording (`--live`, `--live-watch`, `--live-interval`, `--live-max`, `--live-chat`).
   - Fansly media save under `<save location>/Fansly`.
