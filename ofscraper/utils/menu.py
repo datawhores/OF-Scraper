@@ -6,6 +6,7 @@ import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.console as console
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
@@ -74,6 +75,8 @@ def main_menu_action():
                 merge.merge_runner()
             elif result_main_prompt == "quit":
                 return True
+        except interactive.NoConsoleError:
+            raise  # asking again can't work either
         except Exception as E:
             log.debug(E)
             log.debug(traceback.format_exc())

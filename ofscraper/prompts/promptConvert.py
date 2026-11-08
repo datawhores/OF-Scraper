@@ -7,12 +7,15 @@ from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
+import ofscraper.utils.interactive as interactive
 from ofscraper.utils.live.empty import prompt_live
 from ofscraper.utils.live.clear import clear
 
 
 def wrapper(prompt_funct):
     def inner(*args, **kwargs):
+        # with no console the prompt can't open (#286)
+        interactive.require_console(kwargs.get("message") or prompt_funct.__name__)
         # setup
         long_message = functools.partial(
             handle_skip_helper,

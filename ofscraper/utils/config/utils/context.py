@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
 
 
@@ -36,6 +37,8 @@ def config_context():
                     elif config_prompt == "reset":
                         config_file.make_config_original()
                     break
+                except interactive.NoConsoleError:
+                    raise  # asking again can't work either
                 except Exception:
                     continue
             continue
