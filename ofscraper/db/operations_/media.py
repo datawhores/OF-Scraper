@@ -506,6 +506,23 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def update_media_table_download_transition(
+    inputData, model_id=None, conn=None, **kwargs
+):
+    download_keys = ["directory", "filename", "size", "downloaded", "hash"]
+    with contextlib.closing(conn.cursor()) as curr:
+        curr.executemany(
+            mediaUpdateDownload,
+            [
+                [data[key] for key in download_keys]
+                + [data["media_id"], data["model_id"]]
+                for data in inputData
+            ],
+        )
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def replace_media_table(inputData, model_id=None, conn=None, **kwargs):
     rebuild.replace_table(
         conn,
