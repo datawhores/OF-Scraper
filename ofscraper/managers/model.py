@@ -229,9 +229,17 @@ class ModelManager:
         usernames = settings.get_settings().usernames or []
         is_daemon = settings.get_settings().daemon
 
-        # Guard Clause 1: Daemon mode with a specific list of users.
-        if is_daemon and usernames and "ALL" not in usernames:
-            return self._select_by_usernames(self.all_subs, usernames)
+        # Guard Clause 1: Daemon mode with a specific list of users. The same
+        # filters as an interactive run, but no prompt if they remove everyone (#285)
+        if is_daemon and usernames:
+            filtered_models = self._filtered_models()
+            if "ALL" in usernames:
+                if not filtered_models:
+                    log.warning("The filters removed every creator, so none were selected.")
+                return list(filtered_models.values())
+            return self._select_by_usernames(
+                filtered_models.values(), usernames, filtered=True
+            )
 
         # Guard Clause 2: Daemon mode with an existing selection and no new instructions.
         existing_selection = self.get_scrape_selected_models()
@@ -278,17 +286,18 @@ class ModelManager:
         to adjust the filters before proceeding.
         """
         while True:
-            filtered_models = self._apply_filters()
-            sorted_models = sort.sort_models_helper(filtered_models)
-            if sorted_models:
-                return {
-                    model.name: self._all_subs_dict[model.name]
-                    for model in sorted_models
-                }
+            filtered_models = self._filtered_models()
+            if filtered_models:
+                return filtered_models
             console.get_console().print(
                 "[bold red]You have filtered the user list to zero.[/bold red]"
             )
             self.setfilter()
+
+    def _filtered_models(self) -> Dict[str, "Model"]:
+        """The models left after the filters, sorted, by name. Never prompts."""
+        sorted_models = sort.sort_models_helper(self._apply_filters())
+        return {model.name: self._all_subs_dict[model.name] for model in sorted_models}
 
     def setfilter(self):
         """Displays the interactive menu to modify filters."""

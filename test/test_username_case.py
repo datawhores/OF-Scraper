@@ -30,6 +30,8 @@ def _manager(monkeypatch, usernames, daemon, models):
     monkeypatch.setattr(
         mm, "_filter_and_prompt_for_selection", lambda: {m.name: m for m in models}
     )
+    # the daemon filters without the prompt (#285)
+    monkeypatch.setattr(mm, "_filtered_models", lambda: {m.name: m for m in models})
     return mm
 
 
@@ -75,14 +77,17 @@ def test_unmatched_name_is_reported(monkeypatch, daemon):
     assert "somecreator" not in warnings[0]
 
 
-def test_daemon_warning_does_not_blame_filters(monkeypatch):
-    # no filters run before the daemon selection
+def test_daemon_warning_allows_for_exclusion(monkeypatch):
+    # the daemon runs the filters too (#285), so its warning says the same
     warnings = []
     monkeypatch.setattr(model_manager.log, "warning", lambda msg, *a, **k: warnings.append(msg))
     mm = _manager(monkeypatch, _parsed("nosuchcreator"), True, _fansly_models())
 
     assert mm._select_models_scraper() == []
-    assert warnings == ["Not selected: nosuchcreator. No creator has that name or id."]
+    assert warnings == [
+        "Not selected: nosuchcreator. The name or id wasn't found, "
+        "or a filter or --excluded-username removed it."
+    ]
 
 
 def test_interactive_warning_allows_for_exclusion(monkeypatch):
