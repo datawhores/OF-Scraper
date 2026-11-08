@@ -84,14 +84,15 @@ def test_failed_source_is_reported_and_the_rest_merged(sources):
 
 
 def test_menu_merge_returns_the_summary_with_a_failure(sources):
-    old, _, new_db, _ = sources
+    old, bad, new_db, _ = sources
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        completed, skipped = merge_menu.merge_loop(old, new_db)
+        completed, skipped, failed = merge_menu.merge_loop(old, new_db)
     finally:
         asyncio.set_event_loop(None)
         loop.close()
 
     assert [model for model, _ in completed] == [MODEL_ID]
     assert skipped == []
+    assert [path for path, _ in failed] == [bad]

@@ -29,7 +29,7 @@ def run_merges(monkeypatch, answers):
 
     def fake_merge_loop(curr_folder, new_db):
         merges.append((curr_folder, new_db))
-        return ["a.db"], []
+        return ["a.db"], [], []
 
     monkeypatch.setattr(merge_utils, "merge_loop", fake_merge_loop)
 

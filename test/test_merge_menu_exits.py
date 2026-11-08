@@ -44,7 +44,7 @@ def run_screen(monkeypatch, backup, confirm, another=()):
 
     def fake_merge_loop(curr_folder, new_db):
         merges.append((curr_folder, new_db))
-        return ["a.db"], []
+        return ["a.db"], [], []
 
     monkeypatch.setattr(prompts, "backup_prompt_db", lambda: answer("backup"))
     monkeypatch.setattr(prompts, "folder_prompt_db", folder)
@@ -55,7 +55,7 @@ def run_screen(monkeypatch, backup, confirm, another=()):
     monkeypatch.setattr(
         prompts,
         "confirm_db_continue",
-        lambda completed, skipped: answer("another"),
+        lambda completed, skipped, failed: answer("another"),
     )
     monkeypatch.setattr(merge_utils, "merge_loop", fake_merge_loop)
 
