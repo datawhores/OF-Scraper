@@ -8,9 +8,11 @@ import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.console as console
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.managers.manager as manager
+from ofscraper.utils.markup import escape_text
 
 log = logging.getLogger("shared")
 count = 0
@@ -34,6 +36,7 @@ def main_menu_action():
     scapingManager = scraperManager()
     while True:
         console.get_shared_console().clear_live()
+        result_main_prompt = None
         try:
             result_main_prompt = prompts.main_prompt()
             if result_main_prompt == "action":
@@ -78,8 +81,14 @@ def main_menu_action():
         except interactive.NoConsoleError:
             raise  # asking again can't work either
         except Exception as E:
-            log.debug(E)
+            # say on screen that it failed; the traceback stays in the debug log
+            log.error(escape_text(f"{_action_name(result_main_prompt)} failed: {type(E).__name__}: {E}"))
             log.debug(traceback.format_exc())
+
+
+def _action_name(choice):
+    names = {value: name for name, value in of_env.getattr("mainPromptChoices").items()}
+    return names.get(choice, "Main Menu")
 
 
 def profile_menu_helper(result_profiles_prompt):
