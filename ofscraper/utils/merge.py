@@ -28,10 +28,7 @@ def merge_runner():
 @run
 async def merge_loop(curr_folder, new_db):
     db_merger = merge.MergeDatabase()
-    failures, completed, skipped = await db_merger(curr_folder, new_db)
-    for failure in failures:
-        if failure["reason"] == "Found model_id was not numeric":
-            continue
+    _, completed, skipped = await db_merger(curr_folder, new_db)
     return completed, skipped
 
     # while True:
