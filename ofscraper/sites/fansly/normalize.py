@@ -18,6 +18,8 @@ import re
 
 import arrow
 
+from ofscraper.sites.fansly import video
+
 log = logging.getLogger("shared")
 
 # attachment contentType values
@@ -110,6 +112,25 @@ def direct_url(media):
     return None
 
 
+def file_url(media):
+    """The item's URL: for a video, its largest MP4 (its own or a variant's),
+    else its best HLS or DASH stream; for anything else, its own file.
+
+    Some videos have no file of their own, only variants. Without a URL the
+    item counts as not viewable and is dropped. A stream is downloaded by the
+    Fansly stream downloader, which picks it from the raw Media; the URL is
+    what the normal downloader fetches.
+    """
+    if media_type(media.get("mimetype")) != "video":
+        # e.g. a GIF with an mp4 variant keeps its own .gif
+        return direct_url(media)
+    direct = [c for c in video.candidates(media) if c.kind == video.DIRECT]
+    if direct:
+        return max(direct, key=lambda c: c.area).url
+    best = video.select_best(media)
+    return best.url if best else direct_url(media)
+
+
 def duration(media):
     # whole seconds, like OnlyFans (Fansly gives a float)
     value = parse_json(media.get("metadata")).get("duration")
@@ -129,7 +150,7 @@ def media_dict(account_media, media, is_preview, can_view, fallback_date=None):
         or iso(account_media.get("createdAt"))
         or fallback_date,
         "duration": duration(media),
-        "files": {"full": {"url": direct_url(media) if can_view else None}},
+        "files": {"full": {"url": file_url(media) if can_view else None}},
         "fansly": {
             "accountMediaId": str(account_media["id"]),
             "mediaId": str(media["id"]),

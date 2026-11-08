@@ -405,6 +405,12 @@ class Media(base.base):
         if not base_url:
             return None
 
+        fansly = self._media.get("fansly")
+        if fansly and fansly.get("mediaId"):
+            # the URL may be a variant's or a stream's, named by the variant
+            # id, and which one is chosen can change; the media id does not
+            return str(fansly["mediaId"])
+
         filename_part = (
             base_url.split(".")[-2].split("/")[-1].strip("/,.;!_-@#$%^&*()+\\ ")
         )

@@ -130,8 +130,9 @@ class FanslyStreamDownloadManager(DownloadManager):
         try:
             url, audio_url = await self._stream_urls(c, best)
         except fansly_video.StreamError as e:
-            if ele.url:
-                # None: run.py downloads the direct file instead
+            if ele.url and fansly_video.has_direct(fansly_video.raw_media(ele)):
+                # None: run.py downloads the direct file instead (ele.url
+                # is the stream itself when there is no direct file)
                 common_globals.log.info(f"{medialog} {e}; downloading the direct file instead")
                 return None
             if isinstance(e, fansly_video.ProtectedStream):

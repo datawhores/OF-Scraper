@@ -30,6 +30,7 @@ from ofscraper.managers.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
+from ofscraper.sites.fansly import video as fansly_video
 
 
 class MetaDataManager:
@@ -187,6 +188,10 @@ class MetaDataManager:
 
     async def _metadata_helper(self, c, ele):
         placeholderObj = None
+        if fansly_video.uses_stream(ele):
+            # ele.url may be the playlist itself, which needs the CloudFront
+            # cookies; the stream downloader always saves an MP4
+            return placeholder.Placeholders(ele, ext="mp4")
         if not ele.url and not ele.mpd:
             placeholderObj = placeholder.Placeholders(ele, ext=ele.content_type)
             return placeholderObj

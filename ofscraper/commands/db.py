@@ -28,6 +28,12 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
+import ofscraper.sites as sites
+
+
+def is_protected(media):
+    # Fansly has no DRM downloads: its .mpd links are plain DASH streams
+    return "mpd" in media["link"] and not sites.is_fansly()
 
 
 class DBManager:
@@ -119,9 +125,9 @@ class DBManager:
 
         # download type
         if args.protected:
-            medias = [media for media in medias if "mpd" in media["link"]]
+            medias = [media for media in medias if is_protected(media)]
         elif args.normal:
-            medias = [media for media in medias if "mpd" not in media["link"]]
+            medias = [media for media in medias if not is_protected(media)]
         # unlocked
         if args.unlocked:
             medias = [media for media in medias if media["unlocked"]]
