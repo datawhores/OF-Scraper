@@ -89,7 +89,11 @@ async def process_dicts(username, model_id, medialist, posts):
         return (0, 0, 0, 0, 0)
 
     # Continue to download process
-    logging.getLogger("shared").info("Downloading in single thread mode")
+    concurrency_limit = get_max_workers()
+    logging.getLogger("shared").info(
+        f"Downloading up to {concurrency_limit} "
+        f"{'file' if concurrency_limit == 1 else 'files'} at a time"
+    )
     common_globals.mainProcessVariableInit()
     task1 = None
     with progress_utils.setup_live("download"):
@@ -114,7 +118,6 @@ async def process_dicts(username, model_id, medialist, posts):
                     total=len(aws),
                     visible=True,
                 )
-                concurrency_limit = get_max_workers()
                 lock = asyncio.Lock()
                 consumers = [
                     asyncio.create_task(consumer(aws, task1, medialist, lock))
