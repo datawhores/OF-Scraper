@@ -314,9 +314,9 @@ def mass_msg_filter(media):
 
 def final_post_sort(post):
     post_sort = settings.get_settings().post_sort
-    reversed = settings.get_settings().post_desc
+    is_reversed = settings.get_settings().post_desc
     log.debug(f"Using post sort {post_sort}")
-    if post_sort == "date" and reversed:
+    if post_sort == "date" and is_reversed:
         post = list(reversed(post))
     elif post_sort == "random":
         random.shuffle(post)
