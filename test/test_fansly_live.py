@@ -8,6 +8,7 @@ import asyncio
 import contextlib
 import http.server
 import json
+import pathlib
 import shutil
 import subprocess
 import threading
@@ -223,6 +224,75 @@ def test_selection_follows_usernames_and_exclusions():
     assert [s["username"] for s in live.select_streams(online)] == ["creator_a", "creator_b", "creator_c"]
     assert [s["username"] for s in live.select_streams(online, ["ALL"], ["creator_b"])] == ["creator_a", "creator_c"]
     assert [s["username"] for s in live.select_streams(online, ["Creator_C"])] == ["creator_c"]
+
+
+def test_selection_matches_account_ids():
+    online = live_api.parse_online(online_response(CREATOR_A, CREATOR_B, CREATOR_C))
+    # -u <account id> selects that creator
+    assert [s["username"] for s in live.select_streams(online, [CREATOR_B[0]])] == ["creator_b"]
+    # -eu <account id> excludes it, with or without -u
+    assert [s["username"] for s in live.select_streams(online, None, [CREATOR_B[0]])] == ["creator_a", "creator_c"]
+    assert [s["username"] for s in live.select_streams(online, ["ALL"], [CREATOR_B[0]])] == ["creator_a", "creator_c"]
+    assert live.select_streams(online, [CREATOR_B[0]], [CREATOR_B[0]]) == []
+    # names and ids mixed
+    assert [s["username"] for s in live.select_streams(online, ["creator_a", CREATOR_C[0]])] == ["creator_a", "creator_c"]
+
+
+def test_selection_matches_an_id_the_api_sent_as_a_number():
+    online = live_api.parse_online({
+        "success": True,
+        "response": {
+            "streams": [{"id": 1, "channelId": 2, "accountId": 100000000000000104, "status": 2}],
+            "aggregationData": {"accounts": [{"id": 100000000000000104, "username": "creator_d"}]},
+        },
+    })
+    assert [s["username"] for s in live.select_streams(online, ["100000000000000104"])] == ["creator_d"]
+    assert live.select_streams(online, None, ["100000000000000104"]) == []
+    # an int on the stream entry itself compares the same
+    raw = [{"accountId": 100000000000000104, "username": "creator_d"}]
+    assert live.select_streams(raw, ["100000000000000104"]) == raw
+    assert live.select_streams(raw, None, ["100000000000000104"]) == []
+
+
+def test_selection_by_name_is_unchanged_for_mixed_case_names():
+    mixed = ("100000000000000105", "MixedCreator")
+    online = live_api.parse_online(online_response(CREATOR_A, mixed))
+    for name in ("mixedcreator", "MixedCreator", "MIXEDCREATOR"):
+        assert [s["username"] for s in live.select_streams(online, [name])] == ["MixedCreator"]
+        assert [s["username"] for s in live.select_streams(online, None, [name])] == ["creator_a"]
+    assert live.select_streams(online, ["nosuchcreator"]) == []
+
+
+@pytest.mark.parametrize("watch", [False, True], ids=["live", "live-watch"])
+def test_live_and_live_watch_record_a_creator_selected_by_account_id(
+        monkeypatch, tmp_path, fansly_settings, watch):
+    fansly_settings(live=not watch, live_watch=watch, usernames=(CREATOR_B[0],))
+    client = FakeClient({
+        live_api.ONLINE_URL: online_response(CREATOR_A, CREATOR_B),
+        live_api.channel_url(CREATOR_B[0]): channel_response(
+            CREATOR_B[0], "https://live.example.invalid/b/playlist.m3u8?token=t"),
+        "https://live.example.invalid/": "#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2.0,\ns1.ts\n#EXT-X-ENDLIST\n",
+    })
+    install_session(monkeypatch, client)
+    recorded = []
+
+    async def main():
+        stop = asyncio.Event()
+
+        async def fake_ffmpeg(cmd, stop_event=None):
+            recorded.append(cmd[-1])
+            with open(cmd[-1], "wb") as f:
+                f.write(b"\0" * 32)
+            if watch:
+                stop.set()  # watch mode runs until stopped
+            return 0
+
+        monkeypatch.setattr(live, "run_ffmpeg", fake_ffmpeg)
+        await asyncio.wait_for(live.run(watch=watch, stop=stop), timeout=30)
+
+    asyncio.run(main())
+    assert len(recorded) == 1
+    assert pathlib.Path(recorded[0]).parent == tmp_path / "Fansly" / "creator_b" / "Livestreams"
 
 
 # ------------------------------------------------------------------ local live HLS server

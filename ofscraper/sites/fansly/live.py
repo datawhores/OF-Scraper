@@ -29,7 +29,7 @@ import threading
 from urllib.parse import parse_qsl, urljoin, urlparse
 
 from ofscraper.sites.fansly import constants
-from ofscraper.utils.username_match import matches_username, username_keys
+from ofscraper.utils.username_match import matches_account, username_keys
 
 log = logging.getLogger("shared")
 
@@ -446,13 +446,16 @@ class LiveRecorder:
 # ------------------------------------------------------------------ several creators
 
 def select_streams(online: list, usernames=None, excluded=None) -> list:
-    """Live streams of the selected creators (all followed when none or ALL)."""
+    """Live streams of the selected creators (all followed when none or ALL).
+
+    ``usernames`` and ``excluded`` match a username in any case or an account id.
+    """
     wanted = username_keys(usernames)
     skip = username_keys(excluded)
-    out = [s for s in online if not matches_username(s.get("username"), skip)]
+    out = [s for s in online if not matches_account(s.get("username"), s.get("accountId"), skip)]
     if not wanted or "all" in wanted:
         return out
-    return [s for s in out if matches_username(s.get("username"), wanted)]
+    return [s for s in out if matches_account(s.get("username"), s.get("accountId"), wanted)]
 
 
 class LiveWatcher:
