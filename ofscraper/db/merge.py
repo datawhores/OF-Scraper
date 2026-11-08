@@ -48,6 +48,7 @@ class MergeDatabase:
     def __init__(self):
         self._data_init = False
         self._media_keys = ["media_id", "model_id"]
+        self._media_row_keys = ["media_id", "model_id", "post_id"]
         self._label_keys = ["post_id", "label_id", "model_id"]
         self._common_key = ["post_id", "model_id"]
         self._profile_key = ["user_id", "username"]
@@ -84,10 +85,11 @@ class MergeDatabase:
                 )
             )
             curr_medias = await get_all_medias_transition(db_path=self._new_db)
-            self._curr_medias = set(map(self._media_key, curr_medias))
-            self._downloaded_medias = set(
-                self._media_key(x) for x in curr_medias if x["downloaded"]
-            )
+            self._curr_medias = set(map(self._media_row_key, curr_medias))
+            self._downloaded_medias = {}
+            for x in curr_medias:
+                if x["downloaded"]:
+                    self._downloaded_medias.setdefault(self._media_key(x), x)
             self._curr_posts = set(
                 list(
                     map(
@@ -214,35 +216,34 @@ class MergeDatabase:
     def _media_key(self, media):
         return tuple(media[key] for key in self._media_keys)
 
+    def _media_row_key(self, media):
+        return tuple(media[key] for key in self._media_row_keys)
+
     async def merge_media_helper(self, old_db):
         inserts_old_db = await get_all_medias_transition(db_path=old_db)
-        # a downloaded copy replaces a merged row that isn't downloaded yet;
-        # the first downloaded copy wins
-        updates = {}
+        # one row per media item per post
+        new_rows = [
+            x for x in inserts_old_db if self._media_row_key(x) not in self._curr_medias
+        ]
+        # downloaded is per media item, as in the app's own download update:
+        # the first downloaded copy wins and is written to all the item's rows,
+        # including rows added for another post
+        changed = set(map(self._media_key, new_rows))
+        new_downloads = {}
         for x in inserts_old_db:
             key = self._media_key(x)
-            if (
-                x["downloaded"]
-                and key in self._curr_medias
-                and key not in self._downloaded_medias
-            ):
-                updates.setdefault(key, x)
-        await write_media_table_transition(
-            list(
-                filter(
-                    lambda x: self._media_key(x) not in self._curr_medias,
-                    inserts_old_db,
-                )
-            ),
+            if x["downloaded"] and key not in self._downloaded_medias:
+                new_downloads.setdefault(key, x)
+                changed.add(key)
+        downloads = {**new_downloads, **self._downloaded_medias}
+        await write_media_table_transition(new_rows, db_path=self._new_db)
+        await update_media_table_download_transition(
+            [downloads[key] for key in changed if key in downloads],
             db_path=self._new_db,
         )
-        await update_media_table_download_transition(
-            list(updates.values()), db_path=self._new_db
-        )
-        self._curr_medias.update(map(self._media_key, inserts_old_db))
-        self._downloaded_medias.update(
-            self._media_key(x) for x in inserts_old_db if x["downloaded"]
-        )
+        # remember this source only once its writes succeeded
+        self._curr_medias.update(map(self._media_row_key, inserts_old_db))
+        self._downloaded_medias.update(new_downloads)
 
     async def merge_label_helper(self, old_db):
         keys = self._label_keys
