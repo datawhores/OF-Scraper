@@ -58,15 +58,21 @@ log = logging.getLogger("shared")
 
 
 @run
-async def modify_tables(model_id=None, username=None, db_path=None, **kwargs):
-    backup = create_backup_transition(model_id, username, db_path=db_path)
+async def modify_tables(
+    model_id=None, username=None, db_path=None, new_db=False, **kwargs
+):
+    # a database created just now has no older layout worth backing up
+    backup = (
+        None if new_db else create_backup_transition(model_id, username, db_path=db_path)
+    )
     try:
         await add_column_tables(model_id=model_id, username=username, db_path=db_path)
         await modify_tables_constraints_and_columns(
             model_id=model_id, username=username, db_path=db_path
         )
     except Exception as E:
-        restore_backup_transition(backup, model_id, username, db_path=db_path)
+        if backup:
+            restore_backup_transition(backup, model_id, username, db_path=db_path)
         raise E
 
 

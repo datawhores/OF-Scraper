@@ -77,8 +77,9 @@ class MergeDatabase:
 
     async def _data_initializer(self):
         if not self._data_init:
+            new_db = not self._new_db.exists()
             await create_tables(db_path=self._new_db)
-            await modify_tables(db_path=self._new_db)
+            await modify_tables(db_path=self._new_db, new_db=new_db)
             self._curr_labels = set(
                 list(
                     map(
