@@ -131,6 +131,14 @@ def test_multiple_exclusions(paid_run, cli_values):
     assert len(warnings) == 2
 
 
+def test_account_id_is_excluded(paid_run):
+    yielded, db_calls, warnings = paid_run(("2",))
+
+    assert "bob" not in _names(yielded)
+    assert "bob" not in db_calls
+    assert warnings == ["Skipping bob_2: excluded by --excluded-username"]
+
+
 def test_unmatched_exclusion_leaves_models_alone(paid_run):
     yielded, _, warnings = paid_run(("someoneelse",))
 

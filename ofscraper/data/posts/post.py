@@ -365,7 +365,7 @@ async def process_all_paid():
                     )
                 else:
                     username = f"{placeholder}_{model_id}"
-            if is_excluded_username(username):
+            if is_excluded_username(username, model_id):
                 log.warning(
                     f"Skipping {username}_{model_id}: excluded by --excluded-username"
                 )

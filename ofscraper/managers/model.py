@@ -15,6 +15,7 @@ import ofscraper.utils.console as console
 from ofscraper.utils.context.run_async import run
 from ofscraper.classes.of.models import Model
 import ofscraper.utils.settings as settings
+import ofscraper.utils.username_match as username_match
 from ofscraper.utils.args.mutators.user import resetUserFilters
 from ofscraper.managers.utils.state import StateManager, EActivity, string_to_activity
 import ofscraper.utils.of_env.of_env as of_env
@@ -230,13 +231,7 @@ class ModelManager:
 
         # Guard Clause 1: Daemon mode with a specific list of users.
         if is_daemon and usernames and "ALL" not in usernames:
-            allowed_names_and_ids = {str(x) for x in usernames}
-            return [
-                model
-                for model in self.all_subs
-                if str(model.name) in allowed_names_and_ids
-                or str(model.id) in allowed_names_and_ids
-            ]
+            return self._select_by_usernames(self.all_subs, usernames)
 
         # Guard Clause 2: Daemon mode with an existing selection and no new instructions.
         existing_selection = self.get_scrape_selected_models()
@@ -251,19 +246,30 @@ class ModelManager:
 
         # This handles interactive mode when a specific username list is provided via CLI.
         if not is_daemon and usernames:
-            allowed_names_and_ids = {str(x) for x in usernames}
-            return [
-                model
-                for model in filtered_models.values()
-                if str(model.name) in allowed_names_and_ids
-                or str(model.id) in allowed_names_and_ids
-            ]
+            return self._select_by_usernames(
+                filtered_models.values(), usernames, filtered=True
+            )
 
         # FINAL CASE: We must prompt for a selection.
         # This is where the interactive terminal UI menu is actually launched.
         return retriver.get_selected_model(
             list(filtered_models.values()), existing_selection
         )
+
+    def _select_by_usernames(self, models, usernames, filtered=False) -> List["Model"]:
+        """
+        Models named by -u (username in any case, or account id).
+        ``filtered`` says whether the filters (and --excluded-username) already ran.
+        """
+        selected, unmatched = username_match.select_models(list(models), usernames)
+        if unmatched:
+            reason = (
+                "The name or id wasn't found, or a filter or --excluded-username removed it."
+                if filtered
+                else "No creator has that name or id."
+            )
+            log.warning(f"Not selected: {', '.join(map(str, unmatched))}. {reason}")
+        return selected
 
     def _filter_and_prompt_for_selection(self):
         """
