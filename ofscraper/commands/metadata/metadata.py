@@ -187,7 +187,8 @@ class MetadataCommandManager(CommandManager):
         )
         if filtered_media:
             log.info(f"Found {len(filtered_media)} stray items to mark as locked")
-            await batch_set_media_downloaded(
+            # a sync database call: awaiting its None result raised TypeError (#376)
+            batch_set_media_downloaded(
                 filtered_media, model_id=model_id, username=username
             )
 

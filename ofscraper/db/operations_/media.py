@@ -861,6 +861,8 @@ def prev_download_media_data(media, model_id=None, username=None, conn=None, **k
 
 @wrapper.operation_wrapper
 def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
+    """Lock these media (set unlocked = 0); it doesn't mark them downloaded.
+    A sync call, so it's not awaited (#376)."""
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
             map(
