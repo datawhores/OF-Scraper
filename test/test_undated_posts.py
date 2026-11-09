@@ -507,3 +507,63 @@ def test_text_names_for_undated_post(names_env):
     folder, file_name = names(posts_.Post(raw, 1, "u", "timeline"), placeholder.Textholders)
     assert (folder, file_name) == ("1970-01-01", "1970-01-01_8.jpg")
     assert any("Post 8 has no date, using 1970-01-01" in w for w in names_env.warnings)
+
+
+# ---------------------------------------------------------------- warned once per file (#375)
+
+
+def download_names(item, tmp_path, monkeypatch):
+    """Build the names a download builds: the temporary folder, then the
+    final folder and file name."""
+    monkeypatch.setattr(placeholder.data, "get_TempDir", lambda *a, **k: str(tmp_path / "temp"))
+
+    async def run():
+        temp = await placeholder.tempFilePlaceholder(item, "x.part").init()
+        final = await placeholder.Placeholders(item, "jpg").init()
+        return temp.tempfilepath, final.filepath
+
+    return asyncio.run(run())
+
+
+def no_date_warnings(log):
+    return [w for w in log.warnings if "has no date" in w]
+
+
+def test_undated_file_is_warned_once(names_env, tmp_path, monkeypatch):
+    item = of_media()
+    _, final = download_names(item, tmp_path, monkeypatch)
+    assert final.name == "1970-01-01_7.jpg"
+    assert no_date_warnings(names_env) == [
+        "Post 7 (media 70) has no date, using 1970-01-01 for {date} in its file and folder names"
+    ]
+    # building the names again for the same file adds nothing
+    download_names(item, tmp_path, monkeypatch)
+    assert len(no_date_warnings(names_env)) == 1
+
+
+def test_each_undated_file_is_warned_once(names_env, tmp_path, monkeypatch):
+    raw = {"id": 9, "text": "t", "price": 0, "isOpened": True, "responseType": "post",
+           "media": [{"id": mid, "type": "photo", "canView": True,
+                      "files": {"full": {"url": f"https://example.invalid/{mid}.jpg"}}}
+                     for mid in (91, 92)]}
+    for item in posts_.Post(raw, 1, "u", "timeline").all_media:
+        download_names(item, tmp_path, monkeypatch)
+    warnings = no_date_warnings(names_env)
+    assert len(warnings) == 2
+    assert any("(media 91)" in w for w in warnings)
+    assert any("(media 92)" in w for w in warnings)
+
+
+def test_undated_text_file_is_warned_once(names_env):
+    raw = {"id": 8, "text": "hello", "price": 0, "isOpened": True, "responseType": "post"}
+    asyncio.run(placeholder.Textholders(posts_.Post(raw, 1, "u", "timeline"), "txt").init())
+    assert no_date_warnings(names_env) == [
+        "Post 8 has no date, using 1970-01-01 for {date} in its file and folder names"
+    ]
+
+
+def test_dated_file_logs_nothing(names_env, tmp_path, monkeypatch):
+    item = of_media("2024-05-01T20:00:00+00:00")
+    _, final = download_names(item, tmp_path, monkeypatch)
+    assert final.name == "2024-05-01_7.jpg"
+    assert names_env.warnings == []
