@@ -107,14 +107,6 @@ allPOSTCheck = """
 SELECT post_id FROM posts
 """
 
-archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
-"""
-
-streamsPostInfo = """
-SELECT created_at,post_id FROM posts where stream=(1) and model_id=(?)
-"""
-
 deletedPostsCheck = """
 SELECT post_id FROM posts WHERE is_deleted = 1 AND model_id = (?)
 """
