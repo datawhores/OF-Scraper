@@ -9,7 +9,8 @@ and the item was counted as failed instead of skipped.
 skip_download_script skips the same way, but without changing the
 mediatype, so it went unnoticed: with both tracks skipped the item failed
 with "0 bytes", with one skipped it failed on the missing track's file and
-left the other's .part (#325).
+left the other's .part (#325). A skipped audio track then still had the
+video track downloaded in full before the item was dropped (#343).
 
 Each test runs one DRM item through run.py's consumer (the counters), the
 real AltDownloadManager and session, against a local server that serves the
@@ -418,9 +419,34 @@ def test_script_skip_skips_the_whole_video(tmp_path, monkeypatch, skipped, chunk
     )
     assert counts == SKIPPED
     assert merged == {}
-    # the script is still asked about each track, once: no retries
-    assert calls == [len(AUDIO), len(VIDEO)]
-    assert seen == ["audio.mp4", "video.mp4"]
+    if len(AUDIO) in skipped:
+        # a skipped audio track skips the whole video, so the video track
+        # isn't asked for, nor the script about it (#343)
+        assert calls == [len(AUDIO)]
+        assert seen == ["audio.mp4"]
+    else:
+        # the script is asked about each track, once: no retries
+        assert calls == [len(AUDIO), len(VIDEO)]
+        assert seen == ["audio.mp4", "video.mp4"]
+    assert parts == []
+
+
+def test_script_skip_of_audio_removes_an_earlier_video_part(tmp_path, monkeypatch):
+    # the video track isn't asked for, and its part left by an earlier run
+    # is removed, as when the video track was downloaded and then dropped
+    calls = []
+
+    def script(total):
+        calls.append(total)
+        return total == len(AUDIO)
+
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, video_part=2_000, script=script
+    )
+    assert counts == SKIPPED
+    assert merged == {}
+    assert calls == [len(AUDIO)]
+    assert seen == ["audio.mp4"]
     assert parts == []
 
 

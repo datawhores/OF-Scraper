@@ -78,7 +78,16 @@ class AltDownloadManager(DownloadManager):
                 audio = await self._alt_download_downloader(
                     audio, c, ele, before=None if video else 0
                 )
-            if video:
+            if video and audio and audio["total"] == 0:
+                # skip_download_script skipped the audio track, which skips
+                # the whole video: the video track isn't downloaded (#343).
+                # Its part from an earlier run is removed with the audio's
+                placeholderObj = await placeholder.tempFilePlaceholder(
+                    ele, f"{video['name']}.part"
+                ).init()
+                video["path"] = placeholderObj.tempfilepath
+                video["total"] = 0
+            elif video:
                 video = await self._alt_download_downloader(
                     video, c, ele, before=audio["total"] if audio else 0
                 )
