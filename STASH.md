@@ -11,14 +11,16 @@ what OF-Scraper recorded about each file into Stash, for OnlyFans and Fansly dow
 | **Date** | when the post or message was posted | the same |
 | **Title and details** | the caption's first line, and the full caption | the same |
 | **Code** | the post ID (none for profile pictures) | the Fansly media ID |
-| **URL** | the post's page, for timeline posts | `https://fansly.com/post/<id>`, for timeline posts |
+| **URL** | the post's page, for timeline posts and bought posts | `https://fansly.com/post/<id>` for timeline posts, and `https://fansly.com/messages/<conversation>/<id>` for messages |
 | **Tags** | where the file came from, e.g. `OnlyFans Timeline`, `OnlyFans Messages` or `OnlyFans Paid` | the same with `Fansly`, plus `Fansly Preview` for preview media and the caption's #hashtags, lowercased |
 | **Gallery** | none | one per post or message, holding its images and scenes |
 
 Each Fansly gallery gets the post's or message's ID as its code, and the same
 studio, performers, date, title, details, URL and tags (without `Fansly Preview`).
-Messages get no URL on either site: a message has no public page, and for Fansly
-the conversation ID its link needs isn't in the database. Fansly purchases aren't
+OnlyFans messages get no URL: a message has no public page. A Fansly message's
+link needs its conversation ID. Databases written by older versions of
+OF-Scraper don't have it, so such a message gets no URL until a messages scan
+fills it in; the next run then adds the link. Fansly purchases aren't
 posts, so their files get no gallery.
 
 `--studio` and `--tag-prefix` replace the studio and tag prefix for every site;
@@ -96,18 +98,18 @@ files: the report then says so in a `hint`, and nothing is created in Stash.
   Files you've moved or renamed since won't be found.
 - A file posted more than once (for example in a message and again as a
   purchase) gets one item in Stash with the earliest date and all of its tags.
-- An OnlyFans file recorded only as a purchase, or as a bought message, gets no
-  URL. The database doesn't record whether a purchase was a post or a message,
-  and a message has no public page.
-  A bought post that's also on the timeline gets its link only if OnlyFans
-  recorded the timeline copy, which depends on which area a run read first.
-  Otherwise it gets no link until the purchase type is saved
-  ([#315](https://github.com/cloakedkeys/OF-Scraper-Community/issues/315)) and
-  this command uses it. Since nothing is overwritten, a later run fills the link
-  in once the database has it.
+- An OnlyFans bought message gets no URL, since a message has no public page.
+  A file recorded only as a purchase gets its post's link when the database
+  says the purchase was a post. Databases written by older versions of
+  OF-Scraper don't say, so there such a file gets no link until a scan of your
+  purchases fills the purchase type in. Since nothing is overwritten, the
+  next run then adds the link.
 - The creator's performer is matched by name, which is their username. A
   performer you created yourself under another name gets a second one; merge them
   in Stash if so. The same goes for @mentioned Fansly creators.
+- Fansly @mentions come from `@name` in the caption. OF-Scraper also saves the
+  post's list of tagged accounts, but this command doesn't read it yet: no real
+  tagged post has been checked to see which field holds the username.
 - Names are matched as Stash matches them: ignoring case, and also by alias, so a
   performer whose alias is the username is used for that creator.
 - Stash reads `_` and `%` in a name as wildcards when it checks a new performer or

@@ -315,6 +315,8 @@ FIRST_POST = 100000000000000001
 BOUGHT_TOO = 100000000000000149  # an item of a message, also bought on its own
 PURCHASE = 100000000000000900  # a made-up item that was only bought
 PURCHASE_MEDIA = 100000000000000901
+MESSAGE, GROUP = 100000000000000142, 100000000000000143  # a message in the fixtures, and its conversation
+MESSAGE_URL = f"https://fansly.com/messages/{GROUP}/{MESSAGE}"
 
 
 def fansly_routes(edits=None, purchases=False):
@@ -492,7 +494,7 @@ def test_fansly_and_onlyfans_end_to_end(library, fansly_library, stash_server, t
     assert shared["tags"] == ["Fansly Timeline", "outfit", "studio"]
     assert "Fansly Preview" in named(stash, by_file(stash, "100000000000000051.jpg"))["tags"]
     message = named(stash, by_file(stash, "100000000000000229.jpg"))
-    assert message["urls"] == []  # a message's page needs its conversation id
+    assert message["urls"] == [MESSAGE_URL]  # from the stored conversation id
     assert message["code"] == "100000000000000229"
     assert message["tags"] == ["Fansly Messages", "behindthescenes", "studio"]
     assert message["galleries"] == ["100000000000000142"]
@@ -510,7 +512,7 @@ def test_fansly_and_onlyfans_end_to_end(library, fansly_library, stash_server, t
         "urls": [post_url],
         "organized": False,
     }
-    assert galleries["100000000000000142"]["urls"] == []
+    assert galleries["100000000000000142"]["urls"] == [MESSAGE_URL]
     assert galleries["100000000000000142"]["tags"] == ["Fansly Messages", "behindthescenes", "studio"]
 
     # OnlyFans items come out exactly as from a run over the OnlyFans database alone
@@ -717,8 +719,184 @@ def test_onlyfans_bought_message_gets_no_post_link(onlyfans_paid):
     sync([db], stash, apply=True)
     assert by_file(stash, "2001.jpg")["urls"] == [f"https://onlyfans.com/1001/{OF_USER}"]
     assert by_file(stash, "4001.jpg")["urls"] == []  # a message, also bought
-    assert by_file(stash, "6001.jpg")["urls"] == []  # only bought: can't tell a post from a message
+    # only bought, but the purchase type says it was a post
+    assert by_file(stash, "6001.jpg")["urls"] == [f"https://onlyfans.com/5001/{OF_USER}"]
     assert by_file(stash, "4001.jpg")["code"] == "3001"
+
+
+# --- the columns added in #315: posts.purchase_type, messages.group_id, posts.mentions
+
+
+def run_log(db, files):
+    """Sync one database into a new FakeStash; return everything sent and the end state."""
+    stash = FakeStash()
+    for path, kind in files:
+        stash.add(kind, path)
+    preview = sync([db], stash)
+    sync([db], stash, apply=True)
+    again = sync([db], stash, apply=True)
+    return {
+        "reports": (preview["totals"], again["totals"]),
+        "created": stash.created,
+        "updates": stash.updates,
+        "items": {Path(i["path"]).name: named(stash, i) for kind in stash.items.values() for i in kind.values()},
+        "galleries": {g["code"]: named(stash, g) for g in stash.galleries.values()},
+    }
+
+
+def clear_columns(db, drop=False):
+    """Empty the new columns, as on rows saved before them, or drop them (the older layout)."""
+    with closing(sqlite3.connect(db)) as conn, conn:
+        for table, column in (("posts", "purchase_type"), ("posts", "mentions"), ("messages", "group_id")):
+            if drop:
+                conn.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
+            else:
+                conn.execute(f"UPDATE {table} SET {column} = NULL")
+
+
+def test_onlyfans_purchase_type_links_only_bought_posts(onlyfans_paid):
+    db, media_dir = onlyfans_paid
+    with closing(sqlite3.connect(db)) as conn:
+        assert dict(conn.execute("SELECT post_id, purchase_type FROM posts")) == {1001: None, 3001: "message", 5001: "post"}
+    files = [(str(media_dir / f"{m}.jpg"), "image") for m in (2001, 4001, 6001)]
+    log = run_log(db, files)
+    assert log["items"]["6001.jpg"]["urls"] == [f"https://onlyfans.com/5001/{OF_USER}"]
+    assert log["items"]["4001.jpg"]["urls"] == []  # bought message: no public page
+    assert log["items"]["2001.jpg"]["urls"] == [f"https://onlyfans.com/1001/{OF_USER}"]
+    assert log["reports"][1] == {"files": 3, "up_to_date": 3}
+
+
+@pytest.mark.parametrize("drop", [False, True], ids=["null", "older-layout"])
+def test_onlyfans_without_purchase_type_syncs_as_before(onlyfans_paid, drop):
+    db, media_dir = onlyfans_paid
+    files = [(str(media_dir / f"{m}.jpg"), "image") for m in (2001, 4001, 6001)]
+    clear_columns(db, drop)
+    log = run_log(db, files)
+    # as before #315: a post seen only as a purchase can't be told from a message
+    assert log["items"]["6001.jpg"]["urls"] == []
+    assert log["items"]["4001.jpg"]["urls"] == []
+    assert log["items"]["2001.jpg"]["urls"] == [f"https://onlyfans.com/1001/{OF_USER}"]
+
+
+def test_onlyfans_bought_message_with_post_purchase_type_still_gets_no_link(library):
+    # a bought message is also in messages; that wins over a purchase type
+    db, media_dir = library
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.execute("INSERT INTO posts (post_id, text, model_id, purchase_type) VALUES (2002, 'bought', 123, 'post')")
+    stash = FakeStash(images=[str(media_dir / "msg.jpg")])
+    sync([db], stash, apply=True)
+    assert by_file(stash, "msg.jpg")["urls"] == []
+
+
+def test_fansly_message_gets_its_conversation_link(fansly_library):
+    db, _, files = fansly_library
+    with closing(sqlite3.connect(db)) as conn:
+        assert dict(conn.execute("SELECT post_id, group_id FROM messages")) == {
+            MESSAGE: str(GROUP), 100000000000000147: str(GROUP)}
+    log = run_log(db, files)
+    other = f"https://fansly.com/messages/{GROUP}/100000000000000147"
+    assert log["galleries"][str(MESSAGE)]["urls"] == [MESSAGE_URL]
+    assert log["galleries"]["100000000000000147"]["urls"] == [other]
+    assert log["items"]["100000000000000229.jpg"]["urls"] == [MESSAGE_URL]
+    # posts keep their post link
+    assert log["galleries"][str(MENTION_POST)]["urls"] == [f"https://fansly.com/post/{MENTION_POST}"]
+    assert log["reports"][0]["galleries_to_create"] == 5
+    assert "updated" not in log["reports"][1] and "galleries_created" not in log["reports"][1]
+
+
+@pytest.mark.parametrize("drop", [False, True], ids=["null", "older-layout"])
+def test_fansly_without_new_columns_syncs_as_before(make_fansly, tmp_path, drop):
+    db, _, files = make_fansly()
+    with_values = run_log(db, files)
+    clear_columns(db, drop)
+    log = run_log(db, files)
+    assert all(g["urls"] == [] for code, g in log["galleries"].items() if code in (str(MESSAGE), "100000000000000147"))
+    assert log["items"]["100000000000000229.jpg"]["urls"] == []
+    # the conversation link is the only difference
+    for found in (log, with_values):
+        for meta in list(found["items"].values()) + list(found["galleries"].values()):
+            meta["urls"] = [u for u in meta["urls"] if "/messages/" not in u]
+    assert log["items"] == with_values["items"] and log["galleries"] == with_values["galleries"]
+
+
+def test_fansly_message_link_is_added_to_a_gallery_made_before(fansly_library, tmp_path):
+    # a run before the conversation id was saved made the message's gallery without
+    # a link; once a scan fills it in, the next run adds the link to that gallery
+    db, _, files = fansly_library
+    with closing(sqlite3.connect(db)) as conn:
+        groups = list(conn.execute("SELECT post_id, group_id FROM messages"))
+    stash = FakeStash()
+    for path, kind in files:
+        stash.add(kind, path)
+    clear_columns(db)
+    sync([db], stash, apply=True)
+    assert len(stash.galleries) == 5
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.executemany("UPDATE messages SET group_id = ? WHERE post_id = ?", [(g, p) for p, g in groups])
+    report = sync([db], stash, apply=True)
+    assert len(stash.galleries) == 5 and "galleries_created" not in report["totals"]
+    assert report["totals"]["galleries_updated"] == 2
+    gallery = next(g for g in stash.galleries.values() if g["code"] == str(MESSAGE))
+    assert gallery["urls"] == [MESSAGE_URL]
+    assert by_file(stash, "100000000000000229.jpg")["urls"] == [MESSAGE_URL]
+
+
+@pytest.mark.parametrize("group", ["", "1_%", "../x"])
+def test_fansly_conversation_id_that_is_not_a_number_gives_no_link(fansly_library, group):
+    db, _, files = fansly_library
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.execute("UPDATE messages SET group_id = ?", (group,))
+    log = run_log(db, files)
+    assert log["galleries"][str(MESSAGE)]["urls"] == []
+
+
+@pytest.mark.parametrize("stored", ["[]", json.dumps([{"listed": "listedonly"}]), "not json"])
+def test_fansly_stored_mentions_dont_change_performers(make_fansly, stored):
+    # Which field of an accountMentions entry holds the username isn't known
+    # from a real post, so the caption's @name stays the source; a stored list,
+    # even an empty one, neither adds nor drops a performer
+    db, _, files = make_fansly()
+    before = run_log(db, files)
+    with closing(sqlite3.connect(db)) as conn, conn:
+        conn.execute("UPDATE posts SET mentions = ?", (stored,))
+    after = run_log(db, files)
+    assert after["items"] == before["items"] and after["created"] == before["created"]
+    assert FRIEND in after["items"]["100000000000000026.mp4"]["performers"]
+    assert "listedonly" not in json.dumps(after["created"])
+
+
+def test_onlyfans_and_fansly_together(library, make_fansly, tmp_path):
+    of_db, of_dir = library
+    with closing(sqlite3.connect(of_db)) as conn, conn:
+        conn.execute("INSERT INTO posts (post_id, text, model_id, purchase_type) VALUES (3003, 'bought post', 123, 'post')")
+        conn.execute("INSERT INTO posts (post_id, text, model_id, purchase_type) VALUES (3004, 'bought msg', 123, 'message')")
+        conn.execute("INSERT INTO posts (post_id, text, model_id) VALUES (3005, 'unknown purchase', 123)")
+        for media_id, post_id, name in ((7, 3003, "bought_post.jpg"), (8, 3004, "bought_msg.jpg"), (9, 3005, "bought.jpg")):
+            conn.execute(
+                "INSERT INTO medias (media_id, post_id, directory, filename, api_type, media_type, downloaded, "
+                "posted_at, created_at, model_id) VALUES (?,?,?,?,'Paid','Images',1,?,?,123)",
+                (media_id, post_id, str(of_dir), name, "2025-03-01T10:00:00+00:00", "2025-03-01T10:00:00+00:00"))
+    _, _, fansly_files = make_fansly()
+    stash = FakeStash()
+    for path, kind in fansly_files:
+        stash.add(kind, path)
+    for name in ("post.jpg", "bought_post.jpg", "bought_msg.jpg", "bought.jpg"):
+        stash.add("image", str(of_dir / name))
+
+    sync([tmp_path / ".data"], stash, apply=True)
+    assert by_file(stash, "bought_post.jpg")["urls"] == ["https://onlyfans.com/3003/creator"]
+    assert by_file(stash, "bought_msg.jpg")["urls"] == []
+    assert by_file(stash, "bought.jpg")["urls"] == []
+    assert by_file(stash, "post.jpg")["urls"] == ["https://onlyfans.com/1001/creator"]
+    assert by_file(stash, "100000000000000229.jpg")["urls"] == [MESSAGE_URL]
+    assert by_file(stash, "100000000000000026.mp4")["urls"] == [f"https://fansly.com/post/{MENTION_POST}"]
+    # the OnlyFans studio and tags, and no OnlyFans gallery
+    assert named(stash, by_file(stash, "bought_post.jpg"))["studio"] == "OnlyFans"
+    assert named(stash, by_file(stash, "bought_post.jpg"))["tags"] == ["OnlyFans Paid"]
+    assert all(g["code"] not in ("3003", "3004", "3005") for g in stash.galleries.values())
+
+    report = sync([tmp_path / ".data"], stash, apply=True)
+    assert "updated" not in report["totals"] and "galleries_created" not in report["totals"]
 
 
 def test_mention_with_underscore_gets_its_own_performer(make_fansly, tmp_path):

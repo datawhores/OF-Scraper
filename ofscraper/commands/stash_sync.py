@@ -161,6 +161,11 @@ def read_model(database, site=ONLYFANS):
                 for post_id, text in conn.execute(f"SELECT post_id, text FROM {table}"):
                     if text or str(post_id) not in texts:
                         texts[str(post_id)] = (table, text)
+        # Newer databases record what a purchase was (posts.purchase_type, OnlyFans)
+        # and a message's conversation (messages.group_id, Fansly). Databases are
+        # opened read-only and not upgraded, so a missing column counts as empty.
+        purchase_types = optional_column(conn, tables, "posts", "purchase_type")
+        group_ids = optional_column(conn, tables, "messages", "group_id")
 
         media_columns = columns(conn, "medias")
         date_col = "posted_at" if "posted_at" in media_columns else "created_at"
@@ -190,14 +195,25 @@ def read_model(database, site=ONLYFANS):
 
     for entry in files.values():
         if site == FANSLY:
-            entry["meta"] = describe_fansly(entry, texts, username)
-            entry["galleries"] = fansly_galleries(entry, texts, username)
+            entry["meta"] = describe_fansly(entry, texts, username, group_ids)
+            entry["galleries"] = fansly_galleries(entry, texts, username, group_ids)
         else:
-            entry["meta"] = describe(entry, texts, username, message_ids)
+            entry["meta"] = describe(entry, texts, username, message_ids, purchase_types)
     return username, list(files.values())
 
 
-def describe(entry, texts, username, message_ids=frozenset()):
+def optional_column(conn, tables, table, column):
+    """{post_id: value} for the rows where this column is set; {} if it doesn't exist."""
+    if table not in tables or column not in columns(conn, table):
+        return {}
+    return {
+        str(post_id): value
+        for post_id, value in conn.execute(f"SELECT post_id, {column} FROM {table} WHERE {column} IS NOT NULL")
+        if value
+    }
+
+
+def describe(entry, texts, username, message_ids=frozenset(), purchase_types=None):
     """The Stash fields this file should have, from its earliest post with text."""
     posts = sorted(entry["posts"])
     posted, post_id = posts[0]
@@ -212,9 +228,11 @@ def describe(entry, texts, username, message_ids=frozenset()):
     meta = {"code": code, "details": text or None, "title": make_title(text) or None}
     if re.match(r"\d{4}-\d{2}-\d{2}", posted or ""):
         meta["date"] = posted[:10]
-    # A bought message has no public page, and a purchase alone can't be told
-    # apart from one, so neither gets a link
-    is_post = post_id not in message_ids and not bought_only(entry, post_id)
+    # A bought message has no public page, so it gets no link. A purchase is
+    # linked only when the database records it as a post; without a purchase
+    # type it can't be told apart from a message
+    bought_post = (purchase_types or {}).get(post_id) == "post"
+    is_post = post_id not in message_ids and (bought_post or not bought_only(entry, post_id))
     if table == "posts" and is_post and username and code:
         meta["url"] = f"https://onlyfans.com/{post_id}/{username}"
     return meta
@@ -246,22 +264,28 @@ def bought_only(entry, post_id):
     return entry["sources"].get(post_id) == {"Paid"}
 
 
-def fansly_post_meta(post_id, posted, texts, username, bought=False):
+def fansly_post_meta(post_id, posted, texts, username, bought=False, group_ids=None):
     """Fields shared by a Fansly file and its post's gallery."""
     table, raw = texts.get(post_id, (None, None))
     text = plain_text(raw)
     meta = {"details": text or None, "title": make_title(text) or None}
     if re.match(r"\d{4}-\d{2}-\d{2}", posted or ""):
         meta["date"] = posted[:10]
-    # A message's page needs its conversation id, which the database doesn't keep
-    if table == "posts" and not bought and post_id and post_id.isdigit():
-        meta["url"] = f"{FANSLY_ORIGIN}/post/{post_id}"
+    if not bought and post_id and post_id.isdigit():
+        if table == "posts":
+            meta["url"] = f"{FANSLY_ORIGIN}/post/{post_id}"
+        # A message's page needs its conversation id, which older rows don't have
+        elif table == "messages" and str((group_ids or {}).get(post_id) or "").isdigit():
+            meta["url"] = f"{FANSLY_ORIGIN}/messages/{group_ids[post_id]}/{post_id}"
     meta["hashtags"] = hashtags(raw)
+    # posts.mentions keeps Fansly's accountMentions list as sent, but no tagged
+    # post has been seen yet, so which field holds the username isn't known;
+    # until it is, mentions come from @name in the caption only
     meta["mentions"] = mentions(raw, username)
     return meta
 
 
-def describe_fansly(entry, texts, username):
+def describe_fansly(entry, texts, username, group_ids=None):
     """A Fansly file's fields, from its earliest post with text; the code is the media ID."""
     posts = sorted(entry["posts"])
     posted, post_id = posts[0]
@@ -269,12 +293,12 @@ def describe_fansly(entry, texts, username):
         if texts.get(pid, (None, None))[1]:
             posted, post_id = when, pid
             break
-    meta = fansly_post_meta(post_id, posted, texts, username, bought_only(entry, post_id))
+    meta = fansly_post_meta(post_id, posted, texts, username, bought_only(entry, post_id), group_ids)
     meta["code"] = entry["media_ids"].get(post_id)
     return meta
 
 
-def fansly_galleries(entry, texts, username):
+def fansly_galleries(entry, texts, username, group_ids=None):
     """One gallery per Fansly post or message holding this file, keyed by its ID.
 
     Purchases aren't posts (their "post ID" is the item's own ID), so they get none.
@@ -284,7 +308,7 @@ def fansly_galleries(entry, texts, username):
         table = texts.get(post_id, (None, None))[0]
         if table not in ("posts", "messages") or post_id in out or bought_only(entry, post_id):
             continue
-        meta = fansly_post_meta(post_id, posted, texts, username)
+        meta = fansly_post_meta(post_id, posted, texts, username, group_ids=group_ids)
         meta["code"] = post_id
         meta["title"] = meta["title"] or f"Fansly {table[:-1]} {post_id}"
         meta["sources"] = sorted(entry["sources"].get(post_id, ()))

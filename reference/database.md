@@ -104,7 +104,7 @@ One row per direct message seen in the chat with the creator, from either side.
 | `user_id` | INTEGER |  |  | The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
 | `model_id` | INTEGER |  |  | The creator account id the chat belongs to. |
 | `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the message no longer exists. Default 0. |
-| `group_id` | VARCHAR |  |  | Fansly only: the conversation id (`groupId`), so a message's page is `https://fansly.com/messages/<group_id>/<post_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. |
+| `group_id` | VARCHAR |  |  | Fansly only: the conversation id (`groupId`), so a message's page is `https://fansly.com/messages/<group_id>/<post_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link. |
 
 ## `models`
 
@@ -166,7 +166,7 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 | `created_at` | TIMESTAMP |  |  | The post date (`postedAt`, else `createdAt`). |
 | `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
 | `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
-| `purchase_type` | VARCHAR |  |  | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches); a bought message saved by those two commands goes to `messages` as before, without a purchase type, for Fansly purchases, and for rows saved before the column existed. A later timeline or messages scan never clears it, and a purchase scan fills it in for a row that already exists. |
+| `purchase_type` | VARCHAR |  |  | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches); a bought message saved by those two commands goes to `messages` as before, without a purchase type, for Fansly purchases, and for rows saved before the column existed. A later timeline or messages scan never clears it, and a purchase scan fills it in for a row that already exists. `stash_sync` links a bought post's file to its page when this is `post`. |
 | `mentions` | VARCHAR |  |  | Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
 
 ## `products`
