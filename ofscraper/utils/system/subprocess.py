@@ -78,6 +78,27 @@ def run(
     return t
 
 
+KILL_WAIT = 2  # seconds to wait for a killed process to be reaped
+
+
+async def _kill(process):
+    """Kill the process and close its pipes without waiting on its children.
+
+    A program the process started in the background can hold its stdout and
+    stderr open. Python 3.11's process.wait() also waits for those pipes to
+    close, so close them ourselves and bound the wait (#389).
+    """
+    try:
+        process.kill()
+    except ProcessLookupError:
+        pass
+    process._transport.close()
+    try:
+        await asyncio.wait_for(process.wait(), timeout=KILL_WAIT)
+    except asyncio.TimeoutError:
+        pass
+
+
 async def async_run(
     *args,
     log=None,
@@ -165,19 +186,14 @@ async def async_run(
             await stdin_task
 
     except asyncio.TimeoutError:
-        process.kill()
-        await process.wait()
+        await _kill(process)
         raise TimeoutError(
             f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed."
         )
     except BaseException:
         # Cancelled (or failed) while the script runs: don't leave it running.
         if process.returncode is None:
-            try:
-                process.kill()
-            except ProcessLookupError:
-                pass
-            await process.wait()
+            await _kill(process)
         raise
     finally:
         # Leave nothing running: cancel unfinished tasks and wait for them.

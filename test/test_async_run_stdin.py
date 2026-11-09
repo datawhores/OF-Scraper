@@ -1,7 +1,10 @@
 """async_run keeps its stdin/stdout/stderr tasks and leaves none running (#381)."""
 
 import asyncio
+import os
+import signal
 import sys
+import time
 
 import pytest
 
@@ -178,3 +181,83 @@ def test_normal_run_unchanged(spawned):
     assert result.returncode == 0
     assert result.stdout.strip() == "ok"
     assert spawned[0].returncode == 0
+
+
+# A script that starts a background program, which inherits the script's
+# stdout/stderr and so keeps those pipes open after the script is killed (#389).
+BACKGROUND_SLEEP = 20
+PROMPT = 8  # well under BACKGROUND_SLEEP
+
+
+@pytest.fixture
+def background_script(tmp_path):
+    pid_file = tmp_path / "background.pid"
+    script = (
+        "import subprocess, sys, time\n"
+        "child = subprocess.Popen([sys.executable, '-c', "
+        f"'import time; time.sleep({BACKGROUND_SLEEP})'])\n"
+        f"open({str(pid_file)!r}, 'w').write(str(child.pid))\n"
+        "time.sleep(60)\n"
+    )
+    yield [sys.executable, "-c", script], pid_file
+    # Don't leave the background program running after the test.
+    if pid_file.exists():
+        try:
+            os.kill(int(pid_file.read_text()), signal.SIGTERM)
+        except OSError:
+            pass
+
+
+async def _wait_for_file(path):
+    for _ in range(200):
+        if path.exists() and path.read_text():
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError("background program did not start")
+
+
+def test_timeout_does_not_wait_for_background_program(background_script):
+    cmd, pid_file = background_script
+
+    async def main():
+        start = time.monotonic()
+        with pytest.raises(TimeoutError, match="forcefully killed"):
+            await async_run(cmd, level=0, timeout=3)
+        elapsed = time.monotonic() - start
+        assert pid_file.exists()
+        return elapsed, _pending_tasks()
+
+    elapsed, pending = asyncio.run(main())
+    assert elapsed < PROMPT
+    assert pending == []
+
+
+def test_cancel_does_not_wait_for_background_program(background_script):
+    cmd, pid_file = background_script
+
+    async def main():
+        task = asyncio.create_task(async_run(cmd, level=0, timeout=60))
+        await _wait_for_file(pid_file)
+        start = time.monotonic()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        return time.monotonic() - start, _pending_tasks()
+
+    elapsed, pending = asyncio.run(main())
+    assert elapsed < PROMPT
+    assert pending == []
+
+
+def test_normal_run_captures_full_output():
+    script = (
+        "import sys\n"
+        "sys.stdout.write('o' * 1_000_000)\n"
+        "sys.stderr.write('e' * 500_000)\n"
+    )
+    result = asyncio.run(
+        async_run([sys.executable, "-c", script], level=0, timeout=60)
+    )
+    assert result.returncode == 0
+    assert result.stdout == b"o" * 1_000_000
+    assert result.stderr == b"e" * 500_000
