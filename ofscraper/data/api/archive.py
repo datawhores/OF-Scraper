@@ -277,10 +277,16 @@ async def scrape_archived_posts(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                if not is_last_chunk and len(required_ids) == 0:
+                # Boundary condition: this page reaches past the "before" date limit.
+                # Keep its in-range posts before stopping.
+                if max_ts > before:
+                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
                     break
 
-                if max_ts > before:
+                # This chunk has found all of its cached posts. Keep the page
+                # that contained them; the next chunk only starts after its tail.
+                if not is_last_chunk and len(required_ids) == 0:
+                    yield batch
                     break
 
                 current_timestamp = max_ts

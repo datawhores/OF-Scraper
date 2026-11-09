@@ -359,17 +359,22 @@ async def scrape_timeline_posts(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                # 4. Sentinel: Early Exit for Gap-Filling Chunks
+                # 4. Sentinel: Natural Upper Boundary Exit.
+                # Keep this page's in-range posts before stopping.
+                if max_ts > before:
+                    log.debug("Passed the user's '--before' upper boundary. Exiting.")
+                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
+                    break
+
+                # 5. Sentinel: Early Exit for Gap-Filling Chunks.
+                # Keep the page that completed the chunk; the next chunk only
+                # starts after its tail.
                 if not is_last_chunk and len(required_ids) == 0:
                     log.debug(
                         "All required gap IDs found or resolved as ghosts. Exiting early."
                     )
-                    has_more = False
-
-                # 5. Sentinel: Natural Upper Boundary Exit
-                if max_ts > before:
-                    log.debug("Passed the user's '--before' upper boundary. Exiting.")
-                    has_more = False
+                    yield batch
+                    break
 
                 if has_more:
                     url = ep_next.format(model_id, max_ts)
