@@ -30,6 +30,7 @@ from ofscraper.db.operations_.messages import (
     add_column_messages_ID,
     rebuild_messages_table,
     add_column_message_is_deleted,
+    add_column_message_group_id,
 )
 from ofscraper.db.operations_.others import (
     add_column_other_ID,
@@ -45,6 +46,8 @@ from ofscraper.db.operations_.posts import (
     add_column_post_stream,
     rebuild_posts_table,
     add_column_post_is_deleted,
+    add_column_post_purchase_type,
+    add_column_post_mentions,
 )
 from ofscraper.db.operations_.profile import rebuild_profiles_table
 from ofscraper.db.operations_.stories import (
@@ -190,6 +193,27 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         )
         await add_flag_schema(
             "messages_is_deleted", model_id=model_id, username=username, db_path=db_path
+        )
+    if "posts_purchase_type" in missing:
+        await add_column_post_purchase_type(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "posts_purchase_type", model_id=model_id, username=username, db_path=db_path
+        )
+    if "posts_mentions" in missing:
+        await add_column_post_mentions(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "posts_mentions", model_id=model_id, username=username, db_path=db_path
+        )
+    if "messages_group_id" in missing:
+        await add_column_message_group_id(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "messages_group_id", model_id=model_id, username=username, db_path=db_path
         )
 
 

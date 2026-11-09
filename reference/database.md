@@ -84,7 +84,7 @@ One row per direct message seen in the chat with the creator, from either side.
 
 **Written by:** `make_messages_table_changes` (`ofscraper/db/operations_/messages.py`) runs when the Messages area is scraped (`process_messages` in `ofscraper/data/posts/post.py`). Manual/url mode and the check command also run it.
 
-- **New and existing rows:** new message ids are inserted. Existing rows are updated (and `is_deleted` reset to 0) only under the `metadata` command.
+- **New and existing rows:** new message ids are inserted. Existing rows are updated (and `is_deleted` reset to 0) only under the `metadata` command. On every scan, an existing row whose `group_id` is still `NULL` gets the value the scan found; the metadata update doesn't change it.
 - **Deleted messages:** the messages scanner (`ofscraper/data/api/messages.py`) sets `is_deleted=1` for messages it expected but the API skipped past.
 - **Migration and merge:** migration rebuilds the table once, in one transaction, and keeps every column including `is_deleted`. The Merge Databases menu copies rows in, `is_deleted` included.
 - **Deletes:** the app never deletes rows.
@@ -104,6 +104,7 @@ One row per direct message seen in the chat with the creator, from either side.
 | `user_id` | INTEGER |  |  | The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
 | `model_id` | INTEGER |  |  | The creator account id the chat belongs to. |
 | `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the message no longer exists. Default 0. |
+| `group_id` | VARCHAR |  |  | Fansly only: the conversation id (`groupId`), so a message's page is `https://fansly.com/messages/<group_id>/<post_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. |
 
 ## `models`
 
@@ -143,7 +144,7 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 
 **Written by:** `make_post_table_changes` (`ofscraper/db/operations_/posts.py`) runs on every scrape from `ofscraper/data/posts/post.py`. It covers the timeline, pinned, archived, streams and paid areas, and the posts inside labels via `make_label_table_changes`. Manual/url mode and the check command reach it through `make_changes_to_content_tables`.
 
-- **New and existing rows:** new post ids are inserted. Existing rows are updated (and `is_deleted` reset to 0) only when a metadata mode is set, that is, under the `metadata` command.
+- **New and existing rows:** new post ids are inserted. Existing rows are updated (and `is_deleted` reset to 0) only when a metadata mode is set, that is, under the `metadata` command. On every scan, an existing row whose `purchase_type` or `mentions` is still `NULL` gets the value the scan found; a scan without one leaves the stored value alone. The metadata update also replaces `mentions` with the scan's list when it has one, and never changes `purchase_type`.
 - **Deleted posts:** `mark_post_as_deleted` sets `is_deleted=1` for posts that the timeline, archived and streams scanners (`ofscraper/data/api/`) expected from the database but the API skipped past.
 - **Migration and merge:** migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
 - **Deletes:** the app never deletes rows.
@@ -165,6 +166,8 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 | `created_at` | TIMESTAMP |  |  | The post date (`postedAt`, else `createdAt`). |
 | `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
 | `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
+| `purchase_type` | VARCHAR |  |  | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches); a bought message saved by those two commands goes to `messages` as before, without a purchase type, for Fansly purchases, and for rows saved before the column existed. A later timeline or messages scan never clears it, and a purchase scan fills it in for a row that already exists. |
+| `mentions` | VARCHAR |  |  | Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
 
 ## `products`
 
@@ -228,6 +231,9 @@ Flag names:
 - `posts_is_deleted`: `posts.is_deleted` column added.
 - `messages_model_id`: `messages.model_id` column added.
 - `messages_is_deleted`: `messages.is_deleted` column added.
+- `posts_purchase_type`: `posts.purchase_type` column added.
+- `posts_mentions`: `posts.mentions` column added.
+- `messages_group_id`: `messages.group_id` column added.
 - `stories_model_id`: `stories.model_id` column added.
 - `labels_model_id`: `labels.model_id` column added.
 - `products_model_id`: `products.model_id` column added.

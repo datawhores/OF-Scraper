@@ -579,7 +579,7 @@ async def message_check_retriver(forced=False):
                     set_check(paid, model_id, paid_.API)
 
                 paid_posts_array = list(
-                    map(lambda x: posts_.Post(x, model_id, user_name), paid)
+                    map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
                 )
 
                 final_post_array = paid_posts_array + message_posts_array
@@ -643,7 +643,9 @@ async def purchase_check_retriver(forced=False):
                 log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
                 paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                 set_check(paid, model_id, paid_.API)
-            posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
+            posts_array = list(
+                map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
+            )
             yield user_name, model_id, posts_array
 
 

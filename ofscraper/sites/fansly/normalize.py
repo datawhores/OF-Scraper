@@ -288,6 +288,9 @@ def _item_dict(item, lookup, response_type):
     }
     if item.get("expiresAt"):
         out["expiresAt"] = iso(item["expiresAt"])
+    # posts list the accounts they tag; kept as sent so the database can save them
+    if isinstance(item.get("accountMentions"), list):
+        out["accountMentions"] = item["accountMentions"]
     return out
 
 

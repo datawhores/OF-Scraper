@@ -43,21 +43,32 @@ CREATE TABLE IF NOT EXISTS posts (
 	created_at TIMESTAMP, 
     model_id INTEGER, 
     is_deleted BOOLEAN DEFAULT 0, -- NEW COLUMN
-	PRIMARY KEY (id), 
+    purchase_type VARCHAR,
+    mentions VARCHAR,
+	PRIMARY KEY (id),
 	UNIQUE (post_id,model_id)
 )
 """
 postInsert = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id)
-VALUES (?,?,?,?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,purchase_type,mentions)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 postInsertTransition = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted)
-VALUES (?,?,?,?,?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted,purchase_type,mentions)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
+# mentions is only replaced by a list: an item without one keeps what's stored.
+# purchase_type isn't updated here: postFillMissing sets it once, and a
+# timeline scan of a bought post must not clear it
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0,
+mentions = COALESCE(?, mentions)
 WHERE post_id = ? and model_id=(?);"""
+
+# fills the newer columns of rows saved before they existed, on every scan
+postFillMissing = """UPDATE posts
+SET purchase_type = COALESCE(purchase_type, ?), mentions = COALESCE(mentions, ?)
+WHERE post_id = ? AND model_id = (?) AND (purchase_type IS NULL OR mentions IS NULL);"""
 
 postIgnoreGhost = """
 UPDATE posts
@@ -99,7 +110,15 @@ SELECT post_id, text, price, paid, archived, created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'is_deleted')
             THEN is_deleted
             ELSE 0
-       END AS is_deleted
+       END AS is_deleted,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'purchase_type')
+            THEN purchase_type
+            ELSE NULL
+       END AS purchase_type,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'mentions')
+            THEN mentions
+            ELSE NULL
+       END AS mentions
        FROM posts;
 """
 
@@ -128,6 +147,8 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
                     data.opened,
                     data.date,
                     model_id,
+                    data.purchase_type,
+                    data.db_mentions,
                 ),
                 posts,
             )
@@ -150,7 +171,12 @@ def posts_transition_rows(inputData: list) -> list:
         "model_id",
         "is_deleted",
     )
-    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+    # optional columns: a row read before they existed has no value
+    optional_keys = ("purchase_type", "mentions")
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get(key) for key in optional_keys])
+        for data in inputData
+    ]
 
 
 @wrapper.operation_wrapper_async
@@ -184,6 +210,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
                     data.opened,
                     data.date,
                     model_id,
+                    data.db_mentions,
                     data.id,
                     model_id,
                 ],
@@ -191,6 +218,22 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
             )
         )
         cur.executemany(postUpdate, updateData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def fill_posts_missing_fields(
+    posts: list, model_id=None, username=None, conn=None, **kwargs
+):
+    fillData = [
+        [data.purchase_type, data.db_mentions, data.id, model_id]
+        for data in posts
+        if data.purchase_type is not None or data.db_mentions is not None
+    ]
+    if not fillData:
+        return
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(postFillMissing, fillData)
         conn.commit()
 
 
@@ -346,6 +389,36 @@ def add_column_post_is_deleted(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def add_column_post_purchase_type(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'purchase_type') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN purchase_type VARCHAR;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_post_mentions(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'mentions') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN mentions VARCHAR;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
 def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(archivedPostInfo, [model_id])
@@ -403,6 +476,8 @@ async def make_post_table_changes(all_posts, model_id=None, username=None, **kwa
     if settings.get_settings().metadata and len(curr_posts) > 0:
         curr_posts = convert.converthelper(curr_posts)
         await update_posts_table(curr_posts, model_id=model_id, username=username)
+    if len(curr_posts) > 0:
+        await fill_posts_missing_fields(curr_posts, model_id=model_id, username=username)
 
 
 async def get_oldest_archived_date(model_id=None, username=None, **kwargs):

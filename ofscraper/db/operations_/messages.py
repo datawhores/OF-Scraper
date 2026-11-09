@@ -41,21 +41,27 @@ created_at TIMESTAMP,
 user_id INTEGER,
 model_id INTEGER,
 is_deleted BOOLEAN DEFAULT 0,
+group_id VARCHAR,
 PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
 messagesInsert = """INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
-created_at,user_id,model_id)
-            VALUES (?, ?,?,?,?,?,?,?);"""
+created_at,user_id,model_id,group_id)
+            VALUES (?, ?,?,?,?,?,?,?,?);"""
 messagesInsertTransition = """INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
-created_at,user_id,model_id,is_deleted)
-            VALUES (?, ?,?,?,?,?,?,?,?);"""
+created_at,user_id,model_id,is_deleted,group_id)
+            VALUES (?, ?,?,?,?,?,?,?,?,?);"""
 messagesUpdate = """UPDATE messages
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=0
 WHERE post_id = ? and model_id=(?);"""
+# fills group_id of rows saved before it existed, on every scan; a message
+# never changes conversation, so the metadata update leaves it alone
+messagesFillMissing = """UPDATE messages
+SET group_id = ?
+WHERE post_id = ? AND model_id = (?) AND group_id IS NULL;"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
@@ -68,7 +74,11 @@ SELECT post_id, text, price, paid, archived, created_at, user_id,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'is_deleted')
             THEN is_deleted
             ELSE 0
-       END AS is_deleted
+       END AS is_deleted,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'group_id')
+            THEN group_id
+            ELSE NULL
+       END AS group_id
 FROM messages;
 """
 messagesData = """
@@ -118,6 +128,20 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def fill_messages_missing_fields(messages: list, model_id=None, conn=None, **kwargs):
+    fillData = [
+        (message.group_id, message.id, model_id)
+        for message in messages
+        if message.group_id is not None
+    ]
+    if not fillData:
+        return
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(messagesFillMissing, fillData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = list(
@@ -131,6 +155,7 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.date,
                     message.fromuser,
                     model_id,
+                    message.group_id,
                 ),
                 messages,
             )
@@ -151,7 +176,11 @@ def messages_transition_rows(inputData: list) -> list:
         "model_id",
         "is_deleted",
     ]
-    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+    # optional column: a row read before it existed has no value
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get("group_id")])
+        for data in inputData
+    ]
 
 
 @wrapper.operation_wrapper_async
@@ -254,6 +283,10 @@ async def make_messages_table_changes(
     if settings.get_settings().metadata and len(curr_posts) > 0:
         curr_posts = convert.converthelper(curr_posts)
         await update_messages_table(curr_posts, model_id=model_id, username=username)
+    if len(curr_posts) > 0:
+        await fill_messages_missing_fields(
+            curr_posts, model_id=model_id, username=username
+        )
 
 
 async def get_oldest_message_date(model_id=None, username=None, **kwargs):
@@ -302,6 +335,21 @@ def add_column_message_is_deleted(conn=None, **kwargs):
                 cur.execute(
                     "ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_message_group_id(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'group_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE messages ADD COLUMN group_id VARCHAR;")
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()
