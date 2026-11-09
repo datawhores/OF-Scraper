@@ -74,7 +74,7 @@ def _run_post_check(monkeypatch, timeline_strict, timeline=TIMELINE, archived=AR
         asyncio.set_event_loop(None)
         loop.close()
     assert len(results) == 1
-    user_name, model_id, posts = results[0]
+    user_name, model_id, posts, _ = results[0]
     assert (user_name, model_id) == ("a_creator", 12345)
     return posts
 

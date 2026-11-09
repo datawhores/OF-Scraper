@@ -248,7 +248,7 @@ async def data_refill(model_id):
         retriver = partial(post_check_retriver, forced=True)
     else:
         return
-    async for username, model_id, final_post_array in retriver():
+    async for username, model_id, final_post_array, *_ in retriver():
         await process_post_media(username, model_id, final_post_array)
 
 
@@ -294,7 +294,12 @@ def post_checker():
 
 @run
 async def post_check_runner():
-    async for user_name, model_id, final_post_array in post_check_retriver():
+    async for (
+        user_name,
+        model_id,
+        final_post_array,
+        skip_update,
+    ) in post_check_retriver():
         with progress_utils.setup_live("api"):
             progress_updater.activity.update_task(
                 description=check_str.format(
@@ -304,7 +309,10 @@ async def post_check_runner():
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
@@ -331,7 +339,7 @@ async def post_check_retriver(forced=False):
             archived_data = []
             streams_data = []
             # areas read from the API in this run, not from the check cache
-            fresh_data = []
+            fresh = set()
 
             if name_match:
                 user_name = name_match.group(1)
@@ -363,7 +371,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(timeline_data, model_id, timeline.API)
-                        fresh_data += timeline_data
+                        fresh.add("Timeline")
 
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
@@ -378,7 +386,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(archived_data, model_id, archived.API)
-                        fresh_data += archived_data
+                        fresh.add("Archived")
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
@@ -389,7 +397,7 @@ async def post_check_retriver(forced=False):
                         log.info(f"[{user_name}] Fetching fresh data for {pinned.API}")
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
                         set_check(pinned_data, model_id, pinned.API)
-                        fresh_data += pinned_data
+                        fresh.add("Pinned")
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
@@ -411,7 +419,7 @@ async def post_check_retriver(forced=False):
                             for post in label.get("posts", [])
                         ]
                         set_check(labels_data, model_id, labels.API)
-                        fresh_data += labels_data
+                        fresh.add("Labels")
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
@@ -424,19 +432,36 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(streams_data, model_id, streams.API)
-                        fresh_data += streams_data
+                        fresh.add("Streams")
 
+                in_order = [
+                    ("Pinned", pinned_data),
+                    ("Archived", archived_data),
+                    ("Labels", labels_data),
+                    ("Timeline", timeline_data),
+                    ("Streams", streams_data),
+                ]
+                fresh_ids = {
+                    post["id"] for name, data in in_order if name in fresh for post in data
+                }
                 await operations.make_post_table_changes(
-                    all_posts=pinned_data
-                    + archived_data
-                    + labels_data
-                    + timeline_data
-                    + streams_data,
+                    # the last copy of a post is saved, so cached areas go
+                    # first and a fresh copy always wins over a cached one
+                    all_posts=[
+                        post
+                        for _, data in sorted(in_order, key=lambda area: area[0] in fresh)
+                        for post in data
+                    ],
                     model_id=model_id,
                     username=user_name,
                     # only posts the API returned now lose the deleted flag; a
                     # cached list can hold posts deleted since it was saved
-                    from_api={post["id"] for post in fresh_data},
+                    from_api=fresh_ids,
+                    # nor does --metadata write a cached copy over the row
+                    skip_update={
+                        post["id"] for _, data in in_order for post in data
+                    }
+                    - fresh_ids,
                 )
                 def to_posts(data):
                     return list(
@@ -449,7 +474,9 @@ async def post_check_retriver(forced=False):
                     + to_posts(streams_data)
                 )
 
-                yield user_name, model_id, all_post_data
+                # saved above with fresh copies winning; this list can end on a
+                # cached copy, so the runner's save doesn't update the rows
+                yield user_name, model_id, all_post_data, True
         # individual links
         for ele in list(
             filter(
@@ -469,7 +496,7 @@ async def post_check_retriver(forced=False):
                 log.info(f"Getting individual link for {user_name}")
                 resp = get_individual_timeline_post(post_id)
                 data = posts_.Post(resp, model_id, user_name)
-                yield user_name, model_id, [data]
+                yield user_name, model_id, [data], None
 
 
 def reset_data():
@@ -494,7 +521,12 @@ def message_checker():
 
 @run
 async def message_checker_runner():
-    async for user_name, model_id, final_post_array in message_check_retriver():
+    async for (
+        user_name,
+        model_id,
+        final_post_array,
+        skip_update,
+    ) in message_check_retriver():
         with progress_utils.setup_live("api"):
             progress_updater.activity.update_task(
                 description=check_str.format(username=user_name, activity="Messages"),
@@ -502,7 +534,10 @@ async def message_checker_runner():
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
@@ -563,11 +598,14 @@ async def message_check_retriver(forced=False):
                     model_id=model_id,
                     username=user_name,
                     from_api=messages_fresh,
+                    # nor does --metadata write a cached copy over the row
+                    skip_update=not messages_fresh,
                 )
 
                 # --- Paid Content ---
                 oldpaid = read_check(model_id, paid_.API)
                 paid = None
+                paid_fresh = False
 
                 if oldpaid is not None and not forced:
                     log.info(f"[{user_name}] Using cache for {paid_.API}")
@@ -576,13 +614,19 @@ async def message_check_retriver(forced=False):
                     log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
                     paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                     set_check(paid, model_id, paid_.API)
+                    paid_fresh = True
 
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
                 )
 
                 final_post_array = paid_posts_array + message_posts_array
-                yield user_name, model_id, final_post_array
+                # the messages are saved above, and a cached copy comes last in
+                # this list; purchases are saved by the runner
+                skip_update = {post.id for post in message_posts_array}
+                if not paid_fresh:
+                    skip_update |= {post.id for post in paid_posts_array}
+                yield user_name, model_id, final_post_array, skip_update
 
 
 def purchase_checker():
@@ -592,7 +636,12 @@ def purchase_checker():
 
 @run
 async def purchase_checker_runner():
-    async for user_name, model_id, final_post_array in purchase_check_retriver():
+    async for (
+        user_name,
+        model_id,
+        final_post_array,
+        skip_update,
+    ) in purchase_check_retriver():
         with progress_utils.setup_live("api"):
             progress_updater.activity.update_task(
                 description=check_str.format(
@@ -602,7 +651,10 @@ async def purchase_checker_runner():
             )
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
@@ -625,10 +677,14 @@ async def purchase_check_retriver(forced=False):
 
             oldpaid = read_check(model_id, paid_.API)
             paid = None
+            # a cached list can be days older than the rows: --metadata
+            # leaves them alone
+            skip_update = None
 
             if oldpaid is not None and not forced:
                 log.info(f"[{user_name}] Using cache for {paid_.API}")
                 paid = oldpaid
+                skip_update = True
             elif user_name == of_env.getattr("DELETED_MODEL_PLACEHOLDER"):
                 log.info(f"[{user_name}] Processing deleted model cache/data")
                 paid_user_dict = await paid_.get_all_paid_posts()
@@ -645,7 +701,7 @@ async def purchase_check_retriver(forced=False):
             posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
             )
-            yield user_name, model_id, posts_array
+            yield user_name, model_id, posts_array, skip_update
 
 
 def stories_checker():

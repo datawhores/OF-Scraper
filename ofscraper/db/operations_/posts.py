@@ -473,7 +473,12 @@ async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwar
 
 
 async def make_post_table_changes(
-    all_posts, model_id=None, username=None, from_api=False, **kwargs
+    all_posts,
+    model_id=None,
+    username=None,
+    from_api=False,
+    skip_update=None,
+    **kwargs,
 ):
     all_posts_data = list(
         map(
@@ -504,9 +509,13 @@ async def make_post_table_changes(
             model_id=model_id,
             username=username,
         )
-    if settings.get_settings().metadata and len(curr_posts) > 0:
-        curr_posts = convert.converthelper(curr_posts)
-        await update_posts_table(curr_posts, model_id=model_id, username=username)
+    # skip_update is True, or the ids of posts whose rows --metadata leaves
+    # alone: the check commands' cached lists can be days older than the rows
+    if settings.get_settings().metadata and skip_update is not True:
+        updated = [ele for ele in curr_posts if ele.id not in (skip_update or ())]
+        if len(updated) > 0:
+            updated = convert.converthelper(updated)
+            await update_posts_table(updated, model_id=model_id, username=username)
     if len(curr_posts) > 0:
         await fill_posts_missing_fields(curr_posts, model_id=model_id, username=username)
 

@@ -53,7 +53,11 @@ log = logging.getLogger("shared")
 
 
 @run
-async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
+async def make_changes_to_content_tables(
+    posts, model_id, username, skip_update=None, **kwargs
+):
+    # skip_update: True, or the ids of posts and messages whose rows
+    # --metadata leaves alone
     await make_post_table_changes(
         filter(
             lambda x: x.responsetype.capitalize()
@@ -62,11 +66,13 @@ async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
         ),
         model_id=model_id,
         username=username,
+        skip_update=skip_update,
     )
     await make_messages_table_changes(
         filter(lambda x: x.responsetype.capitalize() == "Messages", posts),
         model_id=model_id,
         username=username,
+        skip_update=skip_update,
     )
     await make_stories_table_changes(
         filter(

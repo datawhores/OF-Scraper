@@ -185,7 +185,7 @@ def _run_post_check(monkeypatch):
         asyncio.set_event_loop(None)
         loop.close()
     assert len(results) == 1
-    user_name, model_id, posts = results[0]
+    user_name, model_id, posts, _ = results[0]
     assert (user_name, model_id) == ("a_creator", 12345)
     return calls, posts
 
@@ -246,7 +246,7 @@ def _run_msg_check(monkeypatch, inputs):
     monkeypatch.setattr(check.log, "warning", lambda msg, *a, **k: warned.append(msg))
 
     async def collect():
-        return [(name, model_id) async for name, model_id, _ in check.message_check_retriver()]
+        return [(name, model_id) async for name, model_id, *_ in check.message_check_retriver()]
 
     return asyncio.run(collect()), looked_up, warned
 

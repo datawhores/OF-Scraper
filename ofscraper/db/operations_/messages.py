@@ -277,7 +277,12 @@ async def rebuild_messages_table(model_id=None, username=None, db_path=None, **k
 
 
 async def make_messages_table_changes(
-    all_messages, model_id=None, username=None, from_api=False, **kwargs
+    all_messages,
+    model_id=None,
+    username=None,
+    from_api=False,
+    skip_update=None,
+    **kwargs,
 ):
     all_messages = list(all_messages)
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
@@ -292,9 +297,13 @@ async def make_messages_table_changes(
         await unmark_message_as_deleted(
             [ele.id for ele in curr_posts], model_id=model_id, username=username
         )
-    if settings.get_settings().metadata and len(curr_posts) > 0:
-        curr_posts = convert.converthelper(curr_posts)
-        await update_messages_table(curr_posts, model_id=model_id, username=username)
+    # skip_update is True, or the ids of messages whose rows --metadata leaves
+    # alone: the check commands' cached lists can be days older than the rows
+    if settings.get_settings().metadata and skip_update is not True:
+        updated = [ele for ele in curr_posts if ele.id not in (skip_update or ())]
+        if len(updated) > 0:
+            updated = convert.converthelper(updated)
+            await update_messages_table(updated, model_id=model_id, username=username)
     if len(curr_posts) > 0:
         await fill_messages_missing_fields(
             curr_posts, model_id=model_id, username=username
