@@ -721,3 +721,111 @@ def test_caller_creationflags_are_kept(monkeypatch):
     monkeypatch.setattr(process_tree.sys, "platform", "win32")
     kwargs = process_tree.ProcessTree().popen_kwargs({"creationflags": 0x10})
     assert kwargs["creationflags"] == 0x10 | process_tree._CREATE_SUSPENDED
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="on Windows the script is suspended until it is tracked",
+)
+@pytest.mark.parametrize("cancels", [1, 2])
+def test_cancel_while_starting_stops_script_and_its_programs(
+    tmp_path, monkeypatch, cancels
+):
+    """A cancel while the script is starting, after it has started a
+    program, still leaves neither running: the start is finished so the
+    program can be tracked, then both are stopped."""
+    pid_file = tmp_path / "pids"
+    script = (
+        "import os, subprocess, sys, time\n"
+        "c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])\n"
+        f"open({str(pid_file)!r}, 'w').write(f'{{os.getpid()}} {{c.pid}}')\n"
+        "time.sleep(30)\n"
+    )
+    real_exec = asyncio.create_subprocess_exec
+
+    async def slow_start(*args, **kwargs):
+        # Stretch the moment between the script starting and async_run
+        # getting it back, so the cancel lands there.
+        process = await real_exec(*args, **kwargs)
+        await asyncio.sleep(1)
+        return process
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", slow_start)
+
+    async def main():
+        task = asyncio.create_task(
+            async_run([sys.executable, "-c", script], level=0, timeout=60)
+        )
+        await _wait_for_file(pid_file)
+        while len(pid_file.read_text().split()) < 2:
+            await asyncio.sleep(0.01)
+        for _ in range(cancels):
+            task.cancel()
+            await asyncio.sleep(0.05)
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        return _pending_tasks()
+
+    try:
+        assert asyncio.run(main()) == []
+        for pid in pid_file.read_text().split():
+            _assert_gone(int(pid))
+    finally:
+        if pid_file.exists():
+            for pid in pid_file.read_text().split():
+                try:
+                    os.kill(int(pid), signal.SIGKILL)
+                except OSError:
+                    pass
+
+
+def test_start_failure_is_raised(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        asyncio.run(async_run([str(tmp_path / "missing")], level=0))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_no_signal_to_a_group_that_already_exited(monkeypatch):
+    """If the programs exit between the check and the stop, the group isn't
+    signalled again: its id could in theory belong to a new group by then."""
+    child = subprocess.Popen([sys.executable, "-c", "pass"], start_new_session=True)
+    child.wait()  # the group is gone
+    sent = []
+    real_signal = process_tree._signal_group
+
+    def record(pgid, sig):
+        sent.append(sig)
+        return real_signal(pgid, sig)
+
+    monkeypatch.setattr(process_tree, "_signal_group", record)
+    with process_tree.ProcessTree() as tree:
+        tree.attach(child.pid)
+        asyncio.run(tree.stop())
+    assert sent == [signal.SIGTERM]
+
+
+def test_cancel_during_failed_start_logs_nothing(monkeypatch):
+    """A cancel during a start that then fails raises CancelledError, and
+    the start's error isn't reported to the event loop as unhandled."""
+
+    async def failing_start(*args, **kwargs):
+        await asyncio.sleep(0.5)
+        raise FileNotFoundError("missing")
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", failing_start)
+    reported = []
+
+    async def main():
+        asyncio.get_running_loop().set_exception_handler(
+            lambda loop, context: reported.append(context)
+        )
+        task = asyncio.create_task(async_run(["missing"], level=0))
+        await asyncio.sleep(0.1)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        await asyncio.sleep(0.1)  # let any report arrive
+        return _pending_tasks()
+
+    assert asyncio.run(main()) == []
+    assert reported == []

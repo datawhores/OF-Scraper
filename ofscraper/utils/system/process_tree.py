@@ -97,7 +97,11 @@ class ProcessTree:
         if self._job is not None:
             _windows_job_kill(self._job)
             return
-        if self._pgid is None or not _signal_group(self._pgid, signal.SIGTERM):
+        if self._pgid is None:
+            return
+        if not _signal_group(self._pgid, signal.SIGTERM):
+            # The programs exited since running() looked: nothing to kill.
+            self._settled = True
             return
         try:
             loop = asyncio.get_running_loop()

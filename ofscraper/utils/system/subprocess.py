@@ -121,6 +121,31 @@ def _read_output(*files):
     return contents
 
 
+async def _start(cmd_args, kwargs):
+    """Start the command; return (process, cancelled).
+
+    A cancel that arrives while the command is starting doesn't interrupt
+    the start: asyncio would kill the command, but not a program it had
+    already started, and that program couldn't be tracked. The start is
+    finished instead, and cancelled is True so the caller can stop the
+    command and everything it started, then raise CancelledError.
+    """
+    starting = asyncio.ensure_future(
+        asyncio.create_subprocess_exec(*cmd_args, **kwargs)
+    )
+    cancelled = False
+    # asyncio.wait doesn't cancel what it waits for (no shield needed, which
+    # on 3.15 logs a failed start as an unhandled error after a cancel).
+    while not starting.done():
+        try:
+            await asyncio.wait([starting])
+        except asyncio.CancelledError:
+            cancelled = True  # raised once the command is stopped
+    if cancelled and (starting.cancelled() or starting.exception() is not None):
+        raise asyncio.CancelledError
+    return starting.result(), cancelled
+
+
 async def async_run(
     *args,
     log=None,
@@ -173,7 +198,7 @@ async def async_run(
             kwargs["stdout"] = files.enter_context(tempfile.TemporaryFile())
             kwargs["stderr"] = files.enter_context(tempfile.TemporaryFile())
 
-        process = await asyncio.create_subprocess_exec(*cmd_args, **kwargs)
+        process, cancelled = await _start(cmd_args, kwargs)
         try:
             untracked = tree.attach(process.pid)
         except BaseException:
@@ -186,6 +211,8 @@ async def async_run(
             )
         exited = False
         try:
+            if cancelled:
+                raise asyncio.CancelledError
             async with asyncio.timeout(timeout):
                 await process.wait()
             exited = True
