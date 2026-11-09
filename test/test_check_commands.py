@@ -212,3 +212,82 @@ def test_msg_check_help_describes_messages():
     assert message.message_check.name == "msg_check"
     assert "messages" in message.message_check.short_help
     assert "post_check" not in message.message_check.help
+
+
+def _run_msg_check(monkeypatch, inputs):
+    # drives the real retriever; profile lookups and the cache are faked
+    @contextlib.asynccontextmanager
+    async def fake_session(**kwargs):
+        yield object()
+
+    async def nothing(*args, **kwargs):
+        return None
+
+    ids = {"a_creator": "111", "user123": "222"}
+    names = {v: k for k, v in ids.items()}
+    looked_up = []
+    warned = []
+
+    def scrape_profile(model_id):
+        looked_up.append(("id", model_id))
+        return {"username": names.get(model_id, "creator_" + model_id)}
+
+    def get_id(username):
+        looked_up.append(("name", username))
+        return ids.get(username, "999")
+
+    monkeypatch.setattr(check.settings, "get_settings", lambda: SimpleNamespace(force=False, file=None, url=inputs))
+    monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(session=SimpleNamespace(aget_ofsession=fake_session)))
+    monkeypatch.setattr(check.profile, "scrape_profile", scrape_profile)
+    monkeypatch.setattr(check.profile, "get_id", get_id)
+    monkeypatch.setattr(check, "read_check", lambda *a: [])
+    monkeypatch.setattr(check.operations, "table_init_create", nothing)
+    monkeypatch.setattr(check.operations, "make_messages_table_changes", nothing)
+    monkeypatch.setattr(check.log, "warning", lambda msg, *a, **k: warned.append(msg))
+
+    async def collect():
+        return [(name, model_id) async for name, model_id, _ in check.message_check_retriver()]
+
+    return asyncio.run(collect()), looked_up, warned
+
+
+def test_msg_check_skips_unmatched_input_and_checks_the_rest(monkeypatch):
+    checked, _, warned = _run_msg_check(monkeypatch, ["onlyfans.com/my/chats", "a_creator"])
+    assert checked == [("a_creator", "111")]
+    assert len(warned) == 1 and "onlyfans.com/my/chats" in warned[0]
+
+
+def test_msg_check_skips_blank_line(monkeypatch):
+    checked, looked_up, _ = _run_msg_check(monkeypatch, ["", "a_creator"])
+    assert checked == [("a_creator", "111")]
+    assert looked_up == [("name", "a_creator")]
+
+
+def test_msg_check_reads_username_with_digits_as_username(monkeypatch):
+    checked, looked_up, _ = _run_msg_check(monkeypatch, ["user123"])
+    assert looked_up == [("name", "user123")]
+    assert checked == [("user123", "222")]
+
+
+def test_msg_check_reads_chat_link_and_bare_id_as_model_id(monkeypatch):
+    checked, looked_up, _ = _run_msg_check(
+        monkeypatch, ["https://onlyfans.com/my/chats/chat/111/", "222"]
+    )
+    assert looked_up == [("id", "111"), ("id", "222")]
+    assert checked == [("a_creator", "111"), ("user123", "222")]
+
+
+def test_msg_check_reads_message_link_without_chat_part_as_model_id(monkeypatch):
+    # the app's own message link format, my/chats/<id>/?id=<message id>
+    checked, looked_up, warned = _run_msg_check(
+        monkeypatch,
+        ["https://onlyfans.com/my/chats/111/?id=999", "https://onlyfans.com/my/chats/a_creator/?id=999"],
+    )
+    assert looked_up == [("id", "111")]
+    assert checked == [("a_creator", "111")]
+    assert len(warned) == 1 and "my/chats/a_creator" in warned[0]
+
+
+def test_msg_check_unmatched_input_does_not_recheck_previous_creator(monkeypatch):
+    checked, _, _ = _run_msg_check(monkeypatch, ["a_creator", "onlyfans.com/my/chats"])
+    assert checked == [("a_creator", "111")]

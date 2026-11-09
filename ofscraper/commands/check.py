@@ -503,10 +503,14 @@ async def message_check_retriver(forced=False):
         forced = True
     async with manager.Manager.session.aget_ofsession() as c:
         for item in links:
+            if not item:
+                continue
             num_match = re.search(
-                f"({of_env.getattr('NUMBER_REGEX')}+)", item
+                f"chats/(?:chat/)?({of_env.getattr('NUMBER_REGEX')}+)", item
             ) or re.search(f"^({of_env.getattr('NUMBER_REGEX')}+)$", item)
             name_match = re.search(f"^{of_env.getattr('USERNAME_REGEX')}+$", item)
+            model_id = None
+            user_name = None
 
             if num_match:
                 model_id = num_match.group(1)
@@ -514,6 +518,11 @@ async def message_check_retriver(forced=False):
             elif name_match:
                 user_name = name_match.group(0)
                 model_id = profile.get_id(user_name)
+            else:
+                log.warning(
+                    f"Skipping {item}: not a username, model id or chat link"
+                )
+                continue
 
             if model_id and user_name:
                 log.info(f"Getting Messages/Paid content for {user_name}")

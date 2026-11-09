@@ -56,7 +56,7 @@ Accepts 50 options. Its `--help` summary: Manually download media by providing a
 
 ### `msg_check`
 
-`ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, or any text containing a number, which is taken as the model id (for example a chat URL). It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
+`ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, a model id, or a chat URL (`onlyfans.com/my/chats/chat/<id>` or `onlyfans.com/my/chats/<id>/?id=<message id>`), whose number is taken as the model id. Any other item is skipped with a warning. It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
 Accepts 50 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
