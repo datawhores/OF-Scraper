@@ -444,6 +444,9 @@ class MainDownloadManager(DownloadManager):
 
         check = None
         if await self._check_forced_skip(ele, total) == 0:
+            # skipped on the saved size, without a request: the part left by
+            # the earlier run is removed, as a DRM video's are (#348)
+            pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
             total = 0
             common_logs.path_to_file_logger(placeholderObj, ele, common_globals.log)
             check = True

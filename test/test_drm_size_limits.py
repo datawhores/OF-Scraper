@@ -94,11 +94,13 @@ def _run(
     cache_error=None,
     cache_error_times=1,
     cache_error_always=False,
+    file_part=None,
 ):
     """Download one item through the consumer: a DRM video, or with
     drm=False a non-DRM file. With chunked the server sends each whole file
     chunked, without its size (no Content-Length). video_part is the start of
-    the video track left by an earlier run, with its saved size. script
+    the video track left by an earlier run, with its saved size; file_part
+    the same for a non-DRM file. script
     stands in for skip_download_script: it gets each file's size and
     returns True to skip it. cache_error is raised by the first
     cache_error_times saves of a file's or track's headers after the size
@@ -178,6 +180,13 @@ def _run(
     if video_part:
         (tmp_path / "tempvideo_7_5.part").write_bytes(VIDEO[:video_part])
         cache["tempvideo_7_5"] = {"content-total": len(VIDEO), "validator": None}
+    if file_part:
+        (tmp_path / "file_7_5.part").write_bytes(FILE[:file_part])
+        cache["file"] = {
+            "content-total": len(FILE),
+            "content-type": "video/mp4",
+            "validator": None,
+        }
 
     async def _get_data(self, ele, item):
         return cache.get(item["name"])
@@ -668,5 +677,80 @@ def test_size_skipped_video_reaches_the_script_as_skipped(tmp_path, monkeypatch)
     assert counts == SKIPPED
     assert media["download_status"] == "skipped"
     assert media["type"] == "video"
+
+
+# ------------------------------------------------- resumed non-DRM file (#348)
+
+FILE_LIMITS = pytest.mark.parametrize(
+    "limit",
+    [{"size_min": len(FILE) + 1}, {"size_max": len(FILE) - 1}],
+    ids=["under min", "over max"],
+)
+
+
+@FILE_LIMITS
+def test_resumed_file_skipped_by_a_size_limit_removes_its_part(
+    tmp_path, monkeypatch, limit
+):
+    # the saved size decides it: no request, counted as skipped, and the
+    # part left by the earlier run is removed, as a DRM video's are
+    counts, merged, seen, parts, media = _run_with_payload(
+        tmp_path, monkeypatch, drm=False, file_part=1_000, **limit
+    )
+    assert counts == SKIPPED
+    assert merged == {}
+    assert seen == []
+    assert parts == []
+    assert media["download_status"] == "skipped"
+
+
+def test_script_skip_of_a_resumed_file_removes_its_part(tmp_path, monkeypatch):
+    # skip_download_script is asked about the saved size, without a request.
+    # The part goes too; the file is still saved as done without a file and
+    # counted as a video, as for a script skip of a file that wasn't resumed
+    calls = []
+
+    def script(total):
+        calls.append(total)
+        return True
+
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, drm=False, file_part=1_000, script=script
+    )
+    assert calls == [len(FILE)]
+    assert seen == []
+    assert parts == []
+    assert counts == DOWNLOADED
+    assert merged == {"marked": True}
+
+
+@pytest.mark.parametrize(
+    "limit",
+    [{}, {"size_min": len(FILE)}, {"size_max": len(FILE)}],
+    ids=["no limit", "at min", "at max"],
+)
+def test_resumed_file_inside_the_limits_is_resumed(tmp_path, monkeypatch, limit):
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, drm=False, file_part=1_000, **limit
+    )
+    assert counts == DOWNLOADED
+    assert seen == ["file.mp4 bytes=1000-"]
+    assert merged == {"file": FILE}
+    # the merge is stubbed out, so the finished part stays here
+    assert parts == ["file_7_5.part"]
+
+
+@LIMITS
+def test_resumed_video_skipped_by_a_size_limit_is_unchanged(
+    tmp_path, monkeypatch, limit
+):
+    # a DRM video with a video track part from an earlier run, as before
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, video_part=2_000, **limit
+    )
+    assert counts == SKIPPED
+    assert merged == {}
+    assert seen == ["audio.mp4"]
+    assert parts == []
 
 
