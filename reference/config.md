@@ -344,7 +344,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default from:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default)
 - **Also reads:** `advanced_options`, `scripts`
 - **CLI override:** `--naming-script`
-- An executable that runs for each download to choose its path. It receives JSON about the media, post and current formats on stdin. Non-empty stdout is used as the full file path, in place of `dir_format` and `file_format`. The `-ns`/`--naming-script` option overrides it.
+- An executable that runs for each download to choose its path. It receives JSON about the media, post and current formats on stdin. Non-empty stdout is used as the full file path, in place of `dir_format` and `file_format`. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-ns`/`--naming-script` option overrides it.
 
 ### `script_options.after_download_script`
 
@@ -352,7 +352,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default from:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default)
 - **Also reads:** `advanced_options`, `scripts`
 - **CLI override:** `--after-download-script`
-- An executable that runs after each file is downloaded (text files included). It receives the final file path on stdin. The `-adl`/`--after-download-script` option overrides it.
+- An executable that runs after each file is downloaded (text files included). It receives the final file path on stdin. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-adl`/`--after-download-script` option overrides it.
 
 ### `script_options.skip_download_script`
 
@@ -360,7 +360,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default from:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default)
 - **Also reads:** `advanced_options`, `scripts`
 - **CLI override:** `--skip-download-script`
-- An executable that runs before each download. It receives JSON about the media, post and total size on stdin. It's asked once per file (per track for a DRM video) per run. If it prints `false` or nothing, the file is skipped in this run only: it's counted as skipped, not saved as downloaded, and the script is asked about it again on the next run. If it prints `skip-permanent` (any case), the file is skipped for good: counted as skipped and saved as downloaded with no file, so it isn't asked about again. To undo that, run with `--retry-permanent-skips`, or un-mark the files with `ofscraper db --unmark-permanent-skips`. Any other output, or a script that fails, lets the download proceed. Until #351, `false` and nothing also saved the file as downloaded; to keep that, print `skip-permanent`. The `-sdl`/`--skip-download-script` option overrides it.
+- An executable that runs before each download. It receives JSON about the media, post and total size on stdin. It's asked once per file (per track for a DRM video) per run. If it prints `false` or nothing, the file is skipped in this run only: it's counted as skipped, not saved as downloaded, and the script is asked about it again on the next run. If it prints `skip-permanent` (any case), the file is skipped for good: counted as skipped and saved as downloaded with no file, so it isn't asked about again. To undo that, run with `--retry-permanent-skips`, or un-mark the files with `ofscraper db --unmark-permanent-skips`. Any other output, or a script that fails, lets the download proceed. Until #351, `false` and nothing also saved the file as downloaded; to keep that, print `skip-permanent`. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-sdl`/`--skip-download-script` option overrides it.
 
 ## `responsetype`
 
