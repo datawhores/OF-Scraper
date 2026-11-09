@@ -107,6 +107,23 @@ Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
 - `--undo`: Preview restoring flags from a recovery undo file
 - `--path-root`: Original working directory for relative recorded paths
 
+### `stash_sync` (separate entry point)
+
+`python -m ofscraper.commands.stash_sync PATH... [--apply] [--scan] [--path-map LOCAL=STASH]`. It uses argparse and is not part of the CLI (see `STASH.md`). It reads creators' `user_data.db` files offline (a folder such as `<profile>/.data` is searched for them) and, over Stash's GraphQL API, fills empty fields of each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. A Fansly database (`schema_flags` `site=fansly`) gets the `Fansly` studio and links, @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. It never overwrites a value already in Stash, and without `--apply` it only prints a JSON report. It doesn't contact OnlyFans or Fansly.
+
+Run `python -m ofscraper.commands.stash_sync PATH... [OPTIONS]`.
+
+- `PATHS`: user_data.db files, or folders to search for them (e.g. <profile>/.data)
+- `--apply`: write to Stash; without it, only report
+- `--url`: Stash GraphQL URL (default http://localhost:9999/graphql, or $STASH_URL)
+- `--api-key`: Stash API key, if Stash has a password (default $STASH_API_KEY)
+- `--studio`: studio to set for every site (default OnlyFans, or Fansly for Fansly databases)
+- `--tag-prefix`: prefix for the source tags for every site, e.g. 'OnlyFans Paid' (default 'OnlyFans ', or 'Fansly ' for Fansly databases)
+- `--no-tags`: don't add tags (source tags, and for Fansly the preview tag and hashtags)
+- `--organized`: also mark items as organized
+- `--path-map`: rewrite a path prefix when Stash sees the files elsewhere (e.g. in Docker); repeatable
+- `--scan`: with --apply, have Stash scan the download folders first and wait for it
+
 ### Scripts in `scripts/`
 
 - `scripts/commit_version.sh`: CI helper. Works out the commit-based version string, hashes and push type from git for the build workflows.

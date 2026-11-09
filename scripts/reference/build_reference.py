@@ -407,10 +407,10 @@ def render_cli(notes):
         out.append(notes.COMMANDS[key].strip() + "\n\n")
         count = len(cmd.params)
         out.append(f"Accepts {count} options. Its `--help` summary: {cell(clean_help(cmd.help)) or 'none'}.\n\n")
-    for key in ("recover_collisions",):
+    for key, usage in SEPARATE_COMMANDS.items():
         out.append(f"### `{key}` (separate entry point)\n\n")
         out.append(notes.COMMANDS[key].strip() + "\n\n")
-        out.append(render_argparse_recover())
+        out.append(render_argparse(key, usage))
     out.append("### Scripts in `scripts/`\n\n")
     for key in sorted(k for k in notes.COMMANDS if k.startswith("scripts/")):
         out.append(f"- `{key}`: {notes.COMMANDS[key].strip()}\n")
@@ -468,11 +468,18 @@ def render_cli(notes):
     return "".join(out)
 
 
-def render_argparse_recover():
+# argparse tools under ofscraper/commands that aren't part of the CLI: module -> usage
+SEPARATE_COMMANDS = {
+    "recover_collisions": "DATABASE [OPTIONS]",
+    "stash_sync": "PATH... [OPTIONS]",
+}
+
+
+def render_argparse(module, usage):
     import argparse
+    import importlib
 
-    import ofscraper.commands.recover_collisions as recover
-
+    command = importlib.import_module(f"ofscraper.commands.{module}")
     captured = {}
     original = argparse.ArgumentParser.parse_args
 
@@ -483,11 +490,11 @@ def render_argparse_recover():
     argparse.ArgumentParser.parse_args = capture
     try:
         with contextlib.suppress(SystemExit):
-            recover.main([])
+            command.main([])
     finally:
         argparse.ArgumentParser.parse_args = original
     parser = captured["parser"]
-    out = ["Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.\n\n"]
+    out = [f"Run `python -m ofscraper.commands.{module} {usage}`.\n\n"]
     for action in parser._actions:
         if isinstance(action, argparse._HelpAction):
             continue

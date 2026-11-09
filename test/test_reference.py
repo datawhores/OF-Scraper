@@ -98,7 +98,7 @@ def test_every_action_and_command_is_described(build, notes, environment):
     main_program = build.command_objects()[""]
     actions = next(p for p in main_program.params if p.name == "actions").type.choices
     assert sorted(actions) == sorted(notes.ACTIONS)
-    commands = {name or "(main)" for name in build.command_objects()} | {"recover_collisions"}
+    commands = {name or "(main)" for name in build.command_objects()} | set(build.SEPARATE_COMMANDS)
     assert commands <= set(notes.COMMANDS)
     scripts = {k for k in notes.COMMANDS if k.startswith("scripts/")}
     assert sorted(set(notes.COMMANDS) - commands - scripts) == []

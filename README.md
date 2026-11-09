@@ -184,6 +184,8 @@ Newer versions save the second one as `name_<media_id>` instead. To recover file
   docker kill --signal=SIGUSR1 <container>
   ```
 
+- **Organize downloads in Stash:** copy each download's creator, date, caption and source into [Stash](https://stashapp.cc). See [Stash](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/STASH.md).
+
 ## Reporting a problem
 
 Open an issue [in this repo](https://github.com/cloakedkeys/OF-Scraper-Community/issues), not upstream's.

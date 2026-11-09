@@ -88,6 +88,7 @@ Upstream's docs don't cover these:
   - Fansly databases carry a `site` row in `schema_flags`.
 - **`file_options.filename_collision`** (environment default `FILENAME_COLLISION_DEFAULT`): decides what happens when two media would get the same file name.
 - **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See `COLLISION_RECOVERY.md`.
+- **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See `STASH.md`.
 - **`scripts/creator_names.py`**: lists and records the usernames a creator account has had.
 - **`OF_READ_TIMEOUT`**: a default read timeout for requests.
 - **`LABELS_CONCURRENCY`**: a concurrency default for label scans.
