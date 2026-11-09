@@ -157,8 +157,11 @@ class tempFilePlaceholder(basePlaceholder):
 
 
 class databasePlaceholder(basePlaceholder):
-    def __init__(self) -> None:
+    def __init__(self, create=True) -> None:
+        """create=False works out the database path without making the
+        creator's folder, for a read-only read (#373)."""
         super().__init__()
+        self._create = create
 
     @basePlaceholder.wrapper
     def databasePathHelper(self, model_id, model_username):
@@ -180,7 +183,9 @@ class databasePlaceholder(basePlaceholder):
         data_path = pathlib.Path(formatStr, "user_data.db")
         data_path = pathlib.Path(os.path.normpath(data_path))
         self._metadata = data_path
-        self._metadata.parent.mkdir(parents=True, exist_ok=True)
+        # a read-only read makes no folder (#373)
+        if self._create:
+            self._metadata.parent.mkdir(parents=True, exist_ok=True)
         log.trace(f"final database path {data_path}")
         return pathlib.Path(data_path)
 

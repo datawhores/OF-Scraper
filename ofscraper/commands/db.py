@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 import time
 import datetime
 from collections import OrderedDict
@@ -24,6 +25,7 @@ from ofscraper.db.operations_.media import (
     get_permanent_skip_media_ids,
     unmark_permanent_skips,
 )
+from ofscraper.db.operations_.wrapper import DatabaseMissing
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
 import ofscraper.utils.of_env.of_env as of_env
@@ -95,30 +97,39 @@ class DBManager:
             )
         ):
             # All conditions are true, so proceed with your logic
-            self.media = await get_all_medias(model_id=model_id, username=username)
+            self.media = await get_all_medias(
+                model_id=model_id, username=username, read_only=True
+            )
         else:
+            # read_only: the db command doesn't change the database (#373)
             if "Timeline" in args.download_area:
                 timeline = await get_timeline_media(
-                    model_id=model_id, username=username
+                    model_id=model_id, username=username, read_only=True
                 )
             if "Pinned" in args.download_area:
-                pinned = await get_pinned_media(model_id=model_id, username=username)
+                pinned = await get_pinned_media(
+                    model_id=model_id, username=username, read_only=True
+                )
             if "Archived" in args.download_area:
                 archived = await get_archived_media(
-                    model_id=model_id, username=username
+                    model_id=model_id, username=username, read_only=True
                 )
             if "Messages" in args.download_area:
                 messages = await get_messages_media(
-                    model_id=model_id, username=username
+                    model_id=model_id, username=username, read_only=True
                 )
             if "Streams" in args.download_area:
-                streams = await get_streams_media(model_id=model_id, username=username)
+                streams = await get_streams_media(
+                    model_id=model_id, username=username, read_only=True
+                )
             if "Highlights" in args.download_area:
                 highlights = await get_highlights_media(
-                    model_id=model_id, username=username
+                    model_id=model_id, username=username, read_only=True
                 )
             if "Stories" in args.download_area:
-                stories = await get_stories_media(model_id=model_id, username=username)
+                stories = await get_stories_media(
+                    model_id=model_id, username=username, read_only=True
+                )
             self.media = (
                 timeline + messages + archived + streams + pinned + stories + highlights
             )
@@ -231,7 +242,7 @@ class DBManager:
         # only the permanent skips are un-marked (#354)
         if unmarking():
             skipped = get_permanent_skip_media_ids(
-                model_id=self.model_id, username=self.username
+                model_id=self.model_id, username=self.username, read_only=True
             )
             medias = [media for media in medias if media["media_id"] in skipped]
         self.media = medias
@@ -402,7 +413,22 @@ def db():
     rows = []
     for model in manager.Manager.current_model_manager.all_subs:
         db_manager = DBManager(model.name, model.id)
-        db_manager.print_media()
+        try:
+            db_manager.print_media()
+        except DatabaseMissing:
+            # nothing scraped for this creator yet: not an error (#373)
+            logging.getLogger("shared").warning(
+                f"{model.name} has no database yet, skipping"
+            )
+            continue
+        except sqlite3.DatabaseError as error:
+            # one creator's broken database doesn't stop the others
+            logging.getLogger("shared").warning(
+                f"{model.name}: can't read the database at "
+                f"{getattr(error, 'database_path', None) or 'an unknown path'}"
+                f" ({error}), skipping"
+            )
+            continue
         rows.extend(db_manager.media)
     write_csv(rows)
 
