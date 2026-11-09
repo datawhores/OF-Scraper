@@ -13,6 +13,7 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model_sync,
 )
 import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.scripts.skip_download_script import retry_permanent_skips
 
 log = logging.getLogger("shared")
 
@@ -165,18 +166,29 @@ def previous_download_filter(medialist, username=None, model_id=None):
         log.info("forcing all media to be downloaded")
         return medialist
 
-    # Determine the pool of already downloaded media
+    # Determine the pool of already downloaded media. With
+    # --retry-permanent-skips, the script's permanent skips aren't in it, so
+    # they're offered to the script again (#354)
+    retry = retry_permanent_skips()
+    if retry:
+        log.info("offering permanently skipped media to the skip script again")
     if settings.get_settings().force_model_unique:
         log.info(f"Downloading unique media for model: {username}")
         media_ids = set(
-            get_media_ids_downloaded_model_sync(model_id=model_id, username=username)
+            get_media_ids_downloaded_model_sync(
+                model_id=model_id, username=username, without_permanent_skips=retry
+            )
         )
         log.debug(
             f"Number of unique media ids in database for {username}: {len(media_ids)}"
         )
     else:
         log.info("Downloading unique media across all models")
-        media_ids = set(get_media_ids_downloaded(model_id=model_id, username=username))
+        media_ids = set(
+            get_media_ids_downloaded(
+                model_id=model_id, username=username, without_permanent_skips=retry
+            )
+        )
         log.debug(
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )

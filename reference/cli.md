@@ -46,37 +46,37 @@ Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Th
 
 The run reads `auth.json` and `config.json` from the profile. It writes media under `save_location` and rows to each creator's `user_data.db`.
 
-Accepts 101 options. Its `--help` summary: OF-Scraper Options.
+Accepts 102 options. Its `--help` summary: OF-Scraper Options.
 
 ### `manual`
 
 `ofscraper manual -u URL...` or `-f FILE` (one is required). Downloads specific posts, given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids. A bare id is looked up on the timeline, then in that creator's purchases. It forces `force_all`, so existing files are downloaded again. It writes posts and media to the creator's `user_data.db` and media under `save_location`, then runs the after-download script.
 
-Accepts 50 options. Its `--help` summary: Manually download media by providing a list of urls or IDs.
+Accepts 51 options. Its `--help` summary: Manually download media by providing a list of urls or IDs.
 
 ### `msg_check`
 
 `ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, a model id, or a chat URL (`onlyfans.com/my/chats/chat/<id>` or `onlyfans.com/my/chats/<id>/?id=<message id>`), whose number is taken as the model id. Any other item is skipped with a warning. It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
-Accepts 50 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 51 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `story_check`
 
 `ofscraper story_check -u USERNAME...` (or `-f`). Fetches the creators' stories and highlights from the API, without the check cache. It writes them to `user_data.db` and opens the same downloadable media table.
 
-Accepts 48 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 49 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `paid_check`
 
 `ofscraper paid_check -u USERNAME_OR_ID...` (or `-f`). Fetches each creator's purchased content, writes it to `user_data.db` and opens the media table. The content comes from the check cache unless you pass `--force`. A deleted creator, named `DELETED_MODEL_PLACEHOLDER`, is read from all purchases.
 
-Accepts 50 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 51 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `post_check`
 
 `ofscraper post_check -u URL_OR_USERNAME...` or `-f FILE`. Takes `onlyfans.com/<username>` URLs or bare usernames. It fetches the areas in `--check-area` (default Timeline, Pinned, Archived and Streams; Labels is also available), writes them to `user_data.db` and opens the media table. The areas come from the check cache unless you pass `--force`. All check commands set `force_all` and `after=0`.
 
-Accepts 52 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 53 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
 
 ### `metadata`
 
@@ -92,9 +92,9 @@ Accepts 85 options. Its `--help` summary: Uses API to modify db files without th
 
 ### `db`
 
-`ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV.
+`ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. `--post-id` and `--media-id` take one id, or several separated by commas or spaces. An id is decimal digits, from any script. A value with no id in it, or with anything else (such as `²` or `-4`), is a usage error. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV. `--unmark-permanent-skips` narrows the rows to the permanent `skip_download_script` skips and sets them back to not downloaded after printing them.
 
-Accepts 60 options. Its `--help` summary: Print information from the database.
+Accepts 61 options. Its `--help` summary: Print information from the database.
 
 ### `recover_collisions` (separate entry point)
 
@@ -958,6 +958,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 - Runs a script to dynamically skip a download
 
+#### `--retry-permanent-skips`
+
+- **Dest:** `retry_permanent_skips` · **Type:** flag · **Default:** off
+- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
+- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
+- Ask the skip download script again about the files it skipped for good (skip-permanent) for the creators in this run
+- **Note:** The files `skip_download_script` skipped for good (`medias.skip_permanent = 1`) are no longer treated as downloaded for the run, so the creators' files in the run are offered to the script again. Areas are scanned in full unless `--after` is given, since those files can be in older posts. A file the script keeps downloads. `skip-permanent` keeps it skipped for good. A plain skip counts as skipped and sets it back to not downloaded, so the next run asks again. Without a script set, nothing skips them, so they download. Real downloads and other rows don't change.
+
 ### Advanced Program Options
 
 #### `--no-cache`
@@ -1097,6 +1105,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
 - export the table as a csv file
+
+#### `--unmark-permanent-skips`
+
+- **Dest:** `unmark_permanent_skips` · **Type:** flag · **Default:** off
+- **Commands:** `db`
+- **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
+- Un-mark the files the skip download script skipped for good (skip-permanent) among the selected rows, so the next run asks the script about them again. Filter with the creator, post id and media id options
+- **Note:** `ofscraper db` only. Of the rows the other options select (creator, `--post-id`, `--media-id` and the media filters), it keeps those `skip_download_script` skipped for good, prints them, and sets them back to not downloaded with `skip_permanent` cleared. The next normal run asks the script about them again. A media's download state is kept on all of its rows, so its rows in other posts change too. Other rows never change. Without it, `db` only reads.
 
 ### Table Filter Options
 

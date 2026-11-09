@@ -21,6 +21,8 @@ from ofscraper.db.operations_.media import (
     get_highlights_media,
     get_stories_media,
     get_all_medias,
+    get_permanent_skip_media_ids,
+    unmark_permanent_skips,
 )
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
@@ -29,6 +31,11 @@ import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.sites as sites
+
+
+def unmarking():
+    """True for `ofscraper db --unmark-permanent-skips` (#354)."""
+    return bool(getattr(settings.get_args(), "unmark_permanent_skips", False))
 
 
 def is_protected(media):
@@ -51,6 +58,9 @@ class DBManager:
         self.print_dictionary_table()
         if settings.get_settings().export:
             self.clean_dictionaries()
+        # the table shows the rows as they were, before un-marking
+        if unmarking():
+            self.unmark_permanent_skips()
 
     def get_wanted_media(self):
         self.get_all_media()
@@ -210,7 +220,29 @@ class DBManager:
             medias = [media for media in medias if media["post_id"] in args.post_id]
         if args.media_id:
             medias = [media for media in medias if media["media_id"] in args.media_id]
+        # only the permanent skips are un-marked (#354)
+        if unmarking():
+            skipped = get_permanent_skip_media_ids(
+                model_id=self.model_id, username=self.username
+            )
+            medias = [media for media in medias if media["media_id"] in skipped]
         self.media = medias
+
+    @run_async
+    async def unmark_permanent_skips(self):
+        """Un-mark the permanent skip_download_script skips among the selected
+        rows (#354), so the next run asks the script about them again."""
+        if not self.media:
+            return 0
+        changed = await unmark_permanent_skips(
+            [media["media_id"] for media in self.media],
+            model_id=self.model_id,
+            username=self.username,
+        )
+        self.log.info(
+            f"un-marked {changed} permanently skipped row(s) for {self.username}"
+        )
+        return changed
 
     def get_max_post(self):
         medias = self.media

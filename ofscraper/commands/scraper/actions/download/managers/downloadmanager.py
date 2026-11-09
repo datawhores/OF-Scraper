@@ -23,9 +23,13 @@ import ofscraper.utils.settings as settings
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 import ofscraper.utils.system.free as system
-from ofscraper.db.operations_.media import mark_media_as_downloaded
+from ofscraper.db.operations_.media import (
+    mark_media_as_downloaded,
+    unmark_permanent_skips,
+)
 from ofscraper.scripts.skip_download_script import (
     SKIP_PERMANENT,
+    retry_permanent_skips,
     skip_download_script,
 )
 from ofscraper.scripts.after_download_script import after_download_script
@@ -251,7 +255,19 @@ class DownloadManager:
         if key not in answers:
             answer = await skip_download_script(total, ele)
             answers[key] = answer if answer == SKIP_PERMANENT else bool(answer)
+            if answers[key] != SKIP_PERMANENT and retry_permanent_skips():
+                await self._unmark_permanent_skip(ele)
         return answers[key]
+
+    async def _unmark_permanent_skip(self, ele):
+        """With --retry-permanent-skips, a file the script skipped for good
+        that it now keeps, or skips for this run only, isn't a permanent
+        skip any more (#354): it's set back to not downloaded, so a skip, or
+        a download that fails, is asked about again on the next run. Only a
+        row marked as a permanent skip changes."""
+        await unmark_permanent_skips(
+            [ele.id], model_id=ele.model_id, username=ele.username
+        )
 
     def _skipped_by_script(self, ele):
         """How skip_download_script skipped the item in this run: None (it

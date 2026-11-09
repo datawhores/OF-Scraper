@@ -15,6 +15,12 @@ import ofscraper.utils.of_env.of_env as env
 SKIP_PERMANENT = "permanent"
 
 
+def retry_permanent_skips():
+    """True when --retry-permanent-skips is on: the run offers the files the
+    script skipped for good to it again (#354)."""
+    return bool(getattr(settings.get_settings(), "retry_permanent_skips", False))
+
+
 async def skip_download_script(total, ele): # Made async
     """False to download, True to skip in this run (the script printed
     `false` or nothing), SKIP_PERMANENT to skip for good (it printed

@@ -154,6 +154,14 @@ SELECT media_id FROM medias where downloaded=(1)
 allDLModelIDCheck = """
 SELECT media_id FROM medias where downloaded=(1) and model_id=(?)
 """
+# the same, leaving out permanent skip_download_script skips, which
+# --retry-permanent-skips offers to the script again (#354)
+allDLIDCheckNoPermanentSkips = """
+SELECT media_id FROM medias where downloaded=(1) and skip_permanent IS NOT 1
+"""
+allDLModelIDCheckNoPermanentSkips = """
+SELECT media_id FROM medias where downloaded=(1) and model_id=(?) and skip_permanent IS NOT 1
+"""
 allPostIDCheck = """
 SELECT media_id, post_id FROM medias
 """
@@ -245,6 +253,15 @@ LIMIT 1
 mediaHasFileOrPermanentSkip = mediaHasFile.replace(
     "OR hash IS NOT NULL)", "OR hash IS NOT NULL OR skip_permanent = 1)"
 )
+# un-marks a permanent skip_download_script skip (#354): NULL, as a skip for
+# one run leaves the row
+permanentSkipUnmark = """
+UPDATE medias SET downloaded = NULL, skip_permanent = NULL
+WHERE media_id = ? AND model_id IS ? AND skip_permanent = 1
+"""
+permanentSkipIDs = """
+SELECT DISTINCT media_id FROM medias WHERE model_id IS ? AND skip_permanent = 1
+"""
 # NULL, as a size skip leaves the row now
 sizeSkipUnmark = """
 UPDATE medias SET downloaded = NULL
@@ -383,9 +400,13 @@ def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 
 
 @wrapper.operation_wrapper
-def get_media_ids_downloaded(conn=None, **kwargs) -> list:
+def get_media_ids_downloaded(conn=None, without_permanent_skips=False, **kwargs) -> list:
+    """without_permanent_skips leaves out the permanent skip_download_script
+    skips (#354)."""
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allDLIDCheck)
+        cur.execute(
+            allDLIDCheckNoPermanentSkips if without_permanent_skips else allDLIDCheck
+        )
         return set([dict(row)["media_id"] for row in cur.fetchall()])
 
 
@@ -916,7 +937,62 @@ def repair_size_skipped_media(
 
 
 @wrapper.operation_wrapper
-def get_media_ids_downloaded_model_sync(model_id=None, conn=None, **kwargs) -> list:
+def get_media_ids_downloaded_model_sync(
+    model_id=None, conn=None, without_permanent_skips=False, **kwargs
+) -> list:
+    """without_permanent_skips leaves out the permanent skip_download_script
+    skips (#354)."""
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allDLModelIDCheck, [model_id])
+        cur.execute(
+            (
+                allDLModelIDCheckNoPermanentSkips
+                if without_permanent_skips
+                else allDLModelIDCheck
+            ),
+            [model_id],
+        )
         return set([dict(row)["media_id"] for row in cur.fetchall()])
+
+
+def _has_skip_permanent(cur):
+    return any(
+        col[1] == "skip_permanent"
+        for col in cur.execute("PRAGMA table_info('medias')").fetchall()
+    )
+
+
+@run
+@wrapper.operation_wrapper_async
+def get_permanent_skip_media_ids(model_id=None, conn=None, **kwargs) -> set:
+    """The media ids of the creator's permanent skip_download_script skips
+    (#354). Empty for a database from before the column."""
+    with contextlib.closing(conn.cursor()) as cur:
+        if not _has_skip_permanent(cur):
+            return set()
+        cur.execute(permanentSkipIDs, [model_id])
+        return {row["media_id"] for row in cur.fetchall()}
+
+
+@wrapper.operation_wrapper_async
+def unmark_permanent_skips(media_ids, model_id=None, conn=None, **kwargs) -> int:
+    """Un-mark the permanent skip_download_script skips of these media of the
+    creator (#354): they're set back to not downloaded, so the next run asks
+    the script about them again. Only rows with skip_permanent = 1 change;
+    a media's download state is kept on all of its rows (every post it's
+    in), as a download writes it. Returns the number of rows changed."""
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # the db command doesn't upgrade the database: one from before the
+            # column has no permanent skips
+            if not _has_skip_permanent(cur):
+                return 0
+            changed = 0
+            for media_id in sorted(set(media_ids), key=str):
+                changed += cur.execute(
+                    permanentSkipUnmark, [media_id, model_id]
+                ).rowcount
+            conn.commit()
+            return changed
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e

@@ -10,7 +10,7 @@ Each creator has one SQLite file, `user_data.db`. It sits in the folder given by
   - Before any pending schema migration, it also writes `backup/old_schema_{model_id}_{timestamp}_db_backup.db`. The name is `old_schema_db_backup.db` when there is no model id. It checks that the copy has the same size, and restores it if the migration raises. A database created in that run (a first scrape, or a new Merge Databases target) gets no `old_schema_*` backup.
 - **Merging:** the Merge Databases menu option (`ofscraper/db/merge.py`) creates and migrates a target `user_data.db`. It then copies in rows from every `user_data.db` found under a chosen folder, skipping rows whose key is already present. Each source must contain exactly one numeric model id in `profiles`.
 - **Fansly:** Fansly runs use separate files. When the `metadata` template has no site-specific field (`save_location`, `root`, `site_name`, `model_id` and their aliases), a `Fansly` subfolder is added before `user_data.db`, so Fansly rows don't land in the OnlyFans file. Fansly databases carry a `schema_flags` row `site=fansly`.
-- **Read-only users:** the `db` command and the hash-based duplicate checks only read the database.
+- **Read-only users:** the `db` command and the hash-based duplicate checks only read the database. The exception is `db --unmark-permanent-skips`, which un-marks the selected permanent skips.
 
 The tables and columns below are what a new database has after `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables` run. The create statements are in `ofscraper/db/operations_/`.
 
@@ -50,6 +50,7 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 - **After a download:** once a file is written, `mark_media_as_downloaded` applies the API fields again and sets `directory`, `filename`, `size`, `downloaded`, `hash` and `skip_permanent`. The callers are `main_download.py`, `alt_download.py` (for DRM), `fansly_stream_download.py` and `downloadmanager._force_download` (for zero-size or known-bad URLs). This update matches on `media_id` and `model_id` only, so every row for that media under the creator is updated.
 - **Metadata command:** `commands/metadata/manager.py` uses the same function to set download status and filename from files on disk, without downloading.
 - **Stray media:** `batch_set_media_downloaded` sets `unlocked=0`. Despite its name, it does not touch `downloaded`. `clean_stray_media` in `post.py` calls it on every scrape for not-yet-downloaded unlocked rows. These are rows whose post was just scraped but whose media id was not returned. The `metadata` command calls it for strays when `mark_stray` is on.
+- **Permanent skips undone:** `unmark_permanent_skips` sets `downloaded` and `skip_permanent` back to `NULL` on rows with `skip_permanent = 1` only. `ofscraper db --unmark-permanent-skips` calls it for the rows it selects, and a `--retry-permanent-skips` run calls it when the script no longer skips a file for good.
 - **Collision recovery:** the offline tool `python -m ofscraper.commands.recover_collisions` sets `downloaded=0` for rows that share one file path, and writes an undo file.
 - **Migration and merge:** migration rebuilds the table once (`rebuild_media_table`). It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
 - **Deletes:** nothing in the app deletes rows.
@@ -77,7 +78,7 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 | `unlocked` | BOOL |  |  | 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
 | `hash` | VARCHAR |  |  | The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
 | `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
-| `skip_permanent` | BOOL |  |  | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. |
+| `skip_permanent` | BOOL |  |  | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. `--retry-permanent-skips` and `ofscraper db --unmark-permanent-skips` undo it. |
 
 ## `messages`
 

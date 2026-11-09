@@ -68,6 +68,19 @@ def db_args(func):
             file_okay=True,
         ),
     )
+    @click.option(
+        "--unmark-permanent-skips",
+        "unmark_permanent_skips",
+        help="""
+        \b
+        Un-mark the files the skip download script skipped for good
+        (skip-permanent) among the selected rows, so the next run asks
+        the script about them again. Filter with the creator, post id and
+        media id options
+        """,
+        default=False,
+        is_flag=True,
+    )
     @program_options
     @logging_options
     @click.option_group(

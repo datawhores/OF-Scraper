@@ -74,7 +74,8 @@ def funct(prompt_):
     skip_download_script: A script that determines whether to skip or continue a download. 
     It executes before the download process begins. Printing "False" or nothing to stdout skips the file
     in this run only: the next run asks again. Printing "skip-permanent" skips it for good: it's saved as
-    downloaded with no file and not asked about again. Any other output lets the download proceed.
+    downloaded with no file and not asked about again (--retry-permanent-skips or
+    "ofscraper db --unmark-permanent-skips" undo that). Any other output lets the download proceed.
 
     naming_script: A script to dynamically generate the final filename and path for a media item before download
     after_download_script: A script that executes after each individual media download is complete
