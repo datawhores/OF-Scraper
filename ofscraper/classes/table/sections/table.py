@@ -8,41 +8,7 @@ log = logging.getLogger("shared")
 
 
 class DataTableExtended(DataTable):
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self._download_cart_toggle=False
-    #cart
-    def toggle_cart(self):
-        for key in self.ordered_row_keys:
-            if self.get_row_dict(key)["download_cart"] == "[downloaded]":
-                pass
-            elif self._download_cart_toggle:
-                self.update_cell_at_key(key, "download_cart", "[]")
-            elif self.get_row_dict(key)["download_cart"] == "[]":
-                self.update_cell_at_key(key, "download_cart", "[added]")
-        self._download_cart_toggle=not self._download_cart_toggle
-    def change_cart_cell(self, coord):
-        row,col=coord
-        table=self
-        if table.ordered_columns_keys[col]!="download_cart":
-            return
-        download_cart = table.get_row_dict_at(row)["download_cart"]
-        if download_cart == "Not Unlocked":
-            pass
-        elif download_cart == "[]":
-            table.update_cell_at_coord(coord, Text("[added]",style="bold light_goldenrod2"))
-
-        elif download_cart == "[added]":
-            table.update_cell_at_coord(coord, Text("[]",style="bold light_goldenrod2"))
-        elif download_cart == "[downloaded]" or "[failed]":
-            table.update_cell_at_coord(coord, Text("[added]",style="bold light_goldenrod2"))
-        self._download_cart_toggle=False
-    #cell modification and retrieval
-    def get_row_dict_at(self, row_index):
-        return {key:value for key,value in zip(self.ordered_columns_keys,map(lambda x:x.plain if isinstance(x,Text) else x,self.get_row_at(row_index)))}
-    def get_row_dict(self,row_key):
-        return {key:value for key,value in zip(self.ordered_columns_keys,map(lambda x:x.plain if isinstance(x,Text) else x,self.get_row(row_key)))}
-
+    #cell modification
     def update_cell_at_coord(self, coords, value):
         with mutex:
             value=value if isinstance(value,Text) else Text(value)
@@ -63,22 +29,10 @@ class DataTableExtended(DataTable):
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
-    def get_matching_rows(self,col_name,col_value):
-        order_row_keys=list(self.ordered_row_keys)
-        out={}
-        for key in order_row_keys:
-            row_dict=self.get_row_dict(key)
-            if row_dict[col_name] == col_value:
-                out[key]=row_dict
-        return out
-    
+
     @property
     def ordered_columns_keys(self):
         return list(map(lambda x:x.key.value,self.ordered_columns))
-    
-    @property
-    def ordered_row_keys(self):
-        return list(map(lambda x:x.key.value,self.ordered_rows))
 
         
 

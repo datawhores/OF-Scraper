@@ -51,7 +51,6 @@ class InputApp(App):
         self.table_data = kwargs.pop("table_data", [])
         self._sortkey = None
         self._reverse = False
-        self._download_cart_toggle = False
         self.run()
 
     def compose(self):
@@ -117,7 +116,12 @@ class InputApp(App):
                             break
 
                         current = row["download_cart"]
-                        if current in {"[]", "[downloaded]", "[failed]"}:
+                        if current in {
+                            "[]",
+                            "[downloaded]",
+                            "[failed]",
+                            "[skipped]",
+                        }:
                             row["download_cart"] = "[added]"
                         elif current == "[added]":
                             row["download_cart"] = "[]"
@@ -322,7 +326,12 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if row["download_cart"] in {"[]", "[downloaded]", "[failed]"}:
+            if row["download_cart"] in {
+                "[]",
+                "[downloaded]",
+                "[failed]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -351,7 +360,7 @@ class InputApp(App):
         eligible = [
             r
             for r in rows_to_evaluate
-            if r["download_cart"] in {"[]", "[downloaded]", "[failed]"}
+            if r["download_cart"] in {"[]", "[downloaded]", "[failed]", "[skipped]"}
             and r.get("download_type") != "unknown"
             and r.get("unlocked")
         ]
@@ -385,7 +394,11 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if not row["downloaded"] and row["download_cart"] in {"[]", "[failed]"}:
+            if not row["downloaded"] and row["download_cart"] in {
+                "[]",
+                "[failed]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -400,7 +413,11 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if not row["downloaded"] and row["download_cart"] in {"[]", "[failed]"}:
+            if not row["downloaded"] and row["download_cart"] in {
+                "[]",
+                "[failed]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -479,17 +496,29 @@ class InputApp(App):
 
     def update_cell_state(self, row_key, new_state, style="white"):
         """Allows background threads to safely update the table state and UI"""
+        downloaded = None
         for row in self.table_data:
             if str(row["index"]) == str(row_key):
                 row["download_cart"] = new_state
-                if new_state in {"[downloaded]", "[skipped]"}:
+                # A skip (size limits or a script) isn't recorded as
+                # downloaded in the database (#326), so it isn't here either
+                if new_state == "[downloaded]":
                     row["downloaded"] = True
+                downloaded = row["downloaded"]
                 break
 
         try:
             self.table.update_cell_at_key(
                 str(row_key), "download_cart", Text(new_state, style=style)
             )
+            # Redraw Downloaded too, styled as get_styled does, so it doesn't
+            # wait for the next page redraw (#358)
+            if downloaded is not None:
+                self.table.update_cell_at_key(
+                    str(row_key),
+                    "downloaded",
+                    Text(str(downloaded), style="bold plum1"),
+                )
         except Exception:
             pass
 
