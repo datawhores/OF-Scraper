@@ -263,7 +263,7 @@ async def get_after(model_id, username):
         youngest = await get_youngest_timeline_date(
             model_id=model_id, username=username
         )
-        return arrow.get(youngest or "2000").float_timestamp
+        return date_or_2000(youngest)
 
     # 3. Deduplicate (Keeping newest instance for anchor)
     unique_missing = {}
@@ -278,7 +278,13 @@ async def get_after(model_id, username):
     missing_items = sorted(
         list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
     )
-    return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
+    return date_or_2000(missing_items[0]["posted_at"])
+
+
+def date_or_2000(value):
+    # timeline media dates are Arrow objects, and an undated one (1970) is
+    # still truthy; fall back to 2000 like the other areas' float dates do
+    return arrow.get(value or 0).float_timestamp or arrow.get("2000").float_timestamp
 
 
 async def scrape_timeline_posts(
@@ -329,8 +335,22 @@ async def scrape_timeline_posts(
                     break
                 log.debug(f"Received batch with {len(batch)} items.")
 
-                batch_timestamps = [float(x["postedAtPrecise"]) for x in batch]
-                max_ts = max(batch_timestamps)
+                # an undated post is kept; it doesn't move the page cursor
+                batch_timestamps = []
+                for x in batch:
+                    if x.get("postedAtPrecise") in (None, ""):
+                        log.warning(f"{API}: post {x.get('id')} has no date")
+                        batch_timestamps.append(None)
+                    else:
+                        batch_timestamps.append(float(x["postedAtPrecise"]))
+                dated = [ts for ts in batch_timestamps if ts is not None]
+                if not dated:
+                    log.warning(
+                        f"{API}: no post on this page has a date, stopping the scan here"
+                    )
+                    yield batch
+                    break
+                max_ts = max(dated)
                 batch_ids = {x["id"] for x in batch}
 
                 # 1. Clear out ANY posts we successfully found in this batch
@@ -363,7 +383,11 @@ async def scrape_timeline_posts(
                 # Keep this page's in-range posts before stopping.
                 if max_ts > before:
                     log.debug("Passed the user's '--before' upper boundary. Exiting.")
-                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
+                    yield [
+                        x
+                        for x, ts in zip(batch, batch_timestamps)
+                        if ts is None or ts <= before
+                    ]
                     break
 
                 # 5. Sentinel: Early Exit for Gap-Filling Chunks.
@@ -382,6 +406,7 @@ async def scrape_timeline_posts(
                 yield batch
 
     except Exception as e:
+        log.warning(f"{API}: scan stopped early: {e!r}")
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
 

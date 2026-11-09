@@ -289,15 +289,20 @@ async def scrape_messages(
                     break
 
                 # Extract timestamps and IDs
-                batch_timestamps = [
-                    float(
-                        arrow.get(
-                            x.get("createdAt") or x.get("postedAt")
-                        ).float_timestamp
-                    )
-                    for x in batch
-                ]
-                min_ts = min(batch_timestamps)  # The oldest message in this batch
+                # an undated message is kept; it doesn't count as the oldest
+                batch_timestamps = []
+                for x in batch:
+                    date = x.get("createdAt") or x.get("postedAt")
+                    if not date:
+                        log.warning(f"{API}: message {x.get('id')} has no date")
+                        batch_timestamps.append(None)
+                    else:
+                        batch_timestamps.append(
+                            float(arrow.get(date).float_timestamp)
+                        )
+                dated = [ts for ts in batch_timestamps if ts is not None]
+                # The oldest message in this batch; None when none is dated
+                min_ts = min(dated) if dated else None
                 batch_ids = {x["id"] for x in batch}
 
                 # Clear found IDs
@@ -312,7 +317,9 @@ async def scrape_messages(
                 # we know the API skipped right over it.
                 ghosts_in_batch = []
                 for expected in expected_missing:
-                    if min_ts <= expected["timestamp"] <= start_anchor:
+                    if min_ts is not None and (
+                        min_ts <= expected["timestamp"] <= start_anchor
+                    ):
                         ghosts_in_batch.append(expected["post_id"])
 
                 if ghosts_in_batch:
@@ -327,8 +334,12 @@ async def scrape_messages(
 
                 # Boundary condition: this page reaches past the "after" date limit.
                 # Keep its in-range messages before stopping.
-                if min_ts < after:
-                    yield [x for x, ts in zip(batch, batch_timestamps) if ts >= after]
+                if min_ts is not None and min_ts < after:
+                    yield [
+                        x
+                        for x, ts in zip(batch, batch_timestamps)
+                        if ts is None or ts >= after
+                    ]
                     break
 
                 # This chunk has found all of its cached messages. Keep the page
@@ -346,6 +357,7 @@ async def scrape_messages(
                 yield batch
 
     except Exception as E:
+        log.warning(f"{API}: scan stopped early: {E!r}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:

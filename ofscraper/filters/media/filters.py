@@ -18,14 +18,22 @@ from ofscraper.scripts.skip_download_script import retry_permanent_skips
 log = logging.getLogger("shared")
 
 
+def undated_first(date):
+    # a sort key that puts undated items first, as the oldest, without
+    # comparing None to a date
+    return (date is not None, date or "")
+
+
 def sort_by_date(media):
-    return sorted(media, key=lambda x: x.date)
+    return sorted(media, key=lambda x: undated_first(x.date))
 
 
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
-    media = sorted(media, key=lambda item: (item.post.date, item.id, item.count))
+    media = sorted(
+        media, key=lambda item: (undated_first(item.post.date), item.id, item.count)
+    )
     if of_env.getattr("ALLOW_DUPE_MEDIA"):
         for item in media:
             if not output[(item.id, item.post_id)]:
@@ -158,7 +166,8 @@ def previous_download_filter(medialist, username=None, model_id=None):
 
     # sort to key order same
     medialist = sorted(
-        medialist, key=lambda item: (item.post.date, item.id, item.count)
+        medialist,
+        key=lambda item: (undated_first(item.post.date), item.id, item.count),
     )
 
     # Early Exit if forcing all

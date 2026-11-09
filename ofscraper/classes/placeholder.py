@@ -22,6 +22,18 @@ from ofscraper.scripts.naming_script import naming_script
 log = logging.getLogger("shared")
 
 
+def date_placeholder(date, fallback, name):
+    """The {date} value: the post's date, else ``fallback`` (the media's own
+    date), else 0 (1970), as the database readers store a missing date."""
+    if not date:
+        date = fallback or 0
+        log.warning(
+            f"{name} has no date, {'using its media date' if date else 'using 1970-01-01'}"
+            " for {date} in its file and folder names"
+        )
+    return arrow.get(date).format(data.get_date())
+
+
 def site_save_location():
     """Save location; Fansly runs use ``<save location>/Fansly``.
 
@@ -263,7 +275,11 @@ class Placeholders(basePlaceholder):
         self._variables.update({"media_type": ele.mediatype.capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
         self._variables.update(
-            {"date": arrow.get(ele.postdate).format(data.get_date())}
+            {
+                "date": date_placeholder(
+                    ele.postdate, ele.date, f"Post {ele.post_id} (media {ele.id})"
+                )
+            }
         )
         self._variables.update({"model_username": username})
         self._variables.update({"response_type": ele.modified_responsetype})
@@ -469,7 +485,9 @@ class Textholders(basePlaceholder):
         self._variables.update({"post_id": ele.id})
         self._variables.update({"first_letter": username[0].capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
-        self._variables.update({"date": arrow.get(ele.date).format(data.get_date())})
+        self._variables.update(
+            {"date": date_placeholder(ele.date, None, f"Post {ele.id}")}
+        )
         self._variables.update({"model_username": username})
         self._variables.update({"media_type": "Text"})
         self._variables.update({"response_type": ele.modified_responsetype})

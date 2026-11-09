@@ -37,6 +37,7 @@ from ofscraper.data.api.common.check import read_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
+from ofscraper.filters.media.filters import undated_first
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_ids_downloaded,
@@ -849,7 +850,8 @@ def download_type_helper(ele):
 
 
 def datehelper(date):
-    if date == "None":
+    # the table treats this label as "no date" when sorting
+    if date is None or date == "None":
         return "Probably Deleted"
     return date
 
@@ -875,13 +877,29 @@ async def row_gather(username, model_id):
 
     log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
 
+    # newest first; undated media go last, as the oldest
     try:
-        sorted_media = sorted(media, key=lambda x: x.date, reverse=True)
+        sorted_media = sorted(
+            media, key=lambda x: undated_first(x.date), reverse=True
+        )
     except Exception:
         # Fallback just in case the dates are poorly formatted
-        sorted_media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
+        try:
+            sorted_media = sorted(
+                media,
+                key=lambda x: undated_first(arrow.get(x.date) if x.date else None),
+                reverse=True,
+            )
+        except Exception as E:
+            log.warning(f"Check table: couldn't sort media by date, left unsorted: {E!r}")
+            sorted_media = list(media)
 
     for count, ele in enumerate(sorted_media):
+        # the date column shows the post's date
+        if not ele.postdate:
+            log.warning(
+                f"Check table: media {ele.id} in post {ele.post_id} has no date"
+            )
         is_unlocked = unlocked_helper(ele)
         is_downloaded = (ele.id, ele.post_id) in downloaded
         post_media_len = len(ele._post.post_media)

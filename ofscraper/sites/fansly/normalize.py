@@ -298,25 +298,31 @@ def posts(response, extra_account_media=()):
     """Post dicts for a timeline or ``post?ids=`` response."""
     response = response or {}
     lookup = Lookup(response, extra_account_media)
-    return [
-        _item_dict(post, lookup, "post")
-        for post in response.get("posts") or []
-        if post.get("id") is not None
-    ]
+    out = []
+    for post in response.get("posts") or []:
+        if post.get("id") is None:
+            continue
+        if not post.get("createdAt"):
+            log.warning(f"Fansly: post {post['id']} has no date")
+        out.append(_item_dict(post, lookup, "post"))
+    return out
 
 
 def messages(response, extra_account_media=()):
     """Message dicts for a ``message?groupId=`` response.
 
     Like OnlyFans messages they carry ``fromUser`` (the sender), and also
-    ``groupId``. A message without id, sender or date is skipped.
+    ``groupId``. A message without id or sender is skipped; one without a
+    date is kept, undated, and logged.
     """
     response = response or {}
     lookup = Lookup(response, extra_account_media)
     out = []
     for message in response.get("messages") or []:
-        if message.get("id") is None or not message.get("senderId") or not message.get("createdAt"):
+        if message.get("id") is None or not message.get("senderId"):
             continue
+        if not message.get("createdAt"):
+            log.warning(f"Fansly: message {message['id']} has no date")
         item = _item_dict(message, lookup, "message")
         item["fromUser"] = {"id": int(message["senderId"])}
         item["groupId"] = str(message.get("groupId")) if message.get("groupId") else None
