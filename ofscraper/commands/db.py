@@ -48,6 +48,7 @@ class DBManager:
         self.username = username
         self.model_id = model_id
         self.media = []
+        self.cleaned = False
         self.remove_keys = remove_keys or ["link", "linked"]
         self.log = logging.getLogger("shared")
 
@@ -122,6 +123,13 @@ class DBManager:
                 timeline + messages + archived + streams + pinned + stories + highlights
             )
             self.dedup_by_media_id()
+            # these getters fall back to the created date, and to 0 (1970)
+            # for a row with neither date: show that one as empty (#366)
+            for media in self.media:
+                if not media["created_at"] and arrow.get(
+                    media["posted_at"] or 0
+                ) == arrow.get(0):
+                    media["posted_at"] = None
 
     def filter_media(self):
         self.log.info(f"filtering media for {self.username}_{self.model_id}")
@@ -280,6 +288,11 @@ class DBManager:
         self.media = medias
 
     def clean_dictionaries(self):
+        # rows are cleaned once: their dates are already text after that,
+        # which a custom date format may not parse back
+        if self.cleaned:
+            return
+        self.cleaned = True
         dictionaries = self.media
         # Remove specified keys from dictionaries (if provided)
         if self.remove_keys:
@@ -295,15 +308,18 @@ class DBManager:
         # modify dictionary
         for i, dictionary in enumerate(dictionaries):
             dictionary = OrderedDict(dictionary)
-            dictionary["posted_at"] = arrow.get(dictionary["posted_at"]).format(
-                of_env.getattr("API_DATE_FORMAT")
-            )
-            dictionary["created_at"] = arrow.get(dictionary["created_at"]).format(
-                of_env.getattr("API_DATE_FORMAT")
-            )
+            # a row with no date shows an empty one
+            for key in ("posted_at", "created_at"):
+                if dictionary[key] not in (None, ""):
+                    dictionary[key] = arrow.get(dictionary[key]).format(
+                        of_env.getattr("API_DATE_FORMAT")
+                    )
+                else:
+                    dictionary[key] = ""
+            # size_human, then size, last: the order the export has always had
             size = dictionary.pop("size", None)
-            dictionary["size"] = size
             dictionary["size_human"] = format_size(size or 0)
+            dictionary["size"] = size
             dictionaries[i] = dictionary
 
     def print_dictionary_table(self):
@@ -319,10 +335,12 @@ class DBManager:
         if len(self.media) == 0:
             self.log.info("All media filter out")
             return
-        # Get the unique keys from all dictionaries
-        keys = set()
+        # every key any row has, in first-seen order, as in the CSV export
+        keys = []
         for dictionary in dictionaries:
-            keys.update(dictionary.keys())
+            for key in dictionary:
+                if key not in keys:
+                    keys.append(key)
 
         table = Table(title="Database Table", box=box.HEAVY_EDGE, show_lines=True)
 
