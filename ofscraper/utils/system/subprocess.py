@@ -140,14 +140,20 @@ async def async_run(
             except Exception:
                 pass
 
+    # Keep a reference to every task: asyncio holds tasks only weakly, so an
+    # unreferenced task can be garbage-collected before it finishes.
+    tasks = []
     try:
         # 1. Start feeding stdin in the background
+        stdin_task = None
         if input is not None:
-            asyncio.create_task(_feed_stdin(process.stdin, input))
+            stdin_task = asyncio.create_task(_feed_stdin(process.stdin, input))
+            tasks.append(stdin_task)
 
         # 2. Read stdout and stderr concurrently
         out_task = asyncio.create_task(_read_stream(process.stdout))
         err_task = asyncio.create_task(_read_stream(process.stderr))
+        tasks.extend([out_task, err_task])
 
         # 3. Wait for the process to exit, bounded by timeout
         await asyncio.wait_for(process.wait(), timeout=timeout)
@@ -155,6 +161,8 @@ async def async_run(
         # 4. Gather the exact output
         stdout = await out_task
         stderr = await err_task
+        if stdin_task is not None:
+            await stdin_task
 
     except asyncio.TimeoutError:
         process.kill()
@@ -162,6 +170,11 @@ async def async_run(
         raise TimeoutError(
             f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed."
         )
+    finally:
+        # Leave nothing running: cancel unfinished tasks and wait for them.
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     if text:
         if stdout is not None:
