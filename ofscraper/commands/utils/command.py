@@ -19,6 +19,13 @@ import ofscraper.utils.settings as settings
 log = logging.getLogger("shared")
 
 
+def log_user_failure(username, error, what=None):
+    """Say at normal output that a creator failed (#379); the full traceback
+    stays at traceback level."""
+    what = f" {what}" if what else ""
+    log.warning(f"[{username}]{what} failed: {type(error).__name__}: {error}")
+
+
 class CommandManager:
     def __init__(self):
         pass
@@ -33,14 +40,15 @@ class CommandManager:
                     # reset user activity to initiial
                     self._data_helper(ele)
                     postcollection = await post_media_process(ele, c=c)
+                    if postcollection is None:
+                        continue  # the scrape failed and has said so
                     self._avatar_helper(ele)
                     # show progress bars/set string in action function
                     await action_func(ele=ele, postcollection=postcollection)
                 except Exception as e:
+                    log_user_failure(ele.name, e)
                     log.traceback_(f"failed with exception: {e}")
                     log.traceback_(traceback.format_exc())
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
                 finally:
                     progress_updater.activity.update_user(advance=1, visible=True)
 
@@ -61,10 +69,9 @@ class CommandManager:
                     self._data_helper(ele)
                     all_data.update(await data_func(c, ele))
                 except Exception as e:
+                    log_user_failure(ele.name, e)
                     log.traceback_(f"failed with exception: {e}")
                     log.traceback_(traceback.format_exc())
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
                 finally:
                     c.reset_sleep()
                     progress_updater.activity.update_user(advance=1, visible=True)
@@ -84,16 +91,17 @@ class CommandManager:
 
         for _, val in userdata.items():
             try:
+                if val["postcollection"] is None:
+                    continue  # the scrape failed and has said so
                 self._avatar_helper(val["ele"])
                 await action_func(
                     postcollection=val["postcollection"],
                     ele=val["ele"],
                 )
             except Exception as e:
+                log_user_failure(val["ele"].name, e)
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
             finally:
                 progress_updater.activity.update_user(advance=1, visible=True)
         progress_updater.activity.update_overall(advance=1, visible=True)

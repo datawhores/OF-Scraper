@@ -247,11 +247,14 @@ def test_daemon_keeps_going_after_an_ordinary_error(monkeypatch):
     monkeypatch.setattr(
         scraper,
         "log",
-        SimpleNamespace(info=lambda *a, **k: None, traceback_=logged.append),
+        SimpleNamespace(
+            info=lambda *a, **k: None, warning=logged.append, traceback_=logged.append
+        ),
     )
     with pytest.raises(KeyboardInterrupt):
         scraper.daemon_process()
     assert calls == [1, 1]
+    assert "Daemon pass failed: RuntimeError: a bad pass" in logged
 
 
 # --- every other prompt ------------------------------------------------------

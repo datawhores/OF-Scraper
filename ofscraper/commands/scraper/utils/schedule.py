@@ -43,6 +43,8 @@ class DaemonWakeup:
 
 def set_schedule(*functs, wakeup=None):
     sleep = min(max(settings.get_settings().daemon / 5, 1), 60)
+    # after an error, wait the normal interval even when polling fast (#379)
+    error_wait = sleep
     # Poll a plain flag: setting an Event from a Python signal handler can
     # re-enter a lock held by the interrupted main thread.
     if wakeup is not None and wakeup.installed:
@@ -70,8 +72,12 @@ def set_schedule(*functs, wakeup=None):
                     schedule.run_pending()
                 time.sleep(sleep)
         except Exception as E:
+            # the scheduler carries on (#379), after its normal interval, so
+            # a repeating error neither spins nor floods the output
+            log.warning(f"Daemon scheduler failed: {type(E).__name__}: {E}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+            time.sleep(error_wait)
 
 
 def schedule_helper(*functs, wakeup=None):

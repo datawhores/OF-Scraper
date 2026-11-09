@@ -231,7 +231,11 @@ def run_process_areas(monkeypatch, insert_fails):
     monkeypatch.setattr(post, "batch_mediainsert", fake_insert)
     # traceback_ is added by the app's logging setup, which tests don't run
     monkeypatch.setattr(
-        post, "log", SimpleNamespace(traceback_=lambda *a, **k: None, debug=print)
+        post,
+        "log",
+        SimpleNamespace(
+            traceback_=lambda *a, **k: None, debug=print, warning=lambda *a, **k: None
+        ),
     )
 
     async def run():
