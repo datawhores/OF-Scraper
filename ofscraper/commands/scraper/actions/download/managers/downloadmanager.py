@@ -24,7 +24,10 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import mark_media_as_downloaded
-from ofscraper.scripts.skip_download_script import skip_download_script
+from ofscraper.scripts.skip_download_script import (
+    SKIP_PERMANENT,
+    skip_download_script,
+)
 from ofscraper.scripts.after_download_script import after_download_script
 from ofscraper.commands.scraper.actions.download.utils.retries import NoRetry
 
@@ -206,16 +209,17 @@ class DownloadManager:
             return 0
         return resume_size
 
-    async def _check_forced_skip(self, ele, total, before=0):
+    async def _check_forced_skip(self, ele, total, before=0, track=None):
         """0 if the file isn't downloaded. before is the size of the item's
         parts already downloaded (a DRM video's audio track), which the size
-        limits add to total; None checks no size limits."""
+        limits add to total; None checks no size limits. track names a DRM
+        video's track, for skip_download_script's answer."""
         if total is None:
             return
         total = int(total)
         if total == 0:
             return 0
-        if await skip_download_script(total, ele):
+        if await self._script_skips(ele, total, track):
             return 0
         if before is None:
             return
@@ -234,6 +238,37 @@ class DownloadManager:
                 f"{get_medialog(ele)} {format_size(size)} under size min"
             )
             return 0
+
+    async def _script_skips(self, ele, total, track=None):
+        """skip_download_script's answer for the file (or a DRM video's
+        track) at this size. It's asked once per run: the check on the saved
+        size, the one on the reply and those of retries get the answer it
+        gave (#350). run.download starts each download call with no
+        answers, so a later run, or the check table sending the item
+        again, asks again."""
+        answers = ele.skip_script_answers
+        key = (track, total)
+        if key not in answers:
+            answer = await skip_download_script(total, ele)
+            answers[key] = answer if answer == SKIP_PERMANENT else bool(answer)
+        return answers[key]
+
+    def _skipped_by_script(self, ele):
+        """How skip_download_script skipped the item in this run: None (it
+        didn't), True (for this run) or SKIP_PERMANENT (for good)."""
+        answers = ele.skip_script_answers.values()
+        if SKIP_PERMANENT in answers:
+            return SKIP_PERMANENT
+        return True if any(answers) else None
+
+    async def _script_skip_result(self, ele, username, model_id):
+        """The result of an item skip_download_script skipped: counted as
+        skipped. A skip for this run isn't saved, so the next run asks the
+        script again (#351); a permanent one is saved as done, with no
+        file, as every script skip was before."""
+        if self._skipped_by_script(ele) == SKIP_PERMANENT:
+            await self._force_download(ele, username, model_id, skip_permanent=True)
+        return "forced_skipped", 0
 
     def _skipped_by_size(self, ele, error):
         """True if the size limits have already skipped the item in this
@@ -295,11 +330,14 @@ class DownloadManager:
             s = f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
             raise Exception(s)
 
-    async def _force_download(self, ele, username, model_id):
+    async def _force_download(self, ele, username, model_id, skip_permanent=None):
+        """Save the item as downloaded with no file. skip_permanent marks a
+        permanent skip_download_script skip, so it can be told apart."""
         await mark_media_as_downloaded(
             ele,
             filepath=None,
             model_id=model_id,
             username=username,
             downloaded=True,
+            skip_permanent=skip_permanent,
         )

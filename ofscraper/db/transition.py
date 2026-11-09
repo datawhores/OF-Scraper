@@ -30,6 +30,7 @@ from ofscraper.db.operations_.media import (
     add_column_media_hash,
     add_column_media_ID,
     add_column_media_posted_at,
+    add_column_media_skip_permanent,
     add_column_media_unlocked,
     rebuild_media_table,
     repair_size_skipped_media,
@@ -251,6 +252,13 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         )
         await add_flag_schema(
             "messages_group_id", model_id=model_id, username=username, db_path=db_path
+        )
+    if "media_skip_permanent" in missing:
+        await add_column_media_skip_permanent(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "media_skip_permanent", model_id=model_id, username=username, db_path=db_path
         )
 
 

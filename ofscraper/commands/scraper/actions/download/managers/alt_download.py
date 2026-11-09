@@ -103,6 +103,9 @@ class AltDownloadManager(DownloadManager):
                 for track in (audio, video):
                     if track:
                         pathlib.Path(track["path"]).unlink(missing_ok=True)
+                if self._skipped_by_script(ele):
+                    # saved as done only when the script skips it for good
+                    return await self._script_skip_result(ele, username, model_id)
                 return "forced_skipped", 0
 
             # Safely calculate total size
@@ -287,7 +290,12 @@ class AltDownloadManager(DownloadManager):
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
                 temp_file_logger(placeholderObj, ele)
-                if await self._check_forced_skip(ele, total, item.get("before", 0)) == 0:
+                if (
+                    await self._check_forced_skip(
+                        ele, total, item.get("before", 0), item["type"]
+                    )
+                    == 0
+                ):
                     if asked and not resume_size:
                         # a whole-file reply to a resume: the part is stale
                         pathlib.Path(placeholderObj.tempfilepath).unlink(
@@ -317,7 +325,7 @@ class AltDownloadManager(DownloadManager):
                         # gave its size (#336)
                         if (
                             await self._check_forced_skip(
-                                ele, total, item.get("before", 0)
+                                ele, total, item.get("before", 0), item["type"]
                             )
                             == 0
                         ):
@@ -545,7 +553,12 @@ class AltDownloadManager(DownloadManager):
                 pass
             return item, False
 
-        if await self._check_forced_skip(ele, total, item.get("before", 0)) == 0:
+        if (
+            await self._check_forced_skip(
+                ele, total, item.get("before", 0), item["type"]
+            )
+            == 0
+        ):
             item["total"] = 0
             return item, True
         elif total == resume_size:

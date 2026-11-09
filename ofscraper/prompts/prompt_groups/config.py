@@ -72,8 +72,9 @@ def funct(prompt_):
     It outputs the desired filename or path.
 
     skip_download_script: A script that determines whether to skip or continue a download. 
-    It executes before the download process begins, and should return "False" or an empty string via stdout to 
-    signal that the download should be skipped.
+    It executes before the download process begins. Printing "False" or nothing to stdout skips the file
+    in this run only: the next run asks again. Printing "skip-permanent" skips it for good: it's saved as
+    downloaded with no file and not asked about again. Any other output lets the download proceed.
 
     naming_script: A script to dynamically generate the final filename and path for a media item before download
     after_download_script: A script that executes after each individual media download is complete

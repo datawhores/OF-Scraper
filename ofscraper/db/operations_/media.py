@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS medias (
     unlocked BOOL,
     hash VARCHAR,
     model_id INTEGER,
-    PRIMARY KEY (id), 
+    skip_permanent BOOL,
+    PRIMARY KEY (id),
     UNIQUE (media_id,model_id,post_id)
 );"""
 
@@ -69,7 +70,11 @@ END AS hash,
 CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
             THEN duration
             ELSE NULL
-END AS duration
+END AS duration,
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'skip_permanent')
+            THEN skip_permanent
+            ELSE NULL
+END AS skip_permanent
 FROM medias;
 """
 
@@ -79,9 +84,11 @@ media_id=?,post_id=?,link=?,linked=?,api_type=?,media_type=?,preview=?,created_a
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 
 
+# skip_permanent: 1 when skip_download_script skipped the item for good (it's
+# saved as downloaded with no file); every other download write clears it
 mediaUpdateDownload = """Update 'medias'
 SET
-directory=?,filename=?,size=?,downloaded=?,hash=?
+directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?);"""
 
 
@@ -123,8 +130,8 @@ mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
 media_type,preview,linked,
-downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+downloaded,created_at,posted_at,hash,model_id,duration,unlocked,skip_permanent)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDownloadForce = """
 Update 'medias'
@@ -135,7 +142,7 @@ WHERE media_id=(?) and model_id=(?);
 mediaDownloadSelect = """
 SELECT  
 directory,filename,size,
-downloaded,hash
+downloaded,hash,skip_permanent
 FROM medias where media_id=(?) and model_id=(?)
 """
 allIDCheck = """
@@ -233,6 +240,11 @@ WHERE media_id = ? AND model_id IS ?
 AND (filename IS NOT NULL OR directory IS NOT NULL OR size IS NOT NULL OR hash IS NOT NULL)
 LIMIT 1
 """
+# a permanent skip_download_script skip (#351) is saved as downloaded with no
+# file on purpose: it counts as a file, so the repair leaves its media alone
+mediaHasFileOrPermanentSkip = mediaHasFile.replace(
+    "OR hash IS NOT NULL)", "OR hash IS NOT NULL OR skip_permanent = 1)"
+)
 # NULL, as a size skip leaves the row now
 sizeSkipUnmark = """
 UPDATE medias SET downloaded = NULL
@@ -330,6 +342,21 @@ def add_column_media_ID(model_id=None, username=None, conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def add_column_media_skip_permanent(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'skip_permanent') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE medias ADD COLUMN skip_permanent BOOL;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
 def add_column_media_duration(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
@@ -419,6 +446,7 @@ def mark_media_as_downloaded(
     downloaded=None,
     hashdata=None,
     size=None,
+    skip_permanent=None,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
@@ -438,6 +466,7 @@ def mark_media_as_downloaded(
             curr=curr,
             downloaded=downloaded,
             size=size,
+            skip_permanent=skip_permanent,
         )
 
 
@@ -519,7 +548,11 @@ def media_transition_rows(inputData) -> list:
         "unlocked",
     ]
     inputData = _media_cleaup_helper(inputData)
-    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+    # optional column: a row read before it existed has no value
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get("skip_permanent")])
+        for data in inputData
+    ]
 
 
 @wrapper.operation_wrapper_async
@@ -539,6 +572,7 @@ def update_media_table_download_transition(
             mediaUpdateDownload,
             [
                 [data[key] for key in download_keys]
+                + [data.get("skip_permanent")]
                 + [data["media_id"], data["model_id"]]
                 for data in inputData
             ],
@@ -753,6 +787,7 @@ def update_media_table_download_helper(
     downloaded=None,
     curr=None,
     size=None,
+    skip_permanent=None,
     **kwargs,
 ) -> list:
     filename = str(filename) if filename else None
@@ -763,6 +798,7 @@ def update_media_table_download_helper(
         size,
         downloaded,
         hashdata,
+        1 if skip_permanent else None,
     ]
     insertData.extend([media.id, model_id])
     curr.execute(mediaUpdateDownload, insertData)
@@ -853,9 +889,19 @@ def repair_size_skipped_media(
                 for row in cur.execute(sizeSkipLabelled, [SIZE_SKIP_LABEL])
             }
             media.update(pair for pair in from_backups if pair[0] is not None)
+            # the column is added before the repair runs; checked anyway, so
+            # the repair also works on a table without it
+            has_file = (
+                mediaHasFileOrPermanentSkip
+                if any(
+                    col[1] == "skip_permanent"
+                    for col in cur.execute("PRAGMA table_info('medias')").fetchall()
+                )
+                else mediaHasFile
+            )
             changed = 0
             for pair in sorted(media, key=str):
-                if cur.execute(mediaHasFile, pair).fetchone():
+                if cur.execute(has_file, pair).fetchone():
                     continue
                 changed += cur.execute(sizeSkipUnmark, pair).rowcount
             cur.execute(

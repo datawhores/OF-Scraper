@@ -60,6 +60,11 @@ class MainDownloadManager(DownloadManager):
             ele.add_size(result[0])
 
             if result[0] == 0:
+                if self._skipped_by_script(ele):
+                    # skipped as a DRM video the script skips is (#331),
+                    # leaving no part
+                    pathlib.Path(result[1]).unlink(missing_ok=True)
+                    return await self._script_skip_result(ele, username, model_id)
                 if ele.mediatype.capitalize() != "Forced_skipped":
                     await self._force_download(ele, username, model_id)
                 return ele.mediatype.capitalize(), 0

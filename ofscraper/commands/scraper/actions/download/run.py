@@ -116,6 +116,10 @@ async def consumer(aws, task1, medialist, lock):
 async def download(c, ele, model_id, username):
     try:
         data = None
+        # skip_download_script's answers last for this download call and its
+        # retries: the check table sends the same Media again, and it's
+        # asked again then, as before (#350)
+        ele.skip_script_answers = {}
         if fansly_video.uses_stream(ele):
             # None: the stream can't be used and the item has a direct file
             data = await FanslyStreamDownloadManager().stream_download(

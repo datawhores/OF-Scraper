@@ -360,7 +360,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default from:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default)
 - **Also reads:** `advanced_options`, `scripts`
 - **CLI override:** `--skip-download-script`
-- An executable that runs before each download. It receives JSON about the media, post and total size on stdin. If it prints `false` or nothing, the download is skipped. Any other output lets the download proceed. The `-sdl`/`--skip-download-script` option overrides it.
+- An executable that runs before each download. It receives JSON about the media, post and total size on stdin. It's asked once per file (per track for a DRM video) per run. If it prints `false` or nothing, the file is skipped in this run only: it's counted as skipped, not saved as downloaded, and the script is asked about it again on the next run. If it prints `skip-permanent` (any case), the file is skipped for good: counted as skipped and saved as downloaded with no file, so it isn't asked about again. Any other output, or a script that fails, lets the download proceed. Until #351, `false` and nothing also saved the file as downloaded; to keep that, print `skip-permanent`. The `-sdl`/`--skip-download-script` option overrides it.
 
 ## `responsetype`
 

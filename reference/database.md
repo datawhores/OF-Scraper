@@ -47,7 +47,7 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 **Written by:** Scraping calls `batch_mediainsert` (`ofscraper/db/operations_/media.py`). Scraping means any action-mode run (download, like, unlike), the `metadata` command, manual/url mode and the check/table mode. The callers are `ofscraper/data/posts/post.py`, `commands/manual.py` and `commands/check.py`.
 
 - **New and existing rows:** `(media_id, post_id)` pairs not yet in the table are inserted with API fields only. Pairs already present get their API fields (`link`, `linked`, `api_type`, `media_type`, `preview`, `created_at`, `posted_at`, `duration`, `unlocked`) updated on every scrape, not only in metadata mode.
-- **After a download:** once a file is written, `mark_media_as_downloaded` applies the API fields again and sets `directory`, `filename`, `size`, `downloaded` and `hash`. The callers are `main_download.py`, `alt_download.py` (for DRM), `fansly_stream_download.py` and `downloadmanager._force_download` (for zero-size or known-bad URLs). This update matches on `media_id` and `model_id` only, so every row for that media under the creator is updated.
+- **After a download:** once a file is written, `mark_media_as_downloaded` applies the API fields again and sets `directory`, `filename`, `size`, `downloaded`, `hash` and `skip_permanent`. The callers are `main_download.py`, `alt_download.py` (for DRM), `fansly_stream_download.py` and `downloadmanager._force_download` (for zero-size or known-bad URLs). This update matches on `media_id` and `model_id` only, so every row for that media under the creator is updated.
 - **Metadata command:** `commands/metadata/manager.py` uses the same function to set download status and filename from files on disk, without downloading.
 - **Stray media:** `batch_set_media_downloaded` sets `unlocked=0`. Despite its name, it does not touch `downloaded`. `clean_stray_media` in `post.py` calls it on every scrape for not-yet-downloaded unlocked rows. These are rows whose post was just scraped but whose media id was not returned. The `metadata` command calls it for strays when `mark_stray` is on.
 - **Collision recovery:** the offline tool `python -m ofscraper.commands.recover_collisions` sets `downloaded=0` for rows that share one file path, and writes an undo file.
@@ -77,6 +77,7 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 | `unlocked` | BOOL |  |  | 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
 | `hash` | VARCHAR |  |  | The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
 | `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
+| `skip_permanent` | BOOL |  |  | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. |
 
 ## `messages`
 
@@ -234,6 +235,7 @@ Flag names:
 - `posts_purchase_type`: `posts.purchase_type` column added.
 - `posts_mentions`: `posts.mentions` column added.
 - `messages_group_id`: `messages.group_id` column added.
+- `media_skip_permanent`: `medias.skip_permanent` column added.
 - `stories_model_id`: `stories.model_id` column added.
 - `labels_model_id`: `labels.model_id` column added.
 - `products_model_id`: `products.model_id` column added.
@@ -247,7 +249,7 @@ Flag names:
 - `products_model_id_constraint_added`: `products` rebuilt with `UNIQUE (post_id, model_id)`.
 - `media_post_id_constraint_added`: `medias` rebuilt with `UNIQUE (media_id, model_id, post_id)`. Written together with `media_bool_changes`.
 - `media_bool_changes`: `medias` rebuilt with its boolean columns. Written together with `media_post_id_constraint_added`. If either flag is missing, the one rebuild runs.
-- `media_size_skip_repaired`: a one-time repair, run after the changes above (`repair_tables`). Before #326 a file skipped by a size limit was saved as downloaded with no file, and its row got the media type `Forced_skippeds`. The repair sets `downloaded` back to NULL on the rows of that media (same `media_id` and `model_id`, any post) that are downloaded with no `directory`, `filename`, `size` or `hash`. It finds the media by that label in `medias`, and in the `user_data_copy_N.db` and `old_schema_*` backups, which it opens read-only and reads before the run writes any backup (a new copy can replace the one that still has the label). Media with a file recorded in any of its rows is left alone, and so is every other row downloaded with no file. The `old_schema_*` backup taken first holds the rows as they were. The flag is written in the same transaction.
+- `media_size_skip_repaired`: a one-time repair, run after the changes above (`repair_tables`). Before #326 a file skipped by a size limit was saved as downloaded with no file, and its row got the media type `Forced_skippeds`. The repair sets `downloaded` back to NULL on the rows of that media (same `media_id` and `model_id`, any post) that are downloaded with no `directory`, `filename`, `size` or `hash`. It finds the media by that label in `medias`, and in the `user_data_copy_N.db` and `old_schema_*` backups, which it opens read-only and reads before the run writes any backup (a new copy can replace the one that still has the label). Media with a file recorded in any of its rows, or with a permanent `skip_download_script` skip (`skip_permanent = 1`), is left alone, and so is every other row downloaded with no file. The `old_schema_*` backup taken first holds the rows as they were. The flag is written in the same transaction.
 - `site`: not a migration flag. The value is the site name (`fansly`) for a Fansly database. The row is absent for OnlyFans.
 
 **Unique:** (`flag_name`)

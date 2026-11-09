@@ -39,6 +39,9 @@ class Media(base.base):
         self._cached_mpd = None
         # a size limit replaces the type with "Forced_skipped" for the download
         self._type = media.get("type")
+        # skip_download_script's answers in the current download call, by
+        # (track, size); run.download resets them
+        self.skip_script_answers = {}
 
         self.download_attempted = False
         self.download_succeeded = (

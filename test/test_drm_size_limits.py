@@ -39,6 +39,7 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.settings as settings
 from ofscraper.classes.of.media import Media
 from ofscraper.managers.sessionmanager.sessionmanager import sessionManager
+from ofscraper.scripts.skip_download_script import SKIP_PERMANENT
 
 AUDIO = bytes(i % 251 for i in range(1_000))
 VIDEO = bytes(i % 241 for i in range(5_000))
@@ -95,6 +96,7 @@ def _run(
     cache_error_times=1,
     cache_error_always=False,
     file_part=None,
+    ignore_range=False,
 ):
     """Download one item through the consumer: a DRM video, or with
     drm=False a non-DRM file. With chunked the server sends each whole file
@@ -108,7 +110,9 @@ def _run(
     size check decided. Returns (counters, the tracks the merge got, the
     requests the server saw, the .part files left). A non-DRM file's merge
     is under "file", and "marked" is set when it's saved as downloaded
-    without a file."""
+    without a file ("permanent" when skip_download_script skipped it for
+    good). With ignore_range the server answers a range request as one
+    without it."""
     monkeypatch.setattr(
         settings,
         "get_settings",
@@ -233,6 +237,13 @@ def _run(
 
         monkeypatch.setattr(dm, "skip_download_script", _script)
 
+    async def _mark(ele, filepath=None, downloaded=None, skip_permanent=None, **kwargs):
+        # the database row the real _force_download saves
+        assert filepath is None and downloaded is True
+        merged["marked"] = "permanent" if skip_permanent else True
+
+    monkeypatch.setattr(dm, "mark_media_as_downloaded", _mark)
+
     if not drm:
 
         async def _get_data_main(self, ele):
@@ -246,13 +257,6 @@ def _run(
         async def _handle_main(self, result, ele, username, model_id):
             merged["file"] = pathlib.Path(result[1]).read_bytes()
             return ele.mediatype, result[0]
-
-        async def _mark(ele, filepath=None, downloaded=None, **kwargs):
-            # the database row the real _force_download saves
-            assert filepath is None and downloaded is True
-            merged["marked"] = True
-
-        monkeypatch.setattr(dm, "mark_media_as_downloaded", _mark)
 
         N = md.MainDownloadManager
         for name, fn in (
@@ -280,6 +284,8 @@ def _run(
         name = request.match_info["name"]
         rng = request.headers.get("Range")
         seen.append(f"{name} {rng}" if rng else name)
+        if ignore_range:
+            rng = None
         body = TRACKS[name]
         if not rng and chunked:
             resp = web.StreamResponse(headers={"Content-Type": "video/mp4"})
@@ -454,6 +460,23 @@ def test_script_skip_skips_the_whole_video(tmp_path, monkeypatch, skipped, chunk
     assert parts == []
 
 
+@pytest.mark.parametrize("track", ["audio", "video"])
+def test_permanent_script_skip_of_a_drm_video_is_saved_as_done(
+    tmp_path, monkeypatch, track
+):
+    # skipped as a script skip is, and also saved as downloaded with no
+    # file and marked, so later runs don't ask about it (#351)
+    size = len(AUDIO) if track == "audio" else len(VIDEO)
+    counts, merged, seen, parts = _run(
+        tmp_path,
+        monkeypatch,
+        script=lambda total: SKIP_PERMANENT if total == size else False,
+    )
+    assert counts == SKIPPED
+    assert merged == {"marked": "permanent"}
+    assert parts == []
+
+
 def test_script_skip_of_audio_removes_an_earlier_video_part(tmp_path, monkeypatch):
     # the video track isn't asked for, and its part left by an earlier run
     # is removed, as when the video track was downloaded and then dropped
@@ -506,13 +529,15 @@ def test_script_that_skips_nothing_downloads_both_tracks(tmp_path, monkeypatch, 
 
 
 @REPLIES
-@pytest.mark.parametrize("skip", [True, False])
-def test_script_on_a_non_drm_file_is_unchanged(tmp_path, monkeypatch, skip, chunked):
+@pytest.mark.parametrize(
+    "answer", [True, SKIP_PERMANENT, False], ids=["skip", "skip-permanent", "keep"]
+)
+def test_script_on_a_non_drm_file(tmp_path, monkeypatch, answer, chunked):
     calls = []
 
     def script(total):
         calls.append(total)
-        return skip
+        return answer
 
     counts, merged, seen, parts = _run(
         tmp_path, monkeypatch, script=script, drm=False, chunked=chunked
@@ -520,14 +545,15 @@ def test_script_on_a_non_drm_file_is_unchanged(tmp_path, monkeypatch, skip, chun
     assert seen == ["file.mp4"]
     # asked once, with the file's real size
     assert calls == [len(FILE)]
-    if skip:
-        # a skipped file leaves no part (the merge is stubbed out, so a
-        # downloaded one's part stays here)
-        assert parts == []
-    # a skipped non-DRM file is saved as downloaded without a file and
-    # counted as a video, as before
-    assert counts == DOWNLOADED
-    assert merged == ({"marked": True} if skip else {"file": FILE})
+    if not answer:
+        assert counts == DOWNLOADED
+        assert merged == {"file": FILE}
+        return
+    # skipped as a DRM video is (#351): counted as skipped, no part left.
+    # Saved as downloaded without a file only for a permanent skip
+    assert counts == SKIPPED
+    assert parts == []
+    assert merged == ({"marked": "permanent"} if answer == SKIP_PERMANENT else {})
 
 
 # ------------------------------------------------------------- after-action script
@@ -704,15 +730,16 @@ def test_resumed_file_skipped_by_a_size_limit_removes_its_part(
     assert media["download_status"] == "skipped"
 
 
-def test_script_skip_of_a_resumed_file_removes_its_part(tmp_path, monkeypatch):
+@pytest.mark.parametrize("answer", [True, SKIP_PERMANENT], ids=["skip", "skip-permanent"])
+def test_script_skip_of_a_resumed_file_removes_its_part(tmp_path, monkeypatch, answer):
     # skip_download_script is asked about the saved size, without a request.
-    # The part goes too; the file is still saved as done without a file and
-    # counted as a video, as for a script skip of a file that wasn't resumed
+    # The part goes too, and it's counted as skipped (#351); saved as done
+    # without a file only for a permanent skip
     calls = []
 
     def script(total):
         calls.append(total)
-        return True
+        return answer
 
     counts, merged, seen, parts = _run(
         tmp_path, monkeypatch, drm=False, file_part=1_000, script=script
@@ -720,8 +747,8 @@ def test_script_skip_of_a_resumed_file_removes_its_part(tmp_path, monkeypatch):
     assert calls == [len(FILE)]
     assert seen == []
     assert parts == []
-    assert counts == DOWNLOADED
-    assert merged == {"marked": True}
+    assert counts == SKIPPED
+    assert merged == ({"marked": "permanent"} if answer == SKIP_PERMANENT else {})
 
 
 @pytest.mark.parametrize(
@@ -752,5 +779,95 @@ def test_resumed_video_skipped_by_a_size_limit_is_unchanged(
     assert merged == {}
     assert seen == ["audio.mp4"]
     assert parts == []
+
+
+# ------------------------------------- skip_download_script asked once (#350)
+
+def _keep_script():
+    calls = []
+
+    def script(total):
+        calls.append(total)
+        return False
+
+    return calls, script
+
+
+def test_resumed_file_the_script_keeps_is_asked_once(tmp_path, monkeypatch):
+    # asked on the saved size; the reply's size is the same, so it isn't
+    # asked again
+    calls, script = _keep_script()
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, drm=False, file_part=1_000, script=script
+    )
+    assert calls == [len(FILE)]
+    assert seen == ["file.mp4 bytes=1000-"]
+    assert counts == DOWNLOADED
+    assert merged == {"file": FILE}
+
+
+def test_resumed_video_the_script_keeps_is_asked_once_per_track(
+    tmp_path, monkeypatch
+):
+    calls, script = _keep_script()
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, video_part=2_000, script=script
+    )
+    assert calls == [len(AUDIO), len(VIDEO)]
+    assert seen == ["audio.mp4", "video.mp4 bytes=2000-"]
+    assert counts == DOWNLOADED
+    assert merged == {"audio": AUDIO, "video": VIDEO}
+
+
+def test_retry_doesnt_ask_the_script_again(tmp_path, monkeypatch):
+    # the first try's header save fails once the reply's first bytes are
+    # written; the retry asks for the file again, but not the script
+    calls, script = _keep_script()
+    counts, merged, seen, parts = _run(
+        tmp_path,
+        monkeypatch,
+        drm=False,
+        script=script,
+        cache_error=LOCKED,
+        cache_error_always=True,
+    )
+    assert seen == ["file.mp4", "file.mp4"]
+    assert calls == [len(FILE)]
+    assert counts == DOWNLOADED
+    assert merged == {"file": FILE}
+
+
+def test_resumed_file_with_a_no_size_reply_is_asked_once(tmp_path, monkeypatch):
+    # asked on the saved size; the server ignores the range and sends the
+    # whole file chunked, without its size. Its size, known once it's
+    # written, is the one already answered
+    calls, script = _keep_script()
+    counts, merged, seen, parts = _run(
+        tmp_path,
+        monkeypatch,
+        drm=False,
+        file_part=1_000,
+        script=script,
+        chunked=True,
+        ignore_range=True,
+    )
+    assert seen == ["file.mp4 bytes=1000-"]
+    assert calls == [len(FILE)]
+    assert counts == DOWNLOADED
+    assert merged == {"file": FILE}
+
+
+@REPLIES
+def test_file_the_script_keeps_is_asked_once_with_its_size(
+    tmp_path, monkeypatch, chunked
+):
+    # no saved size: asked once, on the reply's size or, with no size in
+    # the reply, on the size written
+    calls, script = _keep_script()
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, drm=False, script=script, chunked=chunked
+    )
+    assert calls == [len(FILE)]
+    assert counts == DOWNLOADED
 
 

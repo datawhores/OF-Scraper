@@ -86,15 +86,24 @@ class MetaDataManager:
                     )
                     else "Forced_skipped"
                 )
+            downloaded = self._metadata_downloaded_helper(placeholderObj, prevData)
             await mark_media_as_downloaded(
                 ele,
                 filename=self._metadata_file_helper(placeholderObj, prevData),
                 directory=self._metadata_dir_helper(placeholderObj, prevData),
                 model_id=model_id,
                 username=username,
-                downloaded=self._metadata_downloaded_helper(placeholderObj, prevData),
+                downloaded=downloaded,
                 hashdata=self._metadata_hash_helper(placeholderObj, prevData, ele),
                 size=self._metadata_size_helper(placeholderObj, prevData),
+                # a permanent script skip stays marked while it's still
+                # downloaded with no file on disk
+                skip_permanent=(
+                    prevData.get("skip_permanent")
+                    if downloaded
+                    and not pathlib.Path(placeholderObj.trunicated_filepath).exists()
+                    else None
+                ),
             )
             effected = prevData != await prev_download_media_data(
                 ele, model_id=model_id, username=username

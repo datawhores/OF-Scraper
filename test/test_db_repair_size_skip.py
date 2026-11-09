@@ -303,6 +303,37 @@ def test_database_without_such_rows_is_unchanged(model_db):
     assert not get_group_difference(db_path=model_db)
 
 
+def test_permanent_script_skip_is_left_downloaded(model_db):
+    # a skip_download_script `skip-permanent` row is downloaded with no file
+    # on purpose (#351): the repair treats it as having a file, so neither it
+    # nor the media's other rows are un-marked, even with the old label
+    layout_before_the_repair(model_db)
+    add(model_db, 6, 60, "Forced_skippeds", 1)
+    add(model_db, 6, 61, "Videos", 1)
+    sql(model_db, "UPDATE medias SET skip_permanent = 1 WHERE media_id = 6")
+    # a labelled row without the marker is still repaired
+    add(model_db, 7, 70, "Forced_skippeds", 1)
+
+    start_run()
+
+    assert downloaded(model_db)[(6, 60, MODEL_ID)] == 1
+    assert downloaded(model_db)[(6, 61, MODEL_ID)] == 1
+    assert downloaded(model_db)[(7, 70, MODEL_ID)] is None
+    assert not get_group_difference(db_path=model_db)
+
+
+def test_repair_works_on_a_table_without_the_marker_column(model_db):
+    # the column is added before the repair runs; the repair doesn't need it
+    from ofscraper.db.operations_.media import repair_size_skipped_media
+
+    layout_before_the_repair(model_db)
+    sql(model_db, "ALTER TABLE medias DROP COLUMN skip_permanent")
+    add(model_db, 7, 70, "Forced_skippeds", 1)
+
+    assert call(repair_size_skipped_media, db_path=model_db) == 1
+    assert downloaded(model_db)[(7, 70, MODEL_ID)] is None
+
+
 def test_new_database_gets_the_flag_without_a_backup(model_db):
     start_run()
 

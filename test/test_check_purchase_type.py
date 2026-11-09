@@ -69,7 +69,7 @@ BOUGHT_MESSAGE = {
 MEDIA_COLS = [
     "id", "media_id", "post_id", "link", "directory", "filename", "size", "api_type",
     "media_type", "preview", "linked", "downloaded", "created_at", "posted_at", "duration",
-    "unlocked", "hash", "model_id",
+    "unlocked", "hash", "model_id", "skip_permanent",
 ]
 EXPECTED = {
     "posts": (
@@ -89,10 +89,10 @@ EXPECTED = {
         [
             (1, 6101, 6001, "https://cdn.example/files/6101.jpg", None, None, None, "Timeline",
              "Images", 0, 1, None, "2024-08-01T10:00:00+00:00", "2024-08-01T10:00:00+00:00",
-             None, 1, None, MODEL_ID),
+             None, 1, None, MODEL_ID, None),
             (2, 6102, 6002, "https://cdn.example/files/6102.mp4", None, None, None, "Messages",
              "Videos", 0, 1, None, "2024-08-02T10:00:00+00:00", "2024-08-02T10:00:00+00:00",
-             "00:00:00:05", 1, None, MODEL_ID),
+             "00:00:00:05", 1, None, MODEL_ID, None),
         ],
     ),
 }

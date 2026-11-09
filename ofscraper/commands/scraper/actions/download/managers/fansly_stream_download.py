@@ -162,6 +162,10 @@ class FanslyStreamDownloadManager(DownloadManager):
 
             if await self._check_forced_skip(ele, total) == 0:
                 temp.unlink(missing_ok=True)
+                if self._skipped_by_script(ele):
+                    # as main_download: counted as skipped, saved only
+                    # for a permanent skip (#351)
+                    return await self._script_skip_result(ele, username, model_id)
                 if ele.mediatype.capitalize() != "Forced_skipped":
                     await self._force_download(ele, username, model_id)
                 return ele.mediatype.capitalize(), 0

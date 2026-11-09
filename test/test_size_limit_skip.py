@@ -38,6 +38,7 @@ from ofscraper.classes.of.media import Media
 from ofscraper.classes.of.posts import Post
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.managers.sessionmanager.sessionmanager import sessionManager
+from ofscraper.scripts.skip_download_script import SKIP_PERMANENT
 from ofscraper.sites.fansly import auth as fansly_auth
 from ofscraper.sites.fansly import video as fansly_video
 
@@ -299,24 +300,134 @@ def test_limit_the_file_is_inside_downloads_it(env, chunked):
     assert first.files == [BODY]
 
 
-@REPLIES
-def test_skip_download_script_still_saves_the_item_as_done(env, monkeypatch, chunked):
-    # unchanged: a skip by the skip_download_script is a lasting choice; the
-    # item is saved as downloaded (with no file) and counted under its type.
-    # It's asked once, with the file's real size, whether the reply gave it
+# ------------------------------------------------------------- skip_download_script (#351)
+
+def marker(env, media_id):
+    with contextlib.closing(sqlite3.connect(env.db)) as conn:
+        return conn.execute(
+            "SELECT skip_permanent FROM medias WHERE media_id = ?", [media_id]
+        ).fetchone()[0]
+
+
+def script_runs(env, monkeypatch, *answers, chunked=False):
+    """Run the normal downloader once per answer, skip_download_script
+    giving that answer, each run with a new Media as a new scrape makes.
+    Each run's result also has the sizes the script was asked about."""
     asked = []
+    answer = {}
 
-    async def skip(total, ele):
+    async def script(total, ele):
         asked.append(total)
-        return True
+        return answer["now"]
 
-    monkeypatch.setattr(dm, "skip_download_script", skip)
-    first, second = normal_runs(env, (0, 0), (0, 0), chunked=chunked)
-    assert asked == [len(BODY)]
+    monkeypatch.setattr(dm, "skip_download_script", script)
+    results = []
+
+    async def runs():
+        async with Server(chunked) as srv:
+            async with sessionManager(
+                retries=1, wait_min=0, wait_max=0, log=logging.getLogger("test")
+            ) as c:
+                for now in answers:
+                    answer["now"] = now
+                    asked.clear()
+                    counted, todo = await run_async(env, [photo(srv.base)], c)
+                    results.append(SimpleNamespace(
+                        counted=counted, todo=[ele.id for ele in todo], items=todo,
+                        downloaded=downloaded(env, 7), marker=marker(env, 7),
+                        files=files(env), asked=list(asked),
+                    ))
+
+    asyncio.run(runs())
+    return results
+
+
+@REPLIES
+def test_script_skip_is_counted_as_skipped_and_asked_again(env, monkeypatch, chunked):
+    # a skip by the script (`false` or nothing) is for this run only. It's
+    # asked once, with the file's real size, whether the reply gave it
+    skip, keep = script_runs(env, monkeypatch, True, False, chunked=chunked)
+    assert skip.asked == [len(BODY)]
+    assert skip.counted == counts(forced_skipped=1)
+    assert not skip.downloaded
+    assert skip.files == []
+    # the next run asks again; the script now keeps it, and it downloads
+    assert keep.todo == [7]
+    assert keep.asked == [len(BODY)]
+    assert keep.counted == counts(photo_count=1)
+    assert keep.downloaded == 1
+    assert keep.files == [BODY]
+
+
+@REPLIES
+def test_permanent_script_skip_is_saved_as_done_and_not_asked_again(
+    env, monkeypatch, chunked
+):
+    skip, later = script_runs(
+        env, monkeypatch, SKIP_PERMANENT, False, chunked=chunked
+    )
+    assert skip.asked == [len(BODY)]
+    assert skip.counted == counts(forced_skipped=1)
+    # saved as downloaded with no file, and marked as a permanent skip
+    assert skip.downloaded == 1
+    assert skip.marker == 1
+    assert skip.files == []
+    assert later.todo == [] and later.asked == [] and later.counted == counts()
+
+
+@REPLIES
+def test_file_the_script_keeps_downloads_as_before(env, monkeypatch, chunked):
+    first, second = script_runs(env, monkeypatch, False, False, chunked=chunked)
+    assert first.asked == [len(BODY)]
     assert first.counted == counts(photo_count=1)
     assert first.downloaded == 1
-    assert first.files == []
-    assert second.todo == [] and second.counted == counts()
+    # a real download isn't marked
+    assert first.marker is None
+    assert first.files == [BODY]
+    assert second.todo == [] and second.asked == []
+
+
+def test_same_media_sent_again_asks_the_script_again(env, monkeypatch):
+    # the check table sends the same Media object again after a skip; the
+    # script is asked again then, and the file downloads when it keeps it.
+    # The answers last only for one download call and its retries
+    asked = []
+    answers = iter([True, False])
+
+    async def script(total, ele):
+        asked.append(total)
+        return next(answers)
+
+    monkeypatch.setattr(dm, "skip_download_script", script)
+
+    async def go():
+        async with Server() as srv:
+            async with sessionManager(
+                retries=1, wait_min=0, wait_max=0, log=logging.getLogger("test")
+            ) as c:
+                ele = photo(srv.base)
+                first, _ = await run_async(env, [ele], c)
+                second, todo = await run_async(env, [ele], c)
+                return first, second, todo
+
+    first, second, todo = asyncio.run(go())
+    assert first == counts(forced_skipped=1)
+    assert [ele.id for ele in todo] == [7]
+    assert asked == [len(BODY), len(BODY)]
+    assert second == counts(photo_count=1)
+    assert downloaded(env, 7) == 1
+    assert files(env) == [BODY]
+
+
+@pytest.mark.parametrize("answer", [True, SKIP_PERMANENT], ids=["skip", "skip-permanent"])
+def test_script_skip_reaches_action_script_as_skipped(
+    env, monkeypatch, action_script, answer
+):
+    (run,) = script_runs(env, monkeypatch, answer)
+    assert run.counted == counts(forced_skipped=1)
+    (media,) = action_script(run.items)
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "photo"
 
 
 # ------------------------------------------------------------- Fansly stream
@@ -396,6 +507,47 @@ def test_fansly_stream_size_skip_is_counted_and_downloaded_later(env, fansly, li
     assert downloaded(env, fansly.id) == 1
     assert files(env) == [b"\0" * STREAM_SIZE]
     assert len(fansly.runs) == 2
+
+
+@pytest.mark.parametrize(
+    "answer", [True, SKIP_PERMANENT, False], ids=["skip", "skip-permanent", "keep"]
+)
+def test_fansly_stream_script_answers(env, fansly, monkeypatch, action_script, answer):
+    # a stream the script skips is handled as a normal file is (#351)
+    asked = []
+    answers = iter([answer, False])
+
+    async def script(total, ele):
+        asked.append(total)
+        return next(answers)
+
+    monkeypatch.setattr(dm, "skip_download_script", script)
+    first, todo = run_once(env, [fansly_item()[0]], fansly.session)
+    assert asked == [STREAM_SIZE]
+    (media,) = action_script(todo)
+    assert media["type"] == "video"
+    if not answer:
+        assert first == counts(video_count=1)
+        assert downloaded(env, fansly.id) == 1
+        assert marker(env, fansly.id) is None
+        assert media["download_status"] == "succeeded"
+        return
+    assert first == counts(forced_skipped=1)
+    assert files(env) == []
+    assert media["download_status"] == "skipped"
+    later, again = run_once(env, [fansly_item()[0]], fansly.session)
+    if answer == SKIP_PERMANENT:
+        # saved as done with no file, marked, and not asked about again
+        assert downloaded(env, fansly.id) == 1
+        assert marker(env, fansly.id) == 1
+        assert again == [] and asked == [STREAM_SIZE]
+    else:
+        # not saved: the next run asks again, and it downloads on keep
+        assert [ele.id for ele in again] == [fansly.id]
+        assert asked == [STREAM_SIZE, STREAM_SIZE]
+        assert later == counts(video_count=1)
+        assert downloaded(env, fansly.id) == 1
+        assert files(env) == [b"\0" * STREAM_SIZE]
 
 
 def test_fansly_stream_no_limits_unchanged(env, fansly):
