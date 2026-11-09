@@ -330,6 +330,8 @@ async def post_check_retriver(forced=False):
             pinned_data = []
             archived_data = []
             streams_data = []
+            # areas read from the API in this run, not from the check cache
+            fresh_data = []
 
             if name_match:
                 user_name = name_match.group(1)
@@ -361,6 +363,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(timeline_data, model_id, timeline.API)
+                        fresh_data += timeline_data
 
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
@@ -375,6 +378,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(archived_data, model_id, archived.API)
+                        fresh_data += archived_data
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
@@ -385,6 +389,7 @@ async def post_check_retriver(forced=False):
                         log.info(f"[{user_name}] Fetching fresh data for {pinned.API}")
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
                         set_check(pinned_data, model_id, pinned.API)
+                        fresh_data += pinned_data
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
@@ -406,6 +411,7 @@ async def post_check_retriver(forced=False):
                             for post in label.get("posts", [])
                         ]
                         set_check(labels_data, model_id, labels.API)
+                        fresh_data += labels_data
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
@@ -418,6 +424,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(streams_data, model_id, streams.API)
+                        fresh_data += streams_data
 
                 await operations.make_post_table_changes(
                     all_posts=pinned_data
@@ -427,6 +434,9 @@ async def post_check_retriver(forced=False):
                     + streams_data,
                     model_id=model_id,
                     username=user_name,
+                    # only posts the API returned now lose the deleted flag; a
+                    # cached list can hold posts deleted since it was saved
+                    from_api={post["id"] for post in fresh_data},
                 )
                 def to_posts(data):
                     return list(
@@ -532,6 +542,7 @@ async def message_check_retriver(forced=False):
 
                 # --- Messages ---
                 messages = None
+                messages_fresh = False
                 oldmessages = read_check(model_id, messages_.API)
                 log.debug(f"Number of messages in cache {len(oldmessages or [])}")
 
@@ -542,12 +553,16 @@ async def message_check_retriver(forced=False):
                     log.info(f"[{user_name}] Fetching fresh data for {messages_.API}")
                     messages = await messages_.get_messages(model_id, user_name, c=c)
                     set_check(messages, model_id, messages_.API)
+                    messages_fresh = True
 
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
                 await operations.make_messages_table_changes(
-                    message_posts_array, model_id=model_id, username=user_name
+                    message_posts_array,
+                    model_id=model_id,
+                    username=user_name,
+                    from_api=messages_fresh,
                 )
 
                 # --- Paid Content ---

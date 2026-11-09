@@ -90,6 +90,12 @@ SET is_deleted = 1
 WHERE post_id = (?) AND model_id = (?);
 """
 
+messageUnmarkGhost = """
+UPDATE messages
+SET is_deleted = 0
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
+"""
+
 deletedMessagesCheck = """
 SELECT post_id FROM messages WHERE is_deleted = 1 AND model_id = (?)
 """
@@ -271,7 +277,7 @@ async def rebuild_messages_table(model_id=None, username=None, db_path=None, **k
 
 
 async def make_messages_table_changes(
-    all_messages, model_id=None, username=None, **kwargs
+    all_messages, model_id=None, username=None, from_api=False, **kwargs
 ):
     all_messages = list(all_messages)
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
@@ -280,6 +286,12 @@ async def make_messages_table_changes(
     if len(new_posts) > 0:
         new_posts = convert.converthelper(new_posts)
         await write_messages_table(new_posts, model_id=model_id, username=username)
+    # a message the API returned in this run isn't deleted; cached lists (the
+    # check commands) can hold messages deleted since. Only --metadata updates the rest
+    if from_api:
+        await unmark_message_as_deleted(
+            [ele.id for ele in curr_posts], model_id=model_id, username=username
+        )
     if settings.get_settings().metadata and len(curr_posts) > 0:
         curr_posts = convert.converthelper(curr_posts)
         await update_messages_table(curr_posts, model_id=model_id, username=username)
@@ -313,6 +325,19 @@ def mark_message_as_deleted(
     with contextlib.closing(conn.cursor()) as curr:
         insertData = [[post_id, model_id] for post_id in post_ids]
         curr.executemany(messageIgnoreGhost, insertData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def unmark_message_as_deleted(
+    post_ids, model_id=None, username=None, conn=None, **kwargs
+):
+    if not post_ids:
+        return
+    with contextlib.closing(conn.cursor()) as curr:
+        curr.executemany(
+            messageUnmarkGhost, [[post_id, model_id] for post_id in post_ids]
+        )
         conn.commit()
 
 

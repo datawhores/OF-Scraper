@@ -218,7 +218,7 @@ async def rebuild_labels_table(model_id=None, username=None, db_path=None, **kwa
 
 
 async def make_label_table_changes(
-    labels, model_id=None, username=None, posts=True, **kwargs
+    labels, model_id=None, username=None, posts=True, from_api=False, **kwargs
 ):
     labels = list(
         map(
@@ -249,5 +249,5 @@ async def make_label_table_changes(
     if posts:
         all_posts = [post for label in labels for post in label.posts]
         await post_.make_post_table_changes(
-            all_posts, model_id=model_id, username=username
+            all_posts, model_id=model_id, username=username, from_api=from_api
         )

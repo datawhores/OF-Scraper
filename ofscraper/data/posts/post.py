@@ -115,6 +115,7 @@ async def process_paid_post(model_id, username, c):
             paid_content,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
         return (paid_content, paid.API)
     except Exception as E:
@@ -136,6 +137,7 @@ async def process_messages(model_id, username, c):
             messages_,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
         set_after_checks(model_id, messages.API)
 
@@ -217,6 +219,7 @@ async def process_timeline_posts(model_id, username, c):
             timeline_only_posts,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
         set_after_checks(model_id, timeline.API)
         return (timeline_only_posts, timeline.API)
@@ -242,6 +245,7 @@ async def process_archived_posts(model_id, username, c):
             archived_posts,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
 
         set_after_checks(model_id, archive.API)
@@ -268,6 +272,7 @@ async def process_streamed_posts(model_id, username, c):
             streams_posts,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
 
         set_after_checks(model_id, streams.API)
@@ -290,6 +295,7 @@ async def process_pinned_posts(model_id, username, c):
             pinned_posts,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
 
         return (pinned_posts, pinned.API)
@@ -391,6 +397,7 @@ async def process_all_paid():
                 temp_postcollection.posts,
                 model_id=model_id,
                 username=username,
+                from_api=True,
             )
             await batch_mediainsert(
                 temp_postcollection.all_unique_media,
@@ -433,6 +440,7 @@ async def process_labels(model_id, username, c):
             labelled_posts_labels,
             model_id=model_id,
             username=username,
+            from_api=True,
         )
 
         log.debug(

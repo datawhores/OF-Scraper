@@ -229,6 +229,34 @@ def test_message_seen_again_is_no_longer_flagged_deleted(tmp_db, metadata_run):
     assert rows(tmp_db, "messages", ["post_id", "is_deleted"]) == [(901, 0)]
 
 
+def test_message_seen_again_on_a_normal_run_is_no_longer_flagged_deleted(
+    tmp_db, monkeypatch
+):
+    # the same as above without --metadata (#323)
+    real = settings.get_settings()
+
+    class Stub(SimpleNamespace):
+        def __getattr__(self, name):
+            return getattr(real, name)
+
+    monkeypatch.setattr(settings, "get_settings", lambda: Stub(metadata=None))
+
+    async def run():
+        await operations.table_init_create(model_id=MODEL_ID, username=USERNAME)
+        await operations.make_messages_table_changes(
+            [message("text")], model_id=MODEL_ID, username=USERNAME
+        )
+        await mark_message_as_deleted([901], model_id=MODEL_ID, username=USERNAME)
+        # the messages scan, which got the message from the API again
+        await operations.make_messages_table_changes(
+            [message("text")], model_id=MODEL_ID, username=USERNAME, from_api=True
+        )
+        return await get_deleted_messages_ids(model_id=MODEL_ID, username=USERNAME)
+
+    assert asyncio.run(run()) == set()
+    assert rows(tmp_db, "messages", ["post_id", "is_deleted"]) == [(901, 0)]
+
+
 def test_model_id_rebuild_keeps_every_row_and_column(tmp_path):
     db = tmp_path / "user_data.db"
 
