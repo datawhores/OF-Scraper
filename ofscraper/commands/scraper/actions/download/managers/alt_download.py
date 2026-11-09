@@ -82,10 +82,15 @@ class AltDownloadManager(DownloadManager):
                 video = await self._alt_download_downloader(
                     video, c, ele, before=audio["total"] if audio else 0
                 )
-            if ele.mediatype != mediatype:
-                # only a size limit changes it: the item is skipped and its
-                # tracks aren't kept. Nothing after this reads ele.mpd, which
-                # the new mediatype makes None
+            if ele.mediatype != mediatype or any(
+                track and track["total"] == 0 for track in (audio, video)
+            ):
+                # a size limit changes the mediatype; skip_download_script
+                # skips a track without changing it, and leaves its total 0
+                # (#325). Either way the item is skipped and its tracks
+                # aren't kept: a DRM video is no use with a track missing.
+                # Nothing after this reads ele.mpd, which a new mediatype
+                # makes None
                 for track in (audio, video):
                     if track:
                         pathlib.Path(track["path"]).unlink(missing_ok=True)
