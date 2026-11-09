@@ -275,10 +275,11 @@ MAIN_HEADER_ALL_AREAS = [
     "preview", "downloaded", "created_at", "unlocked", "model_id", "posted_at",
     "hash", "duration", "skip_permanent", "size_human", "size",
 ]
+# plus skip_permanent, which all-areas output already had (#371)
 MAIN_HEADER_ONE_AREA = [
     "media_id", "post_id", "directory", "filename", "api_type", "media_type",
     "preview", "downloaded", "created_at", "posted_at", "hash", "model_id",
-    "unlocked", "duration", "size_human", "size",
+    "unlocked", "duration", "skip_permanent", "size_human", "size",
 ]
 
 

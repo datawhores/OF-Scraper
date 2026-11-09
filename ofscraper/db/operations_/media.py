@@ -167,7 +167,8 @@ SELECT media_id, post_id FROM medias
 allPostIDDLCheck = """
 SELECT media_id, post_id FROM medias where downloaded=(1)
 """
-# the per-area queries below are filled in by execute_area_media
+# the per-area queries below are filled in by execute_area_media. New
+# columns go at the end, so existing ones keep their place in the CSV.
 mediaAreaColumns = [
     "media_id",
     "post_id",
@@ -186,7 +187,14 @@ mediaAreaColumns = [
     ("model_id", "NULL"),
     ("unlocked", "NULL"),
     ("duration", "NULL"),
+    ("skip_permanent", "NULL"),
 ]
+# all areas, with mediaSelectTransition's columns
+# (1=1 so model_filter's "and" has a condition to follow)
+getAllMedia = """
+SELECT {columns}
+FROM medias where 1=1 {model_filter}
+"""
 getTimelineMedia = """
 SELECT {columns}
 FROM medias where LOWER(api_type) in ('timeline','posts','post') {model_filter}
@@ -624,16 +632,17 @@ def _media_cleaup_helper(inputData):
     return output_dict.values()
 
 
-def execute_area_media(cur, query, model_id):
-    """Run one of the per-area queries (getTimelineMedia and the rest) on a
+def execute_area_media(cur, query, model_id, columns=None):
+    """Run getAllMedia or a per-area query (getTimelineMedia and the rest) on a
     medias table that may be older than this version: a missing column gets
-    its stand-in (see mediaAreaColumns). A table from before model_id holds
-    one creator's media, so it isn't filtered by creator."""
+    its stand-in (see mediaAreaColumns, the default `columns`). A table from
+    before model_id holds one creator's media, so it isn't filtered by
+    creator."""
     present = db_columns.table_columns(cur, "medias")
     has_model_id = "model_id" in present
     cur.execute(
         query.format(
-            columns=db_columns.select_list(present, mediaAreaColumns),
+            columns=db_columns.select_list(present, columns or mediaAreaColumns),
             model_filter="and model_id=(?)" if has_model_id else "",
         ),
         [model_id] if has_model_id else [],
@@ -658,10 +667,12 @@ def get_all_medias_transition(
         ]
 
 
-async def get_all_medias(model_id=None, username=None, database_model=None, **kwargs):
-    return await get_all_medias_transition(
-        model_id=model_id, username=username, database_model=database_model, **kwargs
-    )
+@wrapper.operation_wrapper_async
+def get_all_medias(model_id=None, username=None, conn=None, **kwargs) -> list:
+    """Every area's media of one creator, for ofscraper db (#371)."""
+    with contextlib.closing(conn.cursor()) as cur:
+        execute_area_media(cur, getAllMedia, model_id, mediaSelectTransition)
+        return [dict(row) for row in cur.fetchall()]
 
 
 @run

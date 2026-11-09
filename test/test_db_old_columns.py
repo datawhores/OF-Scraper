@@ -6,6 +6,7 @@ set, and the database's columns don't change.
 """
 
 import asyncio
+import csv
 import contextlib
 import sqlite3
 from types import SimpleNamespace
@@ -355,16 +356,22 @@ def test_db_per_area_up_to_date_gives_same_output(tmp_path, run_db, monkeypatch)
 
     rows = run_db(path, areas)
 
-    # the output is what the queries before #364 gave
+    # the output is what the queries before #364 gave, plus skip_permanent,
+    # which all-areas output has too (#371)
     def execute_before(cur, query, model_id):
         cur.execute(
-            query.format(columns=AREA_COLUMNS_BEFORE, model_filter="and model_id=(?)"),
+            query.format(
+                columns=AREA_COLUMNS_BEFORE + ",skip_permanent",
+                model_filter="and model_id=(?)",
+            ),
             [model_id],
         )
 
     monkeypatch.setattr(media_ops, "execute_area_media", execute_before)
     expected = run_db(path, areas)
     assert rows == expected
+    # same keys in the same order too: skip_permanent is added after the
+    # columns there were, and they keep their places
     assert [list(row) for row in rows] == [list(row) for row in expected]
     assert sorted(row["api_type"] for row in rows) == [
         "messages",
@@ -474,3 +481,128 @@ def test_transition_readers_on_old_tables(tmp_path, reader, table, create, row, 
     expected.update(stand_ins)
     assert rows == [expected]
     assert schema(path) == before
+
+
+# #371: one database file can hold several creators' media. ofscraper db over
+# all areas must filter by creator like the per-area runs do, and both must
+# give the same columns.
+
+
+def creator_rows(model_id):
+    return [dict(row, model_id=model_id) for row in AREA_ROWS]
+
+
+def test_db_all_areas_shows_only_that_creators_rows(tmp_path, run_db):
+    # Given a database with two creators
+    path = tmp_path / "user_data.db"
+    make_db(path, media_ops.mediaCreate, "medias", creator_rows(5) + creator_rows(6))
+
+    # When ofscraper db runs over all areas for one of them
+    rows = run_db(path)
+
+    # Then only that creator's rows are shown
+    assert len(rows) == len(AREA_ROWS)
+    assert {row["model_id"] for row in rows} == {5}
+
+
+def test_db_all_areas_export_has_only_each_creators_rows(tmp_path, monkeypatch):
+    # Given a database with two creators, both selected
+    path = tmp_path / "user_data.db"
+    make_db(path, media_ops.mediaCreate, "medias", creator_rows(5) + creator_rows(6))
+    models = [SimpleNamespace(name="a creator", id=5), SimpleNamespace(name="another", id=6)]
+    model_manager = SimpleNamespace(all_subs=models, sync_models=lambda **kwargs: None)
+    monkeypatch.setattr(
+        db_command.manager, "Manager", SimpleNamespace(current_model_manager=model_manager)
+    )
+    monkeypatch.setattr(db_command.actions, "select_areas", lambda: None)
+    monkeypatch.setattr(db_command.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(db_command.DBManager, "print_dictionary_table", lambda self: None)
+    args = SimpleNamespace(
+        download_area=ALL_AREAS,
+        downloaded=None,
+        protected=False,
+        normal=False,
+        unlocked=None,
+        preview=None,
+        post_id=None,
+        media_id=None,
+    )
+    export = tmp_path / "out"
+    options = SimpleNamespace(
+        size_max=None,
+        size_min=None,
+        length_max=None,
+        length_min=None,
+        posted_before=None,
+        posted_after=None,
+        created_after=None,
+        created_before=None,
+        mediatypes=["Audios", "Videos", "Images"],
+        max_post_count=None,
+        db_asc=True,
+        db_sort="mediaid",
+        export=export,
+    )
+    monkeypatch.setattr(db_command.settings, "get_args", lambda: args)
+    monkeypatch.setattr(db_command.settings, "get_settings", lambda: options)
+    real = media_ops.get_all_medias
+
+    async def get_all_medias(**kwargs):
+        return await real(**kwargs, db_path=path)
+
+    monkeypatch.setattr(db_command, "get_all_medias", get_all_medias)
+
+    # When ofscraper db runs over all areas and exports
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        db_command.db()
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+    # Then the CSV holds each creator's rows once
+    with open(export.with_suffix(".csv"), newline="") as f:
+        written = [(int(r["model_id"]), int(r["media_id"])) for r in csv.DictReader(f)]
+    expected = [(m, row["media_id"]) for m in (5, 6) for row in AREA_ROWS]
+    assert written == expected
+
+
+def test_db_all_areas_without_model_id_shows_all_rows(tmp_path, run_db):
+    # Given an old single-creator table without model_id
+    path = tmp_path / "user_data.db"
+    create = MEDIAS_BEFORE_HASH.replace("    model_id INTEGER,\n", "").replace(
+        "UNIQUE (media_id,model_id,post_id)", "UNIQUE (media_id,post_id)"
+    )
+    make_db(path, create, "medias", AREA_ROWS)
+    before = schema(path)
+
+    # When ofscraper db runs over all areas
+    rows = run_db(path)
+
+    # Then all its rows are still shown, as per-area does
+    assert [row["media_id"] for row in rows] == [row["media_id"] for row in AREA_ROWS]
+    assert all(row["model_id"] is None for row in rows)
+    assert schema(path) == before
+
+
+@pytest.mark.parametrize(
+    "create",
+    [media_ops.mediaCreate, MEDIAS_BEFORE_SKIP_PERMANENT, MEDIAS_BEFORE_HASH],
+    ids=["up_to_date", "before_skip_permanent", "before_hash"],
+)
+@pytest.mark.parametrize("area", ALL_AREAS)
+def test_db_all_areas_and_per_area_give_same_columns(tmp_path, run_db, create, area):
+    # Given one creator's database
+    path = tmp_path / "user_data.db"
+    make_db(path, create, "medias", AREA_ROWS)
+
+    # When ofscraper db runs over all areas and over one area
+    every = run_db(path)
+    one = run_db(path, [area])
+
+    # Then both give the same columns (each path keeps its own order, so
+    # existing CSV columns don't move)
+    assert len(one) == 1
+    assert set(one[0]) == set(every[0])
+    assert "skip_permanent" in one[0]
