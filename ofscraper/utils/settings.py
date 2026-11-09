@@ -15,7 +15,7 @@ import threading
 import re
 from copy import deepcopy
 import arrow
-from diskcache import Disk, JSONDisk
+from diskcache_community import Disk, JSONDisk
 
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.data as config_data  # <-- IMPORTING THE REAL DATA.PY

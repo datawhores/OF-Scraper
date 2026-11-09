@@ -29,7 +29,7 @@ a = Analysis(
     binaries=[ffmpeg_binary_tuple] if ffmpeg_binary_tuple else [],
     datas=[],
     # Include the hidden import for diskcache
-    hiddenimports=['diskcache'],
+    hiddenimports=['diskcache_community'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

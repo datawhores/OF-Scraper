@@ -1,6 +1,6 @@
 import threading
 
-from diskcache import Cache
+from diskcache_community import Cache
 
 import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths

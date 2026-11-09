@@ -11,7 +11,7 @@ r"""
 
 """
 
-from diskcache import Disk, JSONDisk
+from diskcache_community import SafeDisk, SafeJSONDisk
 from humanfriendly import parse_size
 
 import ofscraper.utils.of_env.of_env as of_env
@@ -565,9 +565,9 @@ def get_show_downloadprogress(config=None):
 @wrapper.config_reader
 def get_cache_mode(config=None):
     if cache_mode_helper(config=config) == "sqlite":
-        return Disk
+        return SafeDisk.with_options(on_error="miss")
     else:
-        return JSONDisk
+        return SafeJSONDisk.with_options(on_error="miss")
 
 
 def cache_mode_helper(config=None):
