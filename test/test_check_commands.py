@@ -118,6 +118,96 @@ def test_check_usernames_combines_u_and_f(monkeypatch):
     assert check.check_usernames() == ["from_f"]
 
 
+def _post(post_id, media_id, **extra):
+    return {"id": post_id, "media": [{"id": media_id, "canView": True}], **extra}
+
+
+def _run_post_check(monkeypatch):
+    # the real post_check retriever, with the API calls and the database faked
+    calls = []
+
+    async def fake_timeline(model_id, username, c=None):
+        calls.append("Timeline")
+        return [_post(1, 101)]
+
+    async def fake_archived(model_id, username, c=None):
+        calls.append("Archived")
+        return [_post(2, 102, isArchived=True)]
+
+    async def fake_pinned(model_id, c=None):
+        calls.append("Pinned")
+        return [_post(3, 103, isPinned=True)]
+
+    async def fake_labels(model_id, c=None):
+        calls.append("Labels")
+        return [{"id": 9, "name": "a label", "posts": [_post(4, 104)]}]
+
+    async def fake_streams(model_id, username, c=None):
+        calls.append("Streams")
+        return [_post(5, 105, streamId=77), _post(6, 106, streamId=78)]
+
+    async def nothing(*args, **kwargs):
+        return None
+
+    @contextlib.asynccontextmanager
+    async def fake_session(**kwargs):
+        yield object()
+
+    current = SimpleNamespace(
+        force=False,
+        file=None,
+        url=["a_creator"],
+        check_area=["Timeline", "Archived", "Pinned", "Labels", "Streams"],
+        timeline_strict=False,
+    )
+    monkeypatch.setattr(check.settings, "get_settings", lambda: current)
+    monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(session=SimpleNamespace(aget_ofsession=fake_session)))
+    monkeypatch.setattr(check, "read_check", lambda *a: None)
+    monkeypatch.setattr(check, "set_check", lambda *a: None)
+    monkeypatch.setattr(check.profile, "get_id", lambda name: 12345)
+    monkeypatch.setattr(check.operations, "table_init_create", nothing)
+    monkeypatch.setattr(check.operations, "make_label_table_changes", nothing)
+    monkeypatch.setattr(check.operations, "make_post_table_changes", nothing)
+    monkeypatch.setattr(check.timeline, "get_timeline_posts", fake_timeline)
+    monkeypatch.setattr(check.archived, "get_archived_posts", fake_archived)
+    monkeypatch.setattr(check.pinned, "get_pinned_posts", fake_pinned)
+    monkeypatch.setattr(check.labels, "get_labels", fake_labels)
+    monkeypatch.setattr(check.streams, "get_streams_posts", fake_streams)
+
+    async def collect():
+        return [item async for item in check.post_check_retriver()]
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        results = loop.run_until_complete(collect())
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+    assert len(results) == 1
+    user_name, model_id, posts = results[0]
+    assert (user_name, model_id) == ("a_creator", 12345)
+    return calls, posts
+
+
+def test_post_check_lists_streams_posts_and_media(monkeypatch):
+    calls, posts = _run_post_check(monkeypatch)
+    assert "Streams" in calls
+    streams_posts = [p for p in posts if p.responsetype == "Streams"]
+    assert sorted(p.id for p in streams_posts) == [5, 6]
+    assert sorted(m.id for p in streams_posts for m in p.all_media) == [105, 106]
+
+
+def test_post_check_other_areas_are_listed_as_before(monkeypatch):
+    calls, posts = _run_post_check(monkeypatch)
+    assert sorted(calls) == ["Archived", "Labels", "Pinned", "Streams", "Timeline"]
+    by_id = {p.id: p for p in posts if p.responsetype != "Streams"}
+    assert sorted(by_id) == [1, 2, 3, 4]
+    assert by_id[2].responsetype == "Archived"
+    assert by_id[3].responsetype == "Pinned"
+    assert sorted(m.id for i in (1, 2, 3, 4) for m in by_id[i].all_media) == [101, 102, 103, 104]
+
+
 def test_msg_check_help_describes_messages():
     assert message.message_check.name == "msg_check"
     assert "messages" in message.message_check.short_help

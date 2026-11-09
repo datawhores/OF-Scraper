@@ -414,14 +414,9 @@ async def post_check_retriver(forced=False):
                         streams_data = oldstreams
                     else:
                         log.info(f"[{user_name}] Fetching fresh data for {streams.API}")
-                        streams_resp = await streams.get_streams_posts(
+                        streams_data = await streams.get_streams_posts(
                             model_id, user_name, c=c
                         )
-                        streams_data = [
-                            post
-                            for streams in streams_resp
-                            for post in streams.get("posts", [])
-                        ]
                         set_check(streams_data, model_id, streams.API)
 
                 await operations.make_post_table_changes(
