@@ -14,7 +14,6 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 import ofscraper.utils.dates as dates
-import ofscraper.utils.system.system as system
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.ffprobe import verify_media_integrity
@@ -312,7 +311,7 @@ class MainDownloadManager(DownloadManager):
                     break
 
         # Catch native aiohttp socket read timeouts
-        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
+        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
             common_globals.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )

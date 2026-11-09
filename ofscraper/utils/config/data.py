@@ -17,7 +17,6 @@ from humanfriendly import parse_size
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.utils.wrapper as wrapper
-import ofscraper.utils.const as const
 
 
 def strip_path_quotes(val):

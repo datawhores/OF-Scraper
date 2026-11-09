@@ -3,7 +3,6 @@ from textual.widgets import SelectionList
 
 from ofscraper.classes.table.fields.selectfield import SelectField
 from textual.widgets.selection_list import Selection
-import ofscraper.utils.settings as settings
 
 
 class DownloadField(SelectField):

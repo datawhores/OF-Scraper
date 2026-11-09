@@ -4,7 +4,6 @@ import threading
 from contextlib import contextmanager
 import time
 import ssl
-import certifi
 import contextlib
 import traceback
 import weakref

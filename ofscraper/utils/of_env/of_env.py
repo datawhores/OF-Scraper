@@ -2,10 +2,8 @@ from ofscraper.utils.of_env import get_all_configs
 import os
 
 
-from ofscraper.utils.of_env import get_all_configs
 from ofscraper.utils.of_env.values.live import OPTIONAL_BOOLS
 import contextlib
-import os
 import json
 import logging
 

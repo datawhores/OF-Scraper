@@ -26,7 +26,6 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.system.system as system
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
@@ -387,7 +386,7 @@ class AltDownloadManager(DownloadManager):
                     break  # Exit loop when no more chunks
 
         # Catch native aiohttp socket read timeouts
-        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError) as E:
+        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
             common_globals.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )

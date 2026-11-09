@@ -406,7 +406,7 @@ def performance_config():
                 "min_allowed": 1,
                 "max_allowed": 15,
                 "validate": EmptyInputValidator(),
-                "option_instruction": f"Value can be 1-15",
+                "option_instruction": "Value can be 1-15",
                 "default": data.get_download_semaphores(),
             }
         ],

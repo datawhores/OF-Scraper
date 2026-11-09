@@ -1,5 +1,4 @@
 import json
-import re
 import logging
 import traceback
 import os

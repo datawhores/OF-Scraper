@@ -56,7 +56,7 @@ class InputApp(App):
     def compose(self):
         try:
             return composer()
-        except Exception as e:
+        except Exception:
             pass
 
     def on_ready(self) -> None:

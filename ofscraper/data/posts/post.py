@@ -15,7 +15,6 @@ import asyncio
 import logging
 import traceback
 from functools import partial
-import arrow
 
 import ofscraper.data.api.archive as archive
 import ofscraper.data.api.highlights as highlights
