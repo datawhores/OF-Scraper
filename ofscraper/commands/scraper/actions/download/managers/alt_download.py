@@ -296,6 +296,20 @@ class AltDownloadManager(DownloadManager):
                     if total is None:
                         total = self._size_written(ele, written)
                         item["total"] = total
+                        # the size is known only now: check the size limits
+                        # and skip_download_script on it, as for a reply that
+                        # gave its size (#336)
+                        if (
+                            await self._check_forced_skip(
+                                ele, total, item.get("before", 0)
+                            )
+                            == 0
+                        ):
+                            pathlib.Path(placeholderObj.tempfilepath).unlink(
+                                missing_ok=True
+                            )
+                            item["total"] = 0
+                            return item
                     await self._total_change_helper(total)
 
             await self._size_checker(placeholderObj.tempfilepath, ele, total)

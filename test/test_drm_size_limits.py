@@ -89,9 +89,11 @@ def _run(
     video_part=None,
     script=None,
     drm=True,
+    chunked=False,
 ):
     """Download one item through the consumer: a DRM video, or with
-    drm=False a non-DRM file. video_part is the start of
+    drm=False a non-DRM file. With chunked the server sends each whole file
+    chunked, without its size (no Content-Length). video_part is the start of
     the video track left by an earlier run, with its saved size. script
     stands in for skip_download_script: it gets each file's size and
     returns True to skip it. Returns (counters, the tracks the merge got, the requests the server
@@ -248,6 +250,14 @@ def _run(
         rng = request.headers.get("Range")
         seen.append(f"{name} {rng}" if rng else name)
         body = TRACKS[name]
+        if not rng and chunked:
+            resp = web.StreamResponse(headers={"Content-Type": "video/mp4"})
+            resp.enable_chunked_encoding()
+            await resp.prepare(request)
+            for i in range(0, len(body), 1024):
+                await resp.write(body[i : i + 1024])
+            await resp.write_eof()
+            return resp
         if not rng:
             return web.Response(status=200, body=body, content_type="video/mp4")
         start = int(rng.split("=")[1].split("-")[0])
@@ -300,9 +310,16 @@ def _run(
 SKIPPED = {"videos": 0, "forced_skipped": 1, "failed": 0}
 DOWNLOADED = {"videos": 1, "forced_skipped": 0, "failed": 0}
 
+# tracks sent with their size, and without it (chunked, no Content-Length):
+# then the size is known only once the track is written (#336)
+REPLIES = pytest.mark.parametrize("chunked", [False, True], ids=["sized", "no size"])
 
-def test_whole_video_under_min_is_skipped_once(tmp_path, monkeypatch):
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, size_min=WHOLE + 1)
+
+@REPLIES
+def test_whole_video_under_min_is_skipped_once(tmp_path, monkeypatch, chunked):
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, size_min=WHOLE + 1, chunked=chunked
+    )
     assert counts == SKIPPED
     assert merged == {}
     # each track asked for once: no retries
@@ -311,25 +328,34 @@ def test_whole_video_under_min_is_skipped_once(tmp_path, monkeypatch):
     assert parts == []
 
 
-def test_small_audio_doesnt_skip_a_big_enough_video(tmp_path, monkeypatch):
+@REPLIES
+def test_small_audio_doesnt_skip_a_big_enough_video(tmp_path, monkeypatch, chunked):
     # the audio track alone is under the minimum, the video is not
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, size_min=len(AUDIO) + 1)
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, size_min=len(AUDIO) + 1, chunked=chunked
+    )
     assert counts == DOWNLOADED
     assert merged == {"audio": AUDIO, "video": VIDEO}
     assert seen == ["audio.mp4", "video.mp4"]
 
 
-def test_whole_video_over_max_is_skipped(tmp_path, monkeypatch):
+@REPLIES
+def test_whole_video_over_max_is_skipped(tmp_path, monkeypatch, chunked):
     # each track is under the maximum, the two together are not
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, size_max=WHOLE - 1)
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, size_max=WHOLE - 1, chunked=chunked
+    )
     assert counts == SKIPPED
     assert merged == {}
     assert seen == ["audio.mp4", "video.mp4"]
     assert parts == []
 
 
-def test_whole_video_within_max_is_downloaded(tmp_path, monkeypatch):
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, size_max=WHOLE)
+@REPLIES
+def test_whole_video_within_max_is_downloaded(tmp_path, monkeypatch, chunked):
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, size_max=WHOLE, chunked=chunked
+    )
     assert counts == DOWNLOADED
     assert merged == {"audio": AUDIO, "video": VIDEO}
 
@@ -354,8 +380,9 @@ def test_resumed_video_big_enough_is_resumed(tmp_path, monkeypatch):
     assert merged == {"audio": AUDIO, "video": VIDEO}
 
 
-def test_no_limits_downloads_both_tracks(tmp_path, monkeypatch):
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch)
+@REPLIES
+def test_no_limits_downloads_both_tracks(tmp_path, monkeypatch, chunked):
+    counts, merged, seen, parts = _run(tmp_path, monkeypatch, chunked=chunked)
     assert counts == DOWNLOADED
     assert merged == {"audio": AUDIO, "video": VIDEO}
     assert seen == ["audio.mp4", "video.mp4"]
@@ -369,7 +396,8 @@ def test_no_limits_downloads_both_tracks(tmp_path, monkeypatch):
         pytest.param({len(VIDEO)}, id="video"),
     ],
 )
-def test_script_skip_skips_the_whole_video(tmp_path, monkeypatch, skipped):
+@REPLIES
+def test_script_skip_skips_the_whole_video(tmp_path, monkeypatch, skipped, chunked):
     # a skip by skip_download_script, of either track or both, skips the
     # item: counted as skipped, not failed, and no track's part is left
     calls = []
@@ -378,7 +406,9 @@ def test_script_skip_skips_the_whole_video(tmp_path, monkeypatch, skipped):
         calls.append(total)
         return total in skipped
 
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, script=script)
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, script=script, chunked=chunked
+    )
     assert counts == SKIPPED
     assert merged == {}
     # the script is still asked about each track, once: no retries
@@ -402,26 +432,42 @@ def test_script_skip_of_a_resumed_video_removes_its_part(tmp_path, monkeypatch):
     assert parts == []
 
 
-def test_script_that_skips_nothing_downloads_both_tracks(tmp_path, monkeypatch):
+@REPLIES
+def test_script_that_skips_nothing_downloads_both_tracks(tmp_path, monkeypatch, chunked):
     calls = []
 
     def script(total):
         calls.append(total)
         return False
 
-    counts, merged, seen, parts = _run(tmp_path, monkeypatch, script=script)
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, script=script, chunked=chunked
+    )
     assert counts == DOWNLOADED
     assert merged == {"audio": AUDIO, "video": VIDEO}
     assert calls == [len(AUDIO), len(VIDEO)]
     assert seen == ["audio.mp4", "video.mp4"]
 
 
+@REPLIES
 @pytest.mark.parametrize("skip", [True, False])
-def test_script_on_a_non_drm_file_is_unchanged(tmp_path, monkeypatch, skip):
+def test_script_on_a_non_drm_file_is_unchanged(tmp_path, monkeypatch, skip, chunked):
+    calls = []
+
+    def script(total):
+        calls.append(total)
+        return skip
+
     counts, merged, seen, parts = _run(
-        tmp_path, monkeypatch, script=lambda total: skip, drm=False
+        tmp_path, monkeypatch, script=script, drm=False, chunked=chunked
     )
     assert seen == ["file.mp4"]
+    # asked once, with the file's real size
+    assert calls == [len(FILE)]
+    if skip:
+        # a skipped file leaves no part (the merge is stubbed out, so a
+        # downloaded one's part stays here)
+        assert parts == []
     # a skipped non-DRM file is saved as downloaded without a file and
     # counted as a video, as before
     assert counts == DOWNLOADED

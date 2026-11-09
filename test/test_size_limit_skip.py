@@ -183,15 +183,30 @@ def counts(**nonzero):
 
 # ------------------------------------------------------------- normal downloader
 
+async def _chunked(request):
+    """The file sent chunked, without its size (no Content-Length)."""
+    resp = web.StreamResponse(headers={"Content-Type": "image/jpeg"})
+    resp.enable_chunked_encoding()
+    await resp.prepare(request)
+    for i in range(0, len(BODY), 8192):
+        await resp.write(BODY[i : i + 8192])
+    await resp.write_eof()
+    return resp
+
+
 class Server:
-    """A local server for the file, kept up for both runs."""
+    """A local server for the file, kept up for both runs. With chunked it
+    sends the file chunked, without its size (no Content-Length)."""
+
+    def __init__(self, chunked=False):
+        self.chunked = chunked
 
     async def __aenter__(self):
         async def handler(request):
             return web.Response(body=BODY, content_type="image/jpeg")
 
         app = web.Application()
-        app.router.add_get("/{name}", handler)
+        app.router.add_get("/{name}", _chunked if self.chunked else handler)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
@@ -215,13 +230,14 @@ def photo(base):
     )
 
 
-def normal_runs(env, *limits):
+def normal_runs(env, *limits, chunked=False):
     """Run the normal downloader once per (size_min, size_max) in `limits`,
-    each run with a new Media as a new scrape makes."""
+    each run with a new Media as a new scrape makes. chunked: the server
+    sends the file without its size."""
     results = []
 
     async def runs():
-        async with Server() as srv:
+        async with Server(chunked) as srv:
             async with sessionManager(
                 retries=1, wait_min=0, wait_max=0, log=logging.getLogger("test")
             ) as c:
@@ -244,9 +260,15 @@ def files(env):
     )
 
 
+# a reply that gives the file's size, and one that doesn't (chunked, no
+# Content-Length), whose size is known only once it's written (#336)
+REPLIES = pytest.mark.parametrize("chunked", [False, True], ids=["sized", "no size"])
+
+
+@REPLIES
 @pytest.mark.parametrize("limit", list(LIMITS), ids=list(LIMITS))
-def test_size_skip_is_counted_and_downloaded_later(env, limit):
-    skip, later = normal_runs(env, LIMITS[limit](len(BODY)), (0, 0))
+def test_size_skip_is_counted_and_downloaded_later(env, limit, chunked):
+    skip, later = normal_runs(env, LIMITS[limit](len(BODY)), (0, 0), chunked=chunked)
     assert skip.counted == counts(forced_skipped=1)
     assert not skip.downloaded
     assert skip.files == []
@@ -257,8 +279,9 @@ def test_size_skip_is_counted_and_downloaded_later(env, limit):
     assert later.files == [BODY]
 
 
-def test_no_limits_unchanged(env):
-    first, second = normal_runs(env, (0, 0), (0, 0))
+@REPLIES
+def test_no_limits_unchanged(env, chunked):
+    first, second = normal_runs(env, (0, 0), (0, 0), chunked=chunked)
     assert first.todo == [7]
     assert first.counted == counts(photo_count=1)
     assert first.downloaded == 1
@@ -266,21 +289,28 @@ def test_no_limits_unchanged(env):
     assert second.todo == [] and second.counted == counts()
 
 
-def test_limit_the_file_is_inside_downloads_it(env):
-    (first,) = normal_runs(env, (len(BODY) - 1, len(BODY) + 1))
+@REPLIES
+def test_limit_the_file_is_inside_downloads_it(env, chunked):
+    (first,) = normal_runs(env, (len(BODY) - 1, len(BODY) + 1), chunked=chunked)
     assert first.counted == counts(photo_count=1)
     assert first.downloaded == 1
     assert first.files == [BODY]
 
 
-def test_skip_download_script_still_saves_the_item_as_done(env, monkeypatch):
+@REPLIES
+def test_skip_download_script_still_saves_the_item_as_done(env, monkeypatch, chunked):
     # unchanged: a skip by the skip_download_script is a lasting choice; the
-    # item is saved as downloaded (with no file) and counted under its type
+    # item is saved as downloaded (with no file) and counted under its type.
+    # It's asked once, with the file's real size, whether the reply gave it
+    asked = []
+
     async def skip(total, ele):
+        asked.append(total)
         return True
 
     monkeypatch.setattr(dm, "skip_download_script", skip)
-    first, second = normal_runs(env, (0, 0), (0, 0))
+    first, second = normal_runs(env, (0, 0), (0, 0), chunked=chunked)
+    assert asked == [len(BODY)]
     assert first.counted == counts(photo_count=1)
     assert first.downloaded == 1
     assert first.files == []
