@@ -290,7 +290,7 @@ class Post(base.base):
 
     @property
     def formatted_date(self):
-        return arrow.get(self.date).format("YYYY-MM-DD hh:mm:ss")
+        return arrow.get(self.date).format("YYYY-MM-DD HH:mm:ss")
 
     @property
     def value(self):

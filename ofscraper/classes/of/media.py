@@ -266,7 +266,7 @@ class Media(base.base):
     def formatted_date(self):
         date_val = self._media.get("createdAt") or self._media.get("postedAt")
         if date_val:
-            return arrow.get(date_val).format("YYYY-MM-DD hh:mm:ss")
+            return arrow.get(date_val).format("YYYY-MM-DD HH:mm:ss")
         return None
 
     @property
