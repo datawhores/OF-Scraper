@@ -206,7 +206,10 @@ class DownloadManager:
             return 0
         return resume_size
 
-    async def _check_forced_skip(self, ele, total):
+    async def _check_forced_skip(self, ele, total, before=0):
+        """0 if the file isn't downloaded. before is the size of the item's
+        parts already downloaded (a DRM video's audio track), which the size
+        limits add to total; None checks no size limits."""
         if total is None:
             return
         total = int(total)
@@ -214,18 +217,21 @@ class DownloadManager:
             return 0
         if await skip_download_script(total, ele):
             return 0
+        if before is None:
+            return
+        size = total + int(before)
         file_size_max = settings.get_settings().size_max
         file_size_min = settings.get_settings().size_min
-        if int(file_size_max) > 0 and (int(total) > int(file_size_max)):
+        if int(file_size_max) > 0 and (size > int(file_size_max)):
             ele.mediatype = "Forced_skipped"
             common_globals.log.debug(
-                f"{get_medialog(ele)} {format_size(total)} over size limit"
+                f"{get_medialog(ele)} {format_size(size)} over size limit"
             )
             return 0
-        elif int(file_size_min) > 0 and (int(total) < int(file_size_min)):
+        elif int(file_size_min) > 0 and (size < int(file_size_min)):
             ele.mediatype = "Forced_skipped"
             common_globals.log.debug(
-                f"{get_medialog(ele)} {format_size(total)} under size min"
+                f"{get_medialog(ele)} {format_size(size)} under size min"
             )
             return 0
 

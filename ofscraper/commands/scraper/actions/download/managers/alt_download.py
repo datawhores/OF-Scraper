@@ -70,11 +70,26 @@ class AltDownloadManager(DownloadManager):
             video = await ele.mpd_video
             path_to_file_logger(sharedPlaceholderObj, ele)
 
-            # Only attempt to download tracks that actually exist
+            # Only attempt to download tracks that actually exist. The size
+            # limits are for the whole video (#316): they're checked once the
+            # last track's size is known, on its size plus the audio's
+            mediatype = ele.mediatype
             if audio:
-                audio = await self._alt_download_downloader(audio, c, ele)
+                audio = await self._alt_download_downloader(
+                    audio, c, ele, before=None if video else 0
+                )
             if video:
-                video = await self._alt_download_downloader(video, c, ele)
+                video = await self._alt_download_downloader(
+                    video, c, ele, before=audio["total"] if audio else 0
+                )
+            if ele.mediatype != mediatype:
+                # only a size limit changes it: the item is skipped and its
+                # tracks aren't kept. Nothing after this reads ele.mpd, which
+                # the new mediatype makes None
+                for track in (audio, video):
+                    if track:
+                        pathlib.Path(track["path"]).unlink(missing_ok=True)
+                return "forced_skipped", 0
 
             # Safely calculate total size
             audio_size = audio["total"] if audio else 0
@@ -95,7 +110,10 @@ class AltDownloadManager(DownloadManager):
         finally:
             common_globals.sem.release()
 
-    async def _alt_download_downloader(self, item, c, ele):
+    async def _alt_download_downloader(self, item, c, ele, before=0):
+        """Download one track. before is the size of the tracks already
+        downloaded: the size limits are checked on it plus this track's
+        size. None checks no limits (another track comes after this one)."""
         self._downloadspace()
         placeholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{item['name']}.part"
@@ -103,6 +121,7 @@ class AltDownloadManager(DownloadManager):
         item["path"] = placeholderObj.tempfilepath
         item["total"] = None
         item["validator"] = None
+        item["before"] = before
 
         _attempt = self._alt_attempt_get(item)
         _attempt.set(0)
@@ -247,7 +266,7 @@ class AltDownloadManager(DownloadManager):
                     f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
                 )
                 temp_file_logger(placeholderObj, ele)
-                if await self._check_forced_skip(ele, total) == 0:
+                if await self._check_forced_skip(ele, total, item.get("before", 0)) == 0:
                     if asked and not resume_size:
                         # a whole-file reply to a resume: the part is stale
                         pathlib.Path(placeholderObj.tempfilepath).unlink(
@@ -491,7 +510,7 @@ class AltDownloadManager(DownloadManager):
                 pass
             return item, False
 
-        if await self._check_forced_skip(ele, total) == 0:
+        if await self._check_forced_skip(ele, total, item.get("before", 0)) == 0:
             item["total"] = 0
             return item, True
         elif total == resume_size:
