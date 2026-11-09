@@ -154,7 +154,8 @@ class Media(base.base):
             return "Images"
         elif media_type == "gif":
             return "Videos"
-        elif media_type == "forced_skipped":
+        elif media_type.lower() == "forced_skipped":
+            # a size limit sets "Forced_skipped": read it back unchanged
             return "Forced_skipped"
         elif media_type in {"audio", "audios"}:
             return "Audios"
