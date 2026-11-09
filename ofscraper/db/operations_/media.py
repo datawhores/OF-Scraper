@@ -216,6 +216,30 @@ unlockedMediaCheck = """
 SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=(1) AND downloaded=(0)
 """
 
+# Before #326 a file skipped by a size limit was saved as downloaded with no
+# file, and its row got the media type "Forced_skippeds" (#319, #352). The
+# download columns are written for every post of the media at once, so all
+# of its rows were left downloaded with no file.
+SIZE_SKIP_LABEL = "Forced_skippeds"
+SIZE_SKIP_REPAIR_FLAG = "media_size_skip_repaired"
+sizeSkipLabelled = """
+SELECT DISTINCT media_id, model_id FROM medias
+WHERE media_type = ? AND downloaded = 1 AND media_id IS NOT NULL
+"""
+# a row with anything recorded about a file is not the bug's
+mediaHasFile = """
+SELECT 1 FROM medias
+WHERE media_id = ? AND model_id IS ?
+AND (filename IS NOT NULL OR directory IS NOT NULL OR size IS NOT NULL OR hash IS NOT NULL)
+LIMIT 1
+"""
+# NULL, as a size skip leaves the row now
+sizeSkipUnmark = """
+UPDATE medias SET downloaded = NULL
+WHERE media_id = ? AND model_id IS ? AND downloaded = 1
+AND filename IS NULL AND directory IS NULL AND size IS NULL AND hash IS NULL
+"""
+
 
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
@@ -809,6 +833,40 @@ def get_unlocked_media_ids(model_id=None, username=None, conn=None, **kwargs) ->
             {"media_id": dict(row)["media_id"], "post_id": dict(row)["post_id"]}
             for row in cur.fetchall()
         ]
+
+
+@wrapper.operation_wrapper_async
+def repair_size_skipped_media(
+    from_backups=(), model_id=None, username=None, conn=None, **kwargs
+) -> int:
+    """Un-mark the media the size-skip bug saved as downloaded (#352).
+
+    The media is the one labelled "Forced_skippeds" here, or in a backup
+    (`from_backups`: (media_id, model_id) pairs). Only its rows downloaded
+    with no file change, and none if any of its rows has a file. Writes the
+    repair's flag in the same transaction, so it runs once per database.
+    Returns the number of rows un-marked."""
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            media = {
+                (row["media_id"], row["model_id"])
+                for row in cur.execute(sizeSkipLabelled, [SIZE_SKIP_LABEL])
+            }
+            media.update(pair for pair in from_backups if pair[0] is not None)
+            changed = 0
+            for pair in sorted(media, key=str):
+                if cur.execute(mediaHasFile, pair).fetchone():
+                    continue
+                changed += cur.execute(sizeSkipUnmark, pair).rowcount
+            cur.execute(
+                "INSERT OR REPLACE INTO schema_flags (flag_name, flag_value) VALUES (?, ?);",
+                [SIZE_SKIP_REPAIR_FLAG, 1],
+            )
+            conn.commit()
+            return changed
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
 
 
 @wrapper.operation_wrapper

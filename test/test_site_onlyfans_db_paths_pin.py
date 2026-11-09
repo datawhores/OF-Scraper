@@ -72,7 +72,7 @@ POST_COLS = ["id", "post_id", "text", "price", "paid", "archived", "created_at",
 FLAGS = [
     "labels_model_id", "labels_model_id_constraint_added", "media_bool_changes",
     "media_duration", "media_hash", "media_model_id", "media_post_id_constraint_added",
-    "media_posted_at", "media_unlocked", "messages_group_id", "messages_is_deleted",
+    "media_posted_at", "media_size_skip_repaired", "media_unlocked", "messages_group_id", "messages_is_deleted",
     "messages_model_id", "messages_model_id_constraint_added", "other_model_id",
     "others_model_id_constraint_added", "posts_is_deleted", "posts_mentions", "posts_model_id",
     "posts_model_id_constraint_added", "posts_opened", "posts_pinned", "posts_purchase_type",

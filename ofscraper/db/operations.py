@@ -45,7 +45,7 @@ from ofscraper.db.operations_.stories import (
     create_stories_table,
     make_stories_table_changes,
 )
-from ofscraper.db.transition import modify_tables
+from ofscraper.db.transition import modify_tables, size_skip_labels_in_backups
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -108,9 +108,13 @@ async def table_init_create(model_id=None, username=None, **kwargs):
         .exists()
     )
     await create_tables(model_id=model_id, username=username)
+    # read before the periodic copy below can replace the backup that has them
+    backup_labels = size_skip_labels_in_backups(model_id=model_id, username=username)
     if not new_db:
         create_backup(model_id, username)
-    await modify_tables(model_id, username, new_db=new_db)
+    await modify_tables(
+        model_id, username, new_db=new_db, backup_labels=backup_labels
+    )
     await write_profile_table(model_id=model_id, username=username)
     await write_models_table(model_id=model_id, username=username)
     # OnlyFans databases stay exactly as before; other sites are recorded

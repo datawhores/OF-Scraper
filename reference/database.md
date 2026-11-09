@@ -247,6 +247,7 @@ Flag names:
 - `products_model_id_constraint_added`: `products` rebuilt with `UNIQUE (post_id, model_id)`.
 - `media_post_id_constraint_added`: `medias` rebuilt with `UNIQUE (media_id, model_id, post_id)`. Written together with `media_bool_changes`.
 - `media_bool_changes`: `medias` rebuilt with its boolean columns. Written together with `media_post_id_constraint_added`. If either flag is missing, the one rebuild runs.
+- `media_size_skip_repaired`: a one-time repair, run after the changes above (`repair_tables`). Before #326 a file skipped by a size limit was saved as downloaded with no file, and its row got the media type `Forced_skippeds`. The repair sets `downloaded` back to NULL on the rows of that media (same `media_id` and `model_id`, any post) that are downloaded with no `directory`, `filename`, `size` or `hash`. It finds the media by that label in `medias`, and in the `user_data_copy_N.db` and `old_schema_*` backups, which it opens read-only and reads before the run writes any backup (a new copy can replace the one that still has the label). Media with a file recorded in any of its rows is left alone, and so is every other row downloaded with no file. The `old_schema_*` backup taken first holds the rows as they were. The flag is written in the same transaction.
 - `site`: not a migration flag. The value is the site name (`fansly`) for a Fansly database. The row is absent for OnlyFans.
 
 **Unique:** (`flag_name`)
