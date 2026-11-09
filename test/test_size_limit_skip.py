@@ -203,6 +203,8 @@ class Server:
 
     async def __aenter__(self):
         async def handler(request):
+            if request.match_info["name"].startswith("gone"):
+                return web.Response(status=404)
             return web.Response(body=BODY, content_type="image/jpeg")
 
         app = web.Application()
@@ -218,14 +220,14 @@ class Server:
         await self.runner.cleanup()
 
 
-def photo(base):
+def photo(base, name="abc123def"):
     post = Post(
         {"id": 1, "postedAt": "2026-01-02T03:04:05+00:00", "text": ""},
         MODEL_ID, USERNAME, responsetype="timeline",
     )
     return Media(
         {"id": 7, "type": "photo", "canView": True,
-         "files": {"full": {"url": f"{base}/abc123def.jpg"}}},
+         "files": {"full": {"url": f"{base}/{name}.jpg"}}},
         0, post,
     )
 
@@ -403,3 +405,90 @@ def test_fansly_stream_no_limits_unchanged(env, fansly):
     second, again = run_once(env, [fansly_item()[0]], fansly.session)
     assert again == [] and second == counts()
     assert len(fansly.runs) == 1
+
+# ------------------------------------------------------------- after-action script
+
+@pytest.fixture
+def action_script(env, monkeypatch, tmp_path):
+    """The real after_download_action_script, with the script's run replaced:
+    returns the media the script would get on stdin (#332)."""
+    import ofscraper.managers.manager as manager
+    import ofscraper.scripts.after_download_action_script as script_mod
+
+    script = tmp_path / "script"
+    script.write_text("")
+    env.stub.after_action_script = str(script)
+    monkeypatch.setattr(manager, "Manager", SimpleNamespace(current_model_manager=SimpleNamespace(
+        get_model=lambda username: {"username": username, "id": MODEL_ID})))
+    sent = []
+    monkeypatch.setattr(script_mod, "run", lambda cmd, input=None, **k: sent.append(input))
+
+    def media(items):
+        script_mod.after_download_action_script(USERNAME, items)
+        (payload,) = sent
+        sent.clear()
+        return json.loads(payload)["media"]
+
+    return media
+
+
+def saved(env, media_id):
+    with contextlib.closing(sqlite3.connect(env.db)) as conn:
+        return conn.execute(
+            "SELECT media_type, downloaded FROM medias WHERE media_id = ?", [media_id]
+        ).fetchone()
+
+
+def normal_item_run(env, name="abc123def", size_min=0, size_max=0):
+    async def go():
+        async with Server() as srv:
+            async with sessionManager(
+                retries=1, wait_min=0, wait_max=0, log=logging.getLogger("test")
+            ) as c:
+                return await run_async(env, [photo(srv.base, name)], c, size_min, size_max)
+
+    return asyncio.run(go())
+
+
+@pytest.mark.parametrize("limit", list(LIMITS), ids=list(LIMITS))
+def test_size_skip_reaches_action_script_as_skipped(env, action_script, limit):
+    counted, todo = normal_item_run(env, size_min=LIMITS[limit](len(BODY))[0],
+                                    size_max=LIMITS[limit](len(BODY))[1])
+    # counted and saved as #319 leaves them
+    assert counted == counts(forced_skipped=1)
+    assert saved(env, 7) == ("Images", None)
+    assert files(env) == []
+    (media,) = action_script(todo)
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "photo"
+
+
+@pytest.mark.parametrize("limit", list(LIMITS), ids=list(LIMITS))
+def test_fansly_stream_size_skip_reaches_action_script_as_skipped(
+    env, fansly, action_script, limit
+):
+    size_min, size_max = LIMITS[limit](STREAM_SIZE)
+    counted, todo = run_once(env, [fansly_item()[0]], fansly.session, size_min, size_max)
+    assert counted == counts(forced_skipped=1)
+    assert saved(env, fansly.id) == ("Videos", None)
+    (media,) = action_script(todo)
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "video"
+
+
+def test_downloaded_item_reaches_action_script_unchanged(env, action_script):
+    counted, todo = normal_item_run(env)
+    assert counted == counts(photo_count=1)
+    (media,) = action_script(todo)
+    assert media["download_status"] == "succeeded"
+    assert media["type"] == "photo"
+    assert media["size"] == float(len(BODY))
+
+
+def test_failed_item_reaches_action_script_unchanged(env, action_script):
+    counted, todo = normal_item_run(env, name="gone123")
+    assert counted == counts(skipped=1)
+    assert not saved(env, 7)[1]
+    (media,) = action_script(todo)
+    assert media["download_status"] == "failed"
+    assert media["type"] == "photo"

@@ -37,6 +37,8 @@ class Media(base.base):
         self._hls = None
         self._lock = asyncio.Lock()
         self._cached_mpd = None
+        # a size limit replaces the type with "Forced_skipped" for the download
+        self._type = media.get("type")
 
         self.download_attempted = False
         self.download_succeeded = (
@@ -66,12 +68,16 @@ class Media(base.base):
         """Sets the flags to represent a skipped download."""
         self.download_attempted = False
         self.download_succeeded = None
+        self.update_download_status()
 
     def update_download_status(self):
         """
         Updates the download status string in the internal media dictionary
         based on the two download flags.
         """
+        # the download is over: give the item its own type back (#332, #341)
+        if str(self._media.get("type")).lower() == "forced_skipped":
+            self._media["type"] = self._type
         if self.download_attempted and self.download_succeeded:
             self.media["download_status"] = "succeeded"
         elif self.download_attempted and not self.download_succeeded:

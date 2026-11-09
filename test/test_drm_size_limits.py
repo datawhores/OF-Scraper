@@ -90,15 +90,18 @@ def _run(
     script=None,
     drm=True,
     chunked=False,
+    cache_error=None,
 ):
     """Download one item through the consumer: a DRM video, or with
     drm=False a non-DRM file. With chunked the server sends each whole file
     chunked, without its size (no Content-Length). video_part is the start of
     the video track left by an earlier run, with its saved size. script
     stands in for skip_download_script: it gets each file's size and
-    returns True to skip it. Returns (counters, the tracks the merge got, the requests the server
-    saw, the .part files left). A non-DRM file's merge is under "file", and
-    "marked" is set when it's saved as downloaded without a file."""
+    returns True to skip it. cache_error is raised by the first save of a
+    track's headers after the size check skips it. Returns (counters, the
+    tracks the merge got, the requests the server saw, the .part files left).
+    A non-DRM file's merge is under "file", and "marked" is set when it's
+    saved as downloaded without a file."""
     monkeypatch.setattr(
         settings,
         "get_settings",
@@ -174,7 +177,11 @@ def _run(
     async def _get_data(self, ele, item):
         return cache.get(item["name"])
 
+    cache_errors = [cache_error] if cache_error else []
+
     async def _set_data(self, ele, item, data):
+        if cache_errors and ele.mediatype == "Forced_skipped":
+            raise cache_errors.pop()
         cache[item["name"]] = data
 
     merged = {}
@@ -472,3 +479,68 @@ def test_script_on_a_non_drm_file_is_unchanged(tmp_path, monkeypatch, skip, chun
     # counted as a video, as before
     assert counts == DOWNLOADED
     assert merged == ({"marked": True} if skip else {"file": FILE})
+
+
+# ------------------------------------------------------------- after-action script
+
+def _script_media(tmp_path, monkeypatch, items):
+    """The media the real after_download_action_script would send on stdin."""
+    import json
+
+    import ofscraper.managers.manager as manager
+    import ofscraper.scripts.after_download_action_script as script_mod
+
+    script = tmp_path / "script"
+    script.write_text("")
+    monkeypatch.setattr(
+        settings, "get_settings",
+        lambda *a, **k: SimpleNamespace(after_action_script=str(script)),
+    )
+    monkeypatch.setattr(manager, "Manager", SimpleNamespace(current_model_manager=SimpleNamespace(
+        get_model=lambda username: {"username": username, "id": 1})))
+    sent = []
+    monkeypatch.setattr(script_mod, "run", lambda cmd, input=None, **k: sent.append(input))
+    script_mod.after_download_action_script("model", items)
+    (payload,) = sent
+    return json.loads(payload)["media"]
+
+
+def test_size_skipped_video_that_fails_reaches_the_script_with_its_type(
+    tmp_path, monkeypatch
+):
+    # the size check labels the video Forced_skipped, then saving the video
+    # track's headers fails. The retry can't fetch the track (the label leaves
+    # no manifest), so the item ends failed, still labelled (#341)
+    items = []
+    consumer = run.consumer
+
+    async def recording_consumer(aws, *args, **kwargs):
+        items.extend(ele for _, ele, *_ in aws)
+        return await consumer(aws, *args, **kwargs)
+
+    monkeypatch.setattr(run, "consumer", recording_consumer)
+    counts, merged, seen, parts = _run(
+        tmp_path, monkeypatch, size_min=WHOLE + 1,
+        cache_error=RuntimeError("database is locked"),
+    )
+    assert counts == {"videos": 0, "forced_skipped": 0, "failed": 1}
+    assert merged == {}
+    (media,) = _script_media(tmp_path, monkeypatch, items)
+    assert media["download_status"] == "failed"
+    assert media["type"] == "video"
+
+
+def test_size_skipped_video_reaches_the_script_as_skipped(tmp_path, monkeypatch):
+    items = []
+    consumer = run.consumer
+
+    async def recording_consumer(aws, *args, **kwargs):
+        items.extend(ele for _, ele, *_ in aws)
+        return await consumer(aws, *args, **kwargs)
+
+    monkeypatch.setattr(run, "consumer", recording_consumer)
+    counts, *_ = _run(tmp_path, monkeypatch, size_min=WHOLE + 1)
+    assert counts == SKIPPED
+    (media,) = _script_media(tmp_path, monkeypatch, items)
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "video"
