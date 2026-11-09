@@ -11,7 +11,7 @@ what OF-Scraper recorded about each file into Stash, for OnlyFans and Fansly dow
 | **Date** | when the post or message was posted | the same |
 | **Title and details** | the caption's first line, and the full caption | the same |
 | **Code** | the post ID (none for profile pictures) | the Fansly media ID |
-| **URL** | the post's page, for timeline posts and bought posts | `https://fansly.com/post/<id>` for timeline posts, and `https://fansly.com/messages/<conversation>/<id>` for messages |
+| **URL** | the post's page, for timeline posts and bought posts | `https://fansly.com/post/<id>` for timeline posts, and the conversation's page, `https://fansly.com/messages/<conversation>`, for messages |
 | **Tags** | where the file came from, e.g. `OnlyFans Timeline`, `OnlyFans Messages` or `OnlyFans Paid` | the same with `Fansly`, plus `Fansly Preview` for preview media and the caption's #hashtags, lowercased |
 | **Gallery** | none | one per post or message, holding its images and scenes |
 
@@ -29,7 +29,9 @@ run is created without a site link.
 
 It only fills in empty fields and adds performers, the studio, tags and galleries.
 Anything you've set in Stash is kept, so running it again changes nothing that's
-already there.
+already there. The one exception: earlier versions linked a Fansly message as
+`https://fansly.com/messages/<conversation>/<id>`, which isn't a Fansly page.
+That exact link is replaced by the conversation's link; any other link is kept.
 
 It reads OF-Scraper's databases offline and never contacts OnlyFans or Fansly.
 A Fansly database is recognised by the site OF-Scraper records in it; Fansly runs

@@ -387,7 +387,7 @@ TABLES = {
             "user_id": "The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own.",
             "model_id": "The creator account id the chat belongs to.",
             "is_deleted": "1 when a scan decided the message no longer exists. Default 0.",
-            "group_id": "Fansly only: the conversation id (`groupId`), so a message's page is `https://fansly.com/messages/<group_id>/<post_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link.",
+            "group_id": "Fansly only: the conversation id (`groupId`), so a message's page is its conversation's, `https://fansly.com/messages/<group_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link.",
         },
     },
     "stories": {

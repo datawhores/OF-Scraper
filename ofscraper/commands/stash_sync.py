@@ -4,7 +4,8 @@ Reads model databases (user_data.db) offline and talks only to Stash's GraphQL
 API. Each downloaded file is looked up in Stash by path; empty fields are filled
 in and the creator, studio and tags are added. Fansly posts and messages also
 get a gallery each. Nothing set in Stash is overwritten or removed, so running
-it again changes nothing.
+it again changes nothing. The one exception is the wrong Fansly message link
+earlier versions added, which is replaced.
 """
 
 import argparse
@@ -274,9 +275,12 @@ def fansly_post_meta(post_id, posted, texts, username, bought=False, group_ids=N
     if not bought and post_id and post_id.isdigit():
         if table == "posts":
             meta["url"] = f"{FANSLY_ORIGIN}/post/{post_id}"
-        # A message's page needs its conversation id, which older rows don't have
+        # A message's page is its conversation's, whose id older rows don't have
         elif table == "messages" and str((group_ids or {}).get(post_id) or "").isdigit():
-            meta["url"] = f"{FANSLY_ORIGIN}/messages/{group_ids[post_id]}/{post_id}"
+            meta["url"] = f"{FANSLY_ORIGIN}/messages/{group_ids[post_id]}"
+            # Earlier versions added .../<conversation>/<message>, which isn't a
+            # Fansly page; that exact link is replaced, any other is kept
+            meta["replaces"] = f"{meta['url']}/{post_id}"
     meta["hashtags"] = hashtags(raw)
     # posts.mentions keeps Fansly's accountMentions list as sent, but no tagged
     # post has been seen yet, so which field holds the username isn't known;
@@ -336,13 +340,13 @@ UPDATE = {
 CREATE_GALLERY = "mutation($input: GalleryCreateInput!) { galleryCreate(input: $input) { id } }"
 
 
-def find_gallery(client, code, url=None):
+def find_gallery(client, code, urls=()):
     """The Fansly gallery with this code (a post or message ID), in any studio, or None.
 
     The user may move a gallery to another studio, or run with another
     --studio, so the studio isn't checked. A gallery is only taken if it has
     no links or a fansly.com one, so one from another site with the same code
-    is left alone. One with this post's link is preferred.
+    is left alone. One with one of urls (this post's links, best first) is preferred.
     """
 
     def fansly_or_unlinked(gallery):
@@ -353,7 +357,11 @@ def find_gallery(client, code, url=None):
         g for g in client.call(FIND_GALLERY, {"code": code})["findGalleries"]["galleries"]
         if g.get("code") == code and fansly_or_unlinked(g)
     ]
-    return next((g for g in found if url and url in (g.get("urls") or [])), found[0] if found else None)
+    for url in urls:
+        for g in found:
+            if url in (g.get("urls") or []):
+                return g
+    return found[0] if found else None
 
 
 def find_item(client, kind, path):
@@ -429,8 +437,11 @@ def plan(item, meta, performer_ids, studio_id, tag_ids, organized=False, gallery
         if meta.get(field) and not item.get(field):
             changes[field] = meta[field]
     urls = item.get("urls") or []
-    if meta.get("url") and meta["url"] not in urls:
-        changes["urls"] = urls + [meta["url"]]
+    kept = [u for u in urls if u != meta.get("replaces")]
+    if meta.get("url") and meta["url"] not in kept:
+        kept.append(meta["url"])
+    if kept != urls:
+        changes["urls"] = kept
     if not item.get("studio"):
         changes["studio_id"] = studio_id
     for field, key, ids in (("performers", "performer_ids", performer_ids), ("tags", "tag_ids", tag_ids),
@@ -571,7 +582,7 @@ def sync(
         sid = studio_id(site)
         people = [creator_id] + [performer_id(site, m) for m in meta["mentions"]]
         tag_ids = fansly_tags(meta, meta["sources"], prefix)
-        existing = find_gallery(client, meta["code"], meta.get("url"))
+        existing = find_gallery(client, meta["code"], [u for u in (meta.get("url"), meta.get("replaces")) if u])
         if existing:
             changes = plan(existing, meta, people, sid, tag_ids, organized)
             if changes:

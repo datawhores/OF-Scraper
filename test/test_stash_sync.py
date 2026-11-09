@@ -316,7 +316,9 @@ BOUGHT_TOO = 100000000000000149  # an item of a message, also bought on its own
 PURCHASE = 100000000000000900  # a made-up item that was only bought
 PURCHASE_MEDIA = 100000000000000901
 MESSAGE, GROUP = 100000000000000142, 100000000000000143  # a message in the fixtures, and its conversation
-MESSAGE_URL = f"https://fansly.com/messages/{GROUP}/{MESSAGE}"
+OTHER_MESSAGE = 100000000000000147  # another message in the same conversation
+MESSAGE_URL = f"https://fansly.com/messages/{GROUP}"  # a message's page is its conversation's
+OLD_MESSAGE_URL = f"https://fansly.com/messages/{GROUP}/{MESSAGE}"  # what #356 wrote; not a Fansly page
 
 
 def fansly_routes(edits=None, purchases=False):
@@ -794,10 +796,12 @@ def test_fansly_message_gets_its_conversation_link(fansly_library):
         assert dict(conn.execute("SELECT post_id, group_id FROM messages")) == {
             MESSAGE: str(GROUP), 100000000000000147: str(GROUP)}
     log = run_log(db, files)
-    other = f"https://fansly.com/messages/{GROUP}/100000000000000147"
+    # both messages are in one conversation, so they share its link
     assert log["galleries"][str(MESSAGE)]["urls"] == [MESSAGE_URL]
-    assert log["galleries"]["100000000000000147"]["urls"] == [other]
+    assert log["galleries"][str(OTHER_MESSAGE)]["urls"] == [MESSAGE_URL]
     assert log["items"]["100000000000000229.jpg"]["urls"] == [MESSAGE_URL]
+    sent = json.dumps(log["created"] + log["updates"])
+    assert f"/messages/{GROUP}/" not in sent
     # posts keep their post link
     assert log["galleries"][str(MENTION_POST)]["urls"] == [f"https://fansly.com/post/{MENTION_POST}"]
     assert log["reports"][0]["galleries_to_create"] == 5
@@ -848,6 +852,42 @@ def test_fansly_conversation_id_that_is_not_a_number_gives_no_link(fansly_librar
         conn.execute("UPDATE messages SET group_id = ?", (group,))
     log = run_log(db, files)
     assert log["galleries"][str(MESSAGE)]["urls"] == []
+    assert log["items"]["100000000000000229.jpg"]["urls"] == []
+
+
+def test_fansly_old_message_link_is_replaced_and_other_links_kept(fansly_library, tmp_path):
+    # a file and galleries synced by #356 have the old .../<conversation>/<message>
+    # link, beside links the user added; only that exact old link goes
+    db, _, files = fansly_library
+    stash = FakeStash()
+    for path, kind in files:
+        stash.add(kind, path)
+    mine = "https://example.com/my-notes"
+    other_old = f"https://fansly.com/messages/{GROUP}/{OTHER_MESSAGE}"  # another message's, not this one's
+    unrelated = "https://fansly.com/messages/x/y"
+    wildcard = f"https://fansly.com/messages/{GROUP}/{str(MESSAGE)[:-1]}_"  # equal only under LIKE
+    item = by_file(stash, "100000000000000229.jpg")
+    item["urls"] = [mine, OLD_MESSAGE_URL, other_old, unrelated, wildcard]
+    blank = {"title": "", "details": "", "date": None, "organized": False, "studio": None, "performers": [],
+             "tags": []}
+    stash.galleries["g1"] = {**blank, "id": "g1", "code": str(MESSAGE), "urls": [OLD_MESSAGE_URL, mine]}
+    # already has the new link too: the old one is only dropped
+    stash.galleries["g2"] = {**blank, "id": "g2", "code": str(OTHER_MESSAGE), "urls": [other_old, MESSAGE_URL]}
+
+    report = sync([db], stash, apply=True)
+
+    assert item["urls"] == [mine, other_old, unrelated, wildcard, MESSAGE_URL]
+    assert stash.galleries["g1"]["urls"] == [mine, MESSAGE_URL]
+    assert stash.galleries["g2"]["urls"] == [MESSAGE_URL]
+    assert {"id": "g1"} in item["galleries"]  # the galleries are reused, not made again
+    assert len(stash.galleries) == 5 and report["totals"]["galleries_created"] == 3
+
+    # a second run changes nothing more
+    updates, created = len(stash.updates), len(stash.created)
+    again = sync([db], stash, apply=True)
+    assert (len(stash.updates), len(stash.created)) == (updates, created)
+    assert "updated" not in again["totals"] and "galleries_updated" not in again["totals"]
+    assert item["urls"] == [mine, other_old, unrelated, wildcard, MESSAGE_URL]
 
 
 @pytest.mark.parametrize("stored", ["[]", json.dumps([{"listed": "listedonly"}]), "not json"])
