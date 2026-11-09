@@ -173,6 +173,9 @@ class AltDownloadManager(DownloadManager):
                     common_globals.log.debug(
                         f" {get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
                     )
+                    if self._skipped_by_size(ele, E):
+                        item["total"] = 0
+                        return item
                     raise E
                 except Exception as E:
                     common_globals.log.traceback_(
@@ -181,6 +184,10 @@ class AltDownloadManager(DownloadManager):
                     common_globals.log.traceback_(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
                     )
+                    if self._skipped_by_size(ele, E):
+                        # alt_download removes both tracks' parts
+                        item["total"] = 0
+                        return item
                     raise E
 
     async def _alt_download_sendreq(self, item, c, ele, placeholderObj):

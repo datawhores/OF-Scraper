@@ -119,6 +119,9 @@ class MainDownloadManager(DownloadManager):
                     common_globals.log.debug(
                         f"[{common_logs.get_medialog(ele)}] [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
                     )
+                    if self._skipped_by_size(ele, E):
+                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                        return (0, tempholderObj.tempfilepath, None)
                     raise E
                 except Exception as E:
                     common_globals.log.traceback_(
@@ -127,6 +130,9 @@ class MainDownloadManager(DownloadManager):
                     common_globals.log.traceback_(
                         f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
                     )
+                    if self._skipped_by_size(ele, E):
+                        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                        return (0, tempholderObj.tempfilepath, None)
                     raise E
 
     async def _main_download_sendreq(

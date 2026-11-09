@@ -235,6 +235,21 @@ class DownloadManager:
             )
             return 0
 
+    def _skipped_by_size(self, ele, error):
+        """True if the size limits have already skipped the item in this
+        attempt. An error after that (saving the reply's headers to the
+        cache, say) doesn't undo the skip: the attempt ends as a skip, with
+        no retry. A retry can't work anyway for a DRM video: the skip leaves
+        it no manifest (#345)."""
+        # read with getattr: this runs while handling the error, and mustn't
+        # replace it with another
+        if getattr(ele, "mediatype", None) != "Forced_skipped":
+            return False
+        common_globals.log.debug(
+            f"{get_medialog(ele)} skipped by the size limits, ignoring a later error: {error}"
+        )
+        return True
+
     def _check_same_file(self, r, resume_size, path, saved_validator):
         """After a 206 (resume_size set), start over if the reply's ETag or
         Last-Modified isn't the one saved with the part. If-Range should have

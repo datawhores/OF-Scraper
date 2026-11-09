@@ -92,17 +92,21 @@ def _run(
     drm=True,
     chunked=False,
     cache_error=None,
+    cache_error_times=1,
+    cache_error_always=False,
 ):
     """Download one item through the consumer: a DRM video, or with
     drm=False a non-DRM file. With chunked the server sends each whole file
     chunked, without its size (no Content-Length). video_part is the start of
     the video track left by an earlier run, with its saved size. script
     stands in for skip_download_script: it gets each file's size and
-    returns True to skip it. cache_error is raised by the first save of a
-    track's headers after the size check skips it. Returns (counters, the
-    tracks the merge got, the requests the server saw, the .part files left).
-    A non-DRM file's merge is under "file", and "marked" is set when it's
-    saved as downloaded without a file."""
+    returns True to skip it. cache_error is raised by the first
+    cache_error_times saves of a file's or track's headers after the size
+    check skips it, or with cache_error_always by those saves whatever the
+    size check decided. Returns (counters, the tracks the merge got, the
+    requests the server saw, the .part files left). A non-DRM file's merge
+    is under "file", and "marked" is set when it's saved as downloaded
+    without a file."""
     monkeypatch.setattr(
         settings,
         "get_settings",
@@ -178,10 +182,15 @@ def _run(
     async def _get_data(self, ele, item):
         return cache.get(item["name"])
 
-    cache_errors = [cache_error] if cache_error else []
+    cache_errors = [cache_error] * cache_error_times if cache_error else []
+
+    def _cache_fails(ele):
+        return cache_errors and (
+            cache_error_always or ele.mediatype == "Forced_skipped"
+        )
 
     async def _set_data(self, ele, item, data):
-        if cache_errors and ele.mediatype == "Forced_skipped":
+        if _cache_fails(ele):
             raise cache_errors.pop()
         cache[item["name"]] = data
 
@@ -221,21 +230,26 @@ def _run(
             return cache.get("file")
 
         async def _set_data_main(self, ele, data):
+            if _cache_fails(ele):
+                raise cache_errors.pop()
             cache["file"] = data
 
         async def _handle_main(self, result, ele, username, model_id):
             merged["file"] = pathlib.Path(result[1]).read_bytes()
             return ele.mediatype, result[0]
 
-        async def _force(self, ele, username, model_id):
+        async def _mark(ele, filepath=None, downloaded=None, **kwargs):
+            # the database row the real _force_download saves
+            assert filepath is None and downloaded is True
             merged["marked"] = True
+
+        monkeypatch.setattr(dm, "mark_media_as_downloaded", _mark)
 
         N = md.MainDownloadManager
         for name, fn in (
             ("_get_data", _get_data_main),
             ("_set_data", _set_data_main),
             ("_handle_result_main", _handle_main),
-            ("_force_download", _force),
             ("_add_download_job_task", _noop),
             ("_remove_download_job_task", _noop),
             ("_total_change_helper", _noop),
@@ -531,42 +545,128 @@ def _script_media(tmp_path, monkeypatch, items):
     return json.loads(payload)["media"]
 
 
-def test_size_skipped_video_that_fails_reaches_the_script_with_its_type(
-    tmp_path, monkeypatch
-):
-    # the size check labels the video Forced_skipped, then saving the video
-    # track's headers fails. The retry can't fetch the track (the label leaves
-    # no manifest), so the item ends failed, still labelled (#341)
+def _run_with_payload(tmp_path, monkeypatch, **kwargs):
+    """_run, plus the media the after-action script gets for the item."""
     items = []
     consumer = run.consumer
 
-    async def recording_consumer(aws, *args, **kwargs):
+    async def recording_consumer(aws, *args, **kw):
         items.extend(ele for _, ele, *_ in aws)
-        return await consumer(aws, *args, **kwargs)
+        return await consumer(aws, *args, **kw)
 
     monkeypatch.setattr(run, "consumer", recording_consumer)
-    counts, merged, seen, parts = _run(
-        tmp_path, monkeypatch, size_min=WHOLE + 1,
-        cache_error=RuntimeError("database is locked"),
+    result = _run(tmp_path, monkeypatch, **kwargs)
+    (media,) = _script_media(tmp_path, monkeypatch, items)
+    return (*result, media)
+
+
+LOCKED = RuntimeError("database is locked")
+LIMITS = pytest.mark.parametrize(
+    "limit",
+    [{"size_min": WHOLE + 1}, {"size_max": WHOLE - 1}],
+    ids=["under min", "over max"],
+)
+
+
+@LIMITS
+def test_size_skipped_video_stays_skipped_after_a_later_error(
+    tmp_path, monkeypatch, limit
+):
+    # the size check skips the video, then saving the video track's headers
+    # fails. The skip stands: no retry (the skip leaves the item no manifest
+    # to fetch the track from), no part left, nothing saved (#345)
+    counts, merged, seen, parts, media = _run_with_payload(
+        tmp_path, monkeypatch, cache_error=LOCKED, **limit
+    )
+    assert counts == SKIPPED
+    # not merged, so not saved as downloaded
+    assert merged == {}
+    assert seen == ["audio.mp4", "video.mp4"]
+    assert parts == []
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "video"
+
+
+@LIMITS
+@pytest.mark.parametrize("times", [1, 3], ids=["once", "every try"])
+def test_size_skipped_file_stays_skipped_after_a_later_error(
+    tmp_path, monkeypatch, limit, times
+):
+    # the same for a non-DRM file: an error after the size check skipped it
+    # ends the attempt as skipped, without asking for the file again
+    limit = {k: len(FILE) + (1 if k == "size_min" else -1) for k in limit}
+    counts, merged, seen, parts, media = _run_with_payload(
+        tmp_path,
+        monkeypatch,
+        drm=False,
+        cache_error=LOCKED,
+        cache_error_times=times,
+        **limit,
+    )
+    assert counts == SKIPPED
+    # neither moved into place nor saved as downloaded without a file
+    assert merged == {}
+    assert seen == ["file.mp4"]
+    assert parts == []
+    assert media["download_status"] == "skipped"
+    assert media["type"] == "video"
+
+
+@pytest.mark.parametrize("drm", [True, False], ids=["drm", "non-drm"])
+def test_error_without_a_size_skip_still_retries_and_fails(
+    tmp_path, monkeypatch, drm
+):
+    # no limit is hit: an error on every try fails the item, as before, and
+    # the part is kept for the next run to resume
+    counts, merged, seen, parts, media = _run_with_payload(
+        tmp_path,
+        monkeypatch,
+        drm=drm,
+        cache_error=LOCKED,
+        cache_error_times=3,
+        cache_error_always=True,
+        size_min=1,
     )
     assert counts == {"videos": 0, "forced_skipped": 0, "failed": 1}
     assert merged == {}
-    (media,) = _script_media(tmp_path, monkeypatch, items)
+    if drm:
+        # the retry resumes the audio part from the size the first try got.
+        # The test server sends the whole track in one chunk, so it's all on
+        # disk and the test server answers the resume with an empty 206,
+        # which fails without more tries, as before
+        assert seen == ["audio.mp4", "audio.mp4 bytes=1000-"]
+    else:
+        assert seen == ["file.mp4"] * 3
+    assert len(parts) == 1
+    assert media["download_status"] == "failed"
+    assert media["type"] == "video"
+
+
+def test_size_skipped_video_that_fails_reaches_the_script_with_its_type(
+    tmp_path, monkeypatch
+):
+    # the size check labels the video Forced_skipped, then removing the
+    # tracks' parts fails. That's outside the retries, so the item ends
+    # failed: the script still gets its own type, not the label (#341)
+    class _Path(type(pathlib.Path())):
+        def unlink(self, missing_ok=False):
+            raise PermissionError("the file is in use")
+
+    monkeypatch.setattr(ad, "pathlib", SimpleNamespace(Path=_Path))
+    counts, merged, seen, parts, media = _run_with_payload(
+        tmp_path, monkeypatch, size_min=WHOLE + 1
+    )
+    assert counts == {"videos": 0, "forced_skipped": 0, "failed": 1}
+    assert merged == {}
+    assert seen == ["audio.mp4", "video.mp4"]
     assert media["download_status"] == "failed"
     assert media["type"] == "video"
 
 
 def test_size_skipped_video_reaches_the_script_as_skipped(tmp_path, monkeypatch):
-    items = []
-    consumer = run.consumer
-
-    async def recording_consumer(aws, *args, **kwargs):
-        items.extend(ele for _, ele, *_ in aws)
-        return await consumer(aws, *args, **kwargs)
-
-    monkeypatch.setattr(run, "consumer", recording_consumer)
-    counts, *_ = _run(tmp_path, monkeypatch, size_min=WHOLE + 1)
+    counts, *_, media = _run_with_payload(tmp_path, monkeypatch, size_min=WHOLE + 1)
     assert counts == SKIPPED
-    (media,) = _script_media(tmp_path, monkeypatch, items)
     assert media["download_status"] == "skipped"
     assert media["type"] == "video"
+
+
