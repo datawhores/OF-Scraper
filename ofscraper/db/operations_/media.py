@@ -21,6 +21,7 @@ from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.rebuild as rebuild
+import ofscraper.db.utils.columns as db_columns
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 from ofscraper.utils.context.run_async import run
 
@@ -52,31 +53,28 @@ CREATE TABLE IF NOT EXISTS medias (
     UNIQUE (media_id,model_id,post_id)
 );"""
 
-mediaSelectTransition = """
-SELECT  media_id,post_id,link,directory,filename,size,api_type,
-media_type,preview,linked,downloaded,created_at,unlocked,
-CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-END AS model_id,
-CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
-            THEN posted_at
-            ELSE NULL
-END AS posted_at,
-CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
-            THEN hash
-            ELSE NULL
-END AS hash,
-CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
-            THEN duration
-            ELSE NULL
-END AS duration,
-CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'skip_permanent')
-            THEN skip_permanent
-            ELSE NULL
-END AS skip_permanent
-FROM medias;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+mediaSelectTransition = [
+    "media_id",
+    "post_id",
+    "link",
+    "directory",
+    "filename",
+    "size",
+    "api_type",
+    "media_type",
+    "preview",
+    "linked",
+    "downloaded",
+    "created_at",
+    ("unlocked", "NULL"),
+    ("model_id", "NULL"),
+    ("posted_at", "NULL"),
+    ("hash", "NULL"),
+    ("duration", "NULL"),
+    ("skip_permanent", "NULL"),
+]
 
 mediaUpdateAPI = """Update 'medias'
 SET
@@ -169,12 +167,29 @@ SELECT media_id, post_id FROM medias
 allPostIDDLCheck = """
 SELECT media_id, post_id FROM medias where downloaded=(1)
 """
+# the per-area queries below are filled in by execute_area_media
+mediaAreaColumns = [
+    "media_id",
+    "post_id",
+    "link",
+    "directory",
+    "filename",
+    "size",
+    "api_type",
+    "media_type",
+    "preview",
+    "linked",
+    "downloaded",
+    "created_at",
+    ("posted_at", "NULL"),
+    ("hash", "NULL"),
+    ("model_id", "NULL"),
+    ("unlocked", "NULL"),
+    ("duration", "NULL"),
+]
 getTimelineMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('timeline','posts','post') {model_filter}
 """
 getModelMediaStatus = """
 SELECT
@@ -182,50 +197,32 @@ media_id,post_id,media_type,downloaded,unlocked
 FROM medias where model_id=(?)
 """
 getArchivedMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('archived') {model_filter}
 """
 
 getPinnedMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('pinned') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('pinned') {model_filter}
 """
 
 getStoriesMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('stories') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('stories') {model_filter}
 """
 getHighlightsMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('highlights') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('highlights') {model_filter}
 """
 getStreamsMedia = """
-SELECT
-media_id,post_id,link,directory,
-filename,size,api_type,media_type,
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked,duration
-FROM medias where LOWER(api_type) in ('streams') and model_id=(?)
+SELECT {columns}
+FROM medias where LOWER(api_type) in ('streams') {model_filter}
 """
 getMessagesMedia = """
-SELECT 
-media_id, post_id, link, directory,
-filename, size, api_type, media_type,
-preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked,duration
+SELECT {columns}
 FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages')
-AND model_id = ?;
+{model_filter}
 """
 unlockedMediaCheck = """
 SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=(1) AND downloaded=(0)
@@ -627,12 +624,28 @@ def _media_cleaup_helper(inputData):
     return output_dict.values()
 
 
+def execute_area_media(cur, query, model_id):
+    """Run one of the per-area queries (getTimelineMedia and the rest) on a
+    medias table that may be older than this version: a missing column gets
+    its stand-in (see mediaAreaColumns). A table from before model_id holds
+    one creator's media, so it isn't filtered by creator."""
+    present = db_columns.table_columns(cur, "medias")
+    has_model_id = "model_id" in present
+    cur.execute(
+        query.format(
+            columns=db_columns.select_list(present, mediaAreaColumns),
+            model_filter="and model_id=(?)" if has_model_id else "",
+        ),
+        [model_id] if has_model_id else [],
+    )
+
+
 @wrapper.operation_wrapper_async
 def get_all_medias_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(mediaSelectTransition)
+        cur.execute(db_columns.select_all(cur, "medias", mediaSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -655,7 +668,7 @@ async def get_all_medias(model_id=None, username=None, database_model=None, **kw
 @wrapper.operation_wrapper_async
 def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getMessagesMedia, [model_id])
+        execute_area_media(cur, getMessagesMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -672,7 +685,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getArchivedMedia, [model_id])
+        execute_area_media(cur, getArchivedMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -689,7 +702,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_pinned_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getPinnedMedia, [model_id])
+        execute_area_media(cur, getPinnedMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -706,7 +719,7 @@ def get_pinned_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_stories_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getStoriesMedia, [model_id])
+        execute_area_media(cur, getStoriesMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -723,7 +736,7 @@ def get_stories_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_highlights_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getHighlightsMedia, [model_id])
+        execute_area_media(cur, getHighlightsMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -740,7 +753,7 @@ def get_highlights_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getStreamsMedia, [model_id])
+        execute_area_media(cur, getStreamsMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -757,7 +770,7 @@ def get_streams_media(conn=None, model_id=None, **kwargs) -> list:
 @wrapper.operation_wrapper_async
 def get_timeline_media(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(getTimelineMedia, [model_id])
+        execute_area_media(cur, getTimelineMedia, model_id)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(ele, posted_at=arrow.get(ele["posted_at"] or ele["created_at"] or 0))

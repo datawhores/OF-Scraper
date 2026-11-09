@@ -22,6 +22,7 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
 import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
@@ -95,38 +96,23 @@ SELECT created_at,post_id FROM posts
 WHERE stream=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
 """
 
-postsSelectTransition = """
-SELECT post_id, text, price, paid, archived, created_at,
-    CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'pinned')
-            THEN pinned
-            ELSE NULL
-       END AS pinned,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'stream')
-            THEN stream
-            ELSE NULL
-       END AS stream,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'opened')
-            THEN opened
-            ELSE NULL
-       END AS opened,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'is_deleted')
-            THEN is_deleted
-            ELSE 0
-       END AS is_deleted,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'purchase_type')
-            THEN purchase_type
-            ELSE NULL
-       END AS purchase_type,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'mentions')
-            THEN mentions
-            ELSE NULL
-       END AS mentions
-       FROM posts;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+postsSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    ("model_id", "NULL"),
+    ("pinned", "NULL"),
+    ("stream", "NULL"),
+    ("opened", "NULL"),
+    ("is_deleted", "0"),
+    ("purchase_type", "NULL"),
+    ("mentions", "NULL"),
+]
 
 allPOSTCheck = """
 SELECT post_id FROM posts
@@ -273,7 +259,7 @@ def get_all_posts_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postsSelectTransition)
+        cur.execute(db_columns.select_all(cur, "posts", postsSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(

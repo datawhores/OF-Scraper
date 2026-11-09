@@ -18,6 +18,7 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
 import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 
@@ -64,26 +65,31 @@ schemaInsert = """
 INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
 VALUES (?, ?);
 """
-othersSelectTransition = """
-SELECT post_id,text,price,paid,archived,created_at ,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('others') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id
-FROM others;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+othersSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    ("model_id", "NULL"),
+]
 othersInsert = """INSERT INTO 'others'(
 post_id, text,price,paid,archived,
 created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
-productsSelectTransition = """
-SELECT post_id,text,price,paid,archived,created_at,title ,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('products') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id
-FROM products;
-"""
+productsSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    "title",
+    ("model_id", "NULL"),
+]
 productsInsert = """INSERT INTO 'products'(
 post_id, text,price,paid,archived,
 created_at,title,model_id)
@@ -200,7 +206,7 @@ def get_all_others_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(othersSelectTransition)
+        cur.execute(db_columns.select_all(cur, "others", othersSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
@@ -241,7 +247,7 @@ def get_all_products_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(productsSelectTransition)
+        cur.execute(db_columns.select_all(cur, "products", productsSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data

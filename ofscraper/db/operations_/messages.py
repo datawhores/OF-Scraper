@@ -21,6 +21,7 @@ from rich.console import Console
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
 import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
@@ -65,22 +66,20 @@ WHERE post_id = ? AND model_id = (?) AND group_id IS NULL;"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
-messagesSelectTransition = """
-SELECT post_id, text, price, paid, archived, created_at, user_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'is_deleted')
-            THEN is_deleted
-            ELSE 0
-       END AS is_deleted,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'group_id')
-            THEN group_id
-            ELSE NULL
-       END AS group_id
-FROM messages;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+messagesSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    "user_id",
+    ("model_id", "NULL"),
+    ("is_deleted", "0"),
+    ("group_id", "NULL"),
+]
 messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
 """
@@ -223,7 +222,7 @@ def get_all_messages_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesSelectTransition)
+        cur.execute(db_columns.select_all(cur, "messages", messagesSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data

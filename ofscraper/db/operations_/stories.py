@@ -19,6 +19,7 @@ from rich.console import Console
 
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
 import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
@@ -48,15 +49,17 @@ SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ? and model_id=(?);"""
 
 
-storiesSelectTransition = """
-SELECT post_id,text,price,paid,archived,created_at,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stories') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id
-FROM stories;
-
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+storiesSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    ("model_id", "NULL"),
+]
 allStoriesCheck = """
 SELECT post_id FROM stories
 """
@@ -165,7 +168,7 @@ def get_all_stories_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(storiesSelectTransition)
+        cur.execute(db_columns.select_all(cur, "stories", storiesSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
