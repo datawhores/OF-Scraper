@@ -428,40 +428,15 @@ async def post_check_retriver(forced=False):
                     model_id=model_id,
                     username=user_name,
                 )
-                all_post_data = []
-                for ele in [
-                    pinned_data,
-                    archived_data,
-                    labels_data,
-                    timeline_data,
-                    streams_data,
-                ]:
-                    if ele == timeline_data:
-
-                        all_post_data.append(
-                            timeline.filter_timeline_post(
-                                list(
-                                    map(
-                                        lambda x: posts_.Post(x, model_id, user_name),
-                                        timeline_data,
-                                    )
-                                )
-                            )
-                        )
-                    else:
-                        all_post_data.append(
-                            map(lambda x: posts_.Post(x, model_id, user_name), ele)
-                        )
-
-                all_post_data = list(
-                    map(
-                        lambda x: posts_.Post(x, model_id, user_name),
-                        pinned_data
-                        + archived_data
-                        + labels_data
-                        + timeline_data
-                        + streams_data,
+                def to_posts(data):
+                    return list(
+                        map(lambda x: posts_.Post(x, model_id, user_name), data)
                     )
+
+                all_post_data = (
+                    to_posts(pinned_data + archived_data + labels_data)
+                    + timeline.filter_timeline_post(to_posts(timeline_data))
+                    + to_posts(streams_data)
                 )
 
                 yield user_name, model_id, all_post_data
