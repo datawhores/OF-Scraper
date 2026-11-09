@@ -249,8 +249,16 @@ async def data_refill(model_id):
         retriver = partial(post_check_retriver, forced=True)
     else:
         return
-    async for username, model_id, final_post_array, *_ in retriver():
-        await process_post_media(username, model_id, final_post_array)
+    # refresh only the creator whose download failed
+    async for username, refilled_id, final_post_array, *_ in retriver(
+        only_model_id=model_id
+    ):
+        await process_post_media(username, refilled_id, final_post_array)
+
+
+def _other_creator(model_id, only_model_id):
+    # True when a refill for one creator should skip this one
+    return only_model_id is not None and str(model_id) != str(only_model_id)
 
 
 def allow_check_dupes():
@@ -319,7 +327,7 @@ async def post_check_runner():
 
 
 @run
-async def post_check_retriver(forced=False):
+async def post_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     links = list(url_helper())
     if settings.get_settings().force:
@@ -354,6 +362,8 @@ async def post_check_retriver(forced=False):
                 model_id = profile.get_id(user_name)
                 user_dict.setdefault(model_id, {})["model_id"] = model_id
                 user_dict.setdefault(model_id, {})["username"] = user_name
+            if _other_creator(model_id, only_model_id):
+                continue
             if user_dict.get(model_id) and model_id and user_name:
                 areas = get_areas()
                 await operations.table_init_create(
@@ -493,6 +503,8 @@ async def post_check_retriver(forced=False):
             if name_match and num_match:
                 user_name = name_match.group(1)
                 model_id = profile.get_id(user_name)
+                if _other_creator(model_id, only_model_id):
+                    continue
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 resp = get_individual_timeline_post(post_id)
@@ -543,7 +555,7 @@ async def message_checker_runner():
             await row_gather(user_name, model_id)
 
 
-async def message_check_retriver(forced=False):
+async def message_check_retriver(forced=False, only_model_id=None):
     links = list(url_helper())
     if settings.get_settings().force:
         forced = True
@@ -570,6 +582,8 @@ async def message_check_retriver(forced=False):
                 )
                 continue
 
+            if _other_creator(model_id, only_model_id):
+                continue
             if model_id and user_name:
                 log.info(f"Getting Messages/Paid content for {user_name}")
                 await operations.table_init_create(
@@ -661,7 +675,7 @@ async def purchase_checker_runner():
 
 
 @run
-async def purchase_check_retriver(forced=False):
+async def purchase_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     auth_requests.make_headers()
     if settings.get_settings().force:
@@ -672,6 +686,8 @@ async def purchase_check_retriver(forced=False):
         for name in check_usernames():
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
+            if _other_creator(model_id, only_model_id):
+                continue
             user_dict[model_id] = user_dict.get(model_id, [])
 
             await operations.table_init_create(model_id=model_id, username=user_name)
@@ -727,7 +743,7 @@ async def stories_checker_runner():
 
 
 @run
-async def stories_check_retriver(forced=False):
+async def stories_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
@@ -735,6 +751,8 @@ async def stories_check_retriver(forced=False):
         for user_name in check_usernames():
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
+            if _other_creator(model_id, only_model_id):
+                continue
             user_dict[model_id] = user_dict.get(model_id, [])
             await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
