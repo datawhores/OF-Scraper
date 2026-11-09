@@ -170,6 +170,15 @@ async def async_run(
         raise TimeoutError(
             f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed."
         )
+    except BaseException:
+        # Cancelled (or failed) while the script runs: don't leave it running.
+        if process.returncode is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+            await process.wait()
+        raise
     finally:
         # Leave nothing running: cancel unfinished tasks and wait for them.
         for task in tasks:
@@ -202,7 +211,5 @@ async def async_run(
         log.log(level, f"{name} stdout:\n{_format_subprocess_output(t.stdout)}")
     if t.stderr:
         log.log(level, f"{name} stderr:\n{_format_subprocess_output(t.stderr)}")
-
-    return t
 
     return t

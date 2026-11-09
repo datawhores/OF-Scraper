@@ -91,3 +91,90 @@ def test_timeout_kills_and_leaves_no_task(slow_stdin):
         return _pending_tasks()
 
     assert asyncio.run(main()) == []
+
+
+@pytest.fixture
+def spawned(monkeypatch):
+    """Record every process async_run starts."""
+    processes = []
+    real_exec = asyncio.create_subprocess_exec
+
+    async def fake_exec(*args, **kwargs):
+        process = await real_exec(*args, **kwargs)
+        processes.append(process)
+        return process
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    return processes
+
+
+async def _start_sleeping_script(spawned, **kwargs):
+    script = "import time; time.sleep(60)"
+    task = asyncio.create_task(
+        async_run([sys.executable, "-c", script], level=0, timeout=60, **kwargs)
+    )
+    while not spawned:
+        await asyncio.sleep(0.05)
+    await asyncio.sleep(0.2)
+    return task, spawned[0]
+
+
+@pytest.mark.parametrize("input", [None, b"data"])
+def test_cancel_kills_running_script(spawned, input):
+    async def main():
+        task, process = await _start_sleeping_script(spawned, input=input)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        # Killed and waited for before the cancel reached the caller.
+        returncode, pending = process.returncode, _pending_tasks()
+        await asyncio.sleep(0.2)  # let the pipe transports close
+        return returncode, pending
+
+    returncode, pending = asyncio.run(main())
+    assert returncode is not None
+    assert returncode != 0
+    assert pending == []
+
+
+def test_second_cancel_during_cleanup_still_raises(spawned):
+    async def main():
+        task, process = await _start_sleeping_script(spawned)
+        task.cancel()
+        for _ in range(3):  # let async_run reach its cleanup
+            await asyncio.sleep(0)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        await asyncio.wait_for(process.wait(), timeout=10)
+        await asyncio.sleep(0.2)  # let the pipe transports close
+        return process, _pending_tasks()
+
+    process, pending = asyncio.run(main())
+    assert process.returncode is not None
+    assert process.returncode != 0
+    assert pending == []
+
+
+def test_timeout_still_kills_script(spawned):
+    async def main():
+        with pytest.raises(TimeoutError, match="forcefully killed"):
+            await async_run(
+                [sys.executable, "-c", "import time; time.sleep(60)"],
+                level=0,
+                timeout=1,
+            )
+        return spawned[0], _pending_tasks()
+
+    process, pending = asyncio.run(main())
+    assert process.returncode is not None
+    assert pending == []
+
+
+def test_normal_run_unchanged(spawned):
+    result = asyncio.run(
+        async_run([sys.executable, "-c", "print('ok')"], level=0, text=True)
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == "ok"
+    assert spawned[0].returncode == 0
