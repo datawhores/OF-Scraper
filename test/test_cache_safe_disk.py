@@ -1,7 +1,9 @@
 """The API cache reads pickled entries as plain data only (CVE-2025-69872):
 a planted entry can't run code, and is read as missing."""
 
+import copyreg
 import logging
+import os
 from types import SimpleNamespace
 
 import diskcache
@@ -131,3 +133,22 @@ def test_ofscraper_cache_reads_a_planted_entry_as_missing(tmp_path, monkeypatch)
     finally:
         ofscraper_cache.close()
         monkeypatch.setattr(ofscraper_cache, "cache", None)
+
+
+def test_copyreg_extension_codes_are_refused(caplog):
+    """An EXT opcode loads a registered callable without find_class."""
+    from ofscraper.utils.cache.safe_disk import _load_plain
+
+    copyreg.add_extension("os", "getcwd", 240)
+    try:
+        # sanity: plain pickle would hand back os.getcwd for this
+        import pickle
+
+        assert pickle.loads(b"\x80\x02\x82\xf0.") is os.getcwd
+        with caplog.at_level(logging.WARNING, logger="shared"):
+            with pytest.raises(UnsafeCacheEntry):
+                _load_plain(b"\x80\x02\x82\xf0.")
+        assert "extension code 240" in caplog.text
+    finally:
+        copyreg.remove_extension("os", "getcwd", 240)
+        copyreg.clear_extension_cache()

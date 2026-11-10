@@ -11,12 +11,17 @@ pickles with an unpickler that refuses every class or function lookup, so a
 planted entry can't run anything. It is treated as missing: diskcache returns
 the default for an entry that raises an IOError, and the data is fetched
 again.
+
+Cache.get, pop and touch read such an entry as missing. Don't use peek or
+peekitem with these disks: diskcache retries an unreadable entry there
+without removing it.
 """
 
 import io
 import logging
 import os.path
 import pickle
+import pickletools
 
 from diskcache import Disk, JSONDisk
 from diskcache.core import MODE_PICKLE
@@ -28,13 +33,25 @@ class UnsafeCacheEntry(OSError):
     """A cache entry that isn't plain data, read as a cache miss."""
 
 
+# EXT opcodes load a callable registered with copyreg.add_extension without
+# going through find_class. Nothing registers one, but refuse them anyway.
+_EXTENSION_OPCODES = {"EXT1", "EXT2", "EXT4"}
+
+
 class _PlainDataUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         raise UnsafeCacheEntry(f"it refers to {module}.{name}")
 
 
+def _refuse_extensions(data: bytes):
+    for opcode, arg, _ in pickletools.genops(data):
+        if opcode.name in _EXTENSION_OPCODES:
+            raise UnsafeCacheEntry(f"it uses copyreg extension code {arg}")
+
+
 def _load_plain(data: bytes):
     try:
+        _refuse_extensions(data)
         return _PlainDataUnpickler(io.BytesIO(data)).load()
     except UnsafeCacheEntry as error:
         log.warning(f"Ignoring a cache entry that isn't plain data: {error}")
