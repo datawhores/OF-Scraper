@@ -48,7 +48,6 @@ class scraperManager(CommandManager):
     def __init__(self):
         super().__init__()
 
-    @exit.exit_wrapper
     def runner(self, menu=False):
         check_auth(include_main_menu=menu)
         if live.once_enabled():
@@ -73,7 +72,6 @@ class scraperManager(CommandManager):
 
                 final_action()
 
-    @exit.exit_wrapper
     @run_async
     async def _process_users_actions_user_first(self, userdata, session):
         data = await self._gather_user_first_data(
@@ -157,7 +155,6 @@ class scraperManager(CommandManager):
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
 
-    @exit.exit_wrapper
     @run_async
     async def _process_users_actions_normal(self, userdata=None, session=None):
         progress_updater.activity.update_user(
@@ -181,13 +178,10 @@ def main():
             paths.temp_cleanup()
             paths.cleanDB()
         except KeyboardInterrupt:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    paths.temp_cleanup()
-                    paths.cleanDB()
-                    raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
+            with exit.DelayedKeyboardInterrupt():
+                paths.temp_cleanup()
+                paths.cleanDB()
+            raise
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -195,10 +189,9 @@ def main():
                     paths.cleanDB()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    raise E
             except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    raise E
+                pass  # report the error, not the Ctrl+C during its cleanup
+            raise
 
 
 # commands/scraper/scraper.py
@@ -244,37 +237,22 @@ def daemon_process():
                 log.traceback_(traceback.format_exc())
             finally:
                 jobqueue.task_done()
-    except KeyboardInterrupt as E:
+    except (KeyboardInterrupt, Exception):
         wakeup.stopped = True
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 if worker_thread:
                     worker_thread.join(timeout=5)
-            raise KeyboardInterrupt
         except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                raise E
-    except Exception as E:
-        wakeup.stopped = True
-        try:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                if worker_thread:
-                    worker_thread.join(timeout=5)
-            raise E
-        except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                raise E
+            pass  # stop with the original error, not the Ctrl+C during cleanup
+        raise
     finally:
         if live_thread:
             live_thread.stop()
         wakeup.restore()
 
 
-@exit.exit_wrapper
 def process_prompts():
     while True:
         if menu.main_menu_action():

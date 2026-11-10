@@ -15,7 +15,6 @@ from ofscraper.utils.markup import escape_text
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache.cache as cache
-import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 
 
@@ -124,9 +123,6 @@ async def process_dicts(username, model_id, medialist, posts):
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
-        except Exception as E:
-            with exit.DelayedKeyboardInterrupt():
-                raise E
         finally:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, cache.close

@@ -18,7 +18,6 @@ import time
 
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.of.posts import Post
@@ -29,7 +28,6 @@ like_str = "Performing Like Action on {name}" + warning_str
 unlike_str = "Performing Unlike Action on {name}" + warning_str
 
 
-@exit.exit_wrapper
 def process_like(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
         progress_updater.activity.update_task(
@@ -39,7 +37,6 @@ def process_like(posts=None, model_id=None, username=None, **kwargs):
         like(model_id, username, posts)
 
 
-@exit.exit_wrapper
 def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
         progress_updater.activity.update_task(

@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 import tenacity
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.context.exit as exit
 import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")
@@ -188,9 +187,6 @@ def operation_wrapper(func: abc.Callable):
                 raise failure from E
             log.info(f"Database is busy. Current timeout is {db_timeout}s.")
             raise E
-        except KeyboardInterrupt as E:
-            with exit.DelayedKeyboardInterrupt():
-                raise E
         except Exception as E:
             raise _final_error(E, read_only, database_path)
         finally:

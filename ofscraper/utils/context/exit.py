@@ -52,20 +52,3 @@ def sigterm_as_keyboard_interrupt():
     """
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
-
-
-def exit_wrapper(func):
-    def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except KeyboardInterrupt:
-            with DelayedKeyboardInterrupt():
-                raise KeyboardInterrupt
-        except Exception as E:
-            try:
-                with DelayedKeyboardInterrupt():
-                    raise E
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
-
-    return inner
