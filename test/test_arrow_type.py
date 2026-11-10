@@ -19,6 +19,10 @@ def test_absolute_dates_parse_including_the_documented_format(value):
         ("1 second ago", {"seconds": -1}),
         ("3 weeks ago", {"weeks": -3}),
         ("1 day ago", {"days": -1}),
+        ("1 hour ago", {"hours": -1}),
+        ("2 hours ago", {"hours": -2}),
+        ("1 month ago", {"months": -1}),
+        ("1 year ago", {"years": -1}),
     ],
 )
 def test_relative_dates_parse(value, shift):

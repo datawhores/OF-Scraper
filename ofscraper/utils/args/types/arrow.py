@@ -37,6 +37,7 @@ class ArrowType(click.ParamType):
                 x = re.sub("\\bday\\b", "days", x)
                 x = re.sub("\\bmonth\\b", "months", x)
                 x = re.sub("\\bweek\\b", "weeks", x)
+                x = re.sub("\\bhour\\b", "hours", x)
                 x = re.sub("\\bminute\\b", "minutes", x)
                 x = re.sub("\\bsecond\\b", "seconds", x)
 
