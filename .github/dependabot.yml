@@ -1,11 +1,50 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Dependabot version updates.
+# Options reference:
+# https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: / # Location of package manifests
+  # Python dependencies (pyproject.toml + uv.lock).
+  - package-ecosystem: "uv"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+    # Leave a pyproject.toml range alone when it already allows the new version
+    # (only uv.lock changes); raise it only when a release falls outside it.
+    versioning-strategy: "increase-if-necessary"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      # Minor and patch updates in one PR; anything else (major) gets its own PR.
+      python-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Actions used by workflows and by the local composite actions.
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Base images in the root Dockerfile.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "build"
+      include: "scope"
