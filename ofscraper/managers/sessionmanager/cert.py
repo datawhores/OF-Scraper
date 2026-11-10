@@ -116,7 +116,8 @@ def create_custom_ssl_context(
                 rng.shuffle(shuffled_ciphers)
                 effective_cipher_string = ":".join(shuffled_ciphers)
                 cache["ciphers"] = effective_cipher_string
-                log.debug(f"Harden: Generated stable TLS fingerprint for seed: {user_seed[:10]}...")
+                # not the seed: it is the auth_id, username or OS user name
+                log.debug("Harden: Generated stable TLS fingerprint")
             else:
                 log.debug("Warning: Could not reorder default ciphers (list too short).")
 
