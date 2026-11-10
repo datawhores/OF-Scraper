@@ -17,9 +17,9 @@ Given/When/Then:
 from types import SimpleNamespace
 
 import pytest
-from diskcache import Disk
 
 import ofscraper.utils.config.data as data
+from ofscraper.utils.cache.safe_disk import SafeDisk
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 
@@ -64,7 +64,7 @@ def test_cache_mode_api_disabled_is_kept_in_file():
     new = schema.get_current_config_schema(cfg)
     assert new["advanced_options"]["cache-mode"] == "api_disabled"
     # the general cache stays in sqlite storage, as before
-    assert data.get_cache_mode(config=cfg) is Disk
+    assert data.get_cache_mode(config=cfg) is SafeDisk
 
 
 def test_cache_mode_disabled_turns_cache_off(config):

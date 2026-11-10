@@ -11,7 +11,7 @@ r"""
 
 """
 
-from diskcache import Disk, JSONDisk
+from ofscraper.utils.cache.safe_disk import SafeDisk, SafeJSONDisk
 from humanfriendly import parse_size
 
 import ofscraper.utils.of_env.of_env as of_env
@@ -597,10 +597,11 @@ def get_show_downloadprogress(config=None):
 
 @wrapper.config_reader
 def get_cache_mode(config=None):
+    # diskcache's disks, reading only plain data back (CVE-2025-69872)
     if cache_mode_helper(config=config) == "json":
-        return JSONDisk
+        return SafeJSONDisk
     else:
-        return Disk
+        return SafeDisk
 
 
 def cache_mode_helper(config=None):
