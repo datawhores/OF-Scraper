@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 import ofscraper.commands.scraper.scraper as scraper
+import ofscraper.utils.system.system as system
 from ofscraper.utils.context import run_async
 
 
@@ -129,7 +130,19 @@ def test_daemon_error_is_raised_after_cleanup(monkeypatch):
     assert cleared == [True]
 
 
-def test_run_async_returns_the_result_and_passes_ctrl_c_on():
+def test_run_async_returns_the_result_and_passes_ctrl_c_on(monkeypatch):
+    # With no current loop, run makes one with system.new_event_loop and sets
+    # it current; record it so the test can check that and close it after.
+    created = []
+    real_new_event_loop = system.new_event_loop
+
+    def new_event_loop():
+        loop = real_new_event_loop()
+        created.append(loop)
+        return loop
+
+    monkeypatch.setattr(system, "new_event_loop", new_event_loop)
+
     @run_async.run
     async def answer():
         return 42
@@ -139,6 +152,14 @@ def test_run_async_returns_the_result_and_passes_ctrl_c_on():
         await asyncio.sleep(0)
         raise KeyboardInterrupt
 
-    assert answer() == 42
-    with pytest.raises(KeyboardInterrupt):
-        interrupted()
+    asyncio.set_event_loop(None)
+    try:
+        assert answer() == 42
+        assert asyncio.get_event_loop() is created[0]
+        with pytest.raises(KeyboardInterrupt):
+            interrupted()
+    finally:
+        asyncio.set_event_loop(None)
+        for loop in created:
+            loop.close()
+    assert len(created) == 1
