@@ -1,83 +1,41 @@
-# =============================================================================
-# DelayedKeyboardInterrupt implementation.
-# This code can be moved into separate python package.
-# =============================================================================
-
-import os
 import signal
 import threading
 
-__all__ = [
-    "SIGNAL_TRANSLATION_MAP",
-]
-
-SIGNAL_TRANSLATION_MAP = {
-    signal.SIGINT: "SIGINT",
-    signal.SIGTERM: "SIGTERM",
-}
+_HELD_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 
 class DelayedKeyboardInterrupt:
-    def __init__(self, propagate_to_forked_processes=None):
-        """
-        Constructs a context manager that suppresses SIGINT & SIGTERM signal handlers
-        for a block of code.
+    """Hold Ctrl+C (SIGINT) and SIGTERM while a block runs; deliver them after.
 
-        The signal handlers are called on exit from the block.
+    A signal received in the block is raised again when it ends, through the
+    handlers that were in place before (so SIGTERM with no handler of
+    ofscraper's still terminates). Blocks can nest.
 
-        Inspired by: https://stackoverflow.com/a/21919644
-
-        :param propagate_to_forked_processes: This parameter controls behavior of this context manager
-        in forked processes.
-        If True, this context manager behaves the same way in forked processes as in parent process.
-        If False, signals received in forked processes are handled by the original signal handler.
-        If None, signals received in forked processes are ignored (default).
-        """
-        self._pid = os.getpid()
-        self._propagate_to_forked_processes = propagate_to_forked_processes
-        self._sig = None
-        self._frame = None
-        self._old_signal_handler_map = None
+    Use it for a short synchronous block, and don't await inside one: blocks
+    in concurrent tasks could end out of order and restore the wrong handler.
+    Outside the main thread it does nothing: Python runs signal handlers, and
+    so raises KeyboardInterrupt, only in the main thread.
+    """
 
     def __enter__(self):
-        self._old_signal_handler_map = {
-            sig: signal.signal(sig, self._handler)
-            for sig, _ in SIGNAL_TRANSLATION_MAP.items()
-        }
+        self._held = []
+        self._saved = {}
+        if threading.current_thread() is threading.main_thread():
+            self._saved = {
+                sig: signal.signal(sig, self._hold) for sig in _HELD_SIGNALS
+            }
+        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for sig, handler in self._old_signal_handler_map.items():
-            signal.signal(sig, handler)
-        if self._sig is None:
-            return
-        self._old_signal_handler_map[self._sig](self._sig, self._frame)
+    def __exit__(self, *exc):
+        for sig, handler in self._saved.items():
+            # None: the handler was set outside Python; use the default.
+            signal.signal(sig, signal.SIG_DFL if handler is None else handler)
+        for sig in dict.fromkeys(self._held):
+            signal.raise_signal(sig)
+        return False
 
-    def _handler(self, sig, frame):
-        self._sig = sig
-        self._frame = frame
-
-        #
-        # Protection against fork.
-        #
-        if os.getpid() != self._pid:
-            if self._propagate_to_forked_processes is False:
-                print(
-                    f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; "
-                    f"PID mismatch: {os.getpid()=}, {self._pid=}, calling original handler"
-                )
-                self._old_signal_handler_map[self._sig](self._sig, self._frame)
-            elif self._propagate_to_forked_processes is None:
-                print(
-                    f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; "
-                    f"PID mismatch: {os.getpid()=}, ignoring the signal"
-                )
-                return
-            # elif self._propagate_to_forked_processes is True:
-            #   ... passthrough
-
-        print(
-            f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; delaying KeyboardInterrupt"
-        )
+    def _hold(self, signum, frame):
+        self._held.append(signum)
 
 
 def _raise_keyboard_interrupt(signum, frame):

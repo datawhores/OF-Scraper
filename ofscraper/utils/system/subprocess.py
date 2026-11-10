@@ -4,7 +4,9 @@ import logging
 import asyncio
 import contextlib
 import tempfile
+import threading
 import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.context.exit as exit_context
 from ofscraper.utils.system.process_tree import ProcessTree
 
 
@@ -84,17 +86,11 @@ def run(
 KILL_WAIT = 2  # seconds to wait for a killed process to be reaped
 
 
-async def _kill(process):
-    """Kill the process if it still runs, and wait a bounded time to reap it."""
-    if process.returncode is None:
-        try:
-            process.kill()
-        except ProcessLookupError:
-            pass
-    try:
-        await asyncio.wait_for(process.wait(), timeout=KILL_WAIT)
-    except TimeoutError:
-        pass
+async def _kill(process, exited):
+    """Kill the process if it still runs, and wait a bounded time for it."""
+    if process.poll() is None:
+        process.kill()
+    await asyncio.wait([exited], timeout=KILL_WAIT)
 
 
 def _write_input(file, data):
@@ -121,29 +117,49 @@ def _read_output(*files):
     return contents
 
 
-async def _start(cmd_args, kwargs):
-    """Start the command; return (process, cancelled).
+def _start(cmd_args, kwargs, tree):
+    """Start the command and track it; return (process, untracked).
 
-    A cancel that arrives while the command is starting doesn't interrupt
-    the start: asyncio would kill the command, but not a program it had
-    already started, and that program couldn't be tracked. The start is
-    finished instead, and cancelled is True so the caller can stop the
-    command and everything it started, then raise CancelledError.
+    Ctrl+C and SIGTERM are held from before the command starts until it is
+    tracked, then delivered: otherwise an interrupt in between could leave it,
+    and anything it starts, running untracked (on Windows, suspended outside
+    any job). This is synchronous so nothing else runs while they are held.
+    untracked is None, or the error that kept its programs from being tracked.
     """
-    starting = asyncio.ensure_future(
-        asyncio.create_subprocess_exec(*cmd_args, **kwargs)
-    )
-    cancelled = False
-    # asyncio.wait doesn't cancel what it waits for (no shield needed, which
-    # on 3.15 logs a failed start as an unhandled error after a cancel).
-    while not starting.done():
+    with exit_context.DelayedKeyboardInterrupt():
+        process = subprocess.Popen(cmd_args, **tree.popen_kwargs(kwargs))
         try:
-            await asyncio.wait([starting])
-        except asyncio.CancelledError:
-            cancelled = True  # raised once the command is stopped
-    if cancelled and (starting.cancelled() or starting.exception() is not None):
-        raise asyncio.CancelledError
-    return starting.result(), cancelled
+            untracked = tree.attach(process.pid)
+        except BaseException:
+            process.kill()
+            process.wait()
+            raise
+    return process, untracked
+
+
+def _exit_future(process):
+    """Return a future that is done once the process has exited.
+
+    A thread waits for it, as asyncio's own subprocess support does on
+    Python 3.11, and reaps it.
+    """
+    loop = asyncio.get_running_loop()
+    exited = loop.create_future()
+
+    def wait():
+        process.wait()
+        try:
+            loop.call_soon_threadsafe(_set_done, exited)
+        except RuntimeError:
+            pass  # the loop is closed: nothing waits for it any more
+
+    threading.Thread(target=wait, name="async_run wait", daemon=True).start()
+    return exited
+
+
+def _set_done(future):
+    if not future.done():
+        future.set_result(None)
 
 
 async def async_run(
@@ -190,7 +206,6 @@ async def async_run(
 
     with contextlib.ExitStack() as files:
         tree = files.enter_context(ProcessTree())
-        kwargs = tree.popen_kwargs(kwargs)
         if input is not None:
             kwargs["stdin"] = files.enter_context(tempfile.TemporaryFile())
             await _write_input_async(kwargs["stdin"], input)
@@ -198,32 +213,27 @@ async def async_run(
             kwargs["stdout"] = files.enter_context(tempfile.TemporaryFile())
             kwargs["stderr"] = files.enter_context(tempfile.TemporaryFile())
 
-        process, cancelled = await _start(cmd_args, kwargs)
-        try:
-            untracked = tree.attach(process.pid)
-        except BaseException:
-            await _kill(process)
-            raise
+        process, untracked = _start(cmd_args, kwargs, tree)
         if untracked:
             log.warning(
                 f"Programs started by subprocess {name} can't be tracked, so "
                 f"they won't be stopped when it exits: {untracked}"
             )
+        exit_future = _exit_future(process)
         exited = False
         try:
-            if cancelled:
-                raise asyncio.CancelledError
             async with asyncio.timeout(timeout):
-                await process.wait()
+                # asyncio.wait doesn't cancel exit_future on a cancel or timeout
+                await asyncio.wait([exit_future])
             exited = True
         except TimeoutError:
-            await _kill(process)
+            await _kill(process, exit_future)
             raise TimeoutError(
                 f"Subprocess {name} timed out after {timeout} seconds and was forcefully killed."
             ) from None
         except BaseException:
             # Cancelled (or failed): don't leave the command running.
-            await _kill(process)
+            await _kill(process, exit_future)
             raise
         finally:
             # Don't leave anything it started running either.

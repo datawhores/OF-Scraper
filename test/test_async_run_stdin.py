@@ -13,6 +13,7 @@ import time
 import psutil
 import pytest
 
+import ofscraper.utils.context.exit as exit_context
 import ofscraper.utils.system.process_tree as process_tree
 import ofscraper.utils.system.subprocess as subprocess_module
 from ofscraper.utils.system.subprocess import async_run
@@ -73,14 +74,14 @@ def test_text_input_and_output():
 def spawned(monkeypatch):
     """Record every process async_run starts."""
     processes = []
-    real_exec = asyncio.create_subprocess_exec
+    real_popen = subprocess.Popen
 
-    async def fake_exec(*args, **kwargs):
-        process = await real_exec(*args, **kwargs)
+    def recording_popen(*args, **kwargs):
+        process = real_popen(*args, **kwargs)
         processes.append(process)
         return process
 
-    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    monkeypatch.setattr(subprocess_module.subprocess, "Popen", recording_popen)
     return processes
 
 
@@ -120,7 +121,10 @@ def test_second_cancel_during_cleanup_still_raises(spawned):
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
-        await asyncio.wait_for(process.wait(), timeout=10)
+        for _ in range(200):  # reaped by async_run's wait thread
+            if process.poll() is not None:
+                break
+            await asyncio.sleep(0.05)
         return process, _pending_tasks()
 
     process, pending = asyncio.run(main())
@@ -407,17 +411,19 @@ def test_kill_wait_is_bounded(monkeypatch):
     monkeypatch.setattr(subprocess_module, "KILL_WAIT", 0.5)
 
     class Unreaped:
-        returncode = None
+        def poll(self):
+            return None
 
         def kill(self):
             pass
 
-        async def wait(self):
-            await asyncio.sleep(60)
+    async def main():
+        never = asyncio.get_running_loop().create_future()
+        start = time.monotonic()
+        await subprocess_module._kill(Unreaped(), never)
+        return time.monotonic() - start
 
-    start = time.monotonic()
-    asyncio.run(subprocess_module._kill(Unreaped()))
-    assert time.monotonic() - start < 5
+    assert asyncio.run(main()) < 5
 
 
 def _gone(pid):
@@ -723,65 +729,83 @@ def test_caller_creationflags_are_kept(monkeypatch):
     assert kwargs["creationflags"] == 0x10 | process_tree._CREATE_SUSPENDED
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="on Windows the script is suspended until it is tracked",
+def test_start_failure_is_raised(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        asyncio.run(async_run([str(tmp_path / "missing")], level=0))
+
+
+# Like CTRL_C_WRAPPER, but the start is stretched so Ctrl+C lands after the
+# script has started a program and before it is tracked.
+CTRL_C_DURING_START_WRAPPER = """
+import sys
+sys.argv = sys.argv[:1]
+import ofscraper.__main__  # noqa: F401  (import order, see AGENTS.md)
+import subprocess
+import time
+from ofscraper.utils.context import run_async
+from ofscraper.utils.system.subprocess import async_run
+
+real_popen = subprocess.Popen
+
+def slow_start(*args, **kwargs):
+    process = real_popen(*args, **kwargs)
+    time.sleep(2)
+    return process
+
+subprocess.Popen = slow_start
+
+pid_file = {pid_file!r}
+script = (
+    "import os, subprocess, sys, time\\n"
+    "c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])\\n"
+    f"open({{pid_file!r}}, 'w').write(f'{{{{os.getpid()}}}} {{{{c.pid}}}}')\\n"
+    "time.sleep(30)\\n"
 )
-@pytest.mark.parametrize("cancels", [1, 2])
-def test_cancel_while_starting_stops_script_and_its_programs(
-    tmp_path, monkeypatch, cancels
-):
-    """A cancel while the script is starting, after it has started a
-    program, still leaves neither running: the start is finished so the
-    program can be tracked, then both are stopped."""
+
+@run_async.run
+async def main():
+    await async_run([sys.executable, "-c", script], level=0, timeout=60)
+
+main()
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_ctrl_c_while_starting_stops_script_and_its_programs(tmp_path):
+    """Ctrl+C after the script has started a program, before the script is
+    tracked: it is held until the script is tracked, so neither is left."""
     pid_file = tmp_path / "pids"
-    script = (
-        "import os, subprocess, sys, time\n"
-        "c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])\n"
-        f"open({str(pid_file)!r}, 'w').write(f'{{os.getpid()}} {{c.pid}}')\n"
-        "time.sleep(30)\n"
+    wrapper = tmp_path / "wrapper.py"
+    wrapper.write_text(CTRL_C_DURING_START_WRAPPER.format(pid_file=str(pid_file)))
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    app = subprocess.Popen(
+        [sys.executable, str(wrapper)],
+        env={**os.environ, "PYTHONPATH": repo},
+        start_new_session=True,
+        stderr=subprocess.DEVNULL,
     )
-    real_exec = asyncio.create_subprocess_exec
-
-    async def slow_start(*args, **kwargs):
-        # Stretch the moment between the script starting and async_run
-        # getting it back, so the cancel lands there.
-        process = await real_exec(*args, **kwargs)
-        await asyncio.sleep(1)
-        return process
-
-    monkeypatch.setattr(asyncio, "create_subprocess_exec", slow_start)
-
-    async def main():
-        task = asyncio.create_task(
-            async_run([sys.executable, "-c", script], level=0, timeout=60)
-        )
-        await _wait_for_file(pid_file)
-        while len(pid_file.read_text().split()) < 2:
-            await asyncio.sleep(0.01)
-        for _ in range(cancels):
-            task.cancel()
-            await asyncio.sleep(0.05)
-        with pytest.raises(asyncio.CancelledError):
-            await task
-        return _pending_tasks()
-
     try:
-        assert asyncio.run(main()) == []
+        for _ in range(200):
+            if pid_file.exists() and len(pid_file.read_text().split()) == 2:
+                break
+            time.sleep(0.05)
+        else:
+            raise AssertionError("script did not start")
+        os.killpg(app.pid, signal.SIGINT)  # still inside the 2 s start
+        app.wait(timeout=30)
+        assert app.returncode != 0  # stopped by the interrupt
         for pid in pid_file.read_text().split():
             _assert_gone(int(pid))
     finally:
+        if app.poll() is None:
+            app.kill()
+            app.wait()
         if pid_file.exists():
             for pid in pid_file.read_text().split():
                 try:
                     os.kill(int(pid), signal.SIGKILL)
                 except OSError:
                     pass
-
-
-def test_start_failure_is_raised(tmp_path):
-    with pytest.raises(FileNotFoundError):
-        asyncio.run(async_run([str(tmp_path / "missing")], level=0))
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
@@ -804,28 +828,95 @@ def test_no_signal_to_a_group_that_already_exited(monkeypatch):
     assert sent == [signal.SIGTERM]
 
 
-def test_cancel_during_failed_start_logs_nothing(monkeypatch):
-    """A cancel during a start that then fails raises CancelledError, and
-    the start's error isn't reported to the event loop as unhandled."""
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_interrupt_right_after_start_is_delivered_once_tracked(
+    monkeypatch, spawned
+):
+    """Ctrl+C the moment the script has started is held until it is tracked,
+    then delivered, and the script is stopped."""
+    real_popen = subprocess_module.subprocess.Popen  # the recording one
 
-    async def failing_start(*args, **kwargs):
-        await asyncio.sleep(0.5)
-        raise FileNotFoundError("missing")
+    def interrupted_start(*args, **kwargs):
+        process = real_popen(*args, **kwargs)
+        signal.raise_signal(signal.SIGINT)
+        return process
 
-    monkeypatch.setattr(asyncio, "create_subprocess_exec", failing_start)
-    reported = []
-
-    async def main():
-        asyncio.get_running_loop().set_exception_handler(
-            lambda loop, context: reported.append(context)
+    monkeypatch.setattr(subprocess_module.subprocess, "Popen", interrupted_start)
+    with pytest.raises(KeyboardInterrupt):
+        asyncio.run(
+            async_run(
+                [sys.executable, "-c", "import time; time.sleep(30)"], level=0
+            )
         )
-        task = asyncio.create_task(async_run(["missing"], level=0))
-        await asyncio.sleep(0.1)
-        task.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await task
-        await asyncio.sleep(0.1)  # let any report arrive
-        return _pending_tasks()
+    _assert_gone(spawned[0].pid)
+    assert not process_tree._live_groups
 
-    assert asyncio.run(main()) == []
-    assert reported == []
+
+def test_delayed_keyboard_interrupt_holds_and_delivers():
+    original = signal.getsignal(signal.SIGINT)
+    reached_end_of_block = False
+    with pytest.raises(KeyboardInterrupt):
+        with exit_context.DelayedKeyboardInterrupt():
+            signal.raise_signal(signal.SIGINT)
+            reached_end_of_block = True
+    assert reached_end_of_block
+    assert signal.getsignal(signal.SIGINT) is original
+
+
+def test_delayed_keyboard_interrupt_nests():
+    original = signal.getsignal(signal.SIGINT)
+    reached_outer_end = False
+    with pytest.raises(KeyboardInterrupt):
+        with exit_context.DelayedKeyboardInterrupt():
+            with exit_context.DelayedKeyboardInterrupt():
+                signal.raise_signal(signal.SIGINT)
+            reached_outer_end = True  # still held by the outer block
+    assert reached_outer_end
+    assert signal.getsignal(signal.SIGINT) is original
+
+
+def test_delayed_keyboard_interrupt_without_signal_changes_nothing():
+    original = signal.getsignal(signal.SIGINT)
+    with exit_context.DelayedKeyboardInterrupt():
+        pass
+    assert signal.getsignal(signal.SIGINT) is original
+
+
+def test_delayed_keyboard_interrupt_outside_main_thread_does_nothing():
+    import threading
+
+    seen = []
+
+    def run():
+        with exit_context.DelayedKeyboardInterrupt():
+            seen.append(signal.getsignal(signal.SIGINT))
+
+    original = signal.getsignal(signal.SIGINT)
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join()
+    assert seen == [original]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_held_sigterm_with_default_handler_terminates():
+    """A SIGTERM held while ofscraper has no SIGTERM handler of its own (a
+    normal run) terminates the process, as it would have without the hold;
+    it used to fail with TypeError calling the default handler."""
+    script = (
+        "import signal\n"
+        "import ofscraper.utils.context.exit as exit_context\n"
+        "with exit_context.DelayedKeyboardInterrupt():\n"
+        "    signal.raise_signal(signal.SIGTERM)\n"
+        "print('survived')\n"
+    )
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        env={**os.environ, "PYTHONPATH": repo},
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == -signal.SIGTERM, result.stderr
+    assert "survived" not in result.stdout
