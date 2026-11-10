@@ -17,6 +17,7 @@ peekitem with these disks: diskcache retries an unreadable entry there
 without removing it.
 """
 
+import copyreg
 import io
 import logging
 import os.path
@@ -33,9 +34,16 @@ class UnsafeCacheEntry(OSError):
     """A cache entry that isn't plain data, read as a cache miss."""
 
 
-# EXT opcodes load a callable registered with copyreg.add_extension without
-# going through find_class. Nothing registers one, but refuse them anyway.
+# EXT opcodes name a callable registered with copyreg.add_extension. The
+# unpickler resolves one through find_class, which refuses it, unless a load
+# has already put it in copyreg's extension cache: then it is returned
+# directly. ofscraper registers no extensions, so the cache stays empty and
+# the opcode scan below (pure Python, about 15x the cost of the load) only
+# runs if something has filled it.
 _EXTENSION_OPCODES = {"EXT1", "EXT2", "EXT4"}
+# The C unpickler keeps the dict copyreg._extension_cache named when pickle
+# was imported; check that one too, in case the module attribute is rebound.
+_EXTENSION_CACHE = copyreg._extension_cache
 
 
 class _PlainDataUnpickler(pickle.Unpickler):
@@ -51,7 +59,8 @@ def _refuse_extensions(data: bytes):
 
 def _load_plain(data: bytes):
     try:
-        _refuse_extensions(data)
+        if _EXTENSION_CACHE or copyreg._extension_cache:
+            _refuse_extensions(data)
         return _PlainDataUnpickler(io.BytesIO(data)).load()
     except UnsafeCacheEntry as error:
         log.warning(f"Ignoring a cache entry that isn't plain data: {error}")
