@@ -280,6 +280,8 @@ def process_selected_areas():
             break
         elif action == "quit":
             break
+        elif action == prompts.CHECK_TABLE:
+            menu.run_check_table()
         else:
             menu.get_count() > 0 and menu.reset_menu_helper()
             scrapingManager.runner()

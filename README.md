@@ -105,6 +105,58 @@ Run `ofscraper` and follow the prompts. The first run asks for your auth details
 
 📖 **[Read the docs](https://cloakedkeys.gitbook.io/ofsc)** for setup, auth, config options, commands and the full [technical reference](https://cloakedkeys.gitbook.io/ofsc/reference).
 
+## Check table
+
+The check table lists a creator's media so you can filter it, pick what you want and download only that. It's for OnlyFans only.
+
+![The check table with made-up rows](https://raw.githubusercontent.com/cloakedkeys/OF-Scraper-Community/main/media/check_table.svg)
+
+**Opening it**
+
+- **From the menu:** run `ofscraper`, choose **Perform Action(s)**, then **Browse and pick media (check table)**. Pick the creators, then the table: Posts, Messages, Paid or Stories. When you close the table, any downloads you sent from it finish, then you're back at the menu.
+- **From the command line:** `ofscraper post_check`, `msg_check`, `paid_check` or `story_check`, with `-u` (usernames, or links for `post_check` and `msg_check`) or `-f` (a file with one per line).
+
+The menu uses the commands' defaults: a creator's saved post list when there is one, and for Posts the Timeline, Pinned, Archived and Streams areas. To fetch a fresh list or pick other areas, use the command with `--force` or `--check-area`.
+
+**Tabs**
+
+- **DataTable:** every media item, a page at a time. Click a column header to sort by it.
+- **Cart:** what you've picked. The **Download Text** and **Text Only (Skip Media)** boxes apply to the next send.
+- **Console:** the log, including download progress.
+
+**Sidebars** (DataTable tab)
+
+- **Ctrl+S** opens the options sidebar: filters for text, media ID, post ID, post media count, price, post date, length, downloaded, unlocked, media type, response type, download type and username. Press **Filter** to apply them. **Clear Filters**, or the **Reset Filters** button, clears them.
+- **Ctrl+D** opens the download sidebar: the minimum and maximum file size to download. Changes apply right away.
+- Press the same key again to close a sidebar.
+- With a cell highlighted, `;` or `'` copies its value into that column's filter. Press **Filter** to apply it.
+
+**Cart keys** (DataTable tab, with both sidebars closed)
+
+| Key | Adds to the cart |
+|---|---|
+| `a` / `Shift+A` | this page / everything the filters show |
+| `u` / `Shift+U` | the same, but each media item once |
+| `e` / `Shift+E` | the same, but only media that isn't downloaded yet |
+
+| Key | Removes from the cart |
+|---|---|
+| `c` / `Shift+C` | this page / everything the filters show |
+| `x` | everything |
+
+You can also click a row's **Download Cart** cell to add or remove it, or click the **Download Cart** header to add the page. Locked media can't be added. On the Cart tab, click `[added]` to remove a row, `c` removes the page, and `x` or `Shift+C` empties the cart.
+
+**Downloading**
+
+Press **>> Send Downloads to OF-Scraper** (on the DataTable or Cart tab). The table switches to the Console, and each row's Download Cart cell shows `[downloading]`, then `[downloaded]`, `[skipped]` or `[failed]`. You can keep picking and send more while it downloads.
+
+**Opening the download folder**
+
+- `o` (DataTable tab, sidebars closed) opens the highlighted row's folder. For a downloaded file, that's the folder holding it, with the file selected where the file manager can do that. Otherwise it's the creator's download folder.
+- The **Open Download Folder** button opens the highlighted row's creator's download folder.
+
+**Ctrl+Q** closes the table.
+
 ## FAQ
 
 <details>

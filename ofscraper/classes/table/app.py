@@ -621,8 +621,12 @@ class InputApp(App):
         except Exception:
             pass
 
-        self.update_cart_info()
-        self.update_search_info()
+        try:
+            self.update_cart_info()
+            self.update_search_info()
+        except Exception:
+            # the table can close while downloads sent from it finish (#425)
+            pass
 
     def init_sort(self):
         self._reverse = settings.get_settings().desc or False

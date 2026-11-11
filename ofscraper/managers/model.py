@@ -134,6 +134,13 @@ class ModelManager:
 
         return final_selection
 
+    def select_models(self) -> List["Model"]:
+        """The usual creator questions (filters, then the picker), without
+        queueing anyone. The check table opened from the Action Menu (#425)
+        uses it."""
+        self._load_all_subs_if_needed()
+        return self._select_models_scraper()
+
     @run
     async def add_models(
         self, usernames: List[str], activity: Union[EActivity, str]

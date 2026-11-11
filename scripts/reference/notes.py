@@ -130,6 +130,7 @@ ENV = {
     "mainPromptChoices": "Menu entries of the interactive main menu. Not read from the environment.",
     "configPromptChoices": "Menu entries of the interactive config editor. Not read from the environment.",
     "actionPromptChoices": "Menu entries for picking actions interactively. Not read from the environment.",
+    "checkTablePromptChoices": "Menu entries for picking which check table the Action Menu opens. Not read from the environment.",
     "usernameOrListChoices": "Menu entries for picking creators interactively. Not read from the environment.",
     "profilesPromptChoices": "Menu entries of the interactive profile menu. Not read from the environment.",
     "modelPrompt": "Menu entries for filtering and sorting the creator list interactively. Not read from the environment.",

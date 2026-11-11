@@ -58,6 +58,10 @@ ALL_MEDIA = {}
 ROWS = {}
 MEDIA_KEY = ["id", "postid", "username"]
 check_user_dict = defaultdict(dict)
+# the thread that downloads what the table sends; one for the whole session
+_download_worker = None
+# set while that thread works on a batch, from taking the rows to its cleanup
+_downloading = threading.Event()
 
 
 def process_download_queue():
@@ -68,58 +72,84 @@ def process_download_queue():
         if app.row_queue.empty():
             time.sleep(1)
             continue
-        user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
-        while not app.row_queue.empty():
-            try:
-                key, row_data = app.row_queue.get()
-                media_item, post_item, username, model_id = _get_data_from_row(row_data)
-
-                # Append all necessary data for later processing
-                user_cart[model_id]["posts"].append(post_item)
-                user_cart[model_id]["media"].append(media_item)
-                user_cart[model_id]["rows"].append((key, row_data))
-                user_cart[model_id]["username"] = username  # Store username once
-
-            except Exception as e:
-                log.debug(f"Error processing row from queue: {e}")
-                log.traceback_(traceback.format_exc())
-
-        # 2. PROCESS: Loop through each user's batch and process their items
-        for model_id, data in user_cart.items():
-            username = data["username"]
-            log.info(f"Processing download batch for user: {username}")
-            try:
-                # Pass the user's entire batch to the processing function
-                _process_user_batch(
-                    username, model_id, data["media"], data["posts"], data["rows"]
-                )
-
-                # Run after-actions for this user
-                after_download_action_script(username, data["media"], data["posts"])
-                manager.Manager.current_model_manager.mark_as_processed(
-                    username, activity="download"
-                )
-                manager.Manager.stats_manager.update_and_print_stats(
-                    username, "download", data["media"]
-                )
-
-            except Exception as e:
-                log.warning(
-                    f"An error occurred while processing the batch for {username}."
-                )
-                log.traceback_(e)
-
-        # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
+        _downloading.set()
         try:
-            final_action()
-            manager.Manager.current_model_manager.clear_scrape_queues()
-            manager.Manager.stats_manager.clear_scraper_activity_stats()
-            log.info("Download processing complete. Waiting for new items...")
+            _process_queued_rows()
+        finally:
+            _downloading.clear()
+
+
+def downloads_pending():
+    """True while rows sent from the table wait or download."""
+    if _download_worker is None or not _download_worker.is_alive():
+        return False
+    return not app.row_queue.empty() or _downloading.is_set()
+
+
+def wait_for_downloads(poll=0.5):
+    """Wait until what the table sent has finished downloading, so the menu
+    doesn't come back with the downloads still running (#425)."""
+    if not downloads_pending():
+        return
+    log.info("Finishing the downloads sent from the check table...")
+    while downloads_pending():
+        time.sleep(poll)
+    log.info("The downloads sent from the check table have finished")
+
+
+def _process_queued_rows():
+    user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
+    while not app.row_queue.empty():
+        try:
+            key, row_data = app.row_queue.get()
+            media_item, post_item, username, model_id = _get_data_from_row(row_data)
+
+            # Append all necessary data for later processing
+            user_cart[model_id]["posts"].append(post_item)
+            user_cart[model_id]["media"].append(media_item)
+            user_cart[model_id]["rows"].append((key, row_data))
+            user_cart[model_id]["username"] = username  # Store username once
+
+        except Exception as e:
+            log.debug(f"Error processing row from queue: {e}")
+            log.traceback_(traceback.format_exc())
+
+    # 2. PROCESS: Loop through each user's batch and process their items
+    for model_id, data in user_cart.items():
+        username = data["username"]
+        log.info(f"Processing download batch for user: {username}")
+        try:
+            # Pass the user's entire batch to the processing function
+            _process_user_batch(
+                username, model_id, data["media"], data["posts"], data["rows"]
+            )
+
+            # Run after-actions for this user
+            after_download_action_script(username, data["media"], data["posts"])
+            manager.Manager.current_model_manager.mark_as_processed(
+                username, activity="download"
+            )
+            manager.Manager.stats_manager.update_and_print_stats(
+                username, "download", data["media"]
+            )
+
         except Exception as e:
             log.warning(
-                f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}"
+                f"An error occurred while processing the batch for {username}."
             )
-            log.traceback_(traceback.format_exc())
+            log.traceback_(e)
+
+    # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
+    try:
+        final_action()
+        manager.Manager.current_model_manager.clear_scrape_queues()
+        manager.Manager.stats_manager.clear_scraper_activity_stats()
+        log.info("Download processing complete. Waiting for new items...")
+    except Exception as e:
+        log.warning(
+            f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}"
+        )
+        log.traceback_(traceback.format_exc())
 
 
 def _get_data_from_row(row: dict):
@@ -844,8 +874,11 @@ async def get_paid_ids(model_id, user_name):
 
 
 def thread_starters(ROWS_):
-    worker_thread = threading.Thread(target=process_download_queue, daemon=True)
-    worker_thread.start()
+    global _download_worker
+    # one download thread: a second table opened from the menu reuses it
+    if _download_worker is None or not _download_worker.is_alive():
+        _download_worker = threading.Thread(target=process_download_queue, daemon=True)
+        _download_worker.start()
     start_table(ROWS_)
 
 
@@ -853,7 +886,17 @@ def start_table(ROWS_):
     loop = system.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
+    # a Textual app runs once, so each table gets a new one
+    app.app = app.InputApp()
     app.app(table_data=ROWS)
+
+
+def reset_table_data():
+    """Forget the last table's rows and media, so a table opened again from
+    the menu shows only what it was opened for (#425)."""
+    global ROWS
+    ROWS = []
+    check_user_dict.clear()
 
 
 def texthelper(text):

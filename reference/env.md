@@ -717,7 +717,13 @@ Defined in `ofscraper/utils/of_env/values/prompts.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="actionpromptchoices"></a>`actionPromptChoices` | none (bare key only) | a dict of 7 entries (see the source) | Menu entries for picking actions interactively. Not read from the environment. |
+| <a id="actionpromptchoices"></a>`actionPromptChoices` | none (bare key only) | a dict of 8 entries (see the source) | Menu entries for picking actions interactively. Not read from the environment. |
+
+### Check Table Prompt Choices: the check command each table runs
+
+| Key | Environment variable | Default | Description |
+|---|---|---|---|
+| <a id="checktablepromptchoices"></a>`checkTablePromptChoices` | none (bare key only) | a dict of 4 entries (see the source) | Menu entries for picking which check table the Action Menu opens. Not read from the environment. |
 
 ### Username or List Choices
 

@@ -43,6 +43,8 @@ def main_menu_action():
                     return True
                 elif action_result_prompt == "main":
                     continue
+                elif action_result_prompt == prompts.CHECK_TABLE:
+                    run_check_table()
                 else:
                     scapingManager.runner(menu=True)
 
@@ -82,6 +84,12 @@ def main_menu_action():
             # say on screen that it failed; the traceback stays in the debug log
             log.error(escape_text(f"{_action_name(result_main_prompt)} failed: {type(E).__name__}: {E}"))
             log.debug(traceback.format_exc())
+
+
+def run_check_table():
+    from ofscraper.commands.check_menu import run_check_table
+
+    run_check_table()
 
 
 def _action_name(choice):
