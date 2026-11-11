@@ -5,6 +5,7 @@ import arrow
 from rich.text import Text
 from textual import events
 from textual.app import App
+from textual.binding import Binding
 from textual.widgets import Button, ContentSwitcher, Checkbox, Input
 from ofscraper.classes.table.utils.names import get_col_names, get_input_names
 from ofscraper.classes.table.utils.lock import mutex
@@ -23,8 +24,9 @@ row_queue = queue.Queue()
 
 class InputApp(App):
     BINDINGS = [
-        ("ctrl+s", "toggle_options_sidebar"),
-        ("ctrl+d", "toggle_download_sidebar"),
+        # priority, so a focused Input (which binds ctrl+d) doesn't take them
+        Binding("ctrl+s", "toggle_options_sidebar", priority=True),
+        Binding("ctrl+d", "toggle_download_sidebar", priority=True),
         ("a", "select_current_page", "Add Page"),
         ("A", "select_all_filtered", "Add All Filtered"),
         ("u", "select_unique_current_page", "Add Unique Page"),
@@ -157,7 +159,9 @@ class InputApp(App):
 
         # Filter triggers
         elif btn_id in ["filter", "filter2"]:
-            self.query_one("#options_sidebar").toggle_hidden()
+            sidebar = self.query_one("#options_sidebar")
+            sidebar.toggle_hidden()
+            self.focus_table_if_hidden_in(sidebar)
             self.filter_table()
             self.update_toggle_labels()
 
@@ -194,7 +198,10 @@ class InputApp(App):
             lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")
         ):
             ele.toggle_hidden()
-        self.query_one("#options_sidebar").toggle_hidden()
+            self.focus_table_if_hidden_in(ele)
+        sidebar = self.query_one("#options_sidebar")
+        sidebar.toggle_hidden()
+        self.focus_table_if_hidden_in(sidebar)
         self.update_toggle_labels()
 
     def action_toggle_download_sidebar(self) -> None:
@@ -204,8 +211,25 @@ class InputApp(App):
             lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")
         ):
             ele.toggle_hidden()
-        self.query_one("#download_option_sidebar").toggle_hidden()
+            self.focus_table_if_hidden_in(ele)
+        sidebar = self.query_one("#download_option_sidebar")
+        sidebar.toggle_hidden()
+        self.focus_table_if_hidden_in(sidebar)
         self.update_toggle_labels()
+
+    def focus_table_if_hidden_in(self, sidebar) -> None:
+        """Focus the table if the sidebar is hidden and has the focus.
+
+        Textual moves focus off a hidden widget to one of its siblings, which
+        are hidden too, so keys went to filter boxes no one could see.
+        """
+        focused = self.focused
+        if (
+            sidebar.has_class("-hidden")
+            and focused is not None
+            and sidebar in focused.ancestors
+        ):
+            self.set_focus(self.table)
 
     def update_toggle_labels(self) -> None:
         try:
