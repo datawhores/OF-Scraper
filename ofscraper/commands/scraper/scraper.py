@@ -15,6 +15,7 @@ import ofscraper.db.operations as operations
 from ofscraper.utils.context.run_async import run as run_async
 from ofscraper.data.posts.post import post_media_process
 import ofscraper.prompts.prompts as prompts
+import ofscraper.prompts.prompt_groups.actions as action_prompts
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.system.network as network
 from ofscraper.commands.scraper.utils.prepare import prepare
@@ -203,6 +204,11 @@ def daemon_process():
     worker_thread = None
     scrapingManager = scraperManager()
 
+    def next_pass():
+        # a Yes to the redownload question was for the first pass only (#433)
+        action_prompts.restore_session_args()
+        scrapingManager.runner()
+
     jobqueue.put(scrapingManager.runner)
     if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
@@ -217,7 +223,7 @@ def daemon_process():
         # non-daemon thread it sat in jobqueue.join() forever and kept the
         # process alive after Ctrl+C/SIGTERM.
         worker_thread = threading.Thread(
-            target=set_schedule, args=[scrapingManager.runner],
+            target=set_schedule, args=[next_pass],
             kwargs={"wakeup": wakeup}, daemon=True
         )
         worker_thread.start()
