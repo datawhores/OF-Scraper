@@ -358,6 +358,10 @@ class StatsManager:
             # 2. Safely delete those keys
             for key in keys_to_delete:
                 del user_activities[key]
+        # a new run: the timeline's full-rescan hint may show again
+        import ofscraper.data.api.common.scan_range as scan_range
+
+        scan_range.reset_hint()
         log.info("All Scrape Activity statistics have been cleared.")
 
     def clear_paid_stats(self):

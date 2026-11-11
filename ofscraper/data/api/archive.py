@@ -16,6 +16,7 @@ import logging
 import traceback
 import arrow
 
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
@@ -363,6 +364,4 @@ async def get_after(model_id, username):
 
 
 def time_log(username, after):
-    log.info(
-        f"Setting archived scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}"
-    )
+    scan_range.log_scan_range(log, username, "archived", after)

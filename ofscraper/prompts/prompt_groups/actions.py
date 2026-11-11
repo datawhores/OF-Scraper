@@ -2,6 +2,7 @@ from InquirerPy.separator import Separator
 import arrow
 from prompt_toolkit.shortcuts import prompt as prompt
 
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.of_env.of_env as of_env
 from InquirerPy.base import Choice
@@ -24,6 +25,8 @@ def action_prompt() -> int:
     if isinstance(action, str):
         return action
     args.actions = action
+    # from here on the actions come from this prompt, not a command line
+    scan_range.mark_actions_prompted()
     settings.update_args(args)
 
 

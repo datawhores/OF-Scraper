@@ -16,6 +16,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
@@ -425,12 +426,7 @@ async def scrape_timeline_posts(
 
 
 def time_log(username, after):
-    log.info(f"""
-Setting timeline scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}
-[yellow]: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
-
-            """)
+    scan_range.log_scan_range(log, username, "timeline", after)
 
 
 def filter_timeline_post(timeline_posts):
