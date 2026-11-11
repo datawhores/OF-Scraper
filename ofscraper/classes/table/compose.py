@@ -78,12 +78,14 @@ def composer():
                         "[bold ansi_blue]Cart_Add:[/bold ansi_blue] Page (a) | All Filtered ([bold ansi_cyan]Shift+A[/bold ansi_cyan])\n"
                         "[bold ansi_blue]Cart_Unique:[/bold ansi_blue] Page (u) | All Unique ([bold ansi_cyan]Shift+U[/bold ansi_cyan])\n"
                         "[bold ansi_green]Cart_New Only:[/bold ansi_green] Page (e) | All New ([bold ansi_cyan]Shift+E[/bold ansi_cyan])\n"
-                        "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)",
+                        "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)\n"
+                        "[bold ansi_blue]Open Folder:[/bold ansi_blue] Highlighted Row (o)",
                         id="table_instructions",
                         markup=True,
                     )
             with Horizontal(id="main_action_row"):
                 yield Button(">> Send Downloads to OF-Scraper", id="send_downloads_main")
+                yield Button("Open Download Folder", id="open_download_folder")
                 yield Button("Reset Filters", id="reset")
             
             # Inline Pagination

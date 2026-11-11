@@ -266,7 +266,7 @@ def check_rows(monkeypatch, media):
     collection = SimpleNamespace(all_media=media, posts_with_media_id=lambda _id: [])
     log = Log()
     monkeypatch.setattr(check, "log", log)
-    monkeypatch.setattr(check, "get_media_post_ids_downloaded", lambda **kw: [])
+    monkeypatch.setattr(check, "get_media_post_files_downloaded", lambda **kw: {})
     monkeypatch.setattr(check, "check_user_dict", {"1": {"collection": collection}})
     monkeypatch.setattr(check, "ROWS", [])
     asyncio.run(check.row_gather("u", 1))

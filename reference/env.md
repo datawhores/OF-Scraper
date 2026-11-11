@@ -75,10 +75,12 @@ The app reads these with `os.getenv` where it uses them, not through `of_env.get
 
 | Variable | Default | Read in | Description |
 |---|---|---|---|
+| `DISPLAY` | `None` | `ofscraper/classes/table/utils/open_folder.py` | Check table, Linux only: with neither this nor `WAYLAND_DISPLAY` set there's no desktop, so Open Download Folder and `o` show the folder's path instead of running `xdg-open`. |
 | `OFSC_FANSLY_API_BASE` | `f'https://{API_HOST}/api/v1/'` | `ofscraper/sites/fansly/constants.py` | Base URL of the Fansly API that Fansly requests go to. |
 | `OFSC_FANSLY_AUTH_FILE_NAME` | `'fansly_auth.json'` | `ofscraper/sites/fansly/constants.py` | Name of the Fansly credentials file in the profile folder. |
 | `STASH_API_KEY` | `None` | `ofscraper/commands/stash_sync.py` | `stash_sync` only: the Stash API key, for a Stash with a password. `--api-key` overrides it. |
 | `STASH_URL` | `DEFAULT_URL` | `ofscraper/commands/stash_sync.py` | `stash_sync` only: Stash's GraphQL URL. `--url` overrides it. |
+| `WAYLAND_DISPLAY` | `None` | `ofscraper/classes/table/utils/open_folder.py` | Check table, Linux only: see `DISPLAY`. |
 
 ## Downloads
 

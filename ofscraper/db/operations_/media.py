@@ -167,6 +167,9 @@ SELECT media_id, post_id FROM medias
 allPostIDDLCheck = """
 SELECT media_id, post_id FROM medias where downloaded=(1)
 """
+allPostFileDLCheck = """
+SELECT media_id, post_id, directory, filename FROM medias where downloaded=(1)
+"""
 # the per-area queries below are filled in by execute_area_media. New
 # columns go at the end, so existing ones keep their place in the CSV.
 mediaAreaColumns = [
@@ -437,6 +440,24 @@ def get_media_post_ids_downloaded(
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allPostIDDLCheck)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
+
+
+@wrapper.operation_wrapper
+def get_media_post_files_downloaded(
+    model_id=None, username=None, conn=None, media_id=None, **kwargs
+) -> dict:
+    """{(media_id, post_id): (directory, filename)} for downloaded media, so
+    the check table can open the file's folder (#424). Directory and filename
+    are None when no file was recorded. media_id limits it to one media."""
+    with contextlib.closing(conn.cursor()) as cur:
+        if media_id is None:
+            cur.execute(allPostFileDLCheck)
+        else:
+            cur.execute(allPostFileDLCheck + " and media_id=(?)", [media_id])
+        return {
+            (row["media_id"], row["post_id"]): (row["directory"], row["filename"])
+            for row in cur.fetchall()
+        }
 
 
 @wrapper.operation_wrapper

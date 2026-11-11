@@ -149,6 +149,8 @@ ENV.update({
 
 # variables read with os.getenv outside ofscraper/utils/of_env/values
 ENV_DIRECT = {
+    "DISPLAY": "Check table, Linux only: with neither this nor `WAYLAND_DISPLAY` set there's no desktop, so Open Download Folder and `o` show the folder's path instead of running `xdg-open`.",
+    "WAYLAND_DISPLAY": "Check table, Linux only: see `DISPLAY`.",
     "OFSC_FANSLY_API_BASE": "Base URL of the Fansly API that Fansly requests go to.",
     "OFSC_FANSLY_AUTH_FILE_NAME": "Name of the Fansly credentials file in the profile folder.",
     "STASH_API_KEY": "`stash_sync` only: the Stash API key, for a Stash with a password. `--api-key` overrides it.",

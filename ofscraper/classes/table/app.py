@@ -13,6 +13,7 @@ from ofscraper.classes.table.sections.table import get_styled
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
+import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
 import ofscraper.utils.console as console_
@@ -36,6 +37,7 @@ class InputApp(App):
         ("c", "clear_current_page", "Clear Page"),
         ("C", "clear_all_filtered", "Clear All Filtered"),
         ("x", "clear_entire_cart", "Nuke Cart"),
+        ("o", "open_download_folder", "Open Folder"),
     ]
     CSS = CSS
 
@@ -157,6 +159,8 @@ class InputApp(App):
             log.info("Adding Downloads to queue")
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
+        elif btn_id == "open_download_folder":
+            self.open_creator_folder()
 
         # Filter triggers
         elif btn_id in ["filter", "filter2"]:
@@ -503,6 +507,76 @@ class InputApp(App):
         self.set_page()
         self.update_cart_table()
         self.update_cart_info()
+
+    # ==========================================
+    # --- Open the Download Folder (#424) ---
+    # ==========================================
+    def highlighted_row(self):
+        """The table_data row under the main table's cursor, or None."""
+        table = self.table
+        if table.row_count == 0:
+            return None
+        try:
+            key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+        except Exception:
+            return None
+        return next(
+            (row for row in self.table_data if str(row["index"]) == str(key)), None
+        )
+
+    def _button_creator(self):
+        """The highlighted row's creator, else the table's only creator."""
+        row = self.highlighted_row()
+        if row is not None:
+            return row.get("username")
+        names = {row.get("username") for row in self.table_data}
+        return names.pop() if len(names) == 1 else None
+
+    def action_open_download_folder(self) -> None:
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
+        self._open_target(lambda: open_folder.row_target(self.highlighted_row()))
+
+    def open_creator_folder(self) -> None:
+        self._open_target(
+            lambda: open_folder.creator_target(self._button_creator())
+        )
+
+    def _open_target(self, get_target) -> None:
+        """Open a folder; a notice with the path when that can't be done,
+        never an error."""
+        try:
+            target = get_target()
+        except Exception as E:
+            log.debug(f"Couldn't work out the download folder: {E!r}")
+            self.notify(
+                f"Couldn't work out the download folder: {E}",
+                title="Open Download Folder",
+                severity="warning",
+                markup=False,
+            )
+            return
+        try:
+            open_folder.open_target(target)
+        except Exception as E:
+            reason = str(E) or type(E).__name__
+            log.debug(f"Couldn't open {target.folder}: {E!r}")
+            self.notify(
+                f"{reason}: {target.folder}",
+                title="Open Download Folder",
+                severity="warning",
+                markup=False,
+            )
+            return
+        if target.note:
+            self.notify(
+                f"{target.note}: {target.folder}",
+                title="Open Download Folder",
+                markup=False,
+            )
 
     # --- Rest of Table Logic ---
     def add_to_row_queue(self):

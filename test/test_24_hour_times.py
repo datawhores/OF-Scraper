@@ -45,7 +45,7 @@ def evening_post():
 def test_check_table_shows_an_evening_post_on_a_24_hour_clock(monkeypatch):
     media = evening_post().all_media
     collection = SimpleNamespace(all_media=media, posts_with_media_id=lambda _id: [])
-    monkeypatch.setattr(check, "get_media_post_ids_downloaded", lambda **kw: [])
+    monkeypatch.setattr(check, "get_media_post_files_downloaded", lambda **kw: {})
     monkeypatch.setattr(check, "check_user_dict", {str(MODEL_ID): {"collection": collection}})
     monkeypatch.setattr(check, "ROWS", [])
 

@@ -40,7 +40,7 @@ from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.filters.media.filters import undated_first
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
-    get_media_post_ids_downloaded,
+    get_media_post_files_downloaded,
 )
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
@@ -207,6 +207,7 @@ def _process_user_batch(
                     app.app.update_cell_state(key, "[skipped]", "bold bright_yellow")
                 else:
                     log.info(f"Download finished: {media.filename}")
+                    _record_row_file(row_list[i][1], model_id, username, media)
                     app.app.update_cell_state(key, "[downloaded]", "bold green")
 
                 break
@@ -235,6 +236,22 @@ def _process_user_batch(
 
 # Initialize counter on the function object
 _process_user_batch.counter = 0
+
+
+def _record_row_file(row, model_id, username, media):
+    """Put the file the download recorded on its table row, so `o` opens
+    its folder (#424)."""
+    try:
+        files = get_media_post_files_downloaded(
+            model_id=model_id, username=username, media_id=media.id
+        )
+        # the file is recorded on every post of the media
+        directory, filename = files.get(
+            (media.id, media.post_id), next(iter(files.values()), (None, None))
+        )
+        row["directory"], row["filename"] = directory, filename
+    except Exception as E:
+        log.debug(f"Couldn't read the file path for media {media.id}: {E}")
 
 
 @run
@@ -880,9 +897,8 @@ def checkmarkhelper(ele):
 
 async def row_gather(username, model_id):
     global ROWS
-    downloaded = set(
-        get_media_post_ids_downloaded(model_id=model_id, username=username)
-    )
+    # with each file's directory and filename, for opening its folder (#424)
+    downloaded = get_media_post_files_downloaded(model_id=model_id, username=username)
 
     m_id = str(model_id)
     collection = check_user_dict[m_id].get("collection")
@@ -920,6 +936,7 @@ async def row_gather(username, model_id):
             )
         is_unlocked = unlocked_helper(ele)
         is_downloaded = (ele.id, ele.post_id) in downloaded
+        directory, filename = downloaded.get((ele.id, ele.post_id), (None, None))
         post_media_len = len(ele._post.post_media)
         dl_type = download_type_helper(ele)  # Calculate once for efficiency
 
@@ -955,6 +972,9 @@ async def row_gather(username, model_id):
                 "post_id": ele.post_id,
                 "media_id": ele.id,
                 "text": ele.post.db_sanitized_text,
+                # not columns; where the file went, if it was downloaded
+                "directory": directory,
+                "filename": filename,
             }
         )
 
