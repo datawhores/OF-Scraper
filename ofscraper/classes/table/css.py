@@ -164,6 +164,22 @@ Options = """
         grid-size: 4 60;
         margin-top: 2;
     }
+
+    /* Filter and Clear Filters share the top row */
+    #filter, #clear_filters {
+        column-span: 2;
+    }
+
+    /* Length holds two rows of 3-line inputs, more than 2 grid rows.
+       It's set here because "Sidebar Widget" beats the field's DEFAULT_CSS */
+    #main_options TimeField {
+        row-span: 3;
+    }
+
+    /* Horizontal is 1fr high, so each size field took half the sidebar */
+    #download_option_sidebar NumField {
+        height: auto;
+    }
 """
 
 CSS = (

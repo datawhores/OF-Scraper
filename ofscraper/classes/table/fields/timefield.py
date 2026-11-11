@@ -10,7 +10,11 @@ class TimeField(Container):
     DEFAULT_CSS = """
     TimeField{
     column-span:4;
-    row-span:2;
+    row-span:3;
+    }
+
+    TimeField Horizontal{
+    height:auto;
     }
 
     TimeField Label{

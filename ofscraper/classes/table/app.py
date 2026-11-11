@@ -150,7 +150,8 @@ class InputApp(App):
             self.set_active_tab(btn_id)
 
         # Top level controls
-        elif btn_id == "reset":
+        # Clear Filters in the options sidebar; the sidebar stays open
+        elif btn_id in ["reset", "clear_filters"]:
             self.reset_table()
         elif btn_id in ["send_downloads", "send_downloads_main"]:
             log.info("Adding Downloads to queue")

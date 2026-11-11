@@ -102,6 +102,7 @@ def composer():
             with Sidebar(id="options_sidebar", classes="-hidden"):
                 with Container(id="main_options"):
                     yield Button("Filter", id="filter")
+                    yield Button("Clear Filters", id="clear_filters")
                     yield Rule()
                     yield TextSearch("Text")
                     yield Rule()
