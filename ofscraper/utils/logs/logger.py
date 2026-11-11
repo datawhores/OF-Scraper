@@ -19,6 +19,13 @@ def add_widget(widget):
     ]
 
 
+def remove_widget(widget):
+    """Stop writing the log to `widget`, if it's the one being written to."""
+    for ele in logging.getLogger("shared").handlers:
+        if isinstance(ele, TextHandler) and ele.widget is widget:
+            ele.widget = None
+
+
 def get_shared_logger(name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")

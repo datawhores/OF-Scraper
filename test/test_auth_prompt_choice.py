@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 import ofscraper.data.api.init as init
@@ -44,7 +42,6 @@ def test_main_in_the_auth_prompt_returns_to_the_main_menu(failed_auth, monkeypat
     main_answers = iter(["action", "quit"])
     monkeypatch.setattr(menu.prompts, "main_prompt", lambda: next(main_answers))
     monkeypatch.setattr(menu.prompts, "action_prompt", lambda: "download")
-    monkeypatch.setattr(menu.console, "get_shared_console", lambda: SimpleNamespace(clear_live=lambda: None))
 
     assert menu.main_menu_action() is True
     # the auth prompt offered "Go to Main Menu" and wasn't shown again

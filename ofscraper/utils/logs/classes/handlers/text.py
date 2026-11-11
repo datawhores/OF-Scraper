@@ -7,12 +7,15 @@ class TextHandler(logging.Handler):
         self._widget = None
 
     def emit(self, record):
-        # only emit after widget is set
-        if self._widget is None:
+        widget = self._widget
+        # only while the widget is in a running app: once the app has exited,
+        # writing to it raises (a log call must never raise)
+        if widget is None or not widget.is_attached:
             return
-        log_entry = self.format(record)
-        log_entry = f"{log_entry}"
-        self._widget.write(log_entry)
+        try:
+            widget.write(self.format(record))
+        except Exception:
+            self.handleError(record)
 
     @property
     def widget(self):

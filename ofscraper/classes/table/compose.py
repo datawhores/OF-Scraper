@@ -67,18 +67,18 @@ def composer():
                 
                 # Column 3: Toggles
                 with Vertical(classes="toggles_column"):
-                    yield Static("[bold blue]Sidebar Controls:[/bold blue]", markup=True)
-                    yield Static("Options Menu:  [bold cyan]Ctrl+S[/bold cyan]", id="label_opt_sidebar", markup=True)
-                    yield Static("Download Menu: [bold cyan]Ctrl+D[/bold cyan]", id="label_dl_sidebar", markup=True)
+                    yield Static("[bold ansi_blue]Sidebar Controls:[/bold ansi_blue]", markup=True)
+                    yield Static("Options Menu:  [bold ansi_cyan]Ctrl+S[/bold ansi_cyan]", id="label_opt_sidebar", markup=True)
+                    yield Static("Download Menu: [bold ansi_cyan]Ctrl+D[/bold ansi_cyan]", id="label_dl_sidebar", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
     
                 # Column 4: Instructions
                 with Vertical(classes="instructions_column"):
                     yield Static(
-                        "[bold blue]Cart_Add:[/bold blue] Page (a) | All Filtered ([bold cyan]Shift+A[/bold cyan])\n"
-                        "[bold blue]Cart_Unique:[/bold blue] Page (u) | All Unique ([bold cyan]Shift+U[/bold cyan])\n"
-                        "[bold green]Cart_New Only:[/bold green] Page (e) | All New ([bold cyan]Shift+E[/bold cyan])\n"
-                        "[bold red]Clear Cart:[/bold red] Page (c) | All Filtered ([bold cyan]Shift+C[/bold cyan]) | Nuke (x)",
+                        "[bold ansi_blue]Cart_Add:[/bold ansi_blue] Page (a) | All Filtered ([bold ansi_cyan]Shift+A[/bold ansi_cyan])\n"
+                        "[bold ansi_blue]Cart_Unique:[/bold ansi_blue] Page (u) | All Unique ([bold ansi_cyan]Shift+U[/bold ansi_cyan])\n"
+                        "[bold ansi_green]Cart_New Only:[/bold ansi_green] Page (e) | All New ([bold ansi_cyan]Shift+E[/bold ansi_cyan])\n"
+                        "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)",
                         id="table_instructions",
                         markup=True,
                     )
@@ -142,11 +142,11 @@ def composer():
                 yield Rule(orientation="vertical", classes="header_divider")
                 with Vertical(classes="instructions_column"):
                     yield Static(
-                        "[bold yellow]Cart Management:[/bold yellow]\n"
+                        "[bold ansi_yellow]Cart Management:[/bold ansi_yellow]\n"
                         "• [bold]Click '\\[added]'[/bold] to instantly remove that item from the cart.\n"
                         "• [bold]Click 'Download Cart'[/bold] (the column header) to clear this entire page.\n"
-                        "• Press [bold cyan](c)[/bold cyan] to remove all items currently visible on this page.\n"
-                        "• Press [bold cyan](x)[/bold cyan] or [bold cyan]Shift+C[/bold cyan] to NUKE the entire cart.",
+                        "• Press [bold ansi_cyan](c)[/bold ansi_cyan] to remove all items currently visible on this page.\n"
+                        "• Press [bold ansi_cyan](x)[/bold ansi_cyan] or [bold ansi_cyan]Shift+C[/bold ansi_cyan] to NUKE the entire cart.",
                         markup=True,
                     )
 
@@ -161,5 +161,5 @@ def composer():
         # ==========================================
         with Vertical(id="console_page"):
             with Horizontal(classes="header_top_row"):
-                yield Static("[bold green]Console View[/bold green]\nMonitor active background tasks and download progress.", markup=True)
+                yield Static("[bold ansi_green]Console View[/bold ansi_green]\nMonitor active background tasks and download progress.", markup=True)
             yield OutConsole(id="console_page_log")

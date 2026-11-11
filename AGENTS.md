@@ -21,7 +21,7 @@ Community fixes for the GUI patch go to `cjb900/OF-Scraper-GUI`.
 6. **Don't send OnlyFans credentials to third parties.** `--key-mode cdrm` posts the request headers, cookies included, to cdrm-project.com. Don't run a live cdrm decrypt without the maintainer's approval.
 
 ## Setup
-- **Python:** `requires-python` is `>=3.11, <3.16`. CI tests on 3.11 (the minimum) and 3.15.2. On 3.15, lz4 and faust-cchardet have no wheels and build from source, so a C compiler is needed (MSVC on Windows).
+- **Python:** `requires-python` is `>=3.11, <3.16`. CI tests on 3.11 (the minimum) and 3.15.2. On 3.15, lz4 has no wheels and builds from source, so a C compiler is needed (MSVC on Windows).
 - **Environment:** `uv sync --python 3.15 --extra test` (or `--python 3.11` for the minimum) creates `.venv` from `uv.lock`. Don't change `uv.lock` unless you're changing dependencies; when you do, use `uv lock -P <package>` rather than a full upgrade.
 - **Parallel work:** use git worktrees, one per branch (e.g. `../ofs-wt/<name>`). Run code from a worktree with `PYTHONPATH=.` and the main checkout's venv.
 

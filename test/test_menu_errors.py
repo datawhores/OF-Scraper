@@ -63,9 +63,6 @@ def _menu(monkeypatch, merge_runner):
 
     monkeypatch.setattr(menu.prompts, "main_prompt", main_prompt)
     monkeypatch.setattr(menu.merge, "merge_runner", merge_runner)
-    monkeypatch.setattr(
-        menu.console, "get_shared_console", lambda: SimpleNamespace(clear_live=lambda: None)
-    )
     return asked
 
 
@@ -100,9 +97,6 @@ def test_failing_menu_prompt_is_shown_too(monkeypatch, screen):
         return "quit"
 
     monkeypatch.setattr(menu.prompts, "main_prompt", main_prompt)
-    monkeypatch.setattr(
-        menu.console, "get_shared_console", lambda: SimpleNamespace(clear_live=lambda: None)
-    )
     assert menu.main_menu_action() is True
     assert "Main Menu failed: ValueError: bad [answer]" in screen.getvalue()
 

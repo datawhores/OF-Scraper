@@ -2,6 +2,7 @@ import re
 
 import arrow
 import cloup as click
+from dateutil import tz
 
 
 class ArrowType(click.ParamType):
@@ -41,7 +42,10 @@ class ArrowType(click.ParamType):
                 x = re.sub("\\bminute\\b", "minutes", x)
                 x = re.sub("\\bsecond\\b", "seconds", x)
 
-                arw = arrow.now()
+                # the local zone with its daylight saving rules, as arrow.now()
+                # had before arrow 1.4 (now a fixed offset), so "6 months ago"
+                # keeps the local time of day across a daylight saving change
+                arw = arrow.now(tz.tzlocal())
                 t = arw.dehumanize(x)
         return t
 

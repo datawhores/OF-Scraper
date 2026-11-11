@@ -5,7 +5,6 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.config.menu as config_menu
-import ofscraper.utils.console as console
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.of_env.of_env as of_env
@@ -35,7 +34,6 @@ def main_menu_action():
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
     scapingManager = scraperManager()
     while True:
-        console.get_shared_console().clear_live()
         result_main_prompt = None
         try:
             result_main_prompt = prompts.main_prompt()

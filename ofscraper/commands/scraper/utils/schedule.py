@@ -1,6 +1,7 @@
 import arrow
 import schedule
 import logging
+from dateutil import tz
 import time
 import traceback
 import signal
@@ -54,7 +55,10 @@ def set_schedule(*functs, wakeup=None):
             jobqueue.join()
             if wakeup is not None and wakeup.stopped:
                 return
-            next = arrow.now().shift(minutes=settings.get_settings().daemon)
+            # the local zone with its daylight saving rules (arrow 1.4's
+            # arrow.now() has a fixed offset): the time is handed to schedule
+            # as a local wall-clock time
+            next = arrow.now(tz.tzlocal()).shift(minutes=settings.get_settings().daemon)
             log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
             job = schedule.every().day.at(next.format("HH:mm:ss")).do(
                 schedule_helper, *functs, wakeup=wakeup

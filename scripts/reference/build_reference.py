@@ -321,12 +321,21 @@ def type_text(param):
 
 def default_text(param):
     default = param.default
-    if default is None or "UNSET" in repr(default) or "Sentinel" in repr(default):
+    sentinel = "UNSET" in repr(default) or "Sentinel" in repr(default)
+    # A single flag (no --no-... pair) parses as False when absent. click 8.5
+    # stores its default as an UNSET sentinel instead of False. A paired flag
+    # really defaults to None: neither of its two options was given.
+    if (
+        getattr(param, "is_flag", False)
+        and not getattr(param, "count", False)
+        and not getattr(param, "secondary_opts", None)
+        and (default is False or sentinel)
+    ):
+        return "off"
+    if default is None or sentinel:
         return "none"
     if callable(default):
         return "computed when parsed"
-    if getattr(param, "is_flag", False) and default is False:
-        return "off"
     return value_text(default)
 
 

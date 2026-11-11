@@ -324,9 +324,6 @@ def test_main_menu_stops_instead_of_asking_again(monkeypatch):
     import ofscraper.utils.menu as menu
 
     monkeypatch.setattr(menu.prompts, "main_prompt", _no_console_once())
-    monkeypatch.setattr(
-        menu.console, "get_shared_console", lambda: SimpleNamespace(clear_live=lambda: None)
-    )
     with pytest.raises(interactive.NoConsoleError):
         menu.main_menu_action()
 

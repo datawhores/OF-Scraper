@@ -100,7 +100,7 @@ def parse_profile(profile: dict) -> tuple:
         # Standardizing structure and casing for hardening
         output.append(
             {
-                "id": xxh128(ele).hexdigest(),
+                "id": xxh128(ele.encode("utf-8")).hexdigest(),
                 "postedAt": profile.get("joinDate"),
                 "text": profile.get("about"),
                 "responsetype": "Profile",  # Capitalized
@@ -108,7 +108,7 @@ def parse_profile(profile: dict) -> tuple:
                 "value": "Free",  # Hardened value for price filtering
                 "media": [
                     {
-                        "id": xxh128(ele[:-1]).hexdigest(),
+                        "id": xxh128(ele[:-1].encode("utf-8")).hexdigest(),
                         "type": "photo",
                         "canView": True,
                         "source": {"source": ele},

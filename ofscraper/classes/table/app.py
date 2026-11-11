@@ -213,10 +213,10 @@ class InputApp(App):
             dl_open = self.query_one("#download_option_sidebar").has_class("-show")
 
             self.query_one("#label_opt_sidebar").update(
-                f"Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
+                f"Options Menu:  [bold ansi_cyan]Ctrl+S[/bold ansi_cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
             )
             self.query_one("#label_dl_sidebar").update(
-                f"Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
+                f"Download Menu: [bold ansi_cyan]Ctrl+D[/bold ansi_cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
             )
         except:
             pass
@@ -834,17 +834,17 @@ class InputApp(App):
         )
 
         try:
-            db_line_1 = f"[bold blue]Database:[/bold blue]  \\[Total: {total_items}] \\[Unlocked: {unlocked_items}]"
-            db_line_2 = f"[bold blue]DL Status:[/bold blue] \\[DL'd: {db_dl}] \\[Missing: {db_miss}] \\[Unique Missing: {unique_to_download}]"
+            db_line_1 = f"[bold ansi_blue]Database:[/bold ansi_blue]  \\[Total: {total_items}] \\[Unlocked: {unlocked_items}]"
+            db_line_2 = f"[bold ansi_blue]DL Status:[/bold ansi_blue] \\[DL'd: {db_dl}] \\[Missing: {db_miss}] \\[Unique Missing: {unique_to_download}]"
             self.query_one("#db_info_bar").update(f"{db_line_1}\n{db_line_2}")
 
-            view_str = f"[bold blue]View:[/bold blue]   \\[Page: {self.main_page}] \\[Per Page: {num_page}] \\[Sort: {clean_sort_name} ({sort_dir})]"
-            filt_str = f"[bold blue]Filter:[/bold blue] \\[Total: {filtered_items}] \\[Unique: {unique_items}]"
-            type_str = f"[bold blue]Media:[/bold blue]  \\[Vids: {vids}] \\[Pics: {pics}] \\[Aud: {auds}]"
+            view_str = f"[bold ansi_blue]View:[/bold ansi_blue]   \\[Page: {self.main_page}] \\[Per Page: {num_page}] \\[Sort: {clean_sort_name} ({sort_dir})]"
+            filt_str = f"[bold ansi_blue]Filter:[/bold ansi_blue] \\[Total: {filtered_items}] \\[Unique: {unique_items}]"
+            type_str = f"[bold ansi_blue]Media:[/bold ansi_blue]  \\[Vids: {vids}] \\[Pics: {pics}] \\[Aud: {auds}]"
 
             if filtered_items == 0:
                 self.query_one("#view_info_bar").update(
-                    f"{view_str}\n{filt_str}\n{type_str}\n[bold red]All Items Filtered Out[/bold red]"
+                    f"{view_str}\n{filt_str}\n{type_str}\n[bold ansi_red]All Items Filtered Out[/bold ansi_red]"
                 )
             else:
                 self.query_one("#view_info_bar").update(
@@ -859,7 +859,7 @@ class InputApp(App):
             1 for row in self.table_data if row["download_cart"] == "[downloading]"
         )
         try:
-            cart_line = f"[bold blue]Cart:[/bold blue]      \\[Queued: {in_cart}] \\[Active: {downloading}]"
+            cart_line = f"[bold ansi_blue]Cart:[/bold ansi_blue]      \\[Queued: {in_cart}] \\[Active: {downloading}]"
             for widget in self.query(".global_cart_info"):
                 widget.update(cart_line)
         except:
