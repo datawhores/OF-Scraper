@@ -145,7 +145,7 @@ def check_env(monkeypatch, tmp_path):
     monkeypatch.setattr(check, "row_gather", no_rows)
     monkeypatch.setattr(check.progress_utils, "setup_live", lambda *a, **k: contextlib.nullcontext())
     monkeypatch.setattr(
-        check.progress_updater, "activity", SimpleNamespace(update_task=lambda *a, **k: None)
+        check.progress_updater, "activity", SimpleNamespace(update_task=lambda *a, **k: None, desc=None, get_desc_id=lambda: None)
     )
     monkeypatch.setattr(check, "check_user_dict", check.defaultdict(dict))
     return db

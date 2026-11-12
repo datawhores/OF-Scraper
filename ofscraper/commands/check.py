@@ -296,11 +296,12 @@ async def data_refill(model_id):
         retriver = partial(post_check_retriver, forced=True)
     else:
         return
-    # refresh only the creator whose download failed
-    async for username, refilled_id, final_post_array, *_ in retriver(
-        only_model_id=model_id
-    ):
-        await process_post_media(username, refilled_id, final_post_array)
+    with progress_utils.TemporaryTaskState(progress_updater.activity):
+        # refresh only the creator whose download failed
+        async for username, refilled_id, final_post_array, *_ in retriver(
+            only_model_id=model_id
+        ):
+            await process_post_media(username, refilled_id, final_post_array)
 
 
 def _other_creator(model_id, only_model_id):
@@ -350,19 +351,16 @@ def post_checker():
 
 @run
 async def post_check_runner():
-    async for (
-        user_name,
-        model_id,
-        final_post_array,
-        skip_update,
-    ) in post_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Timeline posts"
-                ),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in post_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array,
@@ -412,6 +410,12 @@ async def post_check_retriver(forced=False, only_model_id=None):
             if _other_creator(model_id, only_model_id):
                 continue
             if user_dict.get(model_id) and model_id and user_name:
+                progress_updater.activity.update_task(
+                    description=check_str.format(
+                        username=user_name, activity="Timeline posts"
+                    ),
+                    visible=True,
+                )
                 areas = get_areas()
                 await operations.table_init_create(
                     username=user_name, model_id=model_id
@@ -552,6 +556,12 @@ async def post_check_retriver(forced=False, only_model_id=None):
                 model_id = profile.get_id(user_name)
                 if _other_creator(model_id, only_model_id):
                     continue
+                progress_updater.activity.update_task(
+                    description=check_str.format(
+                        username=user_name, activity="Timeline posts"
+                    ),
+                    visible=True,
+                )
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 resp = get_individual_timeline_post(post_id)
@@ -581,17 +591,16 @@ def message_checker():
 
 @run
 async def message_checker_runner():
-    async for (
-        user_name,
-        model_id,
-        final_post_array,
-        skip_update,
-    ) in message_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(username=user_name, activity="Messages"),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in message_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array,
@@ -632,6 +641,10 @@ async def message_check_retriver(forced=False, only_model_id=None):
             if _other_creator(model_id, only_model_id):
                 continue
             if model_id and user_name:
+                progress_updater.activity.update_task(
+                    description=check_str.format(username=user_name, activity="Messages"),
+                    visible=True,
+                )
                 log.info(f"Getting Messages/Paid content for {user_name}")
                 await operations.table_init_create(
                     model_id=model_id, username=user_name
@@ -698,19 +711,16 @@ def purchase_checker():
 
 @run
 async def purchase_checker_runner():
-    async for (
-        user_name,
-        model_id,
-        final_post_array,
-        skip_update,
-    ) in purchase_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Purchased posts"
-                ),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in purchase_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array,
@@ -735,6 +745,12 @@ async def purchase_check_retriver(forced=False, only_model_id=None):
             model_id = name if name.isnumeric() else profile.get_id(user_name)
             if _other_creator(model_id, only_model_id):
                 continue
+            progress_updater.activity.update_task(
+                description=check_str.format(
+                    username=user_name, activity="Purchased posts"
+                ),
+                visible=True,
+            )
             user_dict[model_id] = user_dict.get(model_id, [])
 
             await operations.table_init_create(model_id=model_id, username=user_name)
@@ -775,13 +791,11 @@ def stories_checker():
 
 @run
 async def stories_checker_runner():
-    async for user_name, model_id, final_post_array in stories_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Stories posts"
-                )
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for user_name, model_id, final_post_array in stories_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -800,6 +814,11 @@ async def stories_check_retriver(forced=False, only_model_id=None):
             model_id = profile.get_id(user_name)
             if _other_creator(model_id, only_model_id):
                 continue
+            progress_updater.activity.update_task(
+                description=check_str.format(
+                    username=user_name, activity="Stories posts"
+                )
+            )
             user_dict[model_id] = user_dict.get(model_id, [])
             await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
