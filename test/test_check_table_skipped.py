@@ -162,6 +162,8 @@ def _fake_download(monkeypatch, rows, results):
     monkeypatch.setattr(check, "_get_data_from_row", fake_get_data)
     monkeypatch.setattr(check, "process_dicts", fake_process_dicts)
     monkeypatch.setattr(check, "data_refill", lambda model_id: None)
+    # Faked like data_refill: the real one fetches posts over the network.
+    monkeypatch.setattr(check, "_refresh_failed_posts", lambda *a: False)
     monkeypatch.setattr(check, "after_download_action_script", lambda *a: None)
     monkeypatch.setattr(check, "final_action", lambda: done.append(True))
     monkeypatch.setattr(check.operations, "table_init_create", lambda **k: None)

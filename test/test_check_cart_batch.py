@@ -32,6 +32,8 @@ def batch(monkeypatch):
     monkeypatch.setattr(check.app, "app", SimpleNamespace(update_cell_state=updates), raising=False)
     monkeypatch.setattr(check, "_record_row_file", record)
     monkeypatch.setattr(check, "data_refill", refill)
+    # Faked like data_refill: the real one fetches posts over the network.
+    monkeypatch.setattr(check, "_refresh_failed_posts", lambda *a: False)
     monkeypatch.setattr(check, "time", SimpleNamespace(sleep=Mock()))
     monkeypatch.setattr(check.network, "check_cdm", cdm)
     monkeypatch.setattr(check.operations, "table_init_create", Mock())

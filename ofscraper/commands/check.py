@@ -288,7 +288,10 @@ def _process_user_batch(
     if failed and not stop.requested.is_set():
         log.debug("Refreshing data and retrying...")
         try:
-            data_refill(model_id)
+            if not _refresh_failed_posts(
+                username, model_id, [target_media[i] for i in failed]
+            ) and not stop.requested.is_set():
+                data_refill(model_id)
         except stop.DownloadsStopped:
             pass  # Let download_batch restore the unreported rows below.
         if not stop.requested.is_set():
@@ -299,6 +302,59 @@ def _process_user_batch(
 
 # Initialize counter on the function object
 _process_user_batch.counter = 0
+
+
+@run
+async def _refresh_failed_posts(username, model_id, media):
+    """Replace just the failed posts; False requests one creator-wide fallback."""
+    seen = set()
+    fresh_posts = []
+    try:
+        for item in media:
+            if stop.requested.is_set():
+                return True
+            post = item.post
+            area = getattr(post, "responsetype", "").lower()
+            post_id = getattr(post, "id", None)
+            key = (area, post_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            if area in {"timeline", "archived", "pinned", "streams"}:
+                data = await asyncio.to_thread(get_individual_timeline_post, post_id)
+            elif area == "paid":
+                data = await asyncio.to_thread(
+                    paid_.get_individual_paid_post, username, model_id, post_id
+                )
+            elif area == "messages":
+                async with manager.Manager.session.aget_ofsession() as c:
+                    data = await messages_.get_individual_messages_post(
+                        model_id, post_id, c
+                    )
+            else:
+                return False
+            if stop.requested.is_set():
+                return True
+            data = data if isinstance(data, list) else [data]
+            if not data or any(
+                not isinstance(p, dict) or p.get("error") or not p.get("id")
+                for p in data
+            ):
+                return False
+            if not any(str(p["id"]) == str(post_id) for p in data):
+                return False
+            fresh_posts.extend(
+                posts_.Post(
+                    p, model_id, username, area,
+                    purchased=bool(getattr(post, "purchase_type", None)),
+                )
+                for p in data
+            )
+        await process_post_media(username, model_id, fresh_posts)
+        return True
+    except Exception as e:
+        log.debug(f"Couldn't refresh individual cart posts: {e}")
+        return False
 
 
 def _record_row_file(row, model_id, username, media):
