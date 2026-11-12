@@ -205,63 +205,73 @@ def _process_user_batch(
 
     m_id = str(model_id)
 
-    for i in range(len(media_list)):
-        key = row_list[i][0]
+    target_media = list(media_list)
+    target_posts = list(post_list)
 
-        # DYNAMIC FETCH 1: Grab the absolute newest media object from the collection.
-        try:
-            fresh_collection = check_user_dict[m_id]["collection"]
-            media = fresh_collection.find_media_item(media_list[i].id) or media_list[i]
-            post = media.post
-        except Exception:
-            media = media_list[i]
-            post = post_list[i]
-
-        log.info(f"Attempting to download: {media.filename} for {username}")
-
-        for attempt in range(2):
+    def refresh_media(indices):
+        for i in indices:
             try:
-                # Wrap in a list beforehand to guarantee reference integrity
-                target_media = [media]
-                values = process_dicts(username, model_id, target_media, [post])
+                fresh_collection = check_user_dict[m_id]["collection"]
+                target_media[i] = (
+                    fresh_collection.find_media_item(target_media[i].id) or target_media[i]
+                )
+                target_posts[i] = target_media[i].post
+            except Exception:
+                pass
 
-                if values is None or values[-1] == 1:
-                    raise Exception("Download failed based on process_dicts result")
+    def download_batch(indices, retry=False):
+        failed = set(indices)
+        reported = set()
+        rows_by_media = defaultdict(list)
+        for i in indices:
+            rows_by_media[id(target_media[i])].append(i)
+            log.info(f"Attempting to download: {target_media[i].filename} for {username}")
 
-                media_list[i] = target_media[0]
-                post_list[i] = target_media[0].post
-
-                # Success cases
-                if values[-2] == 1:
+        def on_result(media, result):
+            for i in rows_by_media[id(media)]:
+                key, row = row_list[i]
+                if result == "failed":
+                    if retry:
+                        log.info(f"Download failed for {media.filename}.")
+                        app.app.update_cell_state(key, "[failed]", "bold red")
+                        reported.add(i)
+                    continue
+                failed.discard(i)
+                media_list[i] = media
+                post_list[i] = media.post
+                if result == "skipped":
                     log.info(f"Download skipped: {media.filename}")
                     app.app.update_cell_state(key, "[skipped]", "bold bright_yellow")
                 else:
                     log.info(f"Download finished: {media.filename}")
-                    _record_row_file(row_list[i][1], model_id, username, media)
+                    _record_row_file(row, model_id, username, media)
                     app.app.update_cell_state(key, "[downloaded]", "bold green")
+                reported.add(i)
 
-                break
+        try:
+            process_dicts(
+                username, model_id,
+                [target_media[i] for i in indices],
+                [target_posts[i] for i in indices],
+                on_result=on_result,
+            )
+        except Exception as e:
+            log.debug(f"Download batch failed: {e}")
+        if retry:
+            for i in sorted(set(indices) - reported):
+                log.info(f"Download failed for {target_media[i].filename}.")
+                app.app.update_cell_state(row_list[i][0], "[failed]", "bold red")
+        return sorted(failed)
 
-            except Exception as e:
-                log.debug(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
-                if attempt == 0:
-                    log.debug("Refreshing data and retrying...")
-                    data_refill(model_id)
-                    time.sleep(1)
-
-                    # DYNAMIC FETCH 2: Inside the retry block
-                    try:
-                        fresh_collection = check_user_dict[m_id]["collection"]
-                        media = fresh_collection.find_media_item(media.id) or media
-                        post = media.post
-                        log.info(
-                            f"Successfully retrieved fresh URL for {media.filename}"
-                        )
-                    except Exception:
-                        pass
-                else:
-                    log.info(f"Download failed for {media.filename}.")
-                    app.app.update_cell_state(key, "[failed]", "bold red")
+    indices = list(range(len(media_list)))
+    refresh_media(indices)
+    failed = download_batch(indices)
+    if failed:
+        log.debug("Refreshing data and retrying...")
+        data_refill(model_id)
+        time.sleep(1)
+        refresh_media(failed)
+        download_batch(failed, retry=True)
 
 
 # Initialize counter on the function object

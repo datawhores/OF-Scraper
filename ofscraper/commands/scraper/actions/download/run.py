@@ -36,7 +36,7 @@ from ofscraper.classes.of.media import Media
 from ofscraper.sites.fansly import video as fansly_video
 
 
-async def consumer(aws, task1, medialist, lock):
+async def consumer(aws, task1, medialist, lock, on_result=None):
     while True:
         ele = None
         async with lock:
@@ -79,6 +79,13 @@ async def consumer(aws, task1, medialist, lock):
                 elif media_type == "forced_skipped":
                     ele.mark_download_skipped()
                     common_globals.forced_skipped += 1
+                if on_result is not None:
+                    result = (
+                        "failed" if media_type == "skipped"
+                        else "skipped" if media_type == "forced_skipped"
+                        else "downloaded"
+                    )
+                    on_result(ele, result)
                 sum_count = (
                     common_globals.photo_count
                     + common_globals.video_count

@@ -72,7 +72,12 @@ async def download_process(username, model_id, medialist, posts):
 
 
 @run
-async def process_dicts(username, model_id, medialist, posts):
+async def process_dicts(username, model_id, medialist, posts, on_result=None):
+    """Return batch totals; optionally call on_result(media, result) per file.
+
+    Results are "downloaded", "skipped" (intentional), or "failed".
+    The callback runs in the download worker as each file finishes.
+    """
     # 2. Handle text download if enabled
     if not isinstance(medialist, list):
         medialist = [medialist]
@@ -119,7 +124,7 @@ async def process_dicts(username, model_id, medialist, posts):
                 )
                 lock = asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(aws, task1, medialist, lock))
+                    asyncio.create_task(consumer(aws, task1, medialist, lock, on_result=on_result))
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)

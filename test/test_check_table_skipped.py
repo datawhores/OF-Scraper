@@ -127,8 +127,18 @@ def _fake_download(monkeypatch, rows, results):
         item = media[int(row["media_id"])]
         return item, item.post, row["username"], 1
 
-    def fake_process_dicts(username, model_id, medialist, posts):
-        return results[medialist[0].id]
+    def fake_process_dicts(username, model_id, medialist, posts, on_result=None):
+        totals = [0] * 5
+        for media in medialist:
+            values = results[media.id]
+            totals = [a + b for a, b in zip(totals, values)]
+            if on_result is not None:
+                result = (
+                    "failed" if values[-1] else
+                    "skipped" if values[-2] else "downloaded"
+                )
+                on_result(media, result)
+        return tuple(totals)
 
     done = []
     model_manager = SimpleNamespace(
