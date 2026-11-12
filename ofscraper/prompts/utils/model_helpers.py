@@ -2,14 +2,34 @@ import re
 
 import arrow
 from InquirerPy.base import Choice
+from rich.cells import cell_len
 import ofscraper.utils.settings as settings
 
 
-def model_selectorHelper(count, x):
-    return Choice(
-        x,
-        name=f"{count+1}: {x.name}   =>  subscribed date: {generalDated(x.subscribed_string)}{renewHelper(x)}{lastSeenHelper(x)} | {getPriceHelper(x)}",
-    )
+def model_selector_choices(models):
+    models = list(models)
+    rows = [
+        [
+            str(count + 1),
+            x.name,
+            f"subscribed date: {generalDated(x.subscribed_string)}",
+            renewHelper(x).removeprefix(" | "),
+            lastSeenHelper(x).removeprefix(" | "),
+            getPriceHelper(x),
+        ]
+        for count, x in enumerate(models)
+    ]
+    widths = [max(map(cell_len, column)) for column in zip(*rows)]
+    choices = []
+    for x, row in zip(models, rows):
+        padded = [
+            value + " " * (width - cell_len(value))
+            for value, width in zip(row, widths)
+        ]
+        number = row[0].rjust(widths[0])
+        details = " | ".join(value for value in padded[2:] if value)
+        choices.append(Choice(x, name=f"{number}: {padded[1]}   =>  {details}"))
+    return choices
 
 
 def renewHelper(x):

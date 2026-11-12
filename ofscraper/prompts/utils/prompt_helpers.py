@@ -125,12 +125,12 @@ def model_funct(prompt):
         with stdout.nostdout():
             selectedSet = set(
                 map(
-                    lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                    lambda x: re.search(r"^\s*[0-9]+: ([^ ]+)", x["name"]).group(1),
                     prompt.selected_choices or [],
                 )
             )
             for model in choices:
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet:
                     model.enabled = True
             prompt.content_control._raw_choices = choices
@@ -168,7 +168,7 @@ def _select_helper(prompt, toggle=True):
             model.enabled = False
         selectedSet = set(
             map(
-                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                lambda x: re.search(r"^\s*[0-9]+: ([^ ]+)", x["name"]).group(1),
                 prompt.selected_choices or [],
             )
         )
@@ -183,12 +183,12 @@ def _select_helper(prompt, toggle=True):
         )
         if toggle:
             for count, model in enumerate(choices):
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet or count + 1 in changes:
                     model.enabled = True
         elif not toggle:
             for count, model in enumerate(choices):
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet and count + 1 not in changes:
                     model.enabled = True
 
@@ -199,12 +199,7 @@ def _select_helper(prompt, toggle=True):
 
 def _get_choices():
     models = manager.Manager.current_model_manager.get_models_from_prompt()
-    return list(
-        map(
-            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models.values()),
-        )
-    )
+    return modelHelpers.model_selector_choices(models.values())
 
 
 def user_list(model_str):
