@@ -38,9 +38,9 @@ class DataTableExtended(DataTable):
 
 
 
-def get_styled(row):
+def get_styled(row, columns=None):
     styled_row = []
-    for key in get_col_names():
+    for key in get_col_names() if columns is None else columns:
         if key in ["length","post_date"]:
             styled_row.append(
                 Text(str(row[key]), style="bold deep_sky_blue1")

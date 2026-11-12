@@ -17,10 +17,12 @@ import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
 import ofscraper.utils.console as console_
+import ofscraper.utils.cache.cache as cache
 
 log = logging.getLogger("shared")
 app = None
 row_queue = queue.Queue()
+EXTRA_COLUMNS_CACHE_KEY = "check_table_show_extra_columns"
 
 
 class InputApp(App):
@@ -38,12 +40,14 @@ class InputApp(App):
         ("C", "clear_all_filtered", "Clear All Filtered"),
         ("x", "clear_entire_cart", "Nuke Cart"),
         ("o", "open_download_folder", "Open Folder"),
+        ("h", "toggle_extra_columns", "Show/Hide Columns"),
     ]
     CSS = CSS
 
     def __init__(self, *args, **kwargs) -> None:
         self.sidebar = None
         self._filtered_rows = []
+        self.show_extra_columns = False
 
         # Dedicated Pagination State
         self.main_page = 1
@@ -64,6 +68,12 @@ class InputApp(App):
             pass
 
     def on_ready(self) -> None:
+        try:
+            self.show_extra_columns = (
+                cache.get(EXTRA_COLUMNS_CACHE_KEY, default=False) is True
+            )
+        except Exception:
+            self.show_extra_columns = False
         self.init_table()
         self.init_cart_table()
         self.init_cart_toggles()
@@ -194,6 +204,19 @@ class InputApp(App):
             col_name = table.ordered_columns_keys[col]
             if col_name not in {"other_posts_with_media", "download_cart"}:
                 self.update_input(col_name, table.get_cell_at(cursor_coordinate))
+
+    def action_toggle_extra_columns(self) -> None:
+        if self.is_sidebar_open:
+            return
+        self.show_extra_columns = not self.show_extra_columns
+        try:
+            cache.set(EXTRA_COLUMNS_CACHE_KEY, self.show_extra_columns)
+        except Exception:
+            pass
+        self._insert_visible_table()
+        self._insert_visible_table(self.query_one("#cart_data_table"))
+        self.set_page()
+        self.update_cart_table()
 
     # --- Sidebars Actions ---
     def action_toggle_options_sidebar(self) -> None:
@@ -771,7 +794,7 @@ class InputApp(App):
 
             # 4. Add the rows to the table
             for count, row_dict in enumerate(cart_rows[start : start + num_page]):
-                styled_row = get_styled(row_dict)
+                styled_row = get_styled(row_dict, cart_table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 cart_table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
@@ -844,7 +867,7 @@ class InputApp(App):
 
             # 3. Add the rows to the table
             for count, row_dict in enumerate(rows[start : start + num_page]):
-                styled_row = get_styled(row_dict)
+                styled_row = get_styled(row_dict, self.table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 self.table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
@@ -873,7 +896,7 @@ class InputApp(App):
         table.fixed_rows = 0
         table.zebra_stripes = True
 
-        for ele in get_col_names():
+        for ele in get_col_names(show_extra=self.show_extra_columns):
             width = 18
             width = 50 if ele == "text" else width
             width = 30 if ele == "other_posts_with_media" else width

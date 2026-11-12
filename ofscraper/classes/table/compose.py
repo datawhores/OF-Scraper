@@ -79,7 +79,7 @@ def composer():
                         "[bold ansi_blue]Cart_Unique:[/bold ansi_blue] Page (u) | All Unique ([bold ansi_cyan]Shift+U[/bold ansi_cyan])\n"
                         "[bold ansi_green]Cart_New Only:[/bold ansi_green] Page (e) | All New ([bold ansi_cyan]Shift+E[/bold ansi_cyan])\n"
                         "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)\n"
-                        "[bold ansi_blue]Open Folder:[/bold ansi_blue] Highlighted Row (o)",
+                        "[bold ansi_blue]Open Folder:[/bold ansi_blue] Highlighted Row (o) | Show/Hide Columns (h)",
                         id="table_instructions",
                         markup=True,
                     )
@@ -149,7 +149,8 @@ def composer():
                         "• [bold]Click '\\[added]'[/bold] to instantly remove that item from the cart.\n"
                         "• [bold]Click 'Download Cart'[/bold] (the column header) to clear this entire page.\n"
                         "• Press [bold ansi_cyan](c)[/bold ansi_cyan] to remove all items currently visible on this page.\n"
-                        "• Press [bold ansi_cyan](x)[/bold ansi_cyan] or [bold ansi_cyan]Shift+C[/bold ansi_cyan] to NUKE the entire cart.",
+                        "• Press [bold ansi_cyan](x)[/bold ansi_cyan] or [bold ansi_cyan]Shift+C[/bold ansi_cyan] to NUKE the entire cart.\n"
+                        "• Show/Hide Columns [bold ansi_cyan](h)[/bold ansi_cyan].",
                         markup=True,
                     )
 
