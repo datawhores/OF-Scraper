@@ -8,12 +8,13 @@ import contextlib
 import traceback
 import weakref
 from typing import Optional, Dict, Union, AsyncGenerator, Any, Generator
+from urllib.parse import parse_qs, urlsplit
 
 import arrow
 import httpx
 import tenacity
 import aiohttp
-from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
+from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_exception_type
 
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.headers as fansly_headers
@@ -46,6 +47,31 @@ def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     elif isinstance(exception, httpx.HTTPStatusError):
         status_code = getattr(exception.response, "status_code", None)
     return status_code in numbers
+
+
+def is_signed_cdn_forbidden(exception: Exception) -> bool:
+    """Retrying a rejected signed CDN URL cannot renew its credentials."""
+    try:
+        if not is_provided_exception_number(exception, 403):
+            return False
+        if isinstance(exception, aiohttp.ClientResponseError):
+            url = exception.request_info.real_url
+        else:
+            url = exception.request.url
+        if not url:
+            return False
+        parsed = urlsplit(str(url))
+        host = parsed.hostname or ""
+        # Use the actual request URL, including separately supplied params. Do not
+        # classify API 403s or depend on CloudFront's optional error body/headers.
+        return (
+            host.endswith(".onlyfans.com")
+            and host.split(".")[0].startswith("cdn")
+            and {"Policy", "Signature", "Key-Pair-Id"}.issubset(parse_qs(parsed.query))
+        )
+    except Exception:
+        # Exception request metadata may be absent or raise when accessed.
+        return False
 
 
 class BareSession:
@@ -400,6 +426,8 @@ class sessionManager:
             self._last_auth_warn_date = arrow.now()
 
     def _handle_error(self, E: Exception, exceptions: list):
+        if is_signed_cdn_forbidden(E):
+            return
         if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
             self._rate_limit_sleeper.toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
@@ -410,6 +438,8 @@ class sessionManager:
             time.sleep(8)
 
     async def _async_handle_error(self, E: Exception, exceptions: list):
+        if is_signed_cdn_forbidden(E):
+            return
         if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
             await self._rate_limit_sleeper.async_toomany_req()
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
@@ -552,7 +582,8 @@ class sessionManager:
         wait_max = wait_max if wait_max is not None else self._wait_max
 
         for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit)),
+            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit))
+            & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=wait_min, max=wait_max),
             before=lambda x: (
@@ -664,7 +695,8 @@ class sessionManager:
             # tenacity's attempt swallows it, so it must not count as a failure
             retry=retry_if_not_exception_type(
                 (KeyboardInterrupt, SystemExit, asyncio.CancelledError)
-            ),
+            )
+            & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             reraise=True,
             before_sleep=lambda retry_state: (
                 self._log.debug(

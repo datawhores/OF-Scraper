@@ -4,6 +4,7 @@ from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait
 
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
+from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
 
 
 class NoRetry(Exception):
@@ -23,6 +24,7 @@ class download_retry(AsyncRetrying):
         retry = retry or retry_if_exception(
             lambda e: str(e) != of_env.getattr("SPACE_DOWNLOAD_MESSAGE")
             and not isinstance(e, (KeyboardInterrupt, asyncio.CancelledError, NoRetry))
+            and not is_signed_cdn_forbidden(e)
         )
         
         def _log_retry(retry_state):
