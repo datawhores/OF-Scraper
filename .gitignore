@@ -66,6 +66,7 @@ ofscraper/__version__.pye
 .trunk
 #documentation
 wiki/
-docs/
+docs/*
+!docs/adr/
 
 repomix-output*
