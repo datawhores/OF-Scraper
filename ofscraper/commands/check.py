@@ -261,12 +261,13 @@ def _process_user_batch(
                 reported.add(i)
 
         try:
-            process_dicts(
-                username, model_id,
-                [target_media[i] for i in indices],
-                [target_posts[i] for i in indices],
-                on_result=on_result,
-            )
+            if not stop.requested.is_set():
+                process_dicts(
+                    username, model_id,
+                    [target_media[i] for i in indices],
+                    [target_posts[i] for i in indices],
+                    on_result=on_result,
+                )
         except Exception as e:
             log.debug(f"Download batch failed: {e}")
         if stop.requested.is_set():
@@ -286,9 +287,13 @@ def _process_user_batch(
     failed = download_batch(indices)
     if failed and not stop.requested.is_set():
         log.debug("Refreshing data and retrying...")
-        data_refill(model_id)
-        time.sleep(1)
-        refresh_media(failed)
+        try:
+            data_refill(model_id)
+        except stop.DownloadsStopped:
+            pass  # Let download_batch restore the unreported rows below.
+        if not stop.requested.is_set():
+            time.sleep(1)
+            refresh_media(failed)
         download_batch(failed, retry=True)
 
 
@@ -347,7 +352,16 @@ def get_areas():
     return settings.get_settings().check_area
 
 
-def checker():
+def checker(menu=False):
+    with stop.interrupt_handler():
+        try:
+            _checker()
+        except stop.DownloadsStopped:
+            if not menu:
+                raise SystemExit(130)
+
+
+def _checker():
     check_auth()
     allow_check_dupes()
     set_after_check_mode()
@@ -378,6 +392,7 @@ def post_checker():
 
 
 @run
+@stop.fetching
 async def post_check_runner():
     with (
         progress_utils.setup_live("api"),
@@ -618,6 +633,7 @@ def message_checker():
 
 
 @run
+@stop.fetching
 async def message_checker_runner():
     with (
         progress_utils.setup_live("api"),
@@ -738,6 +754,7 @@ def purchase_checker():
 
 
 @run
+@stop.fetching
 async def purchase_checker_runner():
     with (
         progress_utils.setup_live("api"),
@@ -818,6 +835,7 @@ def stories_checker():
 
 
 @run
+@stop.fetching
 async def stories_checker_runner():
     with (
         progress_utils.setup_live("api"),

@@ -10,6 +10,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
@@ -43,6 +44,7 @@ API = "Timeline"
 
 
 @run
+@stop.fetching
 async def get_timeline_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     post_id = post_id or []
@@ -87,7 +89,7 @@ async def process_tasks(generators):
             await queue.put(None)  # Signal completion for this specific generator
 
     # Schedule producers as concurrent tasks
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     # Consume batches as they arrive in the queue

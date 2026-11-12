@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 from functools import partial
@@ -477,6 +478,7 @@ async def process_labels(model_id, username, c):
 
 
 @run
+@stop.fetching
 async def process_areas(ele, model_id, username, c=None):
     try:
         username = ele.name
@@ -551,7 +553,7 @@ async def process_tasks(model_id, username, ele, c=None):
         # remain accessible after expiration.
         if "Profile" in final_post_areas:
             tasks.append(
-                asyncio.create_task(
+                stop.create_fetch_task(
                     process_single_task(
                         partial(process_profile, username), username, "Profile"
                     )(sem=sem)
@@ -559,7 +561,7 @@ async def process_tasks(model_id, username, ele, c=None):
             )
         if "Purchased" in final_post_areas:
             tasks.append(
-                asyncio.create_task(
+                stop.create_fetch_task(
                     process_single_task(
                         partial(process_paid_post, model_id, username, c), username, "Purchased"
                     )(sem=sem)
@@ -567,7 +569,7 @@ async def process_tasks(model_id, username, ele, c=None):
             )
         if "Messages" in final_post_areas:
             tasks.append(
-                asyncio.create_task(
+                stop.create_fetch_task(
                     process_single_task(
                         partial(process_messages, model_id, username, c), username, "Messages"
                     )(sem=sem)
@@ -579,7 +581,7 @@ async def process_tasks(model_id, username, ele, c=None):
         if not skip_wall:
             if "Pinned" in final_post_areas:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_pinned_posts, model_id, username, c), username, "Pinned"
                         )(sem=sem)
@@ -588,7 +590,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Timeline" in final_post_areas:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_timeline_posts, model_id, username, c=c),
                             username,
@@ -599,7 +601,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Archived" in final_post_areas:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_archived_posts, model_id, username, c=c),
                             username,
@@ -610,7 +612,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Highlights" in final_post_areas:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_highlights, model_id, username, c), username, "Highlights"
                         )(sem=sem)
@@ -619,7 +621,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Stories" in final_post_areas:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_stories, model_id, username, c), username, "Stories"
                         )(sem=sem)
@@ -628,7 +630,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Labels" in final_post_areas and ele.active:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_labels, model_id, username, c), username, "Labels"
                         )(sem=sem)
@@ -641,7 +643,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
             if "Streams" in final_post_areas and ele.active:
                 tasks.append(
-                    asyncio.create_task(
+                    stop.create_fetch_task(
                         process_single_task(
                             partial(process_streamed_posts, model_id, username, c), username, "Streams"
                         )(sem=sem)

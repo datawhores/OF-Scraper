@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 import arrow
@@ -43,6 +44,7 @@ log = logging.getLogger("shared")
 
 
 @run
+@stop.fetching
 async def get_messages(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
 
@@ -114,7 +116,7 @@ async def process_tasks(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:

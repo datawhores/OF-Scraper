@@ -10,6 +10,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
@@ -28,6 +29,7 @@ API = "Purchased"
 
 
 @run
+@stop.fetching
 async def get_paid_posts(username, model_id, c=None):
     tasks = []
     # Create the coroutine; it will return an AsyncGenerator when awaited
@@ -58,7 +60,7 @@ async def process_tasks(generators):
             await queue.put(None)
 
     # Start the producers as proper tasks
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -160,6 +162,7 @@ async def scrape_paid(c, username, offset=0):
 
 
 @run
+@stop.fetching
 async def get_all_paid_posts():
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("SCRAPE_PAID_SEMS"),
@@ -206,7 +209,7 @@ async def process_tasks_all_paid(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -225,6 +228,7 @@ async def process_tasks_all_paid(generators):
 
     progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API} all users final", output, final_count=True)
+    stop.check()
     cache.set(
         "purchased_all",
         list(map(lambda x: x.get("id"), output)),

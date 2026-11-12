@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
@@ -27,6 +28,7 @@ API = "Pinned"
 
 
 @run
+@stop.fetching
 async def get_pinned_posts(model_id, c=None, post_id=None):
     post_id = post_id or []
     # 1. build the list of raw generators
@@ -63,7 +65,7 @@ async def process_tasks_batch(generators):
             await queue.put(None)
 
     # Start producers concurrently
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     # The Consumer: Aggregates data in real-time

@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import contextlib
 import logging
 import traceback
@@ -41,6 +42,7 @@ API = "Labels"
 
 
 @run
+@stop.fetching
 async def get_labels(model_id, c=None, username=None):
     labels_ = await get_labels_data(model_id, c=c)
     labels_ = (
@@ -74,6 +76,7 @@ def mark_label_finished(model_id, label_id):
 
 
 def commit_finished_labels(model_id):
+    stop.check()
     for label_id in _finished_labels.pop(model_id, set()):
         cache.set(label_complete_key(model_id, label_id), True)
 
@@ -82,6 +85,7 @@ def discard_finished_labels(model_id):
     _finished_labels.pop(model_id, None)
 
 
+@stop.fetching
 async def get_labels_data(model_id, c=None):
     # on Fansly a label is a wall (a named tab on the creator's profile)
     names = fansly_scrape.label_names if sites.is_fansly() else scrape_labels
@@ -165,6 +169,7 @@ async def get_known_label_posts(labels, model_id, username):
     return known
 
 
+@stop.fetching
 async def get_posts_for_labels(labels, model_id, c=None, known=None, track=False):
     known = known or {}
     generators = []
@@ -198,7 +203,7 @@ async def process_tasks_labels(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -257,7 +262,7 @@ async def process_tasks_get_posts_for_labels(generators, labels):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:

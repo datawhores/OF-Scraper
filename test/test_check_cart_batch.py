@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import queue
+import threading
 from contextlib import asynccontextmanager, nullcontext
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -235,3 +237,107 @@ def test_stop_restores_unstarted_batch_rows_without_retry(monkeypatch, batch):
         batch.refill.assert_not_called()
     finally:
         stop.clear()
+
+
+def test_stop_during_refill_keeps_worker_alive_for_next_cart(monkeypatch, batch):
+    from ofscraper.commands.scraper.actions.download import stop
+
+    stop.clear()
+    fetching = threading.Event()
+    completed = threading.Event()
+    wake = threading.Event()
+    shutdown = threading.Event()
+    errors = []
+    calls = []
+    rows = [(str(m.id), {"media_id": m.id}) for m in batch.media]
+    cart = queue.Queue()
+    for row in rows:
+        cart.put(row)
+
+    @stop.fetching
+    async def fetch():
+        fetching.set()
+        await asyncio.Event().wait()
+
+    batch.refill.side_effect = lambda _: asyncio.run(fetch())
+
+    def process(username, model_id, media, posts, on_result=None):
+        calls.append([m.id for m in media])
+        for m in media:
+            on_result(m, "downloaded" if len(calls) > 1 or m.id == 0 else "failed")
+
+    class WorkerDone(BaseException):
+        pass
+
+    def idle(_):
+        wake.wait(2)
+        wake.clear()
+        if shutdown.is_set():
+            raise WorkerDone
+
+    clear = stop.clear
+
+    def batch_done():
+        clear()
+        completed.set()
+
+    def worker():
+        try:
+            check.process_download_queue()
+        except WorkerDone:
+            pass
+        except BaseException as exc:
+            errors.append(exc)
+        finally:
+            completed.set()
+
+    model_manager = check.manager.Manager.current_model_manager
+    monkeypatch.setattr(model_manager, "mark_as_processed", Mock(), raising=False)
+    monkeypatch.setattr(model_manager, "clear_scrape_queues", Mock(), raising=False)
+    monkeypatch.setattr(check.manager.Manager, "stats_manager", Mock(), raising=False)
+    after = Mock()
+    monkeypatch.setattr(check, "after_download_action_script", after)
+    monkeypatch.setattr(check, "final_action", Mock())
+    monkeypatch.setattr(check.app, "row_queue", cart)
+    monkeypatch.setattr(check, "_get_data_from_row", lambda row: (
+        batch.media[row["media_id"]], batch.media[row["media_id"]].post, "a creator", 1))
+    monkeypatch.setattr(check, "process_dicts", process)
+    monkeypatch.setattr(check.time, "sleep", idle)
+    monkeypatch.setattr(stop, "clear", batch_done)
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    try:
+        assert fetching.wait(2)
+        stop.request()
+        assert completed.wait(2)
+        assert thread.is_alive()
+        assert errors == []
+        assert not stop.requested.is_set()
+        assert not check._downloading.is_set()
+        assert calls == [[0, 1, 2, 3]]
+        assert batch.updates.call_args_list == [
+            (("0", "[downloaded]", "bold green"),),
+            *[((str(i), "[added]", "bold light_goldenrod2"),) for i in range(1, 4)],
+        ]
+        after.assert_not_called()
+        completed.clear()
+        batch.updates.reset_mock()
+        for row in rows[1:]:
+            cart.put(row)
+        wake.set()
+        assert completed.wait(2)
+        assert thread.is_alive()
+        assert errors == []
+        assert calls == [[0, 1, 2, 3], [1, 2, 3]]
+        assert batch.updates.call_args_list == [
+            ((str(i), "[downloaded]", "bold green"),) for i in range(1, 4)
+        ]
+        batch.refill.assert_called_once_with(1)
+        after.assert_called_once()
+    finally:
+        shutdown.set()
+        stop.request()
+        wake.set()
+        thread.join(3)
+        clear()
+    assert not thread.is_alive()

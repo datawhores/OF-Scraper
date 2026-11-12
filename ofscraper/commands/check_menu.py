@@ -37,7 +37,7 @@ def run_check_table():
     command = prompts.check_table_prompt()
     with check_table_session(command, usernames):
         check.reset_table_data()
-        check.checker()
+        check.checker(menu=True)
 
 
 def check_args(args, command, usernames):
