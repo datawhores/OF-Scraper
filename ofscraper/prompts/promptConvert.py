@@ -1,8 +1,11 @@
 import functools
 import inspect
+import shutil
 
 from InquirerPy import get_style, inquirer
+from InquirerPy.containers.validation import ValidationFloat
 from InquirerPy.separator import Separator
+from prompt_toolkit.layout import FloatContainer
 from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
@@ -55,6 +58,7 @@ def wrapper(prompt_funct):
         with prompt_live():
 
             prompt_ = prompt_funct(*args, **kwargs)
+            fix_validation_float(prompt_, kwargs["long_instruction"])
 
             # Shorten terminal escape-sequence waits, preserving the default
             # timeoutlen for multi-key submit chords. A lone Esc may still wait
@@ -93,6 +97,22 @@ def wrapper(prompt_funct):
         return out
 
     return inner
+
+
+def fix_validation_float(prompt_, long_instruction):
+    if hasattr(prompt_, "_session"):
+        return
+    layout = getattr(prompt_, "_layout", None)
+    container = getattr(layout, "container", layout)
+    if not isinstance(container, FloatContainer):
+        return
+    for float_ in container.floats:
+        if isinstance(float_, ValidationFloat):
+            width = shutil.get_terminal_size().columns
+            float_.bottom = sum(
+                max(1, (len(line) + width - 1) // width)
+                for line in long_instruction.split("\n")
+            )
 
 
 def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
