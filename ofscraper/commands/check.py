@@ -309,6 +309,7 @@ async def _refresh_failed_posts(username, model_id, media):
     """Replace just the failed posts; False requests one creator-wide fallback."""
     seen = set()
     fresh_posts = []
+    paid_posts = None
     try:
         for item in media:
             if stop.requested.is_set():
@@ -323,8 +324,13 @@ async def _refresh_failed_posts(username, model_id, media):
             if area in {"timeline", "archived", "pinned", "streams"}:
                 data = await asyncio.to_thread(get_individual_timeline_post, post_id)
             elif area == "paid":
-                data = await asyncio.to_thread(
-                    paid_.get_individual_paid_post, username, model_id, post_id
+                if paid_posts is None:
+                    paid_posts = await asyncio.to_thread(
+                        paid_.get_paid_posts, username, model_id
+                    )
+                data = next(
+                    (p for p in paid_posts if int(p.get("id")) == int(post_id)),
+                    None,
                 )
             elif area == "messages":
                 async with manager.Manager.session.aget_ofsession() as c:

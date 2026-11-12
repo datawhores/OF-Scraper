@@ -124,20 +124,54 @@ def test_stop_during_refresh_restores_pending_rows(monkeypatch, refresh_batch):
     ]
 
 
+def test_failed_paid_posts_fetch_list_once_and_retry_new_links(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.failed_ids = {0, 1, 2}
+    batch.collection.add_posts([
+        check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid"),
+        check.posts_.Post(_post(101, [2]), 1, "a creator", "paid"),
+    ], overwrite=True)
+    fetch = Mock(return_value=[
+        _post(100, [0, 1], link="fresh"),
+        _post(101, [2], link="fresh"),
+    ])
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    batch.go()
+    fetch.assert_called_once_with("a creator", 1)
+    batch.refill.assert_not_called()
+    assert [[m.id for m in call] for call in batch.calls] == [[0, 1, 2, 3], [0, 1, 2]]
+    assert [m.url for m in batch.calls[1]] == ["fresh", "fresh", "fresh"]
+
+
+def test_missing_paid_post_falls_back_once(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.failed_ids = {0, 1, 2}
+    batch.collection.add_posts([
+        check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid"),
+        check.posts_.Post(_post(101, [2]), 1, "a creator", "paid"),
+    ], overwrite=True)
+    fetch = Mock(return_value=[_post(100, [0, 1], link="fresh")])
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    batch.go()
+    fetch.assert_called_once_with("a creator", 1)
+    batch.refill.assert_called_once_with(1)
+    assert len(batch.calls) == 2
+
+
 def test_stop_exception_during_paid_refresh_restores_pending_rows(monkeypatch, refresh_batch):
     batch = refresh_batch
     batch.collection.add_posts([
         check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid")
     ], overwrite=True)
 
-    def fetch(username, model_id, post_id):
+    def fetch(username, model_id):
         stop.request()
         raise stop.DownloadsStopped
 
     fetch = Mock(side_effect=fetch)
-    monkeypatch.setattr(check.paid_, "get_individual_paid_post", fetch)
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
     batch.go()
-    fetch.assert_called_once_with("a creator", 1, 100)
+    fetch.assert_called_once_with("a creator", 1)
     assert len(batch.calls) == 1
     batch.refill.assert_not_called()
     check.time.sleep.assert_not_called()
