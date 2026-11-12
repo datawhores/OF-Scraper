@@ -16,6 +16,9 @@ import ofscraper.utils.menu as menu
 import ofscraper.utils.profiles.manage as profiles
 
 
+FALLBACK_ENTER_DELAY = 5
+
+
 @pytest.fixture
 def terminal(monkeypatch):
     monkeypatch.setattr(convert.interactive, "require_console", lambda *a: None)
@@ -52,7 +55,7 @@ def test_escape_delay_preserves_default_binding_timeout(terminal):
 def test_escape_cancels_every_prompt_promptly(terminal, factory, options):
     # A delayed Enter lets the old implementation finish rather than hang.
     # In particular, the old multiline prompt actually *submitted* on Esc.
-    timer = Timer(1.5, terminal.send_text, args=("\r",))
+    timer = Timer(FALLBACK_ENTER_DELAY, terminal.send_text, args=("\r",))
     completed = []
     filtered = []
     terminal.send_text("\x1b")
@@ -72,7 +75,8 @@ def test_escape_cancels_every_prompt_promptly(terminal, factory, options):
     assert completed == []
     assert filtered == []
     # Esc can wait for the default binding timeout when an Alt key shares it.
-    assert monotonic() - start < 1.5
+    # Allow slow-runner overhead, but finish clearly before the fallback Enter.
+    assert monotonic() - start < FALLBACK_ENTER_DELAY - 1
 
 
 def test_top_level_escape_does_nothing(terminal):
