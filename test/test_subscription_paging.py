@@ -98,10 +98,12 @@ def test_custom_endpoint_without_limit(monkeypatch, worker, endpoint_key):
 
 @pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
 def test_empty_page_with_has_more_reads_later_pages(worker, endpoint_key):
-    server = SubscriptionServer(21, 10, hidden=range(10))
+    hidden_count = (subscriptions.MAX_EMPTY_PAGES - 1) * 10
+    raw_total = hidden_count + 11
+    server = SubscriptionServer(raw_total, 10, hidden=range(hidden_count))
 
-    assert collect(worker, server) == list(range(10, 21))
-    assert server.offsets == [0, 10, 20]
+    assert collect(worker, server) == list(range(hidden_count, raw_total))
+    assert server.offsets == list(range(0, raw_total, 10))
 
 
 @pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
@@ -110,6 +112,53 @@ def test_empty_page_without_has_more_stops(worker, endpoint_key):
 
     assert collect(worker, server) == []
     assert server.offsets == [0]
+
+
+class EmptyPageServer:
+    def __init__(self, nonempty_pages=()):
+        self.nonempty_pages = set(nonempty_pages)
+        self.offsets = []
+
+    @asynccontextmanager
+    async def requests_async(self, *, url):
+        offset = int(parse_qs(urlsplit(url).query)["offset"][0])
+        self.offsets.append(offset)
+        assert len(self.offsets) <= 50, "Paging did not stop"
+
+        async def json_():
+            return {
+                "list": (
+                    [{"id": offset}] if len(self.offsets) in self.nonempty_pages else []
+                ),
+                "hasMore": True,
+            }
+
+        yield SimpleNamespace(status=200, json_=json_)
+
+
+@pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
+def test_consecutive_empty_pages_stop(worker, endpoint_key, caplog):
+    server = EmptyPageServer()
+    max_empty_pages = subscriptions.MAX_EMPTY_PAGES
+
+    with caplog.at_level("DEBUG", logger="shared"):
+        assert collect(worker, server) == []
+
+    assert len(server.offsets) == max_empty_pages
+    account = "active" if endpoint_key == "subscriptionsActiveEP" else "expired"
+    assert (
+        f"{account} subscriptions offset {server.offsets[-1]}: "
+        f"paging stopped after {max_empty_pages} consecutive empty pages"
+    ) in caplog.text
+
+
+@pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
+def test_nonempty_page_resets_empty_page_count(worker, endpoint_key):
+    max_empty_pages = subscriptions.MAX_EMPTY_PAGES
+    server = EmptyPageServer(nonempty_pages=[max_empty_pages])
+
+    assert collect(worker, server) == [(max_empty_pages - 1) * 10]
+    assert server.offsets == list(range(0, max_empty_pages * 2 * 10, 10))
 
 
 class FixedPageServer:

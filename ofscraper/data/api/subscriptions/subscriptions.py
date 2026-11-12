@@ -24,6 +24,7 @@ from ofscraper.utils.live.updater import userlist
 
 log = logging.getLogger("shared")
 console = Console()
+MAX_EMPTY_PAGES = 20
 
 
 @run
@@ -175,6 +176,7 @@ async def scrape_subscriptions_active(c, offset=0):
     Yields batches page-by-page.
     """
     current_offset = offset
+    empty_pages = 0
     while True:
         url = of_env.getattr("subscriptionsActiveEP").format(current_offset)
         try:
@@ -188,10 +190,18 @@ async def scrape_subscriptions_active(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    empty_pages = 0
                     log.debug(
                         f"active subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
                     )
                     yield subscriptions
+                else:
+                    empty_pages += 1
+                    if empty_pages >= MAX_EMPTY_PAGES:
+                        log.debug(
+                            f"active subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
+                        )
+                        break
 
                 if response.get("hasMore") is not True:
                     break
@@ -216,6 +226,7 @@ async def scrape_subscriptions_disabled(c, offset=0):
     Yields batches page-by-page.
     """
     current_offset = offset
+    empty_pages = 0
     while True:
         url = of_env.getattr("subscriptionsExpiredEP").format(current_offset)
         try:
@@ -229,10 +240,18 @@ async def scrape_subscriptions_disabled(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    empty_pages = 0
                     log.debug(
                         f"expired subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
                     )
                     yield subscriptions
+                else:
+                    empty_pages += 1
+                    if empty_pages >= MAX_EMPTY_PAGES:
+                        log.debug(
+                            f"expired subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
+                        )
+                        break
 
                 if response.get("hasMore") is not True:
                     break
