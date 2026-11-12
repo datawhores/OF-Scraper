@@ -1,8 +1,8 @@
 import functools
 import inspect
-import shutil
 
 from InquirerPy import get_style, inquirer
+from InquirerPy.containers.instruction import InstructionWindow
 from InquirerPy.containers.validation import ValidationFloat
 from InquirerPy.separator import Separator
 from prompt_toolkit.layout import FloatContainer
@@ -58,7 +58,7 @@ def wrapper(prompt_funct):
         with prompt_live():
 
             prompt_ = prompt_funct(*args, **kwargs)
-            fix_validation_float(prompt_, kwargs["long_instruction"])
+            fix_validation_float(prompt_)
             clear_on_resize(prompt_)
 
             # Shorten terminal escape-sequence waits, preserving the default
@@ -100,20 +100,35 @@ def wrapper(prompt_funct):
     return inner
 
 
-def fix_validation_float(prompt_, long_instruction):
+def fix_validation_float(prompt_):
     if hasattr(prompt_, "_session"):
         return
     layout = getattr(prompt_, "_layout", None)
     container = getattr(layout, "container", layout)
     if not isinstance(container, FloatContainer):
         return
+    instruction = next(
+        (
+            child for child in container.content.get_children()
+            if isinstance(child, InstructionWindow)
+        ),
+        None,
+    )
+    if instruction is None:
+        return
     for float_ in container.floats:
         if isinstance(float_, ValidationFloat):
-            width = shutil.get_terminal_size().columns
-            float_.bottom = sum(
-                max(1, (len(line) + width - 1) // width)
-                for line in long_instruction.split("\n")
-            )
+            window = instruction.content
+            write_to_screen = window.write_to_screen
+
+            def draw_instruction(*args, **kwargs):
+                write_to_screen(*args, **kwargs)
+                # FloatContainer draws its content before positioning floats.
+                if window.render_info is not None:
+                    float_.bottom = window.render_info.window_height
+
+            window.write_to_screen = draw_instruction
+            return
 
 
 def clear_on_resize(prompt_):
