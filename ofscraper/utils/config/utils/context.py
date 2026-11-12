@@ -1,4 +1,5 @@
 import json
+from ofscraper.prompts.cancel import back_to_menu
 import pathlib
 from contextlib import contextmanager
 
@@ -29,9 +30,9 @@ def config_context():
                     print(f"{e}\n\n")
                     config_prompt = prompts.reset_config_prompt()
                     if config_prompt == "manual":
-                        configStr = prompts.manual_config_prompt(
-                            configStr or config_file.config_string()
-                        )
+                        configStr = _manual_config(configStr or config_file.config_string())
+                        if configStr is None:
+                            continue
                         config_file.write_config(configStr)
                         config_file.open_config()
                     elif config_prompt == "reset":
@@ -44,3 +45,8 @@ def config_context():
             continue
         yield
         break
+
+
+@back_to_menu
+def _manual_config(configStr):
+    return prompts.manual_config_prompt(configStr)

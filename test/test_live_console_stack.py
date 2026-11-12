@@ -75,7 +75,7 @@ def test_nested_prompts_while_the_live_display_runs(shared):
 class _Prompt:
     """An InquirerPy prompt that answers at once."""
 
-    _session = SimpleNamespace(default_buffer=SimpleNamespace(text=""))
+    _session = SimpleNamespace(message="", default_buffer=SimpleNamespace(text=""))
 
     def register_kb(self, *keys):
         return lambda handler: handler

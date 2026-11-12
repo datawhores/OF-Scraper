@@ -1,4 +1,5 @@
 import logging
+from ofscraper.prompts.cancel import cancel_scope
 import traceback
 import threading
 import schedule
@@ -274,18 +275,20 @@ def process_selected_areas():
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
+        saved_args = settings.get_args(copy=True)
         action = prompts.action_prompt()
-        if action == "main":
-            process_prompts()
-            break
-        elif action == "quit":
-            break
-        elif action == prompts.CHECK_TABLE:
-            menu.run_check_table()
-        else:
-            menu.get_count() > 0 and menu.reset_menu_helper()
-            scrapingManager.runner()
-            menu.update_count()
+        with cancel_scope(restore_args=True, saved_args=saved_args):
+            if action == "main":
+                process_prompts()
+                break
+            elif action == "quit":
+                break
+            elif action == prompts.CHECK_TABLE:
+                menu.run_check_table()
+            else:
+                menu.get_count() > 0 and menu.reset_menu_helper()
+                scrapingManager.runner()
+                menu.update_count()
 
 
 def process_live_only():

@@ -1,3 +1,5 @@
+from ofscraper.prompts.cancel import back_to_menu, cancel_scope
+
 import logging
 import traceback
 
@@ -8,6 +10,7 @@ import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.managers.manager as manager
@@ -37,47 +40,52 @@ def main_menu_action():
         result_main_prompt = None
         try:
             result_main_prompt = prompts.main_prompt()
-            if result_main_prompt == "action":
-                action_result_prompt = prompts.action_prompt()
-                if action_result_prompt == "quit":
-                    return True
-                elif action_result_prompt == "main":
-                    continue
-                elif action_result_prompt == prompts.CHECK_TABLE:
-                    run_check_table()
-                else:
-                    scapingManager.runner(menu=True)
+            with cancel_scope():
+                if result_main_prompt == "action":
+                    while True:
+                        saved_args = settings.get_args(copy=True)
+                        action_result_prompt = prompts.action_prompt()
+                        if action_result_prompt == "quit":
+                            return True
+                        elif action_result_prompt == "main":
+                            break
+                        with cancel_scope(restore_args=True, saved_args=saved_args):
+                            if action_result_prompt == prompts.CHECK_TABLE:
+                                run_check_table()
+                            else:
+                                scapingManager.runner(menu=True)
+                            break
 
-            elif result_main_prompt == "auth":
-                # Edit `auth.json` file
-                auth_result_prompt = auth_file.edit_auth()
-                if auth_result_prompt == "quit":
-                    return True
-            elif result_main_prompt == "config":
-                # Edit `data.json` file
-                while True:
-                    config_result_prompt = prompts.config_prompt()
-                    if config_result_prompt == "quit":
+                elif result_main_prompt == "auth":
+                    # Edit `auth.json` file
+                    auth_result_prompt = auth_file.edit_auth()
+                    if auth_result_prompt == "quit":
                         return True
-                    elif config_result_prompt == "main":
-                        break
-                    else:
-                        config_menu_helper(config_result_prompt)
+                elif result_main_prompt == "config":
+                    # Edit `data.json` file
+                    while True:
+                        config_result_prompt = prompts.config_prompt()
+                        if config_result_prompt == "quit":
+                            return True
+                        elif config_result_prompt == "main":
+                            break
+                        else:
+                            config_menu_helper(config_result_prompt)
 
-            elif result_main_prompt == "profile":
-                # Display  `Profiles` menu
-                while True:
-                    result_profiles_prompt = prompts.profiles_prompt()
-                    if result_profiles_prompt == "quit":
-                        return True
-                    elif result_profiles_prompt == "main":
-                        break
-                    else:
-                        profile_menu_helper(result_profiles_prompt)
-            elif result_main_prompt == "merge":
-                merge.merge_runner()
-            elif result_main_prompt == "quit":
-                return True
+                elif result_main_prompt == "profile":
+                    # Display  `Profiles` menu
+                    while True:
+                        result_profiles_prompt = prompts.profiles_prompt()
+                        if result_profiles_prompt == "quit":
+                            return True
+                        elif result_profiles_prompt == "main":
+                            break
+                        else:
+                            profile_menu_helper(result_profiles_prompt)
+                elif result_main_prompt == "merge":
+                    merge.merge_runner()
+                elif result_main_prompt == "quit":
+                    return True
         except interactive.NoConsoleError:
             raise  # asking again can't work either
         except Exception as E:
@@ -97,6 +105,7 @@ def _action_name(choice):
     return names.get(choice, "Main Menu")
 
 
+@back_to_menu
 def profile_menu_helper(result_profiles_prompt):
     if result_profiles_prompt == "default":
         # Change profiles
@@ -123,6 +132,7 @@ def profile_menu_helper(result_profiles_prompt):
         prompts.press_enter_to_continue()
 
 
+@back_to_menu
 def config_menu_helper(result_config_prompt):
     if result_config_prompt == "download":
         config_menu.download_config()

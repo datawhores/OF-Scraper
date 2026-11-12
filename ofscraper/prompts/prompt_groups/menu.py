@@ -18,6 +18,7 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.of_env.of_env as of_env
 
 
+@promptClasses.top_level
 def main_prompt() -> int:
     main_prompt_choices = [*of_env.getattr("mainPromptChoices")]
     main_prompt_choices.insert(1, Separator())

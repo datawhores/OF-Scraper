@@ -43,8 +43,8 @@ def delete_profile():
 def create_profile():
     tools.print_profiles()
     name = tools.profile_name_fixer(prompts.create_profiles_prompt())
-    manage.create_profile_path(name)
     choice=prompts.change_selected_profile()
+    manage.create_profile_path(name)
     if choice=="default":
         manager.Manager.profile_manager.switch_profile(name,permanent=True)
     if choice=="active":

@@ -1,3 +1,5 @@
+from ofscraper.prompts.cancel import cancel_scope
+
 import logging
 from typing import Dict, List, Optional, Set, Union, Iterable
 
@@ -327,42 +329,43 @@ class ModelManager:
         while True:
             self._print_filter_settings()
             choice = prompts.decide_filters_menu()
-            try:
-                if choice == "model_list":
-                    break
-                original_args = settings.get_args()
-                new_args = settings.get_args(copy=True)
+            with cancel_scope():
+                try:
+                    if choice == "model_list":
+                        break
+                    original_args = settings.get_args()
+                    new_args = settings.get_args(copy=True)
 
-                if choice in prompt_actions:
-                    new_args = prompt_actions[choice](new_args)
-                elif choice == "reset_filters":
-                    new_args = resetUserFilters()
-                elif choice == "reset_list":
-                    new_args.userlist = ["main"]
-                    new_args.blacklist = [""]
-                elif choice == "rescan":
-                    self._fetch_all_subs(force_refetch=True, reset=True)
-
-                if new_args:
-                    user_list_changed = set(original_args.userlist or []) != set(
-                        new_args.userlist or []
-                    )
-                    black_list_changed = set(original_args.blacklist or []) != set(
-                        new_args.blacklist or []
-                    )
-
-                    settings.update_args(new_args)
-                    if user_list_changed or black_list_changed:
-                        console.get_console().print(
-                            "[yellow]Lists changed, re-fetching models from API...[/yellow]"
-                        )
+                    if choice in prompt_actions:
+                        new_args = prompt_actions[choice](new_args)
+                    elif choice == "reset_filters":
+                        new_args = resetUserFilters()
+                    elif choice == "reset_list":
+                        new_args.userlist = ["main"]
+                        new_args.blacklist = [""]
+                    elif choice == "rescan":
                         self._fetch_all_subs(force_refetch=True, reset=True)
-                        original_args = new_args
-                        new_args = settings.get_args(copy=True)
 
-            except Exception as e:
-                console.get_console().print(f"Exception in menu: {escape_text(e)}")
-            settings.update_args(new_args)
+                    if new_args:
+                        user_list_changed = set(original_args.userlist or []) != set(
+                            new_args.userlist or []
+                        )
+                        black_list_changed = set(original_args.blacklist or []) != set(
+                            new_args.blacklist or []
+                        )
+
+                        settings.update_args(new_args)
+                        if user_list_changed or black_list_changed:
+                            console.get_console().print(
+                                "[yellow]Lists changed, re-fetching models from API...[/yellow]"
+                            )
+                            self._fetch_all_subs(force_refetch=True, reset=True)
+                            original_args = new_args
+                            new_args = settings.get_args(copy=True)
+
+                except Exception as e:
+                    console.get_console().print(f"Exception in menu: {escape_text(e)}")
+                settings.update_args(new_args)
 
     def get_models_from_prompt(self):
         """

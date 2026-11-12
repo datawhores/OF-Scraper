@@ -1,6 +1,8 @@
+from ofscraper.prompts.cancel import cancel_scope
+
 from InquirerPy.separator import Separator
 import arrow
-from prompt_toolkit.shortcuts import prompt as prompt
+from ofscraper.prompts.promptConvert import prompt
 
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as promptClasses
@@ -43,10 +45,16 @@ def check_table_available(args):
 
 
 def action_prompt() -> int:
-    answer = promptClasses.getChecklistSelection(
-        message="Action Menu: What action(s) would you like to take?",
-        choices=action_menu_choices(),
-    )
+    while True:
+        answer = promptClasses.getChecklistSelection(
+            message="Action Menu: What action(s) would you like to take?",
+            choices=action_menu_choices(),
+        )
+        with cancel_scope(restore_args=True):
+            return _apply_action(answer)
+
+
+def _apply_action(answer):
     args = settings.get_args()
     action = of_env.getattr("actionPromptChoices")[answer]
     if action == CHECK_TABLE:

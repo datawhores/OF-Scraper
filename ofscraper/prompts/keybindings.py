@@ -33,6 +33,5 @@ multiline = {
         {"key": ["end", "enter"]},
         {"key": ["pageup", "enter"]},
         {"key": ["space", "enter"]},
-        {"key": ["escape"]},
     ]
 }

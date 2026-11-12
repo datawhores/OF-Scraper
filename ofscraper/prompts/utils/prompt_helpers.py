@@ -3,7 +3,7 @@ import re
 
 import pynumparser
 from InquirerPy.base import Choice
-from prompt_toolkit.shortcuts import prompt as prompt
+from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -164,8 +164,6 @@ def _select_helper(prompt, toggle=True):
         # number against the list that is on screen; _get_choices() would
         # send the user through the filter/sort menu again first
         choices = list(prompt.content_control._raw_choices)
-        for model in choices:
-            model.enabled = False
         selectedSet = set(
             map(
                 lambda x: re.search(r"^\s*[0-9]+: ([^ ]+)", x["name"]).group(1),
@@ -181,6 +179,8 @@ def _select_helper(prompt, toggle=True):
                 )
             )
         )
+        for model in choices:
+            model.enabled = False
         if toggle:
             for count, model in enumerate(choices):
                 name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)

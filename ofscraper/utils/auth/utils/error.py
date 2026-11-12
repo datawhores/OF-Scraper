@@ -12,6 +12,7 @@ r"""
 """
 
 import json
+from ofscraper.prompts.cancel import back_to_menu
 import logging
 
 from rich.console import Console
@@ -55,8 +56,8 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                 if auth_prompt == "manual":
                     # Let the user manually fix the file content
                     authStr = auth_dict.get_auth_string()
-                    with open(common_paths.get_auth_file(), "w") as f:
-                        f.write(prompts.manual_auth_prompt(authStr))
+                    if not _manual_auth(authStr):
+                        continue
                 elif auth_prompt == "reset":
                     # Overwrite with a blank, valid JSON
                     with open(common_paths.get_auth_file(), "w") as f:
@@ -78,3 +79,11 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
     
     # Return None to signal that the error was handled and the calling function should retry
     return None
+
+
+@back_to_menu
+def _manual_auth(authStr):
+    updated_auth = prompts.manual_auth_prompt(authStr)
+    with open(common_paths.get_auth_file(), "w") as f:
+        f.write(updated_auth)
+    return True
