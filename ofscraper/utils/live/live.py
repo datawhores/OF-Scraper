@@ -6,7 +6,29 @@ from rich.text import Text
 
 import ofscraper.utils.console as console_
 
-live = Live(
+
+class ResizeAwareLive(Live):
+    """Discard the previous frame's cursor position when the terminal resizes."""
+
+    _last_size = None
+
+    def refresh(self):
+        with self._lock:
+            size = self.console.size
+            if (
+                self.console.is_interactive
+                and self._last_size is not None
+                and size != self._last_size
+            ):
+                self.console.clear()
+                # Reflow makes Rich's saved height invalid. Draw at home rather
+                # than moving up by that height after clearing the screen.
+                self._live_render._shape = None
+            self._last_size = size
+            super().refresh()
+
+
+live = ResizeAwareLive(
     transient=False,
     refresh_per_second=1,
     console=console_.get_shared_console(),
@@ -17,7 +39,7 @@ live = Live(
 def get_live(recreate=False):
     global live
     if not live or recreate:
-        live = Live(
+        live = ResizeAwareLive(
             transient=False,
             refresh_per_second=1,
             console=console_.get_shared_console(),
