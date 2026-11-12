@@ -56,9 +56,10 @@ def log_download_progress(media_type):
         + common_globals.video_count
         + common_globals.forced_skipped
         + common_globals.skipped
+        + common_globals.stopped
     ) % 20 == 0:
         common_globals.log.debug(
             f"In progress -> {format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count} \
 downloads total \\[{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], \
-            {common_globals.forced_skipped} skipped, {common_globals.skipped} failed)"
+            {common_globals.forced_skipped} skipped, {common_globals.skipped} failed, {common_globals.stopped} stopped)"
         )

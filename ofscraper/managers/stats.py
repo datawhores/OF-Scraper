@@ -112,6 +112,7 @@ class DownloadStats:
         self.photo_count = 0
         self.skipped_count = 0
         self.failed_count = 0
+        self.stopped_count = 0
 
     @property
     def total_count(self):
@@ -119,7 +120,7 @@ class DownloadStats:
 
     @property
     def has_changes(self):
-        return self.total_count > 0 or self.skipped_count > 0 or self.failed_count > 0
+        return self.total_count > 0 or self.skipped_count > 0 or self.failed_count > 0 or self.stopped_count > 0
 
     def __str__(self):
         # Format size
@@ -163,7 +164,7 @@ class DownloadStats:
         return (
             f"({size_str}) ({downloads_str} "
             f"\\[{videos_str}, {audios_str}, {photos_str}], "
-            f"{skipped_str}, {failed_str})"
+            f"{skipped_str}, {failed_str}, {self.stopped_count} stopped)"
         )
 
 
@@ -410,7 +411,11 @@ class StatsManager:
     ):
         """Private helper to update download stats."""
         for media in media_list:
-            if not media.download_attempted:
+            if getattr(media, "download_stopped", False):
+                stat_obj.stopped_count += 1
+            elif getattr(media, "download_unstarted", False):
+                continue
+            elif not media.download_attempted:
                 stat_obj.skipped_count += 1
             elif not media.download_succeeded:
                 stat_obj.failed_count += 1
@@ -523,7 +528,7 @@ class StatsManager:
             return
 
         # 1. Setup Aggregators
-        dl_vids = dl_auds = dl_pics = dl_skip = dl_fail = dl_bytes = 0
+        dl_vids = dl_auds = dl_pics = dl_skip = dl_fail = dl_stop = dl_bytes = 0
         meta_vids = meta_auds = meta_pics = meta_unchanged = meta_fail = 0
         text_count = text_skip = text_fail = 0
 
@@ -537,6 +542,7 @@ class StatsManager:
                     dl_pics += stat_obj.photo_count
                     dl_skip += stat_obj.skipped_count
                     dl_fail += stat_obj.failed_count
+                    dl_stop += stat_obj.stopped_count
                     dl_bytes += stat_obj.total_bytes
                     
                 elif isinstance(stat_obj, MetadataStats):
@@ -559,7 +565,7 @@ class StatsManager:
             "=" * 50
         ]
 
-        if any([dl_vids, dl_auds, dl_pics, dl_skip, dl_fail]):
+        if any([dl_vids, dl_auds, dl_pics, dl_skip, dl_fail, dl_stop]):
             total_dl = dl_vids + dl_auds + dl_pics
             output_lines.append("\n--- MEDIA DOWNLOADS ---")
             output_lines.append(f" ➜ TOTAL ITEMS: {total_dl}")
@@ -569,6 +575,7 @@ class StatsManager:
             output_lines.append(f" ➜ IMAGES:      {dl_pics} downloaded")
             output_lines.append(f" ➜ SKIPPED:     {dl_skip} overall")
             output_lines.append(f" ➜ FAILED:      {dl_fail} overall")
+            output_lines.append(f" ➜ STOPPED:     {dl_stop} overall")
 
         if any([meta_vids, meta_auds, meta_pics, meta_unchanged, meta_fail]):
             total_meta = meta_vids + meta_auds + meta_pics

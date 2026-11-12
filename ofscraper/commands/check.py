@@ -1,4 +1,6 @@
 import asyncio
+import queue
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.utils.system.system as system
 import inspect
 import logging
@@ -77,6 +79,7 @@ def process_download_queue():
             _process_queued_rows()
         finally:
             _downloading.clear()
+            stop.clear()
 
 
 def downloads_pending():
@@ -101,7 +104,7 @@ def _process_queued_rows():
     user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
     while not app.row_queue.empty():
         try:
-            key, row_data = app.row_queue.get()
+            key, row_data = app.row_queue.get_nowait()
             media_item, post_item, username, model_id = _get_data_from_row(row_data)
 
             # Append all necessary data for later processing
@@ -110,6 +113,8 @@ def _process_queued_rows():
             user_cart[model_id]["rows"].append((key, row_data))
             user_cart[model_id]["username"] = username  # Store username once
 
+        except queue.Empty:
+            break
         except Exception as e:
             log.debug(f"Error processing row from queue: {e}")
             log.traceback_(traceback.format_exc())
@@ -117,6 +122,10 @@ def _process_queued_rows():
     # 2. PROCESS: Loop through each user's batch and process their items
     for model_id, data in user_cart.items():
         username = data["username"]
+        if stop.requested.is_set():
+            for key, row in data["rows"]:
+                app.app.update_cell_state(key, "[added]", "bold light_goldenrod2")
+            continue
         log.info(f"Processing download batch for user: {username}")
         try:
             # Pass the user's entire batch to the processing function
@@ -125,7 +134,8 @@ def _process_queued_rows():
             )
 
             # Run after-actions for this user
-            after_download_action_script(username, data["media"], data["posts"])
+            if not stop.requested.is_set():
+                after_download_action_script(username, data["media"], data["posts"])
             manager.Manager.current_model_manager.mark_as_processed(
                 username, activity="download"
             )
@@ -239,7 +249,9 @@ def _process_user_batch(
                 failed.discard(i)
                 media_list[i] = media
                 post_list[i] = media.post
-                if result == "skipped":
+                if result == "stopped":
+                    app.app.update_cell_state(key, "[stopped]", "bold cyan")
+                elif result == "skipped":
                     log.info(f"Download skipped: {media.filename}")
                     app.app.update_cell_state(key, "[skipped]", "bold bright_yellow")
                 else:
@@ -257,6 +269,12 @@ def _process_user_batch(
             )
         except Exception as e:
             log.debug(f"Download batch failed: {e}")
+        if stop.requested.is_set():
+            for i in set(indices) - reported:
+                media_list[i] = target_media[i]
+                post_list[i] = target_posts[i]
+                app.app.update_cell_state(row_list[i][0], "[added]", "bold light_goldenrod2")
+            return []
         if retry:
             for i in sorted(set(indices) - reported):
                 log.info(f"Download failed for {target_media[i].filename}.")
@@ -266,7 +284,7 @@ def _process_user_batch(
     indices = list(range(len(media_list)))
     refresh_media(indices)
     failed = download_batch(indices)
-    if failed:
+    if failed and not stop.requested.is_set():
         log.debug("Refreshing data and retrying...")
         data_refill(model_id)
         time.sleep(1)

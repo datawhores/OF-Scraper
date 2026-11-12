@@ -38,6 +38,10 @@ def set_directory(path: Path):
 
 
 def temp_cleanup():
+    from ofscraper.commands.scraper.actions.download import stop
+
+    if stop.requested.is_set():
+        return
     if not of_env.getattr("BATCH_TEMPFILE_CLEANUP"):
         return
     if not settings.get_settings().auto_resume:

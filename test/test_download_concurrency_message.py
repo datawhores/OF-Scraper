@@ -8,6 +8,7 @@
 
 import asyncio
 import logging
+from types import SimpleNamespace
 
 import pytest
 
@@ -63,7 +64,7 @@ def start_download(monkeypatch, caplog):
         try:
             with caplog.at_level(logging.INFO, logger="shared"):
                 with pytest.raises(_Stop):
-                    download.process_dicts("a creator", 1, [object()], [])
+                    download.process_dicts("a creator", 1, [SimpleNamespace()], [])
         finally:
             asyncio.set_event_loop(None)
             loop.close()

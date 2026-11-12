@@ -10,6 +10,10 @@ from ofscraper.managers.manager import start_manager
 def main():
     try:
         start_manager()
+    except SystemExit as exc:
+        if exc.code == 130:
+            exit_manager.shutdown()
+        raise
     except KeyboardInterrupt:
         console.get_shared_console().print("handling force closing of script")
         try:

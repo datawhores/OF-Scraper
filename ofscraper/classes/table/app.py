@@ -13,6 +13,7 @@ from ofscraper.classes.table.sections.table import get_styled
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
@@ -39,6 +40,7 @@ class InputApp(App):
         ("c", "clear_current_page", "Clear Page"),
         ("C", "clear_all_filtered", "Clear All Filtered"),
         ("x", "clear_entire_cart", "Nuke Cart"),
+        Binding("ctrl+x", "stop_downloads", "Stop Downloads", priority=True),
         ("o", "open_download_folder", "Open Folder"),
         ("h", "toggle_extra_columns", "Show/Hide Columns"),
     ]
@@ -134,6 +136,7 @@ class InputApp(App):
                             "[]",
                             "[downloaded]",
                             "[failed]",
+                            "[stopped]",
                             "[skipped]",
                         }:
                             row["download_cart"] = "[added]"
@@ -169,6 +172,8 @@ class InputApp(App):
             log.info("Adding Downloads to queue")
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
+        elif btn_id == "stop_downloads":
+            self.action_stop_downloads()
         elif btn_id == "open_download_folder":
             self.open_creator_folder()
 
@@ -382,6 +387,7 @@ class InputApp(App):
                 "[]",
                 "[downloaded]",
                 "[failed]",
+                "[stopped]",
                 "[skipped]",
             }:
                 row["download_cart"] = "[added]"
@@ -412,7 +418,7 @@ class InputApp(App):
         eligible = [
             r
             for r in rows_to_evaluate
-            if r["download_cart"] in {"[]", "[downloaded]", "[failed]", "[skipped]"}
+            if r["download_cart"] in {"[]", "[downloaded]", "[failed]", "[stopped]", "[skipped]"}
             and r.get("download_type") != "unknown"
             and r.get("unlocked")
         ]
@@ -449,6 +455,7 @@ class InputApp(App):
             if not row["downloaded"] and row["download_cart"] in {
                 "[]",
                 "[failed]",
+                "[stopped]",
                 "[skipped]",
             }:
                 row["download_cart"] = "[added]"
@@ -468,6 +475,7 @@ class InputApp(App):
             if not row["downloaded"] and row["download_cart"] in {
                 "[]",
                 "[failed]",
+                "[stopped]",
                 "[skipped]",
             }:
                 row["download_cart"] = "[added]"
@@ -602,7 +610,26 @@ class InputApp(App):
             )
 
     # --- Rest of Table Logic ---
+    def action_stop_downloads(self):
+        stop.request()
+        while True:
+            try:
+                key, row = row_queue.get_nowait()
+            except queue.Empty:
+                break
+            self.update_cell_state(key, "[added]", "bold light_goldenrod2")
+        self.update_cart_table()
+        log.info("Stopping downloads; Part files are kept for Resume.")
+        # An idle Stop must not prevent sending a new cart.
+        from ofscraper.commands.check import downloads_pending
+
+        if not downloads_pending():
+            stop.clear()
+
     def add_to_row_queue(self):
+        if stop.requested.is_set():
+            self.notify("Downloads are stopping. Send again when they have stopped.")
+            return
         cart = []
         for row in self.table_data:
             if row["download_cart"] == "[added]":

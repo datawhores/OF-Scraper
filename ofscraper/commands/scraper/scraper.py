@@ -3,6 +3,7 @@ from ofscraper.prompts.cancel import cancel_scope
 import traceback
 import threading
 import schedule
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
@@ -51,6 +52,15 @@ class scraperManager(CommandManager):
         super().__init__()
 
     def runner(self, menu=False):
+        with stop.interrupt_handler():
+            try:
+                self._runner(menu=menu)
+            except stop.DownloadsStopped:
+                final_action()
+                if not menu:
+                    raise SystemExit(130)
+
+    def _runner(self, menu=False):
         check_auth(include_main_menu=menu)
         if live.once_enabled():
             # Fansly --live: record who is live now, then do the other actions
@@ -125,6 +135,8 @@ class scraperManager(CommandManager):
                         manager.Manager.stats_manager.update_and_print_stats(
                             username, "download", media
                         )
+                        if stop.requested.is_set():
+                            raise stop.DownloadsStopped
                     elif action == "like":
                         like_action.process_like(
                             ele=ele,
@@ -244,7 +256,7 @@ def daemon_process():
                 log.traceback_(traceback.format_exc())
             finally:
                 jobqueue.task_done()
-    except (KeyboardInterrupt, Exception):
+    except (KeyboardInterrupt, Exception, SystemExit):
         wakeup.stopped = True
         try:
             with exit.DelayedKeyboardInterrupt():

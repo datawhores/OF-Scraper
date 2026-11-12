@@ -8,6 +8,7 @@ import psutil
 from humanfriendly import format_size
 import aiohttp
 
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -42,6 +43,7 @@ class MainDownloadManager(DownloadManager):
     async def main_download(self, c, ele: Media, username, model_id):
         await common_globals.sem.acquire()
         try:
+            stop.started(ele)
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with normal downloader"
             )
@@ -56,6 +58,7 @@ class MainDownloadManager(DownloadManager):
                 return ele.mediatype, 0
 
             result = await self._main_download_downloader(c, ele)
+            stop.check()
             ele.add_size(result[0])
 
             if result[0] == 0:
@@ -336,6 +339,7 @@ class MainDownloadManager(DownloadManager):
         return written
 
     async def _handle_result_main(self, result, ele, username, model_id):
+        stop.check()
         total, temp, placeholderObj = result
         path_to_file = placeholderObj.trunicated_filepath
 
@@ -352,7 +356,9 @@ class MainDownloadManager(DownloadManager):
             and settings.get_settings().verify_all_integrity
         ):
             expected_duration = ele.duration
-            if not verify_media_integrity(temp, expected_duration):
+            valid = verify_media_integrity(temp, expected_duration)
+            stop.check()
+            if not valid:
                 common_globals.log.warning(
                     f"Removing corrupted/truncated standard video: {temp}"
                 )
@@ -363,6 +369,7 @@ class MainDownloadManager(DownloadManager):
             f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
         )
 
+        stop.check()
         # 3. Move the verified file to final path; it can end up under another
         # name if a different file already has this one (#48)
         path_to_file = await asyncio.get_event_loop().run_in_executor(

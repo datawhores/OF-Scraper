@@ -201,3 +201,37 @@ def test_downloader_results_totals_concurrency_and_log(monkeypatch, caplog, call
     media[0].mark_download_succeeded.assert_called_once()
     media[3].mark_download_skipped.assert_called_once()
     media[4].mark_download_failed.assert_called_once()
+
+
+def test_stopped_result_is_not_downloaded_or_retried(monkeypatch, batch):
+    def process(username, model_id, media, posts, on_result=None):
+        for m in media:
+            on_result(m, "stopped")
+    monkeypatch.setattr(check, "process_dicts", process)
+    batch.go()
+    assert batch.updates.call_args_list == [
+        ((str(i), "[stopped]", "bold cyan"),) for i in range(4)
+    ]
+    batch.record.assert_not_called()
+    batch.refill.assert_not_called()
+
+
+def test_stop_restores_unstarted_batch_rows_without_retry(monkeypatch, batch):
+    from ofscraper.commands.scraper.actions.download import stop
+    stop.clear()
+    def process(username, model_id, media, posts, on_result=None):
+        on_result(media[0], "downloaded")
+        stop.request()
+        on_result(media[1], "stopped")
+    monkeypatch.setattr(check, "process_dicts", process)
+    try:
+        batch.go()
+        assert batch.updates.call_args_list == [
+            (("0", "[downloaded]", "bold green"),),
+            (("1", "[stopped]", "bold cyan"),),
+            (("2", "[added]", "bold light_goldenrod2"),),
+            (("3", "[added]", "bold light_goldenrod2"),),
+        ]
+        batch.refill.assert_not_called()
+    finally:
+        stop.clear()

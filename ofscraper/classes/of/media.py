@@ -44,6 +44,9 @@ class Media(base.base):
         self.skip_script_answers = {}
 
         self.download_attempted = False
+        self.download_unstarted = False
+        self.download_stopped = False
+        self.download_started = False
         self.download_succeeded = (
             None  # Using tri-state: None (not attempted), True, False
         )

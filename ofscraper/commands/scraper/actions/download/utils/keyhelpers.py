@@ -9,6 +9,7 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
@@ -136,7 +137,10 @@ async def un_encrypt(item, c, ele, input_=None):
                     log.debug(f"{get_medialog(ele)} removed {n} pssh box(es) from {newpath}")
             except OSError as E:
                 log.debug(f"{get_medialog(ele)} could not strip pssh from {newpath}: {E}")
-            pathlib.Path(item["path"]).unlink(missing_ok=True)
+            stop.check()
+            # Keep encrypted Part files until all tracks have been merged.
+            if pathlib.Path(item["path"]).suffix != ".part":
+                pathlib.Path(item["path"]).unlink(missing_ok=True)
             item["path"] = newpath
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,

@@ -49,6 +49,8 @@ def get_styled(row, columns=None):
             val = str(row[key])
             if val == "[downloaded]":
                 style = "bold green"
+            elif val == "[stopped]":
+                style = "bold cyan"
             elif val == "[failed]":
                 style = "bold red"
             elif val == "[skipped]":

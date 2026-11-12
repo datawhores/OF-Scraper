@@ -44,6 +44,7 @@ def composer():
         yield Button("DataTable", id="table")
         yield Button("Cart", id="cart")
         yield Button("Console", id="console")
+        yield Button("Stop Downloads (Ctrl+X)", id="stop_downloads")
 
     yield Rule()
 

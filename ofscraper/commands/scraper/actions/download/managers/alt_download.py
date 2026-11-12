@@ -11,6 +11,7 @@ import psutil
 from humanfriendly import format_size
 import aiohttp
 
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
@@ -56,6 +57,7 @@ class AltDownloadManager(DownloadManager):
         # Acquire semaphore at the very beginning of the process
         await common_globals.sem.acquire()
         try:
+            stop.started(ele)
             common_globals.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
             )
@@ -77,6 +79,7 @@ class AltDownloadManager(DownloadManager):
                 audio = await self._alt_download_downloader(
                     audio, c, ele, before=None if video else 0
                 )
+                stop.check()
             if video and audio and audio["total"] == 0:
                 # skip_download_script skipped the audio track, which skips
                 # the whole video: the video track isn't downloaded (#343).
@@ -90,6 +93,7 @@ class AltDownloadManager(DownloadManager):
                 video = await self._alt_download_downloader(
                     video, c, ele, before=audio["total"] if audio else 0
                 )
+                stop.check()
             if ele.mediatype != mediatype or any(
                 track and track["total"] == 0 for track in (audio, video)
             ):
@@ -118,11 +122,26 @@ class AltDownloadManager(DownloadManager):
             if post_result:
                 return post_result
 
+            stop.check()
+            parts = [track["path"] for track in (audio, video) if track]
             await self._media_item_keys_alt(c, audio, video, ele)
-
-            return await self._handle_result_alt(
-                sharedPlaceholderObj, ele, audio, video, username, model_id
-            )
+            try:
+                result = await self._handle_result_alt(
+                    sharedPlaceholderObj, ele, audio, video, username, model_id
+                )
+            except (Exception, asyncio.CancelledError) as exc:
+                # After decryption, only a requested stop keeps encrypted
+                # parts for Resume. Key failures above also keep the parts.
+                if not (
+                    isinstance(exc, asyncio.CancelledError)
+                    and stop.requested.is_set()
+                ):
+                    for part in parts:
+                        part.unlink(missing_ok=True)
+                raise
+            for part in parts:
+                part.unlink(missing_ok=True)
+            return result
         finally:
             common_globals.sem.release()
 
@@ -454,6 +473,7 @@ class AltDownloadManager(DownloadManager):
                 f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
             )
 
+        stop.check()
         # Clean up temp tracks
         if video:
             video["path"].unlink(missing_ok=True)
