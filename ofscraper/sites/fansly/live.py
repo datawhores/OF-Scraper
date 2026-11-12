@@ -213,7 +213,7 @@ def chat_path(base: pathlib.Path) -> pathlib.Path:
 def ffmpeg_command(ffmpeg: str, url: str, out: pathlib.Path, user_agent: str = "") -> list:
     headers = f"Origin: {constants.ORIGIN}\r\nReferer: {constants.REFERER}\r\n"
     # -y: ``out`` is the empty file reserve_part() created for this recording
-    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin", "-y"]
+    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y"]
     if user_agent:
         cmd += ["-user_agent", user_agent]
     cmd += [
@@ -235,7 +235,7 @@ async def run_ffmpeg(cmd: list, stop: asyncio.Event = None) -> int:
     """Run ffmpeg until it exits; on ``stop`` it is asked to finish cleanly."""
     proc = await asyncio.create_subprocess_exec(
         *cmd,
-        stdin=asyncio.subprocess.DEVNULL,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -246,8 +246,16 @@ async def run_ffmpeg(cmd: list, stop: asyncio.Event = None) -> int:
             [waiter] + ([stopper] if stopper else []), return_when=asyncio.FIRST_COMPLETED
         )
         if waiter not in done:
-            proc.terminate()
-            await asyncio.wait_for(asyncio.shield(waiter), timeout=15)
+            try:
+                proc.stdin.write(b"q\n")
+                await proc.stdin.drain()
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # ffmpeg exited while the stop request was being sent
+            try:
+                await asyncio.wait_for(asyncio.shield(waiter), timeout=15)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await waiter
         _, err = waiter.result()
         if proc.returncode and err:
             log.debug(f"ffmpeg live: {strip_queries(err.decode(errors='replace'))[-500:]}")
@@ -255,9 +263,13 @@ async def run_ffmpeg(cmd: list, stop: asyncio.Event = None) -> int:
     finally:
         if stopper:
             stopper.cancel()
+            await asyncio.gather(stopper, return_exceptions=True)
         if proc.returncode is None:
             proc.kill()
+        if waiter.cancelled():
             await proc.wait()
+        else:
+            await waiter
 
 
 # ------------------------------------------------------------------ one recording
@@ -509,32 +521,38 @@ class LiveWatcher:
         wake = asyncio.Event()
         queue = []
         poll = True
-        while not stop.is_set():
-            wake.clear()
-            if poll:
+        try:
+            while not stop.is_set():
+                wake.clear()
+                if poll:
+                    try:
+                        queue = list(await self.fetch_online())
+                    except Exception as e:
+                        log.debug(f"live check failed: {e}")
+                queue = [s for s in queue if s["accountId"] not in self.active]
+                while queue and len(self.active) < self.max_concurrent:
+                    self._start(queue.pop(0), stop, wake)
+                if self.once:
+                    if not queue and not self.active:
+                        break
+                    poll = False
+                    await _either(wake, stop)
+                    continue
+                timeout = self.interval + random.uniform(0, self.jitter)
                 try:
-                    queue = list(await self.fetch_online())
-                except Exception as e:
-                    log.debug(f"live check failed: {e}")
-            queue = [s for s in queue if s["accountId"] not in self.active]
-            while queue and len(self.active) < self.max_concurrent:
-                self._start(queue.pop(0), stop, wake)
-            if self.once:
-                if not queue and not self.active:
-                    break
-                poll = False
-                await _either(wake, stop)
-                continue
-            timeout = self.interval + random.uniform(0, self.jitter)
-            try:
-                await asyncio.wait_for(_either(wake, stop), timeout=timeout)
-                # a recording ended: start the next waiting creator now,
-                # the next poll still happens on the interval
-                poll = not wake.is_set()
-            except asyncio.TimeoutError:
-                poll = True
-        if self.active:
-            await asyncio.gather(*self.active.values(), return_exceptions=True)
+                    await asyncio.wait_for(_either(wake, stop), timeout=timeout)
+                    # a recording ended: start the next waiting creator now,
+                    # the next poll still happens on the interval
+                    poll = not wake.is_set()
+                except asyncio.TimeoutError:
+                    poll = True
+        except asyncio.CancelledError:
+            for task in self.active.values():
+                task.cancel()
+            raise
+        finally:
+            if self.active:
+                await asyncio.gather(*self.active.values(), return_exceptions=True)
 
 
 async def _either(a: asyncio.Event, b: asyncio.Event):
@@ -606,6 +624,8 @@ class LiveThread(threading.Thread):
         self.loop = None
         self.stop_event = None
         self.ready = threading.Event()
+        self.finished = threading.Event()
+        self.task = None
 
     def run(self):
         loop = asyncio.new_event_loop()
@@ -614,15 +634,34 @@ class LiveThread(threading.Thread):
             asyncio.set_event_loop(loop)
             self.stop_event = asyncio.Event()
             self.ready.set()
-            loop.run_until_complete(self.runner(self.watch, self.stop_event))
+            self.task = loop.create_task(self.runner(self.watch, self.stop_event))
+            loop.run_until_complete(self.task)
+        except asyncio.CancelledError:
+            pass  # second Ctrl+C: runners force-stop their ffmpeg processes
         except Exception as e:
             log.info(f"livestream recording stopped: {e}")
             log.debug("", exc_info=True)
         finally:
             self.ready.set()
-            loop.close()
+            try:
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            finally:
+                loop.close()
+                self.finished.set()
 
     def stop(self, timeout=30):
+        log.warning("Stopping livestream recordings. A second Ctrl+C quits.")
+        try:
+            self._stop_recordings(timeout)
+        except KeyboardInterrupt:
+            self.force_stop()
+            raise
+
+    def _stop_recordings(self, timeout):
         self.ready.wait(5)
         loop = self.loop
         if loop is not None and self.stop_event is not None:
@@ -630,10 +669,20 @@ class LiveThread(threading.Thread):
                 loop.call_soon_threadsafe(self.stop_event.set)
             except RuntimeError:
                 pass  # loop already closed
-        self.join(timeout)
+        self.finished.wait(timeout)
+
+    def force_stop(self):
+        if self.loop is not None and self.task is not None:
+            try:
+                self.loop.call_soon_threadsafe(self.task.cancel)
+            except RuntimeError:
+                pass  # loop already closed
+        # On Windows an interrupted join can mark a still-running thread as
+        # stopped. Wait for its loop cleanup independently of Thread's state.
+        self.finished.wait(1)
 
 
-def run_blocking(watch: bool, runner=None):
+def run_blocking(watch: bool, runner=None, menu=False):
     """Record in the foreground; Ctrl+C stops the recordings cleanly first."""
     thread = LiveThread(watch, runner)
     thread.start()
@@ -641,9 +690,10 @@ def run_blocking(watch: bool, runner=None):
         while thread.is_alive():
             thread.join(0.5)
     except KeyboardInterrupt:
-        log.info("stopping livestream recording")
         thread.stop()
-        raise
+        if menu:
+            return True
+        raise SystemExit(130)
 
 
 def start_watch_thread(runner=None) -> LiveThread:

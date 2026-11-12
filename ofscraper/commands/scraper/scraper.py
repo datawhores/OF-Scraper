@@ -64,7 +64,9 @@ class scraperManager(CommandManager):
         check_auth(include_main_menu=menu)
         if live.once_enabled():
             # Fansly --live: record who is live now, then do the other actions
-            live.run_blocking(watch=False)
+            if live.run_blocking(watch=False, menu=menu):
+                final_action()
+                return
         with scrape_context_manager():
             with progress_utils.stop_live_screen(clear="all"):
                 with progress_utils.setup_live("main_activity"):
@@ -256,15 +258,26 @@ def daemon_process():
                 log.traceback_(traceback.format_exc())
             finally:
                 jobqueue.task_done()
-    except (KeyboardInterrupt, Exception, SystemExit):
+    except (KeyboardInterrupt, Exception, SystemExit) as exc:
         wakeup.stopped = True
+        live_interrupted = live_thread is not None and isinstance(exc, KeyboardInterrupt)
+        if live_thread:
+            thread, live_thread = live_thread, None
+            if live_interrupted and stop.requested.is_set():
+                thread.force_stop()
+                raise
+            thread.stop()
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 if worker_thread:
                     worker_thread.join(timeout=5)
         except KeyboardInterrupt:
+            if live_interrupted:
+                raise
             pass  # stop with the original error, not the Ctrl+C during cleanup
+        if live_interrupted:
+            raise SystemExit(130)
         raise
     finally:
         if live_thread:
