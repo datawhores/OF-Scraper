@@ -1,0 +1,272 @@
+{
+ "success": true,
+ "response": [
+  {
+   "id": "100000000000000002",
+   "username": "samplecreator1",
+   "displayName": null,
+   "flags": 18,
+   "version": 4,
+   "followCount": 7391,
+   "subscriberCount": 0,
+   "permissions": {
+    "accountPermissionFlags": {
+     "flags": 6
+    }
+   },
+   "timelineStats": {
+    "accountId": "100000000000000002",
+    "imageCount": 37,
+    "videoCount": 383,
+    "bundleCount": 7,
+    "bundleImageCount": 36,
+    "bundleVideoCount": 46,
+    "fetchedAt": 1794014281224
+   },
+   "streaming": {
+    "accountId": "100000000000000002",
+    "channel": null,
+    "enabled": true
+   },
+   "following": true,
+   "statusId": 1,
+   "lastSeenAt": 1793967560433,
+   "postLikes": 3263,
+   "profileAccessFlags": 0,
+   "profileFlags": 0,
+   "about": "Sample about",
+   "location": "Sample location",
+   "profileBadges": [],
+   "pinnedPosts": [
+    {
+     "postId": "100000000000000069",
+     "accountId": "100000000000000002",
+     "pos": 0,
+     "wallId": "100000000000000068",
+     "createdAt": 1792419054433
+    }
+   ],
+   "avatar": {
+    "id": "100000000000000071",
+    "type": 1,
+    "status": 1,
+    "accountId": "100000000000000002",
+    "mimetype": "image/png",
+    "flags": 266,
+    "location": "/100000000000000002/100000000000000071.png",
+    "width": 2157,
+    "height": 2157,
+    "metadata": "{\"dominant\":{\"r\":232,\"g\":184,\"b\":152}}",
+    "updatedAt": 1637002549,
+    "createdAt": 1637002547,
+    "variants": [
+     {
+      "id": "100000000000000072",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000072.png",
+      "width": 1080,
+      "height": 1080,
+      "metadata": null,
+      "updatedAt": 1637002548,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000072.png"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000073",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000073.png",
+      "width": 720,
+      "height": 720,
+      "metadata": null,
+      "updatedAt": 1637002548,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000073.png"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000074",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000074.png",
+      "width": 480,
+      "height": 480,
+      "metadata": null,
+      "updatedAt": 1637002548,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000074.png"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000075",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000075.png",
+      "width": 360,
+      "height": 360,
+      "metadata": null,
+      "updatedAt": 1637002548,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000075.png"
+       }
+      ]
+     }
+    ],
+    "variantHash": {},
+    "locations": [
+     {
+      "locationId": "1",
+      "location": "https://cdn3.fansly.com/100000000000000002/100000000000000071.png"
+     }
+    ]
+   },
+   "banner": {
+    "id": "100000000000000076",
+    "type": 1,
+    "status": 1,
+    "accountId": "100000000000000002",
+    "mimetype": "image/png",
+    "flags": 194,
+    "location": "/100000000000000002/100000000000000076.png",
+    "width": 3527,
+    "height": 916,
+    "metadata": "{\"dominant\":{\"r\":248,\"g\":248,\"b\":248}}",
+    "updatedAt": 1637002551,
+    "createdAt": 1637002549,
+    "variants": [
+     {
+      "id": "100000000000000077",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000077.png",
+      "width": 2772,
+      "height": 720,
+      "metadata": null,
+      "updatedAt": 1637002551,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000077.png"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000078",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000078.png",
+      "width": 1848,
+      "height": 480,
+      "metadata": null,
+      "updatedAt": 1637002551,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000078.png"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000079",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/png",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000079.png",
+      "width": 1386,
+      "height": 360,
+      "metadata": null,
+      "updatedAt": 1637002551,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000079.png"
+       }
+      ]
+     }
+    ],
+    "variantHash": {},
+    "locations": [
+     {
+      "locationId": "1",
+      "location": "https://cdn3.fansly.com/100000000000000002/100000000000000076.png"
+     }
+    ]
+   },
+   "subscribed": true,
+   "subscription": {
+    "id": "100000000000000080",
+    "accountId": "100000000000000002",
+    "subscriptionTierId": "100000000000000020",
+    "subscriptionTierName": "Sample subscriptionTierName",
+    "subscriptionTierColor": "#4F38F7",
+    "planId": "100000000000000081",
+    "promoId": "0",
+    "status": 3,
+    "price": 5000,
+    "renewPrice": 5000,
+    "autoRenew": 1,
+    "billingCycle": 30,
+    "duration": 30,
+    "renewDatexD": 1793972399433,
+    "renewDate": 1793972399433,
+    "createdAt": 1793972399433,
+    "updatedAt": 1793972400433,
+    "endsAt": 1796564399433,
+    "promoPrice": null,
+    "promoDuration": null,
+    "promoStatus": null,
+    "promoStartsAt": null,
+    "promoEndsAt": null
+   },
+   "walls": [
+    {
+     "id": "100000000000000064",
+     "accountId": "100000000000000002",
+     "pos": 2,
+     "name": "Sample name",
+     "description": "",
+     "private": 0,
+     "metadata": ""
+    },
+    {
+     "id": "100000000000000065",
+     "accountId": "100000000000000002",
+     "pos": 3,
+     "name": "Sample name",
+     "description": "",
+     "private": 0,
+     "metadata": ""
+    }
+   ],
+   "hasMainWall": true,
+   "accountMediaLikes": 8965,
+   "profileAccess": true
+  }
+ ]
+}

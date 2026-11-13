@@ -40,29 +40,6 @@ def pagination_bar(prefix: str):
         yield Button("Go", id=f"{prefix}_go", classes="page_btn")
 
 def composer():
-    # ... keep your tabs_row code ...
-
-    with ContentSwitcher(initial="table_page"):
-        with Vertical(id="table_page"):
-            # ... keep your header_top_row code ...
-            
-            # Use the new helper!
-            yield from pagination_bar("main")
-
-            with Vertical(id="table_main"):
-                yield DataTable(id="data_table")
-            
-            # ... keep sidebars ...
-
-        with Vertical(id="cart_page"):
-            # ... keep your header_top_row code ...
-
-            # Use the new helper here too!
-            yield from pagination_bar("cart")
-
-            with Vertical(id="cart_table_main"):
-                yield DataTable(id="cart_data_table")
-def composer():
     with Horizontal(id="tabs_row"):
         yield Button("DataTable", id="table")
         yield Button("Cart", id="cart")

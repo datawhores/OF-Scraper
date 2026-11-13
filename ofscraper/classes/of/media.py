@@ -8,10 +8,10 @@ from typing import Union
 from pathlib import Path
 
 import arrow
-from async_property import async_cached_property
 from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
 
+from ofscraper.utils.async_cached_property import async_cached_property
 import ofscraper.classes.of.base as base
 import ofscraper.managers.manager as manager
 import ofscraper.utils.args.accessors.quality as quality
@@ -37,6 +37,11 @@ class Media(base.base):
         self._hls = None
         self._lock = asyncio.Lock()
         self._cached_mpd = None
+        # a size limit replaces the type with "Forced_skipped" for the download
+        self._type = media.get("type")
+        # skip_download_script's answers in the current download call, by
+        # (track, size); run.download resets them
+        self.skip_script_answers = {}
 
         self.download_attempted = False
         self.download_succeeded = (
@@ -66,12 +71,16 @@ class Media(base.base):
         """Sets the flags to represent a skipped download."""
         self.download_attempted = False
         self.download_succeeded = None
+        self.update_download_status()
 
     def update_download_status(self):
         """
         Updates the download status string in the internal media dictionary
         based on the two download flags.
         """
+        # the download is over: give the item its own type back (#332, #341)
+        if str(self._media.get("type")).lower() == "forced_skipped":
+            self._media["type"] = self._type
         if self.download_attempted and self.download_succeeded:
             self.media["download_status"] = "succeeded"
         elif self.download_attempted and not self.download_succeeded:
@@ -154,7 +163,8 @@ class Media(base.base):
             return "Images"
         elif media_type == "gif":
             return "Videos"
-        elif media_type == "forced_skipped":
+        elif media_type.lower() == "forced_skipped":
+            # a size limit sets "Forced_skipped": read it back unchanged
             return "Forced_skipped"
         elif media_type in {"audio", "audios"}:
             return "Audios"
@@ -265,7 +275,7 @@ class Media(base.base):
     def formatted_date(self):
         date_val = self._media.get("createdAt") or self._media.get("postedAt")
         if date_val:
-            return arrow.get(date_val).format("YYYY-MM-DD hh:mm:ss")
+            return arrow.get(date_val).format("YYYY-MM-DD HH:mm:ss")
         return None
 
     @property
@@ -405,13 +415,19 @@ class Media(base.base):
         if not base_url:
             return None
 
+        fansly = self._media.get("fansly")
+        if fansly and fansly.get("mediaId"):
+            # the URL may be a variant's or a stream's, named by the variant
+            # id, and which one is chosen can change; the media id does not
+            return str(fansly["mediaId"])
+
         filename_part = (
             base_url.split(".")[-2].split("/")[-1].strip("/,.;!_-@#$%^&*()+\\ ")
         )
         filename = re.sub(r"\.mpd$", "", filename_part)
 
         if self.responsetype == "Profile":
-            date_str = arrow.get(self.date).format("YYYY_MM_DD")
+            date_str = arrow.get(self.date or 0).format("YYYY_MM_DD")
             return f"{filename}_{date_str}"
         return filename
 
@@ -434,6 +450,10 @@ class Media(base.base):
 
     @property
     def preview(self):
+        # Fansly marks previews per item, not per post
+        fansly = self._media.get("fansly")
+        if fansly is not None:
+            return 1 if fansly.get("isPreview") else 0
         return 1 if self.post.preview else 0
 
     @property
@@ -496,8 +516,13 @@ class Media(base.base):
         responsetype = self.post.responsetype.lower()
         if responsetype in ["timeline", "archived", "pinned", "posts", "streams"]:
             responsetype = "post"
-        else:
+        elif responsetype in ["messages", "message"]:
             responsetype = "message"
+        else:
+            # purchased items can be timeline posts or PPV messages; the raw
+            # responseType says which DRM endpoint OnlyFans expects
+            raw = str(self.post.post.get("responseType") or "").lower()
+            responsetype = "post" if raw == "post" else "message"
         return of_env.getattr("LICENCE_URL").format(self.id, responsetype, self.post_id)
 
     @property
@@ -571,11 +596,12 @@ class Media(base.base):
         self._log = val
 
     def get_text(self):
+        # an undated item falls back to 0 (1970), as its file name does
         if self.responsetype != "Profile":
-            date_str = arrow.get(self.date).format(data.get_date())
+            date_str = arrow.get(self.date or 0).format(data.get_date())
             text = self._post.file_sanitized_text or self.filename or date_str
         else:
-            date_str = arrow.get(self.date).format()
+            date_str = arrow.get(self.date or 0).format()
             text = f"{date_str} {self.text or self.filename}"
         return text
 
@@ -678,7 +704,11 @@ class Media(base.base):
         for prot in adapt_set.content_protections:
             if prot.value is None:
                 kId = prot.pssh[0].pssh
-                sensitive.add_sensitive_pattern(kId, "pssh_code")
+                # escaped: a base64 PSSH can hold "+" and "/", which as a raw
+                # regex would break the pattern and every log line after it
+                sensitive.add_sensitive_pattern(
+                    re.compile(re.escape(str(kId))), "pssh_code"
+                )
                 break
 
         origname = f"{selected_repr.base_urls[0].base_url_value}"

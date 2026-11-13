@@ -1,0 +1,2041 @@
+{
+ "success": true,
+ "response": {
+  "messages": [
+   {
+    "id": "100000000000000142",
+    "type": 1,
+    "dataVersion": 1,
+    "content": "Sample text 4 #behindthescenes #studio",
+    "groupId": "100000000000000143",
+    "senderId": "100000000000000053",
+    "inReplyTo": null,
+    "inReplyToRoot": null,
+    "createdAt": 1777913614,
+    "attachments": [
+     {
+      "messageId": "100000000000000142",
+      "contentType": 2,
+      "contentId": "100000000000000144",
+      "pos": 0
+     },
+     {
+      "messageId": "100000000000000142",
+      "contentType": 1,
+      "contentId": "100000000000000145",
+      "pos": 1
+     }
+    ],
+    "embeds": [],
+    "interactions": [
+     {
+      "userId": "100000000000000146",
+      "readAt": 1782331811098,
+      "deliveredAt": 1782331804724
+     }
+    ],
+    "likes": [],
+    "totalTipAmount": 0
+   },
+   {
+    "id": "100000000000000147",
+    "type": 1,
+    "dataVersion": 1,
+    "content": "Sample text 5 #sunset #weekend",
+    "groupId": "100000000000000143",
+    "senderId": "100000000000000053",
+    "inReplyTo": null,
+    "inReplyToRoot": null,
+    "createdAt": 1774635539,
+    "attachments": [
+     {
+      "messageId": "100000000000000147",
+      "contentType": 2,
+      "contentId": "100000000000000148",
+      "pos": 0
+     }
+    ],
+    "embeds": [],
+    "interactions": [
+     {
+      "userId": "100000000000000146",
+      "readAt": 1774649339161,
+      "deliveredAt": 1774649159767
+     }
+    ],
+    "likes": [],
+    "totalTipAmount": 0
+   }
+  ],
+  "accountMedia": [
+   {
+    "id": "100000000000000149",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000150",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000151",
+       "accountMediaId": "100000000000000149",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000150",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "video/mp4",
+     "flags": 390,
+     "location": "/100000000000000053/100000000000000150.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":191.02,\"resolutionMode\":2,\"frameRate\":30.01}",
+     "updatedAt": 1696283086,
+     "createdAt": 1696282836,
+     "variants": [
+      {
+       "id": "100000000000000152",
+       "type": 2,
+       "status": 1,
+       "mimetype": "video/mp4",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000152.mp4",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"duration\":191.02,\"resolutionMode\":2}",
+       "updatedAt": 1696282927,
+       "locations": []
+      },
+      {
+       "id": "100000000000000153",
+       "type": 2,
+       "status": 1,
+       "mimetype": "video/mp4",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000153.mp4",
+       "width": 360,
+       "height": 640,
+       "metadata": "{\"duration\":191.02,\"resolutionMode\":2}",
+       "updatedAt": 1696282873,
+       "locations": []
+      },
+      {
+       "id": "100000000000000154",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000154.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282843,
+       "locations": []
+      },
+      {
+       "id": "100000000000000155",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000155.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282843,
+       "locations": []
+      },
+      {
+       "id": "100000000000000156",
+       "type": 102,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1080,
+       "height": 1920,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":191.02,\"resolutionMode\":2,\"frameRate\":30.01,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1696283118,
+       "locations": []
+      },
+      {
+       "id": "100000000000000157",
+       "type": 101,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/new/100000000000000053/100000000000000157/100000000000000157_frame.100000000000000158.jpg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{}",
+       "updatedAt": 1696283118,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000159",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000160",
+    "previewId": "100000000000000161",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000162",
+       "accountMediaId": "100000000000000159",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000160",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 394,
+     "location": "/100000000000000053/100000000000000160.jpeg",
+     "width": 3024,
+     "height": 4032,
+     "metadata": "{\"dominant\":{\"r\":8,\"g\":8,\"b\":8},\"resolutionMode\":2}",
+     "updatedAt": 1696282607,
+     "createdAt": 1696282606,
+     "variants": [
+      {
+       "id": "100000000000000163",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000163.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282608,
+       "locations": []
+      },
+      {
+       "id": "100000000000000164",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000164.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282608,
+       "locations": []
+      },
+      {
+       "id": "100000000000000165",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000165.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000166",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000166.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000167",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000167.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000161",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 6,
+     "location": "/100000000000000053/100000000000000161.jpeg",
+     "width": 1440,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":40,\"g\":40,\"b\":24},\"resolutionMode\":2}",
+     "updatedAt": 1696282822,
+     "createdAt": 1696282820,
+     "variants": [
+      {
+       "id": "100000000000000168",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000168.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282822,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000168.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000169",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000169.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282822,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000169.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000170",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000170.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282822,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000170.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000171",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000171.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282822,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000171.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000172",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000172.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282822,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000172.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000161.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000173",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000174",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000175",
+       "accountMediaId": "100000000000000173",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000174",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 6,
+     "location": "/100000000000000053/100000000000000174.jpeg",
+     "width": 3024,
+     "height": 4032,
+     "metadata": "{\"dominant\":{\"r\":8,\"g\":8,\"b\":8},\"resolutionMode\":2}",
+     "updatedAt": 1696282607,
+     "createdAt": 1696282606,
+     "variants": [
+      {
+       "id": "100000000000000176",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000176.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282608,
+       "locations": []
+      },
+      {
+       "id": "100000000000000177",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000177.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282608,
+       "locations": []
+      },
+      {
+       "id": "100000000000000178",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000178.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000179",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000179.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000180",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000180.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000181",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000182",
+    "previewId": "100000000000000183",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000184",
+       "accountMediaId": "100000000000000181",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000182",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 394,
+     "location": "/100000000000000053/100000000000000182.jpeg",
+     "width": 3024,
+     "height": 4032,
+     "metadata": "{\"dominant\":{\"r\":40,\"g\":40,\"b\":24},\"resolutionMode\":2}",
+     "updatedAt": 1696282607,
+     "createdAt": 1696282606,
+     "variants": [
+      {
+       "id": "100000000000000185",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000185.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282608,
+       "locations": []
+      },
+      {
+       "id": "100000000000000186",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000186.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000187",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000187.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000188",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000188.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      },
+      {
+       "id": "100000000000000189",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000189.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282607,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000183",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 390,
+     "location": "/100000000000000053/100000000000000183.jpeg",
+     "width": 1440,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":56,\"g\":56,\"b\":40},\"resolutionMode\":2}",
+     "updatedAt": 1696282611,
+     "createdAt": 1696282609,
+     "variants": [
+      {
+       "id": "100000000000000190",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000190.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282611,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000190.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000191",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000191.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282611,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000191.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000192",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000192.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282611,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000192.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000193",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000193.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282611,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000193.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000194",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000194.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282611,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000194.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000183.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000195",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000196",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000197",
+       "accountMediaId": "100000000000000195",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000196",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 394,
+     "location": "/100000000000000053/100000000000000196.jpeg",
+     "width": 3024,
+     "height": 4032,
+     "metadata": "{\"dominant\":{\"r\":8,\"g\":8,\"b\":8},\"resolutionMode\":2}",
+     "updatedAt": 1696282605,
+     "createdAt": 1696282604,
+     "variants": [
+      {
+       "id": "100000000000000198",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000198.jpeg",
+       "width": 1080,
+       "height": 1440,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282606,
+       "locations": []
+      },
+      {
+       "id": "100000000000000199",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000199.jpeg",
+       "width": 720,
+       "height": 960,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282606,
+       "locations": []
+      },
+      {
+       "id": "100000000000000200",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000200.jpeg",
+       "width": 480,
+       "height": 640,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282605,
+       "locations": []
+      },
+      {
+       "id": "100000000000000201",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000201.jpeg",
+       "width": 360,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282605,
+       "locations": []
+      },
+      {
+       "id": "100000000000000202",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000202.jpeg",
+       "width": 240,
+       "height": 320,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1696282605,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000203",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000204",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1722445560,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000205",
+       "accountMediaId": "100000000000000203",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000204",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 10,
+     "location": "/100000000000000053/100000000000000204.jpeg",
+     "width": 1179,
+     "height": 2076,
+     "metadata": "{\"dominant\":{\"r\":24,\"g\":24,\"b\":24},\"resolutionMode\":2}",
+     "updatedAt": 1722444883,
+     "createdAt": 1722444882,
+     "variants": [
+      {
+       "id": "100000000000000206",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000206.jpeg",
+       "width": 1080,
+       "height": 1900,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000207",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000207.jpeg",
+       "width": 720,
+       "height": 1268,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000208",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000208.jpeg",
+       "width": 480,
+       "height": 844,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000209",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000209.jpeg",
+       "width": 360,
+       "height": 634,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000210",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000210.jpeg",
+       "width": 240,
+       "height": 422,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000211",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000211.jpeg",
+       "width": 240,
+       "height": 422,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000212",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000213",
+    "previewId": "100000000000000214",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1722445560,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000215",
+       "accountMediaId": "100000000000000212",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000213",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 10,
+     "location": "/100000000000000053/100000000000000213.jpeg",
+     "width": 1179,
+     "height": 2086,
+     "metadata": "{\"dominant\":{\"r\":24,\"g\":24,\"b\":24},\"resolutionMode\":2}",
+     "updatedAt": 1722444883,
+     "createdAt": 1722444882,
+     "variants": [
+      {
+       "id": "100000000000000216",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000216.jpeg",
+       "width": 1080,
+       "height": 1910,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000217",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000217.jpeg",
+       "width": 720,
+       "height": 1274,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000218",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000218.jpeg",
+       "width": 480,
+       "height": 850,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000219",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000219.jpeg",
+       "width": 360,
+       "height": 636,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000220",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000220.jpeg",
+       "width": 240,
+       "height": 424,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      },
+      {
+       "id": "100000000000000221",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000221.jpeg",
+       "width": 240,
+       "height": 424,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444883,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000214",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 10,
+     "location": "/100000000000000053/100000000000000214.jpeg",
+     "width": 1152,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":104,\"g\":120,\"b\":136},\"resolutionMode\":2}",
+     "updatedAt": 1722445447,
+     "createdAt": 1722445445,
+     "variants": [
+      {
+       "id": "100000000000000222",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000222.jpeg",
+       "width": 1080,
+       "height": 1800,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000222.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000223",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000223.jpeg",
+       "width": 720,
+       "height": 1200,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000223.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000224",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000224.jpeg",
+       "width": 480,
+       "height": 800,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000224.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000225",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000225.jpeg",
+       "width": 360,
+       "height": 600,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000225.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000226",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000226.jpeg",
+       "width": 240,
+       "height": 400,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000226.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000227",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000227.jpeg",
+       "width": 240,
+       "height": 400,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000227.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000214.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000228",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000229",
+    "previewId": "100000000000000230",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1722445560,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000231",
+       "accountMediaId": "100000000000000228",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000229",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 6,
+     "location": "/100000000000000053/100000000000000229.jpeg",
+     "width": 1179,
+     "height": 2082,
+     "metadata": "{\"dominant\":{\"r\":24,\"g\":24,\"b\":24},\"resolutionMode\":2}",
+     "updatedAt": 1722444879,
+     "createdAt": 1722444878,
+     "variants": [
+      {
+       "id": "100000000000000232",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000232.jpeg",
+       "width": 1080,
+       "height": 1906,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      },
+      {
+       "id": "100000000000000233",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000233.jpeg",
+       "width": 720,
+       "height": 1270,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      },
+      {
+       "id": "100000000000000234",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000234.jpeg",
+       "width": 480,
+       "height": 848,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      },
+      {
+       "id": "100000000000000235",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000235.jpeg",
+       "width": 360,
+       "height": 636,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      },
+      {
+       "id": "100000000000000236",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000236.jpeg",
+       "width": 240,
+       "height": 424,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      },
+      {
+       "id": "100000000000000237",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000237.jpeg",
+       "width": 240,
+       "height": 424,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722444879,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000230",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 154,
+     "location": "/100000000000000053/100000000000000230.jpeg",
+     "width": 1090,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":248,\"g\":200,\"b\":184},\"resolutionMode\":2}",
+     "updatedAt": 1722445447,
+     "createdAt": 1722445445,
+     "variants": [
+      {
+       "id": "100000000000000238",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000238.jpeg",
+       "width": 1080,
+       "height": 1902,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000238.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000239",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000239.jpeg",
+       "width": 720,
+       "height": 1268,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000239.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000240",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000240.jpeg",
+       "width": 480,
+       "height": 846,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000240.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000241",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000241.jpeg",
+       "width": 360,
+       "height": 634,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000241.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000242",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000242.jpeg",
+       "width": 240,
+       "height": 422,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000242.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000243",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000243.jpeg",
+       "width": 240,
+       "height": 422,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445447,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000243.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000230.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000244",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000245",
+    "previewId": "100000000000000246",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1722445560,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000247",
+       "accountMediaId": "100000000000000244",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000245",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "video/mp4",
+     "flags": 426,
+     "location": "/100000000000000053/100000000000000245.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":2560,\"originalWidth\":1440,\"duration\":916.966666,\"resolutionMode\":2,\"frameRate\":30}",
+     "updatedAt": 1722426476,
+     "createdAt": 1722426239,
+     "variants": [
+      {
+       "id": "100000000000000248",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000248.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722426284,
+       "locations": []
+      },
+      {
+       "id": "100000000000000249",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000249.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722426283,
+       "locations": []
+      },
+      {
+       "id": "100000000000000250",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1440,
+       "height": 2560,
+       "metadata": "{\"originalHeight\":2560,\"originalWidth\":1440,\"duration\":916.966666,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1722427006,
+       "locations": []
+      },
+      {
+       "id": "100000000000000251",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 1440,
+       "height": 2560,
+       "metadata": "{\"originalHeight\":2560,\"originalWidth\":1440,\"duration\":916.966666,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1722427015,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000246",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 10,
+     "location": "/100000000000000053/100000000000000246.jpeg",
+     "width": 1141,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":40,\"g\":56,\"b\":72},\"resolutionMode\":2}",
+     "updatedAt": 1722445445,
+     "createdAt": 1722445443,
+     "variants": [
+      {
+       "id": "100000000000000252",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000252.jpeg",
+       "width": 1080,
+       "height": 1818,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000252.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000253",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000253.jpeg",
+       "width": 720,
+       "height": 1212,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000253.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000254",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000254.jpeg",
+       "width": 480,
+       "height": 808,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000254.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000255",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000255.jpeg",
+       "width": 360,
+       "height": 606,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000255.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000256",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000256.jpeg",
+       "width": 240,
+       "height": 404,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000256.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000257",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000257.jpeg",
+       "width": 240,
+       "height": 404,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722445445,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000257.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000246.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000145",
+    "accountId": "100000000000000053",
+    "mediaId": "100000000000000258",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1748881857,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000259",
+       "accountMediaId": "100000000000000145",
+       "type": 0,
+       "flags": 4,
+       "price": 0,
+       "metadata": "",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000258",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "video/mp4",
+     "flags": 6,
+     "location": "/100000000000000053/100000000000000258.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":3840,\"originalWidth\":2160,\"duration\":43.245,\"resolutionMode\":2,\"frameRate\":30.01}",
+     "updatedAt": 1722421868,
+     "createdAt": 1722421837,
+     "variants": [
+      {
+       "id": "100000000000000260",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000260.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722421846,
+       "locations": []
+      },
+      {
+       "id": "100000000000000261",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000261.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1722421845,
+       "locations": []
+      },
+      {
+       "id": "100000000000000262",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 2160,
+       "height": 3840,
+       "metadata": "{\"originalHeight\":3840,\"originalWidth\":2160,\"duration\":43.245,\"resolutionMode\":2,\"frameRate\":30.01,\"variants\":[{\"w\":2160,\"h\":3840},{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1722422035,
+       "locations": []
+      },
+      {
+       "id": "100000000000000263",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 2160,
+       "height": 3840,
+       "metadata": "{\"originalHeight\":3840,\"originalWidth\":2160,\"duration\":43.245,\"resolutionMode\":2,\"frameRate\":30.01,\"variants\":[{\"w\":2160,\"h\":3840},{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1722422039,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   }
+  ],
+  "accountMediaBundles": [
+   {
+    "id": "100000000000000144",
+    "accountId": "100000000000000053",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1722445560,
+    "deletedAt": null,
+    "deleted": false,
+    "accountMediaIds": [
+     "100000000000000244",
+     "100000000000000228",
+     "100000000000000212",
+     "100000000000000203"
+    ],
+    "bundleContent": [
+     {
+      "accountMediaId": "100000000000000244",
+      "pos": 0
+     },
+     {
+      "accountMediaId": "100000000000000228",
+      "pos": 1
+     },
+     {
+      "accountMediaId": "100000000000000212",
+      "pos": 2
+     },
+     {
+      "accountMediaId": "100000000000000203",
+      "pos": 3
+     }
+    ],
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000264",
+       "accountMediaId": "100000000000000144",
+       "type": 0,
+       "flags": 1,
+       "price": 5000,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   },
+   {
+    "id": "100000000000000148",
+    "accountId": "100000000000000053",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1696283140,
+    "deletedAt": null,
+    "deleted": false,
+    "accountMediaIds": [
+     "100000000000000173",
+     "100000000000000149",
+     "100000000000000159",
+     "100000000000000181",
+     "100000000000000195",
+     "100000000000000265"
+    ],
+    "bundleContent": [
+     {
+      "accountMediaId": "100000000000000173",
+      "pos": 0
+     },
+     {
+      "accountMediaId": "100000000000000149",
+      "pos": 1
+     },
+     {
+      "accountMediaId": "100000000000000159",
+      "pos": 2
+     },
+     {
+      "accountMediaId": "100000000000000181",
+      "pos": 3
+     },
+     {
+      "accountMediaId": "100000000000000195",
+      "pos": 4
+     },
+     {
+      "accountMediaId": "100000000000000265",
+      "pos": 5
+     }
+    ],
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000266",
+       "accountMediaId": "100000000000000148",
+       "type": 0,
+       "flags": 1,
+       "price": 5000,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   }
+  ],
+  "tips": [],
+  "tipGoals": [],
+  "accountMediaOrders": [],
+  "stories": [],
+  "storyOrders": []
+ }
+}

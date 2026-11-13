@@ -118,7 +118,7 @@ def get_save_location(config=None):
     if config is False:
         return of_env.getattr("SAVE_PATH_DEFAULT")
     config = config or config_file.open_config()
-    return (
+    return data.strip_path_quotes(
         config.get("save_location")
         or config.get("file_options", {}).get("save_location")
         or of_env.getattr("SAVE_PATH_DEFAULT")

@@ -18,7 +18,6 @@ import time
 
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.classes.of.posts import Post
@@ -29,7 +28,6 @@ like_str = "Performing Like Action on {name}" + warning_str
 unlike_str = "Performing Unlike Action on {name}" + warning_str
 
 
-@exit.exit_wrapper
 def process_like(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
         progress_updater.activity.update_task(
@@ -39,7 +37,6 @@ def process_like(posts=None, model_id=None, username=None, **kwargs):
         like(model_id, username, posts)
 
 
-@exit.exit_wrapper
 def process_unlike(posts=None, model_id=None, username=None, **kwargs):
     with progress_utils.setup_live("like"):
         progress_updater.activity.update_task(
@@ -131,9 +128,13 @@ def _toggle_like_requests(c, post: Post, model_id):
         post.mark_post_liked()
         return 1
     else:
-        log.debug(f"ID: {id} restored to liked")
+        log.debug(f"ID: {id} was already liked; liking it again")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id)
+        favorited, _ = _like_request(c, id, model_id)
+        if not favorited:
+            post.mark_post_liked(success=False)
+            return 3
+        log.debug(f"ID: {id} restored to liked")
         post.mark_post_liked()
         return 2
 
@@ -151,9 +152,13 @@ def _toggle_unlike_requests(c, post: Post, model_id):
         post.mark_post_unliked()
         return 1
     else:
-        log.debug(f"ID: {id} restored to unlike")
+        log.debug(f"ID: {id} was already unliked; unliking it again")
         time.sleep(sleep_duration)
-        _like_request(c, id, model_id)
+        favorited, _ = _like_request(c, id, model_id)
+        if favorited is not False:
+            post.mark_post_unliked(success=False)
+            return 3
+        log.debug(f"ID: {id} restored to unlike")
         post.mark_post_unliked()
         return 2
 
@@ -167,5 +172,6 @@ def _like_request(c, id, model_id):
     ) as r:
         try:
             return r.json_()["isFavorite"], r.json_()["id"]
-        except:
-            return None
+        except Exception:
+            # an unreadable response: the callers treat None as a failed toggle
+            return None, id

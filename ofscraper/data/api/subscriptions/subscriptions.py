@@ -18,7 +18,6 @@ from rich.console import Console
 import ofscraper.data.api.subscriptions.common as common
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.live.updater import userlist
 

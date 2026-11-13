@@ -1,0 +1,1590 @@
+{
+ "success": true,
+ "response": {
+  "posts": [
+   {
+    "id": "100000000000000001",
+    "accountId": "100000000000000002",
+    "content": "Sample text 1 #studio #outfit",
+    "fypFlags": 0,
+    "inReplyTo": null,
+    "inReplyToRoot": null,
+    "replyPermissionFlags": null,
+    "createdAt": 1793394484,
+    "expiresAt": null,
+    "attachments": [
+     {
+      "postId": "100000000000000001",
+      "pos": 0,
+      "contentType": 1,
+      "contentId": "100000000000000003"
+     }
+    ],
+    "likeCount": 6,
+    "timelineReadPermissionFlags": [],
+    "accountTimelineReadPermissionFlags": {
+     "flags": 0,
+     "metadata": "{}"
+    },
+    "mediaLikeCount": 20,
+    "totalTipAmount": 0,
+    "attachmentTipAmount": 0,
+    "accountMentions": []
+   },
+   {
+    "id": "100000000000000004",
+    "accountId": "100000000000000002",
+    "content": "Sample text 2 #weekend #behindthescenes",
+    "fypFlags": 0,
+    "inReplyTo": null,
+    "inReplyToRoot": null,
+    "replyPermissionFlags": null,
+    "createdAt": 1793934243,
+    "expiresAt": null,
+    "attachments": [
+     {
+      "postId": "100000000000000004",
+      "pos": 0,
+      "contentType": 2,
+      "contentId": "100000000000000005"
+     }
+    ],
+    "likeCount": 1,
+    "timelineReadPermissionFlags": [],
+    "accountTimelineReadPermissionFlags": {
+     "flags": 0,
+     "metadata": "{}"
+    },
+    "mediaLikeCount": 7,
+    "totalTipAmount": 0,
+    "attachmentTipAmount": 0,
+    "accountMentions": []
+   },
+   {
+    "id": "100000000000000006",
+    "accountId": "100000000000000002",
+    "content": "Sample text 3 #outfit #sunset",
+    "fypFlags": 0,
+    "inReplyTo": null,
+    "inReplyToRoot": null,
+    "replyPermissionFlags": null,
+    "createdAt": 1793830083,
+    "expiresAt": null,
+    "attachments": [
+     {
+      "postId": "100000000000000006",
+      "pos": 0,
+      "contentType": 1,
+      "contentId": "100000000000000007"
+     }
+    ],
+    "likeCount": 2,
+    "timelineReadPermissionFlags": [],
+    "accountTimelineReadPermissionFlags": {
+     "flags": 0,
+     "metadata": "{}"
+    },
+    "mediaLikeCount": 16,
+    "totalTipAmount": 0,
+    "attachmentTipAmount": 0,
+    "accountMentions": []
+   }
+  ],
+  "aggregatedPosts": [],
+  "accountMediaBundles": [
+   {
+    "id": "100000000000000005",
+    "accountId": "100000000000000002",
+    "previewId": null,
+    "createdAt": 1793934243,
+    "deletedAt": null,
+    "deleted": false,
+    "access": true,
+    "purchased": false,
+    "whitelisted": false,
+    "price": 0,
+    "permissionFlags": [],
+    "accountPermissionFlags": {
+     "flags": 0,
+     "metadata": "{}"
+    },
+    "accountMediaIds": [
+     "100000000000000003",
+     "100000000000000008",
+     "100000000000000009",
+     "100000000000000010",
+     "100000000000000011",
+     "100000000000000012",
+     "100000000000000013",
+     "100000000000000014",
+     "100000000000000015",
+     "100000000000000016",
+     "100000000000000017",
+     "100000000000000018"
+    ],
+    "bundleContent": [
+     {
+      "accountMediaId": "100000000000000003",
+      "pos": 0
+     },
+     {
+      "accountMediaId": "100000000000000008",
+      "pos": 1
+     },
+     {
+      "accountMediaId": "100000000000000009",
+      "pos": 2
+     },
+     {
+      "accountMediaId": "100000000000000010",
+      "pos": 3
+     },
+     {
+      "accountMediaId": "100000000000000011",
+      "pos": 4
+     },
+     {
+      "accountMediaId": "100000000000000012",
+      "pos": 5
+     },
+     {
+      "accountMediaId": "100000000000000013",
+      "pos": 6
+     },
+     {
+      "accountMediaId": "100000000000000014",
+      "pos": 7
+     },
+     {
+      "accountMediaId": "100000000000000015",
+      "pos": 8
+     },
+     {
+      "accountMediaId": "100000000000000016",
+      "pos": 9
+     },
+     {
+      "accountMediaId": "100000000000000017",
+      "pos": 10
+     },
+     {
+      "accountMediaId": "100000000000000018",
+      "pos": 11
+     }
+    ]
+   }
+  ],
+  "accountMedia": [
+   {
+    "id": "100000000000000003",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000019",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1792703550,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [],
+     "accountPermissionFlags": {
+      "flags": 4,
+      "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+     }
+    },
+    "likeCount": 20,
+    "media": {
+     "id": "100000000000000019",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "video/mp4",
+     "flags": 442,
+     "location": "/100000000000000002/100000000000000019.mp4",
+     "width": 1280,
+     "height": 720,
+     "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30}",
+     "updatedAt": 1792703522,
+     "createdAt": 1792703500,
+     "variants": [
+      {
+       "id": "100000000000000021",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000021.jpeg",
+       "width": 854,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1792703518,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000021.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000022",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000022.jpeg",
+       "width": 854,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1792703517,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000022.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000023",
+       "type": 4,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000023.jpeg",
+       "width": 256,
+       "height": 144,
+       "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":27,\"thumbnailGrid\":[6,5],\"frameDistance\":30}",
+       "updatedAt": 1792703516,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000023.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000024",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 3840,
+       "height": 2160,
+       "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":3840,\"h\":2160},{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+       "updatedAt": 1792703541,
+       "locations": [
+        {
+         "locationId": "102",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000024/100000000000000024.m3u8",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      },
+      {
+       "id": "100000000000000025",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 3840,
+       "height": 2160,
+       "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":3840,\"h\":2160},{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+       "updatedAt": 1792703543,
+       "locations": [
+        {
+         "locationId": "103",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000025/100000000000000025.mpd",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000019.mp4"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 4,
+    "access": true
+   },
+   {
+    "id": "100000000000000008",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000026",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1793763039,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [],
+     "accountPermissionFlags": {
+      "flags": 4,
+      "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+     }
+    },
+    "likeCount": 7,
+    "media": {
+     "id": "100000000000000026",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "video/mp4",
+     "flags": 154,
+     "location": "/100000000000000002/100000000000000026.mp4",
+     "width": 1280,
+     "height": 720,
+     "metadata": "{\"originalHeight\":1080,\"originalWidth\":1920,\"duration\":12.6,\"resolutionMode\":1,\"frameRate\":30}",
+     "updatedAt": 1793761532,
+     "createdAt": 1793761524,
+     "variants": [
+      {
+       "id": "100000000000000027",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000027.jpeg",
+       "width": 854,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1793761530,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000027.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000028",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000028.jpeg",
+       "width": 854,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1793761530,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000028.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000029",
+       "type": 4,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000029.jpeg",
+       "width": 256,
+       "height": 144,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1920,\"duration\":12.6,\"resolutionMode\":1,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":13,\"thumbnailGrid\":[4,4],\"frameDistance\":30}",
+       "updatedAt": 1793761530,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000029.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000030",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1920,
+       "height": 1080,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1920,\"duration\":12.6,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+       "updatedAt": 1793761532,
+       "locations": [
+        {
+         "locationId": "102",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000030/100000000000000030.m3u8",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      },
+      {
+       "id": "100000000000000031",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 1920,
+       "height": 1080,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1920,\"duration\":12.6,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+       "updatedAt": 1793761533,
+       "locations": [
+        {
+         "locationId": "103",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000031/100000000000000031.mpd",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000026.mp4"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 4,
+    "access": true
+   },
+   {
+    "id": "100000000000000009",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000032",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1792703515,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [],
+     "accountPermissionFlags": {
+      "flags": 4,
+      "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+     }
+    },
+    "likeCount": 20,
+    "media": {
+     "id": "100000000000000032",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "video/mp4",
+     "flags": 442,
+     "location": "/100000000000000002/100000000000000032.mp4",
+     "width": 960,
+     "height": 720,
+     "metadata": "{\"originalHeight\":1080,\"originalWidth\":1440,\"duration\":47.766667,\"resolutionMode\":1,\"frameRate\":30}",
+     "updatedAt": 1792703518,
+     "createdAt": 1792703504,
+     "variants": [
+      {
+       "id": "100000000000000033",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000033.jpeg",
+       "width": 640,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1792703513,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000033.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000034",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000034.jpeg",
+       "width": 640,
+       "height": 480,
+       "metadata": "{\"resolutionMode\":1}",
+       "updatedAt": 1792703513,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000034.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000035",
+       "type": 4,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000035.jpeg",
+       "width": 192,
+       "height": 144,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1440,\"duration\":47.766667,\"resolutionMode\":1,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":48,\"thumbnailGrid\":[7,7],\"frameDistance\":30}",
+       "updatedAt": 1792703512,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000035.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000036",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1440,
+       "height": 1080,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1440,\"duration\":47.766667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":1440,\"h\":1080},{\"w\":960,\"h\":720},{\"w\":640,\"h\":480},{\"w\":480,\"h\":360}]}",
+       "updatedAt": 1792703528,
+       "locations": [
+        {
+         "locationId": "102",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000036/100000000000000036.m3u8",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      },
+      {
+       "id": "100000000000000037",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 1440,
+       "height": 1080,
+       "metadata": "{\"originalHeight\":1080,\"originalWidth\":1440,\"duration\":47.766667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":1440,\"h\":1080},{\"w\":960,\"h\":720},{\"w\":640,\"h\":480},{\"w\":480,\"h\":360}]}",
+       "updatedAt": 1792703529,
+       "locations": [
+        {
+         "locationId": "103",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000037/100000000000000037.mpd",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000032.mp4"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 4,
+    "access": true
+   },
+   {
+    "id": "100000000000000010",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000038",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1792703520,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [],
+     "accountPermissionFlags": {
+      "flags": 4,
+      "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+     }
+    },
+    "likeCount": 16,
+    "media": {
+     "id": "100000000000000038",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "video/mp4",
+     "flags": 442,
+     "location": "/100000000000000002/100000000000000038.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":38.933333,\"resolutionMode\":2,\"frameRate\":30}",
+     "updatedAt": 1792703517,
+     "createdAt": 1792703504,
+     "variants": [
+      {
+       "id": "100000000000000039",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000039.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1792703512,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000039.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000040",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000040.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1792703512,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000040.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000041",
+       "type": 4,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000041.jpeg",
+       "width": 144,
+       "height": 256,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":38.933333,\"resolutionMode\":2,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":39,\"thumbnailGrid\":[7,6],\"frameDistance\":30}",
+       "updatedAt": 1792703512,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000041.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000042",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1080,
+       "height": 1920,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":38.933333,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1792703527,
+       "locations": [
+        {
+         "locationId": "102",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000042/100000000000000042.m3u8",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      },
+      {
+       "id": "100000000000000043",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 1080,
+       "height": 1920,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":38.933333,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1792703528,
+       "locations": [
+        {
+         "locationId": "103",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000043/100000000000000043.mpd",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000038.mp4"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 4,
+    "access": true
+   },
+   {
+    "id": "100000000000000011",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000044",
+    "previewId": null,
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1792703510,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [],
+     "accountPermissionFlags": {
+      "flags": 4,
+      "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+     }
+    },
+    "likeCount": 30,
+    "media": {
+     "id": "100000000000000044",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "video/mp4",
+     "flags": 442,
+     "location": "/100000000000000002/100000000000000044.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":1280,\"originalWidth\":720,\"duration\":52.233333,\"resolutionMode\":2,\"frameRate\":30}",
+     "updatedAt": 1792703513,
+     "createdAt": 1792703498,
+     "variants": [
+      {
+       "id": "100000000000000045",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000045.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1792703504,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000045.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000046",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000046.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1792703504,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000046.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000047",
+       "type": 4,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000047.jpeg",
+       "width": 144,
+       "height": 256,
+       "metadata": "{\"originalHeight\":1280,\"originalWidth\":720,\"duration\":52.233333,\"resolutionMode\":2,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":53,\"thumbnailGrid\":[8,7],\"frameDistance\":30}",
+       "updatedAt": 1792703504,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000047.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000048",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 720,
+       "height": 1280,
+       "metadata": "{\"originalHeight\":1280,\"originalWidth\":720,\"duration\":52.233333,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1792703514,
+       "locations": [
+        {
+         "locationId": "102",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000048/100000000000000048.m3u8",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      },
+      {
+       "id": "100000000000000049",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 720,
+       "height": 1280,
+       "metadata": "{\"originalHeight\":1280,\"originalWidth\":720,\"duration\":52.233333,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1792703515,
+       "locations": [
+        {
+         "locationId": "103",
+         "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000049/100000000000000049.mpd",
+         "metadata": {
+          "Key-Pair-Id": "REDACTED",
+          "Signature": "REDACTED",
+          "Policy": "REDACTED"
+         }
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000044.mp4"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 4,
+    "access": true
+   },
+   {
+    "id": "100000000000000007",
+    "accountId": "100000000000000002",
+    "mediaId": "100000000000000050",
+    "previewId": "100000000000000051",
+    "permissionFlags": 0,
+    "price": 0,
+    "createdAt": 1715015873,
+    "deletedAt": null,
+    "deleted": false,
+    "permissions": {
+     "permissionFlags": [
+      {
+       "id": "100000000000000052",
+       "accountMediaId": "100000000000000007",
+       "type": 0,
+       "flags": 1,
+       "price": 0,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\"}",
+       "validAfter": null,
+       "validBefore": null,
+       "verificationFlags": 0,
+       "verificationMetadata": "{}"
+      }
+     ],
+     "accountPermissionFlags": {
+      "flags": 0,
+      "metadata": "{}"
+     }
+    },
+    "likeCount": 0,
+    "media": {
+     "id": "100000000000000050",
+     "type": 2,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "video/mp4",
+     "flags": 138,
+     "location": "/100000000000000053/100000000000000050.mp4",
+     "width": 720,
+     "height": 1280,
+     "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":631.5,\"resolutionMode\":2,\"frameRate\":30}",
+     "updatedAt": 1715004749,
+     "createdAt": 1715004581,
+     "variants": [
+      {
+       "id": "100000000000000054",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000054.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715004600,
+       "locations": []
+      },
+      {
+       "id": "100000000000000055",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000055.jpeg",
+       "width": 480,
+       "height": 854,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715004600,
+       "locations": []
+      },
+      {
+       "id": "100000000000000056",
+       "type": 302,
+       "status": 1,
+       "mimetype": "application/vnd.apple.mpegurl",
+       "flags": 0,
+       "location": null,
+       "width": 1080,
+       "height": 1920,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":631.5,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1715005208,
+       "locations": []
+      },
+      {
+       "id": "100000000000000057",
+       "type": 303,
+       "status": 1,
+       "mimetype": "application/dash+xml",
+       "flags": 0,
+       "location": null,
+       "width": 1080,
+       "height": 1920,
+       "metadata": "{\"originalHeight\":1920,\"originalWidth\":1080,\"duration\":631.5,\"resolutionMode\":2,\"frameRate\":30,\"variants\":[{\"w\":1080,\"h\":1920},{\"w\":720,\"h\":1280},{\"w\":480,\"h\":854},{\"w\":360,\"h\":640}]}",
+       "updatedAt": 1715005218,
+       "locations": []
+      }
+     ],
+     "variantHash": {},
+     "locations": []
+    },
+    "preview": {
+     "id": "100000000000000051",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000053",
+     "mimetype": "image/jpeg",
+     "flags": 138,
+     "location": "/100000000000000053/100000000000000051.jpeg",
+     "width": 1097,
+     "height": 1920,
+     "metadata": "{\"dominant\":{\"r\":216,\"g\":152,\"b\":120},\"resolutionMode\":2}",
+     "updatedAt": 1715015760,
+     "createdAt": 1715015758,
+     "variants": [
+      {
+       "id": "100000000000000058",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000058.jpeg",
+       "width": 1080,
+       "height": 1890,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000058.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000059",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000059.jpeg",
+       "width": 720,
+       "height": 1260,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000059.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000060",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000060.jpeg",
+       "width": 480,
+       "height": 840,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000060.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000061",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000061.jpeg",
+       "width": 360,
+       "height": 630,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000061.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000062",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000062.jpeg",
+       "width": 240,
+       "height": 420,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000062.jpeg"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000063",
+       "type": 3,
+       "status": 1,
+       "mimetype": "image/jpeg",
+       "flags": 0,
+       "location": "/100000000000000053/100000000000000063.jpeg",
+       "width": 240,
+       "height": 420,
+       "metadata": "{\"resolutionMode\":2}",
+       "updatedAt": 1715015760,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000053/100000000000000063.jpeg"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000053/100000000000000051.jpeg"
+      }
+     ]
+    },
+    "purchased": false,
+    "whitelisted": false,
+    "accountPermissionFlags": 0,
+    "access": false
+   }
+  ],
+  "accounts": [
+   {
+    "id": "100000000000000002",
+    "username": "samplecreator1",
+    "displayName": null,
+    "flags": 18,
+    "version": 4,
+    "createdAt": 1629414162433,
+    "followCount": 7391,
+    "subscriberCount": 0,
+    "permissions": {
+     "accountPermissionFlags": {
+      "flags": 6
+     }
+    },
+    "timelineStats": {
+     "accountId": "100000000000000002",
+     "imageCount": 37,
+     "videoCount": 383,
+     "bundleCount": 7,
+     "bundleImageCount": 36,
+     "bundleVideoCount": 46,
+     "fetchedAt": 1794014281224
+    },
+    "accountMediaLikes": 8965,
+    "following": true,
+    "statusId": 1,
+    "lastSeenAt": 1793967560433,
+    "walls": [
+     {
+      "id": "100000000000000064",
+      "accountId": "100000000000000002",
+      "pos": 2,
+      "name": "Sample name",
+      "description": "",
+      "private": 0,
+      "metadata": ""
+     },
+     {
+      "id": "100000000000000065",
+      "accountId": "100000000000000002",
+      "pos": 3,
+      "name": "Sample name",
+      "description": "",
+      "private": 0,
+      "metadata": ""
+     },
+     {
+      "id": "100000000000000066",
+      "accountId": "100000000000000002",
+      "pos": 4,
+      "name": "Sample name",
+      "description": "",
+      "private": 0,
+      "metadata": ""
+     },
+     {
+      "id": "100000000000000067",
+      "accountId": "100000000000000002",
+      "pos": 0,
+      "name": "Sample name",
+      "description": "",
+      "private": 0,
+      "metadata": "",
+      "defaultWall": true,
+      "mainWall": true
+     },
+     {
+      "id": "100000000000000068",
+      "accountId": "100000000000000002",
+      "pos": null,
+      "name": "Sample name",
+      "description": "",
+      "private": 0,
+      "metadata": ""
+     }
+    ],
+    "hasMainWall": true,
+    "profileAccessFlags": 0,
+    "profileFlags": 0,
+    "about": "Sample about",
+    "location": "Sample location",
+    "profileBadges": [],
+    "pinnedPosts": [
+     {
+      "postId": "100000000000000069",
+      "accountId": "100000000000000002",
+      "pos": 0,
+      "wallId": "100000000000000068",
+      "createdAt": 1792419054433
+     },
+     {
+      "postId": "100000000000000070",
+      "accountId": "100000000000000002",
+      "pos": 0,
+      "wallId": "100000000000000067",
+      "createdAt": 1789233158433
+     }
+    ],
+    "postLikes": 3263,
+    "streaming": {
+     "accountId": "100000000000000002",
+     "channel": null,
+     "enabled": true
+    },
+    "avatar": {
+     "id": "100000000000000071",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "image/png",
+     "flags": 266,
+     "location": "/100000000000000002/100000000000000071.png",
+     "width": 2157,
+     "height": 2157,
+     "metadata": "{\"dominant\":{\"r\":232,\"g\":184,\"b\":152}}",
+     "updatedAt": 1637002549,
+     "createdAt": 1637002547,
+     "variants": [
+      {
+       "id": "100000000000000072",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000072.png",
+       "width": 1080,
+       "height": 1080,
+       "metadata": null,
+       "updatedAt": 1637002548,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000072.png"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000073",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000073.png",
+       "width": 720,
+       "height": 720,
+       "metadata": null,
+       "updatedAt": 1637002548,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000073.png"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000074",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000074.png",
+       "width": 480,
+       "height": 480,
+       "metadata": null,
+       "updatedAt": 1637002548,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000074.png"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000075",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000075.png",
+       "width": 360,
+       "height": 360,
+       "metadata": null,
+       "updatedAt": 1637002548,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000075.png"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000071.png"
+      }
+     ]
+    },
+    "banner": {
+     "id": "100000000000000076",
+     "type": 1,
+     "status": 1,
+     "accountId": "100000000000000002",
+     "mimetype": "image/png",
+     "flags": 194,
+     "location": "/100000000000000002/100000000000000076.png",
+     "width": 3527,
+     "height": 916,
+     "metadata": "{\"dominant\":{\"r\":248,\"g\":248,\"b\":248}}",
+     "updatedAt": 1637002551,
+     "createdAt": 1637002549,
+     "variants": [
+      {
+       "id": "100000000000000077",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000077.png",
+       "width": 2772,
+       "height": 720,
+       "metadata": null,
+       "updatedAt": 1637002551,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000077.png"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000078",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000078.png",
+       "width": 1848,
+       "height": 480,
+       "metadata": null,
+       "updatedAt": 1637002551,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000078.png"
+        }
+       ]
+      },
+      {
+       "id": "100000000000000079",
+       "type": 1,
+       "status": 1,
+       "mimetype": "image/png",
+       "flags": 0,
+       "location": "/100000000000000002/100000000000000079.png",
+       "width": 1386,
+       "height": 360,
+       "metadata": null,
+       "updatedAt": 1637002551,
+       "locations": [
+        {
+         "locationId": "1",
+         "location": "https://cdn3.fansly.com/100000000000000002/100000000000000079.png"
+        }
+       ]
+      }
+     ],
+     "variantHash": {},
+     "locations": [
+      {
+       "locationId": "1",
+       "location": "https://cdn3.fansly.com/100000000000000002/100000000000000076.png"
+      }
+     ]
+    },
+    "subscribed": true,
+    "subscription": {
+     "id": "100000000000000080",
+     "accountId": "100000000000000002",
+     "subscriptionTierId": "100000000000000020",
+     "subscriptionTierName": "Sample subscriptionTierName",
+     "subscriptionTierColor": "#4F38F7",
+     "planId": "100000000000000081",
+     "promoId": "0",
+     "status": 3,
+     "price": 5000,
+     "renewPrice": 5000,
+     "autoRenew": 1,
+     "billingCycle": 30,
+     "duration": 30,
+     "renewDatexD": 1793972399433,
+     "renewDate": 1793972399433,
+     "createdAt": 1793972399433,
+     "updatedAt": 1793972400433,
+     "endsAt": 1796564399433,
+     "promoPrice": null,
+     "promoDuration": null,
+     "promoStatus": null,
+     "promoStartsAt": null,
+     "promoEndsAt": null
+    },
+    "subscriptionTiers": [
+     {
+      "id": "100000000000000020",
+      "accountId": "100000000000000002",
+      "name": "Sample name",
+      "color": "#4F38F7",
+      "pos": 0,
+      "price": 5000,
+      "maxSubscribers": 0,
+      "subscriptionBenefits": [
+       "All of our sex tapes, uncut, with faces!"
+      ],
+      "includedTierIds": [],
+      "plans": [
+       {
+        "id": "100000000000000081",
+        "status": 1,
+        "billingCycle": 30,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [
+         {
+          "id": "100000000000000082",
+          "status": 1,
+          "price": 5000,
+          "duration": 30,
+          "maxUses": 1,
+          "maxUsesBefore": 100000000000000083,
+          "newSubscribersOnly": 0,
+          "description": "",
+          "startsAt": 1636993995433,
+          "endsAt": 1669393945433,
+          "uses": 1
+         }
+        ],
+        "uses": 2
+       },
+       {
+        "id": "100000000000000084",
+        "status": 1,
+        "billingCycle": 60,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       },
+       {
+        "id": "100000000000000085",
+        "status": 1,
+        "billingCycle": 90,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       },
+       {
+        "id": "100000000000000086",
+        "status": 1,
+        "billingCycle": 180,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       }
+      ]
+     },
+     {
+      "id": "100000000000000087",
+      "accountId": "100000000000000002",
+      "name": "Sample name",
+      "color": "",
+      "pos": 0,
+      "price": 5000,
+      "maxSubscribers": 0,
+      "subscriptionBenefits": [],
+      "includedTierIds": [],
+      "plans": [
+       {
+        "id": "100000000000000088",
+        "status": 2,
+        "billingCycle": 30,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       }
+      ]
+     },
+     {
+      "id": "100000000000000089",
+      "accountId": "100000000000000002",
+      "name": "Sample name",
+      "color": "",
+      "pos": 0,
+      "price": 5000,
+      "maxSubscribers": 0,
+      "subscriptionBenefits": [],
+      "includedTierIds": [],
+      "plans": [
+       {
+        "id": "100000000000000090",
+        "status": 2,
+        "billingCycle": 30,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       }
+      ]
+     },
+     {
+      "id": "100000000000000091",
+      "accountId": "100000000000000002",
+      "name": "Sample name",
+      "color": "",
+      "pos": 0,
+      "price": 5000,
+      "maxSubscribers": 0,
+      "subscriptionBenefits": [],
+      "includedTierIds": [],
+      "plans": [
+       {
+        "id": "100000000000000092",
+        "status": 2,
+        "billingCycle": 30,
+        "price": 5000,
+        "useAmounts": 0,
+        "promos": [],
+        "uses": 0
+       }
+      ]
+     }
+    ],
+    "profileAccess": true
+   }
+  ],
+  "tips": [],
+  "tipGoals": [],
+  "stories": [],
+  "polls": []
+ }
+}

@@ -8,19 +8,17 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.classes.handlers.discord import DiscordHandler
 
-# Global listener so we can cleanly stop/flush it on shutdown
+# --- ONE GLOBAL QUEUE FOR ALL LOGGERS ---
+global_log_queue = queue.Queue()
 log_queue_listener = None
 
 
 def add_other_handler(log, clear=True):
     global log_queue_listener
+    global global_log_queue
 
     if clear:
         log.handlers.clear()
-        # If we are clearing handlers, stop the old background writer thread
-        if log_queue_listener:
-            log_queue_listener.stop()
-            log_queue_listener = None
 
     format = r" %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
@@ -35,33 +33,23 @@ def add_other_handler(log, clear=True):
 
     # --- File Logging (Non-Blocking Queue Setup) ---
     if settings.get_settings().log_level != "OFF":
-        log_path = common_paths.getlogpath()
-        file_handlers = []
-
-        # 1. Standard Log File Handler (Writes to disk)
-        fh = logging.FileHandler(log_path, encoding="utf-8", mode="a")
-        fh.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
-        fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-        fh.addFilter(log_class.NoTraceBack())
-        file_handlers.append(fh)
-
-        # 2. Traceback Log File Handler (Only if TRACE or DEBUG)
-        if settings.get_settings().log_level in {"TRACE", "DEBUG"}:
-            fh2 = logging.FileHandler(log_path, encoding="utf-8", mode="a")
-            fh2.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
-            fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-            fh2.addFilter(log_class.TraceBackOnly())
-            file_handlers.append(fh2)
-
-        # 3. Create the Memory Queue and attach it to the logger
-        log_queue = queue.Queue()
-        queue_handler = QueueHandler(log_queue)
+        # All loggers now push to the exact same global queue
+        queue_handler = QueueHandler(global_log_queue)
         log.addHandler(queue_handler)
 
-        # 4. Start the background thread that empties the queue to the files
+        # Only start the background listener if it isn't already running
         if not log_queue_listener:
+            log_path = common_paths.getlogpath()
+            file_handlers = []
+
+            # Standard Log File Handler (Writes to disk)
+            fh = logging.FileHandler(log_path, encoding="utf-8", mode="a")
+            fh.setLevel(log_helpers.getLevel(settings.get_settings().log_level))
+            fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
+            file_handlers.append(fh)
+
             log_queue_listener = QueueListener(
-                log_queue, *file_handlers, respect_handler_level=True
+                global_log_queue, *file_handlers, respect_handler_level=True
             )
             log_queue_listener.start()
 

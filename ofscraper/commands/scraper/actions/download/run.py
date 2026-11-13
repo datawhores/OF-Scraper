@@ -29,7 +29,11 @@ from ofscraper.commands.scraper.actions.download.managers.alt_download import (
 from ofscraper.commands.scraper.actions.download.managers.main_download import (
     MainDownloadManager,
 )
+from ofscraper.commands.scraper.actions.download.managers.fansly_stream_download import (
+    FanslyStreamDownloadManager,
+)
 from ofscraper.classes.of.media import Media
+from ofscraper.sites.fansly import video as fansly_video
 
 
 async def consumer(aws, task1, medialist, lock):
@@ -112,14 +116,23 @@ async def consumer(aws, task1, medialist, lock):
 async def download(c, ele, model_id, username):
     try:
         data = None
-        if ele.url:
+        # skip_download_script's answers last for this download call and its
+        # retries: the check table sends the same Media again, and it's
+        # asked again then, as before (#350)
+        ele.skip_script_answers = {}
+        if fansly_video.uses_stream(ele):
+            # None: the stream can't be used and the item has a direct file
+            data = await FanslyStreamDownloadManager().stream_download(
+                c, ele, username, model_id
+            )
+        if data is None and ele.url:
             data = await MainDownloadManager().main_download(
                 c,
                 ele,
                 username,
                 model_id,
             )
-        elif ele.mpd:
+        elif data is None and ele.mpd:
             data = await AltDownloadManager().alt_download(c, ele, username, model_id)
         common_globals.log.debug(f"{get_medialog(ele)} Download finished")
         return data

@@ -35,7 +35,7 @@ from ofscraper.db.operations_.messages import (
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.const as const
-
+from ofscraper.data.api.common.page import get_min_posts_batch
 
 API = "Messages"
 log = logging.getLogger("shared")
@@ -62,7 +62,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
 
 
 async def get_old_messages(model_id, username):
-    if not settings.get_settings().api_cache_disabled:
+    if not settings.get_settings().api_cached_disabled:
         oldmessages = await get_messages_post_info(model_id=model_id, username=username)
     else:
         oldmessages = []
@@ -177,10 +177,7 @@ async def get_split_array(model_id, username, after):
         x for x in postsDataArray if after <= float(x.get("created_at") or 0) <= before
     ]
 
-    min_posts = max(
-        len(oldmessages) // of_env.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
-        of_env.getattr("MIN_PAGE_POST_COUNT"),
-    )
+    min_posts = get_min_posts_batch(len(filteredArray), API)
 
     splitArrays = [
         filteredArray[i : i + min_posts]
@@ -194,7 +191,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
     tasks = []
 
     # Scenario 1: Empty DB, or just hunting for brand new messages
-    if len(splitArrays) == 0:
+    if not splitArrays:
         tasks.append(
             scrape_messages(
                 c,
@@ -209,20 +206,23 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
 
     # Scenarios 2 & 3: Dynamic Chunking
     for i, chunk in enumerate(splitArrays):
-        is_first_chunk = i == 0
-        is_final_chunk = i == len(splitArrays) - 1
 
-        # The first chunk uses the teleport anchor.
-        # Subsequent chunks use the ID of the OLDEST message in the previous chunk.
-        start_id = (
-            anchor_id if is_first_chunk else splitArrays[i - 1][-1].get("post_id")
-        )
+        # --- 1. Define the Start ID ---
+        if i == 0:
+            # Chunk 0: start at the 'before' anchor if set, otherwise the newest message
+            start_id = anchor_id if settings.get_settings().before else None
+        else:
+            # Chunk 1+: Pick up at the tail of the previous chunk
+            start_id = splitArrays[i - 1][-1].get("post_id")
+
+        # --- 2. Define the Start Timestamp ---
         start_timestamp = (
             arrow.now().float_timestamp
-            if is_first_chunk
+            if i == 0
             else float(splitArrays[i - 1][-1].get("created_at"))
         )
 
+        # --- 3. Build the Task ---
         tasks.append(
             scrape_messages(
                 c,
@@ -234,7 +234,7 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
                     {"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")}
                     for ele in chunk
                 ],
-                is_last_chunk=is_final_chunk,
+                is_last_chunk=(i == len(splitArrays) - 1),
                 after=after,
             )
         )
@@ -271,6 +271,7 @@ async def scrape_messages(
                 else of_env.getattr("messagesEP")
             )
             url = ep.format(model_id, current_message_id)
+            log.debug(f"Fetching Messages API: {url}")
 
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
@@ -288,15 +289,20 @@ async def scrape_messages(
                     break
 
                 # Extract timestamps and IDs
-                batch_timestamps = [
-                    float(
-                        arrow.get(
-                            x.get("createdAt") or x.get("postedAt")
-                        ).float_timestamp
-                    )
-                    for x in batch
-                ]
-                min_ts = min(batch_timestamps)  # The oldest message in this batch
+                # an undated message is kept; it doesn't count as the oldest
+                batch_timestamps = []
+                for x in batch:
+                    date = x.get("createdAt") or x.get("postedAt")
+                    if not date:
+                        log.warning(f"{API}: message {x.get('id')} has no date")
+                        batch_timestamps.append(None)
+                    else:
+                        batch_timestamps.append(
+                            float(arrow.get(date).float_timestamp)
+                        )
+                dated = [ts for ts in batch_timestamps if ts is not None]
+                # The oldest message in this batch; None when none is dated
+                min_ts = min(dated) if dated else None
                 batch_ids = {x["id"] for x in batch}
 
                 # Clear found IDs
@@ -311,7 +317,9 @@ async def scrape_messages(
                 # we know the API skipped right over it.
                 ghosts_in_batch = []
                 for expected in expected_missing:
-                    if min_ts <= expected["timestamp"] <= start_anchor:
+                    if min_ts is not None and (
+                        min_ts <= expected["timestamp"] <= start_anchor
+                    ):
                         ghosts_in_batch.append(expected["post_id"])
 
                 if ghosts_in_batch:
@@ -324,11 +332,20 @@ async def scrape_messages(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                if not is_last_chunk and len(required_ids) == 0:
+                # Boundary condition: this page reaches past the "after" date limit.
+                # Keep its in-range messages before stopping.
+                if min_ts is not None and min_ts < after:
+                    yield [
+                        x
+                        for x, ts in zip(batch, batch_timestamps)
+                        if ts is None or ts >= after
+                    ]
                     break
 
-                # Boundary condition: We hit our "after" date limit
-                if min_ts < after:
+                # This chunk has found all of its cached messages. Keep the page
+                # that contained them; the next chunk only starts below its tail.
+                if not is_last_chunk and len(required_ids) == 0:
+                    yield batch
                     break
 
                 # Prevent stuck loop
@@ -340,6 +357,7 @@ async def scrape_messages(
                 yield batch
 
     except Exception as E:
+        log.warning(f"{API}: scan stopped early: {E!r}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:
@@ -381,7 +399,9 @@ async def get_after(model_id, username):
     )
 
     active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
-    active_media_mapped = {const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media}
+    active_media_mapped = {
+        const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media
+    }
 
     filtered_items = [
         x
@@ -390,7 +410,10 @@ async def get_after(model_id, username):
         and x.get("media_id") not in curr_downloaded
         and x.get("post_id") not in deleted_messages
         and x.get("unlocked") != 0
-        and const.MEDIA_ALIASES.get(str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()) in active_media_mapped
+        and const.MEDIA_ALIASES.get(
+            str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()
+        )
+        in active_media_mapped
     ]
 
     if len(filtered_items) == 0:
@@ -411,6 +434,7 @@ async def get_after(model_id, username):
     return max(
         float(missing_items[0]["posted_at"] or 0), arrow.get("2000").float_timestamp
     )
+
 
 def time_log(username, after):
     log.info(

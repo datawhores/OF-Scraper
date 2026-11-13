@@ -109,10 +109,16 @@ def verify_media_integrity(file_path, expected_duration_seconds=None):
             )
             return False
 
+    # With no expected length (the API gave none), only the container check ran
+    diff_text = (
+        f"{abs(expected_duration_seconds - actual_duration):.2f}s"
+        if expected_duration_seconds
+        else "not checked"
+    )
     log.debug(
         f"Integrity Check Succeed: {pathlib.Path(file_path).name}\n"
         f"Expected: {expected_duration_seconds}s | Actual: {actual_duration:.2f}s "
-        f"| Diff: {diff:.2f}s (Limit: 3.0s)"
+        f"| Diff: {diff_text} (Limit: 3.0s)"
     )
 
     return True

@@ -21,6 +21,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "date": data.get_date(config=config),
             "text_type_default": data.get_textType(config=config),
             "truncation_default": data.get_truncation(config=config),
+            "filename_collision": data.get_filename_collision(config=config),
         },
         "download_options": {
             "filter": data.get_filter(config=config),

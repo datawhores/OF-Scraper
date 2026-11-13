@@ -2,6 +2,9 @@ import logging
 import shutil
 import arrow
 import traceback
+
+from ofscraper.utils.markup import escape_text
+
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.context.stdout as stdout
@@ -65,9 +68,9 @@ def delete_old_logs():
         try:
             if (now - log_file.stat().st_mtime) > max_age:
                 log_file.unlink()  # pathlib's way to delete a file
-                console.print(f"Deleted old log file: {log_file}")
+                console.print(f"Deleted old log file: {escape_text(log_file)}")
         except OSError as e:
-            console.print(f"Error deleting file {log_file}: {e}")
+            console.print(f"Error deleting file {escape_text(log_file)}: {escape_text(e)}")
 def delete_empty_folders():
     """
     Recursively finds and deletes empty folders within thelog folder.
@@ -80,7 +83,7 @@ def delete_empty_folders():
         if folder.is_dir() and not any(folder.iterdir()):
             try:
                 folder.rmdir()
-                console.print(f"Deleted empty folder: {folder}")
+                console.print(f"Deleted empty folder: {escape_text(folder)}")
             except OSError as e:
-                console.print(f"Error deleting folder {folder}: {e}")
+                console.print(f"Error deleting folder {escape_text(folder)}: {escape_text(e)}")
 

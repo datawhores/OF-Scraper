@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "response": [
+    {
+      "id": "100000000000000002",
+      "username": "samplecreator1",
+      "displayName": "Sample Creator",
+      "hasMainWall": true,
+      "walls": [
+        {
+          "id": "100000000000000502",
+          "accountId": "100000000000000002",
+          "pos": 2,
+          "name": "Sample wall two",
+          "description": "",
+          "private": 0,
+          "metadata": ""
+        },
+        {
+          "id": "100000000000000500",
+          "accountId": "100000000000000002",
+          "pos": 0,
+          "name": "Posts",
+          "description": "",
+          "private": 0,
+          "metadata": "",
+          "defaultWall": true,
+          "mainWall": true
+        },
+        {
+          "id": "100000000000000501",
+          "accountId": "100000000000000002",
+          "pos": 1,
+          "name": "Sample wall one ",
+          "description": "",
+          "private": 0,
+          "metadata": ""
+        }
+      ]
+    }
+  ]
+}

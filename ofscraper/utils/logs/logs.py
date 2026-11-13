@@ -42,6 +42,8 @@ def print_system_log():
     log = logging.getLogger("shared")
     # print info
     log.info(f"Log Level: {settings.get_settings().log_level}")
+    log.info(f"Output Level: {settings.get_settings().output_level}")
+    log.info(f"Discord Level: {settings.get_settings().discord_level}")
     log.info(f"version: {__version__}")
     log.debug(platform.platform())
     log.info(f"config path: {str(common_paths.get_config_path())}")
@@ -81,34 +83,50 @@ def print_start_message():
         log.error(f"{data}")
 
 
+def _release(version):
+    match = re.match(r"\d+(?:\.\d+)*", version)
+    return tuple(int(x) for x in match.group().split(".")) if match else ()
+
+
+def is_newer(new_version, current_version):
+    # compare release numbers only: a build's version can be ahead of PyPI's,
+    # and its local part (+g<hash>) doesn't make it older
+    return _release(new_version) > _release(current_version)
+
+
+PYPI_URL = "https://pypi.org/pypi/ofscraper-community/json"
+
+
 def print_latest_version():
     log = logging.getLogger("shared")
-    with BareSession.get_bare_session(
-        url="https://pypi.org/pypi/ofscraper/json", method="get"
-    ) as sess:
-        data = sess.json()
-        if not data:
-            return
-        new_version = data["info"]["version"]
-        url = data["info"]["project_url"]
+    # runs at the end of every run too, so a failed check (offline, or not on
+    # PyPI yet) must not stop it
+    try:
+        with BareSession.get_bare_session(url=PYPI_URL, method="get") as sess:
+            data = sess.json()
+    except Exception as e:
+        log.debug(f"Couldn't check PyPI for a newer version: {e}")
+        return
+    if not data:
+        return
+    new_version = data["info"]["version"]
+    url = data["info"]["project_url"]
 
-        if re.search(new_version, __version__):
-            log.warning("[bold yellow]OF-Scraper up to date[/bold yellow]")
-        elif __version__ == "0.0.0":
-            log.warning(
-                "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
-            )
-        elif ".dev" in __version__:
-            log.warning("[bold yellow]OF-Scraper up to date[/bold yellow]")
-        else:
-            log.warning(
-                f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
-            )
-            log.warning(f"[bold yellow]project url: {url}[/bold yellow]")
+    if __version__ == "0.0.0":
+        log.warning(
+            "[bold yellow]OF-Scraper can't check version (probably from zip)[/bold yellow]"
+        )
+    elif ".dev" in __version__ or not is_newer(new_version, __version__):
+        log.warning("[bold yellow]OF-Scraper up to date[/bold yellow]")
+    else:
+        log.warning(
+            f"[bold yellow]new version of OF-Scraper available[/bold yellow]: [bold]{new_version}[/bold]"
+        )
+        log.warning(f"[bold yellow]project url: {url}[/bold yellow]")
 
 
 def discord_warning():
     if settings.get_settings().discord_level == "DEBUG":
-        console.get_shared_console().print(
+        console.get_console().print(
             "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
         )

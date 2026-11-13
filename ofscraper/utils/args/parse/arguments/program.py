@@ -30,6 +30,15 @@ Profiles are always within the config.json file parent directory
         f"{re.sub('_profile','', value)}_profile" if value else None
     ),
 )
+site_option = click.option(
+    "--site",
+    help="""
+Site to use for this run: onlyfans or fansly
+If not set, the profile's site.json decides, and OnlyFans is the default
+""",
+    type=click.Choice(["onlyfans", "fansly"], case_sensitive=False),
+    default=None,
+)
 env_file_option = click.option(
     "--env-files",
     type=click.Path(exists=True, dir_okay=False, readable=True),

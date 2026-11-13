@@ -19,11 +19,12 @@ import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.system.network as network
 from ofscraper.commands.scraper.utils.prepare import prepare
 import ofscraper.utils.console as console
-from ofscraper.commands.utils.command import CommandManager
+from ofscraper.commands.utils.command import CommandManager, log_user_failure
 import ofscraper.utils.actions as actions
 import ofscraper.utils.checkers as checkers
 import ofscraper.managers.manager as manager
-from ofscraper.commands.scraper.utils.schedule import set_schedule
+import ofscraper.utils.interactive as interactive
+from ofscraper.commands.scraper.utils.schedule import DaemonWakeup, set_schedule
 import ofscraper.utils.config.data as data
 import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
@@ -32,6 +33,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
+import ofscraper.sites.fansly.live as live
 
 log = logging.getLogger("shared")
 
@@ -46,9 +48,11 @@ class scraperManager(CommandManager):
     def __init__(self):
         super().__init__()
 
-    @exit.exit_wrapper
     def runner(self, menu=False):
-        check_auth()
+        check_auth(include_main_menu=menu)
+        if live.once_enabled():
+            # Fansly --live: record who is live now, then do the other actions
+            live.run_blocking(watch=False)
         with scrape_context_manager():
             with progress_utils.stop_live_screen(clear="all"):
                 with progress_utils.setup_live("main_activity"):
@@ -68,7 +72,6 @@ class scraperManager(CommandManager):
 
                 final_action()
 
-    @exit.exit_wrapper
     @run_async
     async def _process_users_actions_user_first(self, userdata, session):
         data = await self._gather_user_first_data(
@@ -148,11 +151,10 @@ class scraperManager(CommandManager):
                     ACTION_SCRIPTS.get(action)(username, media, posts, action=action)
 
                 except Exception as E:
-                    log.debug(f"Unable to complete {action} for {username}")
+                    log_user_failure(username, E, what=action)
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
 
-    @exit.exit_wrapper
     @run_async
     async def _process_users_actions_normal(self, userdata=None, session=None):
         progress_updater.activity.update_user(
@@ -176,13 +178,10 @@ def main():
             paths.temp_cleanup()
             paths.cleanDB()
         except KeyboardInterrupt:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    paths.temp_cleanup()
-                    paths.cleanDB()
-                    raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
+            with exit.DelayedKeyboardInterrupt():
+                paths.temp_cleanup()
+                paths.cleanDB()
+            raise
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -190,16 +189,16 @@ def main():
                     paths.cleanDB()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    raise E
             except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    raise E
+                pass  # report the error, not the Ctrl+C during its cleanup
+            raise
 
 
 # commands/scraper/scraper.py
 
 
 def daemon_process():
+    exit.sigterm_as_keyboard_interrupt()
     checkers.check_auth()
     worker_thread = None
     scrapingManager = scraperManager()
@@ -210,45 +209,50 @@ def daemon_process():
     log.info("[bold]Daemon mode on[/bold]")
     manager.Manager.current_model_manager.sync_models()
     actions.select_areas()
+    wakeup = DaemonWakeup()
+    wakeup.install()
+    live_thread = live.start_watch_thread() if live.watch_enabled() else None
     try:
+        # The scheduler only queues jobs; the main thread runs them. As a
+        # non-daemon thread it sat in jobqueue.join() forever and kept the
+        # process alive after Ctrl+C/SIGTERM.
         worker_thread = threading.Thread(
-            target=set_schedule, args=[scrapingManager.runner], daemon=False
+            target=set_schedule, args=[scrapingManager.runner],
+            kwargs={"wakeup": wakeup}, daemon=True
         )
         worker_thread.start()
         while True:
+            # outside the try: a signal while idle here has no job to mark done
+            job_func = jobqueue.get()
             try:
-                job_func = jobqueue.get()
                 job_func()
+            except interactive.NoConsoleError:
+                # a prompt no one can answer won't be answered next pass,
+                # so end the daemon with the error instead (#286)
+                raise
             except Exception as E:
+                # the daemon carries on with the next pass (#379)
+                log.warning(f"Daemon pass failed: {type(E).__name__}: {E}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
             finally:
                 jobqueue.task_done()
-    except KeyboardInterrupt as E:
+    except (KeyboardInterrupt, Exception):
+        wakeup.stopped = True
         try:
             with exit.DelayedKeyboardInterrupt():
                 schedule.clear()
                 if worker_thread:
                     worker_thread.join(timeout=5)
-            raise KeyboardInterrupt
         except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                raise E
-    except Exception as E:
-        try:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                if worker_thread:
-                    worker_thread.join(timeout=5)
-            raise E
-        except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                raise E
+            pass  # stop with the original error, not the Ctrl+C during cleanup
+        raise
+    finally:
+        if live_thread:
+            live_thread.stop()
+        wakeup.restore()
 
 
-@exit.exit_wrapper
 def process_prompts():
     while True:
         if menu.main_menu_action():
@@ -276,14 +280,27 @@ def process_selected_areas():
             menu.update_count()
 
 
+def process_live_only():
+    """Fansly --live / --live-watch with no other action: only record livestreams."""
+    check_auth()
+    if live.once_enabled():
+        live.run_blocking(watch=False)
+    if live.watch_enabled():
+        live.run_blocking(watch=True)
+
+
 def scrapper():
     args = settings.get_args()
     if args.daemon:
-        if len(args.actions) == 0 and not args.scrape_paid:
+        if len(args.actions) == 0 and not args.scrape_paid and not live.enabled():
             prompts.action_prompt()
         daemon_process()
     elif len(args.actions) > 0 or args.scrape_paid:
         process_selected_areas()
+        if live.watch_enabled():
+            live.run_blocking(watch=True)
+    elif live.enabled():
+        process_live_only()
     elif len(args.actions) == 0:
         process_prompts()
 

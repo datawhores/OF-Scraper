@@ -1,0 +1,126 @@
+{
+  "success": true,
+  "response": [
+    {
+      "id": "100000000000000030",
+      "accountId": "100000000000000002",
+      "mediaId": "100000000000000031",
+      "previewId": null,
+      "permissionFlags": [],
+      "price": 0,
+      "createdAt": 1636000000,
+      "deletedAt": null,
+      "deleted": false,
+      "access": true,
+      "purchased": false,
+      "whitelisted": false,
+      "media": {
+        "id": "100000000000000031",
+        "type": 2,
+        "status": 1,
+        "accountId": "100000000000000002",
+        "mimetype": "video/mp4",
+        "flags": 6,
+        "location": "/100000000000000002/100000000000000031.mp4",
+        "width": 608,
+        "height": 1080,
+        "metadata": "{\"duration\":14.5}",
+        "updatedAt": 1636000001,
+        "createdAt": 1636000000,
+        "variants": [
+          {
+            "id": "100000000000000032",
+            "type": 2,
+            "status": 1,
+            "mimetype": "video/mp4",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000032.mp4",
+            "width": 405,
+            "height": 720,
+            "metadata": "{\"duration\":14.5}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000032.mp4", "metadata": null}
+            ]
+          },
+          {
+            "id": "100000000000000033",
+            "type": 2,
+            "status": 1,
+            "mimetype": "video/mp4",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000033.mp4",
+            "width": 608,
+            "height": 1080,
+            "metadata": "{\"duration\":14.5}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000033.mp4", "metadata": null}
+            ]
+          },
+          {
+            "id": "100000000000000034",
+            "type": 2,
+            "status": 1,
+            "mimetype": "video/mp4",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000034.mp4",
+            "width": 270,
+            "height": 480,
+            "metadata": "{\"duration\":14.5}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000034.mp4", "metadata": null}
+            ]
+          },
+          {
+            "id": "100000000000000035",
+            "type": 2,
+            "status": 1,
+            "mimetype": "video/mp4",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000035.mp4",
+            "width": 203,
+            "height": 360,
+            "metadata": "{\"duration\":14.5}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000035.mp4", "metadata": null}
+            ]
+          },
+          {
+            "id": "100000000000000036",
+            "type": 1,
+            "status": 1,
+            "mimetype": "image/png",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000036.png",
+            "width": 1080,
+            "height": 1920,
+            "metadata": "{\"frameIdx\":0}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000036.png", "metadata": null}
+            ]
+          },
+          {
+            "id": "100000000000000037",
+            "type": 1,
+            "status": 1,
+            "mimetype": "image/png",
+            "flags": 0,
+            "location": "/100000000000000002/100000000000000037.png",
+            "width": 608,
+            "height": 1080,
+            "metadata": "{\"frameIdx\":1}",
+            "updatedAt": 1636000001,
+            "locations": [
+              {"locationId": "1", "location": "https://cdn3.fansly.com/100000000000000002/100000000000000037.png", "metadata": null}
+            ]
+          }
+        ],
+        "locations": []
+      }
+    }
+  ]
+}

@@ -14,16 +14,19 @@ from ofscraper.utils.args.parse.groups.user_list import userlist_options
 from ofscraper.utils.args.parse.groups.user_select import user_select_options
 from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 from ofscraper.utils.args.parse.groups.download import (
+    download_options_desc,
     download_options_help,
     download_options_tuple,
 )
 from ofscraper.utils.args.parse.groups.advanced_program import advanced_options
 from ofscraper.utils.args.parse.groups.media_filter import media_filter_options
 
+from ofscraper.utils.args.parse.arguments.post_content import (
+    metadata_mass_msg_option,
+)
 from ofscraper.utils.args.parse.groups.post_filter import (
     filter_option,
     label_option,
-    mass_msg_option,
     neg_filter_option,
     posts_option,
     timed_only_option,
@@ -50,7 +53,7 @@ Uses API to modify db files without the need for downloading
         show_constraints=True,
     )
     @click.option_group(
-        "metadata_options",
+        "Metadata Options",
         click.option(
             "-md",
             "--metadata",
@@ -119,13 +122,13 @@ It also uses a new filename if one is available
         neg_filter_option,
         post_sort_option,
         timed_only_option,
-        mass_msg_option,
+        metadata_mass_msg_option,
         post_id_filter_option,
         download_type_option,
         help=post_filter_options_help,
     )
     @click.option_group(
-        "Metadata Options", *download_options_tuple, help=download_options_help
+        download_options_desc, *download_options_tuple, help=download_options_help
     )
     @user_select_options
     @userlist_options

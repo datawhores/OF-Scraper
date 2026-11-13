@@ -51,3 +51,16 @@ skip_download_script = click.option(
     Runs a script to dynamically skip a download
     """,
 )
+
+
+retry_permanent_skips_option = click.option(
+    "--retry-permanent-skips",
+    "retry_permanent_skips",
+    help="""
+    \b
+    Ask the skip download script again about the files it skipped for good
+    (skip-permanent) for the creators in this run
+    """,
+    default=False,
+    is_flag=True,
+)

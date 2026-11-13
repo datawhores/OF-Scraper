@@ -20,7 +20,7 @@ usernames_option = click.option(
 excluded_username_option = click.option(
     "-eu",
     "--excluded-username",
-    help="Select which usernames to exclude (name,name2). Has preference over --username",
+    help="Select which usernames to exclude (name,name2). Has preference over --username. Also skips these models during --scrape-paid, e.g. --scrape-paid --excluded-username name",
     default=None,
     multiple=True,
     callback=UsernameParse,

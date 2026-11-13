@@ -20,7 +20,7 @@ def main():
                 exit_manager.forcedShutDown()
     except Exception as E:
         logging.getLogger("shared").debug(traceback.format_exc())
-        logging.getLogger("shared").debug(E)
+        logging.getLogger("shared").error(E)
         try:
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.shutdown()
@@ -28,3 +28,5 @@ def main():
             with exit_context.DelayedKeyboardInterrupt():
                 exit_manager.forcedShutDown()
                 raise E
+        # The run failed; don't report success to scripts and schedulers
+        raise SystemExit(1)

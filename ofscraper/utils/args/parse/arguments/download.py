@@ -28,7 +28,7 @@ download_sem_option = click.option(
     "--download-sem",
     "--sems",
     "--sem",
-    "downloadsem",
+    "download_sem",
     help="Number of concurrent downloads per thread",
     default=None,
     type=int,

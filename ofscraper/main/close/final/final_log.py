@@ -13,7 +13,6 @@ r"""
 
 import logging
 import time
-import itertools
 
 import ofscraper.utils.of_env.of_env as of_env
 

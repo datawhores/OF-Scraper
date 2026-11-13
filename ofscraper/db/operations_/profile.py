@@ -20,6 +20,7 @@ from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.rebuild as rebuild
 
 console = Console()
 log = logging.getLogger("shared")
@@ -73,9 +74,6 @@ WHERE NOT EXISTS (
 profilesALL = """
 select user_id,username from profiles
 """
-profilesDrop = """
-DROP TABLE profiles;
-"""
 
 modelsALL = """
 select model_id from models
@@ -121,16 +119,30 @@ def write_profile_table(model_id=None, username=None, conn=None, **kwargs) -> li
         conn.commit()
 
 
+def profiles_transition_rows(inputData) -> list:
+    ordered_keys = [
+        "user_id",
+        "username",
+    ]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+
+
 @wrapper.operation_wrapper_async
 def write_profile_table_transition(inputData, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = [
-            "user_id",
-            "username",
-        ]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(profileInsertTransition, insertData)
+        cur.executemany(profileInsertTransition, profiles_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_profiles_table(inputData, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn,
+        "profiles",
+        profilesCreate,
+        profileInsertTransition,
+        profiles_transition_rows(inputData),
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -163,13 +175,6 @@ def get_all_profiles(
             None
         except Exception as E:
             raise E
-
-
-@wrapper.operation_wrapper_async
-def drop_profiles_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(profilesDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -209,8 +214,6 @@ def get_all_models(
 
 async def rebuild_profiles_table(model_id=None, username=None, db_path=None, **kwargs):
     data = await get_all_profiles(model_id=model_id, username=username, db_path=db_path)
-    await drop_profiles_table(model_id=model_id, username=username, db_path=db_path)
-    await create_profile_table(model_id=model_id, username=username, db_path=db_path)
-    await write_profile_table_transition(
+    await replace_profiles_table(
         data, model_id=model_id, username=username, db_path=db_path
     )

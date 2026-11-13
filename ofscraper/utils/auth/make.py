@@ -3,6 +3,7 @@ import re
 import logging
 
 from rich.console import Console
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.schema as auth_schema
@@ -49,7 +50,7 @@ def make_auth(auth=None,include_main_menu=False):
             newitem = re.sub("\n+", "", newitem)
             auth[key] = newitem
         authFile = common_paths.get_auth_file()
-        console.print(f"{auth}\nWriting to {authFile}", style="yellow")
+        console.print(f"{escape_text(auth)}\nWriting to {escape_text(authFile)}", style="yellow")
         auth = auth_schema.auth_schema(auth)
         if not check_auth_warning(auth):
             continue

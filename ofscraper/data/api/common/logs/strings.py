@@ -1,7 +1,7 @@
 PROGRESS_IDS = r"[bold]\[{} In progress ids][/bold] "
 PROGRESS_RAW_TITLE = r"[bold]\[{} In progress raw data][/bold] total item"
 
-PROGRESS_RAW = "[bold]\[{} In progress raw data][/bold] current item count: {} data: {}"
+PROGRESS_RAW = "[bold]\\[{} In progress raw data][/bold] current item count: {} data: {}"
 
 PROGRESS_RAW_OFFSET = r"[bold]\[{} In progress raw data][/bold]]offset: {} current item count: {} data: {}"
 

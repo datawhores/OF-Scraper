@@ -28,11 +28,11 @@ class Model:
 
     @property
     def avatar(self):
-        return self._model["avatar"]
+        return self._model.get("avatar")
 
     @property
     def header(self):
-        return self._model["header"]
+        return self._model.get("header")
 
     @property
     def sub_price(self):
@@ -130,7 +130,7 @@ class Model:
         elif self.renewed:
             return True
         # 2. Timestamp check with Grace Period
-        # We pull the grace window (default 2 days) from the environment
+        # We pull the grace window (default 1 day) from the environment
         grace_days = of_env.getattr("EXPIRED_GRACE_DEFAULT")
         grace_seconds = grace_days * 86400
         if self.final_expired > 0:

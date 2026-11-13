@@ -120,7 +120,8 @@ class mainManager:
 
     def initLogs(self):
         if len(system.get_dupe_ofscraper()) > 0:
-            console.get_shared_console().print(
+            # a warning, so shown even when --output quiets the shared console
+            console.get_console().print(
                 "[bold yellow]Warning another OF-Scraper instance was detected[bold yellow]\n\n\n"
             )
         logs.printStartValues()

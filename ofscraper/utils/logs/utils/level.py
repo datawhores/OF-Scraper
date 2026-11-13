@@ -1,5 +1,4 @@
 import logging
-import ofscraper.utils.settings as settings
 
 senstiveDict = {}
 

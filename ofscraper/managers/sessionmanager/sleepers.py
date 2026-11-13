@@ -33,8 +33,8 @@ class Sleeper:
             min_sleep=env.getattr(f"{prefix}_MIN_SLEEP"),
             difmin=env.getattr(f"{prefix}_SLEEP_INCREASE_TIME_DIFF"),
             max_sleep=env.getattr(f"{prefix}_SLEEP_MAX"),
-            decay_threshold=env.getattr(f"{prefix}_DECAY_THRESHOLD"),
-            decay_factor=env.getattr(f"{prefix}_DECAY_FACTOR"),
+            decay_threshold=env.getattr(f"{prefix}_SLEEP_DECAY_THRESHOLD"),
+            decay_factor=env.getattr(f"{prefix}_SLEEP_DECAY_FACTOR"),
             increase_factor=env.getattr(f"{prefix}_SLEEP_INCREASE_FACTOR"),
             error_name=error_name,
         )

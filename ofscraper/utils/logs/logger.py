@@ -3,7 +3,6 @@ import logging
 import ofscraper.utils.logs.utils.level as log_helpers
 from ofscraper.utils.logs.stdout import add_stdout_handler
 from ofscraper.utils.logs.other import add_other_handler
-import ofscraper.utils.logs.other as other_logs  # Added to manage the background thread
 from ofscraper.utils.logs.classes.handlers.text import TextHandler
 import ofscraper.utils.dates as dates
 
@@ -36,18 +35,12 @@ def get_shared_logger(name=None):
 
 def clearHandlers(name=None):
     log = logging.getLogger(name or "shared")
-    for handler in log.handlers[:]:  # Iterate over a copy of the list
+    for handler in log.handlers[:]:
         try:
             log.removeHandler(handler)
-            handler.close()  # Release resources (critical for file handlers)
-        except Exception as e:
-            # Basic error handling (optional)
-            print(f"Error closing handler: {str(e)}")
-
-    # Safely shut down the background queue listener to prevent orphaned threads
-    if hasattr(other_logs, "log_queue_listener") and other_logs.log_queue_listener:
-        other_logs.log_queue_listener.stop()
-        other_logs.log_queue_listener = None
+            handler.close()
+        except Exception:
+            pass
 
 
 def resetLogger():

@@ -24,5 +24,6 @@ def resetUserFilters():
 
 def resetUserSelect():
     args = read_args.retriveArgs()
-    args.usernames = None
+    # an empty list, like the CLI default; None broke "ALL" in usernames
+    args.usernames = []
     return args

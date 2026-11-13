@@ -3,30 +3,54 @@ permissions: read-all
 on:
   push:
     branches: main
-    # Publish semver tags as releases.
-    tags: [v*.*.*]
+    # doc-only changes don't need a build or test run
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'media/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: main
+    # doc-only changes don't need a build or test run
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'media/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest supported and current
+        python-version: ["3.11", "3.15.2"]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python 3.11.5
-        uses: actions/setup-python@v5
+        uses: actions/checkout@v7
         with:
-          python-version: 3.11.5
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
+          # version-pioneer derives the package version from git tags
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
         with:
-          poetry-version: 1.4.1
+          python-version: ${{ matrix.python-version }}
+      # --frozen installs exactly what uv.lock pins, so a new upstream release
+      # can't change what CI tests
       - name: Install dependencies
-        run: poetry install --with test
+        run: uv sync --frozen --extra test
       - name: create required folder
         run: mkdir -p /home/runner/.config/ofscraper/main_profile
       - name: Run tests and collect coverage
-        run: poetry run pytest --cov-report term --cov-report xml:coverage.xml --cov=src
+        run: uv run --frozen pytest test --cov-report term --cov-report xml:coverage.xml --cov=ofscraper
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        if: ${{ !cancelled() && matrix.python-version == '3.15.2' }}
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false

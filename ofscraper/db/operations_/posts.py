@@ -22,6 +22,8 @@ import ofscraper.classes.of.posts as posts_
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -42,26 +44,43 @@ CREATE TABLE IF NOT EXISTS posts (
 	created_at TIMESTAMP, 
     model_id INTEGER, 
     is_deleted BOOLEAN DEFAULT 0, -- NEW COLUMN
-	PRIMARY KEY (id), 
+    purchase_type VARCHAR,
+    mentions VARCHAR,
+	PRIMARY KEY (id),
 	UNIQUE (post_id,model_id)
 )
 """
 postInsert = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id)
-VALUES (?,?,?,?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,purchase_type,mentions)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 postInsertTransition = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted)
-VALUES (?,?,?,?,?,?,?,?,?,?,?);"""
+post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted,purchase_type,mentions)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
+# mentions is only replaced by a list: an item without one keeps what's stored.
+# purchase_type isn't updated here: postFillMissing sets it once, and a
+# timeline scan of a bought post must not clear it
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0,
+mentions = COALESCE(?, mentions)
 WHERE post_id = ? and model_id=(?);"""
+
+# fills the newer columns of rows saved before they existed, on every scan
+postFillMissing = """UPDATE posts
+SET purchase_type = COALESCE(purchase_type, ?), mentions = COALESCE(mentions, ?)
+WHERE post_id = ? AND model_id = (?) AND (purchase_type IS NULL OR mentions IS NULL);"""
 
 postIgnoreGhost = """
 UPDATE posts
 SET is_deleted = 1
 WHERE post_id = (?) AND model_id = (?);
+"""
+
+postUnmarkGhost = """
+UPDATE posts
+SET is_deleted = 0
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
 """
 
 timelinePostInfo = """
@@ -77,44 +96,26 @@ SELECT created_at,post_id FROM posts
 WHERE stream=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
 """
 
-postsSelectTransition = """
-SELECT post_id, text, price, paid, archived, created_at,
-    CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'pinned')
-            THEN pinned
-            ELSE NULL
-       END AS pinned,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'stream')
-            THEN stream
-            ELSE NULL
-       END AS stream,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'opened')
-            THEN opened
-            ELSE NULL
-       END AS opened,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'is_deleted')
-            THEN is_deleted
-            ELSE 0
-       END AS is_deleted
-       FROM posts;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+postsSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    ("model_id", "NULL"),
+    ("pinned", "NULL"),
+    ("stream", "NULL"),
+    ("opened", "NULL"),
+    ("is_deleted", "0"),
+    ("purchase_type", "NULL"),
+    ("mentions", "NULL"),
+]
 
-postsDrop = """
-drop table posts;
-"""
 allPOSTCheck = """
 SELECT post_id FROM posts
-"""
-
-archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
-"""
-
-streamsPostInfo = """
-SELECT created_at,post_id FROM posts where stream=(1) and model_id=(?)
 """
 
 deletedPostsCheck = """
@@ -138,6 +139,8 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
                     data.opened,
                     data.date,
                     model_id,
+                    data.purchase_type,
+                    data.db_mentions,
                 ),
                 posts,
             )
@@ -146,27 +149,42 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
         conn.commit()
 
 
+def posts_transition_rows(inputData: list) -> list:
+    ordered_keys = (
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "pinned",
+        "stream",
+        "opened",
+        "created_at",
+        "model_id",
+        "is_deleted",
+    )
+    # optional columns: a row read before they existed has no value
+    optional_keys = ("purchase_type", "mentions")
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get(key) for key in optional_keys])
+        for data in inputData
+    ]
+
+
 @wrapper.operation_wrapper_async
 def write_post_table_transition(
     inputData: list, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = (
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "pinned",
-            "stream",
-            "opened",
-            "created_at",
-            "model_id",
-            "is_deleted",
-        )
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(postInsertTransition, insertData)
+        cur.executemany(postInsertTransition, posts_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_posts_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn, "posts", postCreate, postInsertTransition, posts_transition_rows(inputData)
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -184,6 +202,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
                     data.opened,
                     data.date,
                     model_id,
+                    data.db_mentions,
                     data.id,
                     model_id,
                 ],
@@ -191,6 +210,22 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
             )
         )
         cur.executemany(postUpdate, updateData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def fill_posts_missing_fields(
+    posts: list, model_id=None, username=None, conn=None, **kwargs
+):
+    fillData = [
+        [data.purchase_type, data.db_mentions, data.id, model_id]
+        for data in posts
+        if data.purchase_type is not None or data.db_mentions is not None
+    ]
+    if not fillData:
+        return
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(postFillMissing, fillData)
         conn.commit()
 
 
@@ -224,7 +259,7 @@ def get_all_posts_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postsSelectTransition)
+        cur.execute(db_columns.select_all(cur, "posts", postsSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(
@@ -235,13 +270,6 @@ def get_all_posts_transition(
             )
             for row in data
         ]
-
-
-@wrapper.operation_wrapper_async
-def drop_posts_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postsDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -336,6 +364,15 @@ def mark_post_as_deleted(post_ids, username=None, conn=None, model_id=None, **kw
 
 
 @wrapper.operation_wrapper_async
+def unmark_post_as_deleted(post_ids, username=None, conn=None, model_id=None, **kwargs):
+    if not post_ids:
+        return
+    with contextlib.closing(conn.cursor()) as curr:
+        curr.executemany(postUnmarkGhost, [[post_id, model_id] for post_id in post_ids])
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def add_column_post_is_deleted(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
@@ -346,6 +383,36 @@ def add_column_post_is_deleted(conn=None, **kwargs):
                 cur.execute(
                     "ALTER TABLE posts ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_post_purchase_type(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'purchase_type') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN purchase_type VARCHAR;")
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_post_mentions(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'mentions') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN mentions VARCHAR;")
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()
@@ -386,14 +453,19 @@ async def rebuild_posts_table(model_id=None, username=None, db_path=None, **kwar
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_posts_table(model_id=model_id, username=username, db_path=db_path)
-    await create_post_table(model_id=model_id, username=username, db_path=db_path)
-    await write_post_table_transition(
+    await replace_posts_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 
 
-async def make_post_table_changes(all_posts, model_id=None, username=None, **kwargs):
+async def make_post_table_changes(
+    all_posts,
+    model_id=None,
+    username=None,
+    from_api=False,
+    skip_update=None,
+    **kwargs,
+):
     all_posts_data = list(
         map(
             lambda x: posts_.Post(x, model_id, username) if isinstance(x, dict) else x,
@@ -409,9 +481,29 @@ async def make_post_table_changes(all_posts, model_id=None, username=None, **kwa
     if len(new_posts) > 0:
         new_posts = convert.converthelper(new_posts)
         await write_post_table(new_posts, model_id=model_id, username=username)
-    if settings.get_settings().metadata and len(curr_posts) > 0:
-        curr_posts = convert.converthelper(curr_posts)
-        await update_posts_table(curr_posts, model_id=model_id, username=username)
+    # a post the API returned in this run isn't deleted; cached lists (the check
+    # commands) can hold posts deleted since. from_api is True when every post
+    # came from the API, or the ids of those that did. Only --metadata updates
+    # the rest
+    if from_api:
+        await unmark_post_as_deleted(
+            [
+                ele.id
+                for ele in curr_posts
+                if from_api is True or ele.id in from_api
+            ],
+            model_id=model_id,
+            username=username,
+        )
+    # skip_update is True, or the ids of posts whose rows --metadata leaves
+    # alone: the check commands' cached lists can be days older than the rows
+    if settings.get_settings().metadata and skip_update is not True:
+        updated = [ele for ele in curr_posts if ele.id not in (skip_update or ())]
+        if len(updated) > 0:
+            updated = convert.converthelper(updated)
+            await update_posts_table(updated, model_id=model_id, username=username)
+    if len(curr_posts) > 0:
+        await fill_posts_missing_fields(curr_posts, model_id=model_id, username=username)
 
 
 async def get_oldest_archived_date(model_id=None, username=None, **kwargs):

@@ -1,6 +1,11 @@
 name: Docker Purge
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only log what would be deleted"
+        type: boolean
+        default: true
   schedule:
     - cron: "0 0 * * *" # every day at midnight
 permissions: read-all
@@ -17,19 +22,24 @@ jobs:
 
     steps:
       - name: Main purger
-        uses: snok/container-retention-policy@v2
+        uses: snok/container-retention-policy@v3.1.0
         with:
           image-names: of-scraper
           timestamp-to-use: created_at
-          account-type: personal
+          account: user
           token: ${{ secrets.DOCKER_DELETE}}
-          filter-tags: sha*
-          cut-off: 1 second ago UTC
+          # Manual runs default to a dry run; the nightly schedule deletes
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          image-tags: "sha*"
+          tag-selection: tagged
+          cut-off: 1s
       - name: Delete untagged
-        uses: snok/container-retention-policy@v2
+        uses: snok/container-retention-policy@v3.1.0
         with:
           image-names: of-scraper
-          cut-off: 1 second ago UTC
-          account-type: personal
+          cut-off: 1s
+          account: user
           token: ${{ secrets.DOCKER_DELETE}}
-          untagged-only: true
+          # Manual runs default to a dry run; the nightly schedule deletes
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          tag-selection: untagged

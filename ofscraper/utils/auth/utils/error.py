@@ -15,10 +15,12 @@ import json
 import logging
 
 from rich.console import Console
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.utils.dict as auth_dict
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
 
 console = Console()
@@ -67,8 +69,10 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                 auth_dict.get_auth_dict() 
                 console.print("`auth.json` has been fixed.")
                 break
+            except interactive.NoConsoleError:
+                raise  # asking again can't work either
             except Exception as new_e:
-                console.print(f"An error occurred while trying to fix the file: {new_e}")
+                console.print(f"An error occurred while trying to fix the file: {escape_text(new_e)}")
                 # Loop continues to give user another chance
                 continue
     

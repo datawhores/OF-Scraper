@@ -12,7 +12,6 @@ text_type_option = click.option(
     "--text-type",
     help="set length based on word or letter",
     type=click.Choice(["word", "letter"], case_sensitive=False),
-    default="word",
 )
 
 space_replacer_option = click.option(

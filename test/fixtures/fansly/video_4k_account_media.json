@@ -1,0 +1,151 @@
+{
+ "success": true,
+ "response": [
+  {
+   "id": "100000000000000003",
+   "accountId": "100000000000000002",
+   "mediaId": "100000000000000019",
+   "previewId": null,
+   "permissionFlags": 0,
+   "price": 0,
+   "createdAt": 1792703550,
+   "deletedAt": null,
+   "deleted": false,
+   "permissions": {
+    "permissionFlags": [],
+    "accountPermissionFlags": {
+     "flags": 4,
+     "metadata": "{\"4\":\"{\\\"subscriptionTierId\\\":\\\"100000000000000020\\\"}\"}"
+    }
+   },
+   "likeCount": 20,
+   "media": {
+    "id": "100000000000000019",
+    "type": 2,
+    "status": 1,
+    "accountId": "100000000000000002",
+    "mimetype": "video/mp4",
+    "flags": 442,
+    "location": "/100000000000000002/100000000000000019.mp4",
+    "width": 1280,
+    "height": 720,
+    "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30}",
+    "updatedAt": 1792703522,
+    "createdAt": 1792703500,
+    "variants": [
+     {
+      "id": "100000000000000021",
+      "type": 1,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000021.jpeg",
+      "width": 854,
+      "height": 480,
+      "metadata": "{\"resolutionMode\":1}",
+      "updatedAt": 1792703518,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000021.jpeg"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000022",
+      "type": 3,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000022.jpeg",
+      "width": 854,
+      "height": 480,
+      "metadata": "{\"resolutionMode\":1}",
+      "updatedAt": 1792703517,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000022.jpeg"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000023",
+      "type": 4,
+      "status": 1,
+      "mimetype": "image/jpeg",
+      "flags": 0,
+      "location": "/100000000000000002/100000000000000023.jpeg",
+      "width": 256,
+      "height": 144,
+      "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"thumbnailDistance\":1,\"thumbnailCount\":27,\"thumbnailGrid\":[6,5],\"frameDistance\":30}",
+      "updatedAt": 1792703516,
+      "locations": [
+       {
+        "locationId": "1",
+        "location": "https://cdn3.fansly.com/100000000000000002/100000000000000023.jpeg"
+       }
+      ]
+     },
+     {
+      "id": "100000000000000024",
+      "type": 302,
+      "status": 1,
+      "mimetype": "application/vnd.apple.mpegurl",
+      "flags": 0,
+      "location": null,
+      "width": 3840,
+      "height": 2160,
+      "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":3840,\"h\":2160},{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+      "updatedAt": 1792703541,
+      "locations": [
+       {
+        "locationId": "102",
+        "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000024/100000000000000024.m3u8",
+        "metadata": {
+         "Key-Pair-Id": "REDACTED",
+         "Signature": "REDACTED",
+         "Policy": "REDACTED"
+        }
+       }
+      ]
+     },
+     {
+      "id": "100000000000000025",
+      "type": 303,
+      "status": 1,
+      "mimetype": "application/dash+xml",
+      "flags": 0,
+      "location": null,
+      "width": 3840,
+      "height": 2160,
+      "metadata": "{\"originalHeight\":2160,\"originalWidth\":3840,\"duration\":26.566667,\"resolutionMode\":1,\"frameRate\":30,\"variants\":[{\"w\":3840,\"h\":2160},{\"w\":1920,\"h\":1080},{\"w\":1280,\"h\":720},{\"w\":854,\"h\":480},{\"w\":640,\"h\":360}]}",
+      "updatedAt": 1792703543,
+      "locations": [
+       {
+        "locationId": "103",
+        "location": "https://cdn3.fansly.com/new/100000000000000002/100000000000000025/100000000000000025.mpd",
+        "metadata": {
+         "Key-Pair-Id": "REDACTED",
+         "Signature": "REDACTED",
+         "Policy": "REDACTED"
+        }
+       }
+      ]
+     }
+    ],
+    "variantHash": {},
+    "locations": [
+     {
+      "locationId": "1",
+      "location": "https://cdn3.fansly.com/100000000000000002/100000000000000019.mp4"
+     }
+    ]
+   },
+   "purchased": false,
+   "whitelisted": false,
+   "accountPermissionFlags": 4,
+   "access": true
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+# Codecov settings. The upload itself is in .github/workflows/codecov.yml.
+coverage:
+  status:
+    # Whole-project coverage: fail if a PR lowers it by more than 0.5%.
+    project:
+      default:
+        target: auto
+        threshold: 0.5%
+    # Lines changed by a PR: report how many are tested, without failing.
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "condensed_header, diff, files"
+  require_changes: false
