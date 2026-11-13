@@ -209,11 +209,10 @@ def get_tasks(splitArrays, anchor_id, c, model_id, username, after):
 
         # --- 1. Define the Start ID ---
         if i == 0:
-            start_id = None  # Chunk 0: Teleport to the absolute newest message
-        elif i == 1:
-            start_id = anchor_id  # Chunk 1: Pick up at the cached anchor
+            # Chunk 0: start at the 'before' anchor if set, otherwise the newest message
+            start_id = anchor_id if settings.get_settings().before else None
         else:
-            # Chunk 2+: Pick up at the tail of the previous chunk
+            # Chunk 1+: Pick up at the tail of the previous chunk
             start_id = splitArrays[i - 1][-1].get("post_id")
 
         # --- 2. Define the Start Timestamp ---
@@ -326,11 +325,16 @@ async def scrape_messages(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                if not is_last_chunk and len(required_ids) == 0:
+                # Boundary condition: this page reaches past the "after" date limit.
+                # Keep its in-range messages before stopping.
+                if min_ts < after:
+                    yield [x for x, ts in zip(batch, batch_timestamps) if ts >= after]
                     break
 
-                # Boundary condition: We hit our "after" date limit
-                if min_ts < after:
+                # This chunk has found all of its cached messages. Keep the page
+                # that contained them; the next chunk only starts below its tail.
+                if not is_last_chunk and len(required_ids) == 0:
+                    yield batch
                     break
 
                 # Prevent stuck loop
