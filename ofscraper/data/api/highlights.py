@@ -12,6 +12,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
@@ -32,6 +33,7 @@ API_H = "Highlights"
 
 
 @run
+@stop.fetching
 async def get_stories_post(model_id, c=None):
     # Pass the raw generator
     generators = [scrape_stories(c, model_id)]
@@ -80,7 +82,7 @@ async def process_stories_tasks(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -114,16 +116,19 @@ async def process_stories_tasks(generators):
 
 
 @run
+@stop.fetching
 async def get_highlight_post(model_id, c=None):
     highlightLists = await get_highlight_list(model_id, c)
     return await get_highlights_via_list(highlightLists, c)
 
 
+@stop.fetching
 async def get_highlight_list(model_id, c=None):
     generators = [scrape_highlight_list(c, model_id)]
     return await process_task_get_highlight_list(generators)
 
 
+@stop.fetching
 async def get_highlights_via_list(highlightLists, c=None):
     generators = [scrape_highlights_from_list(c, i) for i in highlightLists]
     return await process_task_highlights(generators)
@@ -148,7 +153,7 @@ async def process_task_get_highlight_list(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -193,7 +198,7 @@ async def process_task_highlights(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -288,6 +293,7 @@ def get_highlightList(data):
     return []
 
 
+@stop.fetching
 async def get_individual_highlights(id, c):
     """
     Compatibility wrapper for individual highlight fetching.
@@ -298,6 +304,7 @@ async def get_individual_highlights(id, c):
     return []
 
 
+@stop.fetching
 async def get_individual_stories(id, c):
     """
     Bridge function: Consumes the new 'scrape_highlights_from_list' generator

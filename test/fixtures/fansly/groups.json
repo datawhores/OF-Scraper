@@ -1,0 +1,178 @@
+{
+ "success": true,
+ "response": {
+  "data": [
+   {
+    "account_id": "100000000000000146",
+    "groupId": "100000000000000143",
+    "partnerAccountId": "100000000000000053",
+    "partnerUsername": "samplecreator2",
+    "flags": 8,
+    "unreadCount": 0,
+    "subscriptionTierId": null,
+    "lastMessageId": "100000000000000276",
+    "lastUnreadMessageId": null
+   },
+   {
+    "account_id": "100000000000000146",
+    "groupId": "100000000000000277",
+    "partnerAccountId": "100000000000000278",
+    "partnerUsername": "samplecreator3",
+    "flags": 8,
+    "unreadCount": 0,
+    "subscriptionTierId": null,
+    "lastMessageId": "100000000000000279",
+    "lastUnreadMessageId": null
+   }
+  ],
+  "aggregationData": {
+   "accounts": [],
+   "groups": [
+    {
+     "id": "100000000000000143",
+     "type": 1,
+     "groupFlags": 0,
+     "groupFlagsMetadata": "",
+     "createdBy": "100000000000000053",
+     "users": [
+      {
+       "groupId": "100000000000000143",
+       "userId": "100000000000000146",
+       "type": 0,
+       "permissionFlags": 65535,
+       "userSettings": {
+        "customName": "",
+        "hidden": 0
+       }
+      },
+      {
+       "groupId": "100000000000000143",
+       "userId": "100000000000000053",
+       "type": 0,
+       "permissionFlags": 65535,
+       "userSettings": {
+        "customName": "",
+        "hidden": 0
+       },
+       "dmPermissionFlags": [
+        {
+         "id": "100000000000000280",
+         "accountId": "100000000000000053",
+         "type": 0,
+         "flags": 5,
+         "metadata": "{\"1\":\"{\\\"price\\\":9990}\",\"4\":\"{\\\"subscriptionTierId\\\":\\\"\\\"}\"}",
+         "verificationFlags": 0,
+         "verificationMetadata": "{\"4\":\"{\\\"errors\\\":[]}\"}"
+        }
+       ]
+      }
+     ],
+     "permissionFlags": [],
+     "recipients": [],
+     "hasDmPermissionFlags": false,
+     "dmPermissionFlags": [
+      {
+       "id": "100000000000000280",
+       "accountId": "100000000000000053",
+       "type": 0,
+       "flags": 5,
+       "metadata": "{\"1\":\"{\\\"price\\\":9990}\",\"4\":\"{\\\"subscriptionTierId\\\":\\\"\\\"}\"}",
+       "verificationFlags": 0,
+       "verificationMetadata": "{\"4\":\"{\\\"errors\\\":[]}\"}"
+      }
+     ],
+     "accountDmPermissionFlags": {
+      "flags": 2,
+      "metadata": "{}"
+     },
+     "lastMessage": {
+      "id": "100000000000000276",
+      "type": 1,
+      "dataVersion": 1,
+      "content": "Sample text 6 #studio #outfit",
+      "groupId": "100000000000000143",
+      "senderId": "100000000000000053",
+      "inReplyTo": null,
+      "inReplyToRoot": null,
+      "createdAt": 1793382125,
+      "attachments": [
+       {
+        "messageId": "100000000000000276",
+        "contentType": 2,
+        "contentId": "100000000000000281",
+        "pos": 0
+       }
+      ],
+      "embeds": [],
+      "interactions": [
+       {
+        "userId": "100000000000000146",
+        "readAt": 1793971700947,
+        "deliveredAt": 1793971282329
+       }
+      ],
+      "likes": []
+     }
+    },
+    {
+     "id": "100000000000000277",
+     "type": 1,
+     "groupFlags": 0,
+     "groupFlagsMetadata": "",
+     "createdBy": "100000000000000278",
+     "users": [
+      {
+       "groupId": "100000000000000277",
+       "userId": "100000000000000146",
+       "type": 0,
+       "permissionFlags": 65535,
+       "userSettings": {
+        "customName": "",
+        "hidden": 0
+       }
+      },
+      {
+       "groupId": "100000000000000277",
+       "userId": "100000000000000278",
+       "type": 0,
+       "permissionFlags": 65535,
+       "userSettings": {
+        "customName": "",
+        "hidden": 1
+       }
+      }
+     ],
+     "permissionFlags": [],
+     "recipients": [],
+     "hasDmPermissionFlags": true,
+     "dmPermissionFlags": [],
+     "accountDmPermissionFlags": {
+      "flags": 2,
+      "metadata": "{}"
+     },
+     "lastMessage": {
+      "id": "100000000000000279",
+      "type": 1,
+      "dataVersion": 1,
+      "content": "Sample text 7 #weekend #behindthescenes",
+      "groupId": "100000000000000277",
+      "senderId": "100000000000000278",
+      "inReplyTo": null,
+      "inReplyToRoot": null,
+      "createdAt": 1783557950,
+      "attachments": [],
+      "embeds": [],
+      "interactions": [
+       {
+        "userId": "100000000000000146",
+        "readAt": 1791783789527,
+        "deliveredAt": 1791783784640
+       }
+      ],
+      "likes": []
+     }
+    }
+   ]
+  }
+ }
+}

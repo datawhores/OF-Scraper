@@ -5,6 +5,7 @@ import arrow
 from rich.text import Text
 from textual import events
 from textual.app import App
+from textual.binding import Binding
 from textual.widgets import Button, ContentSwitcher, Checkbox, Input
 from ofscraper.classes.table.utils.names import get_col_names, get_input_names
 from ofscraper.classes.table.utils.lock import mutex
@@ -12,19 +13,24 @@ from ofscraper.classes.table.sections.table import get_styled
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
+from ofscraper.commands.scraper.actions.download import stop
+import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
 import ofscraper.utils.console as console_
+import ofscraper.utils.cache.cache as cache
 
 log = logging.getLogger("shared")
 app = None
 row_queue = queue.Queue()
+EXTRA_COLUMNS_CACHE_KEY = "check_table_show_extra_columns"
 
 
 class InputApp(App):
     BINDINGS = [
-        ("ctrl+s", "toggle_options_sidebar"),
-        ("ctrl+d", "toggle_download_sidebar"),
+        # priority, so a focused Input (which binds ctrl+d) doesn't take them
+        Binding("ctrl+s", "toggle_options_sidebar", priority=True),
+        Binding("ctrl+d", "toggle_download_sidebar", priority=True),
         ("a", "select_current_page", "Add Page"),
         ("A", "select_all_filtered", "Add All Filtered"),
         ("u", "select_unique_current_page", "Add Unique Page"),
@@ -34,12 +40,16 @@ class InputApp(App):
         ("c", "clear_current_page", "Clear Page"),
         ("C", "clear_all_filtered", "Clear All Filtered"),
         ("x", "clear_entire_cart", "Nuke Cart"),
+        Binding("ctrl+x", "stop_downloads", "Stop Downloads", priority=True),
+        ("o", "open_download_folder", "Open Folder"),
+        ("h", "toggle_extra_columns", "Show/Hide Columns"),
     ]
     CSS = CSS
 
     def __init__(self, *args, **kwargs) -> None:
         self.sidebar = None
         self._filtered_rows = []
+        self.show_extra_columns = False
 
         # Dedicated Pagination State
         self.main_page = 1
@@ -51,16 +61,21 @@ class InputApp(App):
         self.table_data = kwargs.pop("table_data", [])
         self._sortkey = None
         self._reverse = False
-        self._download_cart_toggle = False
         self.run()
 
     def compose(self):
         try:
             return composer()
-        except Exception as e:
+        except Exception:
             pass
 
     def on_ready(self) -> None:
+        try:
+            self.show_extra_columns = (
+                cache.get(EXTRA_COLUMNS_CACHE_KEY, default=False) is True
+            )
+        except Exception:
+            self.show_extra_columns = False
         self.init_table()
         self.init_cart_table()
         self.init_cart_toggles()
@@ -117,7 +132,13 @@ class InputApp(App):
                             break
 
                         current = row["download_cart"]
-                        if current in {"[]", "[downloaded]", "[failed]"}:
+                        if current in {
+                            "[]",
+                            "[downloaded]",
+                            "[failed]",
+                            "[stopped]",
+                            "[skipped]",
+                        }:
                             row["download_cart"] = "[added]"
                         elif current == "[added]":
                             row["download_cart"] = "[]"
@@ -144,16 +165,23 @@ class InputApp(App):
             self.set_active_tab(btn_id)
 
         # Top level controls
-        elif btn_id == "reset":
+        # Clear Filters in the options sidebar; the sidebar stays open
+        elif btn_id in ["reset", "clear_filters"]:
             self.reset_table()
         elif btn_id in ["send_downloads", "send_downloads_main"]:
             log.info("Adding Downloads to queue")
             self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = "console_page"
+        elif btn_id == "stop_downloads":
+            self.action_stop_downloads()
+        elif btn_id == "open_download_folder":
+            self.open_creator_folder()
 
         # Filter triggers
         elif btn_id in ["filter", "filter2"]:
-            self.query_one("#options_sidebar").toggle_hidden()
+            sidebar = self.query_one("#options_sidebar")
+            sidebar.toggle_hidden()
+            self.focus_table_if_hidden_in(sidebar)
             self.filter_table()
             self.update_toggle_labels()
 
@@ -182,6 +210,19 @@ class InputApp(App):
             if col_name not in {"other_posts_with_media", "download_cart"}:
                 self.update_input(col_name, table.get_cell_at(cursor_coordinate))
 
+    def action_toggle_extra_columns(self) -> None:
+        if self.is_sidebar_open:
+            return
+        self.show_extra_columns = not self.show_extra_columns
+        try:
+            cache.set(EXTRA_COLUMNS_CACHE_KEY, self.show_extra_columns)
+        except Exception:
+            pass
+        self._insert_visible_table()
+        self._insert_visible_table(self.query_one("#cart_data_table"))
+        self.set_page()
+        self.update_cart_table()
+
     # --- Sidebars Actions ---
     def action_toggle_options_sidebar(self) -> None:
         if self.query_one(ContentSwitcher).current != "table_page":
@@ -190,7 +231,10 @@ class InputApp(App):
             lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")
         ):
             ele.toggle_hidden()
-        self.query_one("#options_sidebar").toggle_hidden()
+            self.focus_table_if_hidden_in(ele)
+        sidebar = self.query_one("#options_sidebar")
+        sidebar.toggle_hidden()
+        self.focus_table_if_hidden_in(sidebar)
         self.update_toggle_labels()
 
     def action_toggle_download_sidebar(self) -> None:
@@ -200,8 +244,25 @@ class InputApp(App):
             lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")
         ):
             ele.toggle_hidden()
-        self.query_one("#download_option_sidebar").toggle_hidden()
+            self.focus_table_if_hidden_in(ele)
+        sidebar = self.query_one("#download_option_sidebar")
+        sidebar.toggle_hidden()
+        self.focus_table_if_hidden_in(sidebar)
         self.update_toggle_labels()
+
+    def focus_table_if_hidden_in(self, sidebar) -> None:
+        """Focus the table if the sidebar is hidden and has the focus.
+
+        Textual moves focus off a hidden widget to one of its siblings, which
+        are hidden too, so keys went to filter boxes no one could see.
+        """
+        focused = self.focused
+        if (
+            sidebar.has_class("-hidden")
+            and focused is not None
+            and sidebar in focused.ancestors
+        ):
+            self.set_focus(self.table)
 
     def update_toggle_labels(self) -> None:
         try:
@@ -209,10 +270,10 @@ class InputApp(App):
             dl_open = self.query_one("#download_option_sidebar").has_class("-show")
 
             self.query_one("#label_opt_sidebar").update(
-                f"Options Menu:  [bold cyan]Ctrl+S[/bold cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
+                f"Options Menu:  [bold ansi_cyan]Ctrl+S[/bold ansi_cyan] [bold]({'Open' if opt_open else 'Closed'})[/bold]"
             )
             self.query_one("#label_dl_sidebar").update(
-                f"Download Menu: [bold cyan]Ctrl+D[/bold cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
+                f"Download Menu: [bold ansi_cyan]Ctrl+D[/bold ansi_cyan] [bold]({'Open' if dl_open else 'Closed'})[/bold]"
             )
         except:
             pass
@@ -322,7 +383,13 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if row["download_cart"] in {"[]", "[downloaded]", "[failed]"}:
+            if row["download_cart"] in {
+                "[]",
+                "[downloaded]",
+                "[failed]",
+                "[stopped]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -351,7 +418,7 @@ class InputApp(App):
         eligible = [
             r
             for r in rows_to_evaluate
-            if r["download_cart"] in {"[]", "[downloaded]", "[failed]"}
+            if r["download_cart"] in {"[]", "[downloaded]", "[failed]", "[stopped]", "[skipped]"}
             and r.get("download_type") != "unknown"
             and r.get("unlocked")
         ]
@@ -385,7 +452,12 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if not row["downloaded"] and row["download_cart"] in {"[]", "[failed]"}:
+            if not row["downloaded"] and row["download_cart"] in {
+                "[]",
+                "[failed]",
+                "[stopped]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -400,7 +472,12 @@ class InputApp(App):
             # Skip locked or unknown media
             if row.get("download_type") == "unknown" or not row.get("unlocked"):
                 continue
-            if not row["downloaded"] and row["download_cart"] in {"[]", "[failed]"}:
+            if not row["downloaded"] and row["download_cart"] in {
+                "[]",
+                "[failed]",
+                "[stopped]",
+                "[skipped]",
+            }:
                 row["download_cart"] = "[added]"
         self.set_page()
         self.update_cart_info()
@@ -462,8 +539,97 @@ class InputApp(App):
         self.update_cart_table()
         self.update_cart_info()
 
+    # ==========================================
+    # --- Open the Download Folder (#424) ---
+    # ==========================================
+    def highlighted_row(self):
+        """The table_data row under the main table's cursor, or None."""
+        table = self.table
+        if table.row_count == 0:
+            return None
+        try:
+            key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+        except Exception:
+            return None
+        return next(
+            (row for row in self.table_data if str(row["index"]) == str(key)), None
+        )
+
+    def _button_creator(self):
+        """The highlighted row's creator, else the table's only creator."""
+        row = self.highlighted_row()
+        if row is not None:
+            return row.get("username")
+        names = {row.get("username") for row in self.table_data}
+        return names.pop() if len(names) == 1 else None
+
+    def action_open_download_folder(self) -> None:
+        if (
+            self.is_sidebar_open
+            or self.query_one(ContentSwitcher).current != "table_page"
+        ):
+            return
+        self._open_target(lambda: open_folder.row_target(self.highlighted_row()))
+
+    def open_creator_folder(self) -> None:
+        self._open_target(
+            lambda: open_folder.creator_target(self._button_creator())
+        )
+
+    def _open_target(self, get_target) -> None:
+        """Open a folder; a notice with the path when that can't be done,
+        never an error."""
+        try:
+            target = get_target()
+        except Exception as E:
+            log.debug(f"Couldn't work out the download folder: {E!r}")
+            self.notify(
+                f"Couldn't work out the download folder: {E}",
+                title="Open Download Folder",
+                severity="warning",
+                markup=False,
+            )
+            return
+        try:
+            open_folder.open_target(target)
+        except Exception as E:
+            reason = str(E) or type(E).__name__
+            log.debug(f"Couldn't open {target.folder}: {E!r}")
+            self.notify(
+                f"{reason}: {target.folder}",
+                title="Open Download Folder",
+                severity="warning",
+                markup=False,
+            )
+            return
+        if target.note:
+            self.notify(
+                f"{target.note}: {target.folder}",
+                title="Open Download Folder",
+                markup=False,
+            )
+
     # --- Rest of Table Logic ---
+    def action_stop_downloads(self):
+        stop.request()
+        while True:
+            try:
+                key, row = row_queue.get_nowait()
+            except queue.Empty:
+                break
+            self.update_cell_state(key, "[added]", "bold light_goldenrod2")
+        self.update_cart_table()
+        log.info("Stopping downloads; Part files are kept for Resume.")
+        # An idle Stop must not prevent sending a new cart.
+        from ofscraper.commands.check import downloads_pending
+
+        if not downloads_pending():
+            stop.clear()
+
     def add_to_row_queue(self):
+        if stop.requested.is_set():
+            self.notify("Downloads are stopping. Send again when they have stopped.")
+            return
         cart = []
         for row in self.table_data:
             if row["download_cart"] == "[added]":
@@ -479,22 +645,38 @@ class InputApp(App):
 
     def update_cell_state(self, row_key, new_state, style="white"):
         """Allows background threads to safely update the table state and UI"""
+        downloaded = None
         for row in self.table_data:
             if str(row["index"]) == str(row_key):
                 row["download_cart"] = new_state
-                if new_state in {"[downloaded]", "[skipped]"}:
+                # A skip (size limits or a script) isn't recorded as
+                # downloaded in the database (#326), so it isn't here either
+                if new_state == "[downloaded]":
                     row["downloaded"] = True
+                downloaded = row["downloaded"]
                 break
 
         try:
             self.table.update_cell_at_key(
                 str(row_key), "download_cart", Text(new_state, style=style)
             )
+            # Redraw Downloaded too, styled as get_styled does, so it doesn't
+            # wait for the next page redraw (#358)
+            if downloaded is not None:
+                self.table.update_cell_at_key(
+                    str(row_key),
+                    "downloaded",
+                    Text(str(downloaded), style="bold plum1"),
+                )
         except Exception:
             pass
 
-        self.update_cart_info()
-        self.update_search_info()
+        try:
+            self.update_cart_info()
+            self.update_search_info()
+        except Exception:
+            # the table can close while downloads sent from it finish (#425)
+            pass
 
     def init_sort(self):
         self._reverse = settings.get_settings().desc or False
@@ -639,7 +821,7 @@ class InputApp(App):
 
             # 4. Add the rows to the table
             for count, row_dict in enumerate(cart_rows[start : start + num_page]):
-                styled_row = get_styled(row_dict)
+                styled_row = get_styled(row_dict, cart_table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 cart_table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
@@ -712,7 +894,7 @@ class InputApp(App):
 
             # 3. Add the rows to the table
             for count, row_dict in enumerate(rows[start : start + num_page]):
-                styled_row = get_styled(row_dict)
+                styled_row = get_styled(row_dict, self.table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 self.table.add_row(
                     *styled_row, height=None, key=key, label=str(start + count + 1)
@@ -741,7 +923,7 @@ class InputApp(App):
         table.fixed_rows = 0
         table.zebra_stripes = True
 
-        for ele in get_col_names():
+        for ele in get_col_names(show_extra=self.show_extra_columns):
             width = 18
             width = 50 if ele == "text" else width
             width = 30 if ele == "other_posts_with_media" else width
@@ -805,17 +987,17 @@ class InputApp(App):
         )
 
         try:
-            db_line_1 = f"[bold blue]Database:[/bold blue]  \\[Total: {total_items}] \\[Unlocked: {unlocked_items}]"
-            db_line_2 = f"[bold blue]DL Status:[/bold blue] \\[DL'd: {db_dl}] \\[Missing: {db_miss}] \\[Unique Missing: {unique_to_download}]"
+            db_line_1 = f"[bold ansi_blue]Database:[/bold ansi_blue]  \\[Total: {total_items}] \\[Unlocked: {unlocked_items}]"
+            db_line_2 = f"[bold ansi_blue]DL Status:[/bold ansi_blue] \\[DL'd: {db_dl}] \\[Missing: {db_miss}] \\[Unique Missing: {unique_to_download}]"
             self.query_one("#db_info_bar").update(f"{db_line_1}\n{db_line_2}")
 
-            view_str = f"[bold blue]View:[/bold blue]   \\[Page: {self.main_page}] \\[Per Page: {num_page}] \\[Sort: {clean_sort_name} ({sort_dir})]"
-            filt_str = f"[bold blue]Filter:[/bold blue] \\[Total: {filtered_items}] \\[Unique: {unique_items}]"
-            type_str = f"[bold blue]Media:[/bold blue]  \\[Vids: {vids}] \\[Pics: {pics}] \\[Aud: {auds}]"
+            view_str = f"[bold ansi_blue]View:[/bold ansi_blue]   \\[Page: {self.main_page}] \\[Per Page: {num_page}] \\[Sort: {clean_sort_name} ({sort_dir})]"
+            filt_str = f"[bold ansi_blue]Filter:[/bold ansi_blue] \\[Total: {filtered_items}] \\[Unique: {unique_items}]"
+            type_str = f"[bold ansi_blue]Media:[/bold ansi_blue]  \\[Vids: {vids}] \\[Pics: {pics}] \\[Aud: {auds}]"
 
             if filtered_items == 0:
                 self.query_one("#view_info_bar").update(
-                    f"{view_str}\n{filt_str}\n{type_str}\n[bold red]All Items Filtered Out[/bold red]"
+                    f"{view_str}\n{filt_str}\n{type_str}\n[bold ansi_red]All Items Filtered Out[/bold ansi_red]"
                 )
             else:
                 self.query_one("#view_info_bar").update(
@@ -830,7 +1012,7 @@ class InputApp(App):
             1 for row in self.table_data if row["download_cart"] == "[downloading]"
         )
         try:
-            cart_line = f"[bold blue]Cart:[/bold blue]      \\[Queued: {in_cart}] \\[Active: {downloading}]"
+            cart_line = f"[bold ansi_blue]Cart:[/bold ansi_blue]      \\[Queued: {in_cart}] \\[Active: {downloading}]"
             for widget in self.query(".global_cart_info"):
                 widget.update(cart_line)
         except:

@@ -15,6 +15,7 @@ import logging
 import re
 
 from rich.console import Console
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.utils.profiles.data as profile_data
 
@@ -28,7 +29,7 @@ def print_profiles() -> list:
     console.print("\n\nCurrent Profiles\n")
     profile_fmt = "Profile: [cyan]{}"
     for name in profile_data.get_profile_names():
-        console.print(profile_fmt.format(name))
+        console.print(profile_fmt.format(escape_text(name)))
     console.print("\n")
     print_current_profile()
     print_default_profile()
@@ -37,10 +38,10 @@ def print_profiles() -> list:
 
 def print_current_profile():
     current_profile = profile_data.get_active_profile()
-    console.print("Active profile: [cyan]{}[/cyan]".format(current_profile))
+    console.print("Active profile: [cyan]{}[/cyan]".format(escape_text(current_profile)))
 def print_default_profile():
     current_profile = profile_data.get_current_config_profile()
-    console.print("Default config profile: [cyan]{}[/cyan]".format(current_profile))
+    console.print("Default config profile: [cyan]{}[/cyan]".format(escape_text(current_profile)))
 
 
 def profile_name_fixer(input):

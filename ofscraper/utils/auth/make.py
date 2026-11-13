@@ -1,8 +1,13 @@
+from copy import deepcopy
+
+from ofscraper.prompts.cancel import cancel_scope
+
 import json
 import re
 import logging
 
 from rich.console import Console
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.schema as auth_schema
@@ -26,33 +31,40 @@ def make_auth(auth=None,include_main_menu=False):
         browserSelect = prompts.prompt_for_browser_auth(include_main_menu=include_main_menu)
         if browserSelect in {"quit","main"}:
             return None,browserSelect
-        auth = auth_schema.auth_schema(auth or auth_dict.get_empty())
-        if browserSelect == "Paste From M-rcus' OnlyFans-Cookie-Helper":
-            auth = auth_schema.auth_schema(auth_prompt.cookie_helper_extension())
-        elif browserSelect == "Enter Each Field Manually":
-            console.print(
-                """
+        with cancel_scope():
+            result = _make_auth_attempt(deepcopy(auth), browserSelect)
+            if result is not None:
+                return result, None
+
+
+def _make_auth_attempt(auth, browserSelect):
+    auth = auth_schema.auth_schema(auth or auth_dict.get_empty())
+    if browserSelect == "Paste From M-rcus' OnlyFans-Cookie-Helper":
+        auth = auth_schema.auth_schema(auth_prompt.cookie_helper_extension())
+    elif browserSelect == "Enter Each Field Manually":
+        console.print(
+            """
     You'll need to go to onlyfans.com and retrive/update header information
     Go to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'
     You only need to retrive the x-bc header,the user-agent
     and cookie information",
     """,
-                style="yellow",
-            )
-            auth.update(prompts.auth_prompt(auth))
-        else:
-            auth = auth_prompt.browser_cookie_helper(auth, browserSelect)
-        for key, item in auth.items():
-            newitem = item.strip()
-            newitem = re.sub("^ +", "", newitem)
-            newitem = re.sub(" +$", "", newitem)
-            newitem = re.sub("\n+", "", newitem)
-            auth[key] = newitem
-        authFile = common_paths.get_auth_file()
-        console.print(f"{auth}\nWriting to {authFile}", style="yellow")
-        auth = auth_schema.auth_schema(auth)
-        if not check_auth_warning(auth):
-            continue
-        with open(authFile, "w") as f:
-            f.write(json.dumps(auth, indent=4))
-        return auth,None
+            style="yellow",
+        )
+        auth.update(prompts.auth_prompt(auth))
+    else:
+        auth = auth_prompt.browser_cookie_helper(auth, browserSelect)
+    for key, item in auth.items():
+        newitem = item.strip()
+        newitem = re.sub("^ +", "", newitem)
+        newitem = re.sub(" +$", "", newitem)
+        newitem = re.sub("\n+", "", newitem)
+        auth[key] = newitem
+    authFile = common_paths.get_auth_file()
+    console.print(f"{escape_text(auth)}\nWriting to {escape_text(authFile)}", style="yellow")
+    auth = auth_schema.auth_schema(auth)
+    if not check_auth_warning(auth):
+        return None
+    with open(authFile, "w") as f:
+        f.write(json.dumps(auth, indent=4))
+    return auth

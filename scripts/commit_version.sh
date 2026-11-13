@@ -36,12 +36,24 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "Base version from newest commit tag: ${BASE_VERSION}"
     fi
     
+    # A build of a release tag is that version exactly, without the commit hash
+    IS_RELEASE="false"
+    if [[ "${GITHUB_REF:-}" =~ ^refs/tags/v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+        BASE_VERSION="${BASH_REMATCH[1]}"
+        IS_RELEASE="true"
+        echo "Release tag build: ${BASE_VERSION}"
+    fi
+
     # Sanitize BASE_VERSION for use in Git tag/Docker tag names (replace . and + with -)
     SANITIZED_BASE_VERSION=$(echo "$BASE_VERSION" | sed 's/[.+]/_/g')
     echo "Sanitized Base Version: ${SANITIZED_BASE_VERSION}"
 
     # Generate the full version string (always with hash for development builds)
-    VERSION="${BASE_VERSION}+g${SHORT_HASH}"
+    if [ "$IS_RELEASE" = "true" ]; then
+        VERSION="${BASE_VERSION}"
+    else
+        VERSION="${BASE_VERSION}+g${SHORT_HASH}"
+    fi
     echo "Generated version (always with hash): ${VERSION}"
 
     # Sanitize the full version string for file/directory names (replace . + - with _)

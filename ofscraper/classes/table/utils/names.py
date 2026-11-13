@@ -19,10 +19,13 @@ col_names = (
 
 input_only_names = ("num_per_page", "page")
 
+EXTRA_COLUMNS = {"post_media_count", "responsetype", "price", "post_id", "media_id"}
 
-def get_col_names():
+
+def get_col_names(show_extra=True):
     for ele in col_names:
-        yield ele.lower()
+        if show_extra or ele.lower() not in EXTRA_COLUMNS:
+            yield ele.lower()
 
 
 def get_input_names():

@@ -4,6 +4,7 @@ import pathlib
 from InquirerPy.base import Choice
 from InquirerPy.validator import PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
+from rich.markup import escape
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -86,9 +87,9 @@ def confirm_prompt_db(folder, new_db) -> bool:
     return answer[name]
 
 
-def confirm_db_continue(completed, skipped) -> bool:
+def confirm_db_continue(completed, skipped, failed) -> bool:
     name = "continue"
-    promptClasses.batchConverter(
+    answer = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
@@ -96,10 +97,15 @@ def confirm_db_continue(completed, skipped) -> bool:
                 "message": "Do another merge: ",
                 "call": lambda: console.get_console().print(
                     inspect.cleandoc(
-                        f""" 
+                        f"""
                 Merged: {len(completed)} db files
                 Skipped: {len(skipped)} db files
+                Failed: {len(failed)} db files
                 """
+                    )
+                    + "".join(
+                        f"\n  {escape(failure['path'])}: {escape(str(failure['reason']) or type(failure['reason']).__name__)}"
+                        for _, failure in failed
                     )
                 ),
                 "choices": [
@@ -111,6 +117,7 @@ def confirm_db_continue(completed, skipped) -> bool:
             }
         ]
     )
+    return answer[name]
 
 
 def model_id_prompt():

@@ -2,10 +2,21 @@ name: Build and Package
 
 on:
   push:
+    # Pushes to main build the binaries as a check. A version tag (e.g. 3.15.1)
+    # also publishes them as that version's release; path filters don't apply
+    # to tag pushes.
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
+      - main
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+    # doc-only changes don't need a build or test run
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'media/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
 
 permissions:
   contents: read # Required for git checkout and gh CLI to read workflow runs
@@ -30,7 +41,7 @@ jobs:
       is_newer_than_last_successful_run: ${{ steps.version.outputs.IS_NEWER_THAN_LAST_SUCCESSFUL_RUN }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Essential for git merge-base to compare full history
           fetch-tags: true
@@ -64,16 +75,16 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: 3.12.0
+          python-version: 3.15.1
       - name: Install uv
-        uses: astral-sh/setup-uv@v1
+        uses: astral-sh/setup-uv@v10.3.1
 
       - name: Set Version Environment Variables
         shell: bash
@@ -121,7 +132,7 @@ jobs:
           echo "one_file_name=${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
 
       - name: Upload One-File Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build_onefile.outputs.one_file_name }}
           path: ${{ steps.build_onefile.outputs.one_file_path }}
@@ -159,7 +170,7 @@ jobs:
 
       - name: Upload Zipped One-Dir Artifact
         if: success() && steps.build_onedir_zip.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build_onedir_zip.outputs.zip_name }}
           path: ${{ steps.build_onedir_zip.outputs.zip_path }}
@@ -167,7 +178,7 @@ jobs:
 
       - name: Upload One-Dir Folder (if zip failed)
         if: failure() && steps.build_onedir_zip.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.build_onedir_zip.outputs.dir_name }}
           path: ${{ steps.build_onedir_zip.outputs.dir_path }}
@@ -175,14 +186,14 @@ jobs:
 
   publish_release:
     name: Publish GitHub Release
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [build_binaries, generate_version] # Waits for version info AND all binary builds to complete (even partially)
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to create/update GitHub Releases
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts/
           # No specific `if-no-files-found` here on download-artifact, it will download what's available
@@ -192,16 +203,100 @@ jobs:
         run: ls -R artifacts
 
       - name: Create or Update Release
-        uses: ncipollo/release-action@v1.17.0
+        uses: ncipollo/release-action@v1.21.0
 
         with:
           artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
-          # Combined tag for uniqueness and chronological sorting
-          tag: "${{ needs.generate_version.outputs.base_version }}+${{ needs.generate_version.outputs.short_hash }}.${{ needs.generate_version.outputs.commit_timestamp }}"
-          # Human-readable name with all key details
-          name: "Dev Build ${{ needs.generate_version.outputs.base_version }} (Commit ${{ needs.generate_version.outputs.short_hash }}) - ${{ needs.generate_version.outputs.commit_timestamp }}"
-          
-          body: "This is an auto-generated development release created from commit hash `${{ needs.generate_version.outputs.long_hash }}`. Version: `${{ needs.generate_version.outputs.version }}`"
-          commit: "${{ needs.generate_version.outputs.long_hash }}"
+          # One release per version tag; a re-run updates it
+          tag: ${{ github.ref_name }}
+          name: ${{ needs.generate_version.outputs.version }}
+          generateReleaseNotes: true
           allowUpdates: true
-          prerelease: true
+          prerelease: false
+          makeLatest: true
+
+  build_pypi_dist:
+    name: Build PyPI Packages
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [generate_version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.1
+
+      - name: Build sdist and wheel
+        env:
+          # the plain tag version (e.g. 3.16.2); plugins.py would add +g<hash>
+          HATCH_VCS_PRETEND_VERSION: ${{ needs.generate_version.outputs.version }}
+        run: uv build --python 3.15
+
+      - name: Check the version is the plain tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          EXPECTED="${TAG#v}"
+          for f in dist/*; do echo "built: $f"; done
+          WHEELS=(dist/ofscraper_community-*-py3-none-any.whl)
+          SDISTS=(dist/ofscraper_community-*.tar.gz)
+          if [ ${#WHEELS[@]} -ne 1 ] || [ ! -f "${WHEELS[0]}" ] || [ ${#SDISTS[@]} -ne 1 ] || [ ! -f "${SDISTS[0]}" ]; then
+            echo "::error::expected one ofscraper-community wheel and one sdist"; exit 1
+          fi
+          BUILT=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Version: //p' | tr -d '\r')
+          NAME=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Name: //p' | tr -d '\r')
+          echo "name: $NAME, version: $BUILT, tag: $TAG"
+          if [ "$NAME" != "ofscraper-community" ]; then
+            echo "::error::package name is '$NAME', not 'ofscraper-community'"; exit 1
+          fi
+          case "$BUILT" in
+            *+*) echo "::error::version '$BUILT' has a local part, which PyPI rejects"; exit 1 ;;
+          esac
+          if [ "$BUILT" != "$EXPECTED" ]; then
+            echo "::error::version '$BUILT' doesn't match tag '$TAG'"; exit 1
+          fi
+          if [ "${SDISTS[0]}" != "dist/ofscraper_community-${EXPECTED}.tar.gz" ]; then
+            echo "::error::sdist '${SDISTS[0]}' doesn't match tag '$TAG'"; exit 1
+          fi
+
+      - name: Check the wheel installs and runs
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          uv venv --python 3.11 "$RUNNER_TEMP/smoke"
+          uv pip install --python "$RUNNER_TEMP/smoke" dist/*.whl
+          OUTPUT=$("$RUNNER_TEMP/smoke/bin/ofscraper" --version)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -qF "${TAG#v}"
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: pypi-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish_pypi:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    # A PyPI version can't be replaced once uploaded, so publish last: only
+    # after the packages passed their checks and the GitHub release exists.
+    needs: [build_pypi_dist, publish_release]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ofscraper-community/
+    permissions:
+      id-token: write # trusted publishing; no token or password is stored
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: pypi-dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.3

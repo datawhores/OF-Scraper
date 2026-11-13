@@ -12,12 +12,13 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
     steps:
-      - uses: snok/container-retention-policy@v2
+      - uses: snok/container-retention-policy@v3.1.0
         with:
           image-names: ofscraper
-          cut-off: two hours ago UTC+2
+          cut-off: 2h
           timestamp-to-use: updated_at
-          account-type: personal
-          keep-at-least: 10
-          skip-tags: latest,1.*
+          account: user
+          keep-n-most-recent: 10
+          image-tags: "* !latest !1.*"
+          tag-selection: both
           token: ${{ secrets.DOCKER_DELETE}}

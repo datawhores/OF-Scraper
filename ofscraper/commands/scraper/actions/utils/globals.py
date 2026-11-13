@@ -22,6 +22,7 @@ video_count = 0
 audio_count = 0
 skipped = 0
 forced_skipped = 0
+stopped = 0
 total_bytes_downloaded = 0
 
 
@@ -38,6 +39,8 @@ def main_globals():
     audio_count = 0
     global skipped
     skipped = 0
+    global stopped
+    stopped = 0
     global forced_skipped
     forced_skipped = 0
     global count_lock

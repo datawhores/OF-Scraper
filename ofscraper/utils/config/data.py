@@ -11,13 +11,22 @@ r"""
 
 """
 
-from diskcache import Disk, JSONDisk
+from ofscraper.utils.cache.safe_disk import SafeDisk, SafeJSONDisk
 from humanfriendly import parse_size
 
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.utils.wrapper as wrapper
-import ofscraper.utils.const as const
+
+
+def strip_path_quotes(val):
+    # Windows "Copy as path" wraps paths in double quotes, which then end up
+    # literally inside the json string
+    if isinstance(val, str):
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1].strip()
+    return val
 
 
 @wrapper.config_reader
@@ -168,12 +177,15 @@ def get_InfiniteLoop(config=None):
 def get_incremental_downloads(config=None):
     if config is False:
         return of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
-    val = (
-        config.get("incremental_downloads")
-        or config.get("advanced_options", {}).get("incremental_downloads")
-        or config.get("advanced_options", {}).get("enable_auto_after")
-    )
-    return val if val is not None else of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
+    # check each place for None, not falsiness, so a saved false is kept
+    for val in (
+        config.get("incremental_downloads"),
+        config.get("advanced_options", {}).get("incremental_downloads"),
+        config.get("advanced_options", {}).get("enable_auto_after"),
+    ):
+        if val is not None:
+            return val
+    return of_env.getattr("INCREMENTAL_DOWNLOADS_DEFAULT")
 
 
 @wrapper.config_reader
@@ -329,6 +341,9 @@ def get_ffmpeg(config=None):
     if config is False:
         return of_env.getattr("FFMPEG_DEFAULT")
     val = config.get("ffmpeg") or config.get("binary_options", {}).get("ffmpeg")
+    val = strip_path_quotes(val)
+    # "" is kept as-is so a config rewrite doesn't save OFSC_FFMPEG_DEFAULT
+    # into the file; settings applies that fallback at runtime
     return val if val is not None else of_env.getattr("FFMPEG_DEFAULT")
 
 
@@ -483,14 +498,18 @@ def get_spacereplacer(config=None):
 def get_private_key(config=None):
     if not config:
         return None
-    return config.get("private-key") or config.get("cdm_options", {}).get("private-key")
+    return strip_path_quotes(
+        config.get("private-key") or config.get("cdm_options", {}).get("private-key")
+    )
 
 
 @wrapper.config_reader
 def get_client_id(config=None):
     if not config:
         return None
-    return config.get("client-id") or config.get("cdm_options", {}).get("client-id")
+    return strip_path_quotes(
+        config.get("client-id") or config.get("cdm_options", {}).get("client-id")
+    )
 
 
 @wrapper.config_reader
@@ -524,6 +543,16 @@ def get_dynamic(config=None):
 
 
 @wrapper.config_reader
+def get_dynamic_configured(config=None):
+    # the raw value, before get_dynamic() checks it; not written to the file
+    if config is False:
+        return None
+    return config.get("dynamic-mode-default") or config.get(
+        "advanced_options", {}
+    ).get("dynamic-mode-default")
+
+
+@wrapper.config_reader
 def get_part_file_clean(config=None):
     if config is False:
         return of_env.getattr("RESUME_DEFAULT")
@@ -547,7 +576,11 @@ def get_download_semaphores(config=None):
             "download_sems"
         )
         final_sem = sem if sem is not None else of_env.getattr("DOWNLOAD_SEM_DEFAULT")
-        return int(final_sem)
+        final_sem = int(final_sem)
+        # the download pool needs at least one worker
+        if final_sem < 1:
+            return int(of_env.getattr("DOWNLOAD_SEM_DEFAULT"))
+        return final_sem
     except (ValueError, TypeError):
         return int(of_env.getattr("DOWNLOAD_SEM_DEFAULT"))
 
@@ -564,10 +597,11 @@ def get_show_downloadprogress(config=None):
 
 @wrapper.config_reader
 def get_cache_mode(config=None):
-    if cache_mode_helper(config=config) == "sqlite":
-        return Disk
+    # diskcache's disks, reading only plain data back (CVE-2025-69872)
+    if cache_mode_helper(config=config) == "json":
+        return SafeJSONDisk
     else:
-        return JSONDisk
+        return SafeDisk
 
 
 def cache_mode_helper(config=None):
@@ -579,7 +613,7 @@ def cache_mode_helper(config=None):
         "cache-mode"
     )
     final_data = data if data is not None else of_env.getattr("CACHEDEFAULT")
-    if final_data in {"sqlite", "json", "disabled"}:
+    if final_data in {"sqlite", "json", "disabled", "api_disabled"}:
         return final_data
     else:
         return of_env.getattr("CACHEDEFAULT")
@@ -625,7 +659,17 @@ def get_TempDir(config=None):
     if config is False:
         return of_env.getattr("TEMP_FOLDER_DEFAULT")
     val = config.get("temp_dir") or config.get("advanced_options", {}).get("temp_dir")
-    return val if val is not None else of_env.getattr("TEMP_FOLDER_DEFAULT")
+    return strip_path_quotes(val) if val is not None else of_env.getattr("TEMP_FOLDER_DEFAULT")
+
+
+@wrapper.config_reader
+def get_filename_collision(config=None):
+    if config is False:
+        return of_env.getattr("FILENAME_COLLISION_DEFAULT")
+    val = config.get("filename_collision") or config.get("file_options", {}).get(
+        "filename_collision"
+    )
+    return val if val is not None else of_env.getattr("FILENAME_COLLISION_DEFAULT")
 
 
 @wrapper.config_reader

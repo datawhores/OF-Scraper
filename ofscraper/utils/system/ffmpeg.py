@@ -19,7 +19,7 @@ _ffprobe_checked: bool = False
 def _is_valid_ffmpeg(path: str | None) -> bool:
     """
     Checks if a given path is a real, executable FFmpeg binary and validates
-    that its version is >= 6 and < 8 for DRM compatibility. Logs the process.
+    that its version is >= 6 for DRM compatibility. Logs the process.
     """
     if not path or not shutil.which(path):
         log.debug(f"Path '{path}' is not a valid or executable file.")
@@ -44,10 +44,10 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             
             if version_match:
                 major_version = int(version_match.group(1))
-                if major_version < 6 or major_version >= 8:
+                if major_version < 6:
                     log.warning(
                         f"⚠️ Invalid FFmpeg version {major_version}.x detected at '{path}'.\n"
-                        f"DRM decryption requires FFmpeg version >= 6 and < 8.\n"
+                        f"DRM decryption requires FFmpeg version 6 or newer.\n"
                         f"Skipping this binary and looking for an alternative..."
                     )
                     return False
@@ -130,7 +130,7 @@ def get_ffmpeg() -> str:
     raise FileNotFoundError(
         "A valid FFmpeg executable could not be found.\n"
         "Please add FFmpeg to your system's PATH, specify its location in your settings, "
-        "or install the 'ffmpeg' extra ('pip install ofscraper[ffmpeg]')"
+        "or install the 'ffmpeg' extra ('pip install ofscraper-community[ffmpeg]')"
     )
 
 

@@ -40,33 +40,11 @@ def pagination_bar(prefix: str):
         yield Button("Go", id=f"{prefix}_go", classes="page_btn")
 
 def composer():
-    # ... keep your tabs_row code ...
-
-    with ContentSwitcher(initial="table_page"):
-        with Vertical(id="table_page"):
-            # ... keep your header_top_row code ...
-            
-            # Use the new helper!
-            yield from pagination_bar("main")
-
-            with Vertical(id="table_main"):
-                yield DataTable(id="data_table")
-            
-            # ... keep sidebars ...
-
-        with Vertical(id="cart_page"):
-            # ... keep your header_top_row code ...
-
-            # Use the new helper here too!
-            yield from pagination_bar("cart")
-
-            with Vertical(id="cart_table_main"):
-                yield DataTable(id="cart_data_table")
-def composer():
     with Horizontal(id="tabs_row"):
         yield Button("DataTable", id="table")
         yield Button("Cart", id="cart")
         yield Button("Console", id="console")
+        yield Button("Stop Downloads (Ctrl+X)", id="stop_downloads")
 
     yield Rule()
 
@@ -90,23 +68,25 @@ def composer():
                 
                 # Column 3: Toggles
                 with Vertical(classes="toggles_column"):
-                    yield Static("[bold blue]Sidebar Controls:[/bold blue]", markup=True)
-                    yield Static("Options Menu:  [bold cyan]Ctrl+S[/bold cyan]", id="label_opt_sidebar", markup=True)
-                    yield Static("Download Menu: [bold cyan]Ctrl+D[/bold cyan]", id="label_dl_sidebar", markup=True)
+                    yield Static("[bold ansi_blue]Sidebar Controls:[/bold ansi_blue]", markup=True)
+                    yield Static("Options Menu:  [bold ansi_cyan]Ctrl+S[/bold ansi_cyan]", id="label_opt_sidebar", markup=True)
+                    yield Static("Download Menu: [bold ansi_cyan]Ctrl+D[/bold ansi_cyan]", id="label_dl_sidebar", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
     
                 # Column 4: Instructions
                 with Vertical(classes="instructions_column"):
                     yield Static(
-                        "[bold blue]Cart_Add:[/bold blue] Page (a) | All Filtered ([bold cyan]Shift+A[/bold cyan])\n"
-                        "[bold blue]Cart_Unique:[/bold blue] Page (u) | All Unique ([bold cyan]Shift+U[/bold cyan])\n"
-                        "[bold green]Cart_New Only:[/bold green] Page (e) | All New ([bold cyan]Shift+E[/bold cyan])\n"
-                        "[bold red]Clear Cart:[/bold red] Page (c) | All Filtered ([bold cyan]Shift+C[/bold cyan]) | Nuke (x)",
+                        "[bold ansi_blue]Cart_Add:[/bold ansi_blue] Page (a) | All Filtered ([bold ansi_cyan]Shift+A[/bold ansi_cyan])\n"
+                        "[bold ansi_blue]Cart_Unique:[/bold ansi_blue] Page (u) | All Unique ([bold ansi_cyan]Shift+U[/bold ansi_cyan])\n"
+                        "[bold ansi_green]Cart_New Only:[/bold ansi_green] Page (e) | All New ([bold ansi_cyan]Shift+E[/bold ansi_cyan])\n"
+                        "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)\n"
+                        "[bold ansi_blue]Open Folder:[/bold ansi_blue] Highlighted Row (o) | Show/Hide Columns (h)",
                         id="table_instructions",
                         markup=True,
                     )
             with Horizontal(id="main_action_row"):
                 yield Button(">> Send Downloads to OF-Scraper", id="send_downloads_main")
+                yield Button("Open Download Folder", id="open_download_folder")
                 yield Button("Reset Filters", id="reset")
             
             # Inline Pagination
@@ -125,6 +105,7 @@ def composer():
             with Sidebar(id="options_sidebar", classes="-hidden"):
                 with Container(id="main_options"):
                     yield Button("Filter", id="filter")
+                    yield Button("Clear Filters", id="clear_filters")
                     yield Rule()
                     yield TextSearch("Text")
                     yield Rule()
@@ -165,11 +146,12 @@ def composer():
                 yield Rule(orientation="vertical", classes="header_divider")
                 with Vertical(classes="instructions_column"):
                     yield Static(
-                        "[bold yellow]Cart Management:[/bold yellow]\n"
+                        "[bold ansi_yellow]Cart Management:[/bold ansi_yellow]\n"
                         "• [bold]Click '\\[added]'[/bold] to instantly remove that item from the cart.\n"
                         "• [bold]Click 'Download Cart'[/bold] (the column header) to clear this entire page.\n"
-                        "• Press [bold cyan](c)[/bold cyan] to remove all items currently visible on this page.\n"
-                        "• Press [bold cyan](x)[/bold cyan] or [bold cyan]Shift+C[/bold cyan] to NUKE the entire cart.",
+                        "• Press [bold ansi_cyan](c)[/bold ansi_cyan] to remove all items currently visible on this page.\n"
+                        "• Press [bold ansi_cyan](x)[/bold ansi_cyan] or [bold ansi_cyan]Shift+C[/bold ansi_cyan] to NUKE the entire cart.\n"
+                        "• Show/Hide Columns [bold ansi_cyan](h)[/bold ansi_cyan].",
                         markup=True,
                     )
 
@@ -184,5 +166,5 @@ def composer():
         # ==========================================
         with Vertical(id="console_page"):
             with Horizontal(classes="header_top_row"):
-                yield Static("[bold green]Console View[/bold green]\nMonitor active background tasks and download progress.", markup=True)
+                yield Static("[bold ansi_green]Console View[/bold ansi_green]\nMonitor active background tasks and download progress.", markup=True)
             yield OutConsole(id="console_page_log")

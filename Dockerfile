@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7-labs
 # Stage 1: Build the application artifact
-FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.13.5-python3.15-trixie-slim AS builder
 
 ARG BUILD_VERSION
 WORKDIR /app
@@ -32,14 +32,20 @@ RUN \
     hatch build
 
 
+# Static FFmpeg for non-amd64 images (see STEP 2b), pinned by digest.
+FROM mwader/static-ffmpeg:7.1.1@sha256:11a44711684c0b9f754c047dcd64235b8b52deab251bd0e0a86f22faa160749c AS static-ffmpeg
+
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:0.7.13-python3.11-bookworm-slim
+FROM ghcr.io/astral-sh/uv:0.13.5-python3.15-trixie-slim
 WORKDIR /app
 
 # Configure uv's venv and cache location.
 ENV VIRTUAL_ENV="/app/.venv"
 ENV UV_CACHE_DIR="/app/.uv_cache"
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+# Save into the mounted data folder. Set here as well as in the entrypoint
+# because `docker compose exec` doesn't run the entrypoint.
+ENV OFSC_SAVE_PATH_DEFAULT="/home/ofscraper/data"
 
 # >>> CORRECTED STEP 1: Install build dependencies, then pyffmpeg, then clean up <<<
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -58,7 +64,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # (This step remains the same, installing gosu)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
-    && rm -rf /var/lib/apt/lists/*# STEP 2: Install all OS-level dependencies in a single layer.
+    && rm -rf /var/lib/apt/lists/*
+# STEP 2b: A static FFmpeg release for non-amd64 images. pyffmpeg only ships
+# x86_64 binaries, so on arm64 its ffmpeg fails with 'Exec format error' and
+# get_ffmpeg() falls back to this one on PATH. amd64 keeps using pyffmpeg's,
+# which get_ffmpeg() finds first, so it isn't copied there.
+ARG TARGETARCH
+RUN --mount=type=bind,from=static-ffmpeg,source=/,target=/static-ffmpeg \
+    if [ "$TARGETARCH" != "amd64" ]; then \
+        cp /static-ffmpeg/ffmpeg /static-ffmpeg/ffprobe /usr/local/bin/; \
+    fi
 # STEP 3: Copy entrypoint scripts and make them executable.
 COPY --chmod=755 ./scripts/entry/. /usr/local/bin/entry/
 
@@ -67,11 +82,16 @@ COPY --from=builder /app/dist/*.whl .
 RUN \
     WHEEL_FILE=$(ls *.whl) && \
     apt-get update && apt-get install -y --no-install-recommends \
-    build-essential && \
+    build-essential libyaml-dev libyaml-0-2 && \
     uv pip install "${WHEEL_FILE}[ffmpeg]" -v && \
     rm "${WHEEL_FILE}" && \
-    apt-get purge -y --auto-remove build-essential && \
+    # PyYAML has no 3.15 wheel; libyaml-dev lets it build its C extension.
+    # libyaml-0-2 was installed explicitly, so --auto-remove keeps it.
+    apt-get purge -y --auto-remove build-essential libyaml-dev && \
     rm -rf /var/lib/apt/lists/*
+# A home that any UID can write to, for containers started with --user
+# (pyffmpeg and other caches live under $HOME).
+RUN mkdir -p /home/ofscraper && chmod 1777 /home/ofscraper
 USER root 
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]

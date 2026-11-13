@@ -1,9 +1,0 @@
-[submodule "wiki"]
-	path = wiki
-	url = https://github.com/datawhores/OF-Scraper-Docs
-[submodule "OF-Scraper-Docs"]
-	path = OF-Scraper-Docs
-	url = https://github.com/datawhores/OF-Scraper-Docs
-[submodule "docs"]
-	path = docs
-	url = https://github.com/datawhores/OF-Scraper-Docs

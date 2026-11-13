@@ -18,7 +18,7 @@ from typing import Union
 import arrow
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
-from prompt_toolkit.shortcuts import prompt as prompt
+from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -34,21 +34,16 @@ models = None
 
 
 def model_selector(models: Union[dict | list], existing_models) -> bool:
-    choices = list(
-        map(
-            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models),
-        )
-    )
+    choices = modelHelpers.model_selector_choices(models)
     selectedSet = set(map(lambda x: x.name, existing_models))
     for model in choices:
-        name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+        name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
         if name in selectedSet:
             model.enabled = True
 
     p = promptClasses.getFuzzySelection(
         choices=choices,
-        transformer=lambda result: ",".join(map(lambda x: x.split(" ")[1], result)),
+        transformer=lambda result: ",".join(map(lambda x: x.split()[1], result)),
         multiselect=True,
         more_instruction=prompt_strings.MODEL_SELECT,
         long_message=prompt_strings.MODEL_FUZZY,

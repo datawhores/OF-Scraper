@@ -1,9 +1,37 @@
 import logging
 import re
+from rich.errors import MarkupError
+from rich.logging import RichHandler
 from rich.text import Text
 
 # Assumes you have this module for getting sensitive patterns
 import ofscraper.utils.logs.utils.sensitive as sensitive
+
+
+def _unescape(t: str) -> str:
+    # What Rich would have done with "\[" escapes
+    return re.sub(r"\\(\[)", r"\1", t)
+
+
+def strip_markup(t: str) -> str:
+    """Plain text of a Rich-markup string; the text as is (escapes removed) if
+    the markup is broken (e.g. a stray closing tag), so the line is still
+    logged."""
+    try:
+        return Text.from_markup(t).plain
+    except MarkupError:
+        return _unescape(t)
+
+
+class SafeRichHandler(RichHandler):
+    """RichHandler that prints a line with broken markup as plain text instead
+    of dropping it."""
+
+    def render_message(self, record, message):
+        try:
+            return super().render_message(record, message)
+        except MarkupError:
+            return Text(_unescape(message))
 
 
 class TraceBackOnly(logging.Filter):
@@ -81,7 +109,7 @@ class DiscordFormatter(SensitiveFormatter):
         t = re.sub(r"\[code[^\]]*](.*?)\[/code[^\]]*]", r"`\1`", t, flags=re.IGNORECASE)
 
         # --- Cleanup and Final Touches ---
-        t = Text.from_markup(t).plain  # Handle any lingering markup entities
+        t = strip_markup(t)  # Handle any lingering markup entities
         t = re.sub(r" +", " ", t)  # Consolidate multiple spaces
         t = re.sub(r"\*\*+", "**", t)  # Fix cases like "****"
         t = re.sub(r"__+", "__", t)
@@ -101,4 +129,4 @@ class LogFileFormatter(SensitiveFormatter):
         # First, apply the parent's sensitive data filtering
         t = super()._filter(s)
         # Then, strip all rich markup for a plain text representation
-        return Text.from_markup(t).plain
+        return strip_markup(t)

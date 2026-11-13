@@ -1,4 +1,6 @@
 import asyncio
+
+import ofscraper.utils.system.system as system
 import logging
 import threading
 import queue
@@ -38,7 +40,7 @@ class DiscordHandler(logging.Handler):
         try:
             self.loop = asyncio.get_running_loop()
         except Exception:
-            self.loop = asyncio.new_event_loop()
+            self.loop = system.new_event_loop()
             asyncio.set_event_loop(self.loop)
 
     def _worker(self):

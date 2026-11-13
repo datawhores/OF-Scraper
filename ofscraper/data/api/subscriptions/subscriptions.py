@@ -12,18 +12,19 @@ r"""
 import asyncio
 import logging
 import traceback
+from urllib.parse import parse_qs, urlsplit
 
 from rich.console import Console
 
 import ofscraper.data.api.subscriptions.common as common
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.live.updater import userlist
 
 log = logging.getLogger("shared")
 console = Console()
+MAX_EMPTY_PAGES = 20
 
 
 @run
@@ -161,12 +162,21 @@ async def process_task(generators):
     return output
 
 
+def _subscription_page_step(url, count):
+    try:
+        step = int(parse_qs(urlsplit(url).query).get("limit", [count])[0])
+    except (TypeError, ValueError):
+        return count
+    return step if step > 0 else count
+
+
 async def scrape_subscriptions_active(c, offset=0):
     """
     Async Generator Worker Loop for active subscriptions.
     Yields batches page-by-page.
     """
     current_offset = offset
+    empty_pages = 0
     while True:
         url = of_env.getattr("subscriptionsActiveEP").format(current_offset)
         try:
@@ -180,15 +190,26 @@ async def scrape_subscriptions_active(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    empty_pages = 0
                     log.debug(
                         f"active subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
                     )
                     yield subscriptions
+                else:
+                    empty_pages += 1
+                    if empty_pages >= MAX_EMPTY_PAGES:
+                        log.debug(
+                            f"active subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
+                        )
+                        break
 
-                if response.get("hasMore") is not True or not subscriptions:
+                if response.get("hasMore") is not True:
                     break
 
-                current_offset += len(subscriptions)
+                step = _subscription_page_step(url, len(subscriptions))
+                if step <= 0:
+                    break
+                current_offset += step
 
         except asyncio.TimeoutError:
             log.debug(f"Task timed out {url}")
@@ -205,6 +226,7 @@ async def scrape_subscriptions_disabled(c, offset=0):
     Yields batches page-by-page.
     """
     current_offset = offset
+    empty_pages = 0
     while True:
         url = of_env.getattr("subscriptionsExpiredEP").format(current_offset)
         try:
@@ -218,15 +240,26 @@ async def scrape_subscriptions_disabled(c, offset=0):
                 subscriptions = response.get("list", [])
 
                 if subscriptions:
+                    empty_pages = 0
                     log.debug(
                         f"expired subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
                     )
                     yield subscriptions
+                else:
+                    empty_pages += 1
+                    if empty_pages >= MAX_EMPTY_PAGES:
+                        log.debug(
+                            f"expired subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
+                        )
+                        break
 
-                if response.get("hasMore") is not True or not subscriptions:
+                if response.get("hasMore") is not True:
                     break
 
-                current_offset += len(subscriptions)
+                step = _subscription_page_step(url, len(subscriptions))
+                if step <= 0:
+                    break
+                current_offset += step
 
         except asyncio.TimeoutError:
             log.debug(f"Task timed out {url}")

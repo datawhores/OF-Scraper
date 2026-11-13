@@ -13,18 +13,27 @@ from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model_sync,
 )
 import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.scripts.skip_download_script import retry_permanent_skips
 
 log = logging.getLogger("shared")
 
 
+def undated_first(date):
+    # a sort key that puts undated items first, as the oldest, without
+    # comparing None to a date
+    return (date is not None, date or "")
+
+
 def sort_by_date(media):
-    return sorted(media, key=lambda x: x.date)
+    return sorted(media, key=lambda x: undated_first(x.date))
 
 
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
-    media = sorted(media, key=lambda item: (item.post.date, item.id, item.count))
+    media = sorted(
+        media, key=lambda item: (undated_first(item.post.date), item.id, item.count)
+    )
     if of_env.getattr("ALLOW_DUPE_MEDIA"):
         for item in media:
             if not output[(item.id, item.post_id)]:
@@ -157,7 +166,8 @@ def previous_download_filter(medialist, username=None, model_id=None):
 
     # sort to key order same
     medialist = sorted(
-        medialist, key=lambda item: (item.post.date, item.id, item.count)
+        medialist,
+        key=lambda item: (undated_first(item.post.date), item.id, item.count),
     )
 
     # Early Exit if forcing all
@@ -165,18 +175,29 @@ def previous_download_filter(medialist, username=None, model_id=None):
         log.info("forcing all media to be downloaded")
         return medialist
 
-    # Determine the pool of already downloaded media
+    # Determine the pool of already downloaded media. With
+    # --retry-permanent-skips, the script's permanent skips aren't in it, so
+    # they're offered to the script again (#354)
+    retry = retry_permanent_skips()
+    if retry:
+        log.info("offering permanently skipped media to the skip script again")
     if settings.get_settings().force_model_unique:
         log.info(f"Downloading unique media for model: {username}")
         media_ids = set(
-            get_media_ids_downloaded_model_sync(model_id=model_id, username=username)
+            get_media_ids_downloaded_model_sync(
+                model_id=model_id, username=username, without_permanent_skips=retry
+            )
         )
         log.debug(
             f"Number of unique media ids in database for {username}: {len(media_ids)}"
         )
     else:
         log.info("Downloading unique media across all models")
-        media_ids = set(get_media_ids_downloaded(model_id=model_id, username=username))
+        media_ids = set(
+            get_media_ids_downloaded(
+                model_id=model_id, username=username, without_permanent_skips=retry
+            )
+        )
         log.debug(
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )
@@ -314,9 +335,9 @@ def mass_msg_filter(media):
 
 def final_post_sort(post):
     post_sort = settings.get_settings().post_sort
-    reversed = settings.get_settings().post_desc
+    is_reversed = settings.get_settings().post_desc
     log.debug(f"Using post sort {post_sort}")
-    if post_sort == "date" and reversed:
+    if post_sort == "date" and is_reversed:
         post = list(reversed(post))
     elif post_sort == "random":
         random.shuffle(post)

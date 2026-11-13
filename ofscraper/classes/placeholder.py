@@ -2,8 +2,10 @@ import logging
 import os
 import pathlib
 import re
+import string
 import arrow
 
+import ofscraper.sites as sites
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
@@ -20,20 +22,75 @@ from ofscraper.scripts.naming_script import naming_script
 log = logging.getLogger("shared")
 
 
+def date_placeholder(date, fallback, name, ele):
+    """The {date} value: the post's date, else ``fallback`` (the media's own
+    date), else 0 (1970), as the database readers store a missing date.
+
+    Names are built several times per file (temporary folder, folder, file
+    name), so the warning is logged once per item, remembered on ``ele``."""
+    if not date:
+        date = fallback or 0
+        if not getattr(ele, "_undated_name_warned", False):
+            ele._undated_name_warned = True
+            log.warning(
+                f"{name} has no date, {'using its media date' if date else 'using 1970-01-01'}"
+                " for {date} in its file and folder names"
+            )
+    return arrow.get(date).format(data.get_date())
+
+
+def site_save_location():
+    """Save location; Fansly runs use ``<save location>/Fansly``.
+
+    OnlyFans gets the configured value unchanged (same type, no Path round trip).
+    """
+    location = common_paths.get_save_location()
+    if sites.is_fansly():
+        return str(pathlib.Path(location, sites.site_name()))
+    return location
+
+
+# Placeholders whose value differs between OnlyFans and Fansly. {model_id} counts:
+# Fansly ids are 18-digit snowflakes, OnlyFans ids are far shorter.
+_SITE_SPECIFIC_FIELDS = {
+    "save_location", "savelocation", "root", "site_name", "sitename",
+    "model_id", "modelid",
+}
+
+
+def _is_site_specific(fmt):
+    """True when ``fmt`` resolves to a different path for each site."""
+    fields = {
+        name.split(".")[0].split("[")[0]
+        for _, name, _, _ in string.Formatter().parse(fmt)
+        if name
+    }
+    return bool(fields & _SITE_SPECIFIC_FIELDS)
+
+
+def default_media_root():
+    """Save location; Fansly profiles save under ``<save location>/Fansly``."""
+    return pathlib.Path(site_save_location())
+
+
 class basePlaceholder:
     def __init__(self) -> None:
         self._ele = None
 
     def create_variables_base(self):
-        my_id, my_username = me.parse_user()
+        _, my_username = me.parse_user()
+        my_id = "anon" if settings.get_settings().anon else me.get_id()
+        # {save_location} and {root} share the media folder's site root, so a
+        # metadata path built from them can't reach an OnlyFans user_data.db
+        save_location = site_save_location()
         self._variables = {
             "config_path": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),
-            "site_name": "Onlyfans",
-            "save_location": common_paths.get_save_location(),
+            "site_name": sites.site_name(),
+            "save_location": save_location,
             "my_id": my_id,
             "my_username": my_username,
-            "root": pathlib.Path((common_paths.get_save_location())),
+            "root": pathlib.Path((save_location)),
         }
 
     def async_wrapper(f):
@@ -100,8 +157,11 @@ class tempFilePlaceholder(basePlaceholder):
 
 
 class databasePlaceholder(basePlaceholder):
-    def __init__(self) -> None:
+    def __init__(self, create=True) -> None:
+        """create=False works out the database path without making the
+        creator's folder, for a read-only read (#373)."""
         super().__init__()
+        self._create = create
 
     @basePlaceholder.wrapper
     def databasePathHelper(self, model_id, model_username):
@@ -114,11 +174,18 @@ class databasePlaceholder(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        formatStr = data.get_metadata().format(**self._variables)
+        metadata_format = data.get_metadata()
+        formatStr = metadata_format.format(**self._variables)
+        if sites.is_fansly() and not _is_site_specific(metadata_format):
+            # e.g. {configpath}/{profile}/.data/{model_username} resolves to the
+            # same folder on both sites; keep Fansly rows out of the OnlyFans db
+            formatStr = pathlib.Path(formatStr, sites.site_name())
         data_path = pathlib.Path(formatStr, "user_data.db")
         data_path = pathlib.Path(os.path.normpath(data_path))
         self._metadata = data_path
-        self._metadata.parent.mkdir(parents=True, exist_ok=True)
+        # a read-only read makes no folder (#373)
+        if self._create:
+            self._metadata.parent.mkdir(parents=True, exist_ok=True)
         log.trace(f"final database path {data_path}")
         return pathlib.Path(data_path)
 
@@ -218,7 +285,14 @@ class Placeholders(basePlaceholder):
         self._variables.update({"media_type": ele.mediatype.capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
         self._variables.update(
-            {"date": arrow.get(ele.postdate).format(data.get_date())}
+            {
+                "date": date_placeholder(
+                    ele.postdate,
+                    ele.date,
+                    f"Post {ele.post_id} (media {ele.id})",
+                    ele,
+                )
+            }
         )
         self._variables.update({"model_username": username})
         self._variables.update({"response_type": ele.modified_responsetype})
@@ -243,7 +317,7 @@ class Placeholders(basePlaceholder):
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or common_paths.get_save_location())
+        root = pathlib.Path(root or default_media_root())
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
@@ -424,7 +498,9 @@ class Textholders(basePlaceholder):
         self._variables.update({"post_id": ele.id})
         self._variables.update({"first_letter": username[0].capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
-        self._variables.update({"date": arrow.get(ele.date).format(data.get_date())})
+        self._variables.update(
+            {"date": date_placeholder(ele.date, None, f"Post {ele.id}", ele)}
+        )
         self._variables.update({"model_username": username})
         self._variables.update({"media_type": "Text"})
         self._variables.update({"response_type": ele.modified_responsetype})
@@ -449,7 +525,7 @@ class Textholders(basePlaceholder):
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or common_paths.get_save_location())
+        root = pathlib.Path(root or default_media_root())
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(

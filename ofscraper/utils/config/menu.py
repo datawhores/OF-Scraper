@@ -8,7 +8,6 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.settings as settings
 
 
-console = console_.get_shared_console()
 log = logging.getLogger("shared")
 
 
@@ -16,7 +15,8 @@ def update_config_helper(updated_config):
     current_config = config_file.open_config()
     config_.update_config_full(current_config, updated_config)
     settings.update_settings()
-    console.print("`config.json` has been successfully edited.")
+    # the answer to a prompt, so shown even when --output quiets the shared console
+    console_.get_console().print("`config.json` has been successfully edited.")
 
 
 def download_config():

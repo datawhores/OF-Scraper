@@ -1,6 +1,6 @@
 def hide_check_mode(wrapper):
     for param in wrapper.params:
-        if param.name in ["downloadthreads", "downloadsem", "downloadbars"]:
+        if param.name in ["downloadthreads", "download_sem", "downloadbars"]:
             param.hidden = True
 
 

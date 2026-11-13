@@ -10,7 +10,11 @@ class TimeField(Container):
     DEFAULT_CSS = """
     TimeField{
     column-span:4;
-    row-span:2;
+    row-span:3;
+    }
+
+    TimeField Horizontal{
+    height:auto;
     }
 
     TimeField Label{
@@ -60,13 +64,13 @@ class TimeField(Container):
 
     def update_table_min(self, val):
         minLenthInputs = list(self.query_one("#minContainer").query(IntegerInput))
-        if isinstance(val, int) or str(val).isnumeric():
+        if isinstance(val, (int, float)) or str(val).isnumeric():
             val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60
             seconds = val % 60
 
-        elif val != "N/A" and val != "N\A":
+        elif val != "N/A" and val != "N\\A":
             valArray = val.split(":")
             hours, minutes, seconds = valArray
         else:
@@ -76,13 +80,13 @@ class TimeField(Container):
 
     def update_table_max(self, val):
         maxLenthInputs = list(self.query_one("#maxContainer").query(IntegerInput))
-        if isinstance(val, int) or str(val).isnumeric():
+        if isinstance(val, (int, float)) or str(val).isnumeric():
             val = int(val)
             hours = val // 3600
             minutes = (val % 3600) // 60
             seconds = val % 60
 
-        elif val != "N/A" and val != "N\A":
+        elif val != "N/A" and val != "N\\A":
             valArray = val.split(":")
             hours, minutes, seconds = valArray
         else:
@@ -112,7 +116,7 @@ class TimeField(Container):
             ["h:m:s"],
         )
         compare_value = arrow.get(
-            "0:0:0" if value in {"N\A", "N/A"} else value, ["h:m:s"]
+            "0:0:0" if value in {"N\\A", "N/A"} else value, ["h:m:s"]
         )
 
         if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):

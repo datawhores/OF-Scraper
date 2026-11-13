@@ -2,17 +2,27 @@ import functools
 import inspect
 
 from InquirerPy import get_style, inquirer
+from InquirerPy.containers.instruction import InstructionWindow
+from InquirerPy.containers.validation import ValidationFloat
 from InquirerPy.separator import Separator
-from prompt_toolkit.shortcuts import prompt as prompt
+from prompt_toolkit.layout import FloatContainer
+from prompt_toolkit.shortcuts import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.application import get_app
+
+from ofscraper.prompts.cancel import cancel, cancel_scope, top_level
 
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
+import ofscraper.utils.interactive as interactive
 from ofscraper.utils.live.empty import prompt_live
 from ofscraper.utils.live.clear import clear
 
 
 def wrapper(prompt_funct):
     def inner(*args, **kwargs):
+        # with no console the prompt can't open (#286)
+        interactive.require_console(kwargs.get("message") or prompt_funct.__name__)
         # setup
         long_message = functools.partial(
             handle_skip_helper,
@@ -30,6 +40,7 @@ def wrapper(prompt_funct):
                         inspect.cleandoc(
                             f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}".upper()
                         ),
+                        "ESC: GO BACK (NO EFFECT AT TOP LEVEL)",
                         inspect.cleandoc(
                             f"{kwargs.pop('more_instruction', '') or kwargs.pop('more_instructions', '')}".upper()
                         ),
@@ -47,6 +58,21 @@ def wrapper(prompt_funct):
         with prompt_live():
 
             prompt_ = prompt_funct(*args, **kwargs)
+            fix_validation_float(prompt_)
+            clear_on_resize(prompt_)
+
+            # Shorten terminal escape-sequence waits, preserving the default
+            # timeoutlen for multi-key submit chords. A lone Esc may still wait
+            # up to timeoutlen when an Alt binding shares its prefix.
+            if hasattr(prompt_, "_session"):
+                # PromptSession creates a different Application for TERM=dumb.
+                # The message renders in the application actually reading keys.
+                prompt_._session.message = functools.partial(
+                    prompt_message, prompt_._session.message
+                )
+            else:
+                escape_delay(prompt_.application)
+            prompt_.register_kb("escape")(cancel)
 
             register_keys(prompt_, altx_action, altd_action, additional_keys, action)
 
@@ -57,20 +83,67 @@ def wrapper(prompt_funct):
                 prompt_._default = get_default(prompt_funct, prompt_)
                 select = action[0]
                 action[0] = None
-                if select == "altx":
-                    prompt_ = altx_action(prompt_)
-                elif select == "altv":
-                    altv_action()
-                elif select == "altd":
-                    altd_action(prompt_)
-                elif additional_keys.get(select):
-                    prompt_ = additional_keys.get(select)(prompt_)
-                else:
-                    break
+                with cancel_scope():
+                    if select == "altx":
+                        prompt_ = altx_action(prompt_)
+                    elif select == "altv":
+                        altv_action()
+                    elif select == "altd":
+                        altd_action(prompt_)
+                    elif additional_keys.get(select):
+                        prompt_ = additional_keys.get(select)(prompt_)
+                    else:
+                        break
 
         return out
 
     return inner
+
+
+def fix_validation_float(prompt_):
+    if hasattr(prompt_, "_session"):
+        return
+    layout = getattr(prompt_, "_layout", None)
+    container = getattr(layout, "container", layout)
+    if not isinstance(container, FloatContainer):
+        return
+    instruction = next(
+        (
+            child for child in container.content.get_children()
+            if isinstance(child, InstructionWindow)
+        ),
+        None,
+    )
+    if instruction is None:
+        return
+    for float_ in container.floats:
+        if isinstance(float_, ValidationFloat):
+            window = instruction.content
+            write_to_screen = window.write_to_screen
+
+            def draw_instruction(*args, **kwargs):
+                write_to_screen(*args, **kwargs)
+                # FloatContainer draws its content before positioning floats.
+                if window.render_info is not None:
+                    float_.bottom = window.render_info.window_height
+
+            window.write_to_screen = draw_instruction
+            return
+
+
+def clear_on_resize(prompt_):
+    app = getattr(getattr(prompt_, "_session", None), "app", None)
+    if app is None:
+        app = getattr(prompt_, "application", None)
+    if app is None or getattr(app, "renderer", None) is None:
+        return
+
+    def on_resize():
+        # Resizing re-wraps old lines, so the renderer's last height is stale.
+        app.renderer.clear()
+        app._redraw()
+
+    app._on_resize = on_resize
 
 
 def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
@@ -265,6 +338,24 @@ def batchConverter(*args, **kwargs):
     outDict = {}
     outDict.update(list(map(lambda x: batchConverterHelper(x, kwargs), args)))
     return outDict
+
+
+def escape_delay(application):
+    application.ttimeoutlen = 0.1
+
+
+def prompt_message(message):
+    escape_delay(get_app())
+    return message() if callable(message) else message
+
+
+def prompt(message=""):
+    """The same Esc handling for help pages and press-enter prompts."""
+    interactive.require_console(message or "Press enter to return")
+    keys = KeyBindings()
+    keys.add("escape")(cancel)
+    session = PromptSession(key_bindings=keys)
+    return session.prompt(functools.partial(prompt_message, f"{message} [Esc: go back]"))
 
 
 def handle_skip_helper(message):

@@ -32,7 +32,11 @@ def load_system_config():
         os.getenv("OFSC_FINAL_SCRIPT_SUBPROCESS_LEVEL", "10")
     )
 
-    config["LOG_SUBPROCESS_LEVEL"] = int(os.getenv("OFSC_LOG_SUBPROCESS_LEVELL", "10"))
+    # OFSC_LOG_SUBPROCESS_LEVELL is the old misspelled name, kept for compatibility
+    config["LOG_SUBPROCESS_LEVEL"] = int(
+        os.getenv("OFSC_LOG_SUBPROCESS_LEVEL")
+        or os.getenv("OFSC_LOG_SUBPROCESS_LEVELL", "10")
+    )
 
     # Set log level for FFmpeg operations
     config["FFMPEG_SUBPROCESS_LEVEL"] = int(

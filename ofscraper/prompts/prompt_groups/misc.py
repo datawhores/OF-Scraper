@@ -1,4 +1,5 @@
-from InquirerPy import prompt
+from ofscraper.prompts.promptConvert import prompt
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.live.screens as progress_utils
 
 
@@ -6,13 +7,6 @@ def press_enter_to_continue():
     """
     Pauses the script and waits for the user to press Enter.
     """
-    questions = [
-        {
-            "type": "input",
-            "message": "Press enter to continue\n",
-            # The name is not strictly necessary for this use case but is good practice
-            "name": "continue",
-        }
-    ]
+    interactive.require_console("Press enter to continue")
     with progress_utils.stop_live_screen():
-        prompt(questions)
+        prompt("Press enter to continue")

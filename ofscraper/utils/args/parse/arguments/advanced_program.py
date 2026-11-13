@@ -1,6 +1,6 @@
 import cloup as click
 
-from ofscraper.utils.const import KEY_OPTIONS, DYNAMIC_OPTIONS
+from ofscraper.utils.const import KEY_OPTIONS, DYNAMIC_OPTIONS, DYNAMIC_ALIASES
 
 no_cache_option = click.option(
     "-nc",
@@ -59,7 +59,8 @@ dynamic_rules_option = click.option(
     "--dynamic-rule",
     help="Dynamic signing",
     default=None,
-    type=click.Choice(DYNAMIC_OPTIONS, case_sensitive=False),
+    # the same names config.json accepts, short names included (#232)
+    type=click.Choice([*DYNAMIC_OPTIONS, *DYNAMIC_ALIASES], case_sensitive=False),
     callback=lambda ctx, param, value: value.lower() if value else None,
 )
 

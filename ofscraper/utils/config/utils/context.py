@@ -1,9 +1,11 @@
 import json
+from ofscraper.prompts.cancel import back_to_menu
 import pathlib
 from contextlib import contextmanager
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
 
 
@@ -28,16 +30,23 @@ def config_context():
                     print(f"{e}\n\n")
                     config_prompt = prompts.reset_config_prompt()
                     if config_prompt == "manual":
-                        configStr = prompts.manual_config_prompt(
-                            configStr or config_file.config_string()
-                        )
+                        configStr = _manual_config(configStr or config_file.config_string())
+                        if configStr is None:
+                            continue
                         config_file.write_config(configStr)
                         config_file.open_config()
                     elif config_prompt == "reset":
                         config_file.make_config_original()
                     break
+                except interactive.NoConsoleError:
+                    raise  # asking again can't work either
                 except Exception:
                     continue
             continue
         yield
         break
+
+
+@back_to_menu
+def _manual_config(configStr):
+    return prompts.manual_config_prompt(configStr)

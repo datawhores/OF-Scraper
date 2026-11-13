@@ -31,7 +31,6 @@ from ofscraper.utils.checkers import check_auth
 import ofscraper.managers.manager as manager
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache.cache as cache
-import ofscraper.utils.context.exit as exit
 
 
 from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
@@ -187,7 +186,8 @@ class MetadataCommandManager(CommandManager):
         )
         if filtered_media:
             log.info(f"Found {len(filtered_media)} stray items to mark as locked")
-            await batch_set_media_downloaded(
+            # a sync database call: awaiting its None result raised TypeError (#376)
+            batch_set_media_downloaded(
                 filtered_media, model_id=model_id, username=username
             )
 
@@ -249,9 +249,6 @@ async def process_dicts(username, model_id, medialist):
                     for _ in range(concurrency_limit)
                 ]
                 await asyncio.gather(*consumers)
-        except Exception as E:
-            with exit.DelayedKeyboardInterrupt():
-                raise E
         finally:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, cache.close

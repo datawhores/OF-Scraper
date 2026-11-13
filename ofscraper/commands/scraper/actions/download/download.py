@@ -9,12 +9,12 @@ from ofscraper.commands.utils.strings import (
 )
 import ofscraper.utils.live.updater as progress_updater
 import ofscraper.utils.config.data as config_data
-import ofscraper.utils.paths.common as common_paths
+import ofscraper.classes.placeholder as placeholder
 from ofscraper.utils.string import format_safe
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.cache.cache as cache
-import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 
 
@@ -23,22 +23,38 @@ from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
 from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.scraper.actions.download.run import consumer
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
 
 
-async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
-    download_str = download_activity_str.format(username=username)
-    path_str = format_safe(
-        f"\nSaving files to [deep_sky_blue2]{str(pathlib.Path(common_paths.get_save_location(),config_data.get_dirformat(),config_data.get_fileformat()))}[/deep_sky_blue2]",
+def save_path_str(username=None, model_id=None):
+    """The "Saving files to ..." progress line. The path is filled in first
+    and escaped after, so brackets in it or in the filled-in names show as
+    they are."""
+    # the site's media root: <save location>/Fansly on Fansly runs
+    path = format_safe(
+        str(
+            pathlib.Path(
+                placeholder.site_save_location(),
+                config_data.get_dirformat(),
+                config_data.get_fileformat(),
+            )
+        ),
         username=username,
         model_id=model_id,
         model_username=username,
         modelusername=username,
         modelid=model_id,
     )
+    return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]"
+
+
+async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
+    download_str = download_activity_str.format(username=username)
+    path_str = save_path_str(username=username, model_id=model_id)
     with progress_utils.TemporaryTaskState(progress_updater.activity, ["main"]):
         progress_updater.activity.update_task(
             description=download_str + path_str, visible=True
@@ -57,7 +73,12 @@ async def download_process(username, model_id, medialist, posts):
 
 
 @run
-async def process_dicts(username, model_id, medialist, posts):
+async def process_dicts(username, model_id, medialist, posts, on_result=None):
+    """Return batch totals; optionally call on_result(media, result) per file.
+
+    Results are "downloaded", "skipped" (intentional), "failed", or "stopped".
+    The callback runs in the download worker as each file finishes.
+    """
     # 2. Handle text download if enabled
     if not isinstance(medialist, list):
         medialist = [medialist]
@@ -73,7 +94,16 @@ async def process_dicts(username, model_id, medialist, posts):
         return (0, 0, 0, 0, 0)
 
     # Continue to download process
-    logging.getLogger("shared").info("Downloading in single thread mode")
+    for ele in medialist:
+        ele.download_unstarted = True
+        ele.download_stopped = False
+    if stop.requested.is_set():
+        return (0, 0, 0, 0, 0)
+    concurrency_limit = get_max_workers()
+    logging.getLogger("shared").info(
+        f"Downloading up to {concurrency_limit} "
+        f"{'file' if concurrency_limit == 1 else 'files'} at a time"
+    )
     common_globals.mainProcessVariableInit()
     task1 = None
     with progress_utils.setup_live("download"):
@@ -85,6 +115,7 @@ async def process_dicts(username, model_id, medialist, posts):
                     aws.append((c, ele, model_id, username))
                 task1 = progress_updater.download.add_overall_task(
                     desc.format(
+                        stopped=0,
                         p_count=0,
                         v_count=0,
                         a_count=0,
@@ -98,16 +129,18 @@ async def process_dicts(username, model_id, medialist, posts):
                     total=len(aws),
                     visible=True,
                 )
-                concurrency_limit = get_max_workers()
                 lock = asyncio.Lock()
                 consumers = [
-                    asyncio.create_task(consumer(aws, task1, medialist, lock))
+                    asyncio.create_task(consumer(aws, task1, medialist, lock, on_result=on_result))
                     for _ in range(concurrency_limit)
                 ]
-                await asyncio.gather(*consumers)
-        except Exception as E:
-            with exit.DelayedKeyboardInterrupt():
-                raise E
+                try:
+                    await asyncio.gather(*consumers)
+                finally:
+                    for task in consumers:
+                        if not task.done():
+                            task.cancel()
+                    await asyncio.gather(*consumers, return_exceptions=True)
         finally:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, cache.close

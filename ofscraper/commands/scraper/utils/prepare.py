@@ -53,7 +53,7 @@ def unique_name_warning():
     if not check_uniquename():
         log.info(
             "[red]Warning: Your generated filenames may not be unique\n \
-            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
+            https://cloakedkeys.gitbook.io/ofsc/getting-started/config-options/file-output-options/customizing-save-path[/red]      \
             "
         )
         time.sleep(of_env.getattr("LOG_DISPLAY_TIMEOUT") * 3)

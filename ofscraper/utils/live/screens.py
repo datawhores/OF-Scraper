@@ -13,7 +13,7 @@ from ofscraper.utils.live.groups import (
     metadata_group,
     userlist_group,
 )
-from ofscraper.utils.live.live import get_live, stop_live,start_live
+from ofscraper.utils.live.live import get_live, start_live, stop_live
 
 from ofscraper.utils.live.clear import clear_tasks_by_name
 from ofscraper.utils.live.updater import ActivityManager
@@ -22,32 +22,31 @@ from ofscraper.utils.live.updater import ActivityManager
 @contextlib.contextmanager
 def stop_live_screen(clear=False):
     """
-    A context manager to safely stop the live display, show a prompt,
-    and then resume the display.
+    A context manager to stop the live display, show a prompt,
+    and then start the display again with the panels it showed.
+
+    stop_live() leaves the last frame on the screen only if it shows
+    progress; empty panels are erased. If the body starts a live display
+    of its own, that one is left running.
     """
     live = get_live()
     if not live.is_started:
         yield
         return
-    original_transient_state = live.transient
-    live.transient = False
-
+    renderable = live.get_renderable()
     try:
-        # Stop the live display. Because it's transient, it will be erased.
         stop_live()
         yield
     finally:
-        # Restore the original state before restarting
-        live.transient = original_transient_state
-        # Restart the live display with its original content
-        start_live(refresh=True)
+        # stop_live() drops the live display, so this starts a new one
+        start_live(renderable, refresh=True)
         if clear:
             clear_tasks_by_name(clear)
 
 
 SCREENS = {
     "download": {
-        "layout": get_download_group(),
+        "layout": get_download_group,
         "clear": "download",
         "suppress": "SUPRESS_DOWNLOAD_DISPLAY",
     },
@@ -101,8 +100,13 @@ def setup_live(screen_name: str, revert=True, clear=True):
     # Use the 'clear' instruction from the config only if the flag is True
     clear_instruction = config.get("clear") if clear else None
 
+    layout = config["layout"]
+    if layout is get_download_group:
+        # built on first use: it reads the settings, which mustn't happen at import
+        layout = layout()
+
     return ProgressLayoutManager(
-        layout=config["layout"],
+        layout=layout,
         clear_on_exit=clear_instruction,  # Pass the final instruction
         supress_key=config.get("suppress"),
         revert=revert,
@@ -110,32 +114,60 @@ def setup_live(screen_name: str, revert=True, clear=True):
 
 
 class ProgressLayoutManager:
+    """Show a layout on the live display while the block runs.
+
+    A prompt inside the block (stop_live_screen, prompt_live) replaces the
+    live display with a new one, so the display is looked up with get_live()
+    each time it's used, not kept from when the screen opened.
+    """
+
     def __init__(self, layout, clear_on_exit=None, supress_key=None, revert=True):
-        self.live = get_live()
         self.layout = layout
         self.clear_on_exit = clear_on_exit
         self.supress_key = supress_key
         self.previous_layout = None
         self.revert = revert
+        self.quiet_before = None
 
     def __enter__(self):
-        self.previous_layout = self.live.renderable
+        live = get_live()
+        self.previous_layout = live.renderable
         if self.supress_key:
-            console_.get_shared_console().quiet = (
-                of_env.getattr(self.supress_key)
-                if of_env.getattr(self.supress_key) is not None
-                else console_.get_shared_console().quiet
-            )
-        if not self.live.is_started:
-            self.live.start()
-        self.live.update(self.layout, refresh=True)
+            # unset leaves quiet following the output options
+            supress = of_env.getattr(self.supress_key)
+            if supress is not None:
+                shared = console_.get_shared_console()
+                # what quiet was set to before this screen (None: it follows
+                # the output options), so __exit__ can put it back; a plain
+                # Console (update_shared, tests) has only its quiet flag
+                before = getattr(shared, "_quiet_override", shared.quiet)
+                self.quiet_before = (shared, before)
+                shared.quiet = supress
+        try:
+            if not live.is_started:
+                live.start()
+            live.update(self.layout, refresh=True)
+        except BaseException:
+            # __exit__ won't run if the screen fails to open
+            self._restore_quiet()
+            raise
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.previous_layout and self.revert:
-            self.live.update(self.previous_layout, refresh=True)
-        if self.clear_on_exit:
-            clear_tasks_by_name(self.clear_on_exit)
+        try:
+            if self.previous_layout and self.revert:
+                get_live().update(self.previous_layout, refresh=True)
+            if self.clear_on_exit:
+                clear_tasks_by_name(self.clear_on_exit)
+        finally:
+            self._restore_quiet()
+
+    def _restore_quiet(self):
+        if self.quiet_before:
+            # the SUPRESS_* value applies only while this screen is up
+            shared, before = self.quiet_before
+            shared.quiet = before
+            self.quiet_before = None
 
 
 class TemporaryTaskState:

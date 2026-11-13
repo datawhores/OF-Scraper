@@ -12,11 +12,13 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
@@ -43,6 +45,7 @@ log = logging.getLogger("shared")
 
 
 @run
+@stop.fetching
 async def get_streams_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     time_log(username, after)
@@ -96,7 +99,7 @@ async def process_tasks_batch(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -275,10 +278,16 @@ async def scrape_stream_posts(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                if not is_last_chunk and len(required_ids) == 0:
+                # Boundary condition: this page reaches past the "before" date limit.
+                # Keep its in-range posts before stopping.
+                if max_ts > before:
+                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
                     break
 
-                if max_ts > before:
+                # This chunk has found all of its cached posts. Keep the page
+                # that contained them; the next chunk only starts after its tail.
+                if not is_last_chunk and len(required_ids) == 0:
+                    yield batch
                     break
 
                 current_timestamp = max_ts
@@ -350,6 +359,4 @@ async def get_after(model_id, username):
 
 
 def time_log(username, after):
-    log.info(
-        f"Setting streams scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}"
-    )
+    scan_range.log_scan_range(log, username, "streams", after)

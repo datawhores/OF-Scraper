@@ -3,8 +3,11 @@ import logging
 import pathlib
 import re
 
+from ofscraper.utils.markup import escape_text
+
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 
 console = console_.get_shared_console()
@@ -12,7 +15,12 @@ log = logging.getLogger("shared")
 
 
 def make_config(config=False):
-    config = schema.get_current_config_schema(config=config)
+    if config is False:
+        # a new file holds the built-in defaults, not environment values
+        with of_env.builtin_defaults():
+            config = schema.get_current_config_schema(config=config)
+    else:
+        config = schema.get_current_config_schema(config=config)
     if isinstance(config, str):
         config = json_loads(config)
 
@@ -22,7 +30,7 @@ def make_config(config=False):
 
     with open(p, "w") as f:
         f.write(json.dumps(config, indent=4))
-    console.print(f"config file created at {p}")
+    console.print(f"config file created at {escape_text(p)}")
 
 
 def make_config_original():
@@ -61,7 +69,10 @@ def write_config(updated_config):
 
 def auto_update_config(config: dict) -> dict:
     log.info("Auto updating config...")
-    new_config = schema.get_current_config_schema(config)
+    # keys missing from the file get the built-in defaults, not environment
+    # values; the environment still applies at runtime
+    with of_env.builtin_defaults():
+        new_config = schema.get_current_config_schema(config)
     write_config(new_config)
     return new_config
 

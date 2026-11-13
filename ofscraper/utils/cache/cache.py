@@ -19,7 +19,12 @@ def get(*args, **kwargs):
         global cache
         if cache is None:
             cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
-        return cache.get(*args, **kwargs)
+        value = cache.get(*args, **kwargs)
+        # diskcache keeps one sqlite connection per thread; worker threads
+        # never closed theirs (set() already closes after writing)
+        if threading.current_thread() is not threading.main_thread():
+            cache.close()
+        return value
     except Exception as E:
         raise E
     finally:

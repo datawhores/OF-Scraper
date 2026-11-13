@@ -2,6 +2,7 @@ import logging
 
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.cache.read import read_full_after_scan_check
+from ofscraper.scripts.skip_download_script import retry_permanent_skips
 
 log = logging.getLogger("shared")
 
@@ -18,6 +19,11 @@ def get_after_pre_checks(model_id, api):
         return 0
     elif read_full_after_scan_check(model_id, api):
         log.debug(f"{api}: full scan has been trigger")
+        return 0
+    elif retry_permanent_skips():
+        # the permanently skipped files can be in any post, older than the
+        # last scan's (#354)
+        log.debug(f"{api}: doing full scan for --retry-permanent-skips")
         return 0
     # scan action
     for setting in settings.get_settings().actions:

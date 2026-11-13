@@ -1,0 +1,53 @@
+name: audit
+permissions:
+  contents: read
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+  # new advisories land without any change on our side, so check weekly too
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  pip-audit:
+    # pip-audit skips pins whose environment markers don't match the Python
+    # it runs on, so audit on every OS and on both sides of the lock's
+    # python_full_version splits to cover each platform- or version-only pin
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # 3.11.4: oldest supported, and below the lock's 3.11.5 split
+        # (soupsieve); 3.15.2: the version the test workflow uses
+        python-version: ["3.11.4", "3.15.2"]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v10.3.1
+        with:
+          python-version: ${{ matrix.python-version }}
+      # every package pinned in uv.lock, including all extras; the export is
+      # fully pinned, so pip-audit doesn't need to resolve anything itself
+      - name: Export locked requirements
+        run: uv export --frozen --all-extras --no-hashes --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+      # pip-audit runs on, and evaluates markers against, the matrix Python;
+      # -v logs each package it audits.
+      # PYSEC-2026-2447 (GHSA-w8v5-vhqr-4h9v, CVE-2025-69872): diskcache
+      # unpickles cache entries and has no fixed release; mitigated by our
+      # safe unpickler (#399). Remove this ignore once a fixed diskcache ships.
+      - name: Run pip-audit
+        run: >-
+          uvx --python "${{ matrix.python-version }}" pip-audit@2.10.1
+          -r "$RUNNER_TEMP/requirements.txt"
+          --no-deps --disable-pip --strict --progress-spinner off -v
+          --ignore-vuln PYSEC-2026-2447

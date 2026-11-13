@@ -2,17 +2,25 @@
 
 # Function to determine APP_UID and APP_GID for user/group creation and chown operation
 determine_app_ids() {
-    # Use UID and GID environment variables if provided, otherwise default to 1000
-    local effective_uid_candidate="${UID:-}"
-    local effective_gid_candidate="${GID:-}"
-    if [ -z "$effective_uid_candidate" ] || [ -z "$effective_gid_candidate" ]; then
+    # USER_ID/GROUP_ID are the names docker-compose.yml documents; UID/GID
+    # are still accepted. bash always sets UID itself (0 here), so check the
+    # environment the container started with: that tells a passed-in UID,
+    # including an explicit UID=0, from bash's own.
+    local uid_candidate="${USER_ID:-}"
+    if [ -z "$uid_candidate" ] && grep -qz '^UID=' "/proc/$$/environ" 2>/dev/null; then
+        uid_candidate="$UID"
+    fi
+    local gid_candidate="${GROUP_ID:-${GID:-}}"
+
+    if [ -z "$uid_candidate" ] && [ -z "$gid_candidate" ]; then
         APP_UID="1000"
         APP_GID="1000"
-    else
-        echo "INFO: Using provided UID ($effective_uid_candidate) and GID ($effective_gid_candidate)."
-        APP_UID="$effective_uid_candidate"
-        APP_GID="$effective_gid_candidate"
+        return
     fi
+    APP_UID="${uid_candidate:-1000}"
+    # a lone user ID is used for the group too
+    APP_GID="${gid_candidate:-$APP_UID}"
+    echo "INFO: Using provided UID ($APP_UID) and GID ($APP_GID)."
 }
 
 # Function to set up the application group

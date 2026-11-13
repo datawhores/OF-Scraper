@@ -23,6 +23,7 @@ import arrow
 
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache.cache as cache
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
@@ -39,11 +40,8 @@ def read_request_auth():
         "checksum_constant": "0",
     }
 
-    # *values, = get_request_auth()
-    result = get_request_auth()
-    if not result:
-        raise json.JSONDecodeError("No content")
-    (*values,) = result
+    # get_request_auth returns a checked rule or raises
+    (*values,) = get_request_auth()
 
     request_auth.update(zip(request_auth.keys(), values))
     return request_auth
@@ -59,6 +57,7 @@ def get_request_auth():
     ) < of_env.getattr("THIRTY_EXPIRY"):
         return curr_auth
     dynamic = settings.get_settings().dynamic_rules
+    dynamic = const.DYNAMIC_ALIASES.get(dynamic, dynamic)
     auth = None
     if of_env.getattr("DYNAMIC_RULE_MANUAL") and dynamic in {"manual"}:
         auth = get_request_auth_dynamic_rule_manual()
@@ -70,7 +69,7 @@ def get_request_auth():
         auth = get_request_auth_xagler()
     elif (dynamic) in {"rafa"}:
         auth = get_request_auth_rafa()
-    elif (dynamic) in {"dc", "digital", "digitalcriminal", "digitalcriminals"}:
+    elif (dynamic) in {"digitalcriminals"}:
         auth = get_request_auth_digitalcriminals()
     if auth is None:
         auth = get_request_auth_datawhores()
@@ -82,6 +81,18 @@ def get_request_auth():
 
 def get_request_auth_dynamic_rule_manual():
     content = of_env.getattr("DYNAMIC_RULE_MANUAL")
+    # OFSC_DYNAMIC_RULE_MANUAL arrives as text: the rule's JSON
+    if isinstance(content, str):
+        try:
+            content = json.loads(content)
+        except json.JSONDecodeError as E:
+            raise ValueError(
+                f"OFSC_DYNAMIC_RULE_MANUAL is not valid JSON: {E}"
+            ) from E
+    if not isinstance(content, dict):
+        raise ValueError(
+            "OFSC_DYNAMIC_RULE_MANUAL must be a JSON object holding the rule"
+        )
     return request_auth_helper_picker(content)
 
 
@@ -195,7 +206,38 @@ def get_request_auth_digitalcriminals():
             return request_auth_helper_picker(content)
 
 
+class UnusableDynamicRule(Exception):
+    """The dynamic rule's content can't be used to sign requests."""
+
+
+RULE_KEYS = ["static_param", "format", "checksum_indexes", "checksum_constant"]
+SUFFIX_RULE_KEYS = [
+    "static_param",
+    "prefix",
+    "suffix",
+    "checksum_indexes",
+    "checksum_constant",
+]
+
+
+def check_rule(content):
+    if not isinstance(content, dict):
+        found = "null" if content is None else type(content).__name__
+        problem = f"expected a JSON object, got {found}"
+    else:
+        keys = SUFFIX_RULE_KEYS if content.get("suffix") else RULE_KEYS
+        missing = [key for key in keys if key not in content]
+        if not missing:
+            return
+        problem = f"missing {', '.join(missing)}"
+    raise UnusableDynamicRule(
+        f"The dynamic rule ({settings.get_settings().dynamic_rules}) is unusable: "
+        f"{problem}. Try another dynamic rule, or try again later."
+    )
+
+
 def request_auth_helper_picker(content):
+    check_rule(content)
     if content.get("suffix"):
         return request_auth_helper(content)
     else:

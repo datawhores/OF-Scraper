@@ -6,6 +6,7 @@ from ofscraper.utils.args.parse.arguments.scripts import (
     post_script_option,
     after_download_option,
     skip_download_script,
+    retry_permanent_skips_option,
 )
 
 script_options_desc = "Program Scripts"
@@ -16,6 +17,7 @@ script_options_tuple = (
     post_script_option,
     after_download_option,
     skip_download_script,
+    retry_permanent_skips_option,
 )
 # Create the option group
 script_options = click.option_group(

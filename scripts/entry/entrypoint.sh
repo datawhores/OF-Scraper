@@ -2,8 +2,10 @@
 set -euo pipefail
 
 # --- Configuration Variables ---
-APP_USER="${USERNAME:-ofscraper}"
-APP_GROUP="${GROUPNAME:-$APP_USER}"
+# USER_NAME/GROUP_NAME are the names docker-compose.yml documents;
+# USERNAME/GROUPNAME are still accepted
+APP_USER="${USER_NAME:-${USERNAME:-ofscraper}}"
+APP_GROUP="${GROUP_NAME:-${GROUPNAME:-$APP_USER}}"
 #home
 APP_HOME="${APP_HOME:-/home/ofscraper}"
 
@@ -44,9 +46,24 @@ main() {
             exec "$@" # Execute command as current user (root/remapped root)
         fi
   else
-    echo "ERROR: Entrypoint running as non-root container user. Exiting..."
-    exit 1
-fi
+    # Started with --user / 'user:' (e.g. rootless setups). Users can't be
+    # created or files chowned without root, so run the command as this user.
+    echo "INFO: Running as non-root UID $CURRENT_UID; skipping user setup and permission changes."
+    if [ -z "${HOME:-}" ] || [ "$HOME" = "/" ] || [ ! -w "$HOME" ]; then
+        export HOME="$APP_HOME"
+    fi
+    if [ ! -w "$HOME" ]; then
+        echo "WARN: HOME ($HOME) is not writable by UID $CURRENT_UID. Mount a writable folder there or set APP_HOME to one."
+    fi
+    # bash takes UID from the environment when it's passed in, so a value
+    # other than the real UID means one was requested
+    if [ "${UID:-$CURRENT_UID}" != "$CURRENT_UID" ] || [ -n "${GID:-}${USER_ID:-}${GROUP_ID:-}" ]; then
+        echo "INFO: Ignoring UID/GID settings: the container was started as UID $CURRENT_UID (--user), which takes precedence."
+    fi
+    set_up_all_paths
+    mkdir -p "$CONFIG_DIR" "$DATA_DIR" 2>/dev/null || echo "WARN: Could not create $CONFIG_DIR or $DATA_DIR as UID $CURRENT_UID. Mount them writable for this user."
+    exec "$@"
+  fi
 }
 
 # Call the main function to start execution

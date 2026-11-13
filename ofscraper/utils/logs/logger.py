@@ -3,7 +3,6 @@ import logging
 import ofscraper.utils.logs.utils.level as log_helpers
 from ofscraper.utils.logs.stdout import add_stdout_handler
 from ofscraper.utils.logs.other import add_other_handler
-import ofscraper.utils.logs.other as other_logs  # Added to manage the background thread
 from ofscraper.utils.logs.classes.handlers.text import TextHandler
 import ofscraper.utils.dates as dates
 
@@ -18,6 +17,13 @@ def add_widget(widget):
             )
         )
     ]
+
+
+def remove_widget(widget):
+    """Stop writing the log to `widget`, if it's the one being written to."""
+    for ele in logging.getLogger("shared").handlers:
+        if isinstance(ele, TextHandler) and ele.widget is widget:
+            ele.widget = None
 
 
 def get_shared_logger(name=None):
@@ -40,7 +46,7 @@ def clearHandlers(name=None):
         try:
             log.removeHandler(handler)
             handler.close()
-        except Exception as e:
+        except Exception:
             pass
 
 

@@ -17,8 +17,10 @@ def get_my_info():
     else:
         import ofscraper.data.api.me as me
 
-        currentProfile = get_active_profile()
+        # remember the profile only once its data is in, so a failed
+        # request is tried again on the next call
         currentData = me.scrape_user()
+        currentProfile = get_active_profile()
     return currentData
 
 

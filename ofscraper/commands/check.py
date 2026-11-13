@@ -1,4 +1,7 @@
 import asyncio
+import queue
+from ofscraper.commands.scraper.actions.download import stop
+import ofscraper.utils.system.system as system
 import inspect
 import logging
 import re
@@ -36,9 +39,10 @@ from ofscraper.data.api.common.check import read_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
+from ofscraper.filters.media.filters import undated_first
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
-    get_media_post_ids_downloaded,
+    get_media_post_files_downloaded,
 )
 from ofscraper.utils.checkers import check_auth
 from ofscraper.utils.context.run_async import run
@@ -56,6 +60,10 @@ ALL_MEDIA = {}
 ROWS = {}
 MEDIA_KEY = ["id", "postid", "username"]
 check_user_dict = defaultdict(dict)
+# the thread that downloads what the table sends; one for the whole session
+_download_worker = None
+# set while that thread works on a batch, from taking the rows to its cleanup
+_downloading = threading.Event()
 
 
 def process_download_queue():
@@ -66,58 +74,92 @@ def process_download_queue():
         if app.row_queue.empty():
             time.sleep(1)
             continue
-        user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
-        while not app.row_queue.empty():
-            try:
-                key, row_data = app.row_queue.get()
-                media_item, post_item, username, model_id = _get_data_from_row(row_data)
-
-                # Append all necessary data for later processing
-                user_cart[model_id]["posts"].append(post_item)
-                user_cart[model_id]["media"].append(media_item)
-                user_cart[model_id]["rows"].append((key, row_data))
-                user_cart[model_id]["username"] = username  # Store username once
-
-            except Exception as e:
-                log.debug(f"Error processing row from queue: {e}")
-                log.traceback_(traceback.format_exc())
-
-        # 2. PROCESS: Loop through each user's batch and process their items
-        for model_id, data in user_cart.items():
-            username = data["username"]
-            log.info(f"Processing download batch for user: {username}")
-            try:
-                # Pass the user's entire batch to the processing function
-                _process_user_batch(
-                    username, model_id, data["media"], data["posts"], data["rows"]
-                )
-
-                # Run after-actions for this user
-                after_download_action_script(username, data["media"], data["posts"])
-                manager.Manager.current_model_manager.mark_as_processed(
-                    username, activity="download"
-                )
-                manager.Manager.stats_manager.update_and_print_stats(
-                    username, "download", data["media"]
-                )
-
-            except Exception as e:
-                log.debug(
-                    f"An error occurred while processing the batch for {username}."
-                )
-                log.traceback_(e)
-
-        # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
+        _downloading.set()
         try:
-            final_action()
-            manager.Manager.current_model_manager.clear_scrape_queues()
-            manager.Manager.stats_manager.clear_scraper_activity_stats()
-            log.info("Download processing complete. Waiting for new items...")
+            _process_queued_rows()
+        finally:
+            _downloading.clear()
+            stop.clear()
+
+
+def downloads_pending():
+    """True while rows sent from the table wait or download."""
+    if _download_worker is None or not _download_worker.is_alive():
+        return False
+    return not app.row_queue.empty() or _downloading.is_set()
+
+
+def wait_for_downloads(poll=0.5):
+    """Wait until what the table sent has finished downloading, so the menu
+    doesn't come back with the downloads still running (#425)."""
+    if not downloads_pending():
+        return
+    log.info("Finishing the downloads sent from the check table...")
+    while downloads_pending():
+        time.sleep(poll)
+    log.info("The downloads sent from the check table have finished")
+
+
+def _process_queued_rows():
+    user_cart = defaultdict(lambda: {"posts": [], "media": [], "rows": []})
+    while not app.row_queue.empty():
+        try:
+            key, row_data = app.row_queue.get_nowait()
+            media_item, post_item, username, model_id = _get_data_from_row(row_data)
+
+            # Append all necessary data for later processing
+            user_cart[model_id]["posts"].append(post_item)
+            user_cart[model_id]["media"].append(media_item)
+            user_cart[model_id]["rows"].append((key, row_data))
+            user_cart[model_id]["username"] = username  # Store username once
+
+        except queue.Empty:
+            break
         except Exception as e:
-            log.debug(
-                f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}"
-            )
+            log.debug(f"Error processing row from queue: {e}")
             log.traceback_(traceback.format_exc())
+
+    # 2. PROCESS: Loop through each user's batch and process their items
+    for model_id, data in user_cart.items():
+        username = data["username"]
+        if stop.requested.is_set():
+            for key, row in data["rows"]:
+                app.app.update_cell_state(key, "[added]", "bold light_goldenrod2")
+            continue
+        log.info(f"Processing download batch for user: {username}")
+        try:
+            # Pass the user's entire batch to the processing function
+            _process_user_batch(
+                username, model_id, data["media"], data["posts"], data["rows"]
+            )
+
+            # Run after-actions for this user
+            if not stop.requested.is_set():
+                after_download_action_script(username, data["media"], data["posts"])
+            manager.Manager.current_model_manager.mark_as_processed(
+                username, activity="download"
+            )
+            manager.Manager.stats_manager.update_and_print_stats(
+                username, "download", data["media"]
+            )
+
+        except Exception as e:
+            log.warning(
+                f"An error occurred while processing the batch for {username}."
+            )
+            log.traceback_(e)
+
+    # 3. FINAL CLEANUP: Now that all batches are processed, clear the queue
+    try:
+        final_action()
+        manager.Manager.current_model_manager.clear_scrape_queues()
+        manager.Manager.stats_manager.clear_scraper_activity_stats()
+        log.info("Download processing complete. Waiting for new items...")
+    except Exception as e:
+        log.warning(
+            f"An error occurred during the final cleanup phase. The cart state or stats may not have reset properly. {e}"
+        )
+        log.traceback_(traceback.format_exc())
 
 
 def _get_data_from_row(row: dict):
@@ -173,66 +215,168 @@ def _process_user_batch(
 
     m_id = str(model_id)
 
-    for i in range(len(media_list)):
-        key = row_list[i][0]
+    target_media = list(media_list)
+    target_posts = list(post_list)
 
-        # DYNAMIC FETCH 1: Grab the absolute newest media object from the collection.
-        try:
-            fresh_collection = check_user_dict[m_id]["collection"]
-            media = fresh_collection.find_media_item(media_list[i].id) or media_list[i]
-            post = media.post
-        except Exception:
-            media = media_list[i]
-            post = post_list[i]
-
-        log.info(f"Attempting to download: {media.filename} for {username}")
-
-        for attempt in range(2):
+    def refresh_media(indices):
+        for i in indices:
             try:
-                # Wrap in a list beforehand to guarantee reference integrity
-                target_media = [media]
-                values = process_dicts(username, model_id, target_media, [post])
+                fresh_collection = check_user_dict[m_id]["collection"]
+                target_media[i] = (
+                    fresh_collection.find_media_item(target_media[i].id) or target_media[i]
+                )
+                target_posts[i] = target_media[i].post
+            except Exception:
+                pass
 
-                if values is None or values[-1] == 1:
-                    raise Exception("Download failed based on process_dicts result")
+    def download_batch(indices, retry=False):
+        failed = set(indices)
+        reported = set()
+        rows_by_media = defaultdict(list)
+        for i in indices:
+            rows_by_media[id(target_media[i])].append(i)
+            log.info(f"Attempting to download: {target_media[i].filename} for {username}")
 
-                media_list[i] = target_media[0]
-                post_list[i] = target_media[0].post
-
-                # Success cases
-                if values[-2] == 1:
+        def on_result(media, result):
+            for i in rows_by_media[id(media)]:
+                key, row = row_list[i]
+                if result == "failed":
+                    if retry:
+                        log.info(f"Download failed for {media.filename}.")
+                        app.app.update_cell_state(key, "[failed]", "bold red")
+                        reported.add(i)
+                    continue
+                failed.discard(i)
+                media_list[i] = media
+                post_list[i] = media.post
+                if result == "stopped":
+                    app.app.update_cell_state(key, "[stopped]", "bold cyan")
+                elif result == "skipped":
                     log.info(f"Download skipped: {media.filename}")
                     app.app.update_cell_state(key, "[skipped]", "bold bright_yellow")
                 else:
                     log.info(f"Download finished: {media.filename}")
+                    _record_row_file(row, model_id, username, media)
                     app.app.update_cell_state(key, "[downloaded]", "bold green")
+                reported.add(i)
 
-                break
+        try:
+            if not stop.requested.is_set():
+                process_dicts(
+                    username, model_id,
+                    [target_media[i] for i in indices],
+                    [target_posts[i] for i in indices],
+                    on_result=on_result,
+                )
+        except Exception as e:
+            log.debug(f"Download batch failed: {e}")
+        if stop.requested.is_set():
+            for i in set(indices) - reported:
+                media_list[i] = target_media[i]
+                post_list[i] = target_posts[i]
+                app.app.update_cell_state(row_list[i][0], "[added]", "bold light_goldenrod2")
+            return []
+        if retry:
+            for i in sorted(set(indices) - reported):
+                log.info(f"Download failed for {target_media[i].filename}.")
+                app.app.update_cell_state(row_list[i][0], "[failed]", "bold red")
+        return sorted(failed)
 
-            except Exception as e:
-                log.debug(f"Attempt {attempt + 1} failed for {media.filename}: {e}")
-                if attempt == 0:
-                    log.debug("Refreshing data and retrying...")
-                    data_refill(model_id)
-                    time.sleep(1)
-
-                    # DYNAMIC FETCH 2: Inside the retry block
-                    try:
-                        fresh_collection = check_user_dict[m_id]["collection"]
-                        media = fresh_collection.find_media_item(media.id) or media
-                        post = media.post
-                        log.info(
-                            f"Successfully retrieved fresh URL for {media.filename}"
-                        )
-                    except Exception:
-                        pass
-                else:
-                    log.info(f"Download failed for {media.filename}.")
-                    app.app.update_cell_state(key, "[failed]", "bold red")
+    indices = list(range(len(media_list)))
+    refresh_media(indices)
+    failed = download_batch(indices)
+    if failed and not stop.requested.is_set():
+        log.debug("Refreshing data and retrying...")
+        try:
+            if not _refresh_failed_posts(
+                username, model_id, [target_media[i] for i in failed]
+            ) and not stop.requested.is_set():
+                data_refill(model_id)
+        except stop.DownloadsStopped:
+            pass  # Let download_batch restore the unreported rows below.
+        if not stop.requested.is_set():
+            time.sleep(1)
+            refresh_media(failed)
+        download_batch(failed, retry=True)
 
 
 # Initialize counter on the function object
 _process_user_batch.counter = 0
+
+
+@run
+async def _refresh_failed_posts(username, model_id, media):
+    """Replace just the failed posts; False requests one creator-wide fallback."""
+    seen = set()
+    fresh_posts = []
+    paid_posts = None
+    try:
+        for item in media:
+            if stop.requested.is_set():
+                return True
+            post = item.post
+            area = getattr(post, "responsetype", "").lower()
+            post_id = getattr(post, "id", None)
+            key = (area, post_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            if area in {"timeline", "archived", "pinned", "streams"}:
+                data = await asyncio.to_thread(get_individual_timeline_post, post_id)
+            elif area == "paid":
+                if paid_posts is None:
+                    paid_posts = await asyncio.to_thread(
+                        paid_.get_paid_posts, username, model_id
+                    )
+                data = next(
+                    (p for p in paid_posts if int(p.get("id")) == int(post_id)),
+                    None,
+                )
+            elif area == "messages":
+                async with manager.Manager.session.aget_ofsession() as c:
+                    data = await messages_.get_individual_messages_post(
+                        model_id, post_id, c
+                    )
+            else:
+                return False
+            if stop.requested.is_set():
+                return True
+            data = data if isinstance(data, list) else [data]
+            if not data or any(
+                not isinstance(p, dict) or p.get("error") or not p.get("id")
+                for p in data
+            ):
+                return False
+            if not any(str(p["id"]) == str(post_id) for p in data):
+                return False
+            fresh_posts.extend(
+                posts_.Post(
+                    p, model_id, username, area,
+                    purchased=bool(getattr(post, "purchase_type", None)),
+                )
+                for p in data
+            )
+        await process_post_media(username, model_id, fresh_posts)
+        return True
+    except Exception as e:
+        log.debug(f"Couldn't refresh individual cart posts: {e}")
+        return False
+
+
+def _record_row_file(row, model_id, username, media):
+    """Put the file the download recorded on its table row, so `o` opens
+    its folder (#424)."""
+    try:
+        files = get_media_post_files_downloaded(
+            model_id=model_id, username=username, media_id=media.id
+        )
+        # the file is recorded on every post of the media
+        directory, filename = files.get(
+            (media.id, media.post_id), next(iter(files.values()), (None, None))
+        )
+        row["directory"], row["filename"] = directory, filename
+    except Exception as E:
+        log.debug(f"Couldn't read the file path for media {media.id}: {E}")
 
 
 @run
@@ -247,8 +391,17 @@ async def data_refill(model_id):
         retriver = partial(post_check_retriver, forced=True)
     else:
         return
-    async for username, model_id, final_post_array in retriver():
-        await process_post_media(username, model_id, final_post_array)
+    with progress_utils.TemporaryTaskState(progress_updater.activity):
+        # refresh only the creator whose download failed
+        async for username, refilled_id, final_post_array, *_ in retriver(
+            only_model_id=model_id
+        ):
+            await process_post_media(username, refilled_id, final_post_array)
+
+
+def _other_creator(model_id, only_model_id):
+    # True when a refill for one creator should skip this one
+    return only_model_id is not None and str(model_id) != str(only_model_id)
 
 
 def allow_check_dupes():
@@ -261,7 +414,16 @@ def get_areas():
     return settings.get_settings().check_area
 
 
-def checker():
+def checker(menu=False):
+    with stop.interrupt_handler():
+        try:
+            _checker()
+        except stop.DownloadsStopped:
+            if not menu:
+                raise SystemExit(130)
+
+
+def _checker():
     check_auth()
     allow_check_dupes()
     set_after_check_mode()
@@ -292,24 +454,30 @@ def post_checker():
 
 
 @run
+@stop.fetching
 async def post_check_runner():
-    async for user_name, model_id, final_post_array in post_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Timeline posts"
-                ),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in post_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
 
 @run
-async def post_check_retriver(forced=False):
+async def post_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     links = list(url_helper())
     if settings.get_settings().force:
@@ -329,6 +497,8 @@ async def post_check_retriver(forced=False):
             pinned_data = []
             archived_data = []
             streams_data = []
+            # areas read from the API in this run, not from the check cache
+            fresh = set()
 
             if name_match:
                 user_name = name_match.group(1)
@@ -342,7 +512,15 @@ async def post_check_retriver(forced=False):
                 model_id = profile.get_id(user_name)
                 user_dict.setdefault(model_id, {})["model_id"] = model_id
                 user_dict.setdefault(model_id, {})["username"] = user_name
+            if _other_creator(model_id, only_model_id):
+                continue
             if user_dict.get(model_id) and model_id and user_name:
+                progress_updater.activity.update_task(
+                    description=check_str.format(
+                        username=user_name, activity="Timeline posts"
+                    ),
+                    visible=True,
+                )
                 areas = get_areas()
                 await operations.table_init_create(
                     username=user_name, model_id=model_id
@@ -360,6 +538,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(timeline_data, model_id, timeline.API)
+                        fresh.add("Timeline")
 
                 if "Archived" in areas:
                     oldarchive = read_check(model_id, archived.API)
@@ -374,6 +553,7 @@ async def post_check_retriver(forced=False):
                             model_id, user_name, c=c
                         )
                         set_check(archived_data, model_id, archived.API)
+                        fresh.add("Archived")
 
                 if "Pinned" in areas:
                     oldpinned = read_check(model_id, pinned.API)
@@ -384,6 +564,7 @@ async def post_check_retriver(forced=False):
                         log.info(f"[{user_name}] Fetching fresh data for {pinned.API}")
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
                         set_check(pinned_data, model_id, pinned.API)
+                        fresh.add("Pinned")
 
                 if "Labels" in areas:
                     oldlabels = read_check(model_id, labels.API)
@@ -405,6 +586,7 @@ async def post_check_retriver(forced=False):
                             for post in label.get("posts", [])
                         ]
                         set_check(labels_data, model_id, labels.API)
+                        fresh.add("Labels")
 
                 if "Streams" in areas:
                     oldstreams = read_check(model_id, streams.API)
@@ -413,62 +595,55 @@ async def post_check_retriver(forced=False):
                         streams_data = oldstreams
                     else:
                         log.info(f"[{user_name}] Fetching fresh data for {streams.API}")
-                        streams_resp = await streams.get_streams_posts(
+                        streams_data = await streams.get_streams_posts(
                             model_id, user_name, c=c
                         )
-                        streams_data = [
-                            post
-                            for streams in streams_resp
-                            for post in streams.get("posts", [])
-                        ]
                         set_check(streams_data, model_id, streams.API)
+                        fresh.add("Streams")
 
+                in_order = [
+                    ("Pinned", pinned_data),
+                    ("Archived", archived_data),
+                    ("Labels", labels_data),
+                    ("Timeline", timeline_data),
+                    ("Streams", streams_data),
+                ]
+                fresh_ids = {
+                    post["id"] for name, data in in_order if name in fresh for post in data
+                }
                 await operations.make_post_table_changes(
-                    all_posts=pinned_data
-                    + archived_data
-                    + labels_data
-                    + timeline_data
-                    + streams_data,
+                    # the last copy of a post is saved, so cached areas go
+                    # first and a fresh copy always wins over a cached one
+                    all_posts=[
+                        post
+                        for _, data in sorted(in_order, key=lambda area: area[0] in fresh)
+                        for post in data
+                    ],
                     model_id=model_id,
                     username=user_name,
+                    # only posts the API returned now lose the deleted flag; a
+                    # cached list can hold posts deleted since it was saved
+                    from_api=fresh_ids,
+                    # nor does --metadata write a cached copy over the row
+                    skip_update={
+                        post["id"] for _, data in in_order for post in data
+                    }
+                    - fresh_ids,
                 )
-                all_post_data = []
-                for ele in [
-                    pinned_data,
-                    archived_data,
-                    labels_data,
-                    timeline_data,
-                    streams_data,
-                ]:
-                    if ele == timeline_data:
-
-                        all_post_data.append(
-                            timeline.filter_timeline_post(
-                                list(
-                                    map(
-                                        lambda x: posts_.Post(x, model_id, user_name),
-                                        timeline_data,
-                                    )
-                                )
-                            )
-                        )
-                    else:
-                        all_post_data.append(
-                            map(lambda x: posts_.Post(x, model_id, user_name), ele)
-                        )
-
-                all_post_data = list(
-                    map(
-                        lambda x: posts_.Post(x, model_id, user_name),
-                        pinned_data
-                        + archived_data
-                        + labels_data
-                        + timeline_data
-                        + streams_data,
+                def to_posts(data):
+                    return list(
+                        map(lambda x: posts_.Post(x, model_id, user_name), data)
                     )
+
+                all_post_data = (
+                    to_posts(pinned_data + archived_data + labels_data)
+                    + timeline.filter_timeline_post(to_posts(timeline_data))
+                    + to_posts(streams_data)
                 )
 
-                yield user_name, model_id, all_post_data
+                # saved above with fresh copies winning; this list can end on a
+                # cached copy, so the runner's save doesn't update the rows
+                yield user_name, model_id, all_post_data, True
         # individual links
         for ele in list(
             filter(
@@ -484,11 +659,19 @@ async def post_check_retriver(forced=False):
             if name_match and num_match:
                 user_name = name_match.group(1)
                 model_id = profile.get_id(user_name)
+                if _other_creator(model_id, only_model_id):
+                    continue
+                progress_updater.activity.update_task(
+                    description=check_str.format(
+                        username=user_name, activity="Timeline posts"
+                    ),
+                    visible=True,
+                )
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 resp = get_individual_timeline_post(post_id)
                 data = posts_.Post(resp, model_id, user_name)
-                yield user_name, model_id, [data]
+                yield user_name, model_id, [data], None
 
 
 def reset_data():
@@ -512,30 +695,42 @@ def message_checker():
 
 
 @run
+@stop.fetching
 async def message_checker_runner():
-    async for user_name, model_id, final_post_array in message_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(username=user_name, activity="Messages"),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in message_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
 
-async def message_check_retriver(forced=False):
+async def message_check_retriver(forced=False, only_model_id=None):
     links = list(url_helper())
     if settings.get_settings().force:
         forced = True
     async with manager.Manager.session.aget_ofsession() as c:
         for item in links:
+            if not item:
+                continue
             num_match = re.search(
-                f"({of_env.getattr('NUMBER_REGEX')}+)", item
+                f"chats/(?:chat/)?({of_env.getattr('NUMBER_REGEX')}+)", item
             ) or re.search(f"^({of_env.getattr('NUMBER_REGEX')}+)$", item)
             name_match = re.search(f"^{of_env.getattr('USERNAME_REGEX')}+$", item)
+            model_id = None
+            user_name = None
 
             if num_match:
                 model_id = num_match.group(1)
@@ -543,8 +738,19 @@ async def message_check_retriver(forced=False):
             elif name_match:
                 user_name = name_match.group(0)
                 model_id = profile.get_id(user_name)
+            else:
+                log.warning(
+                    f"Skipping {item}: not a username, model id or chat link"
+                )
+                continue
 
+            if _other_creator(model_id, only_model_id):
+                continue
             if model_id and user_name:
+                progress_updater.activity.update_task(
+                    description=check_str.format(username=user_name, activity="Messages"),
+                    visible=True,
+                )
                 log.info(f"Getting Messages/Paid content for {user_name}")
                 await operations.table_init_create(
                     model_id=model_id, username=user_name
@@ -552,6 +758,7 @@ async def message_check_retriver(forced=False):
 
                 # --- Messages ---
                 messages = None
+                messages_fresh = False
                 oldmessages = read_check(model_id, messages_.API)
                 log.debug(f"Number of messages in cache {len(oldmessages or [])}")
 
@@ -562,32 +769,45 @@ async def message_check_retriver(forced=False):
                     log.info(f"[{user_name}] Fetching fresh data for {messages_.API}")
                     messages = await messages_.get_messages(model_id, user_name, c=c)
                     set_check(messages, model_id, messages_.API)
+                    messages_fresh = True
 
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
                 await operations.make_messages_table_changes(
-                    message_posts_array, model_id=model_id, username=user_name
+                    message_posts_array,
+                    model_id=model_id,
+                    username=user_name,
+                    from_api=messages_fresh,
+                    # nor does --metadata write a cached copy over the row
+                    skip_update=not messages_fresh,
                 )
 
                 # --- Paid Content ---
                 oldpaid = read_check(model_id, paid_.API)
                 paid = None
+                paid_fresh = False
 
                 if oldpaid is not None and not forced:
                     log.info(f"[{user_name}] Using cache for {paid_.API}")
                     paid = oldpaid
                 else:
                     log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
-                    paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                    paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                     set_check(paid, model_id, paid_.API)
+                    paid_fresh = True
 
                 paid_posts_array = list(
-                    map(lambda x: posts_.Post(x, model_id, user_name), paid)
+                    map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
                 )
 
                 final_post_array = paid_posts_array + message_posts_array
-                yield user_name, model_id, final_post_array
+                # the messages are saved above, and a cached copy comes last in
+                # this list; purchases are saved by the runner
+                skip_update = {post.id for post in message_posts_array}
+                if not paid_fresh:
+                    skip_update |= {post.id for post in paid_posts_array}
+                yield user_name, model_id, final_post_array, skip_update
 
 
 def purchase_checker():
@@ -596,24 +816,30 @@ def purchase_checker():
 
 
 @run
+@stop.fetching
 async def purchase_checker_runner():
-    async for user_name, model_id, final_post_array in purchase_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Purchased posts"
-                ),
-                visible=True,
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for (
+            user_name,
+            model_id,
+            final_post_array,
+            skip_update,
+        ) in purchase_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
+                final_post_array,
+                model_id=model_id,
+                username=user_name,
+                skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
 
 
 @run
-async def purchase_check_retriver(forced=False):
+async def purchase_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     auth_requests.make_headers()
     if settings.get_settings().force:
@@ -621,19 +847,31 @@ async def purchase_check_retriver(forced=False):
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for name in settings.get_settings().check_usernames:
+        for name in check_usernames():
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
+            if _other_creator(model_id, only_model_id):
+                continue
+            progress_updater.activity.update_task(
+                description=check_str.format(
+                    username=user_name, activity="Purchased posts"
+                ),
+                visible=True,
+            )
             user_dict[model_id] = user_dict.get(model_id, [])
 
             await operations.table_init_create(model_id=model_id, username=user_name)
 
             oldpaid = read_check(model_id, paid_.API)
             paid = None
+            # a cached list can be days older than the rows: --metadata
+            # leaves them alone
+            skip_update = None
 
             if oldpaid is not None and not forced:
                 log.info(f"[{user_name}] Using cache for {paid_.API}")
                 paid = oldpaid
+                skip_update = True
             elif user_name == of_env.getattr("DELETED_MODEL_PLACEHOLDER"):
                 log.info(f"[{user_name}] Processing deleted model cache/data")
                 paid_user_dict = await paid_.get_all_paid_posts()
@@ -645,10 +883,12 @@ async def purchase_check_retriver(forced=False):
                 ]
             else:
                 log.info(f"[{user_name}] Fetching fresh data for {paid_.API}")
-                paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                paid = await paid_.get_paid_posts(user_name, model_id, c=c)
                 set_check(paid, model_id, paid_.API)
-            posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            yield user_name, model_id, posts_array
+            posts_array = list(
+                map(lambda x: posts_.Post(x, model_id, user_name, purchased=True), paid)
+            )
+            yield user_name, model_id, posts_array, skip_update
 
 
 def stories_checker():
@@ -657,14 +897,13 @@ def stories_checker():
 
 
 @run
+@stop.fetching
 async def stories_checker_runner():
-    async for user_name, model_id, final_post_array in stories_check_retriver():
-        with progress_utils.setup_live("api"):
-            progress_updater.activity.update_task(
-                description=check_str.format(
-                    username=user_name, activity="Stories posts"
-                )
-            )
+    with (
+        progress_utils.setup_live("api"),
+        progress_utils.TemporaryTaskState(progress_updater.activity),
+    ):
+        async for user_name, model_id, final_post_array in stories_check_retriver():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array, model_id=model_id, username=user_name
@@ -673,14 +912,21 @@ async def stories_checker_runner():
 
 
 @run
-async def stories_check_retriver(forced=False):
+async def stories_check_retriver(forced=False, only_model_id=None):
     user_dict = {}
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("API_REQ_CHECK_MAX"),
     ) as c:
-        for user_name in settings.get_settings().check_usernames:
+        for user_name in check_usernames():
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
+            if _other_creator(model_id, only_model_id):
+                continue
+            progress_updater.activity.update_task(
+                description=check_str.format(
+                    username=user_name, activity="Stories posts"
+                )
+            )
             user_dict[model_id] = user_dict.get(model_id, [])
             await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
@@ -695,6 +941,14 @@ async def stories_check_retriver(forced=False):
                 map(lambda x: posts_.Post(x, model_id, user_name, "stories"), stories)
             )
             yield user_name, model_id, stories + highlights_
+
+
+def check_usernames():
+    # usernames from -u and from the files given with -f
+    current = settings.get_settings()
+    return list(current.check_usernames or []) + list(
+        getattr(current, "file_usernames", None) or []
+    )
 
 
 def url_helper():
@@ -738,7 +992,7 @@ async def get_paid_ids(model_id, user_name):
         async with manager.Manager.session.aget_ofsession(
             sem_count=of_env.getattr("API_REQ_CHECK_MAX")
         ) as c:
-            paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+            paid = await paid_.get_paid_posts(user_name, model_id, c=c)
             set_check(paid, model_id, paid_.API)
 
     media = await process_post_media(user_name, model_id, paid)
@@ -747,16 +1001,29 @@ async def get_paid_ids(model_id, user_name):
 
 
 def thread_starters(ROWS_):
-    worker_thread = threading.Thread(target=process_download_queue, daemon=True)
-    worker_thread.start()
+    global _download_worker
+    # one download thread: a second table opened from the menu reuses it
+    if _download_worker is None or not _download_worker.is_alive():
+        _download_worker = threading.Thread(target=process_download_queue, daemon=True)
+        _download_worker.start()
     start_table(ROWS_)
 
 
 def start_table(ROWS_):
-    loop = asyncio.new_event_loop()
+    loop = system.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
+    # a Textual app runs once, so each table gets a new one
+    app.app = app.InputApp()
     app.app(table_data=ROWS)
+
+
+def reset_table_data():
+    """Forget the last table's rows and media, so a table opened again from
+    the menu shows only what it was opened for (#425)."""
+    global ROWS
+    ROWS = []
+    check_user_dict.clear()
 
 
 def texthelper(text):
@@ -774,7 +1041,9 @@ def texthelper(text):
 
 
 def unlocked_helper(ele):
-    return ele.canview
+    # canview can be None when OnlyFans sends canView: null; the table
+    # shows that as locked, like the cart cell does
+    return bool(ele.canview)
 
 
 def download_type_helper(ele):
@@ -786,7 +1055,8 @@ def download_type_helper(ele):
 
 
 def datehelper(date):
-    if date == "None":
+    # the table treats this label as "no date" when sorting
+    if date is None or date == "None":
         return "Probably Deleted"
     return date
 
@@ -797,9 +1067,8 @@ def checkmarkhelper(ele):
 
 async def row_gather(username, model_id):
     global ROWS
-    downloaded = set(
-        get_media_post_ids_downloaded(model_id=model_id, username=username)
-    )
+    # with each file's directory and filename, for opening its folder (#424)
+    downloaded = get_media_post_files_downloaded(model_id=model_id, username=username)
 
     m_id = str(model_id)
     collection = check_user_dict[m_id].get("collection")
@@ -812,15 +1081,32 @@ async def row_gather(username, model_id):
 
     log.info(f"Generating UI Table with {len(media)} items... This may take a moment.")
 
+    # newest first; undated media go last, as the oldest
     try:
-        sorted_media = sorted(media, key=lambda x: x.date, reverse=True)
+        sorted_media = sorted(
+            media, key=lambda x: undated_first(x.date), reverse=True
+        )
     except Exception:
         # Fallback just in case the dates are poorly formatted
-        sorted_media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
+        try:
+            sorted_media = sorted(
+                media,
+                key=lambda x: undated_first(arrow.get(x.date) if x.date else None),
+                reverse=True,
+            )
+        except Exception as E:
+            log.warning(f"Check table: couldn't sort media by date, left unsorted: {E!r}")
+            sorted_media = list(media)
 
     for count, ele in enumerate(sorted_media):
+        # the date column shows the post's date
+        if not ele.postdate:
+            log.warning(
+                f"Check table: media {ele.id} in post {ele.post_id} has no date"
+            )
         is_unlocked = unlocked_helper(ele)
         is_downloaded = (ele.id, ele.post_id) in downloaded
+        directory, filename = downloaded.get((ele.id, ele.post_id), (None, None))
         post_media_len = len(ele._post.post_media)
         dl_type = download_type_helper(ele)  # Calculate once for efficiency
 
@@ -856,6 +1142,9 @@ async def row_gather(username, model_id):
                 "post_id": ele.post_id,
                 "media_id": ele.id,
                 "text": ele.post.db_sanitized_text,
+                # not columns; where the file went, if it was downloaded
+                "directory": directory,
+                "filename": filename,
             }
         )
 

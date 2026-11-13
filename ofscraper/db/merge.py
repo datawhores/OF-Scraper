@@ -11,6 +11,7 @@ from ofscraper.db.operations_.labels import (
 )
 from ofscraper.db.operations_.media import (
     get_all_medias_transition,
+    update_media_table_download_transition,
     write_media_table_transition,
 )
 from ofscraper.db.operations_.messages import (
@@ -47,6 +48,7 @@ class MergeDatabase:
     def __init__(self):
         self._data_init = False
         self._media_keys = ["media_id", "model_id"]
+        self._media_row_keys = ["media_id", "model_id", "post_id"]
         self._label_keys = ["post_id", "label_id", "model_id"]
         self._common_key = ["post_id", "model_id"]
         self._profile_key = ["user_id", "username"]
@@ -56,6 +58,9 @@ class MergeDatabase:
         """
         This method is called when the object is used like a function.
         """
+        # check the source before anything is created or backed up in the target
+        if not pathlib.Path(old_db_folder).is_dir():
+            raise FileNotFoundError(f"Merge source folder not found: {old_db_folder}")
         self._new_db = self.get_new_db(new_db_path)
         self._old_db_folder = old_db_folder
         await self._data_initializer()
@@ -72,8 +77,9 @@ class MergeDatabase:
 
     async def _data_initializer(self):
         if not self._data_init:
+            new_db = not self._new_db.exists()
             await create_tables(db_path=self._new_db)
-            await modify_tables(db_path=self._new_db)
+            await modify_tables(db_path=self._new_db, new_db=new_db)
             self._curr_labels = set(
                 list(
                     map(
@@ -82,14 +88,12 @@ class MergeDatabase:
                     )
                 )
             )
-            self._curr_medias = set(
-                list(
-                    map(
-                        lambda x: tuple(x[key] for key in self._media_keys),
-                        await get_all_medias_transition(db_path=self._new_db),
-                    )
-                )
-            )
+            curr_medias = await get_all_medias_transition(db_path=self._new_db)
+            self._curr_medias = set(map(self._media_row_key, curr_medias))
+            self._downloaded_medias = {}
+            for x in curr_medias:
+                if x["downloaded"]:
+                    self._downloaded_medias.setdefault(self._media_key(x), x)
             self._curr_posts = set(
                 list(
                     map(
@@ -151,8 +155,6 @@ class MergeDatabase:
     async def merge_database(self):
         old_root_folder = pathlib.Path(self._old_db_folder)
         new_db_path = pathlib.Path(self._new_db)
-        if not pathlib.Path(old_root_folder).is_dir():
-            raise FileNotFoundError("Path is not dir")
         new_db_path.parent.mkdir(exist_ok=True, parents=True)
         failures = {}
         success = {}
@@ -195,7 +197,7 @@ class MergeDatabase:
                 list(
                     map(
                         lambda x: str([(key, value) for key, value in x.items()]),
-                        failures,
+                        failures.values(),
                     )
                 )
             )
@@ -213,21 +215,37 @@ class MergeDatabase:
         await self.merge_models_helper(db_path)
         await self.merge_messages_helper(db_path)
 
+    def _media_key(self, media):
+        return tuple(media[key] for key in self._media_keys)
+
+    def _media_row_key(self, media):
+        return tuple(media[key] for key in self._media_row_keys)
+
     async def merge_media_helper(self, old_db):
-        keys = self._media_keys
         inserts_old_db = await get_all_medias_transition(db_path=old_db)
-        await write_media_table_transition(
-            list(
-                filter(
-                    lambda x: tuple(x[key] for key in keys) not in self._curr_medias,
-                    inserts_old_db,
-                )
-            ),
+        # one row per media item per post
+        new_rows = [
+            x for x in inserts_old_db if self._media_row_key(x) not in self._curr_medias
+        ]
+        # downloaded is per media item, as in the app's own download update:
+        # the first downloaded copy wins and is written to all the item's rows,
+        # including rows added for another post
+        changed = set(map(self._media_key, new_rows))
+        new_downloads = {}
+        for x in inserts_old_db:
+            key = self._media_key(x)
+            if x["downloaded"] and key not in self._downloaded_medias:
+                new_downloads.setdefault(key, x)
+                changed.add(key)
+        downloads = {**new_downloads, **self._downloaded_medias}
+        await write_media_table_transition(new_rows, db_path=self._new_db)
+        await update_media_table_download_transition(
+            [downloads[key] for key in changed if key in downloads],
             db_path=self._new_db,
         )
-        self._curr_medias.update(
-            map(lambda x: tuple(x[key] for key in keys), inserts_old_db)
-        )
+        # remember this source only once its writes succeeded
+        self._curr_medias.update(map(self._media_row_key, inserts_old_db))
+        self._downloaded_medias.update(new_downloads)
 
     async def merge_label_helper(self, old_db):
         keys = self._label_keys

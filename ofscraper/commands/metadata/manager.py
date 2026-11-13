@@ -30,6 +30,7 @@ from ofscraper.managers.sessionmanager.sessionmanager import FORCED_NEW, SIGN
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
+from ofscraper.sites.fansly import video as fansly_video
 
 
 class MetaDataManager:
@@ -60,20 +61,61 @@ class MetaDataManager:
                 )
                 or {}
             )
+            recorded = self._metadata_recorded_file(prevData)
+            if recorded:
+                # this media's file can be under another name than the
+                # template's when that name held a different file (#48)
+                await mark_media_as_downloaded(
+                    ele,
+                    filepath=recorded,
+                    model_id=model_id,
+                    username=username,
+                    downloaded=1,
+                    hashdata=(
+                        hash.get_hash(recorded)
+                        if settings.get_settings().hash
+                        else prevData.get("hash")
+                    ),
+                    size=recorded.stat().st_size,
+                )
+                return (
+                    ele.mediatype
+                    if prevData
+                    != await prev_download_media_data(
+                        ele, model_id=model_id, username=username
+                    )
+                    else "Forced_skipped"
+                )
+            downloaded = self._metadata_downloaded_helper(placeholderObj, prevData)
             await mark_media_as_downloaded(
                 ele,
                 filename=self._metadata_file_helper(placeholderObj, prevData),
                 directory=self._metadata_dir_helper(placeholderObj, prevData),
                 model_id=model_id,
                 username=username,
-                downloaded=self._metadata_downloaded_helper(placeholderObj, prevData),
+                downloaded=downloaded,
                 hashdata=self._metadata_hash_helper(placeholderObj, prevData, ele),
                 size=self._metadata_size_helper(placeholderObj, prevData),
+                # a permanent script skip stays marked while it's still
+                # downloaded with no file on disk
+                skip_permanent=(
+                    prevData.get("skip_permanent")
+                    if downloaded
+                    and not pathlib.Path(placeholderObj.trunicated_filepath).exists()
+                    else None
+                ),
             )
             effected = prevData != await prev_download_media_data(
                 ele, model_id=model_id, username=username
             )
         return ele.mediatype if effected else "Forced_skipped"
+
+    def _metadata_recorded_file(self, prevData):
+        """In update mode, this media's previously recorded file, if it's still there."""
+        if settings.get_settings().metadata != "update" or not prevData.get("filename"):
+            return None
+        recorded = pathlib.Path(prevData.get("directory") or "", prevData["filename"])
+        return recorded if recorded.is_file() else None
 
     def _metadata_downloaded_helper(self, placeholderObj, prevData):
         if settings.get_settings().metadata == "check":
@@ -127,10 +169,7 @@ class MetaDataManager:
         if not settings.get_settings().hash:
             return prevData.get("hash")
         elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
-            return hash.get_hash(
-                pathlib.Path(placeholderObj.trunicated_filepath),
-                mediatype=ele.mediatype,
-            )
+            return hash.get_hash(pathlib.Path(placeholderObj.trunicated_filepath))
         elif pathlib.Path(
             prevData.get("directory") or "", prevData.get("filename") or ""
         ).is_file():
@@ -158,6 +197,10 @@ class MetaDataManager:
 
     async def _metadata_helper(self, c, ele):
         placeholderObj = None
+        if fansly_video.uses_stream(ele):
+            # ele.url may be the playlist itself, which needs the CloudFront
+            # cookies; the stream downloader always saves an MP4
+            return placeholder.Placeholders(ele, ext="mp4")
         if not ele.url and not ele.mpd:
             placeholderObj = placeholder.Placeholders(ele, ext=ele.content_type)
             return placeholderObj

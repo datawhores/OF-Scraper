@@ -18,6 +18,8 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
@@ -63,32 +65,31 @@ schemaInsert = """
 INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
 VALUES (?, ?);
 """
-othersSelectTransition = """
-SELECT text,price,paid,archived,created_at ,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('others') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id
-FROM others;
-"""
-othersDrop = """
-drop table others;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+othersSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    ("model_id", "NULL"),
+]
 othersInsert = """INSERT INTO 'others'(
 post_id, text,price,paid,archived,
 created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
-productsSelectTransition = """
-SELECT text,price,paid,archived,created_at ,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('products') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id
-FROM products;
-"""
-productsDrop = """
-drop table products;
-"""
+productsSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    "title",
+    ("model_id", "NULL"),
+]
 productsInsert = """INSERT INTO 'products'(
 post_id, text,price,paid,archived,
 created_at,title,model_id)
@@ -176,23 +177,53 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None, **kwargs):
         conn.commit()
 
 
+siteInsert = """
+INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
+VALUES ('site', ?);
+"""
+siteSelect = """
+SELECT flag_value FROM schema_flags WHERE flag_name = 'site';
+"""
+
+
+@wrapper.operation_wrapper_async
+def write_site_flag(site, model_id=None, username=None, conn=None, **kwargs):
+    """Record which site the database belongs to (only written for non-OnlyFans sites)."""
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(siteInsert, [site])
+        conn.commit()
+
+
+@wrapper.operation_wrapper
+def get_site_flag(model_id=None, username=None, conn=None, db_path=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        row = cur.execute(siteSelect).fetchone()
+        return row[0] if row else None
+
+
 @wrapper.operation_wrapper_async
 def get_all_others_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(othersSelectTransition)
+        cur.execute(db_columns.select_all(cur, "others", othersSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
 
 
-@wrapper.operation_wrapper_async
-def drop_others_table(model_id=None, username=None, conn=None, **kwargs):
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(othersDrop)
-        conn.commit()
+def others_transition_rows(inputData) -> list:
+    ordered_keys = [
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "created_at",
+        "model_id",
+    ]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
 
 
 @wrapper.operation_wrapper_async
@@ -200,10 +231,15 @@ def write_others_table_transition(
     inputData, model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = ["text", "price", "paid", "archived", "created_at", "model_id"]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(othersInsert, insertData)
+        cur.executemany(othersInsert, others_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_others_table(inputData, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn, "others", otherCreate, othersInsert, others_transition_rows(inputData)
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -211,18 +247,25 @@ def get_all_products_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(productsSelectTransition)
+        cur.execute(db_columns.select_all(cur, "products", productsSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
 
 
-@wrapper.operation_wrapper_async
-def drop_products_table(model_id=None, username=None, conn=None, **kwargs):
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(productsDrop)
-        conn.commit()
+def products_transition_rows(inputData) -> list:
+    ordered_keys = [
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "created_at",
+        "title",
+        "model_id",
+    ]
+    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
 
 
 @wrapper.operation_wrapper_async
@@ -230,10 +273,19 @@ def write_products_table_transition(
     inputData, model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = ["text", "price", "paid", "archived", "created_at", "model_id"]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(productsInsert, insertData)
+        cur.executemany(productsInsert, products_transition_rows(inputData))
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_products_table(inputData, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn,
+        "products",
+        productCreate,
+        productsInsert,
+        products_transition_rows(inputData),
+    )
 
 
 async def rebuild_others_table(model_id=None, username=None, db_path=None, **kwargs):
@@ -246,9 +298,7 @@ async def rebuild_others_table(model_id=None, username=None, db_path=None, **kwa
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_others_table(model_id=model_id, username=username, db_path=db_path)
-    await create_others_table(model_id=model_id, username=username, db_path=db_path)
-    await write_others_table_transition(
+    await replace_others_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 
@@ -263,8 +313,6 @@ async def rebuild_products_table(model_id=None, username=None, db_path=None, **k
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_products_table(model_id=model_id, username=username, db_path=db_path)
-    await create_products_table(model_id=model_id, username=username, db_path=db_path)
-    await write_products_table_transition(
+    await replace_products_table(
         data, model_id=model_id, username=username, db_path=db_path
     )

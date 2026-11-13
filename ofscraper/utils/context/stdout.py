@@ -10,24 +10,21 @@ import ofscraper.utils.settings as settings
 @contextlib.contextmanager
 def lowstdout():
     if settings.get_settings().output_level in of_env.getattr("SUPRESS_OUTPUTS"):
-        save_stdout = sys.stdout
-        sys.stdout = open(os.devnull, "w")
-        yield
-        sys.stdout = save_stdout
+        with nostdout():
+            yield
     else:
-        None
         yield
-        None
 
 
 @contextlib.contextmanager
 def nostdout():
-    try:
-        save_stdout = sys.stdout
-        sys.stdout = open(os.devnull, "w")
-        yield
-        sys.stdout = save_stdout
-    except:
-        None
-        yield
-        None
+    # always put stdout back, also when the body raises (e.g. ctrl+c in a
+    # prompt); yielding a second time from an except block turned that into
+    # "generator didn't stop after throw()" and left stdout at devnull
+    save_stdout = sys.stdout
+    with open(os.devnull, "w") as devnull:
+        sys.stdout = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = save_stdout

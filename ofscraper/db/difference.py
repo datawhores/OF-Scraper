@@ -21,6 +21,10 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "posts_opened",
         "posts_is_deleted",
         "messages_is_deleted",
+        "posts_purchase_type",
+        "posts_mentions",
+        "messages_group_id",
+        "media_skip_permanent",
     ]
 
     groupB = [
@@ -34,4 +38,9 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "media_post_id_constraint_added",
         "media_bool_changes",
     ]
-    return set((groupA + groupB)).difference(set(changes))
+
+    # one-time data repairs, run after the schema changes
+    groupC = [
+        "media_size_skip_repaired",
+    ]
+    return set((groupA + groupB + groupC)).difference(set(changes))

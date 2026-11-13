@@ -21,6 +21,8 @@ from rich.console import Console
 import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.rebuild as rebuild
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
 
@@ -40,35 +42,44 @@ created_at TIMESTAMP,
 user_id INTEGER,
 model_id INTEGER,
 is_deleted BOOLEAN DEFAULT 0,
+group_id VARCHAR,
 PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
 messagesInsert = """INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
-created_at,user_id,model_id)
-            VALUES (?, ?,?,?,?,?,?,?);"""
+created_at,user_id,model_id,group_id)
+            VALUES (?, ?,?,?,?,?,?,?,?);"""
+messagesInsertTransition = """INSERT INTO 'messages'(
+post_id, text,price,paid,archived,
+created_at,user_id,model_id,is_deleted,group_id)
+            VALUES (?, ?,?,?,?,?,?,?,?,?);"""
 messagesUpdate = """UPDATE messages
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=0
 WHERE post_id = ? and model_id=(?);"""
+# fills group_id of rows saved before it existed, on every scan; a message
+# never changes conversation, so the metadata update leaves it alone
+messagesFillMissing = """UPDATE messages
+SET group_id = ?
+WHERE post_id = ? AND model_id = (?) AND group_id IS NULL;"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
-messagesSelectTransition = """
-SELECT post_id, text, price, paid, archived, created_at, user_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
-            THEN model_id
-            ELSE NULL
-       END AS model_id,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'is_deleted')
-            THEN is_deleted
-            ELSE 0
-       END AS is_deleted
-FROM messages;
-"""
-messagesDrop = """
-drop table messages;
-"""
+# columns a later version added are (name, stand-in when missing): see
+# db_columns.select_all
+messagesSelectTransition = [
+    "post_id",
+    "text",
+    "price",
+    "paid",
+    "archived",
+    "created_at",
+    "user_id",
+    ("model_id", "NULL"),
+    ("is_deleted", "0"),
+    ("group_id", "NULL"),
+]
 messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
 """
@@ -76,6 +87,12 @@ messageIgnoreGhost = """
 UPDATE messages
 SET is_deleted = 1
 WHERE post_id = (?) AND model_id = (?);
+"""
+
+messageUnmarkGhost = """
+UPDATE messages
+SET is_deleted = 0
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
 """
 
 deletedMessagesCheck = """
@@ -116,6 +133,20 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
+def fill_messages_missing_fields(messages: list, model_id=None, conn=None, **kwargs):
+    fillData = [
+        (message.group_id, message.id, model_id)
+        for message in messages
+        if message.group_id is not None
+    ]
+    if not fillData:
+        return
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(messagesFillMissing, fillData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = list(
@@ -129,6 +160,7 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.date,
                     message.fromuser,
                     model_id,
+                    message.group_id,
                 ),
                 messages,
             )
@@ -137,24 +169,45 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
         conn.commit()
 
 
+def messages_transition_rows(inputData: list) -> list:
+    ordered_keys = [
+        "post_id",
+        "text",
+        "price",
+        "paid",
+        "archived",
+        "created_at",
+        "user_id",
+        "model_id",
+        "is_deleted",
+    ]
+    # optional column: a row read before it existed has no value
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get("group_id")])
+        for data in inputData
+    ]
+
+
 @wrapper.operation_wrapper_async
 def write_messages_table_transition(
     inputData: list, model_id=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = [
-            "post_id",
-            "text",
-            "price",
-            "paid",
-            "archived",
-            "created_at",
-            "user_id",
-            "model_id",
-        ]
-        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        cur.executemany(messagesInsert, insertData)
+        cur.executemany(
+            messagesInsertTransition, messages_transition_rows(inputData)
+        )
         conn.commit()
+
+
+@wrapper.operation_wrapper_async
+def replace_messages_table(inputData: list, model_id=None, conn=None, **kwargs):
+    rebuild.replace_table(
+        conn,
+        "messages",
+        messagesCreate,
+        messagesInsertTransition,
+        messages_transition_rows(inputData),
+    )
 
 
 @wrapper.operation_wrapper_async
@@ -169,18 +222,11 @@ def get_all_messages_transition(
     model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesSelectTransition)
+        cur.execute(db_columns.select_all(cur, "messages", messagesSelectTransition))
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
-
-
-@wrapper.operation_wrapper_async
-def drop_messages_table(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesDrop)
-        conn.commit()
 
 
 @wrapper.operation_wrapper_async
@@ -224,25 +270,43 @@ async def rebuild_messages_table(model_id=None, username=None, db_path=None, **k
         database_model=database_model,
         db_path=db_path,
     )
-    await drop_messages_table(model_id=model_id, username=username, db_path=db_path)
-    await create_message_table(model_id=model_id, username=username, db_path=db_path)
-    await write_messages_table_transition(
+    await replace_messages_table(
         data, model_id=model_id, username=username, db_path=db_path
     )
 
 
 async def make_messages_table_changes(
-    all_messages, model_id=None, username=None, **kwargs
+    all_messages,
+    model_id=None,
+    username=None,
+    from_api=False,
+    skip_update=None,
+    **kwargs,
 ):
+    all_messages = list(all_messages)
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
     if len(new_posts) > 0:
         new_posts = convert.converthelper(new_posts)
         await write_messages_table(new_posts, model_id=model_id, username=username)
-    if settings.get_settings().metadata and len(curr_posts) > 0:
-        curr_posts = convert.converthelper(curr_posts)
-        await update_messages_table(curr_posts, model_id=model_id, username=username)
+    # a message the API returned in this run isn't deleted; cached lists (the
+    # check commands) can hold messages deleted since. Only --metadata updates the rest
+    if from_api:
+        await unmark_message_as_deleted(
+            [ele.id for ele in curr_posts], model_id=model_id, username=username
+        )
+    # skip_update is True, or the ids of messages whose rows --metadata leaves
+    # alone: the check commands' cached lists can be days older than the rows
+    if settings.get_settings().metadata and skip_update is not True:
+        updated = [ele for ele in curr_posts if ele.id not in (skip_update or ())]
+        if len(updated) > 0:
+            updated = convert.converthelper(updated)
+            await update_messages_table(updated, model_id=model_id, username=username)
+    if len(curr_posts) > 0:
+        await fill_messages_missing_fields(
+            curr_posts, model_id=model_id, username=username
+        )
 
 
 async def get_oldest_message_date(model_id=None, username=None, **kwargs):
@@ -273,6 +337,19 @@ def mark_message_as_deleted(
 
 
 @wrapper.operation_wrapper_async
+def unmark_message_as_deleted(
+    post_ids, model_id=None, username=None, conn=None, **kwargs
+):
+    if not post_ids:
+        return
+    with contextlib.closing(conn.cursor()) as curr:
+        curr.executemany(
+            messageUnmarkGhost, [[post_id, model_id] for post_id in post_ids]
+        )
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def get_deleted_messages_ids(model_id=None, username=None, conn=None, **kwargs) -> set:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(deletedMessagesCheck, [model_id])
@@ -291,6 +368,21 @@ def add_column_message_is_deleted(conn=None, **kwargs):
                 cur.execute(
                     "ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_message_group_id(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'group_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            if cur.fetchone()[0] == 0:
+                cur.execute("ALTER TABLE messages ADD COLUMN group_id VARCHAR;")
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()

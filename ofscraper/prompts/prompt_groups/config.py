@@ -14,7 +14,7 @@ r"""
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
-from prompt_toolkit.shortcuts import prompt as prompt
+from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 from humanfriendly import parse_size
 
@@ -35,7 +35,7 @@ console = Console()
 
 def funct(prompt_):
     console.print("""
-    For more Details => https://of-scraper.gitbook.io/of-scraper/config-options
+    For more Details => https://cloakedkeys.gitbook.io/ofsc/getting-started/config-options
     
     [General Options]
     main_profile: default profile attached to config
@@ -72,8 +72,10 @@ def funct(prompt_):
     It outputs the desired filename or path.
 
     skip_download_script: A script that determines whether to skip or continue a download. 
-    It executes before the download process begins, and should return "False" or an empty string via stdout to 
-    signal that the download should be skipped.
+    It executes before the download process begins. Printing "False" or nothing to stdout skips the file
+    in this run only: the next run asks again. Printing "skip-permanent" skips it for good: it's saved as
+    downloaded with no file and not asked about again (--retry-permanent-skips or
+    "ofscraper db --unmark-permanent-skips" undo that). Any other output lets the download proceed.
 
     naming_script: A script to dynamically generate the final filename and path for a media item before download
     after_download_script: A script that executes after each individual media download is complete
@@ -87,7 +89,7 @@ def funct(prompt_):
     [Performance Options]
     download_sems: number of downloads per processor/worker
     thread_count: number of processors/workers
-    download_limit: max download speed per second for each thread
+    download_limit: max download speed per second, shared by all downloads
     -----------------------------------
     [Content Filter Options]
     block_ads: use common key words to block ads
@@ -404,7 +406,7 @@ def performance_config():
                 "min_allowed": 1,
                 "max_allowed": 15,
                 "validate": EmptyInputValidator(),
-                "option_instruction": f"Value can be 1-15",
+                "option_instruction": "Value can be 1-15",
                 "default": data.get_download_semaphores(),
             }
         ],
@@ -418,7 +420,7 @@ def performance_config():
             {
                 "type": "input",
                 "name": "download_limit",
-                "message": "Maximum download speed per second for  each thread: ",
+                "message": "Maximum download speed per second, shared by all downloads: ",
                 "validate": EmptyInputValidator(),
                 "option_instruction": """
                 Input can be int representing bytes
@@ -542,14 +544,28 @@ Enter 0 for no minimum
 
 def advanced_config() -> dict:
     out = {}
+    # select the rule an alias such as "dc" picks, listed by the name the menu
+    # saves (digitalcriminals as "digital"), and offer it even if
+    # OFSC_DYNAMIC_OPTIONS leaves it out (#226)
+    def menu_name(rule):
+        rule = const.DYNAMIC_ALIASES.get(rule, rule)
+        return const.DYNAMIC_MENU_NAMES.get(rule, rule)
+
+    dynamic_rule = menu_name(data.get_dynamic())
+    dynamic_choices = []
+    for rule in of_env.getattr("DYNAMIC_OPTIONS"):
+        if menu_name(rule) not in dynamic_choices:
+            dynamic_choices.append(menu_name(rule))
+    if dynamic_rule not in dynamic_choices:
+        dynamic_choices.append(dynamic_rule)
     new_settings = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
-                "default": data.get_dynamic(),
-                "choices": of_env.getattr("DYNAMIC_OPTIONS"),
+                "default": dynamic_rule,
+                "choices": dynamic_choices,
             },
             {
                 "type": "list",

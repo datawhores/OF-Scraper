@@ -15,7 +15,10 @@ from ofscraper.utils.live.progress import (
 
 
 def clear():
-    console.get_shared_console().clear_live()
+    # Not Console.clear_live(): that is Live's own bookkeeping, done by
+    # Live.stop(). On rich 13.7 calling it again only set the console's live
+    # display to None; since rich 14.1 it pops a stack of live displays, so it
+    # raised on an empty stack and dropped a running display from it.
     console.get_shared_console().line(2)
 
 

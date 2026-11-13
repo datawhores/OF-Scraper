@@ -10,10 +10,10 @@ import ofscraper.utils.paths.manage as manage
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.tools as tools
 import ofscraper.managers.manager as manager
+from ofscraper.utils.markup import escape_text
 
 
 log = logging.getLogger("shared")
-console = console.shared_console
 currentData = None
 currentProfile = None
 
@@ -37,20 +37,21 @@ def delete_profile():
     p = common_paths.get_config_home() / profile
     shutil.rmtree(p)
     manager.Manager.profile_manager.delete_profile()
-    print(f"[green]Successfully deleted[/green] {profile}")
+    print(f"[green]Successfully deleted[/green] {escape_text(profile)}")
 
 
 def create_profile():
     tools.print_profiles()
     name = tools.profile_name_fixer(prompts.create_profiles_prompt())
-    manage.create_profile_path(name)
     choice=prompts.change_selected_profile()
+    manage.create_profile_path(name)
     if choice=="default":
         manager.Manager.profile_manager.switch_profile(name,permanent=True)
     if choice=="active":
         manager.Manager.profile_manager.switch_profile(name,permanent=False)
-    console.print(
-        "[green]Successfully created[/green] {dir_name}".format(dir_name=name)
+    # the answer to a prompt, so shown even when --output quiets the shared console
+    console.get_console().print(
+        "[green]Successfully created[/green] {dir_name}".format(dir_name=escape_text(name))
     )
 
 def edit_profile_name():

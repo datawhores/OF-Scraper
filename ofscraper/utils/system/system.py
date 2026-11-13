@@ -1,5 +1,5 @@
 import asyncio
-import re
+import sys
 import logging
 import os
 import platform
@@ -15,9 +15,20 @@ def getcpu_count():
         return psutil.cpu_count()
 
 
+def new_event_loop():
+    """A new event loop: uvloop on Linux, asyncio's default elsewhere."""
+    if platform.system() == "Linux":
+        import uvloop
+
+        return uvloop.new_event_loop()
+    return asyncio.new_event_loop()
+
+
 def set_eventloop():
-    plat = platform.system()
-    if plat == "Linux":
+    # Event loop policies are deprecated from 3.14 and removed in 3.16; there
+    # loops come from new_event_loop() instead. get_event_loop() no longer
+    # creates a loop on 3.14+, so run_async falls through to it.
+    if platform.system() == "Linux" and sys.version_info < (3, 14):
         import uvloop
 
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

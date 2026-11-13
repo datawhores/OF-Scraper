@@ -11,8 +11,10 @@ r"""
 
 """
 
+import contextlib
 import logging
 import pathlib
+import sqlite3
 
 import arrow
 from rich.console import Console
@@ -69,6 +71,41 @@ def check_backup(model_id, username, new_path, db_path=None, **kwargs):
         .st_size
     ):
         raise Exception("backup db file should be the same size")
+
+
+def media_labelled_in_backups(database_path, label):
+    """(media_id, model_id) of the rows saved as downloaded with media type
+    `label` in the automatic backups (`user_data_copy_N.db`, `old_schema_*`)
+    beside the database. The backups are only read; one that can't be read is
+    skipped."""
+    folder = pathlib.Path(database_path).parent / "backup"
+    found = set()
+    if not folder.is_dir():
+        return found
+    backups = sorted(
+        {*folder.glob("user_data_copy_*.db"), *folder.glob("old_schema_*.db")}
+    )
+    for path in backups:
+        # immutable: no lock, no -wal or -shm file left beside the backup
+        uri = f"{path.resolve().as_uri()}?mode=ro&immutable=1"
+        try:
+            with contextlib.closing(sqlite3.connect(uri, uri=True)) as conn:
+                columns = {
+                    row[1] for row in conn.execute("PRAGMA table_info('medias')")
+                }
+                if not {"media_id", "model_id", "media_type", "downloaded"} <= columns:
+                    continue
+                found.update(
+                    conn.execute(
+                        "SELECT DISTINCT media_id, model_id FROM medias"
+                        " WHERE media_type = ? AND downloaded = 1"
+                        " AND media_id IS NOT NULL",
+                        [label],
+                    ).fetchall()
+                )
+        except sqlite3.Error as E:
+            log.debug(f"skipped backup {path}: {E}")
+    return found
 
 
 def create_backup(model_id, username, backup=None, db_path=None, **kwargs):

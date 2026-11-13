@@ -3,7 +3,7 @@ import re
 
 import pynumparser
 from InquirerPy.base import Choice
-from prompt_toolkit.shortcuts import prompt as prompt
+from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -46,7 +46,7 @@ def model_details(prompt_):
         Original Any Promo Price: [bold deep_sky_blue2]{selected.lowest_promo_all}[/bold deep_sky_blue2]   [Lowest of Any Promotional Price]
         =======================================================================================================================================
         
-        [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+        [italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
         ---------------------------------------------------------------------------------------------------------------------------------------
         Final Current Price: [bold deep_sky_blue2]{selected.final_current_price}[/bold deep_sky_blue2]   [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ def price_info(prompt_):
             f"""
 ========================================================================================================================================
 
-[italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+[italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
 current_price => [bold deep_sky_blue2]{settings.get_settings().current_price if settings.get_settings().current_price else 'paid and free'}[/bold deep_sky_blue2]
@@ -117,20 +117,20 @@ PRESS ENTER TO RETURN
 
 def model_funct(prompt):
     while True:
-        with stdout.nostdout():
-            choices = _get_choices()
+        # _get_choices shows the filter menu, so keep stdout visible
+        choices = _get_choices()
         if len(choices) == 0:
             console.print("Current filters returned zero models")
             continue
         with stdout.nostdout():
             selectedSet = set(
                 map(
-                    lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                    lambda x: re.search(r"^\s*[0-9]+: ([^ ]+)", x["name"]).group(1),
                     prompt.selected_choices or [],
                 )
             )
             for model in choices:
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet:
                     model.enabled = True
             prompt.content_control._raw_choices = choices
@@ -142,33 +142,31 @@ def model_funct(prompt):
 
 
 def model_select_funct(prompt):
-    with stdout.nostdout():
-        try:
-            toggle = promptConvert.getChecklistSelection(
-                choices=[
-                    Choice(True, "Range Select"),
-                    Choice(False, "Range Deselect"),
-                ]
-            )
+    toggle = promptConvert.getChecklistSelection(
+        choices=[
+            Choice(True, "Range Select"),
+            Choice(False, "Range Deselect"),
+        ]
+    )
 
-            # select new
-            choices = _select_helper(prompt, toggle)
-            prompt.content_control._raw_choices = choices
-            prompt.content_control.choices = prompt.content_control._get_choices(
-                prompt.content_control._raw_choices, prompt.content_control._default
-            )
-            prompt.content_control._format_choices()
-            return prompt
-        except Exception as E:
-            raise E
+    # select new
+    choices = _select_helper(prompt, toggle)
+    prompt.content_control._raw_choices = choices
+    prompt.content_control.choices = prompt.content_control._get_choices(
+        prompt.content_control._raw_choices, prompt.content_control._default
+    )
+    prompt.content_control._format_choices()
+    return prompt
 
 
 def _select_helper(prompt, toggle=True):
     try:
-        choices = _get_choices()
+        # number against the list that is on screen; _get_choices() would
+        # send the user through the filter/sort menu again first
+        choices = list(prompt.content_control._raw_choices)
         selectedSet = set(
             map(
-                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                lambda x: re.search(r"^\s*[0-9]+: ([^ ]+)", x["name"]).group(1),
                 prompt.selected_choices or [],
             )
         )
@@ -181,14 +179,16 @@ def _select_helper(prompt, toggle=True):
                 )
             )
         )
+        for model in choices:
+            model.enabled = False
         if toggle:
             for count, model in enumerate(choices):
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet or count + 1 in changes:
                     model.enabled = True
         elif not toggle:
             for count, model in enumerate(choices):
-                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                name = re.search(r"^\s*[0-9]+: ([^ ]+)", model.name).group(1)
                 if name in selectedSet and count + 1 not in changes:
                     model.enabled = True
 
@@ -199,12 +199,7 @@ def _select_helper(prompt, toggle=True):
 
 def _get_choices():
     models = manager.Manager.current_model_manager.get_models_from_prompt()
-    return list(
-        map(
-            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models.values()),
-        )
-    )
+    return modelHelpers.model_selector_choices(models.values())
 
 
 def user_list(model_str):
@@ -254,7 +249,7 @@ last-seen-before => [bold deep_sky_blue2]{settings.get_settings().last_seen_befo
 last-seen-after => [bold deep_sky_blue2]{settings.get_settings().last_seen_after}[/bold deep_sky_blue2]
 ==========================================================================================================================================
 
-[italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+[italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
 current_price => [bold deep_sky_blue2]{settings.get_settings().current_price if settings.get_settings().current_price else 'paid and free'}[/bold deep_sky_blue2]

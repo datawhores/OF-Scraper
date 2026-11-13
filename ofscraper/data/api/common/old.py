@@ -17,13 +17,17 @@ async def get_old_posts(model_id, username, db_function, api_name):
     # Filter out None values just in case
     old_data = list(filter(lambda x: x is not None, old_data))
     
-    # 2. Deduplicate based on post_id
+    # 2. Deduplicate based on post_id (rows without one are kept, not collapsed)
     seen = set()
-    old_data = [
-        post
-        for post in old_data
-        if post["post_id"] not in seen and not seen.add(post["post_id"])
-    ]
+    deduped = []
+    for post in old_data:
+        post_id = post.get("post_id")
+        if post_id is not None:
+            if post_id in seen:
+                continue
+            seen.add(post_id)
+        deduped.append(post)
+    old_data = deduped
     
     # 3. Log the results
     log.debug(f"[bold]{api_name} Cache[/bold] {len(old_data)} found")

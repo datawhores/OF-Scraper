@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.data.posts.post as OF
 import ofscraper.commands.scraper.actions.download.download as download
 import ofscraper.commands.metadata.metadata as metadata
@@ -134,6 +135,8 @@ async def process_user(value, length):
             manager.Manager.stats_manager.update_and_print_stats(
                 username, "scrape_paid_download", medias
             )
+            if stop.requested.is_set():
+                raise stop.DownloadsStopped
             manager.Manager.current_model_manager.mark_as_processed(
                 username, "scrape_paid_download"
             )

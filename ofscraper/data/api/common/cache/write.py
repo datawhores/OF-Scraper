@@ -1,3 +1,4 @@
+from ofscraper.commands.scraper.actions.download import stop
 import arrow
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
@@ -10,6 +11,7 @@ def set_after_checks(model_id, api):
 
 
 def set_full_after_scan_check(model_id, api):
+    stop.check()
     api = api.lower()
     cache.set(
         f"{model_id}_full_{api}_v2_scrape", settings.get_settings().after is not None
@@ -17,6 +19,7 @@ def set_full_after_scan_check(model_id, api):
 
 
 def set_check_mode_posts(model_id, api, all_posts, update=False):
+    stop.check()
     api = api.lower()
     key = f"{api}_v2_check_{model_id}"
     expire_key = f"{key}_expire_time"

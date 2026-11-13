@@ -1,3 +1,4 @@
+import json
 import logging
 import arrow
 
@@ -17,7 +18,14 @@ class Post(base.base):
     """
 
     def __init__(
-        self, post, model_id, username, responsetype=None, label=None, mode="download"
+        self,
+        post,
+        model_id,
+        username,
+        responsetype=None,
+        label=None,
+        mode="download",
+        purchased=False,
     ):
         super().__init__()
         self._post = post
@@ -25,6 +33,8 @@ class Post(base.base):
         self._username = username
         self._responsetype = responsetype
         self._label = label
+        # from the purchases list, for a caller that keeps the post's own type
+        self._purchased = purchased
 
         self.is_download_candidate = False
         self.is_like_candidate = False
@@ -240,6 +250,37 @@ class Post(base.base):
         return str(raw_type).capitalize() if raw_type else "Unknown"
 
     @property
+    def purchase_type(self):
+        """``post`` or ``message`` for an OnlyFans purchase, from its ``responseType``.
+
+        None for anything not scraped as a purchase, and for Fansly purchases,
+        which are bought media items rather than posts or messages. The check
+        command builds purchases with their own type (Timeline, Messages) and
+        ``purchased=True``.
+        """
+        if not self._purchased and str(self._responsetype or "").lower() != "paid":
+            return None
+        raw = str(self.post.get("responseType") or "").lower()
+        return raw if raw in {"post", "message"} else None
+
+    @property
+    def group_id(self):
+        """The Fansly conversation id of a message (``groupId``), else None."""
+        value = self._post.get("groupId")
+        return str(value) if value else None
+
+    @property
+    def db_mentions(self):
+        """The Fansly ``accountMentions`` list as JSON, as the API sent it.
+
+        None when the item has no such list (OnlyFans, Fansly messages).
+        """
+        mentions = self._post.get("accountMentions")
+        if not isinstance(mentions, list):
+            return None
+        return json.dumps(mentions, separators=(",", ":"), ensure_ascii=False)
+
+    @property
     def id(self):
         return self._post["id"]
 
@@ -249,7 +290,9 @@ class Post(base.base):
 
     @property
     def formatted_date(self):
-        return arrow.get(self.date).format("YYYY-MM-DD hh:mm:ss")
+        if not self.date:
+            return None
+        return arrow.get(self.date).format("YYYY-MM-DD HH:mm:ss")
 
     @property
     def value(self):
@@ -316,6 +359,9 @@ class Post(base.base):
             # 2. Handle the "Post/Posts" alias normalization
             if response_key in {"post", "posts"}:
                 response_key = "timeline"
+            # the config key for messages is "message"
+            elif response_key == "messages":
+                response_key = "message"
 
             # 3. Lookup in the lowercase config dictionary
             response = data.responsetype().get(response_key)

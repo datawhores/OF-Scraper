@@ -34,7 +34,7 @@ runs:
     - name: Attempt 1 - Upload Artifact
       id: upload_attempt_1
       if: ${{ inputs.operation_type == 'upload' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -46,7 +46,7 @@ runs:
     - name: Attempt 1 - Download Specific Artifact
       id: download_specific_attempt_1 # Unique ID for specific download
       if: ${{ inputs.operation_type == 'download' && inputs.name != '' }} # Run if download AND name is provided
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -56,7 +56,7 @@ runs:
     - name: Attempt 1 - Download All Artifacts
       id: download_all_attempt_1 # Unique ID for download all
       if: ${{ inputs.operation_type == 'download' && inputs.name == '' }} # Run if download AND name is empty (implying download all)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         # NO 'name' input here to explicitly trigger download all behavior
         path: ${{ inputs.path }}
@@ -78,7 +78,7 @@ runs:
     - name: Attempt 2 - Upload Artifact
       id: upload_attempt_2
       if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_1.outcome == 'failure' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -90,7 +90,7 @@ runs:
     - name: Attempt 2 - Download Specific Artifact
       id: download_specific_attempt_2
       if: ${{ inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_1.outcome == 'failure' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -100,7 +100,7 @@ runs:
     - name: Attempt 2 - Download All Artifacts
       id: download_all_attempt_2
       if: ${{ inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_1.outcome == 'failure' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: ${{ inputs.path }}
       continue-on-error: true
@@ -121,7 +121,7 @@ runs:
     - name: Attempt 3 - Upload Artifact
       id: upload_attempt_3
       if: ${{ inputs.operation_type == 'upload' && steps.upload_attempt_2.outcome == 'failure' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -133,7 +133,7 @@ runs:
     - name: Attempt 3 - Download Specific Artifact
       id: download_specific_attempt_3
       if: ${{ inputs.operation_type == 'download' && inputs.name != '' && steps.download_specific_attempt_2.outcome == 'failure' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
@@ -143,7 +143,7 @@ runs:
     - name: Attempt 3 - Download All Artifacts
       id: download_all_attempt_3
       if: ${{ inputs.operation_type == 'download' && inputs.name == '' && steps.download_all_attempt_2.outcome == 'failure' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: ${{ inputs.path }}
       continue-on-error: true

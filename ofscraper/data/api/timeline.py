@@ -10,12 +10,14 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
 import ofscraper.utils.settings as settings
@@ -42,6 +44,7 @@ API = "Timeline"
 
 
 @run
+@stop.fetching
 async def get_timeline_posts(model_id, username, c=None, post_id=None):
     after = await get_after(model_id, username)
     post_id = post_id or []
@@ -86,7 +89,7 @@ async def process_tasks(generators):
             await queue.put(None)  # Signal completion for this specific generator
 
     # Schedule producers as concurrent tasks
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     # Consume batches as they arrive in the queue
@@ -263,7 +266,7 @@ async def get_after(model_id, username):
         youngest = await get_youngest_timeline_date(
             model_id=model_id, username=username
         )
-        return arrow.get(youngest or "2000").float_timestamp
+        return date_or_2000(youngest)
 
     # 3. Deduplicate (Keeping newest instance for anchor)
     unique_missing = {}
@@ -278,7 +281,13 @@ async def get_after(model_id, username):
     missing_items = sorted(
         list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
     )
-    return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
+    return date_or_2000(missing_items[0]["posted_at"])
+
+
+def date_or_2000(value):
+    # timeline media dates are Arrow objects, and an undated one (1970) is
+    # still truthy; fall back to 2000 like the other areas' float dates do
+    return arrow.get(value or 0).float_timestamp or arrow.get("2000").float_timestamp
 
 
 async def scrape_timeline_posts(
@@ -329,8 +338,22 @@ async def scrape_timeline_posts(
                     break
                 log.debug(f"Received batch with {len(batch)} items.")
 
-                batch_timestamps = [float(x["postedAtPrecise"]) for x in batch]
-                max_ts = max(batch_timestamps)
+                # an undated post is kept; it doesn't move the page cursor
+                batch_timestamps = []
+                for x in batch:
+                    if x.get("postedAtPrecise") in (None, ""):
+                        log.warning(f"{API}: post {x.get('id')} has no date")
+                        batch_timestamps.append(None)
+                    else:
+                        batch_timestamps.append(float(x["postedAtPrecise"]))
+                dated = [ts for ts in batch_timestamps if ts is not None]
+                if not dated:
+                    log.warning(
+                        f"{API}: no post on this page has a date, stopping the scan here"
+                    )
+                    yield batch
+                    break
+                max_ts = max(dated)
                 batch_ids = {x["id"] for x in batch}
 
                 # 1. Clear out ANY posts we successfully found in this batch
@@ -359,17 +382,26 @@ async def scrape_timeline_posts(
                     for g_id in ghosts_in_batch:
                         required_ids.discard(g_id)
 
-                # 4. Sentinel: Early Exit for Gap-Filling Chunks
+                # 4. Sentinel: Natural Upper Boundary Exit.
+                # Keep this page's in-range posts before stopping.
+                if max_ts > before:
+                    log.debug("Passed the user's '--before' upper boundary. Exiting.")
+                    yield [
+                        x
+                        for x, ts in zip(batch, batch_timestamps)
+                        if ts is None or ts <= before
+                    ]
+                    break
+
+                # 5. Sentinel: Early Exit for Gap-Filling Chunks.
+                # Keep the page that completed the chunk; the next chunk only
+                # starts after its tail.
                 if not is_last_chunk and len(required_ids) == 0:
                     log.debug(
                         "All required gap IDs found or resolved as ghosts. Exiting early."
                     )
-                    has_more = False
-
-                # 5. Sentinel: Natural Upper Boundary Exit
-                if max_ts > before:
-                    log.debug("Passed the user's '--before' upper boundary. Exiting.")
-                    has_more = False
+                    yield batch
+                    break
 
                 if has_more:
                     url = ep_next.format(model_id, max_ts)
@@ -377,6 +409,7 @@ async def scrape_timeline_posts(
                 yield batch
 
     except Exception as e:
+        log.warning(f"{API}: scan stopped early: {e!r}")
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
 
@@ -395,12 +428,7 @@ async def scrape_timeline_posts(
 
 
 def time_log(username, after):
-    log.info(f"""
-Setting timeline scan range for {username} from {arrow.get(after).format(of_env.getattr('API_DATE_FORMAT'))} to {arrow.get(settings.get_settings().before or arrow.now()).format((of_env.getattr('API_DATE_FORMAT')))}
-[yellow]: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
-
-            """)
+    scan_range.log_scan_range(log, username, "timeline", after)
 
 
 def filter_timeline_post(timeline_posts):

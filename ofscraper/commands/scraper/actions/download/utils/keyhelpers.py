@@ -1,7 +1,7 @@
 import asyncio
-import json
 import pathlib
 import re
+import struct
 import traceback
 from functools import partial
 
@@ -9,6 +9,7 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
+from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
@@ -28,6 +29,47 @@ log = None
 def setLog(input_):
     global log
     log = input_
+
+
+def strip_pssh(path):
+    """
+    Turn pssh boxes in a decrypted file into same-sized 'free' boxes.
+
+    ffmpeg 8+ copies the source's pssh (DRM init data) into the decrypted
+    output; 7.x dropped it. The media is identical either way, but a clear
+    file still carrying pssh can look protected to some players. Renaming
+    keeps every offset valid, so nothing else in the file changes.
+    Returns the number of boxes changed.
+    """
+    changed = 0
+    with open(path, "r+b") as f:
+        f.seek(0, 2)
+        file_end = f.tell()
+
+        def walk(start, end, depth):
+            nonlocal changed
+            pos = start
+            while pos + 8 <= end:
+                f.seek(pos)
+                size, typ = struct.unpack(">I4s", f.read(8))
+                header = 8
+                if size == 1:
+                    size = struct.unpack(">Q", f.read(8))[0]
+                    header = 16
+                elif size == 0:
+                    size = end - pos
+                if size < header or pos + size > end:
+                    return
+                if typ == b"pssh":
+                    f.seek(pos + 4)
+                    f.write(b"free")
+                    changed += 1
+                elif depth == 0 and typ in (b"moov", b"moof"):
+                    walk(pos + header, pos + size, depth + 1)
+                pos += size
+
+        walk(0, file_end, 0)
+    return changed
 
 
 async def un_encrypt(item, c, ele, input_=None):
@@ -90,7 +132,15 @@ async def un_encrypt(item, c, ele, input_=None):
             raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
         else:
             log.debug(f"{get_medialog(ele)} ffmpeg  decrypt success {newpath}")
-            pathlib.Path(item["path"]).unlink(missing_ok=True)
+            try:
+                if n := strip_pssh(newpath):
+                    log.debug(f"{get_medialog(ele)} removed {n} pssh box(es) from {newpath}")
+            except OSError as E:
+                log.debug(f"{get_medialog(ele)} could not strip pssh from {newpath}: {E}")
+            stop.check()
+            # Keep encrypted Part files until all tracks have been merged.
+            if pathlib.Path(item["path"]).suffix != ".part":
+                pathlib.Path(item["path"]).unlink(missing_ok=True)
             item["path"] = newpath
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
@@ -118,7 +168,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         auth_requests.create_sign(licence_url, headers)
         json_data = {
             "licurl": licence_url,
-            "headers": json.dumps(headers),
+            # cdrm-project parses this field with ast.literal_eval, which
+            # needs a python dict literal rather than JSON
+            "headers": repr(dict(headers)),
             "pssh": pssh,
         }
         async with c.requests_async(

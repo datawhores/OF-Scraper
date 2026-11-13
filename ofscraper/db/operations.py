@@ -16,6 +16,8 @@ import logging
 from rich.console import Console
 
 import ofscraper.classes.labels as labels
+import ofscraper.classes.placeholder as placeholder
+import ofscraper.sites as sites
 from ofscraper.db.backup import create_backup
 from ofscraper.db.operations_.labels import (
     create_labels_table,
@@ -30,6 +32,7 @@ from ofscraper.db.operations_.others import (
     create_others_table,
     create_products_table,
     create_schema_table,
+    write_site_flag,
 )
 from ofscraper.db.operations_.posts import create_post_table, make_post_table_changes
 from ofscraper.db.operations_.profile import (
@@ -42,7 +45,7 @@ from ofscraper.db.operations_.stories import (
     create_stories_table,
     make_stories_table_changes,
 )
-from ofscraper.db.transition import modify_tables
+from ofscraper.db.transition import modify_tables, size_skip_labels_in_backups
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -50,7 +53,11 @@ log = logging.getLogger("shared")
 
 
 @run
-async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
+async def make_changes_to_content_tables(
+    posts, model_id, username, skip_update=None, **kwargs
+):
+    # skip_update: True, or the ids of posts and messages whose rows
+    # --metadata leaves alone
     await make_post_table_changes(
         filter(
             lambda x: x.responsetype.capitalize()
@@ -59,11 +66,13 @@ async def make_changes_to_content_tables(posts, model_id, username, **kwargs):
         ),
         model_id=model_id,
         username=username,
+        skip_update=skip_update,
     )
     await make_messages_table_changes(
         filter(lambda x: x.responsetype.capitalize() == "Messages", posts),
         model_id=model_id,
         username=username,
+        skip_update=skip_update,
     )
     await make_stories_table_changes(
         filter(
@@ -93,8 +102,21 @@ async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
 
 @run
 async def table_init_create(model_id=None, username=None, **kwargs):
+    new_db = (
+        not placeholder.databasePlaceholder()
+        .databasePathHelper(model_id, username)
+        .exists()
+    )
     await create_tables(model_id=model_id, username=username)
-    create_backup(model_id, username)
-    await modify_tables(model_id, username)
+    # read before the periodic copy below can replace the backup that has them
+    backup_labels = size_skip_labels_in_backups(model_id=model_id, username=username)
+    if not new_db:
+        create_backup(model_id, username)
+    await modify_tables(
+        model_id, username, new_db=new_db, backup_labels=backup_labels
+    )
     await write_profile_table(model_id=model_id, username=username)
     await write_models_table(model_id=model_id, username=username)
+    # OnlyFans databases stay exactly as before; other sites are recorded
+    if sites.is_fansly():
+        await write_site_flag(sites.FANSLY, model_id=model_id, username=username)

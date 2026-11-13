@@ -1,141 +1,255 @@
-# Notice
+<div align="center">
 
-1. OF-Scraper can not bypass pay walls
-2. OF-Scraper requires a subscription to the model, models can not be scraped anonymously whether free or paid
+<img src="https://raw.githubusercontent.com/cloakedkeys/OF-Scraper-Community/main/media/icon.png" alt="OF-Scraper-Community" width="140">
 
-# For auth issues
+# OF-Scraper-Community
 
-https://github.com/datawhores/OF-Scraper/issues/442
+**Download what you're subscribed to on OnlyFans and Fansly, from the command line.**
 
-# For Issues related to Downloading/ No Models Retrieved error
-https://github.com/datawhores/OF-Scraper/issues/542
+A community-maintained fork of [datawhores/OF-Scraper](https://github.com/datawhores/OF-Scraper), with the fixes users have reported since upstream stopped updating.
 
-# ReadMe
+[![Latest release](https://img.shields.io/github/v/release/cloakedkeys/OF-Scraper-Community?label=release&color=00a8e8)](https://github.com/cloakedkeys/OF-Scraper-Community/releases/latest)
+[![Tests](https://github.com/cloakedkeys/OF-Scraper-Community/actions/workflows/codecov.yml/badge.svg)](https://github.com/cloakedkeys/OF-Scraper-Community/actions/workflows/codecov.yml)
+[![codecov](https://codecov.io/gh/cloakedkeys/OF-Scraper-Community/branch/main/graph/badge.svg)](https://codecov.io/gh/cloakedkeys/OF-Scraper-Community)
+[![Python 3.11 to 3.15](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.15-3776ab?logo=python&logoColor=white)](#install)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/cloakedkeys/OF-Scraper-Community/pkgs/container/of-scraper-community)
+[![Docs](https://img.shields.io/badge/docs-gitbook-00a8e8?logo=gitbook&logoColor=white)](https://cloakedkeys.gitbook.io/ofsc)
+[![License: MIT](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/LICENSE)
 
-## Releases
+[Install](#install) · [Getting started](#getting-started) · [Docs](https://cloakedkeys.gitbook.io/ofsc) · [FAQ](#faq) · [Reference](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
 
-[Releases Page](https://pypi.org/project/ofscraper/#history)
+</div>
 
-```Text
+---
 
-Docker and binary releases also available
+> **OF-Scraper can't get past paywalls.** You need a subscription to a creator, and you can only download what your account can already see.
+
+## Why this fork
+
+Upstream hasn't been updated since April 2026. This fork keeps it working:
+
+| | |
+|---|---|
+| 🔐 **DRM video** | Protected videos download and decrypt again, with ffmpeg 6, 7 and 8+. |
+| 🌐 **Fansly** | Posts, messages, purchases, labels (profile walls) and livestreams, alongside OnlyFans. |
+| 🐍 **Python 3.11 to 3.15** | Tested in CI on the oldest and newest supported versions. |
+| 🛠️ **Bug fixes** | Dozens of reported bugs fixed, with tests that guard them. See the [releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases). |
+| 📖 **Full reference** | Every command, option, setting and database table [documented](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md). |
+
+## Install
+
+This fork is on PyPI as **`ofscraper-community`**. The command is still `ofscraper`.
+
+**Requirements:**
+- Python 3.11 or higher.
+- ffmpeg 6 or newer, only for protected (DRM) videos.
+
+**With uv (recommended)**
+
+```
+uv tool install ofscraper-community
 ```
 
-## Stable
+**With pipx**
 
-<div style="display: inline-block">
-<a href="https://pypi.org/project/ofscraper/">
-<img src="https://img.shields.io/pypi/v/ofscraper.svg?color=dark_green&label=Stable-Release" alt="drawing" style="height:75px"/>
-</div>
-</a>
+```
+pipx install ofscraper-community
+```
 
-## Dev
-Dev releases can be found in the project release history
+**With pip**
 
-https://pypi.org/project/ofscraper/#history
+```
+pip install ofscraper-community
+```
 
-## Table-of-contents
+**Without Python:** download the Windows, macOS or Linux build from the [latest release](https://github.com/cloakedkeys/OF-Scraper-Community/releases/latest).
 
-- [Notice](#notice)
-- [For auth issues](#for-auth-issues)
-- [For Issues related to Downloading/ No Models Retrieved error](#for-issues-related-to-downloading-no-models-retrieved-error)
-- [ReadMe](#readme)
-  - [Releases](#releases)
-  - [Stable](#stable)
-  - [Dev](#dev)
-  - [Table-of-contents](#table-of-contents)
-  - [Description](#description)
-  - [Documentation](#documentation)
-  - [Issues](#issues)
-    - [Private Reports](#private-reports)
-  - [Feature Requests](#feature-requests)
-  - [Migrating from DC script](#migrating-from-dc-script)
-  - [Discord](#discord)
-  - [Support](#support)
-- [](#)
+**Docker**
 
-## Description
+```
+docker pull ghcr.io/cloakedkeys/of-scraper-community:latest
+```
 
-command-line tool that lets you download media from OnlyFans and perform bulk actions including liking or unliking posts.
+### Updating
 
-![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
+```
+uv tool upgrade ofscraper-community
+pipx upgrade ofscraper-community
+pip install -U ofscraper-community
+```
 
-At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed [HERE](https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md), most are only documented in the commit history.
+Use the one that matches how you installed it.
 
-This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
+### Switching from `ofscraper`
 
-## Documentation
+The `ofscraper` package on PyPI is upstream's old version, without these fixes. It installs the same `ofscraper` command, so uninstall it first, using the tool you installed it with:
 
-For detailed instructions on:
+- pip: `pip uninstall ofscraper`
+- uv (this includes the fork installed from GitHub before it was on PyPI): `uv tool uninstall ofscraper`
+- pipx: `pipx uninstall ofscraper`
 
-- Installation
-- Running the tool
-- And other pertinent information you might need
+Then install `ofscraper-community` as above. If pip already has both, uninstall both, then install `ofscraper-community` again.
 
-[Official Documention](https://of-scraper.gitbook.io/of-scraper)
+### Unreleased changes
 
-<h3>DISCLAIMERS:</h3>
-<ol>
-    <li>
-        This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.
-    </li>
-    <li>
-        This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
-    </li>
-</ol>
+To get what's on `main` before it's released, install from this repo. To update, run the same command again.
 
-## Issues
+```
+uv tool install --force git+https://github.com/cloakedkeys/OF-Scraper-Community
+pip install git+https://github.com/cloakedkeys/OF-Scraper-Community
+```
 
-Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
+## Getting started
 
-**Feature request issues are fine**
-**Bug Report Issues without required material will be closed**
+Run `ofscraper` and follow the prompts. The first run asks for your auth details and creates a config file in `~/.config/ofscraper/`.
 
-### Private Reports
+📖 **[Read the docs](https://cloakedkeys.gitbook.io/ofsc)** for setup, auth, config options, commands and the full [technical reference](https://cloakedkeys.gitbook.io/ofsc/reference).
 
-A ticket can be created in the ticket channel
-only you and admins have access to ticket discussions
+## Check table
 
-## Feature Requests
+The check table lists a creator's media so you can filter it, pick what you want and download only that. It's for OnlyFans only.
 
-[ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
+![The check table with made-up rows](https://raw.githubusercontent.com/cloakedkeys/OF-Scraper-Community/main/media/check_table.svg)
 
-## Migrating from DC script
+**Opening it**
 
-To maintain compatibility with your current folders, make sure to modify the metadata option within the config file. Additionally, configure the save_path, dir_path, and filename settings to generate outputs that align with your existing setup.
+- **From the menu:** run `ofscraper`, choose **Perform Action(s)**, then **Browse and pick media (check table)**. Pick the creators, then the table: Posts, Messages, Paid or Stories. When you close the table, any downloads you sent from it finish, then you're back at the menu.
+- **From the command line:** `ofscraper post_check`, `msg_check`, `paid_check` or `story_check`, with `-u` (usernames, or links for `post_check` and `msg_check`) or `-f` (a file with one per line).
 
-The inherited metadata files from DIGITALCRIMINALS' script play a crucial role in preventing redundant downloads by acting as a check for duplicates.
+The menu uses the commands' defaults: a creator's saved post list when there is one, and for Posts the Timeline, Pinned, Archived and Streams areas. To fetch a fresh list or pick other areas, use the command with `--force` or `--check-area`.
 
-For comprehensive guidance on making these adjustments, you can refer to the provided resources
+**Tabs**
 
-1. [Migration Guide](https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script)
-2. [Config Options](https://of-scraper.gitbook.io/of-scraper/config-options)
-3. [Customize Save Path](https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path)
+- **DataTable:** every media item, a page at a time. Click a column header to sort by it.
+- **Cart:** what you've picked. The **Download Text** and **Text Only (Skip Media)** boxes apply to the next send.
+- **Console:** the log, including download progress.
 
-Ask in the discord or open an issue if you need help with what to change to accomplish this
+**Sidebars** (DataTable tab)
 
-## Discord
+- **Ctrl+S** opens the options sidebar: filters for text, media ID, post ID, post media count, price, post date, length, downloaded, unlocked, media type, response type, download type and username. Press **Filter** to apply them. **Clear Filters**, or the **Reset Filters** button, clears them.
+- **Ctrl+D** opens the download sidebar: the minimum and maximum file size to download. Changes apply right away.
+- Press the same key again to close a sidebar.
+- With a cell highlighted, `;` or `'` copies its value into that column's filter. Press **Filter** to apply it.
 
-[Discord](https://discord.gg/wN7uxEVHRK)
+**Cart keys** (DataTable tab, with both sidebars closed)
 
-## Support
+| Key | Adds to the cart |
+|---|---|
+| `a` / `Shift+A` | this page / everything the filters show |
+| `u` / `Shift+U` | the same, but each media item once |
+| `e` / `Shift+E` | the same, but only media that isn't downloaded yet |
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/datawhores)
+| Key | Removes from the cart |
+|---|---|
+| `c` / `Shift+C` | this page / everything the filters show |
+| `x` | everything |
 
-<div>
-      <h4>btc</h4>
-    <a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/btc">
-  <img src="https://github.com/datawhores/OF-Scraper/assets/67020411/c96d0c22-b015-4ffc-b09e-6f246ae10fba" alt="drawing" style="height:100px"/>
-    </a>
-</div>
+You can also click a row's **Download Cart** cell to add or remove it, or click the **Download Cart** header to add the page. Locked media can't be added. On the Cart tab, click `[added]` to remove a row, `c` removes the page, and `x` or `Shift+C` empties the cart.
 
-<div>
-    <h4>eth</h4>
-    <a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/eth">
-  <img src="https://github.com/datawhores/OF-Scraper/assets/67020411/d9df33e9-a8ac-4574-91dd-1cb5a20f7201" alt="drawing" style="height:100px"/>
-    </a>
-</div>
+**Downloading**
 
-#
+Press **>> Send Downloads to OF-Scraper** (on the DataTable or Cart tab). The table switches to the Console, and each row's Download Cart cell shows `[downloading]`, then `[downloaded]`, `[skipped]` or `[failed]`. You can keep picking and send more while it downloads.
 
-[![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
+**Opening the download folder**
+
+- `o` (DataTable tab, sidebars closed) opens the highlighted row's folder. For a downloaded file, that's the folder holding it, with the file selected where the file manager can do that. Otherwise it's the creator's download folder.
+- The **Open Download Folder** button opens the highlighted row's creator's download folder.
+
+**Ctrl+Q** closes the table.
+
+## FAQ
+
+<details>
+<summary><b>Auth keeps failing, or it says "Double check auth info"</b></summary>
+
+- Copy every value (`sess`, `auth_id`, `x-bc`, `user_agent`) again from the same browser while you're logged in to OnlyFans. They expire when you log out.
+- `user_agent` must match that browser exactly.
+- Make sure you're on the latest version of this fork.
+- To stop the auth prompt from looping, add `--auth-fail` and the run quits on an auth error instead.
+
+</details>
+
+<details>
+<summary><b>"No accounts found during scan"</b></summary>
+
+Usually an auth problem, so check the auth answer above first. Then check you have an active subscription to the model, and that you aren't filtering it out with options like `--expired-subscription`.
+
+</details>
+
+<details>
+<summary><b>Protected videos don't download, or leave <code>.part</code> / <code>tempvid</code> files</b></summary>
+
+These videos need a CDM to decrypt them.
+
+- Set up `cdm_options` in your config. See the [CDM guide](https://cloakedkeys.gitbook.io/ofsc/cdm-options).
+- Install ffmpeg 6 or newer and put its full path in `binary_options` → `ffmpeg`.
+- Paths copied with Windows' "Copy as path" (with quotes) work.
+
+</details>
+
+<details>
+<summary><b>Files download fine but are counted as "failed"</b></summary>
+
+Fixed in 3.15.0. This mostly happened when saving to a mapped or network drive. Update to the latest version.
+
+</details>
+
+<details>
+<summary><b>Some messages or new posts are missing</b></summary>
+
+A bug that skipped messages when using `--after` is fixed in 3.15.0. Update, then run again. To rescan a date range, add `--after YYYY-MM-DD`. Add `--force-all` as well if you want files you already have downloaded again.
+
+</details>
+
+<details>
+<summary><b>ffmpeg isn't found even though it's installed</b></summary>
+
+Put the full path to the ffmpeg program in `binary_options` → `ffmpeg` in your config, for example `C:\ffmpeg\bin\ffmpeg.exe`. An empty setting means "not set".
+
+</details>
+
+<details>
+<summary><b>It says to update to 3.14.7</b></summary>
+
+That's upstream's PyPI version, which is older than this fork. Version 3.15.0 and later no longer show that message.
+
+</details>
+
+<details>
+<summary><b>Two files saved with the same name overwrote each other</b></summary>
+
+Newer versions save the second one as `name_<media_id>` instead. To recover files lost to this in older versions, see [Collision Recovery](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/COLLISION_RECOVERY.md).
+
+</details>
+
+## Fork-only features
+
+- **Skip a model during `--scrape-paid`:** `--excluded-username` now works with `--scrape-paid`. Separate several names with commas.
+
+  ```
+  ofscraper --scrape-paid --excluded-username modelname,othermodel
+  ```
+
+- **Start the next daemon pass early (Docker/Linux):** while the daemon is waiting between passes, send `SIGUSR1`.
+
+  ```
+  docker kill --signal=SIGUSR1 <container>
+  ```
+
+- **Organize downloads in Stash:** copy each download's creator, date, caption and source into [Stash](https://stashapp.cc). See [Stash](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/STASH.md).
+
+## Reporting a problem
+
+Open an issue [in this repo](https://github.com/cloakedkeys/OF-Scraper-Community/issues), not upstream's.
+
+Include a debug log. Run with `--log debug`, then attach the newest file from `~/.config/ofscraper/logging/`. Check it for personal details before posting.
+
+The GUI is a separate project: [cjb900/OF-Scraper-GUI](https://github.com/cjb900/OF-Scraper-GUI).
+
+## Disclaimer
+
+This tool isn't affiliated with, endorsed by or sponsored by OnlyFans or Fansly. All OnlyFans trademarks belong to Fenix International Limited. You use it at your own risk and are responsible for how you use it.
+
+## Credits
+
+OF-Scraper was created by [datawhores](https://github.com/datawhores) and its contributors. This fork builds on their work.

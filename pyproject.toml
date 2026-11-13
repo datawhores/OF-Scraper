@@ -1,50 +1,45 @@
 [project]
-name = "ofscraper"
+name = "ofscraper-community"
 dynamic = ["version"]
 description = "automatically scrape onlyfans"
 authors = [{ name = "datawhores", email = "datawhores@riseup.net" }]
 readme = "README.md"
-requires-python = ">=3.11, <3.14"
+requires-python = ">=3.11, <3.16"
 dependencies = [
-  "aiofiles~=23.2.1",
-  "aiolimiter~=1.1.0",
+  "aiofiles~=25.1.0",
+  "aiohttp>=3.14.5,<4",
+  "aiolimiter~=1.3.0",
   "aioprocessing~=2.0.1",
-  "aiosqlite~=0.20.0",
-  "arrow~=1.3.0",
-  "async-property~=0.2.2",
+  "arrow~=1.4.0",
   "browser-cookie3==0.19.1",
   "bs4~=0.0.2",
-  "certifi>=2024.2.2,<2024.8.0",
-  "cloup~=3.0.5",
-  "dill~=0.3.8",
+  "certifi>=2026.10.18",
+  "click>=8.5.1,<9",
+  "cloup~=4.0.0",
   "diskcache~=5.6.3",
-  "faust-cchardet~=2.1.19",
   "humanfriendly~=10.0",
   "httpx[http2]~=0.28.1",
-  "httpx-aiohttp~=0.1.2",
-  "idna==3.7",
+  "idna>=3.15,<4",
   "inquirerpy~=0.3.4",
   "limiter~=0.5.0",
-  "lxml~=5.1.0",
-  "more-itertools~=10.2.0",
+  "lxml~=6.1.2",
   "mpegdash~=0.4.0",
-  "pathvalidate~=3.2.0",
-  "prompt-toolkit~=3.0.43",
-  "psutil~=5.9.8",
-  "pycryptodome~=3.20.0",
+  "pathvalidate~=3.3.1",
+  "prompt-toolkit~=3.0.53",
+  "psutil~=7.2.2",
   "pynumparser~=1.4.1",
-  "pywidevine~=1.8.0",
-  "requests>=2.31,<2.34",
-  "rich~=13.7.1",
+  "python-dateutil>=2.9.0.post0,<3",
+  "pywidevine~=1.9.0",
+  "requests~=2.34.2",
+  "rich~=15.0.0",
   "schedule~=1.2.1",
   "setproctitle~=1.3.3",
   "speedtest-cli~=2.1.3",
-  "tenacity~=8.2.3",
-  "textual==1.0.0",
-  "tqdm~=4.66.4",
-  "uvloop~=0.21.0; sys_platform == 'linux' or sys_platform == 'linux2'",
-  "win32-setctime~=1.1.0",
-  "xxhash~=3.4.1",
+  "tenacity~=9.2.1",
+  "textual~=8.2.8",
+  "uvloop~=0.23.0; sys_platform == 'linux' or sys_platform == 'linux2'",
+  "win32-setctime~=1.2.1",
+  "xxhash~=4.1.0",
   "pyyaml>=6.0.2",
   "dotenv>=0.9.9",
 ]
@@ -52,12 +47,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["autopep8~=2.0.2", "pyinstaller"]
 test = [
-  "pytest~=7.3.1",
-  "coverage~=7.4.3",
-  "pytest-cov~=4.1.0",
+  "pytest~=9.0.3",
+  "coverage~=7.15.4",
+  "pytest-cov~=7.1.0",
   "random-unicode-emoji~=2.8",
   "random-emoji~=1.0.15",
-  "pytest-mock~=3.12.0",
+  "pytest-mock~=3.17.0",
 ]
 docs = ["sphinx-argparse~=0.5.2"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
@@ -66,7 +61,7 @@ ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
 ofscraper = "ofscraper.__main__:main"
 
 [project.urls]
-"Homepage" = "https://github.com/datawhores/OF-Scraper"
+"Homepage" = "https://github.com/cloakedkeys/OF-Scraper-Community"
 
 # --- Build System & Tool Configuration ---
 
@@ -88,4 +83,8 @@ versionscript = "plugins.py"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
-testpaths = ["tests"]
+# a warning is a bug to fix or a filter to justify here
+filterwarnings = ["error"]
+testpaths = ["test"]
+# test/legacy targets the pre-3.12 module layout and no longer imports
+norecursedirs = ["legacy"]

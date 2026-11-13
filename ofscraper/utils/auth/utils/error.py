@@ -12,13 +12,16 @@ r"""
 """
 
 import json
+from ofscraper.prompts.cancel import back_to_menu
 import logging
 
 from rich.console import Console
+from ofscraper.utils.markup import escape_text
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.utils.dict as auth_dict
+import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
 
 console = Console()
@@ -53,8 +56,8 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                 if auth_prompt == "manual":
                     # Let the user manually fix the file content
                     authStr = auth_dict.get_auth_string()
-                    with open(common_paths.get_auth_file(), "w") as f:
-                        f.write(prompts.manual_auth_prompt(authStr))
+                    if not _manual_auth(authStr):
+                        continue
                 elif auth_prompt == "reset":
                     # Overwrite with a blank, valid JSON
                     with open(common_paths.get_auth_file(), "w") as f:
@@ -67,10 +70,20 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                 auth_dict.get_auth_dict() 
                 console.print("`auth.json` has been fixed.")
                 break
+            except interactive.NoConsoleError:
+                raise  # asking again can't work either
             except Exception as new_e:
-                console.print(f"An error occurred while trying to fix the file: {new_e}")
+                console.print(f"An error occurred while trying to fix the file: {escape_text(new_e)}")
                 # Loop continues to give user another chance
                 continue
     
     # Return None to signal that the error was handled and the calling function should retry
     return None
+
+
+@back_to_menu
+def _manual_auth(authStr):
+    updated_auth = prompts.manual_auth_prompt(authStr)
+    with open(common_paths.get_auth_file(), "w") as f:
+        f.write(updated_auth)
+    return True

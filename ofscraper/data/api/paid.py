@@ -10,6 +10,7 @@ r"""
 """
 
 import asyncio
+from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
@@ -28,6 +29,7 @@ API = "Purchased"
 
 
 @run
+@stop.fetching
 async def get_paid_posts(username, model_id, c=None):
     tasks = []
     # Create the coroutine; it will return an AsyncGenerator when awaited
@@ -58,7 +60,7 @@ async def process_tasks(generators):
             await queue.put(None)
 
     # Start the producers as proper tasks
-    workers = [asyncio.create_task(producer(g)) for g in generators]
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
     active_workers = len(workers)
 
     while active_workers > 0:
@@ -108,13 +110,19 @@ async def scrape_paid(c, username, offset=0):
 
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
-                    log.debug(f"Paid API Error at offset {current_offset}: {r.status}")
+                    # stopping here can leave a model's purchases empty or
+                    # incomplete, so say so outside debug logs (#34)
+                    log.warning(
+                        f"Purchased scan for {username} stopped at offset {current_offset}: "
+                        f"HTTP {r.status}. Purchases may be incomplete."
+                    )
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
-                    log.debug(
-                        f"API returned unexpected format at offset {current_offset}"
+                    log.warning(
+                        f"Purchased scan for {username} stopped at offset {current_offset}: "
+                        f"unexpected response format. Purchases may be incomplete."
                     )
                     break
 
@@ -141,7 +149,10 @@ async def scrape_paid(c, username, offset=0):
                 current_offset = new_offset
 
         except Exception as E:
-            log.info(f"Failed scrape paid offset {current_offset}")
+            log.warning(
+                f"Purchased scan for {username} failed at offset {current_offset}: "
+                f"{type(E).__name__}: {E}. Purchases may be incomplete."
+            )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
@@ -151,6 +162,7 @@ async def scrape_paid(c, username, offset=0):
 
 
 @run
+@stop.fetching
 async def get_all_paid_posts():
     async with manager.Manager.session.aget_ofsession(
         sem_count=of_env.getattr("SCRAPE_PAID_SEMS"),
@@ -197,8 +209,8 @@ async def process_tasks_all_paid(generators):
         finally:
             await queue.put(None)
 
-    workers = [asyncio.create_task(producer(g)) for g in generators]
-    active_workeget_paidrs = len(workers)
+    workers = [stop.create_fetch_task(producer(g)) for g in generators]
+    active_workers = len(workers)
 
     while active_workers > 0:
         batch = await queue.get()
@@ -216,6 +228,7 @@ async def process_tasks_all_paid(generators):
 
     progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API} all users final", output, final_count=True)
+    stop.check()
     cache.set(
         "purchased_all",
         list(map(lambda x: x.get("id"), output)),
@@ -240,13 +253,18 @@ async def scrape_all_paid(c, offset=0, required=None):
             )
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
-                    log.debug(
-                        f"Global Paid API Error at offset {current_offset}: {r.status}"
+                    log.warning(
+                        f"Purchased scan (all models) stopped at offset {current_offset}: "
+                        f"HTTP {r.status}. Purchases may be incomplete."
                     )
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
+                    log.warning(
+                        f"Purchased scan (all models) stopped at offset {current_offset}: "
+                        f"unexpected response format. Purchases may be incomplete."
+                    )
                     break
 
                 trace_progress_log(f"{API} all users requests", data)
@@ -276,7 +294,10 @@ async def scrape_all_paid(c, offset=0, required=None):
                 current_offset = new_offset
 
         except Exception as E:
-            log.info(f"Scrape all paid failed at offset {current_offset}")
+            log.warning(
+                f"Purchased scan (all models) failed at offset {current_offset}: "
+                f"{type(E).__name__}: {E}. Purchases may be incomplete."
+            )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break

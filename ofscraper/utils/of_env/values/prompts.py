@@ -47,8 +47,17 @@ def load_prompts_config():
             "unlike",
             "download",
         },
+        "Browse and pick media (check table)": "check",
         "Go to main menu": "main",
         "Quit": "quit",
+    }
+
+    # --- Check Table Prompt Choices: the check command each table runs ---
+    config["checkTablePromptChoices"] = {
+        "Posts": "post_check",
+        "Messages": "msg_check",
+        "Paid": "paid_check",
+        "Stories": "story_check",
     }
 
     # --- Username or List Choices ---
