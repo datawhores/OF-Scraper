@@ -96,8 +96,7 @@ A ticket can be created in the ticket channel
 only you and admins have access to ticket discussions
 
 ## Feature Requests
-
-[ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
+[Discord_Suggestions](https://discord.com/channels/1093562233612673097/1094440464091975780)
 
 
 ## Discord
