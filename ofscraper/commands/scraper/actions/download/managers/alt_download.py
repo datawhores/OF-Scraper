@@ -3,6 +3,7 @@ import pathlib
 import re
 import traceback
 from functools import partial
+from urllib.parse import urlsplit, urlunsplit
 
 import aiofiles
 import arrow
@@ -152,8 +153,7 @@ class AltDownloadManager(DownloadManager):
     async def _alt_download_sendreq(self, item, c, ele, placeholderObj):
         try:
             _attempt = self._alt_attempt_get(item)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
-            url = f"{base_url}{item['origname']}"
+            url = _mpd_segment_url(ele.mpd, item["origname"])
             common_globals.log.debug(
                 f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
             )
@@ -176,8 +176,7 @@ class AltDownloadManager(DownloadManager):
             total = None
             common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
-            base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
-            url = f"{base_url}{item['origname']}"
+            url = _mpd_segment_url(ele.mpd, item["origname"])
             headers = {"Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}"}
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {ele.mpd}"
@@ -503,3 +502,18 @@ class AltDownloadManager(DownloadManager):
             total=total,
         )
         return task1
+
+def _mpd_segment_url(mpd_url: str, segment_name: str) -> str:
+    # Swap the .mpd file name in the link's path for the segment name. The
+    # old regex only matched a link ending in ".mpd", so a link with a query
+    # (123.mpd?Tag=2&u=...) gave 123.mpd?Tag=2&u=...<segment>. The query is
+    # kept on the segment link.
+    parts = urlsplit((mpd_url or "").strip())
+    name = (segment_name or "").strip().lstrip("/")
+    path = parts.path or ""
+    base_path = re.sub(r"[^/]+\.mpd$", "", path, flags=re.IGNORECASE)
+    if base_path == path:
+        base_path = (path.rsplit("/", 1)[0] + "/") if "/" in path else "/"
+    elif not base_path.endswith("/"):
+        base_path += "/"
+    return urlunsplit((parts.scheme, parts.netloc, base_path + name, parts.query, ""))
