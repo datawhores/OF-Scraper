@@ -7,9 +7,6 @@
 
 https://github.com/datawhores/OF-Scraper/issues/442
 
-# For Issues related to Downloading/ No Models Retrieved error
-https://github.com/datawhores/OF-Scraper/issues/542
-
 # ReadMe
 
 ## Releases
@@ -98,21 +95,9 @@ only you and admins have access to ticket discussions
 
 ## Feature Requests
 
-[ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
-
-## Migrating from DC script
-
-To maintain compatibility with your current folders, make sure to modify the metadata option within the config file. Additionally, configure the save_path, dir_path, and filename settings to generate outputs that align with your existing setup.
-
-The inherited metadata files from DIGITALCRIMINALS' script play a crucial role in preventing redundant downloads by acting as a check for duplicates.
-
-For comprehensive guidance on making these adjustments, you can refer to the provided resources
-
-1. [Migration Guide](https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script)
-2. [Config Options](https://of-scraper.gitbook.io/of-scraper/config-options)
-3. [Customize Save Path](https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path)
-
-Ask in the discord or open an issue if you need help with what to change to accomplish this
+[Discord Suggestions](https://discord.com/channels/1093562233612673097/1094440464091975780)
+## Migration Guide
+[text](MIGRATION.md)
 
 ## Discord
 
