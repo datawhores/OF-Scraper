@@ -97,7 +97,7 @@ only you and admins have access to ticket discussions
 
 [Discord Suggestions](https://discord.com/channels/1093562233612673097/1094440464091975780)
 ## Migration Guide
-[text](MIGRATION.md)
+[Migration](MIGRATION.md)
 
 ## Discord
 
