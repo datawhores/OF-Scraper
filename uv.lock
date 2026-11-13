@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11, <3.16"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -309,7 +309,7 @@ name = "browser-cookie3"
 version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jeepney", marker = "'bsd' in sys_platform or sys_platform == 'linux'" },
+    { name = "jeepney", marker = "sys_platform == 'linux' or 'bsd' in sys_platform" },
     { name = "lz4" },
     { name = "pycryptodomex" },
 ]
@@ -1570,7 +1570,7 @@ requires-dist = [
     { name = "pywidevine", specifier = "~=1.9.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "random-emoji", marker = "extra == 'test'", specifier = "~=1.0.15" },
-    { name = "random-unicode-emoji", marker = "extra == 'test'", specifier = "~=2.8" },
+    { name = "random-unicode-emoji", marker = "extra == 'test'", specifier = ">=2.8,<4.0" },
     { name = "requests", specifier = "~=2.34.2" },
     { name = "rich", specifier = "~=15.0.0" },
     { name = "schedule", specifier = "~=1.2.1" },
@@ -2137,11 +2137,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/c4/69/e39a21c65c204e4c0
 
 [[package]]
 name = "random-unicode-emoji"
-version = "2.9"
+version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/24/36/371fa7796a6649b0f8f05e2e759c9642f7a95d25b626cbb0b1dad14c5eb5/random_unicode_emoji-2.9.tar.gz", hash = "sha256:009857c77bb76f703cbbf0967fcd3a215092959a7d9347410fee5156fac110ae", size = 577755, upload-time = "2025-03-24T23:55:07.06Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/28/828634bbe5ad5bdede1668a447f9c3e755007884ec3b7717090460eedc8a/random_unicode_emoji-3.0.1.tar.gz", hash = "sha256:f420d3a9821ea084ab5655f38c42dd083791e68477db14633925bd242abc6dfc", size = 637883, upload-time = "2026-01-26T00:17:09.69Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/90/77fe1c612f15cf128c1ad01e4dae936df28d287a272c4bf7f02f29e50639/random_unicode_emoji-2.9-py3-none-any.whl", hash = "sha256:0a95ba6610aa3f5b19ef48dbe48cc289e7c524bd4aeac3ce034d79a4b6748739", size = 595213, upload-time = "2025-03-24T23:55:05.47Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/1f/025c6d6f3ae5a8d5caaf1a4aa9901ec8a04eef2b32185fe2e13a683c3544/random_unicode_emoji-3.0.1-py3-none-any.whl", hash = "sha256:b4f7d6fe1eb68ba2e84684baf1b9f99d3a4a7a860b6509b278c2d03ac1c8d871", size = 658890, upload-time = "2026-01-26T00:17:08.018Z" },
 ]
 
 [[package]]
