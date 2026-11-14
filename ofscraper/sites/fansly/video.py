@@ -10,9 +10,11 @@ The largest rendition wins; on a tie direct beats HLS, which beats DASH.
 """
 
 import json
+import math
 import os
 import re
 import statistics
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from urllib.parse import parse_qsl, urljoin, urlparse
 
@@ -331,7 +333,7 @@ class LocalPlaylist:
 # extensions ffmpeg's HLS reader accepts for a segment by default
 _SEGMENT_EXTS = (".ts", ".m4s", ".mp4", ".m4v", ".m4a", ".aac", ".mp3")
 # tags that would change what the bytes are or where they come from
-_REFUSED_TAGS = ("#EXT-X-BYTERANGE", "#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF",
+_REFUSED_TAGS = ("#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF",
                  "#EXT-X-MEDIA:", "#EXT-X-PART", "#EXT-X-PRELOAD-HINT", "#EXT-X-SKIP",
                  "#EXT-X-SESSION-KEY")
 
@@ -350,17 +352,29 @@ def _checked(url):
         raise UnexpectedPlaylist(str(e)) from e
 
 
-def local_playlist(text: str, base_url: str, prefix: str) -> LocalPlaylist:
+def _replace_uri(line, name):
+    return _ATTR.sub(lambda m: f'{m[1]}="{name}"' if m[1].upper() == "URI" else m[0], line)
+
+
+def local_playlist(text: str, base_url: str, prefix: str, shared=None) -> LocalPlaylist:
     """Plan a parallel download of a media playlist, or UnexpectedPlaylist.
 
-    Only a complete (``#EXT-X-ENDLIST``), unencrypted playlist of whole files
-    is planned: no byte ranges, keys other than NONE, partial segments or
-    nested playlists. Init segments (``#EXT-X-MAP``) are fetched like segments.
+    Complete VOD playlists may use AES-128 and byte ranges. Keys and whole
+    resources are fetched once; ffmpeg decrypts and reads the ranges locally.
     """
     lines = (text or "").splitlines()
     if not lines or lines[0].strip() != "#EXTM3U":
         raise UnexpectedPlaylist("the media playlist doesn't start with #EXTM3U")
-    out, files, maps = [], [], {}
+    out, files, maps, keys, resources = [], [], {}, {}, {}
+    segments = 0
+    shared = {} if shared is None else shared
+
+    def add_file(url, name):
+        if url not in shared:
+            shared[url] = name
+            files.append((url, name))
+        return shared[url]
+
     ended = False
     for raw in lines:
         line = raw.strip()
@@ -371,18 +385,25 @@ def local_playlist(text: str, base_url: str, prefix: str) -> LocalPlaylist:
             raise UnexpectedPlaylist(f"the media playlist has {line.split(':', 1)[0]}")
         if upper.startswith("#EXT-X-KEY"):
             method = _attrs(line).get("METHOD", "").upper()
-            if method != "NONE":
+            if method not in ("NONE", "AES-128"):
                 raise UnexpectedPlaylist(f"the media playlist is encrypted ({method or 'unknown'})")
+            if method == "AES-128":
+                attrs = _attrs(line)
+                if not attrs.get("URI") or attrs.get("KEYFORMAT", "identity") != "identity":
+                    raise UnexpectedPlaylist("the media playlist has an unsupported AES-128 key")
+                url = _checked(urljoin(base_url, attrs["URI"]))
+                if url not in keys:
+                    keys[url] = add_file(url, f"{prefix}_key{len(keys)}.bin")
+                line = _replace_uri(line, keys[url])
             out.append(line)
         elif upper.startswith("#EXT-X-MAP"):
             attrs = _attrs(line)
-            if not attrs.get("URI") or "BYTERANGE" in attrs:
+            if not attrs.get("URI"):
                 raise UnexpectedPlaylist("the media playlist has an init segment it can't fetch")
             url = _checked(urljoin(base_url, attrs["URI"]))
             if url not in maps:
-                maps[url] = _local_name(f"{prefix}init", len(maps), url, True)
-                files.append((url, maps[url]))
-            out.append(f'#EXT-X-MAP:URI="{maps[url]}"')
+                maps[url] = add_file(url, _local_name(f"{prefix}init", len(maps), url, True))
+            out.append(_replace_uri(line, maps[url]))
         elif line.startswith("#"):
             if "URI=" in upper:
                 raise UnexpectedPlaylist(f"the media playlist has {line.split(':', 1)[0]}")
@@ -390,28 +411,263 @@ def local_playlist(text: str, base_url: str, prefix: str) -> LocalPlaylist:
             out.append(line)
         else:
             url = _checked(urljoin(base_url, line))
-            segments = len(files) - len(maps)
-            name = _local_name(prefix, segments, url, bool(maps))
-            files.append((url, name))
-            out.append(name)
-    if len(files) == len(maps):
+            if url not in resources:
+                resources[url] = add_file(url, _local_name(prefix, segments, url, bool(maps)))
+            segments += 1
+            out.append(resources[url])
+    if not segments:
         raise UnexpectedPlaylist("the media playlist lists no segments")
     if not ended:
         raise UnexpectedPlaylist("the media playlist has no #EXT-X-ENDLIST (live or incomplete)")
     return LocalPlaylist("\n".join(out) + "\n", files)
 
 
-def local_join_command(ffmpeg, playlist, out_path, audio_playlist=None) -> list:
+def local_join_command(ffmpeg, playlist, out_path, audio_playlist=None, dash=False) -> list:
     """ffmpeg copy of local playlists (see ``local_playlist``) into one MP4,
     with the same output options as ``ffmpeg_command``. Only local files may
     be read."""
-    opts = ["-protocol_whitelist", "file"]
+    opts = ["-protocol_whitelist", "file,crypto"]
+    if not dash:
+        opts += ["-allowed_extensions", "ALL"]
     cmd = [str(ffmpeg), "-hide_banner", "-nostdin", "-loglevel", "error", "-y"]
     cmd += opts + ["-i", str(playlist)]
     if audio_playlist:
         cmd += opts + ["-i", str(audio_playlist), "-map", "0:v", "-map", "1:a"]
     cmd += ["-c", "copy", "-f", "mp4", str(out_path)]
     return cmd
+
+
+@dataclass
+class LocalDashTrack(LocalPlaylist):
+    """A chosen representation: identity plus ordered local fMP4 pieces."""
+    pieces: list
+
+
+def _children(node, name):
+    return [child for child in node if child.tag.rsplit("}", 1)[-1] == name]
+
+
+def _duration(value):
+    match = re.fullmatch(r"P(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?"
+                         r"(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?", value or "")
+    if not match:
+        raise UnexpectedPlaylist("DASH has no supported finite duration")
+    return sum(float(x or 0) * scale for x, scale in zip(match.groups(), (86400, 3600, 60, 1)))
+
+
+def _dash_base(node, base):
+    urls = _children(node, "BaseURL")
+    if len(urls) > 1:
+        raise UnexpectedPlaylist("DASH has multiple alternative BaseURLs")
+    if urls:
+        base = urljoin(base, (urls[0].text or "").strip())
+    return base
+
+
+def _dash_address(nodes):
+    kind, attrs, children = None, {}, {}
+    for node in nodes:
+        found = [child for child in node if child.tag.rsplit("}", 1)[-1]
+                 in ("SegmentTemplate", "SegmentList", "SegmentBase")]
+        if len(found) > 1:
+            raise UnexpectedPlaylist("DASH has ambiguous segment addressing")
+        if found:
+            child = found[0]
+            name = child.tag.rsplit("}", 1)[-1]
+            if kind != name:
+                attrs, children = {}, {}
+            kind = name
+            attrs.update(child.attrib)
+            for item in child:
+                tag = item.tag.rsplit("}", 1)[-1]
+                children[tag] = _children(child, tag)
+    return kind, attrs, children
+
+
+def _dash_expand(pattern, rep, number=None, time=None):
+    # Protect escaped dollars before substituting DASH's four identifiers.
+    pattern = pattern.replace("$$", "\x00")
+    values = {"RepresentationID": rep.get("id"), "Bandwidth": rep.get("bandwidth"),
+              "Number": number, "Time": time}
+
+    def replace(match):
+        value = values[match[1]]
+        if value is None:
+            raise UnexpectedPlaylist("DASH template lacks an identifier value")
+        if match[2]:
+            return f"{int(value):0{int(match[2])}d}"
+        return str(value)
+
+    result = re.sub(r"\$(RepresentationID|Bandwidth|Number|Time)(?:%0(\d+)d)?\$", replace, pattern)
+    if "$" in result:
+        raise UnexpectedPlaylist("DASH has an unsupported template identifier")
+    return result.replace("\x00", "$")
+
+
+def _dash_track(nodes, base, prefix, duration):
+    rep = nodes[-1]
+    kind, attrs, children = _dash_address(nodes)
+    urls = []
+    if kind == "SegmentTemplate":
+        media = attrs.get("media")
+        if not media:
+            raise UnexpectedPlaylist("DASH SegmentTemplate has no media template")
+        scale = int(attrs.get("timescale", 1))
+        number = int(attrs.get("startNumber", 1))
+        offset = int(attrs.get("presentationTimeOffset", 0))
+        if scale <= 0 or number < 0:
+            raise UnexpectedPlaylist("DASH has invalid segment timing")
+        if attrs.get("initialization"):
+            urls.append(_dash_expand(attrs["initialization"], rep.attrib))
+        timeline = children.get("SegmentTimeline")
+        times = []
+        if timeline:
+            entries = _children(timeline[0], "S")
+            if not entries:
+                raise UnexpectedPlaylist("DASH SegmentTimeline is empty")
+            current = 0
+            for i, entry in enumerate(entries):
+                current = int(entry.get("t", current))
+                step = int(entry.get("d", 0))
+                repeat = int(entry.get("r", 0))
+                if step <= 0 or repeat < -1:
+                    raise UnexpectedPlaylist("DASH has invalid SegmentTimeline timing")
+                if repeat == -1:
+                    next_time = entries[i + 1].get("t") if i + 1 < len(entries) else None
+                    if next_time is None and duration is None:
+                        raise UnexpectedPlaylist("DASH repeat has no finite end")
+                    end = int(next_time) if next_time is not None else offset + duration * scale
+                    repeat = math.ceil((end - current) / step) - 1
+                count = repeat + 1
+                if count <= 0 or len(times) + count > 100000:
+                    raise UnexpectedPlaylist("DASH timeline is empty or too large")
+                times.extend(current + j * step for j in range(count))
+                current += count * step
+        else:
+            step = int(attrs.get("duration", 0))
+            if step <= 0:
+                raise UnexpectedPlaylist("DASH template has no duration or timeline")
+            if duration is None:
+                raise UnexpectedPlaylist("DASH template has no finite duration")
+            count = math.ceil(duration * scale / step)
+            if count <= 0 or count > 100000:
+                raise UnexpectedPlaylist("DASH segment count is empty or too large")
+            times = [j * step for j in range(count)]
+        urls.extend(_dash_expand(media, rep.attrib, number + i, time) for i, time in enumerate(times))
+    elif kind == "SegmentList":
+        for init in children.get("Initialization", []):
+            if init.get("range"):
+                raise UnexpectedPlaylist("DASH SegmentList initialization uses a byte range")
+            urls.append(init.get("sourceURL", ""))
+        for segment in children.get("SegmentURL", []):
+            if segment.get("mediaRange") or not segment.get("media"):
+                raise UnexpectedPlaylist("DASH SegmentList has unsupported media ranges")
+            urls.append(segment.get("media"))
+        if not children.get("SegmentURL"):
+            raise UnexpectedPlaylist("DASH SegmentList has no segments")
+    elif kind in (None, "SegmentBase"):
+        # A whole single-file representation already includes its init and index.
+        for init in children.get("Initialization", []):
+            if init.get("sourceURL") and urljoin(base, init.get("sourceURL")) != base:
+                if init.get("range"):
+                    raise UnexpectedPlaylist("DASH external initialization uses a byte range")
+                urls.append(init.get("sourceURL"))
+        if base.endswith("/") or not any(_children(node, "BaseURL") for node in nodes):
+            raise UnexpectedPlaylist("DASH single-file representation has no file BaseURL")
+        urls.append(base)
+    else:
+        raise UnexpectedPlaylist("DASH has unsupported segment addressing")
+    files, names, pieces = [], {}, []
+    for uri in urls:
+        url = _checked(urljoin(base, uri))
+        if url not in names:
+            names[url] = f"{prefix}{len(names):05d}.m4s"
+            files.append((url, names[url]))
+        pieces.append(names[url])
+    # Selected representation identity and ordering participate in #443's manifest.
+    identity_attrs = dict(attrs)
+    for key in ("media", "initialization", "index"):
+        if key in identity_attrs:
+            parsed = urlparse(identity_attrs[key])
+            identity_attrs[key] = parsed._replace(query="", fragment="").geturl()
+    identity = json.dumps({"representation": rep.attrib, "addressing": identity_attrs,
+                           "pieces": pieces}, sort_keys=True)
+    return LocalDashTrack(identity, files, pieces)
+
+
+def _dash_rank(content, rep, adaptation):
+    """Sort key matching ffmpeg's automatic stream choice, which the network
+    path relies on: the largest video, the audio with the most channels.
+    Bandwidth breaks ties; max() keeps the first of equals, as ffmpeg does."""
+    def attr(name):
+        return int(rep.get(name) or adaptation.get(name) or 0)
+
+    if content == "video":
+        return attr("width") * attr("height"), attr("bandwidth")
+    channels = 0
+    for node in (rep, adaptation):
+        for config in _children(node, "AudioChannelConfiguration"):
+            if (config.get("value") or "").isdigit():
+                channels = channels or int(config.get("value"))
+    return channels, attr("bandwidth")
+
+
+def local_dash(mpd_text, base_url):
+    """Plan common static, single-period, unprotected MPDs; otherwise fall back.
+
+    The network ffmpeg command has no explicit maps, so ffmpeg picks the
+    tracks; the local plan picks the same ones (see ``_dash_rank``) and maps
+    them explicitly.
+    """
+    try:
+        root = ET.fromstring(mpd_text)
+        if root.tag.rsplit("}", 1)[-1] != "MPD":
+            raise UnexpectedPlaylist("DASH manifest has no MPD root")
+        if dash_is_protected(mpd_text):
+            raise UnexpectedPlaylist("DASH stream is protected")
+        if root.get("type", "static") != "static":
+            raise UnexpectedPlaylist("DASH is dynamic (live)")
+        periods = _children(root, "Period")
+        if len(periods) != 1:
+            raise UnexpectedPlaylist("DASH must have exactly one Period")
+        period = periods[0]
+        if period.get("start") and _duration(period.get("start")) != 0:
+            raise UnexpectedPlaylist("DASH Period has a nonzero start")
+        duration_value = period.get("duration") or root.get("mediaPresentationDuration")
+        duration = _duration(duration_value) if duration_value else None
+        if duration is not None and duration <= 0:
+            raise UnexpectedPlaylist("DASH has no positive finite duration")
+        # External XML addressing and period links cannot be resolved locally.
+        if any(key.rsplit("}", 1)[-1] == "href" for node in root.iter() for key in node.attrib):
+            raise UnexpectedPlaylist("DASH uses external XML links")
+        root_base = _dash_base(root, base_url)
+        period_base = _dash_base(period, root_base)
+        candidates = {"video": [], "audio": []}
+        for adaptation in _children(period, "AdaptationSet"):
+            adaptation_base = _dash_base(adaptation, period_base)
+            for rep in _children(adaptation, "Representation"):
+                if rep.get("dependencyId"):
+                    raise UnexpectedPlaylist("DASH has dependent representations")
+                mime = rep.get("mimeType", adaptation.get("mimeType", ""))
+                content = rep.get("contentType", adaptation.get("contentType", mime.split("/")[0]))
+                if content not in candidates:
+                    raise UnexpectedPlaylist("DASH has an unsupported or unknown track type")
+                if mime and mime not in ("video/mp4", "audio/mp4"):
+                    raise UnexpectedPlaylist("DASH track is not fragmented MP4")
+                candidates[content].append((_dash_rank(content, rep, adaptation), rep,
+                                            adaptation, _dash_base(rep, adaptation_base)))
+        if not candidates["video"]:
+            raise UnexpectedPlaylist("DASH has no video representation")
+        tracks = []
+        for kind, prefix in (("video", "v"), ("audio", "a")):
+            if not candidates[kind]:
+                tracks.append(None)
+                continue
+            _, rep, adaptation, base = max(candidates[kind], key=lambda item: item[0])
+            tracks.append(_dash_track([root, period, adaptation, rep], base, prefix, duration))
+        return tuple(tracks)
+    except (ET.ParseError, ValueError, TypeError, OverflowError) as e:
+        raise UnexpectedPlaylist("DASH has malformed or unsupported segment timing") from e
 
 
 _PROTECTION = re.compile(r"<\s*(?:[\w-]+:)?ContentProtection\b")

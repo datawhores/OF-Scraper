@@ -4,8 +4,8 @@ Used only for Fansly items whose best delivery is a stream (see
 ``ofscraper.sites.fansly.video.uses_stream``); the direct MP4 still goes
 through the normal downloader. An HLS stream's segments are fetched several
 at a time into a folder next to the .part, then ffmpeg joins them into one MP4
-without re-encoding (#292). DASH, and any HLS playlist that parallel fetching
-doesn't handle, is copied by ffmpeg on its own, one segment after another.
+without re-encoding (#292). Common static DASH streams use the same resumable
+fetcher; unsupported playlists are copied by ffmpeg on its own.
 The finishing steps (move, collision handling, file time, database, hash,
 after-download script) are the same as the normal downloader's.
 """
@@ -145,6 +145,15 @@ def _prepare_segments(folder, playlists):
     (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
 
+def _concat_track(folder, pieces, name):
+    path = folder / (name + ".tmp")
+    with path.open("wb") as out:
+        for piece in pieces:
+            with (folder / piece).open("rb") as source:
+                shutil.copyfileobj(source, out)
+    path.replace(folder / name)
+
+
 class _Ffmpeg:
     """The ffmpeg process of one download, so a cancelled download can stop it."""
 
@@ -276,13 +285,18 @@ class FanslyStreamDownloadManager(DownloadManager):
             raise
 
     async def _copy_stream(self, c, best, url, audio_url, temp, timeout, medialog):
-        """Copy the stream into ``temp``: HLS segments fetched in parallel and
-        joined by ffmpeg, or, for DASH and any playlist the parallel
-        downloader doesn't handle, ffmpeg on its own."""
+        """Copy resumable files and join locally, or leave unusual streams to ffmpeg."""
         playlists = None
         if best.kind == fansly_video.HLS and segment_limit() > 0:
             playlists = await self._local_playlists(c, url, audio_url, best.cookies, medialog)
+        elif best.kind == fansly_video.DASH and segment_limit() > 0:
+            try:
+                playlists = fansly_video.local_dash(await self._fetch_text(c, url, best.cookies), url)
+            except fansly_video.UnexpectedPlaylist as e:
+                common_globals.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
         if playlists is None:
+            # Rare live/LL/nested HLS, non-AES-128/session keys, and protected,
+            # live or multi-period DASH still need ffmpeg alone and cannot resume.
             shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return await self._run_ffmpeg(url, temp, best.cookies, audio_url, timeout)
         common_globals.log.debug(
@@ -296,13 +310,14 @@ class FanslyStreamDownloadManager(DownloadManager):
 
         A playlist that can't be fetched fails the file, as it would in ffmpeg."""
         try:
+            shared = {}
             video = fansly_video.local_playlist(
-                await self._fetch_text(c, url, cookies), url, "v"
+                await self._fetch_text(c, url, cookies), url, "v", shared
             )
             audio = None
             if audio_url:
                 audio = fansly_video.local_playlist(
-                    await self._fetch_text(c, audio_url, cookies), audio_url, "a"
+                    await self._fetch_text(c, audio_url, cookies), audio_url, "a", shared
                 )
             return video, audio
         except fansly_video.UnexpectedPlaylist as e:
@@ -328,31 +343,52 @@ class FanslyStreamDownloadManager(DownloadManager):
                 raise StreamTimeout(
                     f"the stream's segments took longer than {timeout:.0f}s and were stopped"
                 )
-            self._check_join_space(folder, temp)
-            (folder / "video.m3u8").write_text(video.text, encoding="utf-8")
-            if audio:
-                (folder / "audio.m3u8").write_text(audio.text, encoding="utf-8")
-            # ffmpeg runs in the folder and gets the playlists by bare name:
-            # its HLS reader resolves segment names against the playlist's
-            # path as a URL, where a "#" in a folder name starts a fragment
-            cmd = fansly_video.local_join_command(
-                get_ffmpeg(), "video.m3u8", pathlib.Path(temp).absolute(),
-                "audio.m3u8" if audio else None,
-            )
+            if isinstance(video, fansly_video.LocalDashTrack):
+                self._check_join_space(folder, temp, dash=True)
+            else:
+                self._check_join_space(folder, temp)
+            if isinstance(video, fansly_video.LocalDashTrack):
+                # Concatenate each fMP4 track off the event loop. These derived
+                # files are rebuilt on resume; only fetched pieces are reused.
+                for track, name in ((video, "video.mp4"), (audio, "audio.mp4")):
+                    if track:
+                        try:
+                            await asyncio.wait_for(
+                                _off_loop(_concat_track, folder, track.pieces, name),
+                                max(0.01, deadline - loop.time()),
+                            )
+                        except asyncio.TimeoutError:
+                            raise StreamTimeout("DASH track concatenation exceeded the stream time limit")
+                cmd = fansly_video.local_join_command(
+                    get_ffmpeg(), "video.mp4", pathlib.Path(temp).absolute(),
+                    "audio.mp4" if audio else None, dash=True,
+                )
+            else:
+                (folder / "video.m3u8").write_text(video.text, encoding="utf-8")
+                if audio:
+                    (folder / "audio.m3u8").write_text(audio.text, encoding="utf-8")
+                # Bare names avoid URL fragment interpretation of '#' in paths.
+                cmd = fansly_video.local_join_command(
+                    get_ffmpeg(), "video.m3u8", pathlib.Path(temp).absolute(),
+                    "audio.m3u8" if audio else None,
+                )
             await self._run_cmd(
                 cmd, temp, max(1.0, deadline - loop.time()),
                 "join the stream's segments", cwd=folder,
             )
             complete = True
         finally:
+            if isinstance(playlists[0], fansly_video.LocalDashTrack):
+                for name in ("video.mp4", "audio.mp4"):
+                    (folder / name).unlink(missing_ok=True)
             if complete or not settings.get_settings().auto_resume:
                 shutil.rmtree(folder, ignore_errors=True)
 
-    def _check_join_space(self, folder, temp):
+    def _check_join_space(self, folder, temp, dash=False):
         """Fail with a clear message when the .part's drive can't hold the
         joined copy (about the segments' size) next to the segments."""
         size = sum(p.stat().st_size for p in folder.iterdir() if p.is_file())
-        need = size + max(JOIN_SPACE_MARGIN, size // 20)
+        need = size * (2 if dash else 1) + max(JOIN_SPACE_MARGIN, size // 20)
         free = _free_space(pathlib.Path(temp).parent)
         if free < need:
             raise NotEnoughSpace(

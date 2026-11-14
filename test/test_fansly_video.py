@@ -762,7 +762,7 @@ def test_separate_audio_rendition_is_downloaded_with_the_video(env, tmp_path):
     # fetched in parallel, then one ffmpeg run joins the local video and audio
     (join,) = env.ffmpeg_runs
     assert join.count("-i") == 2 and ["-map", "0:v", "-map", "1:a"] == join[-9:-5]
-    assert join[join.index("-protocol_whitelist") + 1] == "file"
+    assert join[join.index("-protocol_whitelist") + 1] == "file,crypto"
     assert not any("http" in str(a) for a in join)
 
 
@@ -1350,12 +1350,12 @@ def test_local_playlist_keeps_the_init_segment_and_the_order():
 
 
 UNEXPECTED = {
-    "encrypted": "#EXT-X-KEY:METHOD=AES-128,URI=\"k.key\"\n",
     "sample_aes": "#EXT-X-KEY:METHOD=SAMPLE-AES,URI=\"k.key\"\n",
-    "byterange": "#EXT-X-BYTERANGE:1000@0\n",
-    "map_byterange": '#EXT-X-MAP:URI="i.mp4",BYTERANGE="100@0"\n',
     "nested": '#EXT-X-STREAM-INF:BANDWIDTH=1\n',
     "partial": '#EXT-X-PART:DURATION=1,URI="p.m4s"\n',
+    "preload": '#EXT-X-PRELOAD-HINT:TYPE=PART,URI="p.m4s"\n',
+    "skip": '#EXT-X-SKIP:SKIPPED-SEGMENTS=2\n',
+    "session_key": '#EXT-X-SESSION-KEY:METHOD=AES-128,URI="key.bin"\n',
 }
 
 
@@ -1372,7 +1372,7 @@ def test_unexpected_playlist_is_refused_by_the_planner(case):
         video.local_playlist(text, "https://cdn.example/v/media.m3u8", "v")
 
 
-@pytest.mark.parametrize("case", ["encrypted", "byterange", "no_endlist"])
+@pytest.mark.parametrize("case", ["sample_aes", "partial", "preload", "skip", "session_key", "nested", "no_endlist"])
 def test_unexpected_playlist_falls_back_to_ffmpeg(env, monkeypatch, case):
     raw = raw_media()
     hls_url = variant(raw["media"], video.HLS_MIME)["locations"][0]["location"]
@@ -1780,3 +1780,299 @@ def test_failed_join_keeps_segments_but_removes_partial_output(resume_env, monke
         asyncio.run(e.manager._stream_download(e.session, ele, "a-creator", ele.model_id))
     assert not e.tempfile.exists()
     assert [(e.folder / name).read_bytes() for _, name in e.playlists[0].files] == [b"ab"] * 3
+# ------------------------------------------------------------------ more resumable streams (#444)
+
+
+def dash_mpd(body, **attrs):
+    attributes = {"xmlns": "urn:mpeg:dash:schema:mpd:2011", "type": "static",
+                  "mediaPresentationDuration": "PT3S", **attrs}
+    return '<MPD ' + ' '.join(f'{k}="{v}"' for k, v in attributes.items()) + '>' + body + '</MPD>'
+
+
+def dash_rep(address, base='', rep_id='high', bandwidth=900):
+    return (f'<Representation id="{rep_id}" bandwidth="{bandwidth}">'
+            + (f'<BaseURL>{base}</BaseURL>' if base else '') + address + '</Representation>')
+
+
+@pytest.mark.parametrize('address, expected', [
+    ('<SegmentTemplate initialization="init-$RepresentationID$.mp4" media="s-$Number%03d$.m4s" '
+     'duration="10" timescale="10" startNumber="7"/>',
+     ['init-high.mp4', 's-007.m4s', 's-008.m4s', 's-009.m4s']),
+    ('<SegmentTemplate media="s-$Time$.m4s" timescale="10" duration="10" startNumber="7"/>',
+     ['s-0.m4s', 's-10.m4s', 's-20.m4s']),
+    ('<SegmentTemplate initialization="init.mp4" media="s-$Time$.m4s" timescale="10">'
+     '<SegmentTimeline><S t="20" d="10" r="2"/></SegmentTimeline></SegmentTemplate>',
+     ['init.mp4', 's-20.m4s', 's-30.m4s', 's-40.m4s']),
+    ('<SegmentTemplate media="s-$Time$.m4s" timescale="10">'
+     '<SegmentTimeline><S d="10" r="-1"/></SegmentTimeline></SegmentTemplate>',
+     ['s-0.m4s', 's-10.m4s', 's-20.m4s']),
+    ('<SegmentTemplate media="s-$Number$.m4s" startNumber="4">'
+     '<SegmentTimeline><S d="1" r="-1"/><S t="2" d="1"/></SegmentTimeline></SegmentTemplate>',
+     ['s-4.m4s', 's-5.m4s', 's-6.m4s']),
+    ('<SegmentList><Initialization sourceURL="init.mp4"/><SegmentURL media="b.m4s"/>'
+     '<SegmentURL media="a.m4s"/></SegmentList>', ['init.mp4', 'b.m4s', 'a.m4s']),
+    ('<SegmentBase indexRange="100-200"><Initialization range="0-99"/></SegmentBase>', ['']),
+    ('', ['']),
+])
+def test_dash_planner_resolves_every_base_and_keeps_file_order(address, expected):
+    base = 'track.mp4' if expected == [''] else 'rep/'
+    mpd = dash_mpd('<BaseURL>../root/</BaseURL><Period><BaseURL>period/</BaseURL>'
+                   '<AdaptationSet mimeType="video/mp4"><BaseURL>adapt/</BaseURL>'
+                   + dash_rep(address, base) + '</AdaptationSet></Period>')
+    track, audio = video.local_dash(mpd, 'https://cdn.example/manifests/movie.mpd')
+    root = 'https://cdn.example/root/period/adapt/' + base
+    assert [url for url, _ in track.files] == [root + name for name in expected]
+    assert track.pieces == [name for _, name in track.files]
+    assert audio is None
+
+
+def test_dash_chooses_highest_bandwidth_video_and_audio_and_inherits_template():
+    template = '<SegmentTemplate initialization="$RepresentationID$-init.mp4" media="$RepresentationID$-$Number$.m4s" duration="1"/>'
+    mpd = dash_mpd('<Period><AdaptationSet mimeType="video/mp4">' + template
+                   + dash_rep('', rep_id='vlo', bandwidth=100)
+                   + dash_rep('<SegmentTemplate startNumber="8"/>', rep_id='vhi')
+                   + '</AdaptationSet><AdaptationSet mimeType="audio/mp4">' + template
+                   + dash_rep('', rep_id='ahi', bandwidth=200)
+                   + dash_rep('', rep_id='alo', bandwidth=50)
+                   + '</AdaptationSet></Period>')
+    v, a = video.local_dash(mpd, 'https://cdn.example/m.mpd')
+    assert [url.rsplit('/', 1)[-1] for url, _ in v.files] == ['vhi-init.mp4', 'vhi-8.m4s', 'vhi-9.m4s', 'vhi-10.m4s']
+    assert [url.rsplit('/', 1)[-1] for url, _ in a.files] == ['ahi-init.mp4', 'ahi-1.m4s', 'ahi-2.m4s', 'ahi-3.m4s']
+    assert 'vhi' in v.text and 'ahi' in a.text
+
+
+def test_dash_chooses_tracks_as_ffmpeg_does():
+    # ffmpeg (the network path) takes the largest video and the audio with
+    # the most channels, whatever their bandwidth; bandwidth breaks ties
+    template = '<SegmentTemplate media="$RepresentationID$-$Number$.m4s" duration="1"/>'
+    stereo = '<AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2"/>'
+    surround = stereo.replace('value="2"', 'value="6"')
+    mpd = dash_mpd('<Period><AdaptationSet mimeType="video/mp4">' + template
+                   + '<Representation id="v4k" bandwidth="100" width="3840" height="2160"/>'
+                   + '<Representation id="v720" bandwidth="900" width="1280" height="720"/>'
+                   + '<Representation id="v4k2" bandwidth="200" width="3840" height="2160"/>'
+                   + '</AdaptationSet><AdaptationSet mimeType="audio/mp4">' + template
+                   + f'<Representation id="a2" bandwidth="900">{stereo}</Representation>'
+                   + f'<Representation id="a6" bandwidth="100">{surround}</Representation>'
+                   + '</AdaptationSet></Period>')
+    v, a = video.local_dash(mpd, 'https://cdn.example/m.mpd')
+    assert v.files[0][0].endswith('/v4k2-1.m4s')
+    assert a.files[0][0].endswith('/a6-1.m4s')
+
+
+@pytest.mark.parametrize('body, attrs, reason', [
+    ('<Period/>', {'type': 'dynamic'}, 'dynamic'),
+    ('<Period/><Period/>', {}, 'exactly one'),
+    ('<Period><ContentProtection/></Period>', {}, 'protected'),
+    ('<Period><AdaptationSet mimeType="video/webm">' + dash_rep('', 'v.webm') + '</AdaptationSet></Period>', {}, 'MP4'),
+    ('<Period><AdaptationSet mimeType="video/mp4">' + dash_rep('<SegmentTemplate media="$Number$.m4s"/>') + '</AdaptationSet></Period>', {}, 'duration'),
+])
+def test_unusual_dash_is_refused(body, attrs, reason):
+    with pytest.raises(video.UnexpectedPlaylist, match=reason):
+        video.local_dash(dash_mpd(body, **attrs), 'https://cdn.example/m.mpd')
+
+
+@pytest.mark.parametrize('body, attrs', [('<Period/>', {'type': 'dynamic'}), ('<Period/><Period/>', {})])
+def test_unusual_dash_falls_back_to_ffmpeg(env, monkeypatch, body, attrs, caplog):
+    manager = stream_mod.FanslyStreamDownloadManager()
+    url = 'https://cdn.example/m.mpd'
+    calls = []
+    async def ffmpeg(*args):
+        calls.append(args)
+    monkeypatch.setattr(manager, '_run_ffmpeg', ffmpeg)
+    with caplog.at_level('INFO', logger='shared'):
+        asyncio.run(manager._copy_stream(FakeSession({url: dash_mpd(body, **attrs)}),
+                    video.Candidate(video.DASH, url), url, None, env.temp / 'v.part', 30, 'media'))
+    assert len(calls) == 1 and 'ffmpeg fetches the stream instead' in caplog.text
+
+
+def test_aes_keys_and_range_resources_are_fetched_once_with_attributes_preserved():
+    key = '#EXT-X-KEY:METHOD=AES-128,URI="key.bin?sig=secret",IV=0x00000000000000000000000000000001,KEYFORMAT="identity"'
+    text = ('#EXTM3U\n' + key + '\n#EXTINF:1,\n#EXT-X-BYTERANGE:100@200\nall.ts\n'
+            + key + '\n#EXTINF:1,\n#EXT-X-BYTERANGE:100@0\nall.ts\n#EXT-X-KEY:METHOD=NONE\n'
+            '#EXTINF:1,\n#EXT-X-BYTERANGE:100\nall.ts\n#EXT-X-ENDLIST\n')
+    plan = video.local_playlist(text, 'https://cdn.example/v/media.m3u8', 'v')
+    assert plan.files == [('https://cdn.example/v/key.bin?sig=secret', 'v_key0.bin'),
+                          ('https://cdn.example/v/all.ts', 'v00000.ts')]
+    assert plan.text.count('URI="v_key0.bin"') == 2
+    assert 'IV=0x00000000000000000000000000000001,KEYFORMAT="identity"' in plan.text
+    assert '#EXT-X-BYTERANGE:100@200' in plan.text and '#EXT-X-BYTERANGE:100\n' in plan.text
+    assert plan.text.count('\nv00000.ts\n') == 3 and 'secret' not in plan.text
+
+
+@pytest.mark.parametrize('kind', ['aes', 'dash'])
+@pytest.mark.parametrize('resume', [True, False])
+def test_more_stream_types_resume_completed_files(resume_env, monkeypatch, kind, resume):
+    e = resume_env
+    e.stub.auto_resume = resume
+    if kind == 'aes':
+        text = ('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x01\n'
+                '#EXTINF:1,\n0.ts\n#EXTINF:1,\n1.ts\n#EXTINF:1,\n2.ts\n#EXT-X-ENDLIST\n')
+        e.playlists = video.local_playlist(text, 'https://cdn.example/v/', 'v'), None
+    else:
+        mpd = dash_mpd('<Period><AdaptationSet mimeType="video/mp4">' + dash_rep(
+            '<SegmentList><Initialization sourceURL="init.mp4"/><SegmentURL media="0.ts"/>'
+            '<SegmentURL media="1.ts"/><SegmentURL media="2.ts"/></SegmentList>')
+            + '</AdaptationSet></Period>')
+        e.playlists = video.local_dash(mpd, 'https://cdn.example/m.mpd')
+    async def join(cmd, temp, timeout, what, cwd=None):
+        temp.write_bytes(b'joined')
+    monkeypatch.setattr(e.manager, '_run_cmd', join)
+    e.failure = asyncio.CancelledError()
+    with pytest.raises(asyncio.CancelledError):
+        parallel_run(e)
+    assert e.folder.exists() == resume
+    if resume:
+        assert (e.folder / e.playlists[0].files[0][1]).read_bytes() == b'ab'
+    e.failure = None
+    e.calls.clear()
+    parallel_run(e)
+    expected = e.playlists[0].files[2:] if resume else e.playlists[0].files
+    assert e.calls == [url for url, _ in expected]
+    assert e.tempfile.read_bytes() == b'joined' and not e.folder.exists()
+
+
+@pytest.mark.parametrize('kind', ['aes', 'dash'])
+def test_changed_key_or_representation_invalidates_resume(resume_env, monkeypatch, kind):
+    e = resume_env
+    if kind == 'aes':
+        text = '#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\n#EXTINF:1,\n0.ts\n#EXTINF:1,\n1.ts\n#EXT-X-ENDLIST\n'
+        old = video.local_playlist(text, 'https://cdn.example/', 'v')
+        new = video.local_playlist(text.replace('key.bin', 'other.bin'), 'https://cdn.example/', 'v')
+    else:
+        text = dash_mpd('<Period><AdaptationSet mimeType="video/mp4">' + dash_rep(
+            '<SegmentList><SegmentURL media="0.ts"/><SegmentURL media="1.ts"/></SegmentList>') + '</AdaptationSet></Period>')
+        old = video.local_dash(text, 'https://cdn.example/m.mpd')[0]
+        new = video.local_dash(text.replace('id="high"', 'id="changed"'), 'https://cdn.example/m.mpd')[0]
+    e.playlists = old, None
+    async def join(*args, **kwargs):
+        e.tempfile.write_bytes(b'joined')
+    monkeypatch.setattr(e.manager, '_run_cmd', join)
+    e.failure = OSError('stop')
+    with pytest.raises(stream_mod.SegmentError):
+        parallel_run(e)
+    e.failure = None
+    e.calls.clear()
+    parallel_run(e, (new, None))
+    assert e.calls == [url for url, _ in new.files]
+
+
+def packet_hashes(path):
+    return subprocess.run([FFMPEG, '-v', 'error', '-i', str(path), '-map', '0', '-c', 'copy',
+                           '-f', 'streamhash', '-hash', 'sha256', '-'], capture_output=True, check=True).stdout
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize('kind', ['aes', 'ranges', 'dash'])
+def test_more_streams_join_locally_with_real_ffmpeg(env, tmp_path, monkeypatch, kind):
+    # The fake session yields real media bytes; the manager uses real ffmpeg.
+    source = tmp_path / 'source'
+    source.mkdir()
+    if kind == 'dash':
+        ffmpeg_make(['-f', 'dash', '-seg_duration', '1', '-use_template', '1',
+                     '-use_timeline', '1', 'movie.mpd'], source)
+        mpd = (source / 'movie.mpd').read_text()
+        plans = video.local_dash(mpd, 'https://cdn.example/movie.mpd')
+        subprocess.run([FFMPEG, '-v', 'error', '-y', '-i', 'movie.mpd', '-c', 'copy',
+                        'plain.mp4'], cwd=source, capture_output=True, check=True)
+    else:
+        segments = make_segments(tmp_path, 'segments', '-bsf:v', 'dump_extra=freq=keyframe')
+        for name, body in segments.items():
+            (source / name).write_bytes(body)
+        plain = media_playlist(list(segments)).decode()
+        (source / 'plain.m3u8').write_text(plain)
+        subprocess.run(video.local_join_command(FFMPEG, 'plain.m3u8', 'plain.mp4'),
+                       cwd=source, capture_output=True, check=True)
+        if kind == 'ranges':
+            # Out-of-order storage: byte ranges must be read, not all bytes copied.
+            stored = list(reversed(list(segments)))
+            offsets, data = {}, b''
+            for name in stored:
+                offsets[name] = len(data)
+                data += segments[name]
+            (source / 'all.ts').write_bytes(data)
+            text = '#EXTM3U\n#EXT-X-TARGETDURATION:1\n'
+            for name, body in segments.items():
+                text += f'#EXTINF:1,\n#EXT-X-BYTERANGE:{len(body)}@{offsets[name]}\nall.ts\n'
+            text += '#EXT-X-ENDLIST\n'
+        else:
+            key, iv = bytes(range(16)), bytes(reversed(range(16)))
+            (source / 'key.bin').write_bytes(key)
+            tag = f'#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x{iv.hex()}\n'
+            text = plain.replace('#EXTINF:', tag + '#EXTINF:')
+            for name, body in segments.items():
+                subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'data', '-i', 'pipe:0',
+                                '-map', '0', '-c', 'copy', '-f', 'data',
+                                '-encryption_key', key.hex(), '-encryption_iv', iv.hex(),
+                                'crypto:' + name], input=body, cwd=source,
+                               capture_output=True, check=True)
+        plans = video.local_playlist(text, 'https://cdn.example/media.m3u8', 'v'), None
+    bodies = {url: (source / urlparse(url).path.rsplit('/', 1)[-1]).read_bytes()
+              for plan in plans if plan for url, _ in plan.files}
+    seen, active, peak = [], 0, 0
+    @contextlib.asynccontextmanager
+    async def request(url=None, **kwargs):
+        nonlocal active, peak
+        seen.append((url, kwargs))
+        active += 1
+        peak = max(peak, active)
+        body = bodies[url]
+        class Response:
+            ok, status = True, 200
+            headers = {'content-length': str(len(body))}
+            async def iter_chunked(self, size):
+                await asyncio.sleep(0.01)
+                yield body
+        try:
+            yield Response()
+        finally:
+            active -= 1
+    monkeypatch.setattr(stream_mod, 'segment_limit', lambda: 3)
+    out = env.temp / 'joined.part'
+    manager = stream_mod.FanslyStreamDownloadManager()
+    asyncio.run(manager._parallel_copy(SimpleNamespace(requests_async=request), plans, out, TEST_SIGNED, 30))
+    assert peak > 1 or kind == 'ranges'
+    assert len(seen) == len(bodies)  # keys and range resources are fetched just once
+    assert all(kwargs['cookies'] == TEST_SIGNED for _, kwargs in seen)
+    assert packet_hashes(out) == packet_hashes(source / 'plain.mp4')
+    assert sorted(s['codec_type'] for s in probe(out)['streams']) == ['audio', 'video']
+    assert not stream_mod.segment_folder(out).exists()
+
+
+def test_video_and_audio_share_one_key_fetch(env):
+    text = '#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\n#EXTINF:1,\ntrack.ts\n#EXT-X-ENDLIST\n'
+    session = FakeSession({'https://cdn.example/video.m3u8': text,
+                           'https://cdn.example/audio.m3u8': text.replace('track.ts', 'audio.ts')})
+    v, a = asyncio.run(stream_mod.FanslyStreamDownloadManager()._local_playlists(
+        session, 'https://cdn.example/video.m3u8', 'https://cdn.example/audio.m3u8', {}, 'media'))
+    assert [url for plan in (v, a) for url, _ in plan.files].count('https://cdn.example/key.bin') == 1
+    assert 'URI="v_key0.bin"' in v.text and 'URI="v_key0.bin"' in a.text
+
+
+def test_map_byte_range_attributes_are_preserved():
+    plan = video.local_playlist('#EXTM3U\n#EXT-X-MAP:URI="all.mp4",BYTERANGE="200@0"\n'
+                                '#EXTINF:1,\n#EXT-X-BYTERANGE:400@200\nall.mp4\n#EXT-X-ENDLIST\n',
+                                'https://cdn.example/v.m3u8', 'v')
+    assert len(plan.files) == 1
+    assert '#EXT-X-MAP:URI="vinit00000.mp4",BYTERANGE="200@0"' in plan.text
+    assert '#EXT-X-BYTERANGE:400@200\nvinit00000.mp4' in plan.text
+
+
+def test_dash_refreshed_signatures_do_not_invalidate_resume(resume_env, monkeypatch):
+    e = resume_env
+    mpd = dash_mpd('<Period><AdaptationSet mimeType="video/mp4">' + dash_rep(
+        '<SegmentTemplate initialization="init.mp4?sig=old" media="$Number$.ts?sig=old" duration="1" startNumber="0"/>')
+        + '</AdaptationSet></Period>')
+    e.playlists = video.local_dash(mpd, 'https://cdn.example/m.mpd')
+    async def join(*args, **kwargs):
+        e.tempfile.write_bytes(b'joined')
+    monkeypatch.setattr(e.manager, '_run_cmd', join)
+    e.failure = OSError('stop')
+    with pytest.raises(stream_mod.SegmentError):
+        parallel_run(e)
+    assert 'sig=' not in (e.folder / 'manifest.json').read_text()
+    e.failure = None
+    e.calls.clear()
+    refreshed = video.local_dash(mpd.replace('sig=old', 'sig=new'), 'https://cdn.example/m.mpd')
+    parallel_run(e, refreshed)
+    assert e.calls == [url for url, _ in refreshed[0].files[2:]]
