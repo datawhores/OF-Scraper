@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7-labs
 # Stage 1: Build the application artifact
-FROM ghcr.io/astral-sh/uv:0.13.7-python3.15-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.13.8-python3.15-trixie-slim AS builder
 
 ARG BUILD_VERSION
 WORKDIR /app
@@ -36,7 +36,7 @@ RUN \
 FROM mwader/static-ffmpeg:9.0.2-1@sha256:f5d100184884eb3e82b0eb14bb5ebf98da99826ac824989720297fb9ef21c822 AS static-ffmpeg
 
 # Stage 2: Create the final, minimal production image
-FROM ghcr.io/astral-sh/uv:0.13.7-python3.15-trixie-slim
+FROM ghcr.io/astral-sh/uv:0.13.8-python3.15-trixie-slim
 WORKDIR /app
 
 # Configure uv's venv and cache location.
