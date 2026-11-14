@@ -45,9 +45,18 @@ jobs:
       # PYSEC-2026-2447 (GHSA-w8v5-vhqr-4h9v, CVE-2025-69872): diskcache
       # unpickles cache entries and has no fixed release; mitigated by our
       # safe unpickler (#399). Remove this ignore once a fixed diskcache ships.
+      # CVE-2026-126190, CVE-2026-126191, CVE-2026-126193: soupsieve 2.10, the
+      # last release for Python 3.11.0-3.11.4 (fixed releases need 3.11.5+).
+      # All three need CSS selectors (select/select_one/compile); we only call
+      # BeautifulSoup(...).get_text(), so they can't be reached (#486). Remove
+      # these ignores if the code starts using CSS selectors, or once Python
+      # before 3.11.5 is dropped.
       - name: Run pip-audit
         run: >-
           uvx --python "${{ matrix.python-version }}" pip-audit@2.10.1
           -r "$RUNNER_TEMP/requirements.txt"
           --no-deps --disable-pip --strict --progress-spinner off -v
           --ignore-vuln PYSEC-2026-2447
+          --ignore-vuln CVE-2026-126190
+          --ignore-vuln CVE-2026-126191
+          --ignore-vuln CVE-2026-126193
