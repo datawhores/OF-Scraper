@@ -1,126 +1,102 @@
-# Notice
+<div align="center">
 
-1. OF-Scraper can not bypass pay walls
-2. OF-Scraper requires a subscription to the model, models can not be scraped anonymously whether free or paid
+# OF-Scraper
 
-# For auth issues
+**A command-line tool to download media from OnlyFans and Fansly, and to like or unlike posts in bulk.**
 
-https://github.com/datawhores/OF-Scraper/issues/442
+[![Latest release](https://img.shields.io/github/v/release/datawhores/OF-Scraper?label=release&color=dark_green)](https://github.com/datawhores/OF-Scraper/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/ofscraper-community?label=pypi%20ofscraper-community)](https://pypi.org/project/ofscraper-community/)
+[![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
+[![Discord](https://img.shields.io/badge/discord-join-5865f2?logo=discord&logoColor=white)](https://discord.gg/wN7uxEVHRK)
 
-# ReadMe
+</div>
 
-## Releases
+> [!IMPORTANT]
+> 1. OF-Scraper can't bypass paywalls.
+> 2. You need a subscription to a creator, free or paid. Creators can't be scraped anonymously.
 
-[Releases Page](https://pypi.org/project/ofscraper/#history)
+![OF-Scraper in a terminal](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
-```Text
+## Contents
 
-Docker and binary releases also available
+- [Install](#install)
+- [Documentation](#documentation)
+- [Auth problems](#auth-problems)
+- [About](#about)
+- [Migrating from DIGITALCRIMINALS' script](#migrating-from-digitalcriminals-script)
+- [Issues and feature requests](#issues-and-feature-requests)
+- [Discord](#discord)
+- [Support](#support)
+- [Disclaimers](#disclaimers)
+
+## Install
+
+The current version is on PyPI as **`ofscraper-community`**. The command is still `ofscraper`. The older `ofscraper` package on PyPI stops at 3.14.7.
+
+Requirements: Python 3.11 to 3.15, and ffmpeg 6 or newer for DRM-protected videos.
+
+```
+uv tool install ofscraper-community
 ```
 
-## Stable
+`pipx install ofscraper-community` and `pip install ofscraper-community` work too. To update, use `uv tool upgrade`, `pipx upgrade` or `pip install -U` with the same name.
 
-<div style="display: inline-block">
-<a href="https://pypi.org/project/ofscraper/">
-<img src="https://img.shields.io/pypi/v/ofscraper.svg?color=dark_green&label=Stable-Release" alt="drawing" style="height:75px"/>
-</div>
-</a>
+**Coming from `ofscraper`:** both packages install the same `ofscraper` command, so uninstall the old one first (`uv tool uninstall ofscraper`, `pipx uninstall ofscraper` or `pip uninstall ofscraper`). Your config, auth and databases are used as they are.
 
-## Dev
-Dev releases can be found in the project release history
-
-https://pypi.org/project/ofscraper/#history
-
-## Table-of-contents
-
-- [Notice](#notice)
-- [For auth issues](#for-auth-issues)
-- [For Issues related to Downloading/ No Models Retrieved error](#for-issues-related-to-downloading-no-models-retrieved-error)
-- [ReadMe](#readme)
-  - [Releases](#releases)
-  - [Stable](#stable)
-  - [Dev](#dev)
-  - [Table-of-contents](#table-of-contents)
-  - [Description](#description)
-  - [Documentation](#documentation)
-  - [Issues](#issues)
-    - [Private Reports](#private-reports)
-  - [Feature Requests](#feature-requests)
-  - [Migrating from DC script](#migrating-from-dc-script)
-  - [Discord](#discord)
-  - [Support](#support)
-- [](#)
-
-## Description
-
-command-line tool that lets you download media from OnlyFans and perform bulk actions including liking or unliking posts.
-
-![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
-
-At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed [HERE](https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md), most are only documented in the commit history.
-
-This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
+**Without Python:** Windows, macOS and Linux builds are attached to each [release](https://github.com/datawhores/OF-Scraper/releases). A Docker image is also available.
 
 ## Documentation
 
-For detailed instructions on:
+- [Docs](https://cloakedkeys.gitbook.io/ofsc): installation, running the tool, auth, config options and commands, for the current version.
+- [Reference](reference/README.md): every command, option, setting and database table.
+- [Older docs](https://of-scraper.gitbook.io/of-scraper) for versions up to 3.14.
 
-- Installation
-- Running the tool
-- And other pertinent information you might need
+## Auth problems
 
-[Official Documention](https://of-scraper.gitbook.io/of-scraper)
+- Copy `sess`, `auth_id`, `x-bc` and `user_agent` again from the browser you're logged in with. They stop working when you log out, and `user_agent` must match that browser exactly.
+- Make sure you're on the latest release. The auth check says why it failed: a logged-out session, an unusable dynamic rule, or a network error.
+- If one dynamic rule keeps failing, try another with `dynamic-mode-default` in your config.
 
-<h3>DISCLAIMERS:</h3>
-<ol>
-    <li>
-        This tool is not affiliated, associated, or partnered with OnlyFans in any way. We are not authorized, endorsed, or sponsored by OnlyFans. All OnlyFans trademarks remain the property of Fenix International Limited.
-    </li>
-    <li>
-        This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
-    </li>
-</ol>
+If it still fails, open an [issue](https://github.com/datawhores/OF-Scraper/issues) with a log from a current build.
 
-## Issues
+## About
 
-Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
+OF-Scraper started as a fork of the original onlyfans-scraper. With support from the community and steady updates, the code has been largely rewritten since. Some of the changes are listed in [CHANGES.md](CHANGES.md); the rest are in the commit history and the [release notes](https://github.com/datawhores/OF-Scraper/releases).
 
-**Feature request issues are fine**
-**Bug Report Issues without required material will be closed**
+It's built for an easy move from DIGITALCRIMINALS' script, and it has a wide range of filters for choosing exactly which content to download.
 
-### Private Reports
+## Migrating from DIGITALCRIMINALS' script
 
-A ticket can be created in the ticket channel
-only you and admins have access to ticket discussions
+See the [Migration Guide](MIGRATION.md).
 
-## Feature Requests
+## Issues and feature requests
 
-[Discord Suggestions](https://discord.com/channels/1093562233612673097/1094440464091975780)
-## Migration Guide
-[Migration](MIGRATION.md)
+Open an [issue](https://github.com/datawhores/OF-Scraper/issues) in this repo, or ask in the [Discord](#discord).
+
+- Feature requests are welcome as issues, or in [Discord Suggestions](https://discord.com/channels/1093562233612673097/1094440464091975780).
+- Bug reports need a log and your config. Reports without them will be closed.
+- For a private report, open a ticket in the Discord ticket channel. Only you and the admins can see it.
 
 ## Discord
 
-[Discord](https://discord.gg/wN7uxEVHRK)
+[Join the Discord](https://discord.gg/wN7uxEVHRK)
 
 ## Support
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/datawhores)
 
-<div>
-      <h4>btc</h4>
-    <a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/btc">
-  <img src="https://github.com/datawhores/OF-Scraper/assets/67020411/c96d0c22-b015-4ffc-b09e-6f246ae10fba" alt="drawing" style="height:100px"/>
-    </a>
-</div>
+<table>
+  <tr>
+    <th>BTC</th>
+    <th>ETH</th>
+  </tr>
+  <tr>
+    <td><a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/btc"><img src="https://github.com/datawhores/OF-Scraper/assets/67020411/c96d0c22-b015-4ffc-b09e-6f246ae10fba" alt="BTC address" height="100"></a></td>
+    <td><a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/eth"><img src="https://github.com/datawhores/OF-Scraper/assets/67020411/d9df33e9-a8ac-4574-91dd-1cb5a20f7201" alt="ETH address" height="100"></a></td>
+  </tr>
+</table>
 
-<div>
-    <h4>eth</h4>
-    <a href="https://raw.githubusercontent.com/datawhores/OF-Scraper/main/donate/eth">
-  <img src="https://github.com/datawhores/OF-Scraper/assets/67020411/d9df33e9-a8ac-4574-91dd-1cb5a20f7201" alt="drawing" style="height:100px"/>
-    </a>
-</div>
+## Disclaimers
 
-#
-
-[![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
+1. This tool isn't affiliated, associated or partnered with OnlyFans or Fansly in any way, and isn't authorized, endorsed or sponsored by them. All OnlyFans trademarks belong to Fenix International Limited.
+2. This is a theoretical program for educational purposes only. It may or may not work. If you use it, you accept full responsibility and indemnify the creator, hosts, contributors and everyone else involved from any and all responsibility.
