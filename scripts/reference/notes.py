@@ -136,7 +136,7 @@ ENV = {
     "modelPrompt": "Menu entries for filtering and sorting the creator list interactively. Not read from the environment.",
     "LOG_SUBPROCESS_LEVEL": "Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, and it is still read.",
     "MPD_SESSION_SLEEP_INIT": "Defined but not read anywhere. MPD requests use the standard `SESSION_*` values.",
-    "FANSLY_STREAM_SEGMENTS": "How many segments of one Fansly HLS stream are fetched at once before ffmpeg joins them (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another. DASH streams and HLS playlists that are encrypted, use byte ranges or have no `#EXT-X-ENDLIST` always go to ffmpeg. The number of files downloaded at once is still set by `download_sems`.",
+    "FANSLY_STREAM_SEGMENTS": "How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally; fetched files are kept so a stopped download resumes (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another, with no resume. Streams the local path can't handle still go to ffmpeg: HLS that is live (no `#EXT-X-ENDLIST`) or uses encryption other than AES-128, and DASH that is protected, live, has more than one period or uses unsupported addressing. The number of files downloaded at once is still set by `download_sems`.",
     "DISK_SPACE_CHECK_PATH": "The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be.",
 }
 

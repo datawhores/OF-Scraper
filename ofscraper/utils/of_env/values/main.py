@@ -105,8 +105,8 @@ def load_main_config():
     # Default: 6
     config["DOWNLOAD_SEM_DEFAULT"] = int(os.getenv("OFSC_DOWNLOAD_SEM_DEFAULT", "6"))
 
-    # FANSLY_STREAM_SEGMENTS: How many segments of one Fansly HLS stream are fetched at once.
-    # 0 leaves the whole stream to ffmpeg, one segment after another.
+    # FANSLY_STREAM_SEGMENTS: How many files of one Fansly stream (HLS or DASH) are fetched at once.
+    # 0 leaves the whole stream to ffmpeg, one segment after another, with no resume.
     # Default: 8
     config["FANSLY_STREAM_SEGMENTS"] = int(os.getenv("OFSC_FANSLY_STREAM_SEGMENTS", "8"))
 
