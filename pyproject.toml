@@ -50,7 +50,7 @@ test = [
   "pytest~=9.0.3",
   "coverage~=7.15.4",
   "pytest-cov~=7.1.0",
-  "random-unicode-emoji~=2.8",
+  "random-unicode-emoji>=2.8,<4.0",
   "random-emoji~=1.0.15",
   "pytest-mock~=3.17.0",
 ]
