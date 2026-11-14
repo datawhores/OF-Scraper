@@ -12,11 +12,15 @@ after-download script) are the same as the normal downloader's.
 
 import asyncio
 import contextlib
+import ctypes
+import json
+import os
 import pathlib
 import shutil
 import subprocess
 import threading
 from functools import partial
+from urllib.parse import urlsplit, urlunsplit
 
 from humanfriendly import format_size
 
@@ -102,7 +106,43 @@ class NotEnoughSpace(Exception):
 def segment_folder(temp) -> pathlib.Path:
     """The folder next to the .part that holds a stream's files until they're joined."""
     temp = pathlib.Path(temp)
-    return temp.with_name(temp.name + ".segments")
+    return temp.with_name("." + temp.name + ".segments")
+
+
+def _hide_folder(folder):
+    if os.name != "nt":
+        return
+    try:
+        kernel32 = ctypes.windll.kernel32
+        attributes = kernel32.GetFileAttributesW(str(folder))
+        if attributes == -1 or not kernel32.SetFileAttributesW(str(folder), attributes | 2):
+            raise ctypes.WinError()
+    except Exception as e:
+        common_globals.log.debug(f"Could not hide stream segments folder: {type(e).__name__}")
+
+
+def _prepare_segments(folder, playlists):
+    # Keep playlist boundaries, local names and timing as well as unsigned URLs.
+    manifest = [
+        {"text": p.text, "files": [
+            [urlunsplit(urlsplit(url)._replace(query="", fragment="")), name]
+            for url, name in p.files
+        ]} if p else None
+        for p in playlists
+    ]
+    saved = None
+    try:
+        saved = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    if not settings.get_settings().auto_resume or saved != manifest:
+        if folder.exists():
+            shutil.rmtree(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    _hide_folder(folder)
+    for path in folder.glob("*.tmp"):
+        path.unlink()
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
 
 class _Ffmpeg:
@@ -178,6 +218,12 @@ class FanslyStreamDownloadManager(DownloadManager):
             f"{medialog} Downloading with the Fansly stream downloader: "
             f"{best.kind} {best.width}x{best.height}"
         )
+        tempholderObj = await placeholder.tempFilePlaceholder(
+            ele, f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
+        ).init()
+        temp = pathlib.Path(tempholderObj.tempfilepath)
+        if not settings.get_settings().auto_resume:
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
         self._downloadspace()
 
         try:
@@ -187,22 +233,21 @@ class FanslyStreamDownloadManager(DownloadManager):
                 # None: run.py downloads the direct file instead (ele.url
                 # is the stream itself when there is no direct file)
                 common_globals.log.info(f"{medialog} {e}; downloading the direct file instead")
+                shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return None
             if isinstance(e, fansly_video.ProtectedStream):
                 common_globals.log.info(f"{medialog} protected, not downloaded")
+                shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return "forced_skipped", 0
             if isinstance(e, fansly_video.MissingAudio):
                 # fail rather than save a silent video that is never fetched again
                 raise
             common_globals.log.warning(f"{medialog} {e}")
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return "skipped", 0
 
         placeholderObj = await placeholder.Placeholders(ele, "mp4").init()
         common_logs.path_to_file_logger(placeholderObj, ele)
-        tempholderObj = await placeholder.tempFilePlaceholder(
-            ele, f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
-        ).init()
-        temp = pathlib.Path(tempholderObj.tempfilepath)
         temp.unlink(missing_ok=True)
 
         # BaseException: a cancelled run (Ctrl+C) also removes the .part
@@ -238,6 +283,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         if best.kind == fansly_video.HLS and segment_limit() > 0:
             playlists = await self._local_playlists(c, url, audio_url, best.cookies, medialog)
         if playlists is None:
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return await self._run_ffmpeg(url, temp, best.cookies, audio_url, timeout)
         common_globals.log.debug(
             f"{medialog} Fetching {sum(len(p.files) for p in playlists if p)} stream "
@@ -265,13 +311,13 @@ class FanslyStreamDownloadManager(DownloadManager):
 
     async def _parallel_copy(self, c, playlists, temp, cookies, timeout):
         """Fetch every file of the playlists into a folder next to ``temp``,
-        then join them with ffmpeg. The folder is removed however this ends."""
+        then join them with ffmpeg. Keep completed files if the copy fails."""
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout  # one limit for the fetch and the join
         folder = segment_folder(temp)
-        shutil.rmtree(folder, ignore_errors=True)
-        folder.mkdir(parents=True)
+        complete = False
         try:
+            _prepare_segments(folder, playlists)
             video, audio = playlists
             jobs = video.files + (audio.files if audio else [])
             try:
@@ -297,8 +343,10 @@ class FanslyStreamDownloadManager(DownloadManager):
                 cmd, temp, max(1.0, deadline - loop.time()),
                 "join the stream's segments", cwd=folder,
             )
+            complete = True
         finally:
-            shutil.rmtree(folder, ignore_errors=True)
+            if complete or not settings.get_settings().auto_resume:
+                shutil.rmtree(folder, ignore_errors=True)
 
     def _check_join_space(self, folder, temp):
         """Fail with a clear message when the .part's drive can't hold the
@@ -319,7 +367,8 @@ class FanslyStreamDownloadManager(DownloadManager):
 
         async def worker():
             for url, name in pending:
-                await self._fetch_segment(c, url, folder / name, cookies)
+                if not (folder / name).is_file():
+                    await self._fetch_segment(c, url, folder / name, cookies)
 
         workers = [
             asyncio.ensure_future(worker())
@@ -328,7 +377,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         try:
             await asyncio.gather(*workers)
         except BaseException:
-            # let every worker finish (and close its file) before the folder goes
+            # let every worker finish and close its file before cleanup
             for w in workers:
                 w.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
@@ -340,7 +389,9 @@ class FanslyStreamDownloadManager(DownloadManager):
         try:
             async for _ in download_retry():
                 with _:
-                    await self._fetch_segment_once(c, url, path, cookies)
+                    temp = path.with_name(path.name + ".tmp")
+                    await self._fetch_segment_once(c, url, temp, cookies)
+                    temp.replace(path)
         except (KeyboardInterrupt, asyncio.CancelledError):
             raise
         except Exception as e:

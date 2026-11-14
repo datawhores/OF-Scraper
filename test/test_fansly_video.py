@@ -155,7 +155,7 @@ def env(monkeypatch, tmp_path):
     real = settings.get_settings()
     stub = SimpleNamespace(**{
         **dict(real), "site": "fansly", "verify_all_integrity": True, "size_max": 0,
-        "size_min": 0, "force_all": False, "force_model_unique": False, "download_sems": 2,
+        "size_min": 0, "auto_resume": True, "force_all": False, "force_model_unique": False, "download_sems": 2,
         "ssl_verify": "default", "download_limit": 0, "proxy": None, "hash": "xxh128",
     })
     monkeypatch.setattr(settings, "get_settings", lambda: stub)
@@ -905,7 +905,8 @@ def test_a_skipped_segment_fails_the_item(env, tmp_path, monkeypatch, fault, pat
         ele = make_ele(raw)
         result = download_locally(ele)
     assert result == ("skipped", 0)
-    assert files_in(env.out, env.temp) == [] and list(env.temp.iterdir()) == []
+    assert list(env.out.iterdir()) == []
+    assert len(list(env.temp.iterdir())) == (0 if path == "ffmpeg" else 1)
     assert env.marks == [] and len(env.ffmpeg_runs) == (1 if path == "ffmpeg" else 0)
 
 
@@ -1241,7 +1242,7 @@ def test_a_segment_that_fails_once_is_retried_and_the_file_downloads(env, tmp_pa
 
 
 @needs_ffmpeg
-def test_a_segment_that_fails_every_retry_fails_the_file_and_removes_the_segments(env, tmp_path, monkeypatch):
+def test_a_segment_that_fails_every_retry_fails_the_file_and_keeps_the_segments(env, tmp_path, monkeypatch):
     fast_retries(monkeypatch, attempts=3)
     segments = make_segments(tmp_path, "segment", "-bsf:v", "dump_extra=freq=keyframe")
     raw = raw_media()
@@ -1252,12 +1253,12 @@ def test_a_segment_that_fails_every_retry_fails_the_file_and_removes_the_segment
         result = download_locally(make_ele(raw))
     assert result == ("skipped", 0)
     assert [p for p, _ in srv.seen].count(middle) == 3
-    assert list(env.out.iterdir()) == [] and list(env.temp.iterdir()) == []
+    assert list(env.out.iterdir()) == [] and len(list(env.temp.iterdir())) == 1
     assert env.marks == [] and env.ffmpeg_runs == []
 
 
 @needs_ffmpeg
-def test_cancelled_parallel_download_removes_the_segments(env, tmp_path):
+def test_cancelled_parallel_download_keeps_the_segments(env, tmp_path):
     segments = make_many_segments(tmp_path, "segment")
     raw = raw_media()
     with Server({}, slow_limit=40) as srv:
@@ -1278,7 +1279,7 @@ def test_cancelled_parallel_download_removes_the_segments(env, tmp_path):
                     await task
 
         asyncio.run(go())
-    assert list(env.out.iterdir()) == [] and list(env.temp.iterdir()) == []
+    assert list(env.out.iterdir()) == [] and len(list(env.temp.iterdir())) == 1
     assert env.marks == [] and env.ffmpeg_runs == []
 
 
@@ -1295,7 +1296,7 @@ def test_a_trickling_segment_hits_the_overall_time_limit(env, tmp_path, monkeypa
         result = download_locally(make_ele(raw))
         elapsed = time.monotonic() - started
     assert elapsed < 20 and result == ("skipped", 0)
-    assert list(env.out.iterdir()) == [] and list(env.temp.iterdir()) == []
+    assert list(env.out.iterdir()) == [] and len(list(env.temp.iterdir())) == 1
 
 
 @needs_ffmpeg
@@ -1443,6 +1444,7 @@ def test_join_works_when_the_folder_name_has_a_hash(env, tmp_path, monkeypatch):
     assert sorted(s["codec_type"] for s in probe(out)["streams"]) == ["audio", "video"]
     (join,) = env.ffmpeg_runs
     assert "#" in str(env.ffmpeg_cwds[0]) and env.ffmpeg_cwds[0].name.endswith(".segments")
+    assert env.ffmpeg_cwds[0].name.startswith(".")
     assert join[join.index("-i") + 1] == "video.m3u8"
     assert [a for a in join if str(a).endswith(".m3u8")] == ["video.m3u8", "audio.m3u8"]
     assert list(hashed.iterdir()) == []
@@ -1484,7 +1486,7 @@ def test_not_enough_space_for_the_join_fails_clearly(env, tmp_path, monkeypatch,
     assert "not enough disk space to join the stream" in caplog.text
     assert free == [env.temp]  # the drive of the .part
     assert env.ffmpeg_runs == [] and env.marks == []
-    assert list(env.out.iterdir()) == [] and list(env.temp.iterdir()) == []
+    assert list(env.out.iterdir()) == [] and len(list(env.temp.iterdir())) == 1
 
 
 def test_file_writes_run_off_the_event_loop_and_a_cancel_waits_for_them():
@@ -1507,3 +1509,274 @@ def test_file_writes_run_off_the_event_loop_and_a_cancel_waits_for_them():
         assert all(t != main for _, t in calls)
 
     asyncio.run(go())
+
+# ------------------------------------------------------------------ segment resume (#443)
+
+@pytest.fixture
+def resume_env(env, monkeypatch):
+    fast_retries(monkeypatch, attempts=1)
+    monkeypatch.setattr(stream_mod, "segment_limit", lambda: 1)
+    env.tempfile = env.temp / "video.part"
+    env.folder = stream_mod.segment_folder(env.tempfile)
+    env.playlists = (video.local_playlist(
+        "#EXTM3U\n#EXTINF:1,\n0.ts?sig=old\n#EXTINF:1,\n1.ts?sig=old\n"
+        "#EXTINF:1,\n2.ts?sig=old\n#EXT-X-ENDLIST\n", "https://cdn.example/variant/", "v"
+    ), None)
+    env.calls = []
+    env.fault = None
+    env.manager = stream_mod.FanslyStreamDownloadManager()
+
+    class Response:
+        ok, status = True, 200
+        headers = {"content-length": "2"}
+
+        async def iter_chunked(self, size):
+            yield b"a"
+            if env.fault:
+                fault = env.fault
+                env.fault = None
+                raise fault
+            yield b"b"
+
+    @contextlib.asynccontextmanager
+    async def request(url=None, **kwargs):
+        env.calls.append(url)
+        # Complete the first segment before interrupting the second.
+        if urlparse(url).path.endswith("1.ts") and env.failure:
+            env.fault = env.failure
+        yield Response()
+
+    env.failure = None
+    env.session = SimpleNamespace(requests_async=request)
+
+    async def join(cmd, temp, timeout, what, cwd=None):
+        assert cwd == env.folder
+        names = [line for line in (cwd / "video.m3u8").read_text().splitlines()
+                 if not line.startswith("#")]
+        temp.write_bytes(b"".join((cwd / name).read_bytes() for name in names))
+
+    monkeypatch.setattr(env.manager, "_run_cmd", join)
+    return env
+
+
+def parallel_run(env, playlists=None):
+    return asyncio.run(env.manager._parallel_copy(
+        env.session, playlists or env.playlists, env.tempfile, {}, 30
+    ))
+
+
+def test_resume_fetches_only_missing_segments_after_a_failure(resume_env):
+    e = resume_env
+    e.failure = OSError("interrupted")
+    with pytest.raises(stream_mod.SegmentError):
+        parallel_run(e)
+    assert e.folder.is_dir()
+    assert (e.folder / "v00000.ts").read_bytes() == b"ab"
+    assert not (e.folder / "v00001.ts").exists()
+    assert (e.folder / "v00001.ts.tmp").read_bytes() == b"a"
+    assert e.folder.name.startswith(".")
+    if stream_mod.os.name == "nt":
+        assert stream_mod.ctypes.windll.kernel32.GetFileAttributesW(str(e.folder)) & 2
+    saved = (e.folder / "manifest.json").read_text()
+    assert "sig=" not in saved
+    e.failure = None
+    # Signatures may change between runs; abandoned temporary files go away.
+    (e.folder / "abandoned.tmp").write_bytes(b"partial")
+    original_join = e.manager._run_cmd
+
+    async def join(*args, **kwargs):
+        assert not (e.folder / "abandoned.tmp").exists()
+        await original_join(*args, **kwargs)
+
+    e.manager._run_cmd = join
+    playlist = e.playlists[0]
+    refreshed = video.LocalPlaylist(playlist.text, [
+        (url.replace("sig=old", "sig=new"), name) for url, name in playlist.files
+    ])
+    before = len(e.calls)
+    parallel_run(e, (refreshed, None))
+    assert e.calls[before:] == [url for url, _ in refreshed.files[1:]]
+    resumed = e.tempfile.read_bytes()
+    assert not e.folder.exists()
+    e.calls.clear()
+    parallel_run(e)
+    assert len(e.calls) == 3 and e.tempfile.read_bytes() == resumed == b"ababab"
+
+
+@pytest.mark.parametrize("resume", [True, False])
+def test_cancel_keeps_only_completed_segments_when_resuming(resume_env, resume):
+    e = resume_env
+    e.stub.auto_resume = resume
+    e.failure = asyncio.CancelledError()
+    with pytest.raises(asyncio.CancelledError):
+        parallel_run(e)
+    assert e.folder.exists() == resume
+    if resume:
+        assert (e.folder / "v00000.ts").read_bytes() == b"ab"
+        assert not (e.folder / "v00001.ts").exists()
+
+
+@pytest.mark.parametrize("change", ["variant", "segments", "invalid", "disabled"])
+def test_incompatible_or_disabled_resume_refetches_everything(resume_env, change):
+    e = resume_env
+    e.failure = OSError("interrupted")
+    with pytest.raises(stream_mod.SegmentError):
+        parallel_run(e)
+    e.failure = None
+    playlist = e.playlists[0]
+    if change == "variant":
+        playlist = video.LocalPlaylist(playlist.text, [
+            (url.replace("/variant/", "/other/"), name) for url, name in playlist.files
+        ])
+    elif change == "segments":
+        playlist = video.LocalPlaylist(playlist.text, [
+            (url.replace("0.ts", "different.ts"), name) for url, name in playlist.files
+        ])
+    elif change == "invalid":
+        (e.folder / "manifest.json").write_text("broken")
+    else:
+        e.stub.auto_resume = False
+    e.calls.clear()
+    parallel_run(e, (playlist, None))
+    assert e.calls == [url for url, _ in playlist.files]
+    assert not e.folder.exists()
+
+
+def test_failed_download_without_resume_removes_segments(resume_env):
+    e = resume_env
+    e.stub.auto_resume = False
+    e.failure = OSError("interrupted")
+    with pytest.raises(stream_mod.SegmentError):
+        parallel_run(e)
+    assert not e.folder.exists()
+
+
+def test_failure_to_hide_segments_is_only_logged(resume_env, monkeypatch, caplog):
+    e = resume_env
+    def fail(*args):
+        raise OSError("hidden attribute unavailable")
+    monkeypatch.setattr(stream_mod.ctypes, "windll", SimpleNamespace(kernel32=SimpleNamespace(
+        GetFileAttributesW=lambda path: 16, SetFileAttributesW=fail)), raising=False)
+    monkeypatch.setattr(common_globals, "log", logging.getLogger("test_hide_segments"))
+    # Call the Windows branch even on non-Windows test hosts.
+    with monkeypatch.context() as patch:
+        patch.setattr(stream_mod.os, "name", "nt")
+        with caplog.at_level("DEBUG", logger="test_hide_segments"):
+            stream_mod._hide_folder(e.folder)
+    assert "Could not hide stream segments folder" in caplog.text
+    parallel_run(e)
+    assert e.tempfile.read_bytes() == b"ababab"
+
+@pytest.mark.parametrize("skip", ["size", "script"])
+def test_skip_after_join_removes_segments(resume_env, monkeypatch, skip):
+    e = resume_env
+    ele = make_ele(raw_media())
+    temp = e.temp / f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
+    e.tempfile, e.folder = temp, stream_mod.segment_folder(temp)
+
+    async def urls(*args):
+        return "https://cdn.example/media.m3u8", None
+
+    async def playlists(*args):
+        return e.playlists
+
+    async def noop(*args):
+        pass
+
+    async def skip_script(*args):
+        return True
+
+    monkeypatch.setattr(e.manager, "_stream_urls", urls)
+    monkeypatch.setattr(e.manager, "_local_playlists", playlists)
+    monkeypatch.setattr(e.manager, "_check_complete", noop)
+    monkeypatch.setattr(e.manager, "_force_download", noop)
+    if skip == "size":
+        e.stub.size_max = 1
+    else:
+        monkeypatch.setattr(dm, "skip_download_script", skip_script)
+    asyncio.run(e.manager._stream_download(e.session, ele, "a-creator", ele.model_id))
+    assert len(e.calls) == 3
+    assert not e.folder.exists() and not temp.exists()
+    assert list(e.out.iterdir()) == []
+
+
+@pytest.mark.parametrize("mode", ["direct", "protected", "ffmpeg"])
+def test_fallback_or_protected_skip_cleans_old_segments(env, monkeypatch, mode):
+    manager = stream_mod.FanslyStreamDownloadManager()
+    ele = make_ele(raw_media(), direct=mode != "protected")
+    temp = env.temp / f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
+    folder = stream_mod.segment_folder(temp)
+    folder.mkdir()
+    (folder / "old.ts").write_bytes(b"old")
+
+    async def urls(*args):
+        if mode == "protected":
+            raise video.ProtectedStream("protected")
+        if mode == "direct":
+            raise video.StreamError("use direct")
+        return "https://cdn.example/media.m3u8", None
+
+    async def ffmpeg(*args):
+        assert not folder.exists()
+        temp.write_bytes(b"joined")
+
+    async def noop(*args):
+        pass
+
+    async def finish(*args):
+        temp.unlink()
+        return "Videos", 6
+
+    monkeypatch.setattr(manager, "_stream_urls", urls)
+    monkeypatch.setattr(manager, "_run_ffmpeg", ffmpeg)
+    monkeypatch.setattr(manager, "_check_complete", noop)
+    monkeypatch.setattr(manager, "_integrity_check", noop)
+    monkeypatch.setattr(manager, "_finish", finish)
+    monkeypatch.setattr(stream_mod, "segment_limit", lambda: 0)
+    asyncio.run(manager._stream_download(None, ele, "a-creator", ele.model_id))
+    assert not folder.exists()
+
+
+@pytest.mark.parametrize("resume", [True, False])
+def test_temp_cleanup_handles_hidden_segment_folders(env, monkeypatch, resume):
+    import ofscraper.utils.paths.paths as paths
+    from ofscraper.commands.scraper.actions.download import stop
+
+    env.stub.auto_resume = resume
+    folder = stream_mod.segment_folder(env.temp / "video.part")
+    folder.mkdir()
+    (folder / "v00000.ts").write_bytes(b"segment")
+    part = env.temp / "video.part"
+    part.write_bytes(b"incomplete join")
+    monkeypatch.setattr(paths.data, "get_TempDir", lambda: env.temp)
+    real_getattr = paths.of_env.getattr
+    monkeypatch.setattr(paths.of_env, "getattr", lambda key, *a, **kw:
+                        True if key == "BATCH_TEMPFILE_CLEANUP" else real_getattr(key, *a, **kw))
+    monkeypatch.setattr(stop, "requested", threading.Event())
+    paths.temp_cleanup()
+    assert folder.exists() == resume and part.exists() == resume
+
+
+def test_failed_join_keeps_segments_but_removes_partial_output(resume_env, monkeypatch):
+    e = resume_env
+    ele = make_ele(raw_media())
+    e.tempfile = e.temp / f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
+    e.folder = stream_mod.segment_folder(e.tempfile)
+
+    async def urls(*args):
+        return "https://cdn.example/media.m3u8", None
+
+    async def playlists(*args):
+        return e.playlists
+
+    async def fail_join(*args, **kwargs):
+        e.tempfile.write_bytes(b"partial join")
+        raise OSError("join failed")
+
+    monkeypatch.setattr(e.manager, "_stream_urls", urls)
+    monkeypatch.setattr(e.manager, "_local_playlists", playlists)
+    monkeypatch.setattr(e.manager, "_run_cmd", fail_join)
+    with pytest.raises(OSError, match="join failed"):
+        asyncio.run(e.manager._stream_download(e.session, ele, "a-creator", ele.model_id))
+    assert not e.tempfile.exists()
+    assert [(e.folder / name).read_bytes() for _, name in e.playlists[0].files] == [b"ab"] * 3
