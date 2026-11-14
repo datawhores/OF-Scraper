@@ -40,7 +40,10 @@ def test_update_check(monkeypatch, caplog, pypi, current, newer):
     assert ("new version of OF-Scraper available" in caplog.text) is newer
 
 
-def test_update_check_asks_pypi_for_the_fork(monkeypatch):
+@pytest.mark.parametrize("dist_name", ["ofscraper-community", "ofscraper"])
+def test_update_check_asks_pypi_for_the_installed_project(monkeypatch, dist_name):
+    # an 'ofscraper' install (published by datawhores/OF-Scraper) is told about
+    # 'ofscraper' releases, not 'ofscraper-community' ones
     urls = []
 
     def fake_session(**kwargs):
@@ -48,9 +51,10 @@ def test_update_check_asks_pypi_for_the_fork(monkeypatch):
         return contextlib.nullcontext(_Response("3.14.7"))
 
     monkeypatch.setattr(logs, "__version__", "3.15.0")
+    monkeypatch.setattr(logs, "__dist_name__", dist_name)
     monkeypatch.setattr(logs.BareSession, "get_bare_session", fake_session)
     logs.print_latest_version()
-    assert urls == ["https://pypi.org/pypi/ofscraper-community/json"]
+    assert urls == [f"https://pypi.org/pypi/{dist_name}/json"]
 
 
 def test_update_check_failure_does_not_stop_the_run(monkeypatch, caplog):

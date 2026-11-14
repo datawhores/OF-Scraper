@@ -6,6 +6,7 @@ import logging
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
+from ofscraper.__version__ import __dist_name__
 
 log = logging.getLogger("shared")
 
@@ -130,7 +131,7 @@ def get_ffmpeg() -> str:
     raise FileNotFoundError(
         "A valid FFmpeg executable could not be found.\n"
         "Please add FFmpeg to your system's PATH, specify its location in your settings, "
-        "or install the 'ffmpeg' extra ('pip install ofscraper-community[ffmpeg]')"
+        f"or install the 'ffmpeg' extra ('pip install {__dist_name__}[ffmpeg]')"
     )
 
 

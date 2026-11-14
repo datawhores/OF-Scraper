@@ -220,6 +220,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [generate_version]
     runs-on: ubuntu-latest
+    env:
+      # datawhores/OF-Scraper publishes to the original 'ofscraper' PyPI
+      # project; cloakedkeys/OF-Scraper-Community publishes 'ofscraper-community'.
+      # (Expression string comparisons ignore case.)
+      DIST_NAME: ${{ github.repository == 'datawhores/OF-Scraper' && 'ofscraper' || 'ofscraper-community' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -229,6 +234,12 @@ jobs:
           persist-credentials: false
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+
+      - name: Set the distribution name
+        if: env.DIST_NAME != 'ofscraper-community'
+        run: |
+          sed -i "s/^name = \"ofscraper-community\"$/name = \"$DIST_NAME\"/" pyproject.toml
+          grep -qx "name = \"$DIST_NAME\"" pyproject.toml || { echo "::error::couldn't set the package name to '$DIST_NAME'"; exit 1; }
 
       - name: Build sdist and wheel
         env:
@@ -241,17 +252,18 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           EXPECTED="${TAG#v}"
+          FILE_NAME="${DIST_NAME//-/_}"
           for f in dist/*; do echo "built: $f"; done
-          WHEELS=(dist/ofscraper_community-*-py3-none-any.whl)
-          SDISTS=(dist/ofscraper_community-*.tar.gz)
+          WHEELS=(dist/${FILE_NAME}-*-py3-none-any.whl)
+          SDISTS=(dist/${FILE_NAME}-*.tar.gz)
           if [ ${#WHEELS[@]} -ne 1 ] || [ ! -f "${WHEELS[0]}" ] || [ ${#SDISTS[@]} -ne 1 ] || [ ! -f "${SDISTS[0]}" ]; then
-            echo "::error::expected one ofscraper-community wheel and one sdist"; exit 1
+            echo "::error::expected one $DIST_NAME wheel and one sdist"; exit 1
           fi
           BUILT=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Version: //p' | tr -d '\r')
           NAME=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Name: //p' | tr -d '\r')
           echo "name: $NAME, version: $BUILT, tag: $TAG"
-          if [ "$NAME" != "ofscraper-community" ]; then
-            echo "::error::package name is '$NAME', not 'ofscraper-community'"; exit 1
+          if [ "$NAME" != "$DIST_NAME" ]; then
+            echo "::error::package name is '$NAME', not '$DIST_NAME'"; exit 1
           fi
           case "$BUILT" in
             *+*) echo "::error::version '$BUILT' has a local part, which PyPI rejects"; exit 1 ;;
@@ -259,7 +271,7 @@ jobs:
           if [ "$BUILT" != "$EXPECTED" ]; then
             echo "::error::version '$BUILT' doesn't match tag '$TAG'"; exit 1
           fi
-          if [ "${SDISTS[0]}" != "dist/ofscraper_community-${EXPECTED}.tar.gz" ]; then
+          if [ "${SDISTS[0]}" != "dist/${FILE_NAME}-${EXPECTED}.tar.gz" ]; then
             echo "::error::sdist '${SDISTS[0]}' doesn't match tag '$TAG'"; exit 1
           fi
 
@@ -282,16 +294,17 @@ jobs:
 
   publish_pypi:
     name: Publish to PyPI
-    # PyPI trusts only this repo's workflow for ofscraper-community, so a
-    # tag on a fork or on datawhores/OF-Scraper makes the GitHub release only.
-    if: startsWith(github.ref, 'refs/tags/') && github.repository == 'cloakedkeys/OF-Scraper-Community'
+    # PyPI trusts cloakedkeys/OF-Scraper-Community for ofscraper-community and
+    # datawhores/OF-Scraper (environment pypi-ofscraper) for ofscraper, so a
+    # tag on any other fork makes the GitHub release only.
+    if: startsWith(github.ref, 'refs/tags/') && (github.repository == 'cloakedkeys/OF-Scraper-Community' || github.repository == 'datawhores/OF-Scraper')
     # A PyPI version can't be replaced once uploaded, so publish last: only
     # after the packages passed their checks and the GitHub release exists.
     needs: [build_pypi_dist, publish_release]
     runs-on: ubuntu-latest
     environment:
-      name: pypi
-      url: https://pypi.org/project/ofscraper-community/
+      name: ${{ github.repository == 'datawhores/OF-Scraper' && 'pypi-ofscraper' || 'pypi' }}
+      url: ${{ github.repository == 'datawhores/OF-Scraper' && 'https://pypi.org/project/ofscraper/' || 'https://pypi.org/project/ofscraper-community/' }}
     permissions:
       id-token: write # trusted publishing; no token or password is stored
     steps:
