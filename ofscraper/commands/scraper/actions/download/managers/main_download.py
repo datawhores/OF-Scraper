@@ -33,6 +33,10 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
     get_chunk_timeout,
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_url,
+)
+from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
 
 from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
@@ -77,6 +81,17 @@ class MainDownloadManager(DownloadManager):
             common_globals.sem.release()
 
     async def _main_download_downloader(self, c, ele):
+        try:
+            return await self._main_download_attempts(c, ele)
+        except Exception as E:
+            # a signed link answers 403 after an IP change; retrying it can't
+            # help (#462), but a newly fetched link can
+            if not is_signed_cdn_forbidden(E) or not await refresh_media_url(ele):
+                raise
+        # once per item: the .part is kept and resumed with the new link
+        return await self._main_download_attempts(c, ele)
+
+    async def _main_download_attempts(self, c, ele):
         self._downloadspace()
         tempholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
