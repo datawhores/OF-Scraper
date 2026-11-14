@@ -10,6 +10,7 @@ The largest rendition wins; on a tie direct beats HLS, which beats DASH.
 """
 
 import json
+import os
 import re
 import statistics
 from dataclasses import dataclass, field
@@ -308,6 +309,109 @@ def incomplete_reason(video_times, audio_times=None, expected=None):
     if expected and covered < expected - max(SHORT_MIN, SHORT_SHARE * expected):
         return f"the copy covers {covered:.1f}s, but the video is {expected:.1f}s"
     return None
+
+
+class UnexpectedPlaylist(StreamError):
+    """A media playlist the parallel downloader doesn't handle; ffmpeg fetches it instead."""
+
+
+@dataclass
+class LocalPlaylist:
+    """A media playlist rewritten to point at local files.
+
+    ``files`` is (url, local name) for every file to fetch, in playlist order,
+    init segments included. ``text`` is the playlist with each URI replaced by
+    its local name, for ffmpeg to read once the files are on disk.
+    """
+
+    text: str
+    files: list
+
+
+# extensions ffmpeg's HLS reader accepts for a segment by default
+_SEGMENT_EXTS = (".ts", ".m4s", ".mp4", ".m4v", ".m4a", ".aac", ".mp3")
+# tags that would change what the bytes are or where they come from
+_REFUSED_TAGS = ("#EXT-X-BYTERANGE", "#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF",
+                 "#EXT-X-MEDIA:", "#EXT-X-PART", "#EXT-X-PRELOAD-HINT", "#EXT-X-SKIP",
+                 "#EXT-X-SESSION-KEY")
+
+
+def _local_name(prefix, index, url, fmp4):
+    ext = os.path.splitext(urlparse(url).path)[1].lower()
+    if ext not in _SEGMENT_EXTS:
+        ext = ".m4s" if fmp4 else ".ts"
+    return f"{prefix}{index:05d}{ext}"
+
+
+def _checked(url):
+    try:
+        return check_url(url)
+    except StreamError as e:
+        raise UnexpectedPlaylist(str(e)) from e
+
+
+def local_playlist(text: str, base_url: str, prefix: str) -> LocalPlaylist:
+    """Plan a parallel download of a media playlist, or UnexpectedPlaylist.
+
+    Only a complete (``#EXT-X-ENDLIST``), unencrypted playlist of whole files
+    is planned: no byte ranges, keys other than NONE, partial segments or
+    nested playlists. Init segments (``#EXT-X-MAP``) are fetched like segments.
+    """
+    lines = (text or "").splitlines()
+    if not lines or lines[0].strip() != "#EXTM3U":
+        raise UnexpectedPlaylist("the media playlist doesn't start with #EXTM3U")
+    out, files, maps = [], [], {}
+    ended = False
+    for raw in lines:
+        line = raw.strip()
+        upper = line.upper()
+        if not line:
+            continue
+        if upper.startswith(_REFUSED_TAGS):
+            raise UnexpectedPlaylist(f"the media playlist has {line.split(':', 1)[0]}")
+        if upper.startswith("#EXT-X-KEY"):
+            method = _attrs(line).get("METHOD", "").upper()
+            if method != "NONE":
+                raise UnexpectedPlaylist(f"the media playlist is encrypted ({method or 'unknown'})")
+            out.append(line)
+        elif upper.startswith("#EXT-X-MAP"):
+            attrs = _attrs(line)
+            if not attrs.get("URI") or "BYTERANGE" in attrs:
+                raise UnexpectedPlaylist("the media playlist has an init segment it can't fetch")
+            url = _checked(urljoin(base_url, attrs["URI"]))
+            if url not in maps:
+                maps[url] = _local_name(f"{prefix}init", len(maps), url, True)
+                files.append((url, maps[url]))
+            out.append(f'#EXT-X-MAP:URI="{maps[url]}"')
+        elif line.startswith("#"):
+            if "URI=" in upper:
+                raise UnexpectedPlaylist(f"the media playlist has {line.split(':', 1)[0]}")
+            ended = ended or upper.startswith("#EXT-X-ENDLIST")
+            out.append(line)
+        else:
+            url = _checked(urljoin(base_url, line))
+            segments = len(files) - len(maps)
+            name = _local_name(prefix, segments, url, bool(maps))
+            files.append((url, name))
+            out.append(name)
+    if len(files) == len(maps):
+        raise UnexpectedPlaylist("the media playlist lists no segments")
+    if not ended:
+        raise UnexpectedPlaylist("the media playlist has no #EXT-X-ENDLIST (live or incomplete)")
+    return LocalPlaylist("\n".join(out) + "\n", files)
+
+
+def local_join_command(ffmpeg, playlist, out_path, audio_playlist=None) -> list:
+    """ffmpeg copy of local playlists (see ``local_playlist``) into one MP4,
+    with the same output options as ``ffmpeg_command``. Only local files may
+    be read."""
+    opts = ["-protocol_whitelist", "file"]
+    cmd = [str(ffmpeg), "-hide_banner", "-nostdin", "-loglevel", "error", "-y"]
+    cmd += opts + ["-i", str(playlist)]
+    if audio_playlist:
+        cmd += opts + ["-i", str(audio_playlist), "-map", "0:v", "-map", "1:a"]
+    cmd += ["-c", "copy", "-f", "mp4", str(out_path)]
+    return cmd
 
 
 _PROTECTION = re.compile(r"<\s*(?:[\w-]+:)?ContentProtection\b")

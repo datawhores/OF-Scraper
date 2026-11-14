@@ -485,6 +485,9 @@ def fansly(env, monkeypatch):
     async def no_main_download(self, *a, **k):
         raise AssertionError("normal downloader used for a stream")
 
+    # the size checks run after the copy whichever way it's fetched: keep
+    # these on the ffmpeg path, which fake_ffmpeg stands in for
+    monkeypatch.setattr(stream_mod, "segment_limit", lambda: 0)
     monkeypatch.setattr(stream_mod.FanslyStreamDownloadManager, "_run_ffmpeg", fake_ffmpeg)
     for name in ("_integrity_check", "_check_complete"):
         monkeypatch.setattr(stream_mod.FanslyStreamDownloadManager, name, _noop)

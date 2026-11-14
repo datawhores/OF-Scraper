@@ -561,6 +561,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="discord_default"></a>`DISCORD_DEFAULT` | `OFSC_DISCORD_DEFAULT` | `''` | Default Discord webhook URL or related setting. |
 | <a id="threads_default"></a>`THREADS_DEFAULT` | `OFSC_THREADS_DEFAULT` | `2` | Default number of threads for operations. |
 | <a id="download_sem_default"></a>`DOWNLOAD_SEM_DEFAULT` | `OFSC_DOWNLOAD_SEM_DEFAULT` | `6` | Default semaphore limit for downloads. |
+| <a id="fansly_stream_segments"></a>`FANSLY_STREAM_SEGMENTS` | `OFSC_FANSLY_STREAM_SEGMENTS` | `8` | How many segments of one Fansly HLS stream are fetched at once before ffmpeg joins them (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another. DASH streams and HLS playlists that are encrypted, use byte ranges or have no `#EXT-X-ENDLIST` always go to ffmpeg. The number of files downloaded at once is still set by `download_sems`. |
 | <a id="text_type_default"></a>`TEXT_TYPE_DEFAULT` | `OFSC_TEXT_TYPE_DEFAULT` | `'letter'` | Default text type processing. |
 | <a id="truncation_default"></a>`TRUNCATION_DEFAULT` | `OFSC_TRUNCATION_DEFAULT` | `True` | Whether truncation is enabled by default. |
 | <a id="filename_collision_default"></a>`FILENAME_COLLISION_DEFAULT` | `OFSC_FILENAME_COLLISION_DEFAULT` | `'media_id'` | What to do when a download's path is already |
