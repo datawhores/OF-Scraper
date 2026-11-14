@@ -33,7 +33,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up uv and Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@v10.3.1
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
       # every package pinned in uv.lock, including all extras; the export is
