@@ -282,7 +282,9 @@ jobs:
 
   publish_pypi:
     name: Publish to PyPI
-    if: startsWith(github.ref, 'refs/tags/')
+    # PyPI trusts only this repo's workflow for ofscraper-community, so a
+    # tag on a fork or on datawhores/OF-Scraper makes the GitHub release only.
+    if: startsWith(github.ref, 'refs/tags/') && github.repository == 'cloakedkeys/OF-Scraper-Community'
     # A PyPI version can't be replaced once uploaded, so publish last: only
     # after the packages passed their checks and the GitHub release exists.
     needs: [build_pypi_dist, publish_release]
