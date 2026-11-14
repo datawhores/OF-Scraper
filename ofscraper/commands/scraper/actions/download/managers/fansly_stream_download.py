@@ -2,17 +2,27 @@
 
 Used only for Fansly items whose best delivery is a stream (see
 ``ofscraper.sites.fansly.video.uses_stream``); the direct MP4 still goes
-through the normal downloader. ffmpeg copies the stream into one MP4 without
-re-encoding. The finishing steps (move, collision handling, file time,
-database, hash, after-download script) are the same as the normal downloader's.
+through the normal downloader. An HLS stream's segments are fetched several
+at a time into a folder next to the .part, then ffmpeg joins them into one MP4
+without re-encoding (#292). Common static DASH streams use the same resumable
+fetcher; unsupported playlists are copied by ffmpeg on its own.
+The finishing steps (move, collision handling, file time, database, hash,
+after-download script) are the same as the normal downloader's.
 """
 
 import asyncio
 import contextlib
+import ctypes
+import json
+import os
 import pathlib
+import shutil
 import subprocess
 import threading
 from functools import partial
+from urllib.parse import urlsplit, urlunsplit
+
+from humanfriendly import format_size
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
@@ -20,6 +30,7 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.utils.dates as dates
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
@@ -32,7 +43,11 @@ from ofscraper.sites.fansly import video as fansly_video
 from ofscraper.utils.cache.profile import set_profile_cache
 from ofscraper.utils.system.ffmpeg import get_ffmpeg, get_ffprobe
 from ofscraper.utils.system.ffprobe import get_media_duration, verify_media_integrity
-from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_timeout
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_size,
+    get_chunk_timeout,
+)
+from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
 
 # Backstop for the whole ffmpeg run, in seconds: at least the floor, or this
 # many seconds per second of video. A connection that stops sending is caught
@@ -53,6 +68,92 @@ class StreamTimeout(Exception):
     pass
 
 
+class SegmentError(Exception):
+    """A stream file that couldn't be fetched; the whole download fails."""
+
+
+def segment_limit() -> int:
+    """Files of one HLS stream fetched at once; 0 leaves it all to ffmpeg."""
+    try:
+        return max(0, int(of_env.getattr("FANSLY_STREAM_SEGMENTS")))
+    except (TypeError, ValueError):
+        return 0
+
+
+async def _off_loop(fn, *args):
+    """``fn(*args)`` in the default thread pool. A cancel waits for the call
+    to finish before it goes on, so a file is never closed under a write."""
+    job = asyncio.get_running_loop().run_in_executor(None, fn, *args)
+    try:
+        return await asyncio.shield(job)
+    except asyncio.CancelledError:
+        await asyncio.wait([job])
+        raise
+
+
+def _free_space(path) -> int:
+    return shutil.disk_usage(path).free
+
+
+# room kept free on top of the stream's size when joining it
+JOIN_SPACE_MARGIN = 64 * 1024 * 1024
+
+
+class NotEnoughSpace(Exception):
+    pass
+
+
+def segment_folder(temp) -> pathlib.Path:
+    """The folder next to the .part that holds a stream's files until they're joined."""
+    temp = pathlib.Path(temp)
+    return temp.with_name("." + temp.name + ".segments")
+
+
+def _hide_folder(folder):
+    if os.name != "nt":
+        return
+    try:
+        kernel32 = ctypes.windll.kernel32
+        attributes = kernel32.GetFileAttributesW(str(folder))
+        if attributes == -1 or not kernel32.SetFileAttributesW(str(folder), attributes | 2):
+            raise ctypes.WinError()
+    except Exception as e:
+        common_globals.log.debug(f"Could not hide stream segments folder: {type(e).__name__}")
+
+
+def _prepare_segments(folder, playlists):
+    # Keep playlist boundaries, local names and timing as well as unsigned URLs.
+    manifest = [
+        {"text": p.text, "files": [
+            [urlunsplit(urlsplit(url)._replace(query="", fragment="")), name]
+            for url, name in p.files
+        ]} if p else None
+        for p in playlists
+    ]
+    saved = None
+    try:
+        saved = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    if not settings.get_settings().auto_resume or saved != manifest:
+        if folder.exists():
+            shutil.rmtree(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    _hide_folder(folder)
+    for path in folder.glob("*.tmp"):
+        path.unlink()
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def _concat_track(folder, pieces, name):
+    path = folder / (name + ".tmp")
+    with path.open("wb") as out:
+        for piece in pieces:
+            with (folder / piece).open("rb") as source:
+                shutil.copyfileobj(source, out)
+    path.replace(folder / name)
+
+
 class _Ffmpeg:
     """The ffmpeg process of one download, so a cancelled download can stop it."""
 
@@ -61,12 +162,13 @@ class _Ffmpeg:
         self.proc = None
         self.stopped = False
 
-    def start(self, cmd):
+    def start(self, cmd, cwd=None):
         with self.lock:
             if self.stopped:
                 raise StreamTimeout("download cancelled before ffmpeg started")
             self.proc = subprocess.Popen(
                 cmd,
+                cwd=cwd,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
@@ -80,9 +182,9 @@ class _Ffmpeg:
                 self.proc.kill()
 
 
-def _run_process(proc, cmd, timeout):
+def _run_process(proc, cmd, timeout, cwd=None):
     """Run ffmpeg to the end, or kill it after ``timeout`` seconds."""
-    p = proc.start(cmd)
+    p = proc.start(cmd, cwd=cwd)
     try:
         _, stderr = p.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -125,6 +227,12 @@ class FanslyStreamDownloadManager(DownloadManager):
             f"{medialog} Downloading with the Fansly stream downloader: "
             f"{best.kind} {best.width}x{best.height}"
         )
+        tempholderObj = await placeholder.tempFilePlaceholder(
+            ele, f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
+        ).init()
+        temp = pathlib.Path(tempholderObj.tempfilepath)
+        if not settings.get_settings().auto_resume:
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
         self._downloadspace()
 
         try:
@@ -134,28 +242,27 @@ class FanslyStreamDownloadManager(DownloadManager):
                 # None: run.py downloads the direct file instead (ele.url
                 # is the stream itself when there is no direct file)
                 common_globals.log.info(f"{medialog} {e}; downloading the direct file instead")
+                shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return None
             if isinstance(e, fansly_video.ProtectedStream):
                 common_globals.log.info(f"{medialog} protected, not downloaded")
+                shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return "forced_skipped", 0
             if isinstance(e, fansly_video.MissingAudio):
                 # fail rather than save a silent video that is never fetched again
                 raise
             common_globals.log.warning(f"{medialog} {e}")
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return "skipped", 0
 
         placeholderObj = await placeholder.Placeholders(ele, "mp4").init()
         common_logs.path_to_file_logger(placeholderObj, ele)
-        tempholderObj = await placeholder.tempFilePlaceholder(
-            ele, f"{ele.filename or ele.id}_{ele.id}_{ele.post_id}.part"
-        ).init()
-        temp = pathlib.Path(tempholderObj.tempfilepath)
         temp.unlink(missing_ok=True)
 
         # BaseException: a cancelled run (Ctrl+C) also removes the .part
         try:
-            await self._run_ffmpeg(
-                url, temp, best.cookies, audio_url, stream_timeout(ele.duration)
+            await self._copy_stream(
+                c, best, url, audio_url, temp, stream_timeout(ele.duration), medialog
             )
             await self._check_complete(temp, ele)
             total = temp.stat().st_size
@@ -176,6 +283,181 @@ class FanslyStreamDownloadManager(DownloadManager):
         except BaseException:
             temp.unlink(missing_ok=True)
             raise
+
+    async def _copy_stream(self, c, best, url, audio_url, temp, timeout, medialog):
+        """Copy resumable files and join locally, or leave unusual streams to ffmpeg."""
+        playlists = None
+        if best.kind == fansly_video.HLS and segment_limit() > 0:
+            playlists = await self._local_playlists(c, url, audio_url, best.cookies, medialog)
+        elif best.kind == fansly_video.DASH and segment_limit() > 0:
+            try:
+                playlists = fansly_video.local_dash(await self._fetch_text(c, url, best.cookies), url)
+            except fansly_video.UnexpectedPlaylist as e:
+                common_globals.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
+        if playlists is None:
+            # Rare live/LL/nested HLS, non-AES-128/session keys, and protected,
+            # live or multi-period DASH still need ffmpeg alone and cannot resume.
+            shutil.rmtree(segment_folder(temp), ignore_errors=True)
+            return await self._run_ffmpeg(url, temp, best.cookies, audio_url, timeout)
+        common_globals.log.debug(
+            f"{medialog} Fetching {sum(len(p.files) for p in playlists if p)} stream "
+            f"files, {segment_limit()} at a time"
+        )
+        await self._parallel_copy(c, playlists, temp, best.cookies, timeout)
+
+    async def _local_playlists(self, c, url, audio_url, cookies, medialog):
+        """(video, audio or None) LocalPlaylists, or None to leave it to ffmpeg.
+
+        A playlist that can't be fetched fails the file, as it would in ffmpeg."""
+        try:
+            shared = {}
+            video = fansly_video.local_playlist(
+                await self._fetch_text(c, url, cookies), url, "v", shared
+            )
+            audio = None
+            if audio_url:
+                audio = fansly_video.local_playlist(
+                    await self._fetch_text(c, audio_url, cookies), audio_url, "a", shared
+                )
+            return video, audio
+        except fansly_video.UnexpectedPlaylist as e:
+            common_globals.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
+            return None
+
+    async def _parallel_copy(self, c, playlists, temp, cookies, timeout):
+        """Fetch every file of the playlists into a folder next to ``temp``,
+        then join them with ffmpeg. Keep completed files if the copy fails."""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout  # one limit for the fetch and the join
+        folder = segment_folder(temp)
+        complete = False
+        try:
+            _prepare_segments(folder, playlists)
+            video, audio = playlists
+            jobs = video.files + (audio.files if audio else [])
+            try:
+                await asyncio.wait_for(
+                    self._fetch_segments(c, jobs, folder, cookies), timeout
+                )
+            except asyncio.TimeoutError:
+                raise StreamTimeout(
+                    f"the stream's segments took longer than {timeout:.0f}s and were stopped"
+                )
+            if isinstance(video, fansly_video.LocalDashTrack):
+                self._check_join_space(folder, temp, dash=True)
+            else:
+                self._check_join_space(folder, temp)
+            if isinstance(video, fansly_video.LocalDashTrack):
+                # Concatenate each fMP4 track off the event loop. These derived
+                # files are rebuilt on resume; only fetched pieces are reused.
+                for track, name in ((video, "video.mp4"), (audio, "audio.mp4")):
+                    if track:
+                        try:
+                            await asyncio.wait_for(
+                                _off_loop(_concat_track, folder, track.pieces, name),
+                                max(0.01, deadline - loop.time()),
+                            )
+                        except asyncio.TimeoutError:
+                            raise StreamTimeout("DASH track concatenation exceeded the stream time limit")
+                cmd = fansly_video.local_join_command(
+                    get_ffmpeg(), "video.mp4", pathlib.Path(temp).absolute(),
+                    "audio.mp4" if audio else None, dash=True,
+                )
+            else:
+                (folder / "video.m3u8").write_text(video.text, encoding="utf-8")
+                if audio:
+                    (folder / "audio.m3u8").write_text(audio.text, encoding="utf-8")
+                # Bare names avoid URL fragment interpretation of '#' in paths.
+                cmd = fansly_video.local_join_command(
+                    get_ffmpeg(), "video.m3u8", pathlib.Path(temp).absolute(),
+                    "audio.m3u8" if audio else None,
+                )
+            await self._run_cmd(
+                cmd, temp, max(1.0, deadline - loop.time()),
+                "join the stream's segments", cwd=folder,
+            )
+            complete = True
+        finally:
+            if isinstance(playlists[0], fansly_video.LocalDashTrack):
+                for name in ("video.mp4", "audio.mp4"):
+                    (folder / name).unlink(missing_ok=True)
+            if complete or not settings.get_settings().auto_resume:
+                shutil.rmtree(folder, ignore_errors=True)
+
+    def _check_join_space(self, folder, temp, dash=False):
+        """Fail with a clear message when the .part's drive can't hold the
+        joined copy (about the segments' size) next to the segments."""
+        size = sum(p.stat().st_size for p in folder.iterdir() if p.is_file())
+        need = size * (2 if dash else 1) + max(JOIN_SPACE_MARGIN, size // 20)
+        free = _free_space(pathlib.Path(temp).parent)
+        if free < need:
+            raise NotEnoughSpace(
+                f"not enough disk space to join the stream: needs about "
+                f"{format_size(need)}, {format_size(free)} free"
+            )
+
+    async def _fetch_segments(self, c, jobs, folder, cookies):
+        """Fetch (url, name) jobs into ``folder``, at most ``segment_limit()``
+        at once. The first file that fails all its retries stops the rest."""
+        pending = iter(jobs)
+
+        async def worker():
+            for url, name in pending:
+                if not (folder / name).is_file():
+                    await self._fetch_segment(c, url, folder / name, cookies)
+
+        workers = [
+            asyncio.ensure_future(worker())
+            for _ in range(min(segment_limit(), len(jobs)))
+        ]
+        try:
+            await asyncio.gather(*workers)
+        except BaseException:
+            # let every worker finish and close its file before cleanup
+            for w in workers:
+                w.cancel()
+            await asyncio.gather(*workers, return_exceptions=True)
+            raise
+
+    async def _fetch_segment(self, c, url, path, cookies):
+        """One file of the stream, with the download retries. Errors name the
+        file, never its URL (it may carry a signature)."""
+        try:
+            async for _ in download_retry():
+                with _:
+                    temp = path.with_name(path.name + ".tmp")
+                    await self._fetch_segment_once(c, url, temp, cookies)
+                    temp.replace(path)
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            raise
+        except Exception as e:
+            why = e if isinstance(e, SegmentError) else type(e).__name__
+            raise SegmentError(
+                f"stream file {path.name} failed after its retries: {why}"
+            ) from e
+
+    async def _fetch_segment_once(self, c, url, path, cookies):
+        # HEADERS only, as for the playlists (see _fetch_text)
+        async with c.requests_async(
+            url=url,
+            cookies=cookies or None,
+            actions=[HEADERS],
+            total_timeout=None,
+            read_timeout=get_chunk_timeout(),
+        ) as r:
+            if not r.ok:
+                raise SegmentError(f"status {r.status}")
+            expected = r.headers.get("content-length")
+            written = 0
+            # writes run in a thread, as aiofiles does for the normal
+            # downloader, but the file is closed here, only once no write is
+            # still running, so the folder can always be removed after a cancel
+            with open(path, "wb") as f:
+                async for chunk in r.iter_chunked(get_chunk_size()):
+                    await _off_loop(f.write, chunk)
+                    written += len(chunk)
+        if not written or (expected and int(expected) != written):
+            raise SegmentError(f"got {written} of {expected or 'some'} bytes")
 
     async def _stream_urls(self, c, best):
         """(video url, separate audio url or None) to give ffmpeg."""
@@ -247,10 +529,13 @@ class FanslyStreamDownloadManager(DownloadManager):
             audio_url=audio_url,
             rw_timeout=get_chunk_timeout(),
         )
+        await self._run_cmd(cmd, temp, timeout, "copy the stream")
+
+    async def _run_cmd(self, cmd, temp, timeout, what, cwd=None):
         # subprocess in a worker thread: the app may run a selector event
         # loop on Windows, which can't start asyncio subprocesses
         proc = _Ffmpeg()
-        job = common_globals.thread.submit(_run_process, proc, cmd, timeout)
+        job = common_globals.thread.submit(_run_process, proc, cmd, timeout, cwd)
         try:
             returncode, stderr = await asyncio.wrap_future(job)
         except BaseException:
@@ -261,7 +546,7 @@ class FanslyStreamDownloadManager(DownloadManager):
             raise
         if returncode != 0 or not temp.exists() or not temp.stat().st_size:
             err = (stderr or b"").decode("utf-8", "replace").strip()[-500:]
-            raise Exception(f"ffmpeg could not copy the stream: {err or 'no output'}")
+            raise Exception(f"ffmpeg could not {what}: {err or 'no output'}")
 
     async def _integrity_check(self, temp, ele):
         if not settings.get_settings().verify_all_integrity:
