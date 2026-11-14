@@ -153,6 +153,14 @@ def test_consecutive_empty_pages_stop(worker, endpoint_key, caplog):
 
 
 @pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
+def test_endless_empty_pages_cost_five_requests(worker, endpoint_key):
+    server = EmptyPageServer()
+
+    assert collect(worker, server) == []
+    assert server.offsets == [0, 10, 20, 30, 40]
+
+
+@pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
 def test_nonempty_page_resets_empty_page_count(worker, endpoint_key):
     max_empty_pages = subscriptions.MAX_EMPTY_PAGES
     server = EmptyPageServer(nonempty_pages=[max_empty_pages])

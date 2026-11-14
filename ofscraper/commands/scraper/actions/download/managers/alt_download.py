@@ -46,6 +46,10 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_link,
+)
+from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
 
 from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
@@ -57,93 +61,106 @@ class AltDownloadManager(DownloadManager):
         # Acquire semaphore at the very beginning of the process
         await common_globals.sem.acquire()
         try:
-            stop.started(ele)
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
-            )
-
-            sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} download url:  {common_logs.get_url_log(ele)}"
-            )
-
-            audio = await ele.mpd_audio
-            video = await ele.mpd_video
-            path_to_file_logger(sharedPlaceholderObj, ele)
-
-            # Only attempt to download tracks that actually exist. The size
-            # limits are for the whole video (#316): they're checked once the
-            # last track's size is known, on its size plus the audio's
-            mediatype = ele.mediatype
-            if audio:
-                audio = await self._alt_download_downloader(
-                    audio, c, ele, before=None if video else 0
-                )
-                stop.check()
-            if video and audio and audio["total"] == 0:
-                # skip_download_script skipped the audio track, which skips
-                # the whole video: the video track isn't downloaded (#343).
-                # Its part from an earlier run is removed with the audio's
-                placeholderObj = await placeholder.tempFilePlaceholder(
-                    ele, f"{video['name']}.part"
-                ).init()
-                video["path"] = placeholderObj.tempfilepath
-                video["total"] = 0
-            elif video:
-                video = await self._alt_download_downloader(
-                    video, c, ele, before=audio["total"] if audio else 0
-                )
-                stop.check()
-            if ele.mediatype != mediatype or any(
-                track and track["total"] == 0 for track in (audio, video)
-            ):
-                # a size limit changes the mediatype; skip_download_script
-                # skips a track without changing it, and leaves its total 0
-                # (#325). Either way the item is skipped and its tracks
-                # aren't kept: a DRM video is no use with a track missing.
-                # Nothing after this reads ele.mpd, which a new mediatype
-                # makes None
-                for track in (audio, video):
-                    if track:
-                        pathlib.Path(track["path"]).unlink(missing_ok=True)
-                if self._skipped_by_script(ele):
-                    # saved as done only when the script skips it for good
-                    return await self._script_skip_result(ele, username, model_id)
-                return "forced_skipped", 0
-
-            # Safely calculate total size
-            audio_size = audio["total"] if audio else 0
-            video_size = video["total"] if video else 0
-            ele.add_size(audio_size + video_size)
-
-            post_result = await self._media_item_post_process_alt(
-                audio, video, ele, username, model_id
-            )
-            if post_result:
-                return post_result
-
-            stop.check()
-            parts = [track["path"] for track in (audio, video) if track]
-            await self._media_item_keys_alt(c, audio, video, ele)
             try:
-                result = await self._handle_result_alt(
-                    sharedPlaceholderObj, ele, audio, video, username, model_id
-                )
-            except (Exception, asyncio.CancelledError) as exc:
-                # After decryption, only a requested stop keeps encrypted
-                # parts for Resume. Key failures above also keep the parts.
-                if not (
-                    isinstance(exc, asyncio.CancelledError)
-                    and stop.requested.is_set()
+                return await self._alt_download_item(c, ele, username, model_id)
+            except Exception as E:
+                # a signed manifest or segment answers 403 after an IP change;
+                # a newly fetched signature can fix it (#489)
+                if not is_signed_cdn_forbidden(E) or not await refresh_media_link(
+                    ele
                 ):
-                    for part in parts:
-                        part.unlink(missing_ok=True)
-                raise
-            for part in parts:
-                part.unlink(missing_ok=True)
-            return result
+                    raise
+            # once per item: finished tracks are kept, a partial one resumes
+            return await self._alt_download_item(c, ele, username, model_id)
         finally:
             common_globals.sem.release()
+
+    async def _alt_download_item(self, c, ele: Media, username, model_id):
+        stop.started(ele)
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
+        )
+
+        sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} download url:  {common_logs.get_url_log(ele)}"
+        )
+
+        audio = await ele.mpd_audio
+        video = await ele.mpd_video
+        path_to_file_logger(sharedPlaceholderObj, ele)
+
+        # Only attempt to download tracks that actually exist. The size
+        # limits are for the whole video (#316): they're checked once the
+        # last track's size is known, on its size plus the audio's
+        mediatype = ele.mediatype
+        if audio:
+            audio = await self._alt_download_downloader(
+                audio, c, ele, before=None if video else 0
+            )
+            stop.check()
+        if video and audio and audio["total"] == 0:
+            # skip_download_script skipped the audio track, which skips
+            # the whole video: the video track isn't downloaded (#343).
+            # Its part from an earlier run is removed with the audio's
+            placeholderObj = await placeholder.tempFilePlaceholder(
+                ele, f"{video['name']}.part"
+            ).init()
+            video["path"] = placeholderObj.tempfilepath
+            video["total"] = 0
+        elif video:
+            video = await self._alt_download_downloader(
+                video, c, ele, before=audio["total"] if audio else 0
+            )
+            stop.check()
+        if ele.mediatype != mediatype or any(
+            track and track["total"] == 0 for track in (audio, video)
+        ):
+            # a size limit changes the mediatype; skip_download_script
+            # skips a track without changing it, and leaves its total 0
+            # (#325). Either way the item is skipped and its tracks
+            # aren't kept: a DRM video is no use with a track missing.
+            # Nothing after this reads ele.mpd, which a new mediatype
+            # makes None
+            for track in (audio, video):
+                if track:
+                    pathlib.Path(track["path"]).unlink(missing_ok=True)
+            if self._skipped_by_script(ele):
+                # saved as done only when the script skips it for good
+                return await self._script_skip_result(ele, username, model_id)
+            return "forced_skipped", 0
+
+        # Safely calculate total size
+        audio_size = audio["total"] if audio else 0
+        video_size = video["total"] if video else 0
+        ele.add_size(audio_size + video_size)
+
+        post_result = await self._media_item_post_process_alt(
+            audio, video, ele, username, model_id
+        )
+        if post_result:
+            return post_result
+
+        stop.check()
+        parts = [track["path"] for track in (audio, video) if track]
+        await self._media_item_keys_alt(c, audio, video, ele)
+        try:
+            result = await self._handle_result_alt(
+                sharedPlaceholderObj, ele, audio, video, username, model_id
+            )
+        except (Exception, asyncio.CancelledError) as exc:
+            # After decryption, only a requested stop keeps encrypted
+            # parts for Resume. Key failures above also keep the parts.
+            if not (
+                isinstance(exc, asyncio.CancelledError)
+                and stop.requested.is_set()
+            ):
+                for part in parts:
+                    part.unlink(missing_ok=True)
+            raise
+        for part in parts:
+            part.unlink(missing_ok=True)
+        return result
 
     async def _alt_download_downloader(self, item, c, ele, before=0):
         """Download one track. before is the size of the tracks already

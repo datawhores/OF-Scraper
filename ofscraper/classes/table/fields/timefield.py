@@ -122,9 +122,9 @@ class TimeField(Container):
         if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):
             return True
         elif max_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value > min_val
+            return compare_value >= min_val
         elif min_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value < max_val
+            return compare_value <= max_val
         else:
             return compare_value.is_between(min_val, max_val, bounds="[]")
 

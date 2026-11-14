@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import re
+import shutil
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -49,6 +50,9 @@ def temp_cleanup():
         root = data.get_TempDir()
         if root is None:
             return
+        for folder in pathlib.Path(root).glob("**/.*.part.segments"):
+            if folder.is_dir():
+                shutil.rmtree(folder, ignore_errors=True)
         for file in filter(
             lambda x: x.is_file()
             and re.search(r"\.part$|^temp_", x.name) is not None,

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import logging
@@ -21,6 +22,21 @@ def _format_subprocess_output(text_output):
         text_output = text_output.decode("utf-8", errors="ignore")
     # Replace carriage returns with proper newlines so log files can read it
     return text_output.replace("\r", "\n").strip()
+
+
+# Text goes to and from the child as UTF-8. On Windows, Python 3.11-3.14
+# reads and prints in the ANSI code page unless told otherwise (3.15
+# defaults to UTF-8), so a user script written in Python garbled
+# non-English text (#480). Other programs ignore these variables.
+UTF8_ENV = {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+
+
+def _utf8_env(env):
+    """The child's environment with UTF-8 mode on, unless already set."""
+    env = dict(os.environ if env is None else env)
+    for key, value in UTF8_ENV.items():
+        env.setdefault(key, value)
+    return env
 
 
 def run(
@@ -62,6 +78,11 @@ def run(
         kwargs["stdout"] = stdout
         kwargs["stderr"] = stderr
     # -----------------------
+
+    if kwargs.get("text") or kwargs.get("universal_newlines"):
+        kwargs["env"] = _utf8_env(kwargs.get("env"))
+        # Without this, subprocess decodes in the ANSI code page on Windows.
+        kwargs.setdefault("encoding", "utf-8")
 
     try:
         t = subprocess.run(
@@ -201,8 +222,10 @@ async def async_run(
     if level is None:
         level = int(of_env.getattr("LOG_SUBPROCESS_LEVEL", "10"))
 
-    if text and isinstance(input, str):
-        input = input.encode("utf-8")
+    if text:
+        kwargs["env"] = _utf8_env(kwargs.get("env"))
+        if isinstance(input, str):
+            input = input.encode("utf-8")
 
     with contextlib.ExitStack() as files:
         tree = files.enter_context(ProcessTree())

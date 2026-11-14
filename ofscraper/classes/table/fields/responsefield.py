@@ -94,7 +94,7 @@ class ResponseField(SelectField):
             self.query_one(SelectionList).select(self._stories)
         elif val == "Highlights":
             self.query_one(SelectionList).select(self._highlights)
-        elif val == "Stream":
+        elif val == "Streams":
             self.query_one(SelectionList).select(self._streams)
         elif val == "Messages":
             self.query_one(SelectionList).select(self._messages)

@@ -70,6 +70,55 @@ def test_text_input_and_output():
     assert result.stderr == ""
 
 
+# A Python script started in text mode reads and prints UTF-8 on every
+# Python version and OS (#480). Checking the flag and encodings catches it on
+# Linux too, where the locale is already UTF-8 and the text alone survives.
+UTF8_PROBE = (
+    "import sys; "
+    "print(sys.flags.utf8_mode, sys.stdin.encoding, sys.stdout.encoding, "
+    "sys.stdin.read().upper())"
+)
+
+
+def test_text_mode_script_runs_in_utf8_mode():
+    result = asyncio.run(
+        async_run(
+            [sys.executable, "-c", UTF8_PROBE],
+            input="café 日本",
+            text=True,
+            level=0,
+        )
+    )
+    assert result.stdout.split() == ["1", "utf-8", "utf-8", "CAFÉ", "日本"]
+
+
+def test_sync_run_text_mode_script_runs_in_utf8_mode():
+    result = subprocess_module.run(
+        [sys.executable, "-c", UTF8_PROBE],
+        input="café 日本",
+        text=True,
+        level=0,
+    )
+    assert result.stdout.split() == ["1", "utf-8", "utf-8", "CAFÉ", "日本"]
+
+
+def test_caller_environment_wins(monkeypatch):
+    monkeypatch.setenv("PYTHONUTF8", "0")
+    script = "import os; print(os.environ['PYTHONUTF8'], os.environ['EXTRA'])"
+    env = {**os.environ, "EXTRA": "kept"}
+    result = asyncio.run(
+        async_run([sys.executable, "-c", script], env=env, text=True, level=0)
+    )
+    assert result.stdout.split() == ["0", "kept"]
+
+
+def test_bytes_mode_environment_unchanged(monkeypatch):
+    monkeypatch.delenv("PYTHONUTF8", raising=False)
+    script = "import os; print(os.environ.get('PYTHONUTF8'))"
+    result = asyncio.run(async_run([sys.executable, "-c", script], level=0))
+    assert result.stdout.strip() == b"None"
+
+
 @pytest.fixture
 def spawned(monkeypatch):
     """Record every process async_run starts."""

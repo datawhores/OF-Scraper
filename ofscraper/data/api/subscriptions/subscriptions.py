@@ -24,7 +24,7 @@ from ofscraper.utils.live.updater import userlist
 
 log = logging.getLogger("shared")
 console = Console()
-MAX_EMPTY_PAGES = 20
+MAX_EMPTY_PAGES = 5
 
 
 @run
