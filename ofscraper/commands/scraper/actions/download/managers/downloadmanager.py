@@ -11,16 +11,23 @@ r"""
 
 """
 
+import asyncio
 import pathlib
 import os
+from functools import partial
+
+import aiofiles
+import aiohttp
 from humanfriendly import format_size
 import psutil
 
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_updater
 from ofscraper.commands.scraper.actions.utils.progress.update import update_total
 import ofscraper.utils.settings as settings
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
+import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 import ofscraper.utils.system.free as system
 from ofscraper.db.operations_.media import (
@@ -34,6 +41,7 @@ from ofscraper.scripts.skip_download_script import (
 )
 from ofscraper.scripts.after_download_script import after_download_script
 from ofscraper.commands.scraper.actions.download.utils.retries import NoRetry
+from ofscraper.commands.scraper.actions.download.utils.chunk import get_chunk_size
 
 
 class StartOver(Exception):
@@ -67,6 +75,102 @@ class DownloadManager:
     async def _remove_download_job_task(self, task1, ele):
         if task1:
             progress_updater.download.remove_job_task(task1)
+
+    async def _write_reply_to_part(
+        self, res, ele, path, task, resume_size=0, on_first_chunk=None, on_chunk=None
+    ):
+        """Write the reply to the part at path and return the bytes written.
+        The part is opened on the first chunk: appended to when resuming,
+        else replaced from 0. Until then the part on disk is left as it was,
+        so a reply with no data doesn't cost it (#271). on_first_chunk runs
+        once the first chunk is written, on_chunk after every chunk. task is
+        the progress task, removed when the writing ends."""
+        fileobject = None
+        written = 0
+        try:
+            chunk_iter = res.iter_chunked(get_chunk_size())
+
+            while True:
+                try:
+                    chunk = await chunk_iter.__anext__()
+                    first = fileobject is None
+                    if first:
+                        fileobject = await aiofiles.open(
+                            path, "ab" if resume_size else "wb"
+                        ).__aenter__()
+                    await fileobject.write(chunk)
+                    written += len(chunk)
+                    if first and on_first_chunk:
+                        await on_first_chunk()
+                    if on_chunk:
+                        on_chunk()
+                except StopAsyncIteration:
+                    break
+
+        # Catch native aiohttp socket read timeouts
+        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
+            common_globals.log.info(
+                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
+            )
+            raise Exception("Chunk download timed out")
+        except Exception as E:
+            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
+            raise E
+        finally:
+            if fileobject:
+                try:
+                    await fileobject.close()
+                except Exception as E:
+                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
+                    raise E
+            try:
+                await self._remove_download_job_task(task, ele)
+            except Exception as E:
+                common_globals.log.debug(
+                    f"Error removing download job task for {ele}: {E}"
+                )
+                raise E
+        return written
+
+    async def _get_cached_reply(self, key):
+        """The reply data saved under key when its part was started."""
+        return await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread, partial(cache.get, key)
+        )
+
+    async def _set_cached_reply(self, key, data):
+        return await asyncio.get_event_loop().run_in_executor(
+            common_globals.thread, partial(cache.set, key, data)
+        )
+
+    def _reply_data(self, r, total, resume_size, saved_validator, medialog):
+        """The data saved for the part this reply writes. Its validator is
+        that of the reply that started the part: a resume keeps the saved
+        one."""
+        data = {
+            "content-total": total,
+            "content-type": r.headers.get("content-type"),
+            "validator": saved_validator if resume_size else self._validator(r),
+        }
+        common_globals.log.debug(f"{medialog} data from request {data}")
+        common_globals.log.debug(
+            f"{medialog} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+        )
+        return data
+
+    def _log_saved_reply(self, medialog, attempt, data):
+        """attempt is the "[attempt n/m]" log label."""
+        common_globals.log.debug(
+            f"{medialog} {attempt} using data for possible download resumption"
+        )
+        common_globals.log.debug(f"{medialog} Data from cache{data}")
+        common_globals.log.debug(
+            f"{medialog} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+        )
+
+    def _saved_total(self, data):
+        """The file size saved with the part, or None if none was saved."""
+        return int(data.get("content-total")) if data.get("content-total") else None
 
     async def _total_change_helper(self, new_total, **kwargs):
         if not self.total and not new_total:

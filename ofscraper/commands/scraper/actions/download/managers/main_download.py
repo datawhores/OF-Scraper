@@ -3,10 +3,7 @@ import pathlib
 import traceback
 from functools import partial
 
-import aiofiles
 import psutil
-from humanfriendly import format_size
-import aiohttp
 
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
@@ -15,7 +12,6 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 import ofscraper.utils.dates as dates
-import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 from ofscraper.utils.cache.profile import set_profile_cache
@@ -29,7 +25,6 @@ from ofscraper.commands.scraper.actions.download.utils.retries import (
     get_download_retries,
 )
 from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size,
     get_chunk_timeout,
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
@@ -210,19 +205,8 @@ class MainDownloadManager(DownloadManager):
                 self._check_same_file(
                     r, resume_size, tempholderObj.tempfilepath, validator
                 )
-                data = {
-                    "content-total": total,
-                    "content-type": r.headers.get("content-type"),
-                    # the validator of the reply that started the part: a
-                    # resume keeps the saved one
-                    "validator": validator if resume_size else self._validator(r),
-                }
-
-                common_globals.log.debug(
-                    f"{common_logs.get_medialog(ele)} data from request {data}"
-                )
-                common_globals.log.debug(
-                    f"{common_logs.get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+                data = self._reply_data(
+                    r, total, resume_size, validator, common_logs.get_medialog(ele)
                 )
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = content_type or common.get_unknown_content_type(ele)
@@ -299,59 +283,21 @@ class MainDownloadManager(DownloadManager):
         resume_size=0,
         on_first_chunk=None,
     ):
-        """Write the reply to the part and return the bytes written. The part
-        is opened on the first chunk: appended to when resuming, else
-        replaced from 0. Until then the part on disk is left as it was, so a
-        reply with no data doesn't cost it (#271). on_first_chunk runs once
-        the first chunk is written."""
+        """Write the reply to the part and return the bytes written (see
+        _write_reply_to_part). The progress task is labelled with the final
+        file name."""
         task1 = await self._add_download_job_task(
             ele, total=total, tempholderObj=tempholderObj, placeholderObj=placeholderObj
         )
-        fileobject = None
-        written = 0
-        try:
-            chunk_iter = res.iter_chunked(get_chunk_size())
-
-            while True:
-                try:
-                    chunk = await chunk_iter.__anext__()
-                    first = fileobject is None
-                    if first:
-                        fileobject = await aiofiles.open(
-                            tempholderObj.tempfilepath, "ab" if resume_size else "wb"
-                        ).__aenter__()
-                    await fileobject.write(chunk)
-                    written += len(chunk)
-                    if first and on_first_chunk:
-                        await on_first_chunk()
-                    send_chunk_msg(ele, total, tempholderObj)
-                except StopAsyncIteration:
-                    break
-
-        # Catch native aiohttp socket read timeouts
-        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
-            common_globals.log.info(
-                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
-            )
-            raise Exception("Chunk download timed out")
-        except Exception as E:
-            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
-            raise E
-        finally:
-            if fileobject:
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.debug(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E
-        return written
+        return await self._write_reply_to_part(
+            res,
+            ele,
+            tempholderObj.tempfilepath,
+            task1,
+            resume_size,
+            on_first_chunk,
+            lambda: send_chunk_msg(ele, total, tempholderObj),
+        )
 
     async def _handle_result_main(self, result, ele, username, model_id):
         stop.check()
@@ -422,19 +368,14 @@ class MainDownloadManager(DownloadManager):
 
         return ele.mediatype, total
 
+    def _cache_key(self, ele):
+        return f"{ele.id}_{ele.username}_headers"
+
     async def _get_data(self, ele):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.get, f"{ele.id}_{ele.username}_headers"),
-        )
-        return data
+        return await self._get_cached_reply(self._cache_key(ele))
 
     async def _set_data(self, ele, data):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.set, f"{ele.id}_{ele.username}_headers", data),
-        )
-        return data
+        return await self._set_cached_reply(self._cache_key(ele), data)
 
     async def _fresh_data_handler_main(self, ele, tempholderObj):
         common_globals.log.debug(
@@ -446,18 +387,14 @@ class MainDownloadManager(DownloadManager):
         )
 
     async def _resume_data_handler_main(self, data, ele, tempholderObj):
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
-        )
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} Data from cache{data}"
-        )
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+        self._log_saved_reply(
+            common_logs.get_medialog(ele),
+            f"[attempt {common_globals.attempt.get()}/{get_download_retries()}]",
+            data,
         )
 
         content_type = data.get("content-type").split("/")[-1]
-        total = int(data.get("content-total")) if data.get("content-total") else None
+        total = self._saved_total(data)
         resume_size = self._get_resume_size(tempholderObj)
         resume_size = self._resume_cleaner(
             resume_size, total, tempholderObj.tempfilepath

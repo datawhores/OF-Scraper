@@ -5,11 +5,8 @@ import traceback
 from functools import partial
 from urllib.parse import urlsplit, urlunsplit
 
-import aiofiles
 import arrow
 import psutil
-from humanfriendly import format_size
-import aiohttp
 
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
@@ -24,7 +21,10 @@ from ofscraper.commands.scraper.actions.utils.log import (
 )
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.cache.cache as cache
+
+# the reply cache is read and written by DownloadManager; kept here for code
+# and tests that reach it through this module
+import ofscraper.utils.cache.cache as cache  # noqa: F401
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.system.subprocess import async_run
@@ -40,7 +40,6 @@ from ofscraper.commands.scraper.actions.download.utils.retries import (
     get_download_retries,
 )
 from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size,
     get_chunk_timeout,
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
@@ -308,21 +307,8 @@ class AltDownloadManager(DownloadManager):
                         f"(content-type={content_type or 'unknown'}, url={url})"
                     )
 
-                data = {
-                    "content-total": total,
-                    "content-type": l.headers.get("content-type"),
-                    # the validator of the reply that started the part: a
-                    # resume keeps the saved one
-                    "validator": (
-                        item.get("validator") if resume_size else self._validator(l)
-                    ),
-                }
-
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} data from request {data}"
-                )
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
+                data = self._reply_data(
+                    l, total, resume_size, item.get("validator"), get_medialog(ele)
                 )
                 temp_file_logger(placeholderObj, ele)
                 if (
@@ -394,57 +380,19 @@ class AltDownloadManager(DownloadManager):
     async def _download_fileobject_writer_streamer(
         self, ele, total, res, placeholderObj, resume_size=0, on_first_chunk=None
     ):
-        """Write the reply to the part and return the bytes written. The part
-        is opened on the first chunk: appended to when resuming, else
-        replaced from 0. Until then the part on disk is left as it was, so a
-        reply with no data doesn't cost it (#271). on_first_chunk runs once
-        the first chunk is written."""
+        """Write the reply to the track's part and return the bytes written
+        (see _write_reply_to_part). The progress task is labelled with the
+        part's name."""
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None
-        written = 0
-        try:
-            chunk_iter = res.iter_chunked(get_chunk_size())
-
-            while True:
-                try:
-                    chunk = await chunk_iter.__anext__()
-                    first = fileobject is None
-                    if first:
-                        fileobject = await aiofiles.open(
-                            placeholderObj.tempfilepath, "ab" if resume_size else "wb"
-                        ).__aenter__()
-                    await fileobject.write(chunk)
-                    written += len(chunk)
-                    if first and on_first_chunk:
-                        await on_first_chunk()
-                    send_chunk_msg(ele, total, placeholderObj)
-                except StopAsyncIteration:
-                    break  # Exit loop when no more chunks
-
-        # Catch native aiohttp socket read timeouts
-        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
-            common_globals.log.info(
-                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
-            )
-            raise Exception("Chunk download timed out")
-        except Exception as E:
-            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
-            raise E
-        finally:
-            if fileobject:
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.debug(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E
-        return written
+        return await self._write_reply_to_part(
+            res,
+            ele,
+            placeholderObj.tempfilepath,
+            task1,
+            resume_size,
+            on_first_chunk,
+            lambda: send_chunk_msg(ele, total, placeholderObj),
+        )
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
@@ -556,14 +504,13 @@ class AltDownloadManager(DownloadManager):
         return ele.mediatype, video_total + audio_total
 
     async def _resume_data_handler_alt(self, data, item, ele, placeholderObj):
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+        # logs the video's attempt counter for the audio track too, as before
+        self._log_saved_reply(
+            get_medialog(ele),
+            f"[attempt {common_globals.attempt.get()}/{get_download_retries()}]",
+            data,
         )
-        common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
-        )
-        total = int(data.get("content-total")) if data.get("content-total") else None
+        total = self._saved_total(data)
         item["total"] = total
         item["validator"] = data.get("validator")
         resume_size = self._get_resume_size(placeholderObj)
@@ -577,14 +524,8 @@ class AltDownloadManager(DownloadManager):
 
         if total is None or int(total) <= 0:
             try:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.thread,
-                    partial(
-                        cache.set,
-                        f"{item['name']}_{ele.id}_{ele.username}_headers",
-                        None,
-                    ),
-                )
+                # not through _set_data: clearing is best effort
+                await self._set_cached_reply(self._cache_key(ele, item), None)
             except Exception:
                 pass
             return item, False
@@ -622,19 +563,14 @@ class AltDownloadManager(DownloadManager):
         if item["type"] == "audio":
             return common_globals.attempt2
 
+    def _cache_key(self, ele, item):
+        return f"{item['name']}_{ele.id}_{ele.username}_headers"
+
     async def _get_data(self, ele, item):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.get, f"{item['name']}_{ele.id}_{ele.username}_headers"),
-        )
-        return data
+        return await self._get_cached_reply(self._cache_key(ele, item))
 
     async def _set_data(self, ele, item, data):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.set, f"{item['name']}_{ele.id}_{ele.username}_headers", data),
-        )
-        return data
+        return await self._set_cached_reply(self._cache_key(ele, item), data)
 
     def _get_item_total(self, item):
         return item["path"].absolute().stat().st_size
