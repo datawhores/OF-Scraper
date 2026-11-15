@@ -229,8 +229,14 @@ class SessionSleep:
 
     def toomany_req(self):
         log = logging.getLogger("shared")
-        if not self._sleep:
-            self._sleep = self._init_sleep if self._init_sleep > 0 else 1
+        # A sleep at the minimum gap is pacing, not backoff: "not self._sleep"
+        # alone never fired when the gap is above 0
+        if not self._sleep or self._sleep <= self._min_sleep:
+            start = self._init_sleep if self._init_sleep > 0 else 1
+            # backoff mode needs a sleep above the gap
+            if start <= self._min_sleep:
+                start = self._min_sleep * self._increase_factor
+            self._sleep = min(start, self._max_sleep)
             log.debug(
                 f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error"
             )
