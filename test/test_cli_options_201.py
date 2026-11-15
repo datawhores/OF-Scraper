@@ -76,6 +76,7 @@ def test_table_time_field_accepts_decimal_seconds():
     field = object.__new__(TimeField)
     field.query_one = lambda *a: SimpleNamespace(query=lambda *a: inputs)
     field.update_table_max(5400.0)
-    assert [i.value for i in inputs] == ["1", "30", "0"]
+    # a zero part is left empty so the box shows its placeholder
+    assert [i.value for i in inputs] == ["1", "30", ""]
     field.update_table_min(90.7)
-    assert [i.value for i in inputs] == ["0", "1", "30"]
+    assert [i.value for i in inputs] == ["", "1", "30"]
