@@ -871,7 +871,7 @@ def _refused(url):
 
 @pytest.mark.parametrize("refreshed", [True, False])
 def test_a_refused_playlist_is_fetched_again_with_new_links(env, monkeypatch, refreshed):
-    # Fansly sometimes signs the links for another address (#536)
+    # Fansly sometimes signs the links for another address (#683)
     raw = raw_media()
     old_url = variant(raw["media"], video.HLS_MIME)["locations"][0]["location"]
     new_url = old_url.replace(".m3u8", "-new.m3u8")

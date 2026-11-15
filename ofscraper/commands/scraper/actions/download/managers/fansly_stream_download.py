@@ -245,7 +245,7 @@ class FanslyStreamDownloadManager(DownloadManager):
             try:
                 url, audio_url = await self._stream_urls(c, best)
             except fansly_video.StreamError as e:
-                # Fansly sometimes signs the links for another address (#536):
+                # Fansly sometimes signs the links for another address (#683):
                 # ask for them again, once, before giving up on the stream
                 if not is_provided_exception_number(e.__cause__, 403):
                     raise

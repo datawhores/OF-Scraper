@@ -1,4 +1,4 @@
-"""Fansly: a signed link the CDN rejects (403) is fetched again (#536).
+"""Fansly: a signed link the CDN rejects (403) is fetched again (#683).
 
 Fansly sometimes gives out a link signed for another address. Its CDN refuses
 that link until Fansly signs a new one, and Fansly may return the same link

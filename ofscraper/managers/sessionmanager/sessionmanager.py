@@ -65,7 +65,7 @@ def is_signed_cdn_forbidden(exception: Exception) -> bool:
         # Use the actual request URL, including separately supplied params. Do not
         # classify API 403s or depend on CloudFront's optional error body/headers.
         # Fansly's CDN links are signed the same way, and Fansly sometimes
-        # gives out one signed for another address (#536)
+        # gives out one signed for another address (#683)
         return (
             host.endswith((".onlyfans.com", ".fansly.com"))
             and host.split(".")[0].startswith("cdn")

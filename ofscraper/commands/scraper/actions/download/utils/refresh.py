@@ -176,7 +176,7 @@ async def _refresh_fansly(ele) -> bool:
 
     Fansly keeps a signed link for a while and gives the same one to every
     request for that media, sometimes one signed for another address, which
-    its CDN refuses (#536). So this asks a few times, until a link changes.
+    its CDN refuses (#683). So this asks a few times, until a link changes.
     """
     details = ele.media.get("fansly") or {}
     old = details.get("media") or {}
