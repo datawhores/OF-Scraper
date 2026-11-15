@@ -14,6 +14,6 @@
   "ofscraper/data/api/tasks.py:BLE001": 1,
   "ofscraper/data/api/timeline.py:BLE001": 2,
   "ofscraper/db/merge.py:BLE001": 1,
-  "ofscraper/db/operations_/wrapper.py:BLE001": 2,
-  "ofscraper/db/operations_/wrapper.py:S110": 2
+  "ofscraper/db/operations_/wrapper.py:BLE001": 1,
+  "ofscraper/db/operations_/wrapper.py:S110": 1
 }

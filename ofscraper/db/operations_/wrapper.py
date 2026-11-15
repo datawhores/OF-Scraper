@@ -82,59 +82,91 @@ def _connect(database_path, read_only, **kwargs):
     return sqlite3.connect(database_path, **kwargs)
 
 
+def _retry(work):
+    """Retry `work` on an OperationalError (busy or locked), as both
+    wrappers do; _final_error turns the ones a retry can't fix into
+    other errors."""
+    return tenacity.retry(
+        retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
+        wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
+        stop=tenacity.stop_after_attempt(5),
+        reraise=True,
+    )(work)
+
+
+def _run_operation(
+    func, args, kwargs, *, read_only, db_timeout, check_same_thread, log_failure
+):
+    """One try of a database operation: open the database, configure it,
+    begin a transaction, call func(*args, **kwargs, conn=conn) and close
+    the connection. The wrapper doesn't commit: func commits what it keeps,
+    and closing rolls back the rest.
+
+    log_failure(error, failure) is called for an error before it's raised;
+    failure is what is raised (see _final_error), `from error` if it differs.
+    """
+    conn = None
+    database_path = None
+    try:
+        database_path = _database_path(kwargs, read_only)
+        conn = _connect(
+            database_path,
+            read_only,
+            check_same_thread=check_same_thread,
+            timeout=db_timeout,
+        )
+
+        # 1. Set the PRAGMAs FIRST (configure the engine)
+        if not read_only:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+        # The RAM-safe speed boosters
+        conn.execute("PRAGMA mmap_size=268435456;")
+        conn.execute("PRAGMA cache_size=-32768;")
+        conn.row_factory = sqlite3.Row
+
+        # 2. THEN grab the write lock (a read takes a read lock)
+        conn.execute("BEGIN;" if read_only else "BEGIN IMMEDIATE;")
+
+        # 3. Execute the database logic
+        return func(*args, **kwargs, conn=conn)
+    except Exception as E:
+        failure = _final_error(E, read_only, database_path)
+        log_failure(E, failure)
+        if failure is not E:
+            raise failure from E
+        raise
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def _log_async_failure(error, failure):
+    log.debug(f"Database operation failed: {error}")
+
+
 def operation_wrapper_async(func: abc.Callable):
     async def inner(*args, **kwargs):
         loop = asyncio.get_event_loop()
         db_timeout = of_env.getattr("DATABASE_TIMEOUT")
         read_only = kwargs.get("read_only", False)
 
-        # Wrap the inner DB work with Tenacity to handle async/thread collisions gracefully
-        @tenacity.retry(
-            retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
-            wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
-            stop=tenacity.stop_after_attempt(5),
-            reraise=True,
-        )
+        # Retried inside the pool's thread, so a retry doesn't requeue
+        @_retry
         def _db_work():
-            conn = None
-            database_path = None
-            try:
-                database_path = _database_path(kwargs, read_only)
-
-                conn = _connect(
-                    database_path,
-                    read_only,
-                    check_same_thread=False,
-                    timeout=db_timeout,
-                )
-
-                # 1. Set the PRAGMAs FIRST (Configure the engine)
-                if not read_only:
-                    conn.execute("PRAGMA journal_mode=WAL;")
-                    conn.execute("PRAGMA synchronous=NORMAL;")
-                conn.execute("PRAGMA mmap_size=268435456;")
-                conn.execute("PRAGMA cache_size=-32768;")
-                conn.row_factory = sqlite3.Row
-
-                # 2. THEN grab the write lock (a read takes a read lock)
-                conn.execute("BEGIN;" if read_only else "BEGIN IMMEDIATE;")
-
-                # 3. Execute the database logic
-                result = func(*args, **kwargs, conn=conn)
-                return result
-
-            except Exception as E:
-                log.debug(f"Database operation failed: {E}")
-                failure = _final_error(E, read_only, database_path)
-                if failure is not E:
-                    raise failure from E
-                raise E
-            finally:
-                if conn:
-                    try:
-                        conn.close()
-                    except Exception:
-                        pass
+            return _run_operation(
+                func,
+                args,
+                kwargs,
+                read_only=read_only,
+                db_timeout=db_timeout,
+                # the connection is opened on the pool's thread
+                check_same_thread=False,
+                log_failure=_log_async_failure,
+            )
 
         # Submit the safe retry block to the single-worker pool
         return await loop.run_in_executor(_DB_POOL, _db_work)
@@ -143,57 +175,23 @@ def operation_wrapper_async(func: abc.Callable):
 
 
 def operation_wrapper(func: abc.Callable):
-    # Apply Tenacity retry directly to the inner sync function
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(sqlite3.OperationalError),
-        wait=tenacity.wait_random_exponential(multiplier=0.5, max=10),
-        stop=tenacity.stop_after_attempt(5),
-        reraise=True,
-    )
+    @_retry
     def inner(*args, **kwargs):
-        conn = None
-        database_path = None
         db_timeout = of_env.getattr("DATABASE_TIMEOUT")
-        read_only = kwargs.get("read_only", False)
-        try:
-            database_path = _database_path(kwargs, read_only)
 
-            # Apply the user-configurable timeout for synchronous calls
-            conn = _connect(
-                database_path,
-                read_only,
-                check_same_thread=True,
-                timeout=db_timeout,
-            )
+        def log_failure(error, failure):
+            # a busy or locked database, which is retried
+            if isinstance(error, sqlite3.OperationalError) and failure is error:
+                log.info(f"Database is busy. Current timeout is {db_timeout}s.")
 
-            # 1. Set the PRAGMAs FIRST
-            if not read_only:
-                conn.execute("PRAGMA journal_mode=WAL;")
-                conn.execute("PRAGMA synchronous=NORMAL;")
-
-            # The RAM-Safe Speed Boosters
-            conn.execute("PRAGMA mmap_size=268435456;")
-            conn.execute("PRAGMA cache_size=-32768;")
-
-            conn.row_factory = sqlite3.Row
-
-            conn.execute("BEGIN;" if read_only else "BEGIN IMMEDIATE;")
-
-            return func(*args, **kwargs, conn=conn)
-
-        except sqlite3.OperationalError as E:
-            failure = _final_error(E, read_only, database_path)
-            if failure is not E:
-                raise failure from E
-            log.info(f"Database is busy. Current timeout is {db_timeout}s.")
-            raise E
-        except Exception as E:
-            raise _final_error(E, read_only, database_path)
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except:
-                    pass
+        return _run_operation(
+            func,
+            args,
+            kwargs,
+            read_only=kwargs.get("read_only", False),
+            db_timeout=db_timeout,
+            check_same_thread=True,
+            log_failure=log_failure,
+        )
 
     return inner
