@@ -20,9 +20,7 @@ from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
 # a scan doesn't learn file sizes; the download request does
 SIZE_LIMIT_NOTE = (
     "Size limits apply when files download, not to the table: a scan doesn't"
-    " know file sizes, so no rows are hidden. Each file sent to download is"
-    " checked as it starts; one outside the limits isn't downloaded and its"
-    " row shows [skipped]."
+    " know file sizes, so no rows are hidden."
 )
 
 

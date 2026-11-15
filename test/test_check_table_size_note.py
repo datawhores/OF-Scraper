@@ -2,8 +2,8 @@
 
 A scan doesn't know file sizes (the download request reports them), so
 setting a min or max changes nothing in the table, and that looked like
-the limits weren't working. A note under the boxes says they're checked
-as each file downloads and that a file outside them shows [skipped].
+the limits weren't working. A note under the boxes says they apply when
+files download.
 """
 
 import asyncio
@@ -68,8 +68,7 @@ def test_note_says_when_the_limits_apply(width):
             text = " ".join(str(note.render()).split())
             assert "apply when files download" in text
             assert "a scan doesn't know file sizes" in text
-            # the literal cell text, not swallowed as a style tag
-            assert "row shows [skipped]" in text
+            assert "[skipped]" not in text
 
             # shown in full under both boxes, inside the sidebar
             assert note.display and note.region.height >= 2
