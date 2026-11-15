@@ -4,7 +4,7 @@ operation_wrapper (sync) and operation_wrapper_async share one connect,
 PRAGMA, BEGIN and close sequence. These tests pin what each does: the
 connection's settings, that the wrapped function commits (the wrapper
 doesn't), what happens on an error, a locked database or a supplied conn,
-and that the connection is always closed.
+which errors are retried, and that the connection is always closed.
 """
 
 import asyncio
@@ -176,32 +176,185 @@ def test_error_rolls_back_and_is_not_retried(tmp_path, wrap, opened, no_wait):
     assert no_wait == []
 
 
-def test_sql_error_in_function_is_retried(tmp_path, wrap, opened, no_wait):
-    # any OperationalError is retried, even a mistake in the SQL itself
+@pytest.mark.parametrize(
+    "sql,read_only,match",
+    [
+        ("SELECT FROM nowhere", False, "syntax error"),
+        ("SELECT x FROM nowhere", False, "no such table"),
+        ("SELECT missing FROM t", False, "no such column"),
+        ("INSERT INTO t VALUES (2)", True, "readonly database"),
+    ],
+    ids=["syntax", "no-table", "no-column", "read-only"],
+)
+def test_sql_error_in_function_is_not_retried(
+    tmp_path, wrap, opened, no_wait, sql, read_only, match
+):
+    # a mistake in the function's own SQL, or a write to a read-only
+    # database: a retry can't fix it, so it's raised after one try
     path = tmp_path / "user_data.db"
     make_db(path)
 
     def func(conn=None, **kwargs):
-        conn.execute("SELECT FROM nowhere")
+        conn.execute(sql)
 
-    with pytest.raises(sqlite3.OperationalError, match="syntax error") as raised:
-        wrap(func)(db_path=path)
+    with pytest.raises(sqlite3.OperationalError, match=match) as raised:
+        wrap(func)(db_path=path, read_only=read_only)
     assert raised.value.database_path == path.resolve()
-    assert len(opened) == 5
+    assert len(opened) == 1
+    assert is_closed(opened[0])
+    assert no_wait == []
+
+
+def operational_error(message, code=None):
+    error = sqlite3.OperationalError(message)
+    if code is not None:
+        error.sqlite_errorcode = code
+    return error
+
+
+@pytest.mark.parametrize(
+    "error,retried",
+    [
+        # what SQLite raises: decided by the code, extended codes included
+        (operational_error("database is locked", sqlite3.SQLITE_BUSY), True),
+        (operational_error("x", sqlite3.SQLITE_BUSY_SNAPSHOT), True),
+        (operational_error("x", sqlite3.SQLITE_BUSY_RECOVERY), True),
+        (operational_error("database table is locked", sqlite3.SQLITE_LOCKED), True),
+        (operational_error("x", sqlite3.SQLITE_LOCKED_SHAREDCACHE), True),
+        (operational_error("locking protocol", sqlite3.SQLITE_PROTOCOL), True),
+        (operational_error("disk I/O error", sqlite3.SQLITE_IOERR), True),
+        (operational_error("x", sqlite3.SQLITE_IOERR_SHMLOCK), True),
+        (operational_error("database schema has changed", sqlite3.SQLITE_SCHEMA), True),
+        (operational_error("syntax error", sqlite3.SQLITE_ERROR), False),
+        (operational_error("database is locked", sqlite3.SQLITE_ERROR), False),
+        (
+            operational_error(
+                "attempt to write a readonly database", sqlite3.SQLITE_READONLY
+            ),
+            False,
+        ),
+        (operational_error("x", sqlite3.SQLITE_READONLY_RECOVERY), False),
+        (operational_error("database or disk is full", sqlite3.SQLITE_FULL), False),
+        (
+            operational_error("unable to open database file", sqlite3.SQLITE_CANTOPEN),
+            False,
+        ),
+        (operational_error("interrupted", sqlite3.SQLITE_INTERRUPT), False),
+        # an error raised by Python code has no code: decided by the message
+        (operational_error("database is locked"), True),
+        (operational_error("database table is locked"), True),
+        (operational_error("database schema is locked: main"), True),
+        (operational_error("disk I/O error"), True),
+        (operational_error("simulated write failure"), False),
+        (operational_error("no such table: t"), False),
+        # not an OperationalError
+        (sqlite3.DatabaseError("database is locked"), False),
+        (RuntimeError("database is locked"), False),
+    ],
+    ids=lambda value: str(value) if isinstance(value, bool) else None,
+)
+def test_retryable(error, retried):
+    assert wrapper._retryable(error) is retried
+
+
+@pytest.mark.parametrize(
+    "message,tries",
+    [("database is locked", 5), ("disk I/O error", 5), ("not retried", 1)],
+)
+def test_error_without_code_in_function(
+    tmp_path, wrap, opened, no_wait, message, tries
+):
+    path = tmp_path / "user_data.db"
+    make_db(path)
+
+    def func(conn=None, **kwargs):
+        raise sqlite3.OperationalError(message)
+
+    with pytest.raises(sqlite3.OperationalError, match=message):
+        wrap(func)(db_path=path)
+    assert len(opened) == tries
+    assert len(no_wait) == tries - 1
+
+
+def test_locked_database_is_retried_until_it_frees_up(
+    tmp_path, wrap, opened, monkeypatch
+):
+    path = tmp_path / "user_data.db"
+    make_db(path, wal=True)
+    real_getattr = wrapper.of_env.getattr
+    monkeypatch.setattr(
+        wrapper.of_env,
+        "getattr",
+        lambda key, *args, **kwargs: (
+            0.05 if key == "DATABASE_TIMEOUT" else real_getattr(key, *args, **kwargs)
+        ),
+    )
+    with contextlib.closing(sqlite3.connect(path, check_same_thread=False)) as holder:
+        holder.execute("BEGIN IMMEDIATE")
+        waits = []
+
+        def sleep(seconds):
+            # the lock is let go during the second wait
+            waits.append(seconds)
+            if len(waits) == 2:
+                holder.rollback()
+
+        monkeypatch.setattr(tenacity.nap.time, "sleep", sleep)
+        result = wrap(lambda conn=None, **kwargs: "result")(db_path=path)
+    assert result == "result"
+    assert len(opened) == 3
+    assert len(waits) == 2
     assert all(is_closed(conn) for conn in opened)
+
+
+def test_switch_to_wal_while_another_connection_reads_is_retried(
+    tmp_path, wrap, opened, no_wait, monkeypatch
+):
+    # a database still in rollback mode can't switch to WAL while another
+    # connection has it open in a transaction: that's busy, and retried
+    path = tmp_path / "user_data.db"
+    make_db(path)
+    real_getattr = wrapper.of_env.getattr
+    monkeypatch.setattr(
+        wrapper.of_env,
+        "getattr",
+        lambda key, *args, **kwargs: (
+            0.05 if key == "DATABASE_TIMEOUT" else real_getattr(key, *args, **kwargs)
+        ),
+    )
+    with contextlib.closing(sqlite3.connect(path, isolation_level=None)) as reader:
+        reader.execute("BEGIN")
+        reader.execute("SELECT x FROM t").fetchall()
+        with pytest.raises(sqlite3.OperationalError, match="locked") as raised:
+            wrap(lambda conn=None, **kwargs: None)(db_path=path)
+        reader.execute("ROLLBACK")
+    assert raised.value.sqlite_errorcode == sqlite3.SQLITE_BUSY
+    assert len(opened) == 5
     assert len(no_wait) == 4
 
 
-def test_supplied_conn_is_refused(tmp_path, wrap, opened, no_wait):
-    # the wrapper always opens its own connection; a caller's conn clashes
+@pytest.mark.parametrize("supplied", ["connection", "None"])
+def test_supplied_conn_is_refused(tmp_path, wrap, opened, no_wait, supplied):
+    # the wrapper supplies the connection; a caller's conn is refused
+    # before the wrapper opens one, and isn't retried or used
     path = tmp_path / "user_data.db"
     make_db(path)
+    called = []
+
+    def supplies_its_own(conn=None, **kwargs):
+        called.append(conn)
+
     with contextlib.closing(sqlite3.connect(path)) as own:
-        with pytest.raises(TypeError, match="multiple values for keyword"):
-            wrap(lambda conn=None, **kwargs: None)(db_path=path, conn=own)
+        conn = own if supplied == "connection" else None
+        with pytest.raises(TypeError) as raised:
+            wrap(supplies_its_own)(db_path=path, conn=conn)
         assert not is_closed(own)
-    assert len(opened) == 1
-    assert is_closed(opened[0])
+    assert str(raised.value) == (
+        "supplies_its_own() was passed conn=, but its database wrapper"
+        " opens and supplies the connection itself; call it without conn"
+    )
+    assert called == []
+    assert opened == []
     assert no_wait == []
 
 
@@ -228,16 +381,64 @@ def test_locked_database(tmp_path, wrap, opened, no_wait, monkeypatch, caplog):
     assert len(opened) == 5
     assert all(is_closed(conn) for conn in opened)
     assert len(no_wait) == 4
-    messages = [
+    # both wrappers log each try's failure, and that the database is busy
+    assert (
+        logged(caplog)
+        == [
+            (logging.DEBUG, "Database operation failed: database is locked"),
+            (logging.INFO, "Database is busy. Current timeout is 0.05s."),
+        ]
+        * 5
+    )
+
+
+def logged(caplog):
+    return [
         (record.levelno, record.getMessage())
         for record in caplog.records
         if record.name == "shared"
     ]
-    if wrap.kind == "sync":
-        expected = (logging.INFO, "Database is busy. Current timeout is 0.05s.")
-    else:
-        expected = (logging.DEBUG, "Database operation failed: database is locked")
-    assert messages == [expected] * 5
+
+
+@pytest.mark.parametrize(
+    "error,tries",
+    [
+        (sqlite3.OperationalError("no such table: elsewhere"), 1),
+        (sqlite3.OperationalError("disk I/O error"), 5),
+        (sqlite3.IntegrityError("UNIQUE constraint failed: t.x"), 1),
+        (ValueError("not a database error"), 1),
+    ],
+    ids=["sql", "retried", "integrity", "other"],
+)
+def test_failure_that_is_not_busy_is_logged_at_debug_only(
+    tmp_path, wrap, opened, no_wait, caplog, error, tries
+):
+    # the busy message is only for a busy or locked database; every
+    # failure is logged at debug, by both wrappers
+    path = tmp_path / "user_data.db"
+    make_db(path)
+
+    def func(conn=None, **kwargs):
+        raise error
+
+    with caplog.at_level(logging.DEBUG, logger="shared"):
+        with pytest.raises(type(error)):
+            wrap(func)(db_path=path)
+    assert (
+        logged(caplog)
+        == [(logging.DEBUG, f"Database operation failed: {error}")] * tries
+    )
+
+
+def test_converted_failure_logs_the_original_error(tmp_path, wrap, caplog):
+    path = tmp_path / "user_data.db"
+    path.mkdir()
+    with caplog.at_level(logging.DEBUG, logger="shared"):
+        with pytest.raises(wrapper.DatabaseUnreadable):
+            wrap(lambda conn=None, **kwargs: None)(db_path=path)
+    assert logged(caplog) == [
+        (logging.DEBUG, "Database operation failed: unable to open database file")
+    ]
 
 
 class CloseFails:
