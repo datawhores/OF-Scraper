@@ -280,12 +280,66 @@ def getFuzzySelection(*args, **kwargs):
         mandatory=False,
         **kwargs,
     )
+    fix_list_keys(prompt)
     return prompt
 
 
 @wrapper
 def checkbox(*args, **kwargs):
-    return inquirer.checkbox(*args, keybindings=keybindings.fuzzy, **kwargs)
+    prompt = inquirer.checkbox(*args, keybindings=keybindings.fuzzy, **kwargs)
+    fix_list_keys(prompt)
+    return prompt
+
+
+# the keys that move through or toggle the visible choices
+_CHOICE_ACTIONS = ("down", "up", "toggle", "toggle-down", "toggle-up")
+
+
+def fix_list_keys(prompt):
+    """Work around two InquirerPy 0.3.4 bugs in the fuzzy and checkbox prompts.
+
+    - "toggle-all-false" (Ctrl+D) inverted the choices: InquirerPy sets
+      ``value if value else not enabled``, and False counts as no value.
+    - A fuzzy filter that matches nothing leaves no visible choices, and Down
+      then divides by zero (Up and Tab fail the same way).
+
+    InquirerPy looks the actions up in ``kb_func_lookup`` on every key press,
+    so replacing them on the instance is enough.
+    """
+    lookup = prompt.kb_func_lookup
+    lookup["toggle-all-false"] = [{"func": lambda event: _set_all(prompt, False)}]
+    lookup["toggle-all-true"] = [{"func": lambda event: _set_all(prompt, True)}]
+    for action in _CHOICE_ACTIONS:
+        lookup[action] = [
+            {**method, "func": _skip_when_empty(prompt, method["func"])}
+            for method in lookup.get(action, [])
+        ]
+
+
+def _visible_choices(prompt):
+    control = prompt.content_control
+    filtered = getattr(control, "_filtered_choices", None)
+    if filtered is None:
+        return control.choices
+    return [control.choices[choice["index"]] for choice in filtered]
+
+
+def _set_all(prompt, value):
+    if getattr(prompt, "_multiselect", True) is False:
+        return
+    for choice in _visible_choices(prompt):
+        if not isinstance(choice["value"], Separator):
+            choice["enabled"] = value
+
+
+def _skip_when_empty(prompt, func):
+    @functools.wraps(func)
+    def inner(event, *args):
+        if prompt.content_control.choice_count == 0:
+            return
+        return func(event, *args)
+
+    return inner
 
 
 @wrapper
