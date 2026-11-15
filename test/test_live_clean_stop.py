@@ -211,7 +211,7 @@ def test_menu_interrupt_skips_scraping_after_recording(monkeypatch):
 
 @pytest.mark.parametrize("second", [False, True])
 def test_daemon_interrupt_stops_recordings_or_force_quits(monkeypatch, second):
-    from test.test_daemon_shutdown import _stub_daemon, InterruptWhenIdle
+    from test_daemon_shutdown import _stub_daemon, InterruptWhenIdle
 
     download_stop.clear()
     _stub_daemon(monkeypatch, InterruptWhenIdle(), lambda: None)

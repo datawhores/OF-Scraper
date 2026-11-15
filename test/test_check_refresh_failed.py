@@ -9,7 +9,7 @@ import pytest
 import ofscraper.commands.check as check
 from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.classes.of.media import Media
-from test.test_check_cart_batch import batch
+from test_check_cart_batch import batch
 
 # The shared batch fixture fakes the refresh; these tests need the real one.
 _real_refresh_failed_posts = check._refresh_failed_posts
