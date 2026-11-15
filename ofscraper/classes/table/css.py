@@ -176,8 +176,9 @@ Options = """
         row-span: 3;
     }
 
-    /* Horizontal is 1fr high, so each size field took half the sidebar */
-    #download_option_sidebar NumField {
+    /* a container is 1fr high by default, so each size field took half
+       the sidebar */
+    #download_option_sidebar SizeField {
         height: auto;
     }
 """
