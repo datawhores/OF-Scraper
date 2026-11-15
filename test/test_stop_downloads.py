@@ -208,7 +208,7 @@ def test_stop_button_empties_queue_and_preserves_cart(monkeypatch, stop_signal):
 
 
 def test_daemon_stop_ends_scheduler_and_marks_job_done(monkeypatch, stop_signal):
-    from test.test_daemon_shutdown import _stub_daemon
+    from test_daemon_shutdown import _stub_daemon
     jobs = queue.Queue()
     def runner():
         stop_signal.request()
@@ -229,7 +229,7 @@ def test_daemon_stop_ends_scheduler_and_marks_job_done(monkeypatch, stop_signal)
     "action_select_unique_all_filtered", "action_select_unique_current_page",
 ])
 def test_stopped_rows_can_be_readded(action):
-    from test.test_check_table_skipped import _FakeApp, _row
+    from test_check_table_skipped import _FakeApp, _row
     row = _row(0, 1)
     row["download_cart"] = "[stopped]"
     app = _FakeApp([row])
@@ -239,7 +239,7 @@ def test_stopped_rows_can_be_readded(action):
 
 @pytest.mark.parametrize("key", [True, False], ids=["binding", "button"])
 def test_stop_control_keeps_table_open(monkeypatch, stop_signal, key):
-    from test.test_check_table_sidebar_keys import _Settings, _drive
+    from test_check_table_sidebar_keys import _Settings, _drive
     import ofscraper.commands.check as check
     monkeypatch.setattr(table.settings, "get_settings", lambda: _Settings(db_sort="number", desc=False))
     monkeypatch.setattr(table.settings, "get_args", lambda: SimpleNamespace(text=False, text_only=False))
@@ -266,7 +266,7 @@ def test_stop_control_keeps_table_open(monkeypatch, stop_signal, key):
 
 
 def test_stopped_file_can_be_clicked_and_sent_again(monkeypatch, stop_signal):
-    from test.test_check_table_skipped import _FakeApp, _row, _click_cart_cell
+    from test_check_table_skipped import _FakeApp, _row, _click_cart_cell
     row = _row(0, 1)
     row["download_cart"] = "[stopped]"
     app = _FakeApp([row])

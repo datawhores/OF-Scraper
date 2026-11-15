@@ -11,7 +11,6 @@ r"""
 
 """
 
-import asyncio
 from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
@@ -20,6 +19,7 @@ import traceback
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
+from ofscraper.data.api.tasks import collect_pages
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
@@ -40,62 +40,15 @@ async def get_pinned_posts(model_id, c=None, post_id=None):
 
 
 async def process_tasks_batch(generators):
-    """
-    Fixed Orchestrator: Bridges Async Generators to the event loop
-    via a Producer-Consumer Queue.
-    """
-    responseArray = []
-    page_count = 0
-    seen = set()
-    queue = asyncio.Queue()
-
-    page_task = progress_utils.api.add_overall_task(
-        f"Pinned Content Pages Progress: {page_count}", visible=True
-    )
-
-    # The Producer: Feeds the queue batches from the generator
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    # Start producers concurrently
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    # The Consumer: Aggregates data in real-time
-    while active_workers > 0:
-        batch = await queue.get()
-
-        if batch is None:
-            active_workers -= 1
-            continue
-
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task,
-            description=f"Pinned Content Pages Progress: {page_count}",
+    def on_new(new_posts):
+        log.debug(
+            f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
         )
+        trace_progress_log(f"{API} task", new_posts)
 
-        if batch:
-            new_posts = [
-                post
-                for post in batch
-                if post.get("id") not in seen and not seen.add(post.get("id"))
-            ]
-            log.debug(
-                f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
-            )
-            trace_progress_log(f"{API} task", new_posts)
-            responseArray.extend(new_posts)
-
-    progress_utils.api.remove_overall_task(page_task)
-
+    responseArray = await collect_pages(
+        generators, "Pinned Content Pages Progress", on_new
+    )
     log.debug(
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
     )

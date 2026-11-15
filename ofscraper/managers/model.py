@@ -46,6 +46,9 @@ class ModelManager:
         self.state: "StateManager" = state_manager or StateManager()
         self._all_subs_dict: Dict[str, "Model"] = {}
         self._last_fetched: Optional[List["Model"]] = None
+        # creators ticked when Esc left the picker; they stand in for the last
+        # selection until a run queues one
+        self._ticked_on_cancel: List[str] = []
 
     @property
     def all_subs(self) -> List["Model"]:
@@ -99,9 +102,12 @@ class ModelManager:
             if self._all_subs_dict:
                 final_selection = self._select_models_scraper()
         else:
-            # INTERACTIVE MODE: Check if we have a leftover queue from a previous run
-            existing_queued_users = [x.name for x in self.get_scrape_selected_models()]
+            # INTERACTIVE MODE: Check if we have a leftover queue from a previous
+            # run, or creators ticked before Esc left the picker
+            existing_queued_users = [x.name for x in self._previous_selection()]
             requires_new_selection = True
+            # "Yes Update Selection" opens the picker with nothing checked
+            keep_previous = True
 
             if existing_queued_users:
                 prompt_choice = None
@@ -111,6 +117,7 @@ class ModelManager:
                         requires_new_selection = False
                     elif prompt_choice in {"Selection", "Selection_Strict"}:
                         settings.resetUserSelect()
+                        keep_previous = False
                         if prompt_choice == "Selection":
                             self._fetch_all_subs(force_refetch=True)
                     else:
@@ -119,14 +126,18 @@ class ModelManager:
 
             if requires_new_selection:
                 # Get a fresh selection. This leads down to the UI Menu.
-                final_selection = self._select_models_scraper()
+                final_selection = self._select_models_scraper(
+                    keep_previous=keep_previous
+                )
             else:
                 log.info(
-                    f"Re-using existing queue of {len(existing_queued_users)} models."
+                    f"Re-using the previous selection of {len(existing_queued_users)} models."
                 )
-                final_selection = list(self.get_models(existing_queued_users).values())
+                final_selection = self._previous_selection()
 
         # --- Step 3: Reset and Queue the Selection for All Specified Activities---
+        # the queue now holds the selection, so the ticked list isn't needed
+        self._ticked_on_cancel = []
         self.clear_scrape_queues()
         log.info(
             f"Final selection contains {len(final_selection)} models. Queuing for all activities."
@@ -229,7 +240,7 @@ class ModelManager:
     # 3. INTERACTIVE UI & FILTERING
     # =========================================================================
 
-    def _select_models_scraper(self) -> List["Model"]:
+    def _select_models_scraper(self, keep_previous: bool = True) -> List["Model"]:
         """
         SCRAPER-MODE ROUTER:
         Internal selection logic called exclusively by 'prepare_scraper_activity'
@@ -242,6 +253,10 @@ class ModelManager:
            via 'retriver.get_selected_model'.
 
         Note: This is NOT used by 'add_models' (Check modes), which injects targets directly.
+
+        ``keep_previous=False`` opens the picker without the previous run's
+        creators checked. The queue itself is only replaced once the new
+        selection is made.
         """
         usernames = settings.get_settings().usernames or []
         is_daemon = settings.get_settings().daemon
@@ -277,9 +292,33 @@ class ModelManager:
 
         # FINAL CASE: We must prompt for a selection.
         # This is where the interactive terminal UI menu is actually launched.
-        return retriver.get_selected_model(
-            list(filtered_models.values()), existing_selection
+        selected = retriver.get_selected_model(
+            list(filtered_models.values()),
+            self._previous_selection() if keep_previous else [],
+            on_cancel=self._remember_ticked,
         )
+        self._ticked_on_cancel = []
+        return selected
+
+    def _previous_selection(self) -> List["Model"]:
+        """What answering "No" to reselecting uses, and what the picker opens
+        with ticked: the creators ticked when Esc last left the picker, else
+        the last queued selection."""
+        if self._ticked_on_cancel:
+            models = self.get_models(self._ticked_on_cancel)
+            return [models[n] for n in self._ticked_on_cancel if n in models]
+        return list(self.get_scrape_selected_models())
+
+    def _remember_ticked(self, models) -> None:
+        """Esc left the picker: keep what was ticked, so it isn't lost. With
+        nothing ticked the previous selection stays."""
+        names = [m.name for m in models]
+        if names:
+            self._ticked_on_cancel = names
+            log.info(
+                f"Left the creator picker with {len(names)} ticked; they're kept"
+                f" as the selection: {', '.join(names)}"
+            )
 
     def _select_by_usernames(self, models, usernames, filtered=False) -> List["Model"]:
         """

@@ -1,0 +1,18 @@
+{
+  "ofscraper/data/api/common/dated_posts.py:BLE001": 1,
+  "ofscraper/data/api/common/timeline.py:BLE001": 1,
+  "ofscraper/data/api/highlights.py:BLE001": 3,
+  "ofscraper/data/api/init.py:BLE001": 1,
+  "ofscraper/data/api/labels.py:BLE001": 5,
+  "ofscraper/data/api/messages.py:BLE001": 2,
+  "ofscraper/data/api/paid.py:BLE001": 2,
+  "ofscraper/data/api/pinned.py:BLE001": 1,
+  "ofscraper/data/api/subscriptions/individual.py:BLE001": 1,
+  "ofscraper/data/api/subscriptions/lists.py:BLE001": 3,
+  "ofscraper/data/api/subscriptions/subscriptions.py:BLE001": 3,
+  "ofscraper/data/api/tasks.py:BLE001": 1,
+  "ofscraper/data/api/timeline.py:BLE001": 1,
+  "ofscraper/db/merge.py:BLE001": 1,
+  "ofscraper/db/operations_/wrapper.py:BLE001": 1,
+  "ofscraper/db/operations_/wrapper.py:S110": 1
+}

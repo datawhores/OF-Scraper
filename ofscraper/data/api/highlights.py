@@ -11,7 +11,6 @@ r"""
 
 """
 
-import asyncio
 from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
@@ -20,6 +19,7 @@ import ofscraper.data.api.common.logs.strings as common_logs
 
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
+from ofscraper.data.api.tasks import collect_pages
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_progress_log, trace_log_raw
 
@@ -64,49 +64,15 @@ async def scrape_stories(c, user_id):
 
 
 async def process_stories_tasks(generators):
-    responseArray = []
-    page_count = 0
-    page_task = progress_utils.api.add_overall_task(
-        f"Stories Pages Progress: {page_count}", visible=True
+    responseArray = await collect_pages(
+        generators,
+        "Stories Pages Progress",
+        lambda new_posts: trace_progress_log(f"{API_S} task", new_posts),
     )
-    seen = set()
-    queue = asyncio.Queue()
-
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        batch = await queue.get()
-        if batch is None:
-            active_workers -= 1
-            continue
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task, description=f"Stories Pages Progress: {page_count}"
-        )
-        if batch:
-            new_posts = [
-                p
-                for p in batch
-                if p.get("id") not in seen and not seen.add(p.get("id"))
-            ]
-            responseArray.extend(new_posts)
-            trace_progress_log(f"{API_S} task", new_posts)
     trace_log_raw(f"{API_S} final", responseArray, final_count=True)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    progress_utils.api.remove_overall_task(page_task)
     return responseArray
 
 
@@ -135,41 +101,10 @@ async def get_highlights_via_list(highlightLists, c=None):
 
 
 async def process_task_get_highlight_list(generators):
-    highlightLists = []
-    page_count = 0
-    page_task = progress_utils.api.add_overall_task(
-        f"Highlights List Progress: {page_count}", visible=True
+    # pages of highlight ids
+    highlightLists = await collect_pages(
+        generators, "Highlights List Progress", key=lambda highlight_id: highlight_id
     )
-    seen = set()
-    queue = asyncio.Queue()
-
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        batch = await queue.get()
-        if batch is None:
-            active_workers -= 1
-            continue
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task, description=f"Highlights List Progress: {page_count}"
-        )
-        if batch:
-            new_posts = [p for p in batch if p not in seen and not seen.add(p)]
-            highlightLists.extend(new_posts)
-
-    progress_utils.api.remove_overall_task(page_task)
     trace_log_raw(f"{API_H} list final", highlightLists, final_count=True)
     log.debug(
         common_logs.FINAL_COUNT_ITEM.format(
@@ -180,46 +115,11 @@ async def process_task_get_highlight_list(generators):
 
 
 async def process_task_highlights(generators):
-    highlightResponse = []
-    page_count = 0
-    page_task = progress_utils.api.add_overall_task(
-        f"Highlight Content Progress: {page_count}", visible=True
+    highlightResponse = await collect_pages(
+        generators,
+        "Highlight Content Progress",
+        lambda new_posts: trace_progress_log(f"{API_H} list posts task", new_posts),
     )
-    seen = set()
-    queue = asyncio.Queue()
-
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        batch = await queue.get()
-        if batch is None:
-            active_workers -= 1
-            continue
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task, description=f"Highlight Content Progress: {page_count}"
-        )
-        if batch:
-            new_posts = [
-                p
-                for p in batch
-                if p.get("id") not in seen and not seen.add(p.get("id"))
-            ]
-            highlightResponse.extend(new_posts)
-            trace_progress_log(f"{API_H} list posts task", new_posts)
-
-    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
     )

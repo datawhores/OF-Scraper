@@ -102,12 +102,17 @@ async def get_via_individual():
     return models_objects
 
 
-def get_selected_model(parsed_subscriptions: list, existing_models: list) -> tuple:
+def get_selected_model(
+    parsed_subscriptions: list, existing_models: list, on_cancel=None
+) -> tuple:
     """
     Prints user's subscriptions to console and accepts input from user corresponding
-    to the model(s) whose content they would like to scrape.
+    to the model(s) whose content they would like to scrape. ``on_cancel`` gets
+    the models ticked when Esc leaves the picker.
     """
-    return prompts.model_selector(parsed_subscriptions, existing_models)
+    return prompts.model_selector(
+        parsed_subscriptions, existing_models, on_cancel=on_cancel
+    )
 
 
 def get_sub_count():

@@ -21,9 +21,14 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.hash as hash
 
 
-async def get_hash(file_data):
+# get_hash's default thread: the current DownloadContext's pool
+_CURRENT_POOL = object()
+
+
+async def get_hash(file_data, thread=_CURRENT_POOL):
+    """thread is the pool to hash on (None: the loop's default)."""
     return await asyncio.get_event_loop().run_in_executor(
-        common_globals.thread,
+        common_globals.thread if thread is _CURRENT_POOL else thread,
         partial(
             hash.get_hash,
             file_data,

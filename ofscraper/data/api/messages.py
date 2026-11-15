@@ -11,16 +11,18 @@ r"""
 
 """
 
-import asyncio
 from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.live.updater as progress_utils
+# module attribute that callers and tests patch the progress screen through
+import ofscraper.utils.live.updater as progress_utils  # noqa: F401
+from ofscraper.data.api.tasks import collect_pages
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
 from ofscraper.data.api.common.check import update_check
@@ -46,7 +48,7 @@ log = logging.getLogger("shared")
 @run
 @stop.fetching
 async def get_messages(model_id, username, c=None, post_id=None):
-    after = await get_after(model_id, username)
+    after = incomplete.start_scan(model_id, API, await get_after(model_id, username))
 
     time_log(username, after)
     post_id = post_id or []
@@ -57,6 +59,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         splitArrays, anchor_id = await get_split_array(model_id, username, after)
         generators = get_tasks(splitArrays, anchor_id, c, model_id, username, after)
         data = await process_tasks(generators)
+        incomplete.save_scan(model_id, API, after, username)
     else:
         data = await process_messages_as_individual(model_id, c)
 
@@ -98,50 +101,11 @@ async def process_messages_as_individual(model_id, c):
 
 
 async def process_tasks(generators):
-    page_count = 0
-    responseArray = []
-    page_task = progress_utils.api.add_overall_task(
-        f"Message Content Pages Progress: {page_count}", visible=True
+    responseArray = await collect_pages(
+        generators,
+        "Message Content Pages Progress",
+        lambda new_posts: trace_progress_log(f"{API} task", new_posts),
     )
-    seen = set()
-    queue = asyncio.Queue()
-
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        batch = await queue.get()
-
-        if batch is None:
-            active_workers -= 1
-            continue
-
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task,
-            description=f"Message Content Pages Progress: {page_count}",
-        )
-
-        if batch:
-            new_posts = [
-                post
-                for post in batch
-                if post.get("id") not in seen and not seen.add(post.get("id"))
-            ]
-            responseArray.extend(new_posts)
-            trace_progress_log(f"{API} task", new_posts)
-
-    progress_utils.api.remove_overall_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x: x.get('id'), responseArray))}"
     )
@@ -279,11 +243,15 @@ async def scrape_messages(
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Messages API Error: {r.status} for {url}")
+                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
                     log.debug(f"API returned unexpected format (not a dict) for {url}")
+                    incomplete.mark_incomplete(
+                        model_id, API, "unexpected response format"
+                    )
                     break
 
                 batch = data.get("list", [])
@@ -360,7 +328,7 @@ async def scrape_messages(
                 yield batch
 
     except Exception as E:
-        log.warning(f"{API}: scan stopped early: {E!r}")
+        incomplete.mark_incomplete(model_id, API, repr(E))
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:

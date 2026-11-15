@@ -8,7 +8,11 @@ class StrInput(FilterInput):
     def update_table_val(self, val):
         self.value = val
 
+    def reset(self):
+        self.value = ""
+
     def compare(self, value):
         if self.value == "":
             return True
-        return value.lower() == self.value.lower()
+        # part of a name is enough
+        return self.value.strip().lower() in str(value).lower()

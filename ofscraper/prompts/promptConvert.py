@@ -10,7 +10,13 @@ from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 
-from ofscraper.prompts.cancel import cancel, cancel_scope, top_level
+# top_level is re-exported: menu.py uses it as promptClasses.top_level
+from ofscraper.prompts.cancel import (  # noqa: F401
+    PromptCancelled,
+    cancel,
+    cancel_scope,
+    top_level,
+)
 
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -20,6 +26,7 @@ from ofscraper.utils.live.clear import clear
 
 
 def wrapper(prompt_funct):
+    @functools.wraps(prompt_funct)
     def inner(*args, **kwargs):
         # with no console the prompt can't open (#286)
         interactive.require_console(kwargs.get("message") or prompt_funct.__name__)
@@ -54,6 +61,8 @@ def wrapper(prompt_funct):
         altx_action = kwargs.pop("altx", None)
         altd_action = kwargs.pop("altd", None)
         additional_keys = kwargs.pop("additional_keys", {})
+        # called with the prompt when Esc leaves it, before the cancel unwinds
+        on_cancel = kwargs.pop("on_cancel", None)
         action = [None]
         with prompt_live():
 
@@ -79,7 +88,12 @@ def wrapper(prompt_funct):
             while True:
                 funct() if funct else None
                 clear()
-                out = prompt_.execute()
+                try:
+                    out = prompt_.execute()
+                except PromptCancelled:
+                    if on_cancel is not None:
+                        on_cancel(prompt_)
+                    raise
                 prompt_._default = get_default(prompt_funct, prompt_)
                 select = action[0]
                 action[0] = None
@@ -121,11 +135,13 @@ def fix_validation_float(prompt_):
             window = instruction.content
             write_to_screen = window.write_to_screen
 
+            # the loop returns right after this, so the closure only ever
+            # sees this iteration's variables
             def draw_instruction(*args, **kwargs):
-                write_to_screen(*args, **kwargs)
+                write_to_screen(*args, **kwargs)  # noqa: B023
                 # FloatContainer draws its content before positioning floats.
-                if window.render_info is not None:
-                    float_.bottom = window.render_info.window_height
+                if window.render_info is not None:  # noqa: B023
+                    float_.bottom = window.render_info.window_height  # noqa: B023
 
             window.write_to_screen = draw_instruction
             return
@@ -233,6 +249,9 @@ def getChecklistSelection(*args, **kwargs):
 
 @wrapper
 def getFuzzySelection(*args, **kwargs):
+    # scorer(search text, choice name) -> (score, matched indices or None),
+    # in place of InquirerPy's fuzzy match
+    scorer = kwargs.pop("scorer", None)
     prompt = inquirer.fuzzy(
         *args,
         marker="\u25c9 ",
@@ -265,12 +284,86 @@ def getFuzzySelection(*args, **kwargs):
         mandatory=False,
         **kwargs,
     )
+    if scorer is not None:
+        prompt.content_control._scorer = scorer
+    fix_list_keys(prompt)
     return prompt
 
 
 @wrapper
 def checkbox(*args, **kwargs):
-    return inquirer.checkbox(keybindings=keybindings.fuzzy, *args, **kwargs)
+    prompt = inquirer.checkbox(*args, keybindings=keybindings.fuzzy, **kwargs)
+    fix_list_keys(prompt)
+    return prompt
+
+
+# the keys that move through or toggle the visible choices
+_CHOICE_ACTIONS = ("down", "up", "toggle", "toggle-down", "toggle-up")
+
+
+def fix_list_keys(prompt):
+    """Work around InquirerPy 0.3.4 behaviour in the fuzzy and checkbox prompts.
+
+    - "toggle-all-false" (Ctrl+D) inverted the choices: InquirerPy sets
+      ``value if value else not enabled``, and False counts as no value.
+    - "toggle-all" (Ctrl+A) flipped each choice, so it unselected the ones
+      already selected. It now selects them all, or clears them all when
+      they're all selected.
+    - A fuzzy filter that matches nothing leaves no visible choices, and Down
+      then divides by zero (Up and Tab fail the same way).
+
+    InquirerPy looks the actions up in ``kb_func_lookup`` on every key press,
+    so replacing them on the instance is enough.
+    """
+    lookup = prompt.kb_func_lookup
+    lookup["toggle-all-false"] = [{"func": lambda event: _set_all(prompt, False)}]
+    lookup["toggle-all-true"] = [{"func": lambda event: _set_all(prompt, True)}]
+    lookup["toggle-all"] = [{"func": lambda event: _toggle_all(prompt)}]
+    for action in _CHOICE_ACTIONS:
+        lookup[action] = [
+            {**method, "func": _skip_when_empty(prompt, method["func"])}
+            for method in lookup.get(action, [])
+        ]
+
+
+def _visible_choices(prompt):
+    control = prompt.content_control
+    filtered = getattr(control, "_filtered_choices", None)
+    if filtered is None:
+        return control.choices
+    return [control.choices[choice["index"]] for choice in filtered]
+
+
+def _set_all(prompt, value):
+    if getattr(prompt, "_multiselect", True) is False:
+        return
+    for choice in _visible_choices(prompt):
+        if not isinstance(choice["value"], Separator):
+            choice["enabled"] = value
+
+
+def _toggle_all(prompt):
+    """Select every visible choice, or clear them when all are selected.
+
+    InquirerPy flips each choice instead, so the ones already selected came
+    out unselected.
+    """
+    choices = [
+        choice
+        for choice in _visible_choices(prompt)
+        if not isinstance(choice["value"], Separator)
+    ]
+    _set_all(prompt, not all(choice["enabled"] for choice in choices))
+
+
+def _skip_when_empty(prompt, func):
+    @functools.wraps(func)
+    def inner(event, *args):
+        if prompt.content_control.choice_count == 0:
+            return
+        return func(event, *args)
+
+    return inner
 
 
 @wrapper

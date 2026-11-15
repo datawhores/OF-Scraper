@@ -212,18 +212,18 @@ def _packet_times(ffprobe, path, stream):
 
 class FanslyStreamDownloadManager(DownloadManager):
     async def stream_download(self, c, ele, username, model_id):
-        await common_globals.sem.acquire()
+        await self.ctx.sem.acquire()
         try:
             return await self._stream_download(c, ele, username, model_id)
         finally:
-            common_globals.sem.release()
+            self.ctx.sem.release()
 
     async def _stream_download(self, c, ele, username, model_id):
         medialog = common_logs.get_medialog(ele)
         best = fansly_video.select_best(fansly_video.raw_media(ele))
         if not best or not best.is_stream:
             raise fansly_video.StreamError("no HLS or DASH stream to download")
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{medialog} Downloading with the Fansly stream downloader: "
             f"{best.kind} {best.width}x{best.height}"
         )
@@ -241,22 +241,22 @@ class FanslyStreamDownloadManager(DownloadManager):
             if ele.url and fansly_video.has_direct(fansly_video.raw_media(ele)):
                 # None: run.py downloads the direct file instead (ele.url
                 # is the stream itself when there is no direct file)
-                common_globals.log.info(f"{medialog} {e}; downloading the direct file instead")
+                self.ctx.log.info(f"{medialog} {e}; downloading the direct file instead")
                 shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return None
             if isinstance(e, fansly_video.ProtectedStream):
-                common_globals.log.info(f"{medialog} protected, not downloaded")
+                self.ctx.log.info(f"{medialog} protected, not downloaded")
                 shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return "forced_skipped", 0
             if isinstance(e, fansly_video.MissingAudio):
                 # fail rather than save a silent video that is never fetched again
                 raise
-            common_globals.log.warning(f"{medialog} {e}")
+            self.ctx.log.warning(f"{medialog} {e}")
             shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return "skipped", 0
 
         placeholderObj = await placeholder.Placeholders(ele, "mp4").init()
-        common_logs.path_to_file_logger(placeholderObj, ele)
+        common_logs.path_to_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
         temp.unlink(missing_ok=True)
 
         # BaseException: a cancelled run (Ctrl+C) also removes the .part
@@ -293,13 +293,13 @@ class FanslyStreamDownloadManager(DownloadManager):
             try:
                 playlists = fansly_video.local_dash(await self._fetch_text(c, url, best.cookies), url)
             except fansly_video.UnexpectedPlaylist as e:
-                common_globals.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
+                self.ctx.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
         if playlists is None:
             # Rare live/LL/nested HLS, non-AES-128/session keys, and protected,
             # live or multi-period DASH still need ffmpeg alone and cannot resume.
             shutil.rmtree(segment_folder(temp), ignore_errors=True)
             return await self._run_ffmpeg(url, temp, best.cookies, audio_url, timeout)
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{medialog} Fetching {sum(len(p.files) for p in playlists if p)} stream "
             f"files, {segment_limit()} at a time"
         )
@@ -321,7 +321,7 @@ class FanslyStreamDownloadManager(DownloadManager):
                 )
             return video, audio
         except fansly_video.UnexpectedPlaylist as e:
-            common_globals.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
+            self.ctx.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
             return None
 
     async def _parallel_copy(self, c, playlists, temp, cookies, timeout):
@@ -499,7 +499,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         """
         ffprobe = get_ffprobe()
         if not ffprobe:
-            common_globals.log.warning(
+            self.ctx.log.warning(
                 f"{common_logs.get_medialog(ele)} ffprobe not found; "
                 "the stream copy can't be checked for skipped segments"
             )
@@ -507,7 +507,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         loop = asyncio.get_event_loop()
         video_times, audio_times = [
             await loop.run_in_executor(
-                common_globals.thread, partial(_packet_times, ffprobe, temp, stream)
+                self.ctx.thread, partial(_packet_times, ffprobe, temp, stream)
             )
             for stream in ("v:0", "a:0")
         ]
@@ -535,7 +535,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         # subprocess in a worker thread: the app may run a selector event
         # loop on Windows, which can't start asyncio subprocesses
         proc = _Ffmpeg()
-        job = common_globals.thread.submit(_run_process, proc, cmd, timeout, cwd)
+        job = self.ctx.thread.submit(_run_process, proc, cmd, timeout, cwd)
         try:
             returncode, stderr = await asyncio.wrap_future(job)
         except BaseException:
@@ -555,12 +555,12 @@ class FanslyStreamDownloadManager(DownloadManager):
         loop = asyncio.get_event_loop()
         if expected:
             ok = await loop.run_in_executor(
-                common_globals.thread, partial(verify_media_integrity, temp, expected)
+                self.ctx.thread, partial(verify_media_integrity, temp, expected)
             )
         else:
             ok = (
                 await loop.run_in_executor(
-                    common_globals.thread, partial(get_media_duration, temp)
+                    self.ctx.thread, partial(get_media_duration, temp)
                 )
             ) is not None
         if not ok:
@@ -571,13 +571,13 @@ class FanslyStreamDownloadManager(DownloadManager):
         loop = asyncio.get_event_loop()
         # can end up under another name if a different file already has this one (#48)
         path_to_file = await loop.run_in_executor(
-            common_globals.thread,
+            self.ctx.thread,
             partial(common_paths.moveHelper, temp, placeholderObj.trunicated_filepath, ele),
         )
-        common_paths.addGlobalDir(path_to_file.parent)
+        common_paths.addGlobalDir(path_to_file.parent, self.ctx.dirSet)
         if ele.postdate:
             await loop.run_in_executor(
-                common_globals.thread,
+                self.ctx.thread,
                 partial(
                     common_paths.set_time,
                     path_to_file,
@@ -591,10 +591,10 @@ class FanslyStreamDownloadManager(DownloadManager):
                 model_id=model_id,
                 username=username,
                 downloaded=True,
-                hashdata=await common.get_hash(path_to_file),
+                hashdata=await common.get_hash(path_to_file, self.ctx.thread),
                 size=path_to_file.stat().st_size,
             )
-        await set_profile_cache(ele, common_globals.thread)
+        await set_profile_cache(ele, self.ctx.thread)
         ele.add_filepath(path_to_file)
         ele.add_size(total)
         await self._after_download_script(path_to_file)
