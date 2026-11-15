@@ -14,6 +14,7 @@ r"""
 import asyncio
 from ofscraper.commands.scraper.actions.download import stop
 import contextlib
+import html
 import logging
 import traceback
 from types import SimpleNamespace
@@ -51,7 +52,8 @@ async def get_labels(model_id, c=None, username=None):
         if not settings.get_settings().label
         else list(
             filter(
-                lambda x: x.get("name").lower() in settings.get_settings().label,
+                lambda x: (x.get("name") or "").lower()
+                in settings.get_settings().label,
                 labels_,
             )
         )
@@ -91,7 +93,17 @@ async def get_labels_data(model_id, c=None):
     # on Fansly a label is a wall (a named tab on the creator's profile)
     names = fansly_scrape.label_names if sites.is_fansly() else scrape_labels
     generators = [names(c, model_id)]
-    return await process_tasks_labels(generators)
+    return [decode_label_name(label) for label in await process_tasks_labels(generators)]
+
+
+def decode_label_name(label):
+    """OnlyFans sends label names HTML-escaped ("Nudes &amp; Sexy Videos").
+    Decode them once here, so the progress text, the --label filter, the
+    {label} placeholder and the database all get the name as written."""
+    name = label.get("name")
+    if isinstance(name, str):
+        label["name"] = html.unescape(name)
+    return label
 
 
 def label_complete_key(model_id, label_id):

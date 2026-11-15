@@ -39,6 +39,18 @@ def date_placeholder(date, fallback, name, ele):
     return arrow.get(date).format(data.get_date())
 
 
+# can't be in a folder or file name on Windows; a slash would add a folder
+_NOT_IN_A_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+def path_safe_label(label):
+    """The {label} value: the label's name without characters a file name
+    can't hold. Names arrive decoded ("Q&A <3", not "Q&amp;A &lt;3"), so
+    ``<`` and ``>`` would otherwise stop the folder being made on Windows.
+    Spaces and dashes are kept, so existing label folders keep their names."""
+    return _NOT_IN_A_NAME.sub("", str(label)).strip() or "None"
+
+
 def site_save_location():
     """Save location; Fansly runs use ``<save location>/Fansly``.
 
@@ -296,7 +308,7 @@ class Placeholders(basePlaceholder):
         )
         self._variables.update({"model_username": username})
         self._variables.update({"response_type": ele.modified_responsetype})
-        self._variables.update({"label": ele.label_string})
+        self._variables.update({"label": path_safe_label(ele.label_string)})
         self._variables.update({"download_type": ele.downloadtype})
         self._variables.update(
             {"modelObj": manager.Manager.current_model_manager.get_model(username)}
@@ -504,7 +516,7 @@ class Textholders(basePlaceholder):
         self._variables.update({"model_username": username})
         self._variables.update({"media_type": "Text"})
         self._variables.update({"response_type": ele.modified_responsetype})
-        self._variables.update({"label": ele.label_string})
+        self._variables.update({"label": path_safe_label(ele.label_string)})
         self._variables.update(
             {"modelObj": manager.Manager.current_model_manager.get_model(username)}
         )
