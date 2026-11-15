@@ -21,6 +21,7 @@ from types import SimpleNamespace
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
+from ofscraper.data.api.tasks import collect_pages, consume_pages
 from ofscraper.data.api.common.check import update_check
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
@@ -185,52 +186,13 @@ async def get_posts_for_labels(labels, model_id, c=None, known=None, track=False
 
 
 async def process_tasks_labels(generators):
-    output = []
-    page_count = 0
-    page_task = progress_utils.api.add_overall_task(
-        f"Label Names Pages Progress: {page_count}", visible=True
-    )
-    seen = set()
-    queue = asyncio.Queue()
-
-    async def producer(gen):
-        try:
-            async for batch in gen:
-                await queue.put(batch)
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
-
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        batch = await queue.get()
-        if batch is None:
-            active_workers -= 1
-            continue
-
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task,
-            description=f"Label Names Pages Progress: {page_count}",
+    def on_new(new_labels):
+        log.debug(
+            f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x: x['id'], new_labels))}"
         )
+        trace_progress_log(f"{API} names tasks", new_labels)
 
-        if batch:
-            new_labels = [
-                label
-                for label in batch
-                if label.get("id") not in seen and not seen.add(label.get("id"))
-            ]
-            log.debug(
-                f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x: x['id'], new_labels))}"
-            )
-            trace_progress_log(f"{API} names tasks", new_labels)
-            output.extend(new_labels)
-
-    progress_utils.api.remove_overall_task(page_task)
+    output = await collect_pages(generators, "Label Names Pages Progress", on_new)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x: x['id'], output))}"
     )
@@ -243,40 +205,16 @@ async def process_tasks_labels(generators):
 
 async def process_tasks_get_posts_for_labels(generators, labels):
     responseDict = get_default_label_dict(labels)
-    page_count = 0
-    page_task = progress_utils.api.add_overall_task(
-        f"Labels Progress: {page_count}", visible=True
-    )
-    queue = asyncio.Queue()
     # Paging every label at once is what trips OnlyFans' rate limit (429s)
     sem = asyncio.Semaphore(max(1, int(of_env.getattr("LABELS_CONCURRENCY"))))
 
-    async def producer(gen):
-        try:
-            async with sem:
-                async for label_info, batch in gen:
-                    await queue.put((label_info, batch))
-        except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        finally:
-            await queue.put(None)
+    async def limited(gen):
+        async with sem:
+            async for label_info, batch in gen:
+                yield label_info, batch
 
-    workers = [stop.create_fetch_task(producer(g)) for g in generators]
-    active_workers = len(workers)
-
-    while active_workers > 0:
-        result = await queue.get()
-        if result is None:
-            active_workers -= 1
-            continue
-
+    def on_page(result):
         label_info, batch = result
-        page_count += 1
-        progress_utils.api.update_overall_task(
-            page_task, description=f"Labels Progress: {page_count}"
-        )
-
         if batch:
             new_posts = label_dedupe(responseDict[label_info["id"]]["seen"], batch)
             log.debug(
@@ -284,6 +222,8 @@ async def process_tasks_get_posts_for_labels(generators, labels):
             )
             trace_progress_log(f"{API} content tasks", new_posts)
             responseDict[label_info["id"]]["posts"].extend(new_posts)
+
+    await consume_pages([limited(g) for g in generators], "Labels Progress", on_page)
 
     # Clean up 'seen' sets
     [label.pop("seen", None) for label in responseDict.values()]
@@ -326,8 +266,6 @@ async def process_tasks_get_posts_for_labels(generators, labels):
     )
 
     trace_log_raw(f"{API} content final", list(responseDict.values()), final_count=True)
-    progress_utils.api.remove_overall_task(page_task)
-
     return list(responseDict.values())
 
 
