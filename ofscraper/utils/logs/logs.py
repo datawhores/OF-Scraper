@@ -95,8 +95,8 @@ def is_newer(new_version, current_version):
 
 
 def pypi_url():
-    # the PyPI project this copy was installed from: 'ofscraper-community', or
-    # 'ofscraper' for installs published by datawhores/OF-Scraper
+    # the PyPI project this copy was installed from: 'ofscraper', or
+    # 'ofscraper-community' for installs published by OF-Scraper-Community
     return f"https://pypi.org/pypi/{__dist_name__}/json"
 
 
