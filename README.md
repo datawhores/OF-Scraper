@@ -80,9 +80,11 @@ pip install -U ofscraper-community
 
 Use the one that matches how you installed it.
 
-### Switching from `ofscraper`
+### Installed as `ofscraper`?
 
-The `ofscraper` package on PyPI is upstream's old version, without these fixes. It installs the same `ofscraper` command, so uninstall it first, using the tool you installed it with:
+[datawhores/OF-Scraper](https://github.com/datawhores/OF-Scraper) releases this same code to PyPI as `ofscraper`. The two packages are released separately, so either one can be a version ahead of the other for a while. If you installed `ofscraper` from PyPI, you can keep it and update it with `uv tool upgrade ofscraper`, `pipx upgrade ofscraper` or `pip install -U ofscraper`. Version 3.14.7 and older are upstream's old code, without these fixes.
+
+Both packages install the same `ofscraper` command, so keep only one. To switch to `ofscraper-community`, uninstall `ofscraper` first, using the tool you installed it with:
 
 - pip: `pip uninstall ofscraper`
 - uv (this includes the fork installed from GitHub before it was on PyPI): `uv tool uninstall ofscraper`
