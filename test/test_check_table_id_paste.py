@@ -119,3 +119,50 @@ def test_other_numeric_input_paste_is_unchanged(monkeypatch):
         app.notify.assert_not_called()
 
     _drive(monkeypatch, steps)
+
+
+@pytest.mark.parametrize("field", ["media_id", "post_id"])
+def test_right_click_pastes_what_the_table_copied(monkeypatch, field):
+    async def steps(app, pilot):
+        box = app.query_one(f"#{field}_input", Input)
+        box.value = "123"
+        app.copy_to_clipboard("3456789012")
+        assert await pilot.click(f"#{field}_input", button=3)
+        await pilot.pause()
+        # in place of what was there
+        assert box.value == "3456789012"
+        app.notify.assert_not_called()
+
+        # several ids aren't one number: the value stays, with a notice
+        app.copy_to_clipboard("111, 222")
+        assert await pilot.click(f"#{field}_input", button=3)
+        await pilot.pause()
+        assert box.value == "3456789012"
+        app.notify.assert_called_once()
+
+    _drive(monkeypatch, steps)
+
+
+def test_right_click_with_nothing_copied_says_so(monkeypatch):
+    async def steps(app, pilot):
+        box = app.query_one("#post_id_input", Input)
+        box.value = "123"
+        assert await pilot.click("#post_id_input", button=3)
+        await pilot.pause()
+        assert box.value == "123"
+        app.notify.assert_called_once()
+        assert "paste key" in app.notify.call_args.args[0]
+
+    _drive(monkeypatch, steps)
+
+
+def test_right_click_on_another_numeric_input_pastes_nothing(monkeypatch):
+    async def steps(app, pilot):
+        box = app.query_one("#post_media_count_input", Input)
+        app.copy_to_clipboard("45")
+        assert await pilot.click("#post_media_count_input", button=3)
+        await pilot.pause()
+        assert box.value == ""
+        app.notify.assert_not_called()
+
+    _drive(monkeypatch, steps)
