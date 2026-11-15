@@ -282,18 +282,9 @@ jobs:
 
   publish_pypi:
     name: Publish to PyPI
-    # PyPI trusts only this repo's workflow for ofscraper-community, so a
-    # tag on a fork or on datawhores/OF-Scraper makes the GitHub release only.
     if: startsWith(github.ref, 'refs/tags/') && github.repository == 'datawhores/OF-Scraper'
-    # A PyPI version can't be replaced once uploaded, so publish last: only
-    # after the packages passed their checks and the GitHub release exists.
     needs: [build_pypi_dist, publish_release]
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/ofscraper-community/
-    permissions:
-      id-token: write # trusted publishing; no token or password is stored
     steps:
       - name: Download packages
         uses: actions/download-artifact@v8
@@ -302,3 +293,6 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.14.3
+        with:
+          user: __token__
+          password: ${{ secrets.pypi }}
