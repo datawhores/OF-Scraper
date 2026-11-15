@@ -14,4 +14,5 @@ class StrInput(FilterInput):
     def compare(self, value):
         if self.value == "":
             return True
-        return value.lower() == self.value.lower()
+        # part of a name is enough
+        return self.value.strip().lower() in str(value).lower()
