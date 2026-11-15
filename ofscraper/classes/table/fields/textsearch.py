@@ -30,7 +30,8 @@ class TextSearch(Horizontal):
             placeholder=f"{self.filter_name.capitalize()} Search",
             id=f"{self.filter_name}_search",
         )
-        yield Checkbox("Exact Match", False, id="exact_match")
+        exact_id = "exact_match" if self.filter_name == "text" else f"{self.filter_name}_exact_match"
+        yield Checkbox("Exact Match", False, id=exact_id)
 
 
     def update_table_val(self, val):
@@ -38,8 +39,8 @@ class TextSearch(Horizontal):
 
     def reset(self):
         self.query_one(f"#{self.filter_name}_search").value = ""
-        self.query_one("#exact_match").value = False
+        self.query_one("#exact_match" if self.filter_name == "text" else f"#{self.filter_name}_exact_match").value = False
     def compare(self,value):
         if self.query_one(f"#{self.filter_name}_search").value=="":
             return True
-        return self.query_one(f"#{self.filter_name}_search").value.lower() ==value.lower() if self.query_one("#exact_match").value else re.search(self.query_one(f"#{self.filter_name}_search").value, value, flags=re.IGNORECASE) is not None
+        return self.query_one(f"#{self.filter_name}_search").value.lower() ==value.lower() if self.query_one("#exact_match" if self.filter_name == "text" else f"#{self.filter_name}_exact_match").value else re.search(self.query_one(f"#{self.filter_name}_search").value, value, flags=re.IGNORECASE) is not None

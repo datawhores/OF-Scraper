@@ -27,8 +27,10 @@ class DateField(Container):
 
     def compose(self):
         with Horizontal():
-            yield Input(placeholder="Earliest Date", id="minDate")
-            yield Input(placeholder="Latest Date", id="maxDate")
+            min_id = "minDate" if self.filter_name == "post_date" else f"{self.filter_name}_minDate"
+            max_id = "maxDate" if self.filter_name == "post_date" else f"{self.filter_name}_maxDate"
+            yield Input(placeholder="Earliest Date", id=min_id)
+            yield Input(placeholder="Latest Date", id=max_id)
 
     def on_mount(self):
         """
@@ -57,16 +59,16 @@ class DateField(Container):
     def update_min_val(self, val):
         val = self.convertString(val)
         if val != "":
-            self.query_one("#minDate").value = arrow.get(val).format("YYYY.MM.DD")
+            self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value = arrow.get(val).format("YYYY.MM.DD")
         else:
-            self.query_one("#minDate").value = ""
+            self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value = ""
 
     def update_max_val(self, val):
         val = self.convertString(val)
         if val != "":
-            self.query_one("#maxDate").value = arrow.get(val).format("YYYY.MM.DD")
+            self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value = arrow.get(val).format("YYYY.MM.DD")
         else:
-            self.query_one("#maxDate").value = ""
+            self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value = ""
 
     def reset(self):
         for ele in self.query(Input):
@@ -82,13 +84,13 @@ class DateField(Container):
     def compare(self, value):
         value = arrow.get(value).floor("day")
         min_val = (
-            arrow.get(self.query_one("#minDate").value)
-            if self.query_one("#minDate").value
+            arrow.get(self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value)
+            if self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value
             else arrow.get(0)
         )
         max_val = (
-            arrow.get(self.query_one("#maxDate").value)
-            if self.query_one("#maxDate").value
+            arrow.get(self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value)
+            if self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value
             else arrow.now()
         )
         return arrow.get(value).is_between(min_val, max_val, bounds="[]")

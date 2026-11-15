@@ -1,7 +1,7 @@
 import logging
 import re
 from rich.text import Text
-from ofscraper.classes.table.utils.names import get_col_names
+from ofscraper.classes.table.utils.names import get_col_names, get_post_col_names
 
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable
@@ -118,6 +118,10 @@ def get_styled(row, columns=None):
                 Text(str(row[key]), style="bold bright_white")
             )
             
+        elif key == "download_type" and str(row[key]).strip().lower() == "unknown":
+            styled_row.append(
+                Text("protected", style="bold medium_spring_green")
+            )
         elif isinstance(row[key],str):
             styled_row.append(
                 Text(str(row[key]), style="bold medium_spring_green")
@@ -139,3 +143,43 @@ def get_styled(row, columns=None):
     
 
 
+
+
+def get_post_styled(row, columns=None):
+    styled_row = []
+    for key in get_post_col_names() if columns is None else columns:
+        val = row.get(key, "")
+        if key in ["video_length", "new_video_length", "audio_length", "new_audio_length", "post_date"]:
+            styled_row.append(Text(str(val), style="bold deep_sky_blue1"))
+        elif key == "download_cart":
+            sval = str(val)
+            if sval == "[downloaded]":
+                style = "bold green"
+            elif sval == "[stopped]":
+                style = "bold cyan"
+            elif sval == "[failed]":
+                style = "bold red"
+            elif sval == "[skipped]":
+                style = "bold bright_yellow"
+            elif sval == "[downloading]":
+                style = "bold dark_orange"
+            else:
+                style = "bold light_goldenrod2"
+            styled_row.append(Text(sval, style=style))
+        elif key.startswith("new_cost_") or key.startswith("cost_per_") or key == "total_cost":
+            sval = str(val)
+            style = "dim white" if sval in {"N/A", "All Dupes"} else "bold gold1"
+            styled_row.append(Text(sval, style=style))
+        elif key in {"new_media", "new_photos", "new_videos", "new_audios"}:
+            styled_row.append(Text(str(val), style="bold bright_green"))
+        elif key == "text":
+            styled_row.append(Text(str(val), style="bold dark_sea_green1"))
+        elif key == "number":
+            styled_row.append(Text(str(val), style="bold bright_white"))
+        elif isinstance(val, bool):
+            styled_row.append(Text(str(val), style="bold plum1"))
+        elif isinstance(val, (int, float, list)):
+            styled_row.append(Text(str(val), style="bold bright_white"))
+        else:
+            styled_row.append(Text(str(val), style="bold medium_spring_green"))
+    return styled_row

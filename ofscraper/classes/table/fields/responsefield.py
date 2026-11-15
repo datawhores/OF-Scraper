@@ -16,10 +16,11 @@ class ResponseField(SelectField):
 
 """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
+        self.label_text = label
         self._pinned = Selection(
             "Pinned",
             value="Pinned",
@@ -71,6 +72,9 @@ class ResponseField(SelectField):
         )
 
     def compose(self):
+        if self.label_text:
+            from textual.widgets import Label
+            yield Label(self.label_text)
         yield SelectionList(
             self._timeline,
             self._archived,
