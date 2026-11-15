@@ -8,7 +8,9 @@ import psutil
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
-import ofscraper.commands.scraper.actions.utils.globals as common_globals
+# the managers use their DownloadContext (self.ctx); kept here for code
+# and tests that reach the current context through this module
+import ofscraper.commands.scraper.actions.utils.globals as common_globals  # noqa: F401
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 import ofscraper.utils.dates as dates
@@ -40,17 +42,17 @@ from ofscraper.db.operations_.media import mark_media_as_downloaded
 class MainDownloadManager(DownloadManager):
 
     async def main_download(self, c, ele: Media, username, model_id):
-        await common_globals.sem.acquire()
+        await self.ctx.sem.acquire()
         try:
             stop.started(ele)
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} Downloading with normal downloader"
             )
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} download url:  {common_logs.get_url_log(ele)}"
             )
             if common.is_bad_url(ele.url):
-                common_globals.log.debug(
+                self.ctx.log.debug(
                     f"{common_logs.get_medialog(ele)} Forcing download because known bad url"
                 )
                 await self._force_download(ele, username, model_id)
@@ -73,7 +75,7 @@ class MainDownloadManager(DownloadManager):
             return await self._handle_result_main(result, ele, username, model_id)
 
         finally:
-            common_globals.sem.release()
+            self.ctx.sem.release()
 
     async def _main_download_downloader(self, c, ele):
         try:
@@ -92,12 +94,12 @@ class MainDownloadManager(DownloadManager):
             ele, f"{ele.filename}_{ele.id}_{ele.post_id}.part"
         ).init()
 
-        common_globals.attempt.set(0)
+        self.ctx.attempt.set(0)
 
         async for _ in download_retry():
             with _:
                 try:
-                    common_globals.attempt.set(common_globals.attempt.get(0) + 1)
+                    self.ctx.attempt.set(self.ctx.attempt.get(0) + 1)
                     # a retry keeps the part and resumes it (#268): the saved
                     # size checks it, as on the next run
                     data = await self._get_data(ele)
@@ -133,19 +135,19 @@ class MainDownloadManager(DownloadManager):
                         )
 
                 except OSError as E:
-                    common_globals.log.debug(
-                        f"[{common_logs.get_medialog(ele)}] [attempt {common_globals.attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
+                    self.ctx.log.debug(
+                        f"[{common_logs.get_medialog(ele)}] [attempt {self.ctx.attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
                     )
                     if self._skipped_by_size(ele, E):
                         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
                         return (0, tempholderObj.tempfilepath, None)
                     raise E
                 except Exception as E:
-                    common_globals.log.traceback_(
-                        f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
+                    self.ctx.log.traceback_(
+                        f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
                     )
-                    common_globals.log.traceback_(
-                        f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] {E}"
+                    self.ctx.log.traceback_(
+                        f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] {E}"
                     )
                     if self._skipped_by_size(ele, E):
                         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
@@ -156,8 +158,8 @@ class MainDownloadManager(DownloadManager):
         self, c, ele, tempholderObj, placeholderObj=None, total=None, validator=None
     ):
         try:
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
+            self.ctx.log.debug(
+                f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] download temp path {tempholderObj.tempfilepath}"
             )
             try:
                 return await self._send_req_inner(
@@ -170,7 +172,7 @@ class MainDownloadManager(DownloadManager):
                 )
             except StartOver as E:
                 # the part was deleted; ask for the whole file, without a range
-                common_globals.log.debug(f"{common_logs.get_medialog(ele)} {E}")
+                self.ctx.log.debug(f"{common_logs.get_medialog(ele)} {E}")
                 return await self._send_req_inner(
                     c, ele, tempholderObj, placeholderObj=placeholderObj, total=None
                 )
@@ -186,8 +188,8 @@ class MainDownloadManager(DownloadManager):
             resume_size = self._get_resume_size(tempholderObj)
             headers = self._get_resume_header(resume_size, total, validator)
             saved_total, total = total, None
-            common_globals.log.debug(
-                f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
+            self.ctx.log.debug(
+                f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
             )
 
             async with c.requests_async(
@@ -214,7 +216,7 @@ class MainDownloadManager(DownloadManager):
                     placeholderObj = await placeholder.Placeholders(
                         ele, content_type
                     ).init()
-                common_logs.path_to_file_logger(placeholderObj, ele)
+                common_logs.path_to_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
                 if await self._check_forced_skip(ele, total) == 0:
                     if asked and not resume_size:
                         # a whole-file reply to a resume: the part is stale
@@ -262,14 +264,14 @@ class MainDownloadManager(DownloadManager):
         resume_size=0,
         on_first_chunk=None,
     ):
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] writing media to disk"
+        self.ctx.log.debug(
+            f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] writing media to disk"
         )
         written = await self._download_fileobject_writer_streamer(
             r, ele, tempholderObj, placeholderObj, total, resume_size, on_first_chunk
         )
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] finished writing media to disk"
+        self.ctx.log.debug(
+            f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] finished writing media to disk"
         )
         return written
 
@@ -296,7 +298,7 @@ class MainDownloadManager(DownloadManager):
             task1,
             resume_size,
             on_first_chunk,
-            lambda: send_chunk_msg(ele, total, tempholderObj),
+            lambda: send_chunk_msg(ele, total, tempholderObj, self.ctx.log),
         )
 
     async def _handle_result_main(self, result, ele, username, model_id):
@@ -307,7 +309,7 @@ class MainDownloadManager(DownloadManager):
         # 1. Check that the file size matches the API reported size
         await self._size_checker(temp, ele, total)
 
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
         )
 
@@ -320,13 +322,13 @@ class MainDownloadManager(DownloadManager):
             valid = verify_media_integrity(temp, expected_duration)
             stop.check()
             if not valid:
-                common_globals.log.warning(
+                self.ctx.log.warning(
                     f"Removing corrupted/truncated standard video: {temp}"
                 )
                 pathlib.Path(temp).unlink(missing_ok=True)
                 raise Exception("Standard video failed duration integrity check")
 
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
         )
 
@@ -334,17 +336,17 @@ class MainDownloadManager(DownloadManager):
         # 3. Move the verified file to final path; it can end up under another
         # name if a different file already has this one (#48)
         path_to_file = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
+            self.ctx.thread,
             partial(common_paths.moveHelper, temp, path_to_file, ele),
         )
 
-        (common_paths.addGlobalDir(path_to_file.parent))
+        (common_paths.addGlobalDir(path_to_file.parent, self.ctx.dirSet))
 
         # 4. Set File Dates
         if ele.postdate:
             newDate = dates.convert_local_time(ele.postdate)
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
+                self.ctx.thread,
                 partial(common_paths.set_time, path_to_file, newDate),
             )
 
@@ -356,11 +358,11 @@ class MainDownloadManager(DownloadManager):
                 model_id=model_id,
                 username=username,
                 downloaded=True,
-                hashdata=await common.get_hash(path_to_file),
+                hashdata=await common.get_hash(path_to_file, self.ctx.thread),
                 size=path_to_file.stat().st_size,
             )
 
-        await set_profile_cache(ele, common_globals.thread)
+        await set_profile_cache(ele, self.ctx.thread)
         ele.add_filepath(path_to_file)
 
         # 6. Run Post-Download Scripts
@@ -378,18 +380,18 @@ class MainDownloadManager(DownloadManager):
         return await self._set_cached_reply(self._cache_key(ele), data)
 
     async def _fresh_data_handler_main(self, ele, tempholderObj):
-        common_globals.log.debug(
-            f"{common_logs.get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
+        self.ctx.log.debug(
+            f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
         )
         resume_size = self._get_resume_size(tempholderObj)
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} resume_size: {resume_size}"
         )
 
     async def _resume_data_handler_main(self, data, ele, tempholderObj):
         self._log_saved_reply(
             common_logs.get_medialog(ele),
-            f"[attempt {common_globals.attempt.get()}/{get_download_retries()}]",
+            f"[attempt {self.ctx.attempt.get()}/{get_download_retries()}]",
             data,
         )
 
@@ -400,7 +402,7 @@ class MainDownloadManager(DownloadManager):
             resume_size, total, tempholderObj.tempfilepath
         )
 
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} resume_size: {resume_size}  and total: {total}"
         )
         placeholderObj = await placeholder.Placeholders(ele, content_type).init()
@@ -411,14 +413,14 @@ class MainDownloadManager(DownloadManager):
             # the earlier run is removed, as a DRM video's are (#348)
             pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
             total = 0
-            common_logs.path_to_file_logger(placeholderObj, ele, common_globals.log)
+            common_logs.path_to_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
             check = True
         elif total == resume_size:
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} total==resume_size skipping download"
             )
-            common_logs.path_to_file_logger(placeholderObj, ele, common_globals.log)
-            if common_globals.attempt.get() == 0:
+            common_logs.path_to_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
+            if self.ctx.attempt.get() == 0:
                 pass
             check = True
         return total, placeholderObj, check

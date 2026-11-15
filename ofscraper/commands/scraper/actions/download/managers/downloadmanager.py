@@ -57,7 +57,11 @@ class ErrorReply(NoRetry):
 
 
 class DownloadManager:
-    def __init__(self):
+    def __init__(self, ctx=None):
+        """ctx is the DownloadContext the manager uses: its log, thread
+        pool, semaphore, attempt counters and totals. By default it's the
+        process's current one, which main_globals() sets up for each run."""
+        self.ctx = ctx if ctx is not None else common_globals.current()
         self.total = None
         self.process = psutil.Process(os.getpid())
 
@@ -109,24 +113,24 @@ class DownloadManager:
 
         # Catch native aiohttp socket read timeouts
         except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
-            common_globals.log.info(
+            self.ctx.log.info(
                 f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
             )
             raise Exception("Chunk download timed out")
         except Exception as E:
-            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
+            self.ctx.log.info(f"An error occurred during download for {ele}: {E}")
             raise E
         finally:
             if fileobject:
                 try:
                     await fileobject.close()
                 except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
+                    self.ctx.log.debug(f"Error closing file for {ele}: {E}")
                     raise E
             try:
                 await self._remove_download_job_task(task, ele)
             except Exception as E:
-                common_globals.log.debug(
+                self.ctx.log.debug(
                     f"Error removing download job task for {ele}: {E}"
                 )
                 raise E
@@ -135,12 +139,12 @@ class DownloadManager:
     async def _get_cached_reply(self, key):
         """The reply data saved under key when its part was started."""
         return await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.get, key)
+            self.ctx.thread, partial(cache.get, key)
         )
 
     async def _set_cached_reply(self, key, data):
         return await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread, partial(cache.set, key, data)
+            self.ctx.thread, partial(cache.set, key, data)
         )
 
     def _reply_data(self, r, total, resume_size, saved_validator, medialog):
@@ -152,19 +156,19 @@ class DownloadManager:
             "content-type": r.headers.get("content-type"),
             "validator": saved_validator if resume_size else self._validator(r),
         }
-        common_globals.log.debug(f"{medialog} data from request {data}")
-        common_globals.log.debug(
+        self.ctx.log.debug(f"{medialog} data from request {data}")
+        self.ctx.log.debug(
             f"{medialog} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
         )
         return data
 
     def _log_saved_reply(self, medialog, attempt, data):
         """attempt is the "[attempt n/m]" log label."""
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{medialog} {attempt} using data for possible download resumption"
         )
-        common_globals.log.debug(f"{medialog} Data from cache{data}")
-        common_globals.log.debug(
+        self.ctx.log.debug(f"{medialog} Data from cache{data}")
+        self.ctx.log.debug(
             f"{medialog} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
         )
 
@@ -176,10 +180,10 @@ class DownloadManager:
         if not self.total and not new_total:
             return
         elif not self.total:
-            await update_total(new_total)
+            await update_total(new_total, self.ctx)
             self.total = new_total
         elif self.total and new_total - self.total != 0:
-            await update_total(new_total - self.total)
+            await update_total(new_total - self.total, self.ctx)
             self.total = new_total
 
     def _get_resume_header(self, resume_size, total, validator=None):
@@ -292,7 +296,7 @@ class DownloadManager:
             "send the file chunked, so a cut-off download can't be detected; "
             "not downloaded, the .part is kept"
         )
-        common_globals.log.info(message)
+        self.ctx.log.info(message)
         raise Exception(message)
 
     def _get_resume_size(
@@ -336,13 +340,13 @@ class DownloadManager:
         file_size_min = settings.get_settings().size_min
         if int(file_size_max) > 0 and (size > int(file_size_max)):
             ele.mediatype = "Forced_skipped"
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} {format_size(size)} over size limit"
             )
             return 0
         elif int(file_size_min) > 0 and (size < int(file_size_min)):
             ele.mediatype = "Forced_skipped"
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} {format_size(size)} under size min"
             )
             return 0
@@ -400,7 +404,7 @@ class DownloadManager:
         # replace it with another
         if getattr(ele, "mediatype", None) != "Forced_skipped":
             return False
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{get_medialog(ele)} skipped by the size limits, ignoring a later error: {error}"
         )
         return True

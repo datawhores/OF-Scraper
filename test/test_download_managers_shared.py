@@ -98,7 +98,8 @@ def test_writer_appends_on_resume_and_replaces_otherwise(
     events = []
     module = ad if drm else md
     monkeypatch.setattr(
-        module, "send_chunk_msg", lambda ele, total, h: events.append((ele, total, h))
+        # the fourth argument is the manager's log
+        module, "send_chunk_msg", lambda ele, total, h, log: events.append((ele, total, h))
     )
 
     async def first():
