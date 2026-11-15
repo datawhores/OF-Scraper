@@ -37,15 +37,51 @@ def make_config_original():
     make_config(config=False)
 
 
+class NotAnObjectError(ValueError):
+    """config.json is valid JSON but doesn't hold an object of settings"""
+
+
+def _json_type(value):
+    if isinstance(value, bool):
+        return "true or false"
+    if value is None:
+        return "null"
+    if isinstance(value, list):
+        return "a list"
+    if isinstance(value, str):
+        return "a string"
+    if isinstance(value, (int, float)):
+        return "a number"
+    return type(value).__name__
+
+
+def unwrap(config):
+    """
+    The settings in a parsed config.json: the object itself, or the one under
+    "config" in the older {"config": {...}} form (an empty "config" is
+    ignored, as before). Raises NotAnObjectError when either isn't an object.
+    """
+    if not isinstance(config, dict):
+        raise NotAnObjectError(
+            f"config.json holds {_json_type(config)}, not an object of settings"
+        )
+    wrapped = config.get("config")
+    if not wrapped:
+        return config
+    if not isinstance(wrapped, dict):
+        raise NotAnObjectError(
+            f'"config" in config.json holds {_json_type(wrapped)}, '
+            "not an object of settings"
+        )
+    return wrapped
+
+
 def open_config():
     import ofscraper.utils.config.utils.context as config_context
 
     with config_context.config_context():
         configText = config_string()
-        config = json_loads(configText)
-        if config.get("config"):
-            return config.get("config")
-        return config
+        return unwrap(json_loads(configText))
 
 
 def config_string():
@@ -58,8 +94,7 @@ def config_string():
 def write_config(updated_config):
     if isinstance(updated_config, str):
         updated_config = json_loads(updated_config)
-    if updated_config.get("config"):
-        updated_config = updated_config["config"]
+    updated_config = unwrap(updated_config)
     p = common_paths.get_config_path()
     if not p.parent.is_dir():
         p.parent.mkdir(parents=True, exist_ok=True)

@@ -205,6 +205,34 @@ def test_filter_leaves_out_entries_that_arent_names():
     assert data.get_filter(config=config) == ["Images", "Audios"]
 
 
+@pytest.mark.parametrize(
+    "default,expected",
+    [
+        (["images", 7, "videos"], ["Images", "Videos"]),
+        ("images,videos", ["Images", "Videos"]),
+        (None, []),
+    ],
+)
+def test_filter_default_is_normalised_on_every_path(monkeypatch, default, expected):
+    real = of_env.getattr
+
+    def getattr_(key, *args, **kwargs):
+        if key == "FILTER_DEFAULT":
+            return default
+        return real(key, *args, **kwargs)
+
+    monkeypatch.setattr(of_env, "getattr", getattr_)
+    assert data.get_filter(config={}) == expected
+    assert data.get_filter(config=False) == expected
+
+
+def test_filter_default_from_the_environment_is_normalised(monkeypatch):
+    # a variable named after the setting overrides the default
+    monkeypatch.setenv("FILTER_DEFAULT", "images,videos")
+    assert data.get_filter(config={}) == ["Images", "Videos"]
+    assert data.get_filter(config=False) == ["Images", "Videos"]
+
+
 BAD_SECTIONS = [None, "text", 0, 5, True, ["a"]]
 
 
