@@ -309,7 +309,7 @@ name = "browser-cookie3"
 version = "0.20.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jeepney", marker = "sys_platform == 'linux' or 'bsd' in sys_platform" },
+    { name = "jeepney", marker = "'bsd' in sys_platform or sys_platform == 'linux'" },
     { name = "lz4" },
     { name = "pycryptodomex" },
     { name = "shadowcopy", marker = "sys_platform == 'win32'" },
@@ -1504,6 +1504,11 @@ test = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = "~=25.1.0" },
@@ -1552,6 +1557,9 @@ requires-dist = [
     { name = "xxhash", specifier = "~=4.1.0" },
 ]
 provides-extras = ["dev", "docs", "ffmpeg", "test"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.17.4" }]
 
 [[package]]
 name = "packaging"
