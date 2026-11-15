@@ -19,7 +19,7 @@ class SelectField(Widget):
         super().__init__(id=name, classes=classes)
         self.filter_name = name
         clean_name = name.replace("post_", "").capitalize()
-        self.label_text = label or f"{clean_name} Status:"
+        self.label_text = label or f"{clean_name} Status"
 
         setting_val = getattr(settings.get_settings(), self.filter_name, None)
         true_state = (setting_val is True) or (setting_val is None)
