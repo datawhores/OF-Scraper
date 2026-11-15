@@ -1,10 +1,10 @@
-# Contributing to OF-Scraper-Community
+# Contributing to OF-Scraper
 
-Thanks for helping. This is a community-maintained fork of [datawhores/OF-Scraper](https://github.com/datawhores/OF-Scraper), which is no longer updated.
+Thanks for helping.
 
 ### 🌿 Which branch should I use?
 
-* **Target `main`.** It has the latest code, and all fixes are merged there. There's no separate dev branch, and upstream's `dev/3.XX` branches aren't used here.
+* **Target `main`.** It has the latest code, and all fixes are merged there. There's no separate dev branch, and the old `dev/3.XX` branches aren't used.
 * **Releases are tags on `main`**, e.g. `3.15.0`.
 
 ### 🚀 Quick start
