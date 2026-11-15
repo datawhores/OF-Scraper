@@ -1099,6 +1099,9 @@ async def row_gather(username, model_id):
             log.warning(f"Check table: couldn't sort media by date, left unsorted: {E!r}")
             sorted_media = list(media)
 
+    # "index" is the row's key in the table, so it must be unique across all
+    # the creators in one table; "number" counts within this creator
+    first_index = len(ROWS or []) + 1
     for count, ele in enumerate(sorted_media):
         # the date column shows the post's date
         if not ele.postdate:
@@ -1125,7 +1128,7 @@ async def row_gather(username, model_id):
 
         out.append(
             {
-                "index": count + 1,
+                "index": first_index + count,
                 "number": count + 1,
                 "download_cart": cart_state,
                 "username": username,
