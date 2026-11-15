@@ -120,6 +120,15 @@ class InputApp(App):
         table = event.control
         col_name = table.ordered_columns_keys[event.coordinate.column]
         row_key = event.cell_key.row_key.value
+        coordinate = event.coordinate
+
+        # Enter (or a click) on the Number cell adds or removes the row like
+        # the Download cell does
+        if col_name == "number" and "download_cart" in table.ordered_columns_keys:
+            col_name = "download_cart"
+            coordinate = coordinate._replace(
+                column=table.ordered_columns_keys.index("download_cart")
+            )
 
         if col_name == "download_cart":
             if table.id == "data_table":
@@ -146,7 +155,7 @@ class InputApp(App):
                         styled_text = Text(
                             row["download_cart"], style="bold light_goldenrod2"
                         )
-                        table.update_cell_at_coord(event.coordinate, styled_text)
+                        table.update_cell_at_coord(coordinate, styled_text)
                         break
                 self.update_cart_info()
 
