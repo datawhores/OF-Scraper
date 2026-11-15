@@ -77,6 +77,34 @@ def test_toggle_all_true_selects_every_choice(session, make):
     assert _enabled(prompt) == [True, True, True]
 
 
+@pytest.mark.parametrize("make", [_fuzzy, _checkbox], ids=["fuzzy", "checkbox"])
+def test_toggle_all_selects_every_choice_then_clears_them(session, make):
+    prompt = make()
+    assert _enabled(prompt) == [True, False, False]
+
+    # Ctrl+A: the one already selected stays selected (it was flipped off)
+    _press(prompt, "toggle-all")
+    assert _enabled(prompt) == [True, True, True]
+
+    _press(prompt, "toggle-all")  # all selected, so it clears them
+    assert _enabled(prompt) == [False, False, False]
+
+    _press(prompt, "toggle-all")
+    assert _enabled(prompt) == [True, True, True]
+
+
+def test_toggle_all_leaves_choices_the_filter_hides(session):
+    prompt = _fuzzy()
+    control = prompt.content_control
+    control._filtered_choices = [c for c in control.choices if c["index"] != 0]
+
+    _press(prompt, "toggle-all")
+    assert _enabled(prompt) == [True, True, True]
+
+    _press(prompt, "toggle-all")  # the visible two are selected: clear those
+    assert _enabled(prompt) == [True, False, False]
+
+
 def test_toggle_all_false_leaves_choices_the_filter_hides(session):
     prompt = _fuzzy()
     control = prompt.content_control

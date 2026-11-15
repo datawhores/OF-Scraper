@@ -296,10 +296,13 @@ _CHOICE_ACTIONS = ("down", "up", "toggle", "toggle-down", "toggle-up")
 
 
 def fix_list_keys(prompt):
-    """Work around two InquirerPy 0.3.4 bugs in the fuzzy and checkbox prompts.
+    """Work around InquirerPy 0.3.4 behaviour in the fuzzy and checkbox prompts.
 
     - "toggle-all-false" (Ctrl+D) inverted the choices: InquirerPy sets
       ``value if value else not enabled``, and False counts as no value.
+    - "toggle-all" (Ctrl+A) flipped each choice, so it unselected the ones
+      already selected. It now selects them all, or clears them all when
+      they're all selected.
     - A fuzzy filter that matches nothing leaves no visible choices, and Down
       then divides by zero (Up and Tab fail the same way).
 
@@ -309,6 +312,7 @@ def fix_list_keys(prompt):
     lookup = prompt.kb_func_lookup
     lookup["toggle-all-false"] = [{"func": lambda event: _set_all(prompt, False)}]
     lookup["toggle-all-true"] = [{"func": lambda event: _set_all(prompt, True)}]
+    lookup["toggle-all"] = [{"func": lambda event: _toggle_all(prompt)}]
     for action in _CHOICE_ACTIONS:
         lookup[action] = [
             {**method, "func": _skip_when_empty(prompt, method["func"])}
@@ -330,6 +334,20 @@ def _set_all(prompt, value):
     for choice in _visible_choices(prompt):
         if not isinstance(choice["value"], Separator):
             choice["enabled"] = value
+
+
+def _toggle_all(prompt):
+    """Select every visible choice, or clear them when all are selected.
+
+    InquirerPy flips each choice instead, so the ones already selected came
+    out unselected.
+    """
+    choices = [
+        choice
+        for choice in _visible_choices(prompt)
+        if not isinstance(choice["value"], Separator)
+    ]
+    _set_all(prompt, not all(choice["enabled"] for choice in choices))
 
 
 def _skip_when_empty(prompt, func):

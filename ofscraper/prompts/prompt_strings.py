@@ -76,6 +76,7 @@ KEYS
    ========
 
    TOGGLE ALL
+   Selects all, or clears all when all are selected
    ========
    CTRL+A
    ========
@@ -133,6 +134,7 @@ KEYS
 
 
   TOGGLE ALL
+  Selects all, or clears all when all are selected
    ========
    CTRL+A
    ========
