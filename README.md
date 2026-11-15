@@ -37,7 +37,7 @@
 
 ## 📦 Install
 
-This version is on PyPI as **`ofscraper`**. The command is `ofscraper`.
+OF-Scraper is on PyPI as **`ofscraper`**.
 
 ```
 uv tool install ofscraper
@@ -63,7 +63,9 @@ pipx upgrade ofscraper
 pip install -U ofscraper
 ```
 
-**Coming from `ofscraper`:** the old `ofscraper` package on PyPI stops at 3.14.7. Both install the same `ofscraper` command, so uninstall the old one first (`uv tool uninstall ofscraper`, `pipx uninstall ofscraper` or `pip uninstall ofscraper`). Your config, auth and databases are used as they are.
+**Updating from 3.14.7 or older:** use the update command above. Your config, auth and databases are used as they are.
+
+**Have `ofscraper-community` installed?** It's the same code, published as a separate package by the [OF-Scraper-Community](https://github.com/cloakedkeys/OF-Scraper-Community) fork. Both install the same `ofscraper` command, so keep only one. To switch, uninstall it first (`uv tool uninstall ofscraper-community`, `pipx uninstall ofscraper-community` or `pip uninstall ofscraper-community`), then install `ofscraper`.
 
 **Without Python:** download the Windows, macOS or Linux build from the [latest release](https://github.com/datawhores/OF-Scraper/releases/latest). A Docker image is also available.
 
