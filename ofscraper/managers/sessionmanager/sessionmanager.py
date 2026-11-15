@@ -64,8 +64,10 @@ def is_signed_cdn_forbidden(exception: Exception) -> bool:
         host = parsed.hostname or ""
         # Use the actual request URL, including separately supplied params. Do not
         # classify API 403s or depend on CloudFront's optional error body/headers.
+        # Fansly's CDN links are signed the same way, and Fansly sometimes
+        # gives out one signed for another address (#536)
         return (
-            host.endswith(".onlyfans.com")
+            host.endswith((".onlyfans.com", ".fansly.com"))
             and host.split(".")[0].startswith("cdn")
             and {"Policy", "Signature", "Key-Pair-Id"}.issubset(parse_qs(parsed.query))
         )
@@ -229,8 +231,14 @@ class SessionSleep:
 
     def toomany_req(self):
         log = logging.getLogger("shared")
-        if not self._sleep:
-            self._sleep = self._init_sleep if self._init_sleep > 0 else 1
+        # A sleep at the minimum gap is pacing, not backoff: "not self._sleep"
+        # alone never fired when the gap is above 0
+        if not self._sleep or self._sleep <= self._min_sleep:
+            start = self._init_sleep if self._init_sleep > 0 else 1
+            # backoff mode needs a sleep above the gap
+            if start <= self._min_sleep:
+                start = self._min_sleep * self._increase_factor
+            self._sleep = min(start, self._max_sleep)
             log.debug(
                 f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error"
             )
