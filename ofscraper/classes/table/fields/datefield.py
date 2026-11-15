@@ -7,16 +7,12 @@ import ofscraper.utils.settings as settings  # Reconnect to truth
 
 class DateField(Container):
     DEFAULT_CSS = """
-    #minDate{
-        width:50%;
+    DateField Input {
+        width: 50%;
     }
 
-    #maxDate{
-        width:50%;
-    }
-    
-    DateField{
-        row-span:2;
+    DateField {
+        row-span: 2;
     }
     """
 
@@ -38,7 +34,7 @@ class DateField(Container):
         Runs immediately after the widget is drawn.
         """
         # Map filter_name to the config prefix (e.g., 'post_date' becomes 'posted')
-        prefix = "posted" if self.filter_name == "post_date" else self.filter_name
+        prefix = "posted" if self.filter_name in {"post_date", "post_post_date"} else self.filter_name
 
         min_val = getattr(settings.get_settings(), f"{prefix}_after", None)
         max_val = getattr(settings.get_settings(), f"{prefix}_before", None)

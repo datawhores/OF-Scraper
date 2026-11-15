@@ -399,3 +399,42 @@ def test_media_default_columns_and_protected_download_type(stub_env):
             assert app.table.get_cell("1", "download_type").plain == "protected"
 
     asyncio.run(drive())
+
+
+def test_post_table_latest_date_filter_visible_and_works(stub_env, monkeypatch):
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    p_old = _post_obj(401, 5.0, 0, [_media_obj(31, 401, "images")], text="older post")
+    p_old.formatted_date = "2025-01-10"
+    p_new = _post_obj(402, 5.0, 0, [_media_obj(32, 402, "images")], text="newer post")
+    p_new.formatted_date = "2026-06-15"
+    p_rows = post_metrics.build_post_centric_rows([p_old, p_new], "creator_a", 1)
+
+    async def drive():
+        app = table_app.InputApp()
+        app.table_data = []
+        app.post_data = p_rows
+        app._sortkey = None
+        app._reverse = False
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            await pilot.click("#post_tab")
+            await pilot.pause()
+
+            # Open PostTable sidebar and check both Earliest and Latest Date inputs render side-by-side
+            await pilot.press("ctrl+s")
+            await pilot.pause()
+            min_input = app.query_one("#post_post_date_minDate")
+            max_input = app.query_one("#post_post_date_maxDate")
+            assert min_input.region.width > 0
+            assert max_input.region.width > 0
+            assert max_input.region.x >= min_input.region.right
+
+            # Filter to Latest Date = 2025.12.31 -> only older post remains
+            max_input.value = "2025.12.31"
+            await pilot.click("#post_filter")
+            await pilot.pause()
+            assert [r["post_id"] for r in app._filtered_post_rows] == [401]
+
+    asyncio.run(drive())
