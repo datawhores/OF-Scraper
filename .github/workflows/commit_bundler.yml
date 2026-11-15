@@ -26,10 +26,10 @@ jobs:
     name: Generate Version Info
     runs-on: ubuntu-latest
     env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF: ${{ github.ref }}
-          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_REF: ${{ github.ref }}
+      GITHUB_EVENT_BEFORE: ${{ github.event.before }}
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       sanitized_version: ${{ steps.version.outputs.SANITIZED_VERSION }}
@@ -45,12 +45,11 @@ jobs:
         with:
           fetch-depth: 0 # Essential for git merge-base to compare full history
           fetch-tags: true
-      
+
       - name: Make script executable
         run: chmod +x ./scripts/commit_version.sh
       - name: Generate Version and Git Info
         id: version # This step runs your commit_version.sh script
-        # Pass GitHub Actions context variables as environment variables to the script
         run: ./scripts/commit_version.sh
 
   build_binaries:
@@ -59,7 +58,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false # <-- ADDED: Allows all OS builds to complete even if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -112,19 +111,19 @@ jobs:
       - name: Build Executable using Spec Files (One-File)
         id: build_onefile
         shell: bash
-        continue-on-error: true # <-- ADDED: Allows this step to fail without stopping this OS matrix axis
+        continue-on-error: true
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           EXE_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}"
-          
+
           if [ "${{ runner.os }}" == "Windows" ]; then
-              source .venv/Scripts/activate
-              EXE_EXT=".exe"
+            source .venv/Scripts/activate
+            EXE_EXT=".exe"
           else
-              source .venv/bin/activate
-              EXE_EXT=""
+            source .venv/bin/activate
+            EXE_EXT=""
           fi
-          
+
           echo "Building one-file executable from specs/onefile.spec..."
           pyinstaller specs/onefile.spec
           mv dist/ofscraper_file${EXE_EXT} dist/${EXE_NAME}${EXE_EXT}
@@ -136,21 +135,21 @@ jobs:
         with:
           name: ${{ steps.build_onefile.outputs.one_file_name }}
           path: ${{ steps.build_onefile.outputs.one_file_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if-no-files-found: ignore
 
       - name: Build and Zip One-Dir Bundle
         id: build_onedir_zip
         shell: bash
-        continue-on-error: true # Already present: Allows this step to fail without stopping this OS matrix axis
+        continue-on-error: true
         run: |
           SANITIZED_VERSION="${{ needs.generate_version.outputs.sanitized_version }}"
           DIR_NAME="ofscraper_${{ matrix.artifact_suffix }}_dir"
           ZIP_NAME="ofscraper_${{ matrix.artifact_suffix }}_${SANITIZED_VERSION}.zip"
 
           if [ "${{ runner.os }}" == "Windows" ]; then
-              source .venv/Scripts/activate
+            source .venv/Scripts/activate
           else
-              source .venv/bin/activate
+            source .venv/bin/activate
           fi
 
           echo "Building one-dir bundle from specs/onedir.spec..."
@@ -174,7 +173,7 @@ jobs:
         with:
           name: ${{ steps.build_onedir_zip.outputs.zip_name }}
           path: ${{ steps.build_onedir_zip.outputs.zip_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if-no-files-found: ignore
 
       - name: Upload One-Dir Folder (if zip failed)
         if: failure() && steps.build_onedir_zip.outcome == 'failure'
@@ -182,12 +181,12 @@ jobs:
         with:
           name: ${{ steps.build_onedir_zip.outputs.dir_name }}
           path: ${{ steps.build_onedir_zip.outputs.dir_path }}
-          if-no-files-found: ignore # Ensures upload step doesn't fail if previous build step failed
+          if-no-files-found: ignore
 
   publish_release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build_binaries, generate_version] # Waits for version info AND all binary builds to complete (even partially)
+    needs: [build_binaries, generate_version]
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to create/update GitHub Releases
@@ -196,18 +195,14 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: artifacts/
-          # No specific `if-no-files-found` here on download-artifact, it will download what's available
-          # and log warnings for missing ones by default.
 
       - name: List downloaded files for debugging
         run: ls -R artifacts
 
       - name: Create or Update Release
         uses: ncipollo/release-action@v1.21.0
-
         with:
-          artifacts: artifacts/*/* # Attach any downloaded artifacts (will include only those that were built successfully)
-          # One release per version tag; a re-run updates it
+          artifacts: artifacts/*/*
           tag: ${{ github.ref_name }}
           name: ${{ needs.generate_version.outputs.version }}
           generateReleaseNotes: true
@@ -242,16 +237,16 @@ jobs:
         run: |
           EXPECTED="${TAG#v}"
           for f in dist/*; do echo "built: $f"; done
-          WHEELS=(dist/ofscraper_community-*-py3-none-any.whl)
-          SDISTS=(dist/ofscraper_community-*.tar.gz)
+          WHEELS=(dist/ofscraper-*-py3-none-any.whl)
+          SDISTS=(dist/ofscraper-*.tar.gz)
           if [ ${#WHEELS[@]} -ne 1 ] || [ ! -f "${WHEELS[0]}" ] || [ ${#SDISTS[@]} -ne 1 ] || [ ! -f "${SDISTS[0]}" ]; then
-            echo "::error::expected one ofscraper-community wheel and one sdist"; exit 1
+            echo "::error::expected one ofscraper wheel and one sdist"; exit 1
           fi
           BUILT=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Version: //p' | tr -d '\r')
           NAME=$(unzip -p "${WHEELS[0]}" '*.dist-info/METADATA' | sed -n 's/^Name: //p' | tr -d '\r')
           echo "name: $NAME, version: $BUILT, tag: $TAG"
-          if [ "$NAME" != "ofscraper-community" ]; then
-            echo "::error::package name is '$NAME', not 'ofscraper-community'"; exit 1
+          if [ "$NAME" != "ofscraper" ]; then
+            echo "::error::package name is '$NAME', not 'ofscraper'"; exit 1
           fi
           case "$BUILT" in
             *+*) echo "::error::version '$BUILT' has a local part, which PyPI rejects"; exit 1 ;;
@@ -259,7 +254,7 @@ jobs:
           if [ "$BUILT" != "$EXPECTED" ]; then
             echo "::error::version '$BUILT' doesn't match tag '$TAG'"; exit 1
           fi
-          if [ "${SDISTS[0]}" != "dist/ofscraper_community-${EXPECTED}.tar.gz" ]; then
+          if [ "${SDISTS[0]}" != "dist/ofscraper-${EXPECTED}.tar.gz" ]; then
             echo "::error::sdist '${SDISTS[0]}' doesn't match tag '$TAG'"; exit 1
           fi
 
