@@ -17,8 +17,11 @@ class TimeField(Container):
     height:auto;
     }
 
+    /* as tall as the boxes, text on their middle line */
     TimeField .length_label{
     width:2fr;
+    height:3;
+    content-align:left middle;
     }
 
     .min_length,.max_length{

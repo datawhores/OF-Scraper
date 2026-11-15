@@ -118,6 +118,19 @@ def test_rows_are_labelled(start):
     _drive(steps)
 
 
+def test_row_labels_line_up_with_their_boxes(start):
+    async def steps(app, pilot, field):
+        for container, box in [("#minContainer", "#min_hour"), ("#maxContainer", "#max_hour")]:
+            label = field.query_one(container).query_one(Label)
+            box = app.query_one(box, Input)
+            # the label is as tall as the box and its text sits on the middle
+            # line, where the box's own text is
+            assert (label.region.y, label.region.height) == (box.region.y, box.region.height)
+            assert label.styles.content_align_vertical == "middle"
+
+    _drive(steps)
+
+
 @pytest.mark.parametrize(
     "start", [{"length_min": 90, "length_max": 3600}], indirect=True
 )
