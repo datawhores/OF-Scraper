@@ -23,7 +23,7 @@ DOWNLOAD = "Download content from a user"
 LIKE = "Like a selection of a user's posts"
 MENU_HINT = (
     '[yellow]Hint: Full rescan: answer Yes to "Would you like to redownload'
-    ' all files" (this also re-downloads files)[/yellow]'
+    ' all files"; it also scans every post from 2000[/yellow]'
 )
 NORMAL = (None, False, False)
 REDOWNLOAD = (YEAR_2000, True, True)

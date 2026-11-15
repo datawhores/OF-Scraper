@@ -21,19 +21,26 @@ def _load(monkeypatch, versions):
     spec = importlib.util.spec_from_file_location("_version_under_test", VERSION_FILE)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.__version__, asked
+    return (module.__version__, module.__dist_name__), asked
 
 
 def test_version_comes_from_the_ofscraper_distribution(monkeypatch):
+    # 'ofscraper' is looked up first, so it wins when both are installed
     version, asked = _load(
-        monkeypatch, {"ofscraper": "3.16.2"}
+        monkeypatch, {"ofscraper": "3.16.14", "ofscraper-community": "3.16.2"}
     )
-    assert version == "3.16.2"
+    assert version == ("3.16.14", "ofscraper")
     assert asked == ["ofscraper"]
 
 
-@pytest.mark.parametrize("installed", [{}, {"ofscraper": "3.14.7"}])
-def test_version_falls_back_when_not_installed(monkeypatch, installed):
-    # upstream's 'ofscraper' metadata is never mistaken for the fork's version
-    version, _ = _load(monkeypatch, installed)
-    assert version == "0.0.0"
+def test_version_comes_from_the_ofscraper_community_distribution(monkeypatch):
+    # cloakedkeys/OF-Scraper-Community publishes the same code to PyPI as
+    # 'ofscraper-community'
+    version, asked = _load(monkeypatch, {"ofscraper-community": "3.16.2"})
+    assert version == ("3.16.2", "ofscraper-community")
+    assert asked == ["ofscraper", "ofscraper-community"]
+
+
+def test_version_falls_back_when_not_installed(monkeypatch):
+    version, _ = _load(monkeypatch, {})
+    assert version == ("0.0.0", "ofscraper")

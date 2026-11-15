@@ -26,7 +26,7 @@ CLI_HINT = (
 )
 MENU_HINT = (
     '[yellow]Hint: Full rescan: answer Yes to "Would you like to redownload'
-    ' all files" (this also re-downloads files)[/yellow]'
+    ' all files"; it also scans every post from 2000[/yellow]'
 )
 YEAR_2000 = arrow.get("2000").float_timestamp
 PARTIAL = arrow.get("2024-03-01").float_timestamp

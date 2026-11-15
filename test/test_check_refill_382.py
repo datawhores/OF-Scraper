@@ -49,7 +49,7 @@ def _refill(monkeypatch, command, model_id):
     monkeypatch.setattr(check.settings, "get_settings", lambda: current)
     monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(session=SimpleNamespace(aget_ofsession=fake_session)))
     monkeypatch.setattr(check.auth_requests, "make_headers", lambda: None)
-    monkeypatch.setattr(check.profile, "get_id", lambda name: IDS[name])
+    monkeypatch.setattr(check.profile, "get_id", lambda name, **kw: IDS[name])
     monkeypatch.setattr(check.profile, "scrape_profile", lambda name: {"username": NAMES.get(name, name)})
     monkeypatch.setattr(check, "read_check", lambda *a: None)
     monkeypatch.setattr(check, "set_check", lambda *a: None)

@@ -13,7 +13,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.__version__ import __version__
+from ofscraper.__version__ import __dist_name__, __version__
 import ofscraper.utils.cache.cache as cache
 from ofscraper.managers.sessionmanager.sessionmanager import BareSession
 
@@ -94,7 +94,10 @@ def is_newer(new_version, current_version):
     return _release(new_version) > _release(current_version)
 
 
-PYPI_URL = "https://pypi.org/pypi/ofscraper/json"
+def pypi_url():
+    # the PyPI project this copy was installed from: 'ofscraper', or
+    # 'ofscraper-community' for installs published by OF-Scraper-Community
+    return f"https://pypi.org/pypi/{__dist_name__}/json"
 
 
 def print_latest_version():
@@ -102,7 +105,7 @@ def print_latest_version():
     # runs at the end of every run too, so a failed check (offline, or not on
     # PyPI yet) must not stop it
     try:
-        with BareSession.get_bare_session(url=PYPI_URL, method="get") as sess:
+        with BareSession.get_bare_session(url=pypi_url(), method="get") as sess:
             data = sess.json()
     except Exception as e:
         log.debug(f"Couldn't check PyPI for a newer version: {e}")

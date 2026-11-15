@@ -443,7 +443,11 @@ def test_downloaders_record_and_use_final_path(tmp_path, monkeypatch, downloader
         return target.name
 
     ele.final_filename = filename() if downloader == "normal" else None
-    manager = SimpleNamespace(_size_checker=AsyncMock(), _after_download_script=AsyncMock())
+    # the unbound methods run on this stand-in, which uses the current context
+    manager = SimpleNamespace(
+        _size_checker=AsyncMock(), _after_download_script=AsyncMock(),
+        ctx=module.common_globals.current(),
+    )
     database = AsyncMock()
     hashing = AsyncMock(return_value="new-hash")
     dating = Mock()
@@ -479,7 +483,8 @@ def test_downloaders_record_and_use_final_path(tmp_path, monkeypatch, downloader
     assert database.await_args.kwargs["filepath"] == final
     assert database.await_args.kwargs["size"] == len(payload)
     assert database.await_args.kwargs["hashdata"] == "new-hash"
-    hashing.assert_awaited_once_with(final)
+    # hashed on the manager's thread pool
+    hashing.assert_awaited_once_with(final, manager.ctx.thread)
     assert dating.call_args.args[0] == final
     ele.add_filepath.assert_called_once_with(final)
     manager._after_download_script.assert_awaited_once_with(final)

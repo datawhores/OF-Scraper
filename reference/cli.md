@@ -130,6 +130,7 @@ Run `python -m ofscraper.commands.stash_sync PATH... [OPTIONS]`.
 - `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--force] | --csv FILE] [--data-dir DIR]`. Lists the usernames each creator account has had, from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder). `--add` appends a name. It works on OnlyFans databases only.
 - `scripts/determine_docker_stable_dev_tags.py`: CI helper. Asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.
 - `scripts/entry/`: Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.
+- `scripts/lint/`: CI lint helper. `python scripts/lint/check_blind_except.py [--update]` counts ruff's BLE001 (blind except) and S110 (try/except/pass) findings per file in `ofscraper/data/api` and `ofscraper/db` and fails when a count differs from `blind_except_baseline.json`. `--update` rewrites the baseline; commit it after removing findings.
 - `scripts/retry_action.sh`: CI helper. Retries a command up to N times, with a sleep between attempts.
 
 ## `--action` modes

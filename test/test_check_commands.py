@@ -164,7 +164,7 @@ def _run_post_check(monkeypatch):
     monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(session=SimpleNamespace(aget_ofsession=fake_session)))
     monkeypatch.setattr(check, "read_check", lambda *a: None)
     monkeypatch.setattr(check, "set_check", lambda *a: None)
-    monkeypatch.setattr(check.profile, "get_id", lambda name: 12345)
+    monkeypatch.setattr(check.profile, "get_id", lambda name, **kw: 12345)
     monkeypatch.setattr(check.operations, "table_init_create", nothing)
     monkeypatch.setattr(check.operations, "make_label_table_changes", nothing)
     monkeypatch.setattr(check.operations, "make_post_table_changes", nothing)
@@ -232,7 +232,7 @@ def _run_msg_check(monkeypatch, inputs):
         looked_up.append(("id", model_id))
         return {"username": names.get(model_id, "creator_" + model_id)}
 
-    def get_id(username):
+    def get_id(username, asked_for=None):
         looked_up.append(("name", username))
         return ids.get(username, "999")
 

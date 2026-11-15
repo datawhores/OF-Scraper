@@ -17,6 +17,12 @@ from ofscraper.classes.table.sections.sidebar import Sidebar
 from ofscraper.classes.table.sections.table import DataTableExtended as DataTable
 from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
 
+# a scan doesn't learn file sizes; the download request does
+SIZE_LIMIT_NOTE = (
+    "Size limits apply when files download, not to the table: a scan doesn't"
+    " know file sizes, so no rows are hidden."
+)
+
 
 # Add this helper function above def composer():
 def pagination_bar(prefix: str):
@@ -101,6 +107,10 @@ def composer():
                 yield Static("Values change right away", shrink=True, markup=True)
                 yield SizeMinField("Download_Size_Min")
                 yield SizeMaxField("Download_Size_Max")
+                # no markup: "[skipped]" would be read as a style tag
+                yield Static(
+                    SIZE_LIMIT_NOTE, id="size_limit_note", shrink=True, markup=False
+                )
 
             with Sidebar(id="options_sidebar", classes="-hidden"):
                 with Container(id="main_options"):

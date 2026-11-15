@@ -244,6 +244,7 @@ COMMANDS = {
     "scripts/commit_version.sh": "CI helper. Works out the commit-based version string, hashes and push type from git for the build workflows.",
     "scripts/determine_docker_stable_dev_tags.py": "CI helper. Asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.",
     "scripts/retry_action.sh": "CI helper. Retries a command up to N times, with a sleep between attempts.",
+    "scripts/lint/": "CI lint helper. `python scripts/lint/check_blind_except.py [--update]` counts ruff's BLE001 (blind except) and S110 (try/except/pass) findings per file in `ofscraper/data/api` and `ofscraper/db` and fails when a count differs from `blind_except_baseline.json`. `--update` rewrites the baseline; commit it after removing findings.",
     "scripts/entry/": "Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.",
 }
 

@@ -17,8 +17,11 @@ class TimeField(Container):
     height:auto;
     }
 
-    TimeField Label{
+    /* as tall as the boxes, text on their middle line */
+    TimeField .length_label{
     width:2fr;
+    height:3;
+    content-align:left middle;
     }
 
     .min_length,.max_length{
@@ -34,15 +37,15 @@ class TimeField(Container):
 
     def compose(self):
         with Horizontal(id="minContainer"):
-            yield Label("MinLength")
-            yield IntegerInput(placeholder="Hour", classes="min_length", id="min_hour")
-            yield IntegerInput(placeholder="Min", classes="min_length", id="min_minute")
-            yield IntegerInput(placeholder="Sec", classes="min_length", id="min_second")
+            yield Label("Min length", classes="length_label")
+            yield IntegerInput(placeholder="Hours", classes="min_length", id="min_hour")
+            yield IntegerInput(placeholder="Minutes", classes="min_length", id="min_minute")
+            yield IntegerInput(placeholder="Seconds", classes="min_length", id="min_second")
         with Horizontal(id="maxContainer"):
-            yield Label("MaxLength")
-            yield IntegerInput(placeholder="Hour", classes="max_length", id="max_hour")
-            yield IntegerInput(placeholder="Min", classes="max_length", id="max_minute")
-            yield IntegerInput(placeholder="Sec", classes="max_length", id="max_second")
+            yield Label("Max length", classes="length_label")
+            yield IntegerInput(placeholder="Hours", classes="max_length", id="max_hour")
+            yield IntegerInput(placeholder="Minutes", classes="max_length", id="max_minute")
+            yield IntegerInput(placeholder="Seconds", classes="max_length", id="max_second")
 
     def on_mount(self):
         """
@@ -63,36 +66,24 @@ class TimeField(Container):
         self.update_table_max(val)
 
     def update_table_min(self, val):
-        minLenthInputs = list(self.query_one("#minContainer").query(IntegerInput))
-        if isinstance(val, (int, float)) or str(val).isnumeric():
-            val = int(val)
-            hours = val // 3600
-            minutes = (val % 3600) // 60
-            seconds = val % 60
-
-        elif val != "N/A" and val != "N\\A":
-            valArray = val.split(":")
-            hours, minutes, seconds = valArray
-        else:
-            hours, minutes, seconds = 0, 0, 0
-        for pack in zip(minLenthInputs, [hours, minutes, seconds]):
-            pack[0].value = str(pack[1])
+        self._fill("#minContainer", val)
 
     def update_table_max(self, val):
-        maxLenthInputs = list(self.query_one("#maxContainer").query(IntegerInput))
+        self._fill("#maxContainer", val)
+
+    def _fill(self, container, val):
+        inputs = list(self.query_one(container).query(IntegerInput))
         if isinstance(val, (int, float)) or str(val).isnumeric():
             val = int(val)
-            hours = val // 3600
-            minutes = (val % 3600) // 60
-            seconds = val % 60
-
+            parts = [val // 3600, (val % 3600) // 60, val % 60]
         elif val != "N/A" and val != "N\\A":
-            valArray = val.split(":")
-            hours, minutes, seconds = valArray
+            parts = [int(x) for x in str(val).split(":")]
         else:
-            hours, minutes, seconds = 0, 0, 0
-        for pack in zip(maxLenthInputs, [hours, minutes, seconds]):
-            pack[0].value = str(pack[1])
+            parts = [0, 0, 0]
+        # a zero part is left empty (it means the same) so its placeholder
+        # shows; "0" in all three boxes hid which box was which
+        for box, part in zip(inputs, parts):
+            box.value = str(part) if part else ""
 
     def reset(self):
         for ele in self.query(IntegerInput):

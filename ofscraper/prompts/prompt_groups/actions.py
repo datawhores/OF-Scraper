@@ -2,7 +2,6 @@ from ofscraper.prompts.cancel import cancel_scope
 
 from InquirerPy.separator import Separator
 import arrow
-from ofscraper.prompts.promptConvert import prompt
 
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as promptClasses

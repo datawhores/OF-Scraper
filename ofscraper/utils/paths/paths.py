@@ -218,7 +218,7 @@ def cleanDB():
             missing_ok=True
         )
     except PermissionError:
-        None
+        pass
 
 
 def speed_file():
