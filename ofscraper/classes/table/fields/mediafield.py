@@ -7,8 +7,7 @@ import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 class MediaField(SelectField):
     DEFAULT_CSS = """
     MediaField {
-        column-span: 3;
-        row-span: 4;
+        column-span: 4;
         height: auto;
     }
     """
@@ -68,7 +67,6 @@ class PostMediaField(SelectField):
     DEFAULT_CSS = """
     PostMediaField {
         column-span: 4;
-        row-span: 4;
         height: auto;
     }
     """

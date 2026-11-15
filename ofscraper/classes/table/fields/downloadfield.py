@@ -8,8 +8,7 @@ from textual.widgets.selection_list import Selection
 class DownloadField(SelectField):
     DEFAULT_CSS = """
     DownloadField {
-        column-span: 3;
-        row-span: 4;
+        column-span: 4;
         height: auto;
     }
     """

@@ -10,7 +10,6 @@ class NumField(Vertical):
     DEFAULT_CSS = """
     NumField {
         height: auto;
-        row-span: 2;
     }
     """
 

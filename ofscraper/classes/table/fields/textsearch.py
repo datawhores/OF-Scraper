@@ -8,7 +8,6 @@ class TextSearch(Vertical):
     DEFAULT_CSS = """
     TextSearch {
         column-span: 4;
-        row-span: 2;
         height: auto;
     }
 

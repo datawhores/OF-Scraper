@@ -8,8 +8,10 @@ import ofscraper.utils.settings as settings  # Bring in the source of truth
 class SelectField(Widget):
     DEFAULT_CSS = """
     SelectField {
-        row-span: 3;
-        column-span: 2;
+        column-span: 4;
+        height: auto;
+    }
+    SelectField SelectionList {
         height: auto;
     }
     """

@@ -7,7 +7,6 @@ class ResponseField(SelectField):
     DEFAULT_CSS = """
     ResponseField {
         column-span: 4;
-        row-span: 5;
         height: auto;
     }
     """

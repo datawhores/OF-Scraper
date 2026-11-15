@@ -5,7 +5,6 @@ Widgets = """
     
     Sidebar Widget {
         column-span: 4;
-        row-span: 2;
     }
     
     Screen {
@@ -192,10 +191,17 @@ Options = """
     }
 
     #main_options, #post_options {
-        height: 150;
+        height: auto;
         layout: grid;
-        grid-size: 4 60;
-        margin-top: 2;
+        grid-size: 4;
+        grid-rows: auto;
+        margin-top: 1;
+        padding-bottom: 2;
+    }
+    
+    #main_options Rule, #post_options Rule {
+        column-span: 4;
+        margin: 1 0;
     }
 
     /* Filter and Clear Filters share the top row */
@@ -206,15 +212,12 @@ Options = """
     /* Length holds two rows of 3-line inputs, more than 2 grid rows.
        It's set here because "Sidebar Widget" beats the field's DEFAULT_CSS */
     #main_options TimeField {
-        row-span: 3;
     }
 
     #post_options PostMediaField {
-        row-span: 3;
     }
 
     #post_options ResponseField {
-        row-span: 5;
     }
 
     /* a container is 1fr high by default, so each size field took half

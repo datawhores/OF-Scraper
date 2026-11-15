@@ -7,7 +7,6 @@ class PriceField(Vertical):
     DEFAULT_CSS = """
     PriceField {
         column-span: 4;
-        row-span: 2;
         height: auto;
     }
 

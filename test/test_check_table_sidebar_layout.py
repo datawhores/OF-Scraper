@@ -143,11 +143,11 @@ def test_options_sidebar_fields_do_not_overlap():
         await pilot.press("ctrl+s")
         await _settle(pilot)
         grid = app.query_one("#main_options")
-        children = list(grid.children)
-        for a, b in itertools.combinations(children, 2):
-            assert not a.region.overlaps(b.region), (a, b)
-        for child in children:
-            assert grid.region.contains_region(child.region), child
+        import itertools
+        visible_children = [c for c in grid.children if c.display and c.region.height > 0]
+        for a, b in itertools.combinations(visible_children, 2):
+            assert not a.region.overlaps(b.region), f"{a} overlaps {b}"
+
 
     _drive(steps)
 

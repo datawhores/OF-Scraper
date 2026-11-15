@@ -9,7 +9,6 @@ class DateField(Container):
     DEFAULT_CSS = """
     DateField {
         column-span: 4;
-        row-span: 3;
         height: auto;
     }
 
