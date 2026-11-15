@@ -123,8 +123,8 @@ Table = """
         height: 1fr;
     }
     
-    /* 1. Page Ceiling: Prevents headers from scrolling off-screen */
-    #table_page, #cart_page {
+/* 1. Page Ceiling: Prevents headers from scrolling off-screen */
+    #media_table_page, #cart_page {
         height: 1fr; 
         width: 100%;
         layout: vertical;
@@ -133,7 +133,7 @@ Table = """
 
     /* 2. Container: Using 1fr here allows it to expand to fill the page,
        while padding-bottom: 1 protects the horizontal scrollbar. */
-    #table_main, #cart_table_main {
+    #media_table_main, #cart_table_main {
         height: 1fr;
         width: 100%;
         padding-bottom: 1; 
@@ -141,12 +141,11 @@ Table = """
     
     /* 3. The Table: height: auto allows it to be small when empty.
        margin: 1 adds a clean buffer around the grid. */
-    #data_table, #cart_data_table {
+    #media_table, #cart_data_table {
         margin: 1;
         height: auto; 
         width: 100%;
-    }
-"""
+    }"""
 
 Options = """
     #options_sidebar, #download_option_sidebar {

@@ -92,7 +92,7 @@ class InputApp(App):
         key = re.sub(" ", "_", clean_label).lower()
         if key == "download_cart":
             table_id = event.control.id
-            if table_id == "data_table":
+            if table_id == "media_table":
                 self.action_select_current_page()
             elif table_id == "cart_data_table":
                 self.action_clear_current_page()
@@ -131,7 +131,7 @@ class InputApp(App):
             )
 
         if col_name == "download_cart":
-            if table.id == "data_table":
+            if table.id == "media_table":
                 for row in self._filtered_rows:
                     if str(row["index"]) == row_key:
                         # Prevent manually clicking locked or unknown media
@@ -170,7 +170,7 @@ class InputApp(App):
         if btn_id in ["console", "table", "cart"]:
             if btn_id == "cart":
                 self.update_cart_table()
-            self.query_one(ContentSwitcher).current = f"{btn_id}_page"
+            self.query_one(ContentSwitcher).current = "media_table_page" if btn_id == "table" else f"{btn_id}_page"
             self.set_active_tab(btn_id)
 
         # Top level controls
@@ -234,7 +234,7 @@ class InputApp(App):
 
     # --- Sidebars Actions ---
     def action_toggle_options_sidebar(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page":
+        if self.query_one(ContentSwitcher).current != "media_table_page":
             return
         for ele in filter(
             lambda x: x.id != "options_sidebar", self.query("Sidebar.-show")
@@ -247,7 +247,7 @@ class InputApp(App):
         self.update_toggle_labels()
 
     def action_toggle_download_sidebar(self) -> None:
-        if self.query_one(ContentSwitcher).current != "table_page":
+        if self.query_one(ContentSwitcher).current != "media_table_page":
             return
         for ele in filter(
             lambda x: x.id != "download_option_sidebar", self.query("Sidebar.-show")
@@ -370,7 +370,7 @@ class InputApp(App):
     def action_select_current_page(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
@@ -380,7 +380,7 @@ class InputApp(App):
     def action_select_all_filtered(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         self._add_items_to_cart(self._filtered_rows)
@@ -406,7 +406,7 @@ class InputApp(App):
     def action_select_unique_current_page(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
@@ -416,7 +416,7 @@ class InputApp(App):
     def action_select_unique_all_filtered(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         self._run_unique_selection(self._filtered_rows)
@@ -451,7 +451,7 @@ class InputApp(App):
     def action_select_page_undownloaded(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
@@ -474,7 +474,7 @@ class InputApp(App):
     def action_select_all_undownloaded(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         for row in self._filtered_rows:
@@ -498,7 +498,7 @@ class InputApp(App):
         if self.is_sidebar_open:
             return
         active_tab = self.query_one(ContentSwitcher).current
-        if active_tab == "table_page":
+        if active_tab == "media_table_page":
             num_page = int(
                 self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
             )
@@ -526,7 +526,7 @@ class InputApp(App):
         if self.is_sidebar_open:
             return
         active_tab = self.query_one(ContentSwitcher).current
-        if active_tab == "table_page":
+        if active_tab == "media_table_page":
             for row in self._filtered_rows:
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
@@ -575,7 +575,7 @@ class InputApp(App):
     def action_open_download_folder(self) -> None:
         if (
             self.is_sidebar_open
-            or self.query_one(ContentSwitcher).current != "table_page"
+            or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
         self._open_target(lambda: open_folder.row_target(self.highlighted_row()))
@@ -866,8 +866,8 @@ class InputApp(App):
     def update_table_sort(self, key):
         self.set_sort(key)
         active_tab = self.query_one(ContentSwitcher).current
-        if active_tab == "table_page":
-            self._insert_visible_table(self.query_one("#data_table"))
+        if active_tab == "media_table_page":
+            self._insert_visible_table(self.query_one("#media_table"))
             self.set_filtered_rows()
             self.set_page()
         elif active_tab == "cart_page":
@@ -1029,7 +1029,7 @@ class InputApp(App):
 
     @property
     def table(self):
-        return self.query_one("#data_table")
+        return self.query_one("#media_table")
 
     @property
     def is_sidebar_open(self) -> bool:

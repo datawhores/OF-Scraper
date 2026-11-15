@@ -14,7 +14,7 @@ from ofscraper.classes.table.inputs.strinput import StrInput
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 from ofscraper.classes.table.sections.table_console import OutConsole
 from ofscraper.classes.table.sections.sidebar import Sidebar
-from ofscraper.classes.table.sections.table import DataTableExtended as DataTable
+from ofscraper.classes.table.sections.table import DataTableExtended
 from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
 
 # a scan doesn't learn file sizes; the download request does
@@ -47,19 +47,19 @@ def pagination_bar(prefix: str):
 
 def composer():
     with Horizontal(id="tabs_row"):
-        yield Button("DataTable", id="table")
+        yield Button("MediaTable", id="table")
         yield Button("Cart", id="cart")
         yield Button("Console", id="console")
         yield Button("Stop Downloads (Ctrl+X)", id="stop_downloads")
 
     yield Rule()
 
-    with ContentSwitcher(initial="table_page"):
+    with ContentSwitcher(initial="media_table_page"):
         
 # ==========================================
         # 1. MAIN DATA TABLE PAGE
         # ==========================================
-        with Vertical(id="table_page"):
+        with Vertical(id="media_table_page"):
             with Horizontal(classes="header_top_row"):
                 # Column 1: DB and Cart Info
                 with Vertical(classes="trackers_column"):
@@ -99,8 +99,8 @@ def composer():
             with Horizontal(classes="pagination_row"):
                 yield from pagination_bar("main")
 
-            with Vertical(id="table_main"):
-                yield DataTable(id="data_table")
+            with Vertical(id="media_table_main"):
+                yield DataTableExtended(id="media_table")
 
             # Sidebars (Only visible on Main Table)
             with Sidebar(id="download_option_sidebar", classes="-hidden"):
@@ -169,7 +169,7 @@ def composer():
             with Horizontal(classes="pagination_row"):
                 yield from pagination_bar("cart")
             with Vertical(id="cart_table_main"):
-                yield DataTable(id="cart_data_table")
+                yield DataTableExtended(id="cart_data_table")
 
         # ==========================================
         # 3. CONSOLE PAGE

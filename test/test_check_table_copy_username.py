@@ -80,7 +80,7 @@ def _drive(steps):
             await _settle(pilot)
             notices = []
             app.notify = lambda message, **kwargs: notices.append(message)
-            await steps(app, pilot, app.query_one("#data_table"), notices)
+            await steps(app, pilot, app.query_one("#media_table"), notices)
 
     asyncio.run(run())
 
