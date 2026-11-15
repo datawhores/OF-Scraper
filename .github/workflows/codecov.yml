@@ -21,6 +21,26 @@ on:
       - '.github/ISSUE_TEMPLATE/**'
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up uv and Python 3.11
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+      # ruff is pinned in the test extra, so uv.lock decides its version.
+      # Linting doesn't need the package itself, whose version comes from git
+      # tags this shallow checkout doesn't have.
+      - name: Install dependencies
+        run: uv sync --frozen --extra test --no-install-project
+      - name: Run ruff
+        run: uv run --no-sync ruff check --output-format github
+      # blind excepts in ofscraper/data/api and ofscraper/db may only go down
+      - name: Check blind-except baseline
+        if: ${{ !cancelled() }}
+        run: uv run --no-sync python scripts/lint/check_blind_except.py
   run:
     runs-on: ubuntu-latest
     strategy:

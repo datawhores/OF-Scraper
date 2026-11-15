@@ -14,7 +14,7 @@ CLI_HINT = (
 # --after 2000 together with --force-all
 MENU_HINT = (
     'Full rescan: answer Yes to "Would you like to redownload all files"'
-    " (this also re-downloads files)"
+    "; it also scans every post from 2000"
 )
 
 # set once the action prompt chose the actions (main menu, daemon or the

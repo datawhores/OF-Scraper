@@ -1,7 +1,9 @@
 import logging
+import re
 from rich.text import Text
 from ofscraper.classes.table.utils.names import get_col_names
 
+from textual.coordinate import Coordinate
 from textual.widgets import DataTable
 from ofscraper.classes.table.utils.lock import mutex
 log = logging.getLogger("shared")
@@ -29,6 +31,50 @@ class DataTableExtended(DataTable):
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
+
+    # columns a right-click copies from
+    COPY_COLUMNS = {"username", "other_posts_with_media"}
+
+    async def _on_click(self, event):
+        # a right-click on one of those cells copies it and doesn't select
+        # it. Textual runs DataTable's own handler after this one, unless
+        # it's prevented
+        if event.button == 3 and self._copy_cell(event):
+            event.prevent_default()
+            event.stop()
+
+    def _copy_cell(self, event):
+        meta = event.style.meta
+        row, column = meta.get("row", -1), meta.get("column", -1)
+        if row < 0 or column < 0 or meta.get("out_of_bounds", False):
+            return False
+        if self.ordered_columns_keys[column] not in self.COPY_COLUMNS:
+            return False
+        coordinate = Coordinate(row, column)
+        value = self.get_cell_at(coordinate)
+        shown = value.plain if isinstance(value, Text) else str(value)
+        # a list of post ids is shown as [1, 2]: copy the id under the
+        # pointer, or 1, 2 when the click isn't on one
+        text = self._clicked_entry(event, coordinate, shown) or (
+            shown.strip().strip("[]").strip()
+        )
+        if not text:
+            return False
+        self.app.copy_to_clipboard(text)
+        self.app.notify(f"Copied {text}", markup=False)
+        return True
+
+    def _clicked_entry(self, event, coordinate, shown):
+        """The comma-separated entry of a cell's text that was clicked."""
+        try:
+            start = self._get_cell_region(coordinate).x + self.cell_padding
+            index = int(event.x + self.scroll_x) - start
+        except Exception:
+            return None
+        for entry in re.finditer(r"[^\s,\[\]]+", shown):
+            if entry.start() <= index < entry.end():
+                return entry.group()
+        return None
 
     @property
     def ordered_columns_keys(self):

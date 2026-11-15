@@ -18,6 +18,7 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
+from ofscraper.data.api.tasks import collect_pages
 from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.settings as settings
@@ -161,49 +162,17 @@ async def scrape_for_list(c, offset=0):
 
 
 async def get_list_users(lists):
-    output = []
-    page_count = 0
-
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
-        page_task = progress_updater.userlist.add_overall_task(
-            f"UserList Users Pages Progress: {page_count}", visible=True
+        # deduplicated by id below; the workers aren't part of a stop-tracked fetch
+        output = await collect_pages(
+            [scrape_list_members(c, item) for item in lists],
+            "UserList Users Pages Progress",
+            key=None,
+            progress=progress_updater.userlist,
+            create_task=asyncio.create_task,
         )
-
-        # Queue to aggregate results from concurrent generators
-        queue = asyncio.Queue()
-
-        async def producer(generator):
-            try:
-                async for batch in generator:
-                    await queue.put(batch)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-            finally:
-                await queue.put(None)  # Signal done
-
-        # Start producers for each list
-        generators = [scrape_list_members(c, item) for item in lists]
-        producers = [asyncio.create_task(producer(gen)) for gen in generators]
-        active_producers = len(producers)
-
-        while active_producers > 0:
-            item = await queue.get()
-
-            if item is None:
-                active_producers -= 1
-                continue
-
-            page_count += 1
-            progress_updater.userlist.update_overall_task(
-                page_task,
-                description=f"UserList Users Pages Progress: {page_count}",
-            )
-            output.extend(item)
-
-        progress_updater.userlist.remove_overall_task(page_task)
 
     outdict = {}
     for ele in output:

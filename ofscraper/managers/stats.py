@@ -533,8 +533,8 @@ class StatsManager:
         text_count = text_skip = text_fail = 0
 
         # 2. Accumulate Totals from all users in the defaultdict 
-        for username, activity_dict in self._stats.items():
-            for activity, stat_obj in activity_dict.items():
+        for _username, activity_dict in self._stats.items():
+            for _activity, stat_obj in activity_dict.items():
                 
                 if isinstance(stat_obj, DownloadStats):
                     dl_vids += stat_obj.video_count

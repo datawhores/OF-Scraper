@@ -186,8 +186,13 @@ def merged_settings():
         if args.textlength is not None
         else config_data.get_textlength()
     )
-    merged.size_max = args.size_max or config_data.get_filesize_max()
-    merged.size_min = args.size_min or config_data.get_filesize_min()
+    # 0 from the cart sidebar means "no limit" and must override the config
+    merged.size_max = (
+        args.size_max if args.size_max is not None else config_data.get_filesize_max()
+    )
+    merged.size_min = (
+        args.size_min if args.size_min is not None else config_data.get_filesize_min()
+    )
     merged.download_sems = args.download_sem or config_data.get_download_semaphores()
     merged.system_free_min = args.system_free_min or config_data.get_system_freesize()
     merged.max_post_count = args.max_count or config_data.get_max_post_count()

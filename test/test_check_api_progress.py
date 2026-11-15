@@ -43,7 +43,7 @@ def test_api_progress_during_check_fetch(
         for key, value in kwargs.items():
             setattr(state, key, value)
 
-    def get_id(name):
+    def get_id(name, asked_for=None):
         state.creator = name
         return creators.index(name) + 1
 

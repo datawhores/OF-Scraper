@@ -204,7 +204,7 @@ def test_daemon_retries_after_an_empty_startup_scan(monkeypatch, records, consol
     # without -u the first non-empty pass asks which creators to scrape, as before;
     # the answer here is "all of them"
     monkeypatch.setattr(
-        model.retriver, "get_selected_model", lambda models, selected: models
+        model.retriver, "get_selected_model", lambda models, selected, **kw: models
     )
 
     selections = []

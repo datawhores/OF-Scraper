@@ -15,15 +15,20 @@ def config_context():
         try:
             p = pathlib.Path(common_paths.get_config_path())
             with open(p, "r") as f:
-                json.load(f)
+                # valid JSON that isn't an object of settings, e.g. a list,
+                # is broken the same way as a syntax error
+                config_file.unwrap(json.load(f))
         except FileNotFoundError:
             config_file.make_config()
             continue
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, config_file.NotAnObjectError) as e:
             configStr = None
             while True:
                 try:
-                    print("Your config.json has a syntax error")
+                    if isinstance(e, json.JSONDecodeError):
+                        print("Your config.json has a syntax error")
+                    else:
+                        print("Your config.json doesn't hold an object of settings")
                     import traceback
 
                     print(traceback.format_exc())

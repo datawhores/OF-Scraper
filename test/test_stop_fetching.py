@@ -231,7 +231,7 @@ def test_check_fetch_stops_before_table_opens(monkeypatch, pages, menu):
 
 
 def test_daemon_fetch_stop_shuts_down_scheduler(monkeypatch, pages):
-    from test.test_daemon_shutdown import _stub_daemon
+    from test_daemon_shutdown import _stub_daemon
     generator, closed = pages
     call = fetch(monkeypatch, "paid", generator)
     manager = scraper.scraperManager()

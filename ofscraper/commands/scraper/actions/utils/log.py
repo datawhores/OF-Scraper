@@ -13,28 +13,32 @@ def get_medialog(ele):
     return f"PID: {os.getpid()} Media:{ele.id} Post:{ele.post_id}"
 
 
-def path_to_file_logger(placeholderObj, ele, innerlog=None):
+def path_to_file_logger(placeholderObj, ele, innerlog=None, attempt=None):
+    """innerlog and attempt (the attempt contextvar) default to the current
+    DownloadContext's."""
     innerlog = innerlog or common_globals.log
+    attempt = attempt or common_globals.attempt
     safe_filename = str(placeholderObj.filename)
     safe_filepath = str(placeholderObj.filepath)
     safe_trunicated_filepath = str(placeholderObj.trunicated_filepath)
     innerlog.debug(
-        rf"{get_medialog(ele)} \[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
+        rf"{get_medialog(ele)} \[attempt {attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path from config {safe_filepath}"
+        f"{get_medialog(ele)} \\[attempt {attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path from config {safe_filepath}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path trunicated from config {safe_trunicated_filepath}"
+        f"{get_medialog(ele)} \\[attempt {attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] full path trunicated from config {safe_trunicated_filepath}"
     )
 
 
-def temp_file_logger(placeholderObj, ele, innerlog=None):
+def temp_file_logger(placeholderObj, ele, innerlog=None, attempt=None):
     innerlog = innerlog or common_globals.log
+    attempt = attempt or common_globals.attempt
 
     safe_tempfilepath = re.escape(str(placeholderObj.tempfilepath))
     innerlog.debug(
-        f"{get_medialog(ele)} \\[attempt {common_globals.attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_tempfilepath}"
+        f"{get_medialog(ele)} \\[attempt {attempt.get()}/{of_env.getattr('API_NUM_TRIES')}] filename from config {safe_tempfilepath}"
     )
 
 

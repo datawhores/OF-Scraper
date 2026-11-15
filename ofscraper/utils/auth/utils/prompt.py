@@ -14,7 +14,6 @@ r"""
 import logging
 
 import browser_cookie3
-import requests
 from rich.console import Console
 
 import ofscraper.prompts.prompts as prompts
@@ -24,9 +23,8 @@ log = logging.getLogger("shared")
 
 
 def browser_cookie_helper(auth, browserSelect):
-    temp = requests.utils.dict_from_cookiejar(
-        getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans")
-    )
+    jar = getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans")
+    temp = {cookie.name: cookie.value for cookie in jar}
     for key in ["sess", "auth_id", "auth_uid_"]:
         auth[key] = auth[key] or temp.get(key, "")
     console.print(

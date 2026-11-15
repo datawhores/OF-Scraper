@@ -16,12 +16,12 @@ from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
 from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
-from humanfriendly import parse_size
 
 
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.prompts.utils.size_prompt as size_prompt
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.of_env.of_env as of_env
@@ -31,6 +31,13 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.const as const
 
 console = Console()
+
+# limits for the size and speed prompts, in bytes (a second); a value
+# outside them is a typo, not a setting
+FILE_SIZE_MAX = 1024**4  # 1 TB
+FREE_SPACE_MAX = 1024**5  # 1,024 TB
+SPEED_MAX = 100 * 1000**3 // 8  # 100 Gbps
+SPEED_MIN = 64 * 1000 // 8  # 64 Kbps; slower would stall every download
 
 
 def funct(prompt_):
@@ -137,22 +144,18 @@ def config_prompt() -> int:
 
 def download_config():
     out = {}
+    out["system_free_min"] = size_prompt.ask_size(
+        "system_free_min",
+        "minimum free space: ",
+        "Downloads stop when the drive's free space falls below this",
+        data.get_system_freesize(),
+        maximum=FREE_SPACE_MAX,
+        what="Minimum free space",
+        altx=funct,
+        more_instruction=prompt_strings.CONFIG_MENU,
+    )
     answer = promptClasses.batchConverter(
         *[
-            {
-                "type": "input",
-                "name": "system_free_min",
-                "message": "minimum free space: ",
-                "option_instruction": """
-Minimum freespace for download
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no limit
-""",
-                "default": str(data.get_system_freesize()),
-                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
-            },
             {
                 "type": "input",
                 "name": "length_min",
@@ -415,25 +418,18 @@ def performance_config():
     )
     out.update(sems)
 
-    speed = promptClasses.batchConverter(
-        *[
-            {
-                "type": "input",
-                "name": "download_limit",
-                "message": "Maximum download speed per second, shared by all downloads: ",
-                "validate": EmptyInputValidator(),
-                "option_instruction": """
-                Input can be int representing bytes
-                or human readable such as 10mb
-                """,
-                "default": str(data.get_download_limit()),
-                "filter": lambda x: int(x) if x != "None" else 0,
-            }
-        ],
+    out["download_limit"] = size_prompt.ask_size(
+        "download_limit",
+        "Maximum download speed, shared by all downloads: ",
+        "The speed is in bits a second, the way internet plans quote it",
+        data.get_download_limit(),
+        maximum=SPEED_MAX,
+        minimum=SPEED_MIN,
+        what="The speed limit",
+        scale=size_prompt.SPEED,
         altx=funct,
         more_instruction=prompt_strings.CONFIG_MENU,
     )
-    out.update(speed)
 
     config = config_file.open_config()
     config.update(out)
@@ -479,36 +475,37 @@ def general_config():
 
 def content_config():
     out = {}
+    out["file_size_max"] = size_prompt.ask_size(
+        "file_size_max",
+        "file_size_max: ",
+        "Files larger than this aren't downloaded",
+        data.get_filesize_max(),
+        maximum=FILE_SIZE_MAX,
+        what="The max file size",
+        more_instruction=prompt_strings.CONFIG_MENU,
+    )
+    largest = out["file_size_max"]
+
+    def not_above_max(size):
+        if largest and size > largest:
+            return (
+                f"The min file size is above the max "
+                f"({size_prompt.SIZE.format(largest)}), so nothing would download."
+            )
+        return None
+
+    out["file_size_min"] = size_prompt.ask_size(
+        "file_size_min",
+        "file_size_min: ",
+        "Files smaller than this aren't downloaded",
+        data.get_filesize_min(),
+        maximum=FILE_SIZE_MAX,
+        what="The min file size",
+        check=not_above_max,
+        more_instruction=prompt_strings.CONFIG_MENU,
+    )
     answer = promptClasses.batchConverter(
         *[
-            {
-                "type": "input",
-                "name": "file_size_max",
-                "message": "file_size_max: ",
-                "option_instruction": """
-File size limit
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no limit
-""",
-                "default": str(data.get_filesize_max()),
-                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
-            },
-            {
-                "type": "input",
-                "name": "file_size_min",
-                "message": "file_size_min: ",
-                "option_instruction": """
-File size min
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no minimum
-""",
-                "default": str(data.get_filesize_min()),
-                "filter": lambda x: int(parse_size(x)) if x != "None" else 0,
-            },
             {
                 "type": "list",
                 "name": "block_ads",

@@ -18,7 +18,6 @@ from typing import Union
 import arrow
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
-from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -33,7 +32,39 @@ console = Console()
 models = None
 
 
-def model_selector(models: Union[dict | list], existing_models) -> bool:
+def ticked_values(prompt):
+    """The values of the ticked choices in a multiselect list prompt."""
+    return [
+        choice["value"]
+        for choice in prompt.content_control.choices
+        if isinstance(choice, dict) and choice.get("enabled")
+    ]
+
+
+def username_scorer(needle, row):
+    """Search the creator picker by username only, as one piece of text.
+
+    InquirerPy's fuzzy match took the letters anywhere in the row, in order,
+    so "mee" matched an "m" in one name plus the "e"s of "subscribed date".
+    Returns (score, indices of the matched characters), or indices None for
+    no match. Names that match earlier come first.
+    """
+    needle = needle.strip().lower()
+    if not needle:
+        return 0, []
+    name = re.search(r"^\s*[0-9]+: ([^ ]+)", row)
+    start = name.group(1).lower().find(needle) if name else -1
+    if start < 0:
+        return float("-inf"), None
+    first = name.start(1) + start
+    return -start, list(range(first, first + len(needle)))
+
+
+def model_selector(
+    models: Union[dict | list], existing_models, on_cancel=None
+) -> bool:
+    """The creator picker. ``on_cancel`` gets the creators ticked when Esc
+    leaves it."""
     choices = modelHelpers.model_selector_choices(models)
     selectedSet = set(map(lambda x: x.name, existing_models))
     for model in choices:
@@ -43,6 +74,7 @@ def model_selector(models: Union[dict | list], existing_models) -> bool:
 
     p = promptClasses.getFuzzySelection(
         choices=choices,
+        scorer=username_scorer,
         transformer=lambda result: ",".join(map(lambda x: x.split()[1], result)),
         multiselect=True,
         more_instruction=prompt_strings.MODEL_SELECT,
@@ -54,6 +86,9 @@ def model_selector(models: Union[dict | list], existing_models) -> bool:
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
         info=True,
+        on_cancel=(
+            (lambda prompt: on_cancel(ticked_values(prompt))) if on_cancel else None
+        ),
     )
 
     return p

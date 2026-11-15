@@ -143,17 +143,29 @@ def print_profile_info(info):
     log.info(final_fmt.format(*info))
 
 
-def get_id(username, c=None):
+def get_id(username, c=None, asked_for=None):
     c = c or manager.Manager.session.get_ofsession()
     with c as c:
-        return get_id_helper(c, username)
+        return get_id_helper(c, username, asked_for=asked_for)
 
 
-def get_id_helper(c, username):
+def get_id_helper(c, username, asked_for=None):
+    """The account id for ``username``, or None when OnlyFans has no such
+    account (deleted, renamed or banned). Callers skip that creator.
+
+    ``asked_for`` is the name the user gave, when ``username`` came from a
+    profile lookup that may have replaced it with the deleted placeholder."""
     if username.isnumeric():
         return username
     if username == of_env.getattr("DELETED_MODEL_PLACEHOLDER"):
-        raise Exception("could not get ID")
+        if asked_for and asked_for != username:
+            log.warning(
+                f"Skipping {asked_for}: OnlyFans lists it as a deleted account,"
+                " so its id is unknown"
+            )
+        else:
+            log.warning("Skipping a deleted account: its id is unknown")
+        return None
     id = cache.get(f"model_id_{username}")
     if id:
         return id
@@ -162,7 +174,18 @@ def get_id_helper(c, username):
         log.info(f"to get id {username}")
 
         with c.requests(of_env.getattr("profileEP").format(username)) as r:
-            id = r.json()["id"]
+            # the session passes a 404 through instead of raising
+            try:
+                data = r.json()
+            except ValueError:  # not JSON (JSONDecodeError, bad encoding)
+                data = None
+            id = data.get("id") if isinstance(data, dict) else None
+            if r.status == 404 or not id:
+                log.warning(
+                    f"Skipping {username}: OnlyFans has no account by that name"
+                    f" (HTTP {r.status}; deleted, renamed or banned)"
+                )
+                return None
             cache.set(f"model_id_{username}", id, of_env.getattr("DAY_SECONDS"))
 
             return id

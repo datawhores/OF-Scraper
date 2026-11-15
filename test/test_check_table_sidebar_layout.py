@@ -92,8 +92,8 @@ async def _settle(pilot):
 @pytest.mark.parametrize(
     "field, label, value",
     [
-        ("#download_size_min", "Min size (bytes)", "10"),
-        ("#download_size_max", "Max size (bytes)", "10000"),
+        ("#download_size_min", "Min size", "10"),
+        ("#download_size_max", "Max size", "10000"),
     ],
 )
 def test_size_fields_are_small_and_labelled(field, label, value):
@@ -103,7 +103,8 @@ def test_size_fields_are_small_and_labelled(field, label, value):
         sidebar = app.query_one("#download_option_sidebar")
         node = app.query_one(field)
 
-        assert node.region.height <= 4
+        # the box, the unit buttons and the hint line; not half the sidebar
+        assert node.region.height <= 8
         assert node.query_one(Input).value == value
 
         text = node.query_one(Label)

@@ -12,7 +12,7 @@ dependencies = [
   "aioprocessing~=2.0.1",
   "arrow~=1.4.0",
   "browser-cookie3==0.20.1",
-  "bs4~=0.0.2",
+  "beautifulsoup4~=4.14.3",
   "certifi>=2026.10.18",
   "click>=8.5.1,<9",
   "cloup~=4.0.0",
@@ -21,7 +21,6 @@ dependencies = [
   "httpx[http2]~=0.28.1",
   "idna>=3.15,<4",
   "inquirerpy~=0.3.4",
-  "limiter~=0.5.0",
   "lxml~=6.1.2",
   "mpegdash~=0.4.0",
   "pathvalidate~=3.3.1",
@@ -29,19 +28,17 @@ dependencies = [
   "psutil~=7.2.2",
   "pynumparser~=1.4.1",
   "python-dateutil>=2.9.0.post0,<5",
+  "python-dotenv~=1.2.2",
   "pywidevine~=1.9.0",
-  "requests~=2.34.2",
   "rich~=15.0.0",
   "schedule~=1.2.1",
   "setproctitle~=1.3.3",
-  "speedtest-cli~=2.1.3",
   "tenacity~=9.2.1",
   "textual~=8.2.8",
   "uvloop~=0.23.0; sys_platform == 'linux' or sys_platform == 'linux2'",
   "win32-setctime~=1.2.1",
   "xxhash~=4.1.0",
   "pyyaml>=6.0.2",
-  "dotenv>=0.9.9",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +50,8 @@ test = [
   "random-unicode-emoji~=3.0",
   "random-emoji~=1.0.15",
   "pytest-mock~=3.17.0",
+  # exact pin: a new ruff release can add findings to the same rules
+  "ruff==0.17.4",
 ]
 docs = ["sphinx-argparse>=0.5.2,<0.7.0"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
@@ -88,3 +87,27 @@ filterwarnings = ["error"]
 testpaths = ["test"]
 # test/legacy targets the pre-3.12 module layout and no longer imports
 norecursedirs = ["legacy"]
+
+[tool.ruff]
+# lint the application only; test/ and scripts/ aren't checked yet
+include = ["ofscraper/**/*.py"]
+target-version = "py311"
+
+[tool.ruff.lint]
+# narrow on purpose: syntax errors, pyflakes (undefined or unused names) and
+# bugbear. Blind excepts and try/except/pass in ofscraper/data/api and
+# ofscraper/db are checked against a baseline by
+# scripts/lint/check_blind_except.py, not here.
+select = ["E9", "F", "B"]
+ignore = [
+  # raise-without-from-inside-except: adding `from err`/`from None` changes
+  # the chained traceback users and logs see, so each site needs a decision
+  "B904",
+  # zip-without-explicit-strict: strict=True can raise where the code relied
+  # on truncation, and strict=False everywhere is noise
+  "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# prompts.py is the re-export hub for the prompt_groups modules
+"ofscraper/prompts/prompts.py" = ["F403"]

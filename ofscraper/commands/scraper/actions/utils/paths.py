@@ -195,13 +195,17 @@ def _resolve_dir(path):
     return path if path.is_dir() else path.parent
 
 
-def addGlobalDir(path):
+def addGlobalDir(path, dir_set=None):
+    """dir_set is the run's set of folders written to, by default the
+    current DownloadContext's."""
     paths = (
         [path]
         if isinstance(path, (str, os.PathLike)) or not isinstance(path, Iterable)
         else path
     )
-    common_globals.dirSet.update(map(_resolve_dir, paths))
+    (common_globals.dirSet if dir_set is None else dir_set).update(
+        map(_resolve_dir, paths)
+    )
 
 
 def addLocalDir(path):

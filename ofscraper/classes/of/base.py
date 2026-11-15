@@ -10,7 +10,7 @@ html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 
 class base:
     def __init__(self):
-        None
+        pass
 
     def text_trunicate(self, text):
         text = str(text)

@@ -5,16 +5,15 @@ import traceback
 from functools import partial
 from urllib.parse import urlsplit, urlunsplit
 
-import aiofiles
 import arrow
 import psutil
-from humanfriendly import format_size
-import aiohttp
 
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
-import ofscraper.commands.scraper.actions.utils.globals as common_globals
+# the managers use their DownloadContext (self.ctx); kept here for code
+# and tests that reach the current context through this module
+import ofscraper.commands.scraper.actions.utils.globals as common_globals  # noqa: F401
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 from ofscraper.commands.scraper.actions.utils.log import (
@@ -24,7 +23,10 @@ from ofscraper.commands.scraper.actions.utils.log import (
 )
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 import ofscraper.utils.auth.request as auth_requests
-import ofscraper.utils.cache.cache as cache
+
+# the reply cache is read and written by DownloadManager; kept here for code
+# and tests that reach it through this module
+import ofscraper.utils.cache.cache as cache  # noqa: F401
 import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.system.subprocess import async_run
@@ -40,7 +42,6 @@ from ofscraper.commands.scraper.actions.download.utils.retries import (
     get_download_retries,
 )
 from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size,
     get_chunk_timeout,
 )
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
@@ -59,7 +60,7 @@ class AltDownloadManager(DownloadManager):
 
     async def alt_download(self, c, ele: Media, username, model_id):
         # Acquire semaphore at the very beginning of the process
-        await common_globals.sem.acquire()
+        await self.ctx.sem.acquire()
         try:
             try:
                 return await self._alt_download_item(c, ele, username, model_id)
@@ -73,22 +74,22 @@ class AltDownloadManager(DownloadManager):
             # once per item: finished tracks are kept, a partial one resumes
             return await self._alt_download_item(c, ele, username, model_id)
         finally:
-            common_globals.sem.release()
+            self.ctx.sem.release()
 
     async def _alt_download_item(self, c, ele: Media, username, model_id):
         stop.started(ele)
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
         )
 
         sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} download url:  {common_logs.get_url_log(ele)}"
         )
 
         audio = await ele.mpd_audio
         video = await ele.mpd_video
-        path_to_file_logger(sharedPlaceholderObj, ele)
+        path_to_file_logger(sharedPlaceholderObj, ele, self.ctx.log, self.ctx.attempt)
 
         # Only attempt to download tracks that actually exist. The size
         # limits are for the whole video (#316): they're checked once the
@@ -205,10 +206,10 @@ class AltDownloadManager(DownloadManager):
                             raise E
                     return item
                 except OSError as E:
-                    common_globals.log.debug(
+                    self.ctx.log.debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Number of Open Files -> { len(psutil.Process().open_files())}"
                     )
-                    common_globals.log.debug(
+                    self.ctx.log.debug(
                         f" {get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
                     )
                     if self._skipped_by_size(ele, E):
@@ -216,10 +217,10 @@ class AltDownloadManager(DownloadManager):
                         return item
                     raise E
                 except Exception as E:
-                    common_globals.log.traceback_(
+                    self.ctx.log.traceback_(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
                     )
-                    common_globals.log.traceback_(
+                    self.ctx.log.traceback_(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
                     )
                     if self._skipped_by_size(ele, E):
@@ -232,17 +233,17 @@ class AltDownloadManager(DownloadManager):
         try:
             _attempt = self._alt_attempt_get(item)
             url = _mpd_segment_url(ele.mpd, item["origname"])
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
             )
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
             )
             try:
                 return await self._send_req_inner(c, ele, item, placeholderObj)
             except StartOver as E:
                 # the part was deleted; ask for the whole track, without a range
-                common_globals.log.debug(f"{get_medialog(ele)} {E}")
+                self.ctx.log.debug(f"{get_medialog(ele)} {E}")
                 item["total"] = None
                 item["validator"] = None
                 return await self._send_req_inner(c, ele, item, placeholderObj)
@@ -262,14 +263,14 @@ class AltDownloadManager(DownloadManager):
             )
             # reset total
             total = None
-            common_globals.log.debug(f"{get_medialog(ele)} resume header {headers}")
+            self.ctx.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             url = _mpd_segment_url(ele.mpd, item["origname"])
             headers = {
                 **(headers or {}),
                 "Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}",
             }
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {url}"
             )
             async with c.requests_async(
@@ -308,23 +309,10 @@ class AltDownloadManager(DownloadManager):
                         f"(content-type={content_type or 'unknown'}, url={url})"
                     )
 
-                data = {
-                    "content-total": total,
-                    "content-type": l.headers.get("content-type"),
-                    # the validator of the reply that started the part: a
-                    # resume keeps the saved one
-                    "validator": (
-                        item.get("validator") if resume_size else self._validator(l)
-                    ),
-                }
-
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} data from request {data}"
+                data = self._reply_data(
+                    l, total, resume_size, item.get("validator"), get_medialog(ele)
                 )
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} total from request {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
-                )
-                temp_file_logger(placeholderObj, ele)
+                temp_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
                 if (
                     await self._check_forced_skip(
                         ele, total, item.get("before", 0), item["type"]
@@ -380,13 +368,13 @@ class AltDownloadManager(DownloadManager):
     async def _download_fileobject_writer(
         self, total, l, ele, placeholderObj, item, resume_size=0, on_first_chunk=None
     ):
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] writing media to disk"
         )
         written = await self._download_fileobject_writer_streamer(
             ele, total, l, placeholderObj, resume_size, on_first_chunk
         )
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] finished writing media to disk"
         )
         return written
@@ -394,57 +382,19 @@ class AltDownloadManager(DownloadManager):
     async def _download_fileobject_writer_streamer(
         self, ele, total, res, placeholderObj, resume_size=0, on_first_chunk=None
     ):
-        """Write the reply to the part and return the bytes written. The part
-        is opened on the first chunk: appended to when resuming, else
-        replaced from 0. Until then the part on disk is left as it was, so a
-        reply with no data doesn't cost it (#271). on_first_chunk runs once
-        the first chunk is written."""
+        """Write the reply to the track's part and return the bytes written
+        (see _write_reply_to_part). The progress task is labelled with the
+        part's name."""
         task1 = await self._add_download_job_task(ele, total, placeholderObj)
-        fileobject = None
-        written = 0
-        try:
-            chunk_iter = res.iter_chunked(get_chunk_size())
-
-            while True:
-                try:
-                    chunk = await chunk_iter.__anext__()
-                    first = fileobject is None
-                    if first:
-                        fileobject = await aiofiles.open(
-                            placeholderObj.tempfilepath, "ab" if resume_size else "wb"
-                        ).__aenter__()
-                    await fileobject.write(chunk)
-                    written += len(chunk)
-                    if first and on_first_chunk:
-                        await on_first_chunk()
-                    send_chunk_msg(ele, total, placeholderObj)
-                except StopAsyncIteration:
-                    break  # Exit loop when no more chunks
-
-        # Catch native aiohttp socket read timeouts
-        except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
-            common_globals.log.info(
-                f"{common_logs.get_medialog(ele)}⚠️ CDN went silent (sock_read timeout). Connection stalled, forcing retry!"
-            )
-            raise Exception("Chunk download timed out")
-        except Exception as E:
-            common_globals.log.info(f"An error occurred during download for {ele}: {E}")
-            raise E
-        finally:
-            if fileobject:
-                try:
-                    await fileobject.close()
-                except Exception as E:
-                    common_globals.log.debug(f"Error closing file for {ele}: {E}")
-                    raise E
-            try:
-                await self._remove_download_job_task(task1, ele)
-            except Exception as E:
-                common_globals.log.debug(
-                    f"Error removing download job task for {ele}: {E}"
-                )
-                raise E
-        return written
+        return await self._write_reply_to_part(
+            res,
+            ele,
+            placeholderObj.tempfilepath,
+            task1,
+            resume_size,
+            on_first_chunk,
+            lambda: send_chunk_msg(ele, total, placeholderObj, self.ctx.log),
+        )
 
     async def _handle_result_alt(
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
@@ -482,11 +432,11 @@ class AltDownloadManager(DownloadManager):
 
         # Fallback error check if stderr is captured and Output is missing
         if t.stderr and t.stderr.decode().find("Output") == -1:
-            common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
-            common_globals.log.debug(
+            self.ctx.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
             )
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
             )
 
@@ -499,20 +449,20 @@ class AltDownloadManager(DownloadManager):
 
         expected_duration = ele.duration
         if not verify_media_integrity(temp_path, expected_duration):
-            common_globals.log.warning(
+            self.ctx.log.warning(
                 f"DRM Merge failed integrity check for {ele.id}: {temp_path}"
             )
             temp_path.unlink(missing_ok=True)
             raise Exception("Merged DRM media failed integrity check")
 
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
         )
 
         # Thread executor for disk I/O move operation; the file can end up
         # under another name if a different file already has this one (#48)
         final_path = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
+            self.ctx.thread,
             partial(
                 common_paths.moveHelper,
                 temp_path,
@@ -521,15 +471,15 @@ class AltDownloadManager(DownloadManager):
             ),
         )
 
-        (common_paths.addGlobalDir(final_path.parent))
+        (common_paths.addGlobalDir(final_path.parent, self.ctx.dirSet))
 
         if ele.postdate:
             newDate = dates.convert_local_time(ele.postdate)
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{common_logs.get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
             )
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread,
+                self.ctx.thread,
                 partial(
                     common_paths.set_time,
                     final_path,
@@ -544,7 +494,7 @@ class AltDownloadManager(DownloadManager):
                 model_id=model_id,
                 username=username,
                 downloaded=True,
-                hashdata=await common.get_hash(final_path),
+                hashdata=await common.get_hash(final_path, self.ctx.thread),
                 size=final_path.stat().st_size,
             )
         ele.add_filepath(final_path)
@@ -556,14 +506,13 @@ class AltDownloadManager(DownloadManager):
         return ele.mediatype, video_total + audio_total
 
     async def _resume_data_handler_alt(self, data, item, ele, placeholderObj):
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] using data for possible download resumption"
+        # logs the video's attempt counter for the audio track too, as before
+        self._log_saved_reply(
+            get_medialog(ele),
+            f"[attempt {self.ctx.attempt.get()}/{get_download_retries()}]",
+            data,
         )
-        common_globals.log.debug(f"{get_medialog(ele)} Data from cache{data}")
-        common_globals.log.debug(
-            f"{get_medialog(ele)} Total size from cache {format_size(data.get('content-total')) if data.get('content-total') else 'unknown'}"
-        )
-        total = int(data.get("content-total")) if data.get("content-total") else None
+        total = self._saved_total(data)
         item["total"] = total
         item["validator"] = data.get("validator")
         resume_size = self._get_resume_size(placeholderObj)
@@ -571,20 +520,14 @@ class AltDownloadManager(DownloadManager):
             resume_size, total, placeholderObj.tempfilepath
         )
 
-        common_globals.log.debug(
+        self.ctx.log.debug(
             f"{get_medialog(ele)} resume_size: {resume_size}  and total: {total }"
         )
 
         if total is None or int(total) <= 0:
             try:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.thread,
-                    partial(
-                        cache.set,
-                        f"{item['name']}_{ele.id}_{ele.username}_headers",
-                        None,
-                    ),
-                )
+                # not through _set_data: clearing is best effort
+                await self._set_cached_reply(self._cache_key(ele, item), None)
             except Exception:
                 pass
             return item, False
@@ -598,10 +541,10 @@ class AltDownloadManager(DownloadManager):
             item["total"] = 0
             return item, True
         elif total == resume_size:
-            common_globals.log.debug(
+            self.ctx.log.debug(
                 f"{get_medialog(ele)} total==resume_size skipping download"
             )
-            temp_file_logger(placeholderObj, ele)
+            temp_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
             if self._alt_attempt_get(item).get() == 0:
                 pass
             return item, True
@@ -609,32 +552,27 @@ class AltDownloadManager(DownloadManager):
             return item, False
 
     async def _fresh_data_handler_alt(self, item, ele, placeholderObj):
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}] fresh download for media"
+        self.ctx.log.debug(
+            f"{get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] fresh download for media"
         )
         resume_size = self._get_resume_size(placeholderObj)
-        common_globals.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
+        self.ctx.log.debug(f"{get_medialog(ele)} resume_size: {resume_size}")
         return item, False
 
     def _alt_attempt_get(self, item):
         if item["type"] == "video":
-            return common_globals.attempt
+            return self.ctx.attempt
         if item["type"] == "audio":
-            return common_globals.attempt2
+            return self.ctx.attempt2
+
+    def _cache_key(self, ele, item):
+        return f"{item['name']}_{ele.id}_{ele.username}_headers"
 
     async def _get_data(self, ele, item):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.get, f"{item['name']}_{ele.id}_{ele.username}_headers"),
-        )
-        return data
+        return await self._get_cached_reply(self._cache_key(ele, item))
 
     async def _set_data(self, ele, item, data):
-        data = await asyncio.get_event_loop().run_in_executor(
-            common_globals.thread,
-            partial(cache.set, f"{item['name']}_{ele.id}_{ele.username}_headers", data),
-        )
-        return data
+        return await self._set_cached_reply(self._cache_key(ele, item), data)
 
     def _get_item_total(self, item):
         return item["path"].absolute().stat().st_size
@@ -669,8 +607,8 @@ class AltDownloadManager(DownloadManager):
                         if item is not None:
                             item = await keyhelpers.un_encrypt(item, c, ele)
                 except Exception as E:
-                    common_globals.log.traceback_(E)
-                    common_globals.log.traceback_(traceback.format_exc())
+                    self.ctx.log.traceback_(E)
+                    self.ctx.log.traceback_(traceback.format_exc())
                     raise E
 
     async def _add_download_job_task(self, ele, total=None, placeholderObj=None):
