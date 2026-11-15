@@ -11,174 +11,80 @@ r"""
 
 """
 
-from ofscraper.commands.scraper.actions.download import stop
+# The scan itself is in common/dated_posts.py, shared with archived. The
+# names imported here are this area's: the shared code reaches them through
+# this module, so patching one here changes the streams scan only.
 import logging
-import traceback
-import arrow
+import sys
 
-import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.data.api.common.incomplete as incomplete
+import ofscraper.data.api.common.dated_posts as dated_posts
 import ofscraper.data.api.common.scan_range as scan_range
-import ofscraper.utils.of_env.of_env as of_env
-# module attribute that callers and tests patch the progress screen through
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.utils.context.run_async import run
+
+# Imports marked F401 are used through this module by dated_posts, or patched
+# through it (module.settings, module.progress_utils, module.incomplete)
+import ofscraper.data.api.common.incomplete as incomplete  # noqa: F401
 import ofscraper.utils.live.updater as progress_utils  # noqa: F401
-from ofscraper.data.api.tasks import collect_pages
-import ofscraper.utils.settings as settings
-from ofscraper.data.api.common.after import get_after_pre_checks
-from ofscraper.data.api.common.check import update_check
-from ofscraper.db.operations_.media import (
-    get_media_ids_downloaded_model,
+import ofscraper.utils.of_env.of_env as of_env  # noqa: F401
+import ofscraper.utils.settings as settings  # noqa: F401
+from ofscraper.data.api.common.after import get_after_pre_checks  # noqa: F401
+from ofscraper.data.api.common.check import update_check  # noqa: F401
+from ofscraper.data.api.common.page import get_min_posts_batch  # noqa: F401
+from ofscraper.data.api.common.timeline import process_posts_as_individual  # noqa: F401
+from ofscraper.db.operations_.media import (  # noqa: F401
     get_streams_media,
+    get_media_ids_downloaded_model,
 )
-from ofscraper.db.operations_.posts import (
+from ofscraper.db.operations_.posts import (  # noqa: F401
     get_streams_post_info,
-    get_youngest_streams_date,
     get_deleted_post_ids,
+    get_youngest_streams_date,
     mark_post_as_deleted,
 )
-from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
-from ofscraper.data.api.common.timeline import process_posts_as_individual
-import ofscraper.utils.const as const
-from ofscraper.data.api.common.page import get_min_posts_batch
 
 API = "Streams"
+AREA = dated_posts.Area(
+    api=API,
+    endpoint="streamsEP",
+    next_endpoint="streamsNextEP",
+    max_individual="MAX_STREAMS_INDIVIDUAL_SEARCH",
+    cache_trace="oldtimestreams",
+    ghosts="ghost streams in database.",
+    log_final=True,
+)
 log = logging.getLogger("shared")
+_area = sys.modules[__name__]
 
 
 @run
 @stop.fetching
 async def get_streams_posts(model_id, username, c=None, post_id=None):
-    after = incomplete.start_scan(model_id, API, await get_after(model_id, username))
-    time_log(username, after)
-    post_id = post_id or []
-    if len(post_id) == 0 or len(post_id) > of_env.getattr(
-        "MAX_STREAMS_INDIVIDUAL_SEARCH"
-    ):
-        splitArrays = await get_split_array(model_id, username, after)
-        generators = get_tasks(splitArrays, c, model_id, username, after)
-        data = await process_tasks_batch(generators)
-        incomplete.save_scan(model_id, API, after, username)
-    elif len(post_id) <= of_env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
-        data = process_posts_as_individual()
-    update_check(data, model_id, after, API)
-    return data
+    return await dated_posts.get_posts(_area, model_id, username, c, post_id)
 
 
 async def get_oldstreams(model_id, username):
-    if not settings.get_settings().api_cached_disabled:
-        oldstreams = await get_streams_post_info(model_id=model_id, username=username)
-    else:
-        oldstreams = []
-    oldstreams = list(filter(lambda x: x is not None, oldstreams))
-    seen = set()
-    oldstreams = [
-        post
-        for post in oldstreams
-        if post["post_id"] not in seen and not seen.add(post["post_id"])
-    ]
-    log.debug(f"[bold]Streams Cache[/bold] {len(oldstreams)} found")
-    trace_log_raw("oldtimestreams", oldstreams)
-    return oldstreams
+    return await dated_posts.get_old_posts(
+        _area, get_streams_post_info, model_id, username
+    )
 
 
 async def process_tasks_batch(generators):
-    responseArray = await collect_pages(
-        generators,
-        "Streams Content Pages Progress",
-        lambda new_posts: trace_progress_log(f"{API} task", new_posts),
-    )
-    log.debug(
-        f"{common_logs.FINAL_IDS.format('Streams')} {list(map(lambda x: x.get('id'), responseArray))}"
-    )
-    trace_log_raw(f"{API} final", responseArray, final_count=True)
-    log.debug(common_logs.FINAL_COUNT_POST.format("Streams", len(responseArray)))
-    return responseArray
+    return await dated_posts.process_tasks_batch(_area, generators)
 
 
 async def get_split_array(model_id, username, after):
     oldstreams = await get_oldstreams(model_id, username)
-    if len(oldstreams) == 0:
-        return []
-    min_posts = get_min_posts_batch(len(oldstreams), API)
-    postsDataArray = sorted(oldstreams, key=lambda x: x.get("created_at"))
-    filteredArray = list(
-        filter(
-            lambda x: arrow.get(x.get("created_at")).float_timestamp >= after,
-            postsDataArray,
-        )
-    )
-
-    splitArrays = [
-        filteredArray[i : i + min_posts]
-        for i in range(0, len(filteredArray), min_posts)
-    ]
-    return splitArrays
+    return dated_posts.split_posts(_area, oldstreams, after)
 
 
 def get_tasks(splitArrays, c, model_id, username, after):
-    tasks = []
-
-    if len(splitArrays) == 0:
-        tasks.append(
-            scrape_stream_posts(
-                c, model_id, username, timestamp=after, is_last_chunk=True, offset=True
-            )
-        )
-        return tasks
-
-    first_known_post = splitArrays[0][0]
-    first_known_timestamp = float(first_known_post.get("created_at"))
-
-    if float(after) < first_known_timestamp:
-        log.debug(
-            f"Spawning Bridge Worker to cover gap from {after} to {first_known_timestamp}"
-        )
-        tasks.append(
-            scrape_stream_posts(
-                c,
-                model_id,
-                username,
-                timestamp=after,
-                required_posts=[
-                    {
-                        "post_id": first_known_post.get("post_id"),
-                        "timestamp": first_known_timestamp,
-                    }
-                ],
-                offset=True,
-            )
-        )
-
-    for i, chunk in enumerate(splitArrays):
-        is_first_chunk = i == 0
-        is_final_chunk = i == len(splitArrays) - 1
-
-        start_timestamp = (
-            chunk[0].get("created_at")
-            if is_first_chunk
-            else splitArrays[i - 1][-1].get("created_at")
-        )
-
-        tasks.append(
-            scrape_stream_posts(
-                c,
-                model_id,
-                username,
-                timestamp=start_timestamp,
-                required_posts=[
-                    {"post_id": ele.get("post_id"), "timestamp": ele.get("created_at")}
-                    for ele in chunk
-                ],
-                is_last_chunk=is_final_chunk,
-                offset=is_first_chunk or is_final_chunk,
-            )
-        )
-
-    return tasks
+    return dated_posts.get_tasks(
+        scrape_stream_posts, splitArrays, c, model_id, username, after
+    )
 
 
-async def scrape_stream_posts(
+def scrape_stream_posts(
     c,
     model_id,
     username,
@@ -187,141 +93,16 @@ async def scrape_stream_posts(
     is_last_chunk=False,
     offset=False,
 ):
-    required_posts = required_posts or []
-    expected_missing = [p for p in required_posts]
-    required_ids = {p["post_id"] for p in required_posts}
-
-    before = arrow.get(settings.get_settings().before or arrow.now()).float_timestamp
-    start_anchor = float(timestamp) if timestamp else 0
-    all_ghosts_found = []
-
-    current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
-    has_more = True
-
-    try:
-        while has_more:
-            url = (
-                of_env.getattr("streamsNextEP").format(model_id, str(current_timestamp))
-                if current_timestamp
-                else of_env.getattr("streamsEP").format(model_id)
-            )
-
-            async with c.requests_async(url=url) as r:
-                if not (200 <= r.status < 300):
-                    log.debug(f"Streams API Error: {r.status} for {url}")
-                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
-                    break
-
-                data = await r.json_()
-                batch = data.get("list", [])
-                has_more = data.get("hasMore", False)
-                if not batch:
-                    break
-
-                batch_timestamps = [float(x.get("postedAtPrecise", 0)) for x in batch]
-                max_ts = max(batch_timestamps)
-                batch_ids = {x["id"] for x in batch}
-
-                expected_missing = [
-                    p for p in expected_missing if p["post_id"] not in batch_ids
-                ]
-                for ele in batch:
-                    required_ids.discard(ele["id"])
-
-                ghosts_in_batch = []
-                for expected in expected_missing:
-                    if max_ts >= expected["timestamp"] >= start_anchor:
-                        ghosts_in_batch.append(expected["post_id"])
-
-                if ghosts_in_batch:
-                    all_ghosts_found.extend(ghosts_in_batch)
-                    expected_missing = [
-                        p
-                        for p in expected_missing
-                        if p["post_id"] not in ghosts_in_batch
-                    ]
-                    for g_id in ghosts_in_batch:
-                        required_ids.discard(g_id)
-
-                # Boundary condition: this page reaches past the "before" date limit.
-                # Keep its in-range posts before stopping.
-                if max_ts > before:
-                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
-                    break
-
-                # This chunk has found all of its cached posts. Keep the page
-                # that contained them; the next chunk only starts after its tail.
-                if not is_last_chunk and len(required_ids) == 0:
-                    yield batch
-                    break
-
-                current_timestamp = max_ts
-                yield batch
-
-    except Exception as E:
-        incomplete.mark_incomplete(model_id, API, repr(E))
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-    finally:
-        if all_ghosts_found:
-            log.info(
-                f"Worker finished. Flagging {len(all_ghosts_found)} ghost streams in database."
-            )
-            await mark_post_as_deleted(
-                post_ids=all_ghosts_found, model_id=model_id, username=username
-            )
+    """An async generator of one worker's pages."""
+    return dated_posts.scrape_posts(
+        _area, c, model_id, username, timestamp, required_posts, is_last_chunk, offset
+    )
 
 
 async def get_after(model_id, username):
-    prechecks = get_after_pre_checks(model_id, API)
-    if prechecks is not None:
-        return max(
-            arrow.get(prechecks).float_timestamp, arrow.get("2000").float_timestamp
-        )
-
-    curr = await get_streams_media(model_id=model_id, username=username)
-    if len(curr) == 0:
-        return arrow.get("2000").float_timestamp
-
-    curr_downloaded = await get_media_ids_downloaded_model(
-        model_id=model_id, username=username
+    return await dated_posts.get_after(
+        _area, get_streams_media, get_youngest_streams_date, model_id, username
     )
-    deleted_posts = await get_deleted_post_ids(model_id=model_id, username=username)
-
-    active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
-    active_media_mapped = {
-        const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media
-    }
-
-    filtered_items = [
-        x
-        for x in curr
-        if x.get("downloaded") != 1
-        and x.get("media_id") not in curr_downloaded
-        and x.get("post_id") not in deleted_posts
-        and x.get("unlocked") != 0
-        and const.MEDIA_ALIASES.get(
-            str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()
-        )
-        in active_media_mapped
-    ]
-
-    if len(filtered_items) == 0:
-        youngest = await get_youngest_streams_date(model_id=model_id, username=username)
-        return arrow.get(youngest or "2000").float_timestamp
-
-    unique_missing = {}
-    for item in filtered_items:
-        mid = item.get("media_id")
-        if mid not in unique_missing or arrow.get(
-            item.get("posted_at") or 0
-        ) > arrow.get(unique_missing[mid].get("posted_at") or 0):
-            unique_missing[mid] = item
-
-    missing_items = sorted(
-        list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
-    )
-    return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
 
 
 def time_log(username, after):
