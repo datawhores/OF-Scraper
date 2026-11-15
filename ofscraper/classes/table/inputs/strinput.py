@@ -8,6 +8,9 @@ class StrInput(FilterInput):
     def update_table_val(self, val):
         self.value = val
 
+    def reset(self):
+        self.value = ""
+
     def compare(self, value):
         if self.value == "":
             return True
