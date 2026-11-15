@@ -20,7 +20,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 from urllib.parse import urlparse
 
+import aiohttp
 import pytest
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 import ofscraper.commands.db as db_command
 import ofscraper.commands.metadata.manager as meta_mod
@@ -859,6 +862,47 @@ def test_unusable_stream_falls_back_to_the_direct_file(env, monkeypatch, case):
     assert asyncio.run(run_download(FakeSession(bodies), ele)) == ("Videos", 10)
     assert calls == [ele.url] and ele.url
     assert env.ffmpeg_runs == [] and files_in(env.out, env.temp) == []
+
+
+def _refused(url):
+    info = aiohttp.RequestInfo(URL(url), "GET", CIMultiDictProxy(CIMultiDict()), URL(url))
+    return aiohttp.ClientResponseError(info, (), status=403)
+
+
+@pytest.mark.parametrize("refreshed", [True, False])
+def test_a_refused_playlist_is_fetched_again_with_new_links(env, monkeypatch, refreshed):
+    # Fansly sometimes signs the links for another address (#536)
+    raw = raw_media()
+    old_url = variant(raw["media"], video.HLS_MIME)["locations"][0]["location"]
+    new_url = old_url.replace(".m3u8", "-new.m3u8")
+    session = FakeSession({old_url: _refused(old_url), new_url: EMPTY_MASTER})
+    asked = []
+
+    async def refresh_media_link(ele):
+        asked.append(ele.id)
+        if not refreshed:
+            return False
+        new = copy.deepcopy(video.raw_media(ele))
+        loc = variant(new, video.HLS_MIME)["locations"][0]
+        loc["location"] = new_url
+        loc["metadata"] = dict(TEST_SIGNED)
+        ele.media["fansly"]["media"] = new
+        return True
+
+    async def main_download(self, c, ele, username, model_id):
+        return "Videos", 10
+
+    monkeypatch.setattr(stream_mod, "refresh_media_link", refresh_media_link)
+    monkeypatch.setattr(run_mod.MainDownloadManager, "main_download", main_download)
+    ele = make_ele(raw)
+    # the new playlist is empty here, so the item ends on its direct file
+    assert asyncio.run(run_download(session, ele)) == ("Videos", 10)
+    assert asked == [ele.id]
+    urls = [url for url, _ in session.calls]
+    assert urls == ([old_url, new_url] if refreshed else [old_url])
+    if refreshed:
+        cookies = session.calls[-1][1]["cookies"]
+        assert cookies["CloudFront-Signature"] == TEST_SIGNED["Signature"]
 
 
 # ------------------------------------------------------------------ skipped segments (re-review)

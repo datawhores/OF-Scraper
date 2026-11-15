@@ -36,7 +36,13 @@ from ofscraper.commands.scraper.actions.download.managers.downloadmanager import
     DownloadManager,
 )
 from ofscraper.db.operations_.media import mark_media_as_downloaded
-from ofscraper.managers.sessionmanager.sessionmanager import HEADERS
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_link,
+)
+from ofscraper.managers.sessionmanager.sessionmanager import (
+    HEADERS,
+    is_provided_exception_number,
+)
 from ofscraper.sites.fansly import auth as fansly_auth
 from ofscraper.sites.fansly import headers as fansly_headers
 from ofscraper.sites.fansly import video as fansly_video
@@ -236,7 +242,19 @@ class FanslyStreamDownloadManager(DownloadManager):
         self._downloadspace()
 
         try:
-            url, audio_url = await self._stream_urls(c, best)
+            try:
+                url, audio_url = await self._stream_urls(c, best)
+            except fansly_video.StreamError as e:
+                # Fansly sometimes signs the links for another address (#536):
+                # ask for them again, once, before giving up on the stream
+                if not is_provided_exception_number(e.__cause__, 403):
+                    raise
+                if not await refresh_media_link(ele):
+                    raise
+                best = fansly_video.select_best(fansly_video.raw_media(ele))
+                if not best or not best.is_stream:
+                    raise
+                url, audio_url = await self._stream_urls(c, best)
         except fansly_video.StreamError as e:
             if ele.url and fansly_video.has_direct(fansly_video.raw_media(ele)):
                 # None: run.py downloads the direct file instead (ele.url

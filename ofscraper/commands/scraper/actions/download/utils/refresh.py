@@ -8,6 +8,10 @@ API gives links signed for the current IP.
 A normal file gets a new URL. A DRM video keeps its manifest URL but gets a new
 signature (``files.drm``), which signs the manifest and segment requests.
 
+Fansly links are signed the same way, with one difference: Fansly sometimes
+gives out a link signed for another address, with no IP change on this side.
+See ``_refresh_fansly``.
+
 Based on datawhores/OF-Scraper#653 by danijel1124.
 """
 
@@ -23,8 +27,16 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.data.api.highlights import get_highlightList
+from ofscraper.sites.fansly import api as fansly_api
+from ofscraper.sites.fansly import normalize as fansly_normalize
+from ofscraper.sites.fansly import video as fansly_video
 
 log = logging.getLogger("shared")
+
+# how often Fansly is asked for a link that differs from the rejected one, and
+# the seconds between asks
+FANSLY_ASKS = 3
+FANSLY_ASK_WAIT = 5
 
 TIMELINE_AREAS = {"Timeline", "Pinned", "Archived", "Streams"}
 
@@ -148,12 +160,78 @@ def _use_new_signature(ele, media):
     return None
 
 
+def _fansly_signatures(raw):
+    """The signatures on every location of a raw Fansly Media."""
+    out = set()
+    for obj in [raw] + list(raw.get("variants") or []):
+        for location in obj.get("locations") or []:
+            signature = fansly_video.cloudfront_cookies(location).get("CloudFront-Signature")
+            if signature:
+                out.add(signature)
+    return out
+
+
+async def _refresh_fansly(ele) -> bool:
+    """Fansly: fetch the item's accountMedia again and use its links.
+
+    Fansly keeps a signed link for a while and gives the same one to every
+    request for that media, sometimes one signed for another address, which
+    its CDN refuses (#536). So this asks a few times, until a link changes.
+    """
+    details = ele.media.get("fansly") or {}
+    old = details.get("media") or {}
+    account_media_id = details.get("accountMediaId")
+    if not account_media_id or not old:
+        log.debug(f"Media {ele.id}: no way to fetch a new Fansly link")
+        return False
+    part = "preview" if details.get("isPreview") else "media"
+    for ask in range(FANSLY_ASKS):
+        if ask:
+            await asyncio.sleep(FANSLY_ASK_WAIT)
+        try:
+            async with manager.Manager.session.aget_ofsession() as c:
+                found = await fansly_api.account_media(c, [account_media_id])
+        except Exception as E:
+            log.debug(f"Media {ele.id}: fetching a new link failed: {E}")
+            return False
+        item = next(
+            (x for x in found or [] if str(x.get("id")) == str(account_media_id)), {}
+        )
+        new = item.get(part) or {}
+        if str(new.get("id")) != str(old.get("id")):
+            log.debug(f"Media {ele.id}: the API didn't return this media")
+            return False
+        if not _fansly_signatures(new) - _fansly_signatures(old):
+            continue
+        new_url = fansly_normalize.file_url(new)
+        if ele.url and (not new_url or not _same_file(ele.url, new_url)):
+            log.debug(f"Media {ele.id}: the new link is for a different file, not using it")
+            return False
+        # the stream downloader reads its links from the raw Media
+        details["media"] = new
+        if new_url:
+            ele.media.setdefault("files", {}).setdefault("full", {})["url"] = new_url
+            ele.url = new_url
+        log.info(
+            f"Media {ele.id}: the download link was rejected (403), using a newly signed one"
+        )
+        return True
+    log.info(
+        f"Media {ele.id}: Fansly's CDN rejected the download link (403) and Fansly "
+        f"gave the same link again {FANSLY_ASKS} times. It may be signed for "
+        "another address; the next run tries again"
+    )
+    return False
+
+
 async def refresh_media_link(ele) -> bool:
     """Give ``ele`` a newly signed link (or DRM signature) for the same file.
 
     Returns True if it changed. Any failure is logged and returns False, so the
     download fails as it would have without a refresh.
     """
+    if ele.media.get("fansly"):
+        return await _refresh_fansly(ele)
     protected = ele.protected
     endpoint = _endpoint(ele)
     if not endpoint or not (ele.mpd if protected else ele.url):
