@@ -1,39 +1,46 @@
 import re
 import arrow
 from textual.containers import Container, Horizontal
-from textual.widgets import Input
+from textual.widgets import Input, Label
 import ofscraper.utils.settings as settings  # Reconnect to truth
 
 
 class DateField(Container):
     DEFAULT_CSS = """
+    DateField {
+        column-span: 4;
+        row-span: 3;
+        height: auto;
+    }
+
+    DateField Horizontal {
+        height: auto;
+    }
+
     DateField Input {
         width: 50%;
     }
-
-    DateField {
-        row-span: 2;
-    }
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(id=name, classes="container")
         self.filter_name = name
+        self.label_text = label or "Post Date (YYYY.MM.DD or YYYY-MM-DD)"
 
     def compose(self):
+        yield Label(self.label_text)
         with Horizontal():
             min_id = "minDate" if self.filter_name == "post_date" else f"{self.filter_name}_minDate"
             max_id = "maxDate" if self.filter_name == "post_date" else f"{self.filter_name}_maxDate"
-            yield Input(placeholder="Earliest Date", id=min_id)
-            yield Input(placeholder="Latest Date", id=max_id)
+            yield Input(placeholder="Earliest (e.g. 2025.01.01)", id=min_id)
+            yield Input(placeholder="Latest (e.g. 2026.12.31)", id=max_id)
 
     def on_mount(self):
         """
         Self-Aware Logic: Maps 'post_date' to settings 'posted_after' / 'posted_before'
         Runs immediately after the widget is drawn.
         """
-        # Map filter_name to the config prefix (e.g., 'post_date' becomes 'posted')
         prefix = "posted" if self.filter_name in {"post_date", "post_post_date"} else self.filter_name
 
         min_val = getattr(settings.get_settings(), f"{prefix}_after", None)
@@ -54,17 +61,13 @@ class DateField(Container):
 
     def update_min_val(self, val):
         val = self.convertString(val)
-        if val != "":
-            self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value = arrow.get(val).format("YYYY.MM.DD")
-        else:
-            self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value = ""
+        target = "#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate"
+        self.query_one(target).value = arrow.get(val).format("YYYY.MM.DD") if val != "" else ""
 
     def update_max_val(self, val):
         val = self.convertString(val)
-        if val != "":
-            self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value = arrow.get(val).format("YYYY.MM.DD")
-        else:
-            self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value = ""
+        target = "#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate"
+        self.query_one(target).value = arrow.get(val).format("YYYY.MM.DD") if val != "" else ""
 
     def reset(self):
         for ele in self.query(Input):
@@ -79,14 +82,8 @@ class DateField(Container):
 
     def compare(self, value):
         value = arrow.get(value).floor("day")
-        min_val = (
-            arrow.get(self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value)
-            if self.query_one("#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate").value
-            else arrow.get(0)
-        )
-        max_val = (
-            arrow.get(self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value)
-            if self.query_one("#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate").value
-            else arrow.now()
-        )
+        min_id = "#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate"
+        max_id = "#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate"
+        min_val = arrow.get(self.query_one(min_id).value) if self.query_one(min_id).value else arrow.get(0)
+        max_val = arrow.get(self.query_one(max_id).value) if self.query_one(max_id).value else arrow.now()
         return arrow.get(value).is_between(min_val, max_val, bounds="[]")

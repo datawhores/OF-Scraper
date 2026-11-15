@@ -49,7 +49,7 @@ def auth_prompt(auth) -> dict:
             {
                 "type": "input",
                 "name": "auth_uid",
-                "message": "Enter your auth_uid cookie (can be left blank if you don't use 2FA):",
+                "message": "Enter your auth_uid cookie (can be left blank if you don't use 2FA)",
                 "default": auth["auth_uid"] or "",
                 "multiline": True,
             },

@@ -1,6 +1,6 @@
 from textual.containers import Container, Horizontal, Vertical
 import re
-from textual.widgets import Button, ContentSwitcher, Rule, Static, Checkbox, SelectionList
+from textual.widgets import Button, ContentSwitcher, Rule, Static, Checkbox, SelectionList, Label
 from textual.widgets.selection_list import Selection
 from ofscraper.classes.table.utils.names import col_names, post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
 
@@ -144,7 +144,8 @@ def composer():
                     yield Rule()
                     yield DownloadField("Download_Type")
                     yield Rule()
-                    yield StrInput(id="username")
+                    yield Label("Creator Username:")
+                    yield StrInput(id="username", placeholder="Username (e.g. creator_name)")
                     yield Rule()
                     yield Button("Filter", id="filter2")
 
@@ -206,9 +207,10 @@ def composer():
                     yield SelectField("post_unlocked")
                     yield Rule()
                     yield PostMediaField("post_mediatype")
-                    yield ResponseField("post_responsetype", label="Post Type (matches ANY checked):")
+                    yield ResponseField("post_responsetype", label="Post Type (matches ANY checked)")
                     yield Rule()
-                    yield StrInput(id="post_username", placeholder="Username Search")
+                    yield Label("Creator Username:")
+                    yield StrInput(id="post_username", placeholder="Username (e.g. creator_name)")
                     yield Rule()
                     yield Button("Filter", id="post_filter2")
 

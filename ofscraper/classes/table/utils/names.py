@@ -83,6 +83,7 @@ POST_EXTRA_COLUMNS = {
     "new_cost_per_audio",
     "cost_per_audio_sec",
     "new_cost_per_audio_sec",
+    "post_date",
 }
 
 

@@ -1,15 +1,25 @@
-from textual.containers import Horizontal
+from textual.containers import Vertical
+from textual.widgets import Label
 from ofscraper.classes.table.inputs.intergerinput import PostiveIntegerInput
 import ofscraper.utils.settings as settings
 
 
-class NumField(Horizontal):
+class NumField(Vertical):
     Field = PostiveIntegerInput
 
-    def __init__(self, name: str, default=None) -> None:
+    DEFAULT_CSS = """
+    NumField {
+        height: auto;
+        row-span: 2;
+    }
+    """
+
+    def __init__(self, name: str, default=None, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
+        clean_title = name.replace("post_post_", "post_").replace("post_", "").replace("_", " ").title()
+        self.label_text = label or f"{clean_title} (exact)"
         setting_val = getattr(settings.get_settings(), self.filter_name, None)
         if setting_val:
             if isinstance(setting_val, list):
@@ -22,8 +32,10 @@ class NumField(Horizontal):
         self.default = str(default if str(default).isnumeric() else "")
 
     def compose(self):
+        yield Label(self.label_text)
+        clean_placeholder = self.filter_name.replace("post_post_", "post_").replace("post_", "").replace("_", " ").title()
         yield self.Field(
-            placeholder=self.filter_name.capitalize().replace("_", " "),
+            placeholder=f"{clean_placeholder} (e.g. 12345)",
             id=f"{self.filter_name}_input",
             value=self.default,
         )
@@ -52,9 +64,13 @@ class NumField(Horizontal):
 class PostiveNumField(NumField):
     Field = PostiveIntegerInput
 
+    def __init__(self, name: str, default=None, label: str | None = None) -> None:
+        super().__init__(name, default=default, label=label or "Min New Media (at least N)")
+
     def compose(self):
+        yield Label(self.label_text)
         yield self.Field(
-            placeholder=self.filter_name.capitalize().replace("_", " "),
+            placeholder="Min New Media (e.g. 1)",
             id=f"{self.filter_name}_input",
             value=self.default,
         )

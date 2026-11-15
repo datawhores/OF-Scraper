@@ -1079,6 +1079,8 @@ class InputApp(App):
 
             # 4. Add the rows to the table
             for count, row_dict in enumerate(cart_rows[start : start + num_page]):
+                if row_dict.get("download_type") == "unknown":
+                    row_dict["download_type"] = "protected"
                 styled_row = get_styled(row_dict, cart_table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 cart_table.add_row(
@@ -1152,6 +1154,8 @@ class InputApp(App):
 
             # 3. Add the rows to the table
             for count, row_dict in enumerate(rows[start : start + num_page]):
+                if row_dict.get("download_type") == "unknown":
+                    row_dict["download_type"] = "protected"
                 styled_row = get_styled(row_dict, self.table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 self.table.add_row(
@@ -1491,6 +1495,8 @@ class InputApp(App):
                 self.post_page = total_pages
             start = (self.post_page - 1) * num_page
             for count, row_dict in enumerate(rows[start : start + num_page]):
+                if row_dict.get("download_type") == "unknown":
+                    row_dict["download_type"] = "protected"
                 styled_row = get_post_styled(row_dict, table.ordered_columns_keys)
                 table.add_row(*styled_row, height=None, key=str(row_dict["index"]), label=str(start + count + 1))
             try:

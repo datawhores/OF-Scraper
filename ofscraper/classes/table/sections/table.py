@@ -118,10 +118,7 @@ def get_styled(row, columns=None):
                 Text(str(row[key]), style="bold bright_white")
             )
             
-        elif key == "download_type" and str(row[key]).strip().lower() == "unknown":
-            styled_row.append(
-                Text("protected", style="bold medium_spring_green")
-            )
+
         elif isinstance(row[key],str):
             styled_row.append(
                 Text(str(row[key]), style="bold medium_spring_green")

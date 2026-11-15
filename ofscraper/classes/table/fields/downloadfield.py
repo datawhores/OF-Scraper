@@ -1,5 +1,5 @@
 from ofscraper.utils import settings
-from textual.widgets import SelectionList
+from textual.widgets import Label, SelectionList
 
 from ofscraper.classes.table.fields.selectfield import SelectField
 from textual.widgets.selection_list import Selection
@@ -8,17 +8,18 @@ from textual.widgets.selection_list import Selection
 class DownloadField(SelectField):
     DEFAULT_CSS = """
     DownloadField {
-    column-span:3;
-    row-span:3;
+        column-span: 3;
+        row-span: 4;
+        height: auto;
     }
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
+        self.label_text = label or "Download Type (Normal vs DRM/Protected)"
         dl_type = settings.get_settings().download_type
-        # If None, both are checked. If "normal", only normal is checked, etc.
         normal_state = dl_type in ["normal", None]
         protected_state = dl_type in ["protected", None]
 
@@ -36,6 +37,7 @@ class DownloadField(SelectField):
         )
 
     def compose(self):
+        yield Label(self.label_text)
         yield SelectionList(self._normal, self._protected)
 
     def update_table_val(self, val):

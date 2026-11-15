@@ -1,4 +1,4 @@
-from textual.widgets import SelectionList
+from textual.widgets import Label, SelectionList
 from textual.widgets.selection_list import Selection
 from ofscraper.classes.table.fields.selectfield import SelectField
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
@@ -7,23 +7,23 @@ import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 class MediaField(SelectField):
     DEFAULT_CSS = """
     MediaField {
-    column-span:3;
-    row-span:3;
+        column-span: 3;
+        row-span: 4;
+        height: auto;
     }
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
+        self.label_text = label or "Media Type (checked = shown)"
 
-        # 1. Fetch the active media types from the config right now
         active_media = settings.get_settings().mediatypes or [
             "Audios",
             "Videos",
             "Images",
         ]
-        # 2. Harden the capitalization
         active_media = [m.capitalize() for m in active_media]
 
         self._videos = Selection(
@@ -46,6 +46,7 @@ class MediaField(SelectField):
         )
 
     def compose(self):
+        yield Label(self.label_text)
         yield SelectionList(self._videos, self._images, self._audios)
 
     def compare(self, value):
@@ -67,7 +68,8 @@ class PostMediaField(SelectField):
     DEFAULT_CSS = """
     PostMediaField {
         column-span: 4;
-        row-span: 3;
+        row-span: 4;
+        height: auto;
     }
     """
 
@@ -96,10 +98,8 @@ class PostMediaField(SelectField):
         )
 
     def compose(self):
-        from textual.widgets import Label
         yield Label("Contains Media (none = any;")
-        yield Label("checked = contain 1+ of mediatype):")
-
+        yield Label("checked = contain 1+ of mediatype)")
         yield SelectionList(self._videos, self._images, self._audios)
 
     def reset(self):
