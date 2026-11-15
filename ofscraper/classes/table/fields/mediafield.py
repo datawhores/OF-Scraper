@@ -97,7 +97,7 @@ class PostMediaField(SelectField):
 
     def compose(self):
         from textual.widgets import Label
-        yield Label("Contains Media (none = any; ALL checked):")
+        yield Label("Contains Media (none = any; checked = must contain 1+ media of type):")
         yield SelectionList(self._videos, self._images, self._audios)
 
     def reset(self):
