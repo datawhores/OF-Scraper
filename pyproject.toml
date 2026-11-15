@@ -1,5 +1,5 @@
 [project]
-name = "ofscraper-community"
+name = "ofscraper"
 dynamic = ["version"]
 description = "automatically scrape onlyfans"
 authors = [{ name = "datawhores", email = "datawhores@riseup.net" }]
@@ -61,7 +61,7 @@ ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
 ofscraper = "ofscraper.__main__:main"
 
 [project.urls]
-"Homepage" = "https://github.com/cloakedkeys/OF-Scraper-Community"
+"Homepage" = "https://github.com/datawhores/OF-Scraper"
 
 # --- Build System & Tool Configuration ---
 
