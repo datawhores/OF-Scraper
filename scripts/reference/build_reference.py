@@ -222,6 +222,11 @@ def config_getter_map():
     return result
 
 
+# lookup helper in config/data.py -> whether its first string argument is the
+# environment default's key
+CONFIG_LOOKUP_HELPERS = {"_first": False, "_value": True, "_truthy_value": True}
+
+
 def getter_details(getter, module_file, key_path):
     """(environment defaults read, older config keys read) by a config getter"""
     fn = module_functions(ROOT / module_file).get(getter)
@@ -230,10 +235,25 @@ def getter_details(getter, module_file, key_path):
         return envs, keys
     own = key_path.split(".")
     for node in ast.walk(fn):
-        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+        if not isinstance(node, ast.Call):
             continue
         args = [a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
         if not args:
+            continue
+        # data.py's lookup helpers: _value(config, ENV_KEY, *paths) and
+        # _truthy_value likewise, _first(config, *paths); a path is "key"
+        # or "section.key"
+        helper = getattr(node.func, "id", "")
+        if helper in CONFIG_LOOKUP_HELPERS:
+            if len(args) != len(node.args) - 1:
+                # a path held in a variable would be left out of the reference
+                raise ValueError(f"{getter}: pass {helper}() its keys as literal strings")
+            if CONFIG_LOOKUP_HELPERS[helper]:
+                envs.append(args[0])
+                args = args[1:]
+            keys.extend(part for path in args for part in path.split("."))
+            continue
+        if not isinstance(node.func, ast.Attribute):
             continue
         if node.func.attr == "getattr" and getattr(node.func.value, "id", "") == "of_env":
             envs.append(args[0])
