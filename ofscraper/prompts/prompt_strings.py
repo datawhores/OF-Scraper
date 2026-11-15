@@ -153,7 +153,7 @@ This can greatly increase the time needed for a single scrape
 
 It should not be needed to turn this on everytime, especially with  frequent scrapes
 
-SHOW KEYBINDINGS AND INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS AND INSTRUCTIONS: [ALT+V] or [CTRL+V] (in Windows Terminal, Ctrl+V pastes instead)
 """
 
 SINGLE_LINE = """
@@ -179,11 +179,11 @@ PRESS ENTER TO RETURN
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
 KEY_BOARD = """
-SHOW KEYBINDINGS AND INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS AND INSTRUCTIONS: [ALT+V] or [CTRL+V] (in Windows Terminal, Ctrl+V pastes instead)
 """
 
 NUMBER = """
-SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V] (in Windows Terminal, Ctrl+V pastes instead)
 """
 
 MODEL_SELECT = """
