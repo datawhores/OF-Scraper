@@ -11,7 +11,12 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 
 # top_level is re-exported: menu.py uses it as promptClasses.top_level
-from ofscraper.prompts.cancel import cancel, cancel_scope, top_level  # noqa: F401
+from ofscraper.prompts.cancel import (  # noqa: F401
+    PromptCancelled,
+    cancel,
+    cancel_scope,
+    top_level,
+)
 
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -55,6 +60,8 @@ def wrapper(prompt_funct):
         altx_action = kwargs.pop("altx", None)
         altd_action = kwargs.pop("altd", None)
         additional_keys = kwargs.pop("additional_keys", {})
+        # called with the prompt when Esc leaves it, before the cancel unwinds
+        on_cancel = kwargs.pop("on_cancel", None)
         action = [None]
         with prompt_live():
 
@@ -80,7 +87,12 @@ def wrapper(prompt_funct):
             while True:
                 funct() if funct else None
                 clear()
-                out = prompt_.execute()
+                try:
+                    out = prompt_.execute()
+                except PromptCancelled:
+                    if on_cancel is not None:
+                        on_cancel(prompt_)
+                    raise
                 prompt_._default = get_default(prompt_funct, prompt_)
                 select = action[0]
                 action[0] = None

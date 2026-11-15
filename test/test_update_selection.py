@@ -26,5 +26,5 @@ def test_selection_after_reset_opens_selector(monkeypatch):
         lambda: SimpleNamespace(usernames=None, daemon=None),
     )
     monkeypatch.setattr(mm, "_filter_and_prompt_for_selection", lambda: {m.name: m for m in models})
-    monkeypatch.setattr(retriver, "get_selected_model", lambda found, existing: found[:1])
+    monkeypatch.setattr(retriver, "get_selected_model", lambda found, existing, **kw: found[:1])
     assert [m.name for m in mm._select_models_scraper()] == ["m0"]

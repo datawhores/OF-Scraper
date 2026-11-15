@@ -40,7 +40,7 @@ def _manager(monkeypatch, answers):
     monkeypatch.setattr(model.prompts, "press_enter_to_continue", lambda: None)
     picked = {}
 
-    def picker(choices, existing):
+    def picker(choices, existing, on_cancel=None):
         picked["checked"] = [m.name for m in existing]
         return [creators["new_one"]]
 

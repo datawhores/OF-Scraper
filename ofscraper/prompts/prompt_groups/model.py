@@ -32,7 +32,20 @@ console = Console()
 models = None
 
 
-def model_selector(models: Union[dict | list], existing_models) -> bool:
+def ticked_values(prompt):
+    """The values of the ticked choices in a multiselect list prompt."""
+    return [
+        choice["value"]
+        for choice in prompt.content_control.choices
+        if isinstance(choice, dict) and choice.get("enabled")
+    ]
+
+
+def model_selector(
+    models: Union[dict | list], existing_models, on_cancel=None
+) -> bool:
+    """The creator picker. ``on_cancel`` gets the creators ticked when Esc
+    leaves it."""
     choices = modelHelpers.model_selector_choices(models)
     selectedSet = set(map(lambda x: x.name, existing_models))
     for model in choices:
@@ -53,6 +66,9 @@ def model_selector(models: Union[dict | list], existing_models) -> bool:
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
         info=True,
+        on_cancel=(
+            (lambda prompt: on_cancel(ticked_values(prompt))) if on_cancel else None
+        ),
     )
 
     return p
