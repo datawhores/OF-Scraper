@@ -7,7 +7,7 @@
 **Download what you're subscribed to on OnlyFans and Fansly, from the command line.**
 
 [![Latest release](https://img.shields.io/github/v/release/datawhores/OF-Scraper?label=release&color=00a8e8)](https://github.com/datawhores/OF-Scraper/releases/latest)
-[![PyPI](https://img.shields.io/pypi/v/ofscraper-community?label=pypi&color=3776ab)](https://pypi.org/project/ofscraper-community/)
+[![PyPI](https://img.shields.io/pypi/v/ofscraper?label=pypi&color=3776ab)](https://pypi.org/project/ofscraper/)
 [![Python 3.11 to 3.15](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.15-3776ab?logo=python&logoColor=white)](#-install)
 [![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
 [![Discord](https://img.shields.io/badge/discord-join-5865f2?logo=discord&logoColor=white)](https://discord.gg/wN7uxEVHRK)
@@ -37,10 +37,10 @@
 
 ## 📦 Install
 
-This version is on PyPI as **`ofscraper-community`**. The command is `ofscraper`.
+This version is on PyPI as **`ofscraper`**. The command is `ofscraper`.
 
 ```
-uv tool install ofscraper-community
+uv tool install ofscraper
 ```
 
 <details>
@@ -51,16 +51,16 @@ uv tool install ofscraper-community
 **pipx or pip**
 
 ```
-pipx install ofscraper-community
-pip install ofscraper-community
+pipx install ofscraper
+pip install ofscraper
 ```
 
 **Update**
 
 ```
-uv tool upgrade ofscraper-community
-pipx upgrade ofscraper-community
-pip install -U ofscraper-community
+uv tool upgrade ofscraper
+pipx upgrade ofscraper
+pip install -U ofscraper
 ```
 
 **Coming from `ofscraper`:** the old `ofscraper` package on PyPI stops at 3.14.7. Both install the same `ofscraper` command, so uninstall the old one first (`uv tool uninstall ofscraper`, `pipx uninstall ofscraper` or `pip uninstall ofscraper`). Your config, auth and databases are used as they are.
