@@ -22,7 +22,7 @@ services:
       # Optional: Mount pre-installed binaries from host (adjust paths as needed)
       # - /usr/bin/ffmpeg:/usr/bin/ffmpeg
 
-    image: ghcr.io/cloakedkeys/of-scraper-community:latest
+    image: ghcr.io/datawhores/of-scraper:latest
     # --- COMMAND OPTIONS ---
     # Choose one of the following 'command' configurations based on your use case.
     # Uncomment the desired option and ensure others are commented out.
