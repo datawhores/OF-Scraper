@@ -181,6 +181,13 @@ Options = """
     #download_option_sidebar SizeField {
         height: auto;
     }
+
+    #size_limit_note {
+        height: auto;
+        margin-top: 1;
+        padding: 0 1;
+        color: $text-muted;
+    }
 """
 
 CSS = (
