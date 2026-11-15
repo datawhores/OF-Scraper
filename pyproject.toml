@@ -51,6 +51,8 @@ test = [
   "random-unicode-emoji~=3.0",
   "random-emoji~=1.0.15",
   "pytest-mock~=3.17.0",
+  # exact pin: a new ruff release can add findings to the same rules
+  "ruff==0.17.4",
 ]
 docs = ["sphinx-argparse>=0.5.2,<0.7.0"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
@@ -86,3 +88,27 @@ filterwarnings = ["error"]
 testpaths = ["test"]
 # test/legacy targets the pre-3.12 module layout and no longer imports
 norecursedirs = ["legacy"]
+
+[tool.ruff]
+# lint the application only; test/ and scripts/ aren't checked yet
+include = ["ofscraper/**/*.py"]
+target-version = "py311"
+
+[tool.ruff.lint]
+# narrow on purpose: syntax errors, pyflakes (undefined or unused names) and
+# bugbear. Blind excepts and try/except/pass in ofscraper/data/api and
+# ofscraper/db are checked against a baseline by
+# scripts/lint/check_blind_except.py, not here.
+select = ["E9", "F", "B"]
+ignore = [
+  # raise-without-from-inside-except: adding `from err`/`from None` changes
+  # the chained traceback users and logs see, so each site needs a decision
+  "B904",
+  # zip-without-explicit-strict: strict=True can raise where the code relied
+  # on truncation, and strict=False everywhere is noise
+  "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# prompts.py is the re-export hub for the prompt_groups modules
+"ofscraper/prompts/prompts.py" = ["F403"]

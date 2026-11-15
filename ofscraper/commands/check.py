@@ -123,7 +123,7 @@ def _process_queued_rows():
     for model_id, data in user_cart.items():
         username = data["username"]
         if stop.requested.is_set():
-            for key, row in data["rows"]:
+            for key, _row in data["rows"]:
                 app.app.update_cell_state(key, "[added]", "bold light_goldenrod2")
             continue
         log.info(f"Processing download batch for user: {username}")
@@ -630,9 +630,10 @@ async def post_check_retriver(forced=False, only_model_id=None):
                     }
                     - fresh_ids,
                 )
+                # only called in this iteration, so the loop variables are current
                 def to_posts(data):
                     return list(
-                        map(lambda x: posts_.Post(x, model_id, user_name), data)
+                        map(lambda x: posts_.Post(x, model_id, user_name), data)  # noqa: B023
                     )
 
                 all_post_data = (

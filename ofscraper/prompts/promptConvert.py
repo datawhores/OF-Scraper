@@ -10,7 +10,8 @@ from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
 
-from ofscraper.prompts.cancel import cancel, cancel_scope, top_level
+# top_level is re-exported: menu.py uses it as promptClasses.top_level
+from ofscraper.prompts.cancel import cancel, cancel_scope, top_level  # noqa: F401
 
 import ofscraper.prompts.keybindings as keybindings
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -121,11 +122,13 @@ def fix_validation_float(prompt_):
             window = instruction.content
             write_to_screen = window.write_to_screen
 
+            # the loop returns right after this, so the closure only ever
+            # sees this iteration's variables
             def draw_instruction(*args, **kwargs):
-                write_to_screen(*args, **kwargs)
+                write_to_screen(*args, **kwargs)  # noqa: B023
                 # FloatContainer draws its content before positioning floats.
-                if window.render_info is not None:
-                    float_.bottom = window.render_info.window_height
+                if window.render_info is not None:  # noqa: B023
+                    float_.bottom = window.render_info.window_height  # noqa: B023
 
             window.write_to_screen = draw_instruction
             return
@@ -270,7 +273,7 @@ def getFuzzySelection(*args, **kwargs):
 
 @wrapper
 def checkbox(*args, **kwargs):
-    return inquirer.checkbox(keybindings=keybindings.fuzzy, *args, **kwargs)
+    return inquirer.checkbox(*args, keybindings=keybindings.fuzzy, **kwargs)
 
 
 @wrapper

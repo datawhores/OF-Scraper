@@ -18,7 +18,6 @@ from typing import Union
 import arrow
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
-from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
 import ofscraper.prompts.prompt_strings as prompt_strings
