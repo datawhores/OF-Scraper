@@ -5,7 +5,7 @@ from textual.widgets.selection_list import Selection
 from ofscraper.classes.table.utils.names import col_names, post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
 
 from ofscraper.classes.table.fields.datefield import DateField
-from ofscraper.classes.table.fields.mediafield import MediaField, PostMediaField, PostMediaField
+from ofscraper.classes.table.fields.mediafield import MediaField, PostMediaField
 from ofscraper.classes.table.fields.downloadfield import DownloadField
 from ofscraper.classes.table.fields.numfield import NumField, PostiveNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
