@@ -224,7 +224,12 @@ def config_getter_map():
 
 # lookup helper in config/data.py -> whether its first string argument is the
 # environment default's key
-CONFIG_LOOKUP_HELPERS = {"_first": False, "_value": True, "_truthy_value": True}
+CONFIG_LOOKUP_HELPERS = {
+    "_first": False,
+    "_first_set": False,
+    "_value": True,
+    "_truthy_value": True,
+}
 
 
 def getter_details(getter, module_file, key_path):
@@ -241,8 +246,8 @@ def getter_details(getter, module_file, key_path):
         if not args:
             continue
         # data.py's lookup helpers: _value(config, ENV_KEY, *paths) and
-        # _truthy_value likewise, _first(config, *paths); a path is "key"
-        # or "section.key"
+        # _truthy_value likewise, _first(config, *paths) and _first_set
+        # likewise; a path is "key" or "section.key"
         helper = getattr(node.func, "id", "")
         if helper in CONFIG_LOOKUP_HELPERS:
             if len(args) != len(node.args) - 1:
