@@ -24,12 +24,12 @@ def _load(monkeypatch, versions):
     return module.__version__, asked
 
 
-def test_version_comes_from_the_ofscraper_community_distribution(monkeypatch):
+def test_version_comes_from_the_ofscraper_distribution(monkeypatch):
     version, asked = _load(
-        monkeypatch, {"ofscraper-community": "3.16.2", "ofscraper": "3.14.7"}
+        monkeypatch, {"ofscraper": "3.16.2"}
     )
     assert version == "3.16.2"
-    assert asked == ["ofscraper-community"]
+    assert asked == ["ofscraper"]
 
 
 @pytest.mark.parametrize("installed", [{}, {"ofscraper": "3.14.7"}])

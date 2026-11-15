@@ -50,12 +50,12 @@ def test_update_check_asks_pypi_for_the_fork(monkeypatch):
     monkeypatch.setattr(logs, "__version__", "3.15.0")
     monkeypatch.setattr(logs.BareSession, "get_bare_session", fake_session)
     logs.print_latest_version()
-    assert urls == ["https://pypi.org/pypi/ofscraper-community/json"]
+    assert urls == ["https://pypi.org/pypi/ofscraper/json"]
 
 
 def test_update_check_failure_does_not_stop_the_run(monkeypatch, caplog):
     # before the first release PyPI answers 404; offline, the request fails
-    request = httpx.Request("GET", "https://pypi.org/pypi/ofscraper-community/json")
+    request = httpx.Request("GET", "https://pypi.org/pypi/ofscraper/json")
 
     def not_found(**kwargs):
         raise httpx.HTTPStatusError(

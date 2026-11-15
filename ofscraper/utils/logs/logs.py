@@ -94,7 +94,7 @@ def is_newer(new_version, current_version):
     return _release(new_version) > _release(current_version)
 
 
-PYPI_URL = "https://pypi.org/pypi/ofscraper-community/json"
+PYPI_URL = "https://pypi.org/pypi/ofscraper/json"
 
 
 def print_latest_version():
