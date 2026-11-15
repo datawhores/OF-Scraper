@@ -12,6 +12,7 @@ import ofscraper.commands.check as check
 import ofscraper.classes.of.media as media_
 import ofscraper.sites.fansly.normalize as normalize
 import ofscraper.classes.of.posts as posts_
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.messages as messages
 import ofscraper.data.api.timeline as timeline
 import ofscraper.filters.media.filters as filters
@@ -65,6 +66,8 @@ class Log:
 @pytest.fixture
 def log(monkeypatch):
     log = Log()
+    # a scan stopped by an error is reported by the incomplete-scan record
+    monkeypatch.setattr(incomplete, "log", log)
     for module in (timeline, messages):
         monkeypatch.setattr(module, "log", log)
 

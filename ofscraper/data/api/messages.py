@@ -18,6 +18,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
@@ -46,7 +47,7 @@ log = logging.getLogger("shared")
 @run
 @stop.fetching
 async def get_messages(model_id, username, c=None, post_id=None):
-    after = await get_after(model_id, username)
+    after = incomplete.start_scan(model_id, API, await get_after(model_id, username))
 
     time_log(username, after)
     post_id = post_id or []
@@ -57,6 +58,7 @@ async def get_messages(model_id, username, c=None, post_id=None):
         splitArrays, anchor_id = await get_split_array(model_id, username, after)
         generators = get_tasks(splitArrays, anchor_id, c, model_id, username, after)
         data = await process_tasks(generators)
+        incomplete.save_scan(model_id, API, after, username)
     else:
         data = await process_messages_as_individual(model_id, c)
 
@@ -279,11 +281,15 @@ async def scrape_messages(
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Messages API Error: {r.status} for {url}")
+                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
                     break
 
                 data = await r.json_()
                 if not isinstance(data, dict):
                     log.debug(f"API returned unexpected format (not a dict) for {url}")
+                    incomplete.mark_incomplete(
+                        model_id, API, "unexpected response format"
+                    )
                     break
 
                 batch = data.get("list", [])
@@ -360,7 +366,7 @@ async def scrape_messages(
                 yield batch
 
     except Exception as E:
-        log.warning(f"{API}: scan stopped early: {E!r}")
+        incomplete.mark_incomplete(model_id, API, repr(E))
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:

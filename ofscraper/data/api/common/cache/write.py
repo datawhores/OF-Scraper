@@ -1,5 +1,6 @@
 from ofscraper.commands.scraper.actions.download import stop
 import arrow
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
@@ -8,6 +9,7 @@ import ofscraper.utils.settings as settings
 def set_after_checks(model_id, api):
     api = api.lower()
     set_full_after_scan_check(model_id, api)
+    incomplete.commit_scan(model_id, api)
 
 
 def set_full_after_scan_check(model_id, api):

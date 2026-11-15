@@ -18,6 +18,7 @@ import traceback
 import arrow
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
@@ -47,7 +48,7 @@ log = logging.getLogger("shared")
 @run
 @stop.fetching
 async def get_streams_posts(model_id, username, c=None, post_id=None):
-    after = await get_after(model_id, username)
+    after = incomplete.start_scan(model_id, API, await get_after(model_id, username))
     time_log(username, after)
     post_id = post_id or []
     if len(post_id) == 0 or len(post_id) > of_env.getattr(
@@ -56,6 +57,7 @@ async def get_streams_posts(model_id, username, c=None, post_id=None):
         splitArrays = await get_split_array(model_id, username, after)
         generators = get_tasks(splitArrays, c, model_id, username, after)
         data = await process_tasks_batch(generators)
+        incomplete.save_scan(model_id, API, after, username)
     elif len(post_id) <= of_env.getattr("MAX_STREAMS_INDIVIDUAL_SEARCH"):
         data = process_posts_as_individual()
     update_check(data, model_id, after, API)
@@ -245,6 +247,7 @@ async def scrape_stream_posts(
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Streams API Error: {r.status} for {url}")
+                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
                     break
 
                 data = await r.json_()
@@ -294,6 +297,7 @@ async def scrape_stream_posts(
                 yield batch
 
     except Exception as E:
+        incomplete.mark_incomplete(model_id, API, repr(E))
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:
