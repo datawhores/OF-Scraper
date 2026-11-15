@@ -26,6 +26,7 @@ from ofscraper.utils.live.clear import clear
 
 
 def wrapper(prompt_funct):
+    @functools.wraps(prompt_funct)
     def inner(*args, **kwargs):
         # with no console the prompt can't open (#286)
         interactive.require_console(kwargs.get("message") or prompt_funct.__name__)
@@ -248,6 +249,9 @@ def getChecklistSelection(*args, **kwargs):
 
 @wrapper
 def getFuzzySelection(*args, **kwargs):
+    # scorer(search text, choice name) -> (score, matched indices or None),
+    # in place of InquirerPy's fuzzy match
+    scorer = kwargs.pop("scorer", None)
     prompt = inquirer.fuzzy(
         *args,
         marker="\u25c9 ",
@@ -280,6 +284,8 @@ def getFuzzySelection(*args, **kwargs):
         mandatory=False,
         **kwargs,
     )
+    if scorer is not None:
+        prompt.content_control._scorer = scorer
     fix_list_keys(prompt)
     return prompt
 

@@ -41,6 +41,25 @@ def ticked_values(prompt):
     ]
 
 
+def username_scorer(needle, row):
+    """Search the creator picker by username only, as one piece of text.
+
+    InquirerPy's fuzzy match took the letters anywhere in the row, in order,
+    so "mee" matched an "m" in one name plus the "e"s of "subscribed date".
+    Returns (score, indices of the matched characters), or indices None for
+    no match. Names that match earlier come first.
+    """
+    needle = needle.strip().lower()
+    if not needle:
+        return 0, []
+    name = re.search(r"^\s*[0-9]+: ([^ ]+)", row)
+    start = name.group(1).lower().find(needle) if name else -1
+    if start < 0:
+        return float("-inf"), None
+    first = name.start(1) + start
+    return -start, list(range(first, first + len(needle)))
+
+
 def model_selector(
     models: Union[dict | list], existing_models, on_cancel=None
 ) -> bool:
@@ -55,6 +74,7 @@ def model_selector(
 
     p = promptClasses.getFuzzySelection(
         choices=choices,
+        scorer=username_scorer,
         transformer=lambda result: ",".join(map(lambda x: x.split()[1], result)),
         multiselect=True,
         more_instruction=prompt_strings.MODEL_SELECT,
