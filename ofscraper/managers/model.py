@@ -102,6 +102,8 @@ class ModelManager:
             # INTERACTIVE MODE: Check if we have a leftover queue from a previous run
             existing_queued_users = [x.name for x in self.get_scrape_selected_models()]
             requires_new_selection = True
+            # "Yes Update Selection" opens the picker with nothing checked
+            keep_previous = True
 
             if existing_queued_users:
                 prompt_choice = None
@@ -111,6 +113,7 @@ class ModelManager:
                         requires_new_selection = False
                     elif prompt_choice in {"Selection", "Selection_Strict"}:
                         settings.resetUserSelect()
+                        keep_previous = False
                         if prompt_choice == "Selection":
                             self._fetch_all_subs(force_refetch=True)
                     else:
@@ -119,7 +122,9 @@ class ModelManager:
 
             if requires_new_selection:
                 # Get a fresh selection. This leads down to the UI Menu.
-                final_selection = self._select_models_scraper()
+                final_selection = self._select_models_scraper(
+                    keep_previous=keep_previous
+                )
             else:
                 log.info(
                     f"Re-using existing queue of {len(existing_queued_users)} models."
@@ -229,7 +234,7 @@ class ModelManager:
     # 3. INTERACTIVE UI & FILTERING
     # =========================================================================
 
-    def _select_models_scraper(self) -> List["Model"]:
+    def _select_models_scraper(self, keep_previous: bool = True) -> List["Model"]:
         """
         SCRAPER-MODE ROUTER:
         Internal selection logic called exclusively by 'prepare_scraper_activity'
@@ -242,6 +247,10 @@ class ModelManager:
            via 'retriver.get_selected_model'.
 
         Note: This is NOT used by 'add_models' (Check modes), which injects targets directly.
+
+        ``keep_previous=False`` opens the picker without the previous run's
+        creators checked. The queue itself is only replaced once the new
+        selection is made.
         """
         usernames = settings.get_settings().usernames or []
         is_daemon = settings.get_settings().daemon
@@ -278,7 +287,8 @@ class ModelManager:
         # FINAL CASE: We must prompt for a selection.
         # This is where the interactive terminal UI menu is actually launched.
         return retriver.get_selected_model(
-            list(filtered_models.values()), existing_selection
+            list(filtered_models.values()),
+            existing_selection if keep_previous else [],
         )
 
     def _select_by_usernames(self, models, usernames, filtered=False) -> List["Model"]:
