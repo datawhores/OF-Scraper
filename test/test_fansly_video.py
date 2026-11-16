@@ -2017,8 +2017,17 @@ def test_more_streams_join_locally_with_real_ffmpeg(env, tmp_path, monkeypatch, 
                      '-use_timeline', '1', 'movie.mpd'], source)
         mpd = (source / 'movie.mpd').read_text()
         plans = video.local_dash(mpd, 'https://cdn.example/movie.mpd')
-        subprocess.run([FFMPEG, '-v', 'error', '-y', '-i', 'movie.mpd', '-c', 'copy',
-                        'plain.mp4'], cwd=source, capture_output=True, check=True)
+        # The reference is each stream's segments joined as the muxer wrote
+        # them, not ffmpeg reading movie.mpd: ffmpeg 6.1's DASH reader drops
+        # audio packets that the segments hold
+        inputs = []
+        for n in range(2):
+            stream = f'stream{n}.mp4'
+            parts = [f'init-stream{n}.m4s', *sorted(p.name for p in source.glob(f'chunk-stream{n}-*.m4s'))]
+            (source / stream).write_bytes(b''.join((source / p).read_bytes() for p in parts))
+            inputs += ['-i', stream]
+        subprocess.run([FFMPEG, '-v', 'error', '-y', *inputs, '-map', '0', '-map', '1',
+                        '-c', 'copy', 'plain.mp4'], cwd=source, capture_output=True, check=True)
     else:
         segments = make_segments(tmp_path, 'segments', '-bsf:v', 'dump_extra=freq=keyframe')
         for name, body in segments.items():
