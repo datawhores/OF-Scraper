@@ -217,7 +217,7 @@ PLACEHOLDERS = {
     "text": "For media: the post text, cleaned and truncated to `textlength`. It falls back to the file name, the date, or the media id. For text files: the sanitised, truncated post text.",
     "config": "An object: the parsed `config.json` as a dict. Use item syntax, for example `{config[file_options][date]}`. Attribute access does not work.",
     "args": "An object: the parsed command-line arguments (an `AutoDotDict`). Use attribute access, for example `{args.posts}`. A missing name gives `None`.",
-    "ext": "The file extension without the dot, for example `mp4` or `jpg`. It is `txt` for text files.",
+    "ext": "The file extension without the dot, for example `mp4` or `jpeg`. It comes from the download's content type: usually its subtype, but the usual extension where the subtype isn't one (`video/quicktime` is `mov`, `video/x-matroska` is `mkv`). A missing or generic type (`application/octet-stream`) gives `mp4` for videos and `jpg` for images. It is `txt` for text files.",
     "current_price": "`Free` if the creator's final current price is 0, else `Paid`. It is `MODEL_PRICE_PLACEHOLDER` (`Unknown_Price` by default) when the model isn't loaded.",
     "regular_price": "`Free` or `Paid`, from the creator's final regular price, or `MODEL_PRICE_PLACEHOLDER`.",
     "promo_price": "`Free` or `Paid`, from the creator's final promo price, or `MODEL_PRICE_PLACEHOLDER`.",
