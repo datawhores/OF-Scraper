@@ -75,6 +75,11 @@ packages = ["ofscraper"]
 requires = ["hatchling", "version-pioneer"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.17.4",
+]
+
 [tool.hatch.version]
 source = "version-pioneer"
 

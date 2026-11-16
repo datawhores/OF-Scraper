@@ -100,11 +100,7 @@ MAX = ("max_hour", "max_minute", "max_second")
 def test_each_box_names_its_unit(start):
     async def steps(app, pilot, field):
         for row in (MIN, MAX):
-            assert [app.query_one(f"#{b}", Input).placeholder for b in row] == [
-                "Hours",
-                "Minutes",
-                "Seconds",
-            ]
+            assert [app.query_one(f"#{b}", Input).placeholder for b in row] == ["Hours (0-23)", "Min (0-59)", "Sec (0-59)"]
 
     _drive(steps)
 
@@ -139,7 +135,7 @@ def test_saved_lengths_leave_zero_parts_empty(start):
         assert _values(app, *MIN) == ["", "1", "30"]
         assert _values(app, *MAX) == ["1", "", ""]
         # an empty part is the placeholder, still telling you which box it is
-        assert app.query_one("#max_minute", Input).placeholder == "Minutes"
+        assert app.query_one("#max_minute", Input).placeholder == "Min (0-59)"
 
     _drive(steps)
 

@@ -1,25 +1,21 @@
-from textual.widgets import SelectionList
-
+from textual.widgets import Label, SelectionList
 from ofscraper.classes.table.fields.selectfield import SelectField
-
 from textual.widgets.selection_list import Selection
 
 
 class ResponseField(SelectField):
     DEFAULT_CSS = """
-
     ResponseField {
-    column-span:4;
-    row-span:4;
+        column-span: 4;
+        height: auto;
     }
-   
+    """
 
-"""
-
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(name=name, classes="container")
         self.filter_name = name
+        self.label_text = label or "Post Type (checked = shown)"
         self._pinned = Selection(
             "Pinned",
             value="Pinned",
@@ -71,6 +67,7 @@ class ResponseField(SelectField):
         )
 
     def compose(self):
+        yield Label(self.label_text)
         yield SelectionList(
             self._timeline,
             self._archived,

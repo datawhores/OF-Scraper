@@ -1,27 +1,29 @@
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
-from textual.widgets import SelectionList
+from textual.widgets import Label, SelectionList
 from textual.widgets.selection_list import Selection
 import ofscraper.utils.settings as settings  # Bring in the source of truth
 
 
 class SelectField(Widget):
     DEFAULT_CSS = """
-        SelectField{
-        row-span:2;
-        column-span:2;
-        }
+    SelectField {
+        column-span: 4;
+        height: auto;
+    }
+    SelectField SelectionList {
+        height: auto;
+    }
     """
 
-    def __init__(self, name: str, classes=None) -> None:
+    def __init__(self, name: str, classes=None, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(id=name, classes=classes)
         self.filter_name = name
+        clean_name = name.replace("post_", "").capitalize()
+        self.label_text = label or f"{clean_name} Status"
 
-        # 1. Dynamically fetch the setting (e.g., settings.unlocked or settings.downloaded)
         setting_val = getattr(settings.get_settings(), self.filter_name, None)
-
-        # 2. Determine initial states
         true_state = (setting_val is True) or (setting_val is None)
         false_state = (setting_val is False) or (setting_val is None)
 
@@ -44,11 +46,13 @@ class SelectField(Widget):
         return value in self.query_one(SelectionList).selected
 
     def compose(self):
-        with Horizontal():
-            yield SelectionList(
-                self._true,
-                self._false,
-            )
+        with Vertical():
+            yield Label(self.label_text)
+            with Horizontal():
+                yield SelectionList(
+                    self._true,
+                    self._false,
+                )
 
     def reset(self):
         for ele in self.query(SelectionList):

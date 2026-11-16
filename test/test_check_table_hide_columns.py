@@ -11,7 +11,12 @@ import ofscraper.classes.table.app as table_app
 import ofscraper.utils.cache.cache as cache
 
 
-EXTRA_COLUMNS = {"post_media_count", "responsetype", "price", "post_id", "media_id"}
+EXTRA_COLUMNS = {
+    "download_type",
+    "other_posts_with_media",
+    "post_media_count",
+    "price",
+}
 CACHE_KEY = "check_table_show_extra_columns"
 
 
