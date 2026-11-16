@@ -39,6 +39,8 @@ def no_system_certs(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(cert, "_CONFIG_CACHE", {})
     monkeypatch.setattr(cert, "_windows_ca_cache", None)
+    # these tests are about other systems; the Windows tests set it to True
+    monkeypatch.setattr(cert, "_WINDOWS", False)
     return capath
 
 
