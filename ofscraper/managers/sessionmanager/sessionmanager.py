@@ -22,7 +22,10 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 import ofscraper.utils.settings as settings
-from ofscraper.managers.sessionmanager.cert import create_custom_ssl_context
+from ofscraper.managers.sessionmanager.cert import (
+    create_custom_ssl_context,
+    load_certifi_if_no_ca_certs,
+)
 
 # Constants for request actions
 TOO_MANY = "too_many"
@@ -471,6 +474,7 @@ class sessionManager:
         # Tier 2: Default SSL (Standard)
         elif ssl_setting == "default":
             ssl_context = ssl.create_default_context()
+            load_certifi_if_no_ca_certs(ssl_context)
             ssl_context.post_handshake_auth = True
             return ssl_context
 

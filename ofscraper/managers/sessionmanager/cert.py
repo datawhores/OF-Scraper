@@ -1,8 +1,13 @@
+import os
 import ssl
+import sys
+import time
 import logging
 import random
 import hashlib            
 import getpass
+
+import certifi
 
 import ofscraper.utils.auth.request as auth_requests
 
@@ -18,6 +23,90 @@ def get_default_cipher_names():
     """
     temp_ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
     return [c["name"] for c in temp_ctx.get_ciphers()]
+
+
+def load_certifi_if_no_ca_certs(context: ssl.SSLContext) -> bool:
+    """
+    Loads certifi's CA bundle when the context has no system CA certificates,
+    and returns whether it did.
+
+    A python.org build on macOS has none until "Install Certificates.command"
+    is run, so every HTTPS request fails certificate verification. The CA
+    store isn't part of the ClientHello, so this leaves the TLS fingerprint
+    alone.
+    """
+    if context.verify_mode == ssl.CERT_NONE:
+        return False
+    if context.cert_store_stats()["x509_ca"]:
+        return False
+    # certificates in a CA directory load on demand and aren't counted above
+    capath = ssl.get_default_verify_paths().capath
+    try:
+        if capath and os.listdir(capath):
+            return False
+    except OSError:
+        pass
+    context.load_verify_locations(cafile=certifi.where())
+    return True
+
+
+_WINDOWS = sys.platform == "win32"
+
+
+# The certificates load_system_ca_certs gives every context on Windows, as
+# concatenated DER, with the time they were collected. A context is built for
+# each request on the aiohttp path, so the store is read once and kept.
+_windows_ca_cache = None
+# an entry can expire while a daemon runs
+_WINDOWS_CA_TTL = 24 * 60 * 60
+
+
+def _windows_ca_certs() -> bytes:
+    """
+    The Windows store's CA certificates without the expired ones, plus
+    certifi's bundle, as concatenated DER.
+
+    Adding certifi means trusting Mozilla's roots as well as Windows': a root
+    removed or distrusted in Windows is trusted again when certifi has it.
+    """
+    global _windows_ca_cache
+    now = time.time()
+    if _windows_ca_cache and now - _windows_ca_cache[0] < _WINDOWS_CA_TTL:
+        return _windows_ca_cache[1]
+    store = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    store.load_default_certs(ssl.Purpose.SERVER_AUTH)
+    certs = {}
+    # both calls list the store in the same order
+    for der, info in zip(store.get_ca_certs(binary_form=True), store.get_ca_certs()):
+        try:
+            if ssl.cert_time_to_seconds(info["notAfter"]) <= now:
+                continue
+        except (KeyError, ValueError):
+            pass
+        certs[der] = None
+    bundle = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    bundle.load_verify_locations(cafile=certifi.where())
+    # a certificate in both is kept once
+    certs.update(dict.fromkeys(bundle.get_ca_certs(binary_form=True)))
+    _windows_ca_cache = (now, b"".join(certs))
+    return _windows_ca_cache[1]
+
+
+def load_system_ca_certs(context: ssl.SSLContext) -> None:
+    """
+    Loads the system's CA certificates, as load_default_certs does, but on
+    Windows leaves out the expired ones and adds certifi's bundle.
+
+    Python loads the whole Windows store, expired certificates included, and
+    OpenSSL prefers a stored issuer to the one the server sends. An expired
+    intermediate left in the store then fails a valid chain with "certificate
+    has expired". Windows also fetches root certificates on demand, so a root
+    can be missing from the store until something else has used it.
+    """
+    if not _WINDOWS:
+        context.load_default_certs(ssl.Purpose.SERVER_AUTH)
+        return
+    context.load_verify_locations(cadata=_windows_ca_certs())
 
 
 def _fansly_seed():
@@ -144,10 +233,13 @@ def create_custom_ssl_context(
     context.verify_mode = verify_mode
     if load_default_ca_certs:
         try:
-            context.load_default_certs(ssl.Purpose.SERVER_AUTH)
+            load_system_ca_certs(context)
         except Exception as e:
             if not cache["logged_certs"]:
                 log.debug(f"Warning: Could not load default CAcerts: {e}.")
                 cache["logged_certs"] = True
+        if load_certifi_if_no_ca_certs(context) and not cache["logged_certs"]:
+            log.debug("No system CA certificates found, using certifi's")
+            cache["logged_certs"] = True
 
     return context
