@@ -36,6 +36,40 @@ async def get_hash(file_data, thread=_CURRENT_POOL):
     )
 
 
+# Content types whose subtype isn't the file's usual extension
+_EXTENSIONS = {
+    "video/quicktime": "mov",
+    "video/x-ms-wmv": "wmv",
+    "video/x-ms-asf": "asf",
+    "video/x-msvideo": "avi",
+    "video/x-matroska": "mkv",
+    "audio/x-matroska": "mka",
+    "video/x-flv": "flv",
+    "video/mp2t": "ts",
+    "video/3gpp": "3gp",
+    "video/3gpp2": "3g2",
+    "video/x-m4v": "m4v",
+    "audio/x-m4a": "m4a",
+    "audio/x-wav": "wav",
+}
+# Content types that say nothing about the file's format
+_GENERIC = {"application/octet-stream", "binary/octet-stream"}
+
+
+def extension_for(content_type, fallback=None):
+    """The file extension for a reply's Content-Type header.
+
+    Usually the subtype ("video/mp4" -> "mp4"), but a few subtypes aren't
+    extensions players know ("video/quicktime" is a ".mov"). A missing or
+    generic type gives the fallback.
+    """
+    mime = (content_type or "").split(";")[0].strip().lower()
+    subtype = mime.split("/")[-1]
+    if not subtype or mime in _GENERIC:
+        return fallback
+    return _EXTENSIONS.get(mime, subtype)
+
+
 def get_unknown_content_type(ele):
     return (
         "mp4"

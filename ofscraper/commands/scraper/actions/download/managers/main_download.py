@@ -210,7 +210,7 @@ class MainDownloadManager(DownloadManager):
                 data = self._reply_data(
                     r, total, resume_size, validator, common_logs.get_medialog(ele)
                 )
-                content_type = r.headers.get("content-type").split("/")[-1]
+                content_type = common.extension_for(r.headers.get("content-type"))
                 content_type = content_type or common.get_unknown_content_type(ele)
                 if not placeholderObj:
                     placeholderObj = await placeholder.Placeholders(
@@ -395,7 +395,8 @@ class MainDownloadManager(DownloadManager):
             data,
         )
 
-        content_type = data.get("content-type").split("/")[-1]
+        content_type = common.extension_for(data.get("content-type"))
+        content_type = content_type or common.get_unknown_content_type(ele)
         total = self._saved_total(data)
         resume_size = self._get_resume_size(tempholderObj)
         resume_size = self._resume_cleaner(
