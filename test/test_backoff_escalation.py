@@ -85,13 +85,23 @@ def test_the_wait_does_not_shrink_while_errors_keep_coming():
 
 @pytest.fixture
 def no_waiting(monkeypatch):
+    """Waits return at once but move the clock on by their length, so a retry
+    is sent after the raise before it, as it would be. Without the clock, a
+    retry on Windows (about 15 ms resolution) has the raise's timestamp."""
     waits = []
+    passed = [0.0]
+    now = sm.arrow.now
+
+    def wait(seconds):
+        waits.append(seconds)
+        passed[0] += seconds
 
     async def fake_sleep(seconds):
-        waits.append(seconds)
+        wait(seconds)
 
+    monkeypatch.setattr(sm.arrow, "now", lambda *a: now(*a).shift(seconds=passed[0]))
     monkeypatch.setattr(sm.asyncio, "sleep", fake_sleep)
-    monkeypatch.setattr(sm.time, "sleep", waits.append)
+    monkeypatch.setattr(sm.time, "sleep", wait)
     return waits
 
 
