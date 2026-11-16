@@ -24,7 +24,7 @@ def sleeper(min_sleep):
 def decay_fully(s, rounds=40):
     for _ in range(rounds):
         # well past the decay threshold, never on its boundary
-        s._last_date = sm.arrow.now().shift(seconds=-120)
+        s._last_date = s._last_error = sm.arrow.now().shift(seconds=-120)
         s._maybe_decay_sleep()
 
 
