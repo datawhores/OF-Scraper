@@ -53,6 +53,45 @@ def load_certifi_if_no_ca_certs(context: ssl.SSLContext) -> bool:
 _WINDOWS = sys.platform == "win32"
 
 
+# The certificates load_system_ca_certs gives every context on Windows, as
+# concatenated DER, with the time they were collected. A context is built for
+# each request on the aiohttp path, so the store is read once and kept.
+_windows_ca_cache = None
+# an entry can expire while a daemon runs
+_WINDOWS_CA_TTL = 24 * 60 * 60
+
+
+def _windows_ca_certs() -> bytes:
+    """
+    The Windows store's CA certificates without the expired ones, plus
+    certifi's bundle, as concatenated DER.
+
+    Adding certifi means trusting Mozilla's roots as well as Windows': a root
+    removed or distrusted in Windows is trusted again when certifi has it.
+    """
+    global _windows_ca_cache
+    now = time.time()
+    if _windows_ca_cache and now - _windows_ca_cache[0] < _WINDOWS_CA_TTL:
+        return _windows_ca_cache[1]
+    store = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    store.load_default_certs(ssl.Purpose.SERVER_AUTH)
+    certs = {}
+    # both calls list the store in the same order
+    for der, info in zip(store.get_ca_certs(binary_form=True), store.get_ca_certs()):
+        try:
+            if ssl.cert_time_to_seconds(info["notAfter"]) <= now:
+                continue
+        except (KeyError, ValueError):
+            pass
+        certs[der] = None
+    bundle = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    bundle.load_verify_locations(cafile=certifi.where())
+    # a certificate in both is kept once
+    certs.update(dict.fromkeys(bundle.get_ca_certs(binary_form=True)))
+    _windows_ca_cache = (now, b"".join(certs))
+    return _windows_ca_cache[1]
+
+
 def load_system_ca_certs(context: ssl.SSLContext) -> None:
     """
     Loads the system's CA certificates, as load_default_certs does, but on
@@ -67,18 +106,7 @@ def load_system_ca_certs(context: ssl.SSLContext) -> None:
     if not _WINDOWS:
         context.load_default_certs(ssl.Purpose.SERVER_AUTH)
         return
-    store = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    store.load_default_certs(ssl.Purpose.SERVER_AUTH)
-    now = time.time()
-    # both calls list the store in the same order
-    for der, info in zip(store.get_ca_certs(binary_form=True), store.get_ca_certs()):
-        try:
-            if ssl.cert_time_to_seconds(info["notAfter"]) <= now:
-                continue
-        except (KeyError, ValueError):
-            pass
-        context.load_verify_locations(cadata=der)
-    context.load_verify_locations(cafile=certifi.where())
+    context.load_verify_locations(cadata=_windows_ca_certs())
 
 
 def _fansly_seed():

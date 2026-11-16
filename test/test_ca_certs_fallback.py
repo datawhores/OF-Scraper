@@ -38,6 +38,7 @@ def no_system_certs(monkeypatch, tmp_path):
         cert.auth_requests.auth_file, "read_auth", lambda: {"auth_id": "11111"}
     )
     monkeypatch.setattr(cert, "_CONFIG_CACHE", {})
+    monkeypatch.setattr(cert, "_windows_ca_cache", None)
     return capath
 
 
@@ -136,6 +137,45 @@ def test_windows_adds_certifi(monkeypatch, no_system_certs, tmp_path):
     monkeypatch.setattr(cert, "load_certifi_if_no_ca_certs", lambda context: False)
     context = cert.create_custom_ssl_context()
     assert _subjects(context) == ["Test Root"]
+
+
+@pytest.fixture
+def store_reads(monkeypatch):
+    """Counts reads of the system store."""
+    reads = []
+    load = ssl.SSLContext.load_default_certs
+
+    def counted(self, purpose=ssl.Purpose.SERVER_AUTH):
+        reads.append(1)
+        load(self, purpose)
+
+    monkeypatch.setattr(ssl.SSLContext, "load_default_certs", counted)
+    return reads
+
+
+def test_windows_reads_the_store_once_for_many_contexts(
+    monkeypatch, store_with_expired_cert, store_reads
+):
+    # the aiohttp path builds a context for every request
+    monkeypatch.setattr(cert, "_WINDOWS", True)
+    # the first context reads the store, and once more to list the ciphers
+    cert.create_custom_ssl_context()
+    store_reads.clear()
+    contexts = [cert.create_custom_ssl_context() for _ in range(5)]
+    assert store_reads == []
+    assert [_subjects(context) for context in contexts] == [["Test Root"]] * 5
+
+
+def test_windows_reads_the_store_again_when_the_list_is_old(
+    monkeypatch, store_with_expired_cert, store_reads
+):
+    monkeypatch.setattr(cert, "_WINDOWS", True)
+    monkeypatch.setattr(cert, "_WINDOWS_CA_TTL", 0)
+    cert.create_custom_ssl_context()
+    store_reads.clear()
+    cert.create_custom_ssl_context()
+    cert.create_custom_ssl_context()
+    assert len(store_reads) == 2
 
 
 def test_other_systems_load_the_store_unchanged(monkeypatch, store_with_expired_cert):
