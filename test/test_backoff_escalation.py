@@ -195,3 +195,55 @@ def test_other_errors_keep_the_usual_number_of_tries(monkeypatch, no_waiting):
     with pytest.raises(aiohttp.ClientResponseError):
         asyncio.run(run())
     assert len(hits) == 3
+
+
+def test_fansly_paging_gets_through_a_rate_limit(monkeypatch, no_waiting):
+    """Fansly pages one request at a time through the API session, so every
+    429 comes from a request sent at the current wait."""
+    from ofscraper.managers.sessionmanager.ofsession import OFSessionManager
+    from ofscraper.sites.fansly import api, constants
+
+    hits = []
+
+    async def handler(request):
+        hits.append(1)
+        # the second page is refused 4 times: more than the 3 usual tries
+        if 2 <= len(hits) <= 5:
+            return web.json_response({"success": False}, status=429)
+        before = request.query.get("before")
+        ids = {None: ["3", "2"], "2": ["1"]}.get(before, [])
+        return web.json_response(
+            {"success": True, "response": {"messages": [{"id": i} for i in ids]}}
+        )
+
+    async def run():
+        app = web.Application()
+        app.router.add_get("/message", handler)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "127.0.0.1", 0)
+        await site.start()
+        port = site._server.sockets[0].getsockname()[1]
+        monkeypatch.setattr(constants, "API_BASE", f"http://127.0.0.1:{port}/")
+        monkeypatch.setattr(
+            sm.settings, "get_settings", lambda: SimpleNamespace(ssl_verify="false")
+        )
+        monkeypatch.setattr(api.normalize, "messages", lambda response, extra: response["messages"])
+        monkeypatch.setattr(api.normalize, "missing_account_media_ids", lambda response: [])
+        try:
+            m = OFSessionManager(
+                wait_min=0,
+                wait_max=0,
+                rate_limit_sleeper=sleeper(),
+                forbidden_sleeper=sleeper(min_sleep=0),
+            )
+            m._create_headers = lambda headers, *a: headers or {}
+            m._create_cookies = lambda: None
+            async with m:
+                return await api.messages(m, "1")
+        finally:
+            await runner.cleanup()
+
+    found = asyncio.run(run())
+    assert [x["id"] for x in found] == ["3", "2", "1"]
+    assert [w for w in no_waiting if w >= 2.5] == [2.5, 5, 10, 20, 20]
