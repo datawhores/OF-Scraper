@@ -523,7 +523,10 @@ async def process_tasks(model_id, username, ele, c=None):
     skip_enabled = settings.get_settings().skip_unavailable_content
 
     # 2. Simplified Wall Check
-    skip_wall = skip_enabled and not ele.active
+    # Fansly posts can be public or open to followers, so a creator without
+    # an active subscription still has wall posts the account can see
+    wall_visible = ele.active or sites.is_fansly()
+    skip_wall = skip_enabled and not wall_visible
 
     # 3. Area Selection Logic
     like_area = get_like_area()
@@ -628,7 +631,7 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
 
-            if "Labels" in final_post_areas and ele.active:
+            if "Labels" in final_post_areas and wall_visible:
                 tasks.append(
                     stop.create_fetch_task(
                         process_single_task(
