@@ -205,8 +205,8 @@ def _int(value) -> int:
 
 
 def master_renditions(text: str, base_url: str) -> list:
-    """(width, height, bandwidth, absolute url, audio group or None) for each
-    rendition in a master playlist."""
+    """(width, height, bandwidth, absolute url, audio group or None, codecs)
+    for each rendition in a master playlist."""
     out = []
     lines = [line.strip() for line in (text or "").splitlines()]
     for i, line in enumerate(lines):
@@ -219,8 +219,16 @@ def master_renditions(text: str, base_url: str) -> list:
         res = _RES.fullmatch(attrs.get("RESOLUTION", ""))
         w, h = (int(res.group(1)), int(res.group(2))) if res else (0, 0)
         out.append((w, h, _int(attrs.get("BANDWIDTH")), urljoin(base_url, uri),
-                    attrs.get("AUDIO") or None))
+                    attrs.get("AUDIO") or None, attrs.get("CODECS") or ""))
     return out
+
+
+# CODECS entries (RFC 6381) of audio formats HLS carries
+_AUDIO_CODECS = ("mp4a", "ac-3", "ec-3", "opus", "flac")
+
+
+def _has_audio(codecs: str) -> bool:
+    return any(c.strip().lower().startswith(_AUDIO_CODECS) for c in codecs.split(","))
 
 
 def _audio_url(text: str, base_url: str, group: str):
@@ -242,16 +250,29 @@ def _audio_url(text: str, base_url: str, group: str):
     return urljoin(base_url, pick["URI"]) if pick.get("URI") else None
 
 
-def best_rendition(text: str, base_url: str) -> tuple:
-    """(video url, audio url or None) of the largest rendition. A plain media
-    playlist is used as it is."""
+def best_rendition_info(text: str, base_url: str) -> tuple:
+    """(video url, separate audio url or None, audio inside the video) of the
+    largest rendition. A plain media playlist is used as it is.
+
+    When the rendition's CODECS name an audio format, its segments carry the
+    sound (RFC 8216 4.3.4.2 lists every format in them), so a separate audio
+    track is not fetched: it is a copy, and Fansly lists one for some older
+    videos that its CDN refuses. Its website plays the video segments alone.
+    """
     renditions = master_renditions(text, base_url)
     if renditions:
-        w, h, bw, url, group = max(renditions, key=lambda r: (r[0] * r[1], r[2]))
-        return url, _audio_url(text, base_url, group)
+        w, h, bw, url, group, codecs = max(renditions, key=lambda r: (r[0] * r[1], r[2]))
+        if _has_audio(codecs):
+            return url, None, True
+        return url, _audio_url(text, base_url, group), False
     if "#EXTINF" in (text or ""):
-        return base_url, None
+        return base_url, None, False
     raise EmptyMasterPlaylist("HLS master playlist lists no renditions; nothing to download")
+
+
+def best_rendition(text: str, base_url: str) -> tuple:
+    """(video url, separate audio url or None) of the largest rendition."""
+    return best_rendition_info(text, base_url)[:2]
 
 
 def best_rendition_url(text: str, base_url: str) -> str:

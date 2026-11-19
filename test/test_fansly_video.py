@@ -261,6 +261,7 @@ class Server:
         # paths answered with a 404 this many more times; seconds to wait
         # before sending a path; how many requests were open at once, at most
         self.fail = {}
+        self.refuse = set()  # paths always answered with a 403
         self.delay = {}
         self.active = self.peak = 0
         self.count_lock = threading.Lock()
@@ -283,6 +284,9 @@ class Server:
                 if outer.fail.get(path):
                     outer.fail[path] -= 1
                     self.send_error(404)
+                    return
+                if path in outer.refuse:
+                    self.send_error(403)
                     return
                 if outer.delay.get(path):
                     time.sleep(outer.delay[path])
@@ -663,11 +667,16 @@ VIDEO_ONLY_MASTER = (
 SPLIT_AUDIO_MASTER = (
     "#EXTM3U\n#EXT-X-VERSION:4\n"
     '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="Main",DEFAULT=YES,AUTOSELECT=YES,URI="audio/media.m3u8"\n'
-    '#EXT-X-STREAM-INF:BANDWIDTH=400000,RESOLUTION=640x360,CODECS="avc1.64001e,mp4a.40.2",AUDIO="aud"\n'
+    # video-only CODECS: the sound is only in the separate track
+    '#EXT-X-STREAM-INF:BANDWIDTH=400000,RESOLUTION=640x360,CODECS="avc1.64001e",AUDIO="aud"\n'
     "r360/media.m3u8\n"
-    '#EXT-X-STREAM-INF:BANDWIDTH=9000000,RESOLUTION=3840x2160,CODECS="avc1.640033,mp4a.40.2",AUDIO="aud"\n'
+    '#EXT-X-STREAM-INF:BANDWIDTH=9000000,RESOLUTION=3840x2160,CODECS="avc1.640033",AUDIO="aud"\n'
     "r2160/media.m3u8\n"
 )
+# Fansly's usual master: the renditions carry the sound (mp4a) and an audio
+# group lists a copy of it, which the CDN refuses for some older videos
+IN_BAND_AUDIO_MASTER = SPLIT_AUDIO_MASTER.replace('CODECS="avc1.64001e"', 'CODECS="avc1.64001e,mp4a.40.2"').replace(
+    'CODECS="avc1.640033"', 'CODECS="avc1.640033,mp4a.40.2"')
 
 
 def ffmpeg_only(monkeypatch):
@@ -767,6 +776,94 @@ def test_separate_audio_rendition_is_downloaded_with_the_video(env, tmp_path):
     assert join.count("-i") == 2 and ["-map", "0:v", "-map", "1:a"] == join[-9:-5]
     assert join[join.index("-protocol_whitelist") + 1] == "file,crypto"
     assert not any("http" in str(a) for a in join)
+
+
+@needs_ffmpeg
+def test_audio_inside_the_video_is_used_and_the_copy_is_not_fetched(env, tmp_path):
+    # Fansly's playlists list an audio track the CDN refuses for some older
+    # videos; the video segments carry the same sound, as on its website
+    segments = make_segments(tmp_path, "v", "-bsf:v", "dump_extra=freq=keyframe")
+    raw = raw_media()
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, IN_BAND_AUDIO_MASTER, {"r2160": segments})
+        ele = make_ele(raw)
+        result = download_locally(ele)
+
+    assert result[0] == "Videos" and result[1] > 0
+    out = env.out / f"{ele.filename}.mp4"
+    assert sorted(s["codec_type"] for s in probe(out)["streams"]) == ["audio", "video"]
+    assert not any("/audio/" in p for p, _ in srv.seen)
+    (join,) = env.ffmpeg_runs
+    assert join.count("-i") == 1 and "-map" not in join
+
+
+@needs_ffmpeg
+def test_video_without_the_audio_its_playlist_lists_is_saved_and_logged(env, tmp_path, caplog):
+    # the playlist says the segments carry sound but they don't: keep the
+    # video, as the website plays it, and log why it is silent
+    segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    raw = raw_media()
+    with Server({}) as srv:
+        serve_hls(srv, raw, IN_BAND_AUDIO_MASTER, {"r2160": segments})
+        ele = make_ele(raw)
+        with caplog.at_level(logging.WARNING):
+            result = download_locally(ele)
+    assert result[0] == "Videos" and result[1] > 0
+    out = env.out / f"{ele.filename}.mp4"
+    assert [s["codec_type"] for s in probe(out)["streams"]] == ["video"]
+    assert "segments have no audio" in caplog.text and "without sound" in caplog.text
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("refused", ["playlist", "segment"])
+def test_refused_audio_track_saves_the_video_and_logs_why(env, tmp_path, caplog, refused):
+    video_segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    audio_segments = make_segments(tmp_path, "a", "-vn")
+    raw = raw_media()
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, SPLIT_AUDIO_MASTER,
+                         {"r2160": video_segments, "audio": audio_segments})
+        target = (f"{root}/audio/media.m3u8" if refused == "playlist"
+                  else f"{root}/audio/{next(iter(audio_segments))}")
+        srv.refuse.add(target)
+        ele = make_ele(raw)
+        with caplog.at_level(logging.WARNING):
+            result = download_locally(ele)
+    assert result[0] == "Videos" and result[1] > 0
+    out = env.out / f"{ele.filename}.mp4"
+    assert files_in(env.out, env.temp) == [out.name]
+    assert [s["codec_type"] for s in probe(out)["streams"]] == ["video"]
+    assert "refused" in caplog.text and "without sound" in caplog.text
+    assert len(env.marks) == 1
+
+
+@needs_ffmpeg
+def test_audio_track_that_fails_for_another_reason_still_fails_the_file(env, tmp_path, monkeypatch):
+    # a 404 or a dropped connection may work next run: don't save it silent
+    fast_retries(monkeypatch, attempts=2)
+    video_segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    audio_segments = make_segments(tmp_path, "a", "-vn")
+    raw = raw_media()
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, SPLIT_AUDIO_MASTER,
+                         {"r2160": video_segments, "audio": audio_segments})
+        srv.fail[f"{root}/audio/{next(iter(audio_segments))}"] = 99
+        result = download_locally(make_ele(raw))
+    assert result == ("skipped", 0)
+    assert list(env.out.iterdir()) == [] and env.marks == []
+
+
+def test_audio_codecs_in_a_rendition_mean_its_segments_carry_the_sound():
+    base = "https://cdn3.fansly.com/new/1/2/2.m3u8"
+    assert video.best_rendition_info(IN_BAND_AUDIO_MASTER, base) == (
+        "https://cdn3.fansly.com/new/1/2/r2160/media.m3u8", None, True)
+    assert video.best_rendition_info(SPLIT_AUDIO_MASTER, base)[2] is False
+    assert video.best_rendition_info(VIDEO_ONLY_MASTER, base) == (
+        "https://cdn3.fansly.com/new/1/2/r2160/media.m3u8", None, False)
+    for codecs in ("avc1.640033,mp4a.40.2", "hvc1.1.6.L93.B0, ec-3", "avc1.64001f,Opus"):
+        assert video._has_audio(codecs)
+    for codecs in ("avc1.640033", "", "hvc1.1.6.L93.B0"):
+        assert not video._has_audio(codecs)
 
 
 def test_audio_group_is_resolved_from_the_master():

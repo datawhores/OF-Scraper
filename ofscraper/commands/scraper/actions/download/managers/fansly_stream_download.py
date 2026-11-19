@@ -127,6 +127,17 @@ def _hide_folder(folder):
         common_globals.log.debug(f"Could not hide stream segments folder: {type(e).__name__}")
 
 
+def _refused(e) -> bool:
+    """True when the CDN refused the request (401 or 403) somewhere in the chain."""
+    seen = set()
+    while e is not None and id(e) not in seen:
+        seen.add(id(e))
+        if is_provided_exception_number(e, 401, 403):
+            return True
+        e = e.__cause__ or e.__context__
+    return False
+
+
 def _prepare_segments(folder, playlists):
     # Keep playlist boundaries, local names and timing as well as unsigned URLs.
     manifest = [
@@ -321,7 +332,12 @@ class FanslyStreamDownloadManager(DownloadManager):
             f"{medialog} Fetching {sum(len(p.files) for p in playlists if p)} stream "
             f"files, {segment_limit()} at a time"
         )
-        await self._parallel_copy(c, playlists, temp, best.cookies, timeout)
+        await self._parallel_copy(c, playlists, temp, best.cookies, timeout, medialog)
+
+    def _warn_silent(self, medialog, what):
+        self.ctx.log.warning(
+            f"{medialog} the CDN refused {what}; saving the video without sound"
+        )
 
     async def _local_playlists(self, c, url, audio_url, cookies, medialog):
         """(video, audio or None) LocalPlaylists, or None to leave it to ffmpeg.
@@ -334,17 +350,25 @@ class FanslyStreamDownloadManager(DownloadManager):
             )
             audio = None
             if audio_url:
-                audio = fansly_video.local_playlist(
-                    await self._fetch_text(c, audio_url, cookies), audio_url, "a", shared
-                )
+                try:
+                    text = await self._fetch_text(c, audio_url, cookies)
+                except fansly_video.StreamError as e:
+                    if not _refused(e):
+                        raise
+                    self._warn_silent(medialog, "its audio playlist")
+                else:
+                    audio = fansly_video.local_playlist(text, audio_url, "a", shared)
             return video, audio
         except fansly_video.UnexpectedPlaylist as e:
             self.ctx.log.info(f"{medialog} {e}; ffmpeg fetches the stream instead")
             return None
 
-    async def _parallel_copy(self, c, playlists, temp, cookies, timeout):
+    async def _parallel_copy(self, c, playlists, temp, cookies, timeout, medialog=""):
         """Fetch every file of the playlists into a folder next to ``temp``,
-        then join them with ffmpeg. Keep completed files if the copy fails."""
+        then join them with ffmpeg. Keep completed files if the copy fails.
+
+        The video's files come first. If the CDN then refuses the separate
+        audio track, the video is saved without sound and a warning says why."""
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout  # one limit for the fetch and the join
         folder = segment_folder(temp)
@@ -352,11 +376,21 @@ class FanslyStreamDownloadManager(DownloadManager):
         try:
             _prepare_segments(folder, playlists)
             video, audio = playlists
-            jobs = video.files + (audio.files if audio else [])
             try:
                 await asyncio.wait_for(
-                    self._fetch_segments(c, jobs, folder, cookies), timeout
+                    self._fetch_segments(c, video.files, folder, cookies), timeout
                 )
+                if audio:
+                    try:
+                        await asyncio.wait_for(
+                            self._fetch_segments(c, audio.files, folder, cookies),
+                            max(0.01, deadline - loop.time()),
+                        )
+                    except SegmentError as e:
+                        if not _refused(e):
+                            raise
+                        self._warn_silent(medialog, "its audio track")
+                        audio = None
             except asyncio.TimeoutError:
                 raise StreamTimeout(
                     f"the stream's segments took longer than {timeout:.0f}s and were stopped"
@@ -481,7 +515,9 @@ class FanslyStreamDownloadManager(DownloadManager):
         """(video url, separate audio url or None) to give ffmpeg."""
         manifest = await self._fetch_text(c, fansly_video.check_url(best.url), best.cookies)
         if best.kind == fansly_video.HLS:
-            url, audio_url = fansly_video.best_rendition(manifest, best.url)
+            url, audio_url, self.audio_inside = fansly_video.best_rendition_info(
+                manifest, best.url
+            )
             return (fansly_video.check_url(url),
                     fansly_video.check_url(audio_url) if audio_url else None)
         if fansly_video.dash_is_protected(manifest):
@@ -529,6 +565,14 @@ class FanslyStreamDownloadManager(DownloadManager):
             )
             for stream in ("v:0", "a:0")
         ]
+        if getattr(self, "audio_inside", False) and not audio_times:
+            # the playlist said the video segments carry the sound: keep the
+            # video, as the website would play it, and say why it is silent
+            self.ctx.log.warning(
+                f"{common_logs.get_medialog(ele)} the stream's video segments have no "
+                "audio, though its playlist lists an audio format; saving the video "
+                "without sound"
+            )
         reason = fansly_video.incomplete_reason(
             video_times,
             audio_times,
