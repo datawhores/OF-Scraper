@@ -41,106 +41,117 @@ from ofscraper.sites.fansly import video as fansly_video
 
 async def consumer(aws, task1, medialist, lock, on_result=None):
     while True:
-        ele = None
         async with lock:
             if stop.requested.is_set() or not aws:
                 break
             data = aws.pop()
         if data is None:
             break
-        else:
-            try:
-                ele: Media = data[1]
-                ele.download_stopped = False
-                ele.download_unstarted = False
-                # Stream videos retain their existing cancellation behavior.
-                context = nullcontext() if fansly_video.uses_stream(ele) else stop.transfer(ele)
-                with context:
-                    pack = await download(*data)
-                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
-                media_type, num_bytes_downloaded = pack
-            except asyncio.CancelledError:
-                if not stop.requested.is_set():
-                    raise
-                if not getattr(ele, "download_started", False):
-                    ele.download_unstarted = True
-                    break
-                ele.download_stopped = True
-                media_type = "stopped"
-                num_bytes_downloaded = 0
-            except Exception as e:
-                common_globals.log.info(
-                    f"{get_medialog(ele)} Download Failed because\n{e}"
-                )
-                common_globals.log.traceback_(traceback.format_exc())
-                media_type = "skipped"
-                num_bytes_downloaded = 0
-            try:
-                common_globals.total_bytes_downloaded = (
-                    common_globals.total_bytes_downloaded + num_bytes_downloaded
-                )
-                media_type = media_type.lower()
-                if media_type == "images":
-                    common_globals.photo_count += 1
-                    ele.mark_download_succeeded()
+        if not await handle_one(data, task1, lambda: len(medialist), on_result):
+            break
 
-                elif media_type == "videos":
-                    common_globals.video_count += 1
-                    ele.mark_download_succeeded()
-                elif media_type == "audios":
-                    common_globals.audio_count += 1
-                    ele.mark_download_succeeded()
-                elif media_type == "stopped":
-                    common_globals.stopped += 1
-                elif media_type == "skipped":
-                    common_globals.skipped += 1
-                    ele.mark_download_failed()
-                elif media_type == "forced_skipped":
-                    ele.mark_download_skipped()
-                    common_globals.forced_skipped += 1
-                if on_result is not None:
-                    result = (
-                        "stopped" if media_type == "stopped"
-                        else "failed" if media_type == "skipped"
-                        else "skipped" if media_type == "forced_skipped"
-                        else "downloaded"
-                    )
-                    on_result(ele, result)
-                sum_count = (
-                    common_globals.photo_count
-                    + common_globals.video_count
-                    + common_globals.audio_count
-                    + common_globals.skipped
-                    + common_globals.forced_skipped
-                    + common_globals.stopped
-                )
-                log_download_progress(media_type)
-                progress_updater.download.update_overall_task(
-                    task1,
-                    description=desc.format(
-                        stopped=common_globals.stopped,
-                        p_count=common_globals.photo_count,
-                        v_count=common_globals.video_count,
-                        a_count=common_globals.audio_count,
-                        skipped=common_globals.skipped,
-                        forced_skipped=common_globals.forced_skipped,
-                        mediacount=len(medialist),
-                        sumcount=sum_count,
-                        total_bytes=convert_num_bytes(common_globals.total_bytes),
-                        total_bytes_download=convert_num_bytes(
-                            common_globals.total_bytes_downloaded
-                        ),
-                    ),
-                    refresh=True,
-                    advance=1,
-                )
-                if not stop.requested.is_set():
-                    await asyncio.sleep(1)
-            except Exception as e:
-                common_globals.log.info(
-                    f"{get_medialog(ele)} Download Failed because\n{e}"
-                )
-                common_globals.log.traceback_(traceback.format_exc())
+
+async def handle_one(data, task1, total, on_result=None):
+    """Download one item and count its result.
+
+    ``data`` is ``(c, ele, model_id, username)``; ``total`` returns the count
+    shown as the run's media count. Returns False when a stop request ended
+    the item before it started, so the caller takes no more items.
+    """
+    ele = None
+    try:
+        ele: Media = data[1]
+        ele.download_stopped = False
+        ele.download_unstarted = False
+        # Stream videos retain their existing cancellation behavior.
+        context = nullcontext() if fansly_video.uses_stream(ele) else stop.transfer(ele)
+        with context:
+            pack = await download(*data)
+        common_globals.log.debug(f"unpack {pack} count {len(pack)}")
+        media_type, num_bytes_downloaded = pack
+    except asyncio.CancelledError:
+        if not stop.requested.is_set():
+            raise
+        if not getattr(ele, "download_started", False):
+            ele.download_unstarted = True
+            return False
+        ele.download_stopped = True
+        media_type = "stopped"
+        num_bytes_downloaded = 0
+    except Exception as e:
+        common_globals.log.info(
+            f"{get_medialog(ele)} Download Failed because\n{e}"
+        )
+        common_globals.log.traceback_(traceback.format_exc())
+        media_type = "skipped"
+        num_bytes_downloaded = 0
+    try:
+        common_globals.total_bytes_downloaded = (
+            common_globals.total_bytes_downloaded + num_bytes_downloaded
+        )
+        media_type = media_type.lower()
+        if media_type == "images":
+            common_globals.photo_count += 1
+            ele.mark_download_succeeded()
+
+        elif media_type == "videos":
+            common_globals.video_count += 1
+            ele.mark_download_succeeded()
+        elif media_type == "audios":
+            common_globals.audio_count += 1
+            ele.mark_download_succeeded()
+        elif media_type == "stopped":
+            common_globals.stopped += 1
+        elif media_type == "skipped":
+            common_globals.skipped += 1
+            ele.mark_download_failed()
+        elif media_type == "forced_skipped":
+            ele.mark_download_skipped()
+            common_globals.forced_skipped += 1
+        if on_result is not None:
+            result = (
+                "stopped" if media_type == "stopped"
+                else "failed" if media_type == "skipped"
+                else "skipped" if media_type == "forced_skipped"
+                else "downloaded"
+            )
+            on_result(ele, result)
+        sum_count = (
+            common_globals.photo_count
+            + common_globals.video_count
+            + common_globals.audio_count
+            + common_globals.skipped
+            + common_globals.forced_skipped
+            + common_globals.stopped
+        )
+        log_download_progress(media_type)
+        progress_updater.download.update_overall_task(
+            task1,
+            description=desc.format(
+                stopped=common_globals.stopped,
+                p_count=common_globals.photo_count,
+                v_count=common_globals.video_count,
+                a_count=common_globals.audio_count,
+                skipped=common_globals.skipped,
+                forced_skipped=common_globals.forced_skipped,
+                mediacount=total(),
+                sumcount=sum_count,
+                total_bytes=convert_num_bytes(common_globals.total_bytes),
+                total_bytes_download=convert_num_bytes(
+                    common_globals.total_bytes_downloaded
+                ),
+            ),
+            refresh=True,
+            advance=1,
+        )
+        if not stop.requested.is_set():
+            await asyncio.sleep(1)
+    except Exception as e:
+        common_globals.log.info(
+            f"{get_medialog(ele)} Download Failed because\n{e}"
+        )
+        common_globals.log.traceback_(traceback.format_exc())
+    return True
 
 
 async def download(c, ele, model_id, username):
