@@ -40,7 +40,10 @@ import ofscraper.utils.separate as separate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as free
 from ofscraper.commands.scraper.actions.download import stop
-from ofscraper.commands.scraper.actions.download.download import save_path_str
+from ofscraper.commands.scraper.actions.download.download import (
+    recheck_silent,
+    save_path_str,
+)
 from ofscraper.commands.scraper.actions.download.run import handle_one
 from ofscraper.commands.scraper.actions.download.utils import refresh
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
@@ -749,6 +752,9 @@ async def run(ele, c, collection=None):
             if (not ended or stop.requested.is_set()) and collection is None:
                 # a scan that was interrupted or failed isn't recorded as finished
                 labels_api.discard_finished_labels(model_id)
+        if not stopped:
+            # videos saved without sound: check their audio again (silent.py)
+            await recheck_silent(username, model_id, run_.collection.all_media)
         if not stopped and collection is None:
             await _commit(run_)
         text_posts = run_.collection.get_posts_for_text_download()

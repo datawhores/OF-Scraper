@@ -110,6 +110,11 @@ def load_main_config():
     # Default: 8
     config["FANSLY_STREAM_SEGMENTS"] = int(os.getenv("OFSC_FANSLY_STREAM_SEGMENTS", "8"))
 
+    # SILENT_RECHECKS: How many times a Fansly video saved without sound, because the CDN
+    # refused its audio, is checked again on later runs before it is kept as it is.
+    # Default: 3
+    config["SILENT_RECHECKS"] = int(os.getenv("OFSC_SILENT_RECHECKS", "3"))
+
     # FANSLY_FULL_SCAN_DAYS: A Fansly repeat run scans an area fully when its last full
     # scan is older than this many days; otherwise it may stop where the last scan began.
     # 0 scans fully every time.

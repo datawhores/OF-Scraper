@@ -38,6 +38,7 @@ from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
 import ofscraper.sites.fansly.live as live
 import ofscraper.sites.fansly.pipeline as fansly_pipeline
+import ofscraper.sites as sites
 
 log = logging.getLogger("shared")
 
@@ -148,6 +149,10 @@ class scraperManager(CommandManager):
                             media=media,
                             model_id=model_id,
                             username=username,
+                            # Fansly: silent videos to check again (silent.py)
+                            all_media=(
+                                postcollection.all_media if sites.is_fansly() else None
+                            ),
                         )
                         manager.Manager.stats_manager.update_and_print_stats(
                             username, "download", media

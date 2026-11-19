@@ -275,6 +275,14 @@ class Harness:
 
         m.setattr(pipeline, "textDownloader", text)
 
+        async def recheck(username, model_id, all_media):
+            self.events.append("silent recheck")
+            self.calls.setdefault("silent recheck", []).append(
+                (username, model_id, [m.id for m in all_media])
+            )
+
+        m.setattr(pipeline, "recheck_silent", recheck)
+
         async def strays(username, model_id, collection):
             self.events.append("strays")
             self.calls.setdefault("strays", []).append(collection)

@@ -41,6 +41,7 @@ from ofscraper.commands.scraper.actions.download.utils.refresh import (
 )
 from ofscraper.classes.of.media import Media
 from ofscraper.sites.fansly import video as fansly_video
+from ofscraper.commands.scraper.actions.download.utils import silent
 
 
 async def consumer(aws, task1, medialist, lock, on_result=None):
@@ -160,6 +161,18 @@ async def handle_one(data, task1, total, on_result=None):
     return True
 
 
+async def _clear_silent_flag(model_id, ele):
+    """Drop the "saved without sound" flag of a Fansly video (silent.py)."""
+    try:
+        await asyncio.get_running_loop().run_in_executor(
+            common_globals.thread, silent.clear, model_id, ele.id
+        )
+    except Exception as E:
+        common_globals.log.debug(
+            f"{get_medialog(ele)} could not record that it has sound: {type(E).__name__}"
+        )
+
+
 async def download(c, ele, model_id, username):
     try:
         data = None
@@ -182,6 +195,10 @@ async def download(c, ele, model_id, username):
                 username,
                 model_id,
             )
+            if fansly_video.uses_stream(ele) and data and str(data[0]).lower() == "videos":
+                # saved from its direct file, which has the sound: a copy
+                # flagged as saved without sound needs no more checks
+                await _clear_silent_flag(model_id, ele)
         elif data is None and ele.mpd:
             data = await AltDownloadManager().alt_download(c, ele, username, model_id)
         common_globals.log.debug(f"{get_medialog(ele)} Download finished")

@@ -359,6 +359,16 @@ _REFUSED_TAGS = ("#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF",
                  "#EXT-X-SESSION-KEY")
 
 
+def first_media_url(files):
+    """The URL of the first of an HLS playlist's ``files`` that carries
+    media: not an AES key (``..._key0.bin``) and not an init segment
+    (``...init00000.m4s``), as ``local_playlist`` names them."""
+    for url, name in files:
+        if "_key" not in name and "init" not in name:
+            return url
+    return None
+
+
 def _local_name(prefix, index, url, fmp4):
     ext = os.path.splitext(urlparse(url).path)[1].lower()
     if ext not in _SEGMENT_EXTS:

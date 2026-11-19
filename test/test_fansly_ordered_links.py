@@ -40,6 +40,10 @@ class Collection:
     def get_posts_for_text_download(self):
         return []
 
+    @property
+    def all_media(self):
+        return list(self.media)
+
 
 def account_media_item(n, tag):
     """accountMedia ``n`` with every link signed as ``tag``."""

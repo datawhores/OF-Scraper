@@ -5,6 +5,7 @@ was captured, so the ones used here are written by the tests.
 """
 
 import asyncio
+import errno
 import contextlib
 import copy
 import json
@@ -1367,6 +1368,246 @@ def test_the_direct_sound_join_reads_only_local_files_without_hls_options():
     dash = video.local_join_command("ffmpeg", "video.mp4", "out.part", dash=True,
                                     audio_file="direct.mp4")
     assert "-allowed_extensions" not in dash
+
+
+# ------------------------------------------------------------------ silent videos checked again
+
+@pytest.fixture
+def sound_marks(monkeypatch):
+    marks = []
+    monkeypatch.setattr(stream_mod.silent, "flag",
+                        lambda model_id, ele, path: marks.append(("flag", ele.id, str(path))))
+    monkeypatch.setattr(stream_mod.silent, "clear",
+                        lambda model_id, media_id: marks.append(("clear", media_id)))
+    return marks
+
+
+@needs_ffmpeg
+def test_a_video_saved_silent_because_its_audio_was_refused_is_flagged(
+        env, tmp_path, caplog, sound_marks):
+    run = refused_audio_download(env, tmp_path, caplog, direct_args=None)
+    assert [s["codec_type"] for s in probe(run.out)["streams"]] == ["video"]
+    assert sound_marks == [("flag", run.ele.id, str(run.out))]
+
+
+@needs_ffmpeg
+def test_a_video_with_its_sound_from_the_direct_file_is_not_flagged(
+        env, tmp_path, caplog, sound_marks):
+    run = refused_audio_download(env, tmp_path, caplog)
+    assert sound_marks == [("clear", run.ele.id)]
+
+
+@needs_ffmpeg
+def test_segments_without_their_listed_sound_are_not_flagged(env, tmp_path, sound_marks):
+    # nothing can be fetched later: a check could never succeed
+    segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    raw = raw_media()
+    with Server({}) as srv:
+        serve_hls(srv, raw, IN_BAND_AUDIO_MASTER, {"r2160": segments})
+        ele = make_ele(raw, direct=False)
+        download_locally(ele)
+    assert sound_marks == [("clear", ele.id)]
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("sound", [True, False])
+def test_downloading_a_silent_video_again_replaces_it_only_with_sound(
+        env, tmp_path, caplog, sound_marks, sound):
+    old = env.out / "saved-earlier.mp4"
+    old.write_bytes(b"silent copy")
+
+    def setup(srv, raw, ele, direct_path):
+        ele.replace_silent = str(old)
+        if sound:
+            srv.refuse.clear()
+
+    run = refused_audio_download(env, tmp_path, caplog, direct_args=None, setup=setup)
+    if sound:
+        assert run.result[0] == "Videos"
+        # the copy with sound takes the silent copy's place
+        assert files_in(env.out, env.temp) == [old.name]
+        assert sorted(s["codec_type"] for s in probe(old)["streams"]) == ["audio", "video"]
+        assert sound_marks == [("clear", run.ele.id)]
+    else:
+        assert run.result == ("skipped", 0)
+        assert old.read_bytes() == b"silent copy"
+        assert files_in(env.out, env.temp) == [old.name]
+        assert sound_marks == []
+        # silent.recheck counts this as refused again, not as a failed download
+        assert run.ele.still_silent is True
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("error", [
+    PermissionError("the file is in use"),
+    OSError(errno.ENOSPC, "No space left on device"),
+    FileNotFoundError("the drive is gone"),
+], ids=["in-use", "disk-full", "drive-gone"])
+def test_the_silent_copy_stays_until_the_copy_with_sound_replaces_it(
+        env, tmp_path, caplog, sound_marks, monkeypatch, error):
+    old = env.out / "saved-earlier.mp4"
+    old.write_bytes(b"silent copy")
+    seen = []
+    real = stream_mod.os.replace
+
+    def replace(src, dst):
+        if pathlib.Path(dst) != old:
+            return real(src, dst)
+        # the new copy is whole beside the silent one, which is still there
+        seen.append((pathlib.Path(src).parent == old.parent, old.read_bytes()))
+        raise error
+
+    def setup(srv, raw, ele, direct_path):
+        ele.replace_silent = str(old)
+        srv.refuse.clear()
+
+    monkeypatch.setattr(stream_mod.os, "replace", replace)
+    run = refused_audio_download(env, tmp_path, caplog, direct_args=None, setup=setup)
+    assert run.result == ("skipped", 0)
+    assert seen == [(True, b"silent copy")]
+    assert old.read_bytes() == b"silent copy"
+    assert files_in(env.out, env.temp) == [old.name]
+    # silent.recheck counts a check: the next run would end the same way
+    assert "could not be replaced" in run.ele.not_kept
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("skipped_by", ["size", "script", "script-for-good"])
+def test_a_copy_with_sound_that_a_filter_skips_leaves_the_silent_copy_and_its_row(
+        env, tmp_path, caplog, sound_marks, monkeypatch, skipped_by):
+    old = env.out / "saved-earlier.mp4"
+    old.write_bytes(b"silent copy")
+    forced = []
+
+    async def force_download(self, ele, username, model_id, **kw):
+        forced.append(kw)
+
+    async def script(total, ele):
+        return dm.SKIP_PERMANENT if skipped_by == "script-for-good" else True
+
+    monkeypatch.setattr(stream_mod.FanslyStreamDownloadManager, "_force_download", force_download)
+    if skipped_by == "size":
+        env.stub.size_max = 10
+    else:
+        monkeypatch.setattr(dm, "skip_download_script", script)
+
+    def setup(srv, raw, ele, direct_path):
+        ele.replace_silent = str(old)
+        srv.refuse.clear()
+
+    run = refused_audio_download(env, tmp_path, caplog, direct_args=None, setup=setup)
+    assert run.result == ("forced_skipped", 0)
+    assert old.read_bytes() == b"silent copy"
+    assert files_in(env.out, env.temp) == [old.name]
+    # the row keeps the silent copy's file, and its flag stays for the count
+    assert forced == [] and env.marks == [] and sound_marks == []
+    assert "skipped" in run.ele.not_kept
+
+
+@needs_ffmpeg
+def test_a_silent_copy_moved_away_with_its_folder_gets_the_copy_with_sound_there(
+        env, tmp_path, caplog, sound_marks):
+    old = env.out / "moved-away" / "saved-earlier.mp4"
+
+    def setup(srv, raw, ele, direct_path):
+        ele.replace_silent = str(old)
+        srv.refuse.clear()
+
+    run = refused_audio_download(env, tmp_path, caplog, direct_args=None, setup=setup)
+    assert run.result[0] == "Videos"
+    assert sorted(s["codec_type"] for s in probe(old)["streams"]) == ["audio", "video"]
+
+
+def test_the_audio_check_tries_a_file_that_carries_sound():
+    text = (
+        "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-TARGETDURATION:1\n"
+        '#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\n'
+        '#EXT-X-MAP:URI="init.mp4"\n'
+        "#EXTINF:1.0,\nseg-0.m4s\n#EXTINF:1.0,\nseg-1.m4s\n#EXT-X-ENDLIST\n"
+    )
+    files = video.local_playlist(text, "https://cdn.example/audio/media.m3u8", "a").files
+    assert [url.rsplit("/", 1)[1] for url, _ in files[:2]] == ["key.bin", "init.mp4"]
+    assert video.first_media_url(files) == "https://cdn.example/audio/seg-0.m4s"
+    assert video.first_media_url(files[:2]) is None
+
+
+@needs_ffmpeg
+def test_the_audio_check_is_not_answered_by_a_setup_file(env, tmp_path):
+    # the init segment is served, the sound itself is refused
+    video_segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    raw = raw_media()
+    playlist = (
+        "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-TARGETDURATION:1\n"
+        '#EXT-X-MAP:URI="init.mp4"\n#EXTINF:1.0,\nseg-0.m4s\n#EXT-X-ENDLIST\n'
+    )
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, SPLIT_AUDIO_MASTER, {"r2160": video_segments})
+        srv.files[f"{root}/audio/media.m3u8"] = playlist.encode()
+        srv.files[f"{root}/audio/init.mp4"] = b"init"
+        srv.files[f"{root}/audio/seg-0.m4s"] = b"sound"
+        srv.refuse.add(f"{root}/audio/seg-0.m4s")
+
+        async def go():
+            async with ofsession.download_session() as c:
+                return await stream_mod.FanslyStreamDownloadManager().audio_check(c, raw["media"])
+
+        assert asyncio.run(go()) == stream_mod.silent.REFUSED
+        requested = [p for p, _ in srv.seen]
+    assert f"{root}/audio/init.mp4" not in requested
+
+
+def test_a_video_saved_from_its_direct_file_needs_no_more_audio_checks(
+        env, monkeypatch, sound_marks):
+    raw = raw_media()
+    url = variant(raw["media"], video.HLS_MIME)["locations"][0]["location"]
+
+    async def main_download(self, c, ele, username, model_id):
+        return "Videos", 10
+
+    monkeypatch.setattr(run_mod.MainDownloadManager, "main_download", main_download)
+    ele = make_ele(raw)
+    assert asyncio.run(run_download(FakeSession({url: EMPTY_MASTER}), ele)) == ("Videos", 10)
+    assert sound_marks == [("clear", ele.id)]
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("case, expected", [
+    ("accepted", stream_mod.silent.ACCEPTED),
+    ("playlist_refused", stream_mod.silent.REFUSED),
+    ("file_refused", stream_mod.silent.REFUSED),
+    ("file_missing", stream_mod.silent.FAILED),
+    # the master playlist says nothing about the audio: no check is used
+    ("master_refused", stream_mod.silent.FAILED),
+])
+def test_the_audio_check_asks_for_the_playlist_and_its_first_file(env, tmp_path, case, expected):
+    video_segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
+    audio_segments = make_segments(tmp_path, "a", "-vn")
+    raw = raw_media()
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, SPLIT_AUDIO_MASTER,
+                         {"r2160": video_segments, "audio": audio_segments})
+        first = f"{root}/audio/{next(iter(audio_segments))}"
+        if case == "playlist_refused":
+            srv.refuse.add(f"{root}/audio/media.m3u8")
+        elif case == "file_refused":
+            srv.refuse.add(first)
+        elif case == "file_missing":
+            del srv.files[first]
+        elif case == "master_refused":
+            srv.refuse.add(next(p for p in srv.files if p.startswith(root) and p.count("/") == root.count("/") + 1))
+
+        async def go():
+            async with ofsession.download_session() as c:
+                return await stream_mod.FanslyStreamDownloadManager().audio_check(c, raw["media"])
+
+        assert asyncio.run(go()) == expected
+        requested = [p for p, _ in srv.seen]
+    # two small requests after the master: no video segment is fetched
+    assert not any("/r2160/" in p and p.endswith(".ts") for p in requested)
+    if case == "master_refused":
+        assert first not in requested
+    elif case != "playlist_refused":
+        assert requested.count(first) == 1
 
 
 @needs_ffmpeg
