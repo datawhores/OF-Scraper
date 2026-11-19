@@ -37,6 +37,7 @@ from ofscraper.scripts.after_download_action_script import after_download_action
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
 import ofscraper.sites.fansly.live as live
+import ofscraper.sites.fansly.pipeline as fansly_pipeline
 
 log = logging.getLogger("shared")
 
@@ -85,6 +86,14 @@ class scraperManager(CommandManager):
                         self._process_users_actions_normal(userdata, session)
 
                 final_action()
+
+    async def _process_user(self, ele, c, action_func):
+        # Fansly downloads each page as it is scanned (sites/fansly/pipeline.py)
+        if fansly_pipeline.applies():
+            self._data_helper(ele)
+            await fansly_pipeline.run(ele, c)
+            return
+        await super()._process_user(ele, c, action_func)
 
     @run_async
     async def _process_users_actions_user_first(self, userdata, session):

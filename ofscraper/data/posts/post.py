@@ -516,28 +516,56 @@ def process_single_task(func, username=None, area=None):
     return inner
 
 
-async def process_tasks(model_id, username, ele, c=None):
-    tasks = []
+def wall_visible(ele):
+    """Whether the account can see the creator's wall (timeline, labels).
 
-    # 1. Access the 'Single Source of Truth' for settings
-    skip_enabled = settings.get_settings().skip_unavailable_content
+    Fansly posts can be public or open to followers, so a creator without
+    an active subscription still has wall posts the account can see.
+    """
+    return ele.active or sites.is_fansly()
 
-    # 2. Simplified Wall Check
-    # Fansly posts can be public or open to followers, so a creator without
-    # an active subscription still has wall posts the account can see
-    wall_visible = ele.active or sites.is_fansly()
-    skip_wall = skip_enabled and not wall_visible
 
-    # 3. Area Selection Logic
-    like_area = get_like_area()
-    download_area = get_download_area()
-    final_post_areas = get_final_posts_area()
+def skip_wall(ele):
+    """Wall areas are skipped for an inactive creator when
+    ``skip_unavailable_content`` is on, unless the wall is visible anyway."""
+    return settings.get_settings().skip_unavailable_content and not wall_visible(ele)
+
+
+def site_post_areas():
+    """The areas asked for that the site supports; on Fansly the rest are
+    skipped with a log line."""
     final_post_areas = get_final_posts_area()
     if sites.is_fansly():
         skipped = [a for a in final_post_areas if a not in fansly_scrape.AREAS]
         if skipped:
             log.info(f"Not available for Fansly yet, skipping: {', '.join(skipped)}")
         final_post_areas = [a for a in final_post_areas if a in fansly_scrape.AREAS]
+    return final_post_areas
+
+
+def log_skipped_labels(username):
+    log.info(
+        f"Skipping labels for {username}: labels are only scraped for active subscriptions"
+    )
+
+
+def log_skipped_wall(username):
+    log.info(
+        f"Skipping wall/story APIs for {username} (Account is inactive and past grace period)"
+    )
+
+
+async def process_tasks(model_id, username, ele, c=None):
+    tasks = []
+
+    # Fansly walls are visible without a subscription (wall_visible)
+    skip_wall_ = skip_wall(ele)
+    wall_visible_ = wall_visible(ele)
+
+    # Area Selection Logic
+    like_area = get_like_area()
+    download_area = get_download_area()
+    final_post_areas = site_post_areas()
 
     max_count = max(
         min(
@@ -581,7 +609,7 @@ async def process_tasks(model_id, username, ele, c=None):
 
         # --- "WALL" CONTENT AREAS ---
         # These are skipped if the account is expired beyond the grace period.
-        if not skip_wall:
+        if not skip_wall_:
             if "Pinned" in final_post_areas:
                 tasks.append(
                     stop.create_fetch_task(
@@ -631,7 +659,7 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
 
-            if "Labels" in final_post_areas and wall_visible:
+            if "Labels" in final_post_areas and wall_visible_:
                 tasks.append(
                     stop.create_fetch_task(
                         process_single_task(
@@ -640,9 +668,7 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
             elif "Labels" in final_post_areas:
-                log.info(
-                    f"Skipping labels for {username}: labels are only scraped for active subscriptions"
-                )
+                log_skipped_labels(username)
 
             if "Streams" in final_post_areas and ele.active:
                 tasks.append(
@@ -653,9 +679,7 @@ async def process_tasks(model_id, username, ele, c=None):
                     )
                 )
         else:
-            log.info(
-                f"Skipping wall/story APIs for {username} (Account is inactive and past grace period)"
-            )
+            log_skipped_wall(username)
 
         # Gather results and add to postcollection
         for result in asyncio.as_completed(tasks):

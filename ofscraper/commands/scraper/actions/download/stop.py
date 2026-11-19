@@ -123,12 +123,17 @@ def started(media):
 def handle_interrupt(signum, frame):
     with _lock:
         fetch_active = bool(_fetches)
-        active = fetch_active or any(m.download_started for m in _transfers.values())
+        downloading = any(m.download_started for m in _transfers.values())
+        active = fetch_active or downloading
     if requested.is_set() or not active:
         raise KeyboardInterrupt
     request()
+    import ofscraper.sites as sites
+
+    # Fansly downloads pages while it scans them, so both can be active
+    fetch_only = fetch_active and not (downloading and sites.is_fansly())
     logging.getLogger("shared").warning(
-        "Stopping the fetch. A second Ctrl+C quits." if fetch_active else
+        "Stopping the fetch. A second Ctrl+C quits." if fetch_only else
         "Stopping downloads; Part files are kept for Resume. A second Ctrl+C quits."
     )
 

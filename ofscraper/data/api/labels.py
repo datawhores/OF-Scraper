@@ -46,18 +46,7 @@ API = "Labels"
 @run
 @stop.fetching
 async def get_labels(model_id, c=None, username=None):
-    labels_ = await get_labels_data(model_id, c=c)
-    labels_ = (
-        labels_
-        if not settings.get_settings().label
-        else list(
-            filter(
-                lambda x: (x.get("name") or "").lower()
-                in settings.get_settings().label,
-                labels_,
-            )
-        )
-    )
+    labels_ = only_asked_labels(await get_labels_data(model_id, c=c))
     known = await get_known_label_posts(labels_, model_id, username)
     # Check mode (no username) always scans fully and leaves the marks alone.
     data = await get_posts_for_labels(
@@ -66,6 +55,18 @@ async def get_labels(model_id, c=None, username=None):
     update_check(data, model_id, None, API)
 
     return data
+
+
+def only_asked_labels(labels_):
+    """With --label, only the labels named."""
+    if not settings.get_settings().label:
+        return labels_
+    return list(
+        filter(
+            lambda x: (x.get("name") or "").lower() in settings.get_settings().label,
+            labels_,
+        )
+    )
 
 
 # Labels whose scan reached the end in this run, per model. Their "finished"
