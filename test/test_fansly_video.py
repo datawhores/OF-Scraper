@@ -33,6 +33,7 @@ import ofscraper.commands.scraper.actions.download.managers.fansly_stream_downlo
 import ofscraper.commands.scraper.actions.download.run as run_mod
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.filters.media.filters as filters
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.classes.of.media import Media
 from ofscraper.classes.of.posts import Post
@@ -173,6 +174,15 @@ def env(monkeypatch, tmp_path):
     }.items():
         monkeypatch.setattr(common_globals, name, value, raising=False)
     monkeypatch.setattr(fansly_auth, "read_auth", lambda *a, **k: {"user_agent": UA})
+    # A refused file is tried again at once. The real waits (2 to 3 seconds
+    # before each new try of a request and of a download) are not what these
+    # tests are about, and made every test with a refused file take over
+    # half a minute.
+    real_getattr = of_env.getattr
+    monkeypatch.setattr(
+        of_env, "getattr",
+        lambda key, *a, **k: 0 if key in ("OF_MIN_WAIT_API", "OF_MAX_WAIT_API")
+        else real_getattr(key, *a, **k))
 
     out_dir, temp_dir = tmp_path / "out", tmp_path / "temp"
     out_dir.mkdir()
