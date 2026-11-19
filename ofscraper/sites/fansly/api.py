@@ -212,7 +212,20 @@ def group_id_for(pages, account_id):
 
 async def messages(c, group_id, after=None):
     """All message dicts of one conversation, newest first (``before`` cursor)."""
-    out = []
+    return [
+        message
+        async for page in messages_pages(c, group_id, after=after)
+        for message in page
+    ]
+
+
+async def messages_pages(c, group_id, after=None):
+    """Message dicts of one conversation one page at a time, newest first.
+
+    ``before`` is the id of the last message of the previous page; paging
+    stops on an empty page, or once a page reaches messages older than
+    ``after`` (epoch seconds).
+    """
     before = None
     for _ in range(MAX_PAGES):
         path = f"message?groupId={group_id}&limit={MESSAGES_LIMIT}"
@@ -221,22 +234,58 @@ async def messages(c, group_id, after=None):
         response = await get_json(c, path) or {}
         page = response.get("messages") or []
         if not page:
-            break
-        out.extend(normalize.messages(response, await missing_media(c, response)))
+            return
+        yield normalize.messages(response, await missing_media(c, response))
         last = str(page[-1]["id"])
         if last == before:
-            break
+            return
         before = last
         oldest = normalize.to_seconds(page[-1].get("createdAt"))
         if after is not None and oldest is not None and oldest < after:
-            break
-    return out
+            return
 
 
 # ------------------------------------------------------------------ purchases
 
 
+async def _orders(c, account_id):
+    """The orders response, and one creator's purchase posts built from it."""
+    response = await get_json(c, "account/media/orders/?limit=9999&offset=0") or {}
+    return response, normalize.purchases(
+        response, account_id, await missing_media(c, response)
+    )
+
+
 async def purchases(c, account_id):
     """Purchased media of one creator (``account/media/orders/``), one post each."""
-    response = await get_json(c, "account/media/orders/?limit=9999&offset=0") or {}
-    return normalize.purchases(response, account_id, await missing_media(c, response))
+    return (await _orders(c, account_id))[1]
+
+
+async def purchase_pages(c, account_id):
+    """One creator's purchase posts in chunks of ``ACCOUNT_MEDIA_BATCH``.
+
+    The orders endpoint answers every purchase at once, so its links are all
+    signed at that moment. The first chunk is given as answered; each later
+    chunk's accountMedia is fetched again just before the chunk is given, so
+    its links are as new as the chunk. A post the new answer leaves out
+    keeps what the orders response gave.
+    """
+    response, found = await _orders(c, account_id)
+    orders = response.get("accountMediaOrders") or []
+    for start in range(0, len(found), ACCOUNT_MEDIA_BATCH):
+        chunk = found[start : start + ACCOUNT_MEDIA_BATCH]
+        if start:
+            ids = [str(post["id"]) for post in chunk]
+            wanted = set(ids)
+            rebuilt = normalize.purchases(
+                {
+                    "accountMediaOrders": [
+                        o for o in orders if str(o.get("accountMediaId")) in wanted
+                    ],
+                    "accountMedia": await account_media(c, ids),
+                },
+                account_id,
+            )
+            by_id = {post["id"]: post for post in rebuilt}
+            chunk = [by_id.get(post["id"], post) for post in chunk]
+        yield chunk
