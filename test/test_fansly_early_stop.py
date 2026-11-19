@@ -426,6 +426,38 @@ def test_without_a_full_scan_on_record_an_early_stop_writes_nothing(decision):
     assert decision.data == {}
 
 
+def test_a_scan_that_began_at_before_is_not_a_full_scan(decision):
+    first = dict(decision.data[incremental.mark_key(MODEL_ID, "Timeline")])
+    decision.settings.before = decision.settings.before_original = arrow.get(2024, 3, 1)
+    # it ran to the last page, but from post 6: posts 7 to 10 weren't scanned
+    incremental.record(
+        decision.ele, "Timeline", 6, True, now=first["full_at"] + 3600, oldest=1
+    )
+    second = decision.data[incremental.mark_key(MODEL_ID, "Timeline")]
+    assert (second["newest"], second["oldest"], second["full_at"]) == (10, 1, first["full_at"])
+
+
+def test_a_scan_that_began_at_before_writes_no_first_mark(decision):
+    decision.data.clear()
+    decision.settings.before = decision.settings.before_original = arrow.get(2024, 3, 1)
+    incremental.record(decision.ele, "Timeline", 6, True, oldest=1)
+    # a mark would let the next run stop at post 6 for good, or count the
+    # posts newer than it as scanned
+    assert decision.data == {}
+
+
+@pytest.mark.parametrize("given", ["nothing", "a date ahead"])
+def test_a_scan_from_the_newest_post_is_a_full_scan_whatever_before_holds(decision, given):
+    # without --before the setting holds a date a few days ahead
+    decision.settings.before = arrow.now().shift(days=4)
+    decision.settings.before_original = None if given == "nothing" else decision.settings.before
+    first = decision.data[incremental.mark_key(MODEL_ID, "Timeline")]
+    later = first["full_at"] + 3600
+    incremental.record(decision.ele, "Timeline", 12, True, now=later, oldest=1)
+    second = decision.data[incremental.mark_key(MODEL_ID, "Timeline")]
+    assert (second["newest"], second["full_at"]) == (12, later)
+
+
 def test_other_areas_never_stop_early(decision):
     assert asyncio.run(incremental.early_stop_for(decision.ele, "Purchased")) is None
     assert asyncio.run(incremental.early_stop_for(decision.ele, "Labels")) is None

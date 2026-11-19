@@ -22,11 +22,29 @@ GROUPS_LIMIT = 20
 MESSAGES_LIMIT = 25
 # safety stop for cursor paging that never runs dry
 MAX_PAGES = 10000
+# A Fansly id starts with the time it was made: the milliseconds since
+# ID_EPOCH (epoch seconds), above ID_TIME_SHIFT lower bits. The API takes any
+# such number as a ``before`` cursor, not only the id of a real post.
+ID_EPOCH = 1561494359
+ID_TIME_SHIFT = 22
+# An id's time was within a second of ``createdAt`` on every post and message
+# checked. What the slack lets in is newer than the date asked for and is
+# dropped by the date filters.
+BEFORE_SLACK = 60
 
 
 def _ids(values):
     # comma-separated lists are sent with literal commas, like the web app
     return ",".join(str(v) for v in values)
+
+
+def cursor_before(seconds):
+    """The ``before`` cursor that starts paging at a time (epoch seconds):
+    the lowest id an item made ``BEFORE_SLACK`` seconds after it can have.
+    A time before the first id gives "1" (nothing is older); "0" would ask
+    for the newest page."""
+    milliseconds = int((float(seconds) + BEFORE_SLACK - ID_EPOCH) * 1000)
+    return str(max(1, milliseconds << ID_TIME_SHIFT))
 
 
 async def get_json(c, path, asks=None):
@@ -140,18 +158,20 @@ async def timeline(c, account_id, wall_id="", after=None):
     ]
 
 
-async def timeline_pages(c, account_id, wall_id="", after=None):
+async def timeline_pages(c, account_id, wall_id="", after=None, before=None):
     """Timeline post dicts one page at a time, newest first.
 
-    ``before`` is the id of the last post of the previous page; paging stops
-    on an empty page, or once a page reaches posts older than ``after``
-    (epoch seconds). With ``wall_id``, only that wall's posts.
+    The first page starts at the newest post, or with ``before`` (epoch
+    seconds) at the posts made up to then (``cursor_before``). Each later
+    page is asked for with the id of the last post of the page before it.
+    Paging stops on an empty page, or once a page reaches posts older than
+    ``after`` (epoch seconds). With ``wall_id``, only that wall's posts.
     """
-    before = "0"
+    cursor = "0" if before is None else cursor_before(before)
     for _ in range(MAX_PAGES):
         response = await get_json(
             c,
-            f"timelinenew/{account_id}?before={before}&after=0&wallId={wall_id}&contentSearch=",
+            f"timelinenew/{account_id}?before={cursor}&after=0&wallId={wall_id}&contentSearch=",
         )
         response = response or {}
         page = response.get("posts") or []
@@ -159,9 +179,9 @@ async def timeline_pages(c, account_id, wall_id="", after=None):
             return
         yield normalize.posts(response, await missing_media(c, response))
         last = str(page[-1]["id"])
-        if last == before:
+        if last == cursor:
             return
-        before = last
+        cursor = last
         oldest = normalize.to_seconds(page[-1].get("createdAt"))
         if after is not None and oldest is not None and oldest < after:
             return
@@ -232,27 +252,29 @@ async def messages(c, group_id, after=None):
     ]
 
 
-async def messages_pages(c, group_id, after=None):
+async def messages_pages(c, group_id, after=None, before=None):
     """Message dicts of one conversation one page at a time, newest first.
 
-    ``before`` is the id of the last message of the previous page; paging
-    stops on an empty page, or once a page reaches messages older than
-    ``after`` (epoch seconds).
+    The first page starts at the newest message, or with ``before`` (epoch
+    seconds) at the messages made up to then (``cursor_before``). Each later
+    page is asked for with the id of the last message of the page before it.
+    Paging stops on an empty page, or once a page reaches messages older
+    than ``after`` (epoch seconds).
     """
-    before = None
+    cursor = None if before is None else cursor_before(before)
     for _ in range(MAX_PAGES):
         path = f"message?groupId={group_id}&limit={MESSAGES_LIMIT}"
-        if before:
-            path += f"&before={before}"
+        if cursor:
+            path += f"&before={cursor}"
         response = await get_json(c, path) or {}
         page = response.get("messages") or []
         if not page:
             return
         yield normalize.messages(response, await missing_media(c, response))
         last = str(page[-1]["id"])
-        if last == before:
+        if last == cursor:
             return
-        before = last
+        cursor = last
         oldest = normalize.to_seconds(page[-1].get("createdAt"))
         if after is not None and oldest is not None and oldest < after:
             return

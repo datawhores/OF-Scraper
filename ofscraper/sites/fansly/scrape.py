@@ -7,6 +7,7 @@ OnlyFans.
 
 import contextlib
 import logging
+import time
 
 import ofscraper.utils.settings as settings
 from ofscraper.sites.fansly import api, normalize
@@ -36,6 +37,20 @@ def _after():
     return getattr(after, "float_timestamp", None)
 
 
+def start_before():
+    """``--before`` as epoch seconds when the scan can start there, or None
+    for a scan from the newest item: the option wasn't given (the setting
+    then holds a date a few days ahead), or its date isn't in the past."""
+    s = settings.get_settings()
+    before = getattr(s, "before", None)
+    if not before or not getattr(s, "before_original", None):
+        return None
+    seconds = getattr(before, "float_timestamp", None)
+    if seconds is None or seconds + api.BEFORE_SLACK >= time.time():
+        return None
+    return seconds
+
+
 def _only(items, post_id):
     """With ``--post-id``, only those posts or messages."""
     if not post_id:
@@ -51,13 +66,17 @@ async def _collect(pages):
 
 async def timeline_pages(model_id, username, c=None, post_id=None):
     """The creator's timeline posts one page at a time, newest first, with
-    the same ``--after`` stop and ``--post-id`` filter as the full list."""
+    the same ``--after`` stop and ``--post-id`` filter as the full list.
+    With ``--before`` the first page asked for is the one at that date."""
     async with _session(c) as c:
         if post_id:
             yield _only(await api.posts_by_id(c, post_id), post_id)
             return
+        before = start_before()
+        if before is not None:
+            log.debug(f"Fansly timeline: starting at --before for {username}")
         async with contextlib.aclosing(
-            api.timeline_pages(c, model_id, after=_after())
+            api.timeline_pages(c, model_id, after=_after(), before=before)
         ) as pages:
             async for page in pages:
                 yield page
@@ -71,14 +90,18 @@ async def get_timeline_posts(model_id, username, c=None, post_id=None):
 
 
 async def message_pages(model_id, username, c=None, post_id=None):
-    """The messages with the creator one page at a time, newest first."""
+    """The messages with the creator one page at a time, newest first. With
+    ``--before`` the first page asked for is the one at that date."""
     async with _session(c) as c:
         group_id = api.group_id_for(await api.groups(c), model_id)
         if not group_id:
             log.info(f"No Fansly conversation with {username}")
             return
+        before = start_before()
+        if before is not None:
+            log.debug(f"Fansly messages: starting at --before for {username}")
         async with contextlib.aclosing(
-            api.messages_pages(c, group_id, after=_after())
+            api.messages_pages(c, group_id, after=_after(), before=before)
         ) as pages:
             async for page in pages:
                 yield _only(page, post_id)

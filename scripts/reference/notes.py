@@ -19,6 +19,7 @@ Style:
 # extra notes for options, keyed by the option's dest (the name in the args)
 CLI = {
     "redownload": "Sets `force_all`, `--after 2000` and `--before` tomorrow for the run. Every item is scanned and downloaded again. The merge happens in `merged_settings`.",
+    "before": "On Fansly a timeline or message scan starts at this date instead of at the newest post, so the newer pages are not asked for; with `--after` only the pages of the range are. Walls (the Labels area) and purchases are scanned as without it.",
     "text_only": "Also turns on `--text`. Text files are written and media is skipped.",
     "original": "Turns off file name truncation for the run, whatever `file_options.truncation_default` says.",
     "no_auto_resume": "Turns `download_options.auto_resume` off for the run.",

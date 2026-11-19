@@ -11,7 +11,10 @@ page-by-page download (``pipeline``) whose scan
 of that area ran to its end and whose downloads all ran (the run wasn't
 stopped). Rows in the database aren't proof of that: a labels-only run or
 an interrupted scan-first run writes post rows for an area it never scanned
-to the end.
+to the end. A scan that began at ``--before`` (``scrape.start_before``)
+counts as one that stopped early: it never saw the newer pages, so it leaves
+the time of the last full scan as it was and, with no full scan on record,
+writes no mark.
 
 On the next run an area stops paging at the first page whose posts are all
 at or below the mark, once no post with media left to download is older than
@@ -50,6 +53,7 @@ from ofscraper.data.api.common.after import get_after_pre_checks
 from ofscraper.data.api.common.pending import get_posts_missing_media
 from ofscraper.db.operations_.messages import get_all_messages_ids
 from ofscraper.db.operations_.posts import get_all_post_ids
+from ofscraper.sites.fansly import scrape
 
 log = logging.getLogger("shared")
 
@@ -110,6 +114,9 @@ def record(ele, area, newest, full, now=None, oldest=None):
     if getattr(s, "after", None) is not None or getattr(s, "post_id", None):
         # a scan cut short by --after or --post-id says nothing about older pages
         return
+    if scrape.start_before() is not None:
+        # a scan that began at --before didn't see the newer pages: not a full scan
+        full = False
     now = time.time() if now is None else now
     old = cache.get(mark_key(ele.id, area))
     old = old if isinstance(old, dict) and old.get("access") == access(ele) else {}
