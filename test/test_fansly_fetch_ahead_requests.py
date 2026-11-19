@@ -203,12 +203,13 @@ def alone(session):
     return [call for call in session.api_calls if len(call) == 1]
 
 
-def test_788_files_after_an_address_change_cost_six_calls(world):
+def test_788_files_after_an_address_change_cost_eight_calls(world):
     world.session = Session(lambda n: account_media(n, NEW, "new"), cdn_refused={OLD})
     results, refused = run(world.session, queue(788))
     assert all(results)
     assert len(refused) == 1
-    assert len(world.session.api_calls) == 6
+    # 100 ids a call, the most one call answers
+    assert len(world.session.api_calls) == 8
     assert world.session.dns_cleared == 0
 
 
@@ -590,7 +591,7 @@ def test_a_shared_call_that_fails_twice_is_made_again_for_the_next_file(world):
     results, _ = run(s, queue(300))
     assert results == [False] + [True] * 299
     assert s.failed == 2
-    assert len(s.api_calls) == 2
+    assert len(s.api_calls) == 3
 
 
 @pytest.mark.parametrize(

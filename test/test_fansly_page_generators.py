@@ -233,8 +233,8 @@ def test_purchases_come_in_chunks_with_links_fetched_per_chunk(fansly):
     # the orders are asked for once; each later chunk's media only after
     # the chunk before it was taken
     assert c.paths() == [
-        "account/media/orders/", "chunk of 150",
-        "account/media", "chunk of 150",
+        "account/media/orders/", f"chunk of {CHUNK}",
+        "account/media", f"chunk of {CHUNK}",
         "account/media", "chunk of 20",
     ]
     assert [[p["id"] for p in page] for page in pages] == [

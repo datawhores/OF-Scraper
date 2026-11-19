@@ -163,12 +163,14 @@ async def download_all(items):
         refresh.fansly_refresher.done(ele)
 
 
-def test_one_refusal_among_300_waiting_files_makes_two_calls(fansly):
-    items = waiting(300)
+def test_one_refusal_among_250_waiting_files_makes_three_calls(fansly):
+    items = waiting(250)
     asyncio.run(download_all(items))
+    # never more ids than one call answers
     assert [len(call) for call in fansly.calls] == [
         api.ACCOUNT_MEDIA_BATCH,
-        300 - api.ACCOUNT_MEDIA_BATCH,
+        api.ACCOUNT_MEDIA_BATCH,
+        250 - 2 * api.ACCOUNT_MEDIA_BATCH,
     ]
     assert all(address._range(ele.url) == NEW for ele in items)
 

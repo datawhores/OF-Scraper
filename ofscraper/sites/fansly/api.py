@@ -15,7 +15,8 @@ log = logging.getLogger("shared")
 # the API host has four addresses: the first ask, then one per address
 ADDRESS_ASKS = 5
 ACCOUNT_IDS_BATCH = 5
-ACCOUNT_MEDIA_BATCH = 150
+# one account/media call answers at most 100 ids and says nothing about the rest
+ACCOUNT_MEDIA_BATCH = 100
 FOLLOWING_LIMIT = 50
 GROUPS_LIMIT = 20
 MESSAGES_LIMIT = 25
@@ -108,7 +109,7 @@ def next_address(c):
 
 
 async def account_media(c, ids, asks=None):
-    """Full accountMedia objects by accountMedia id, 150 per call (``asks``:
+    """Full accountMedia objects by accountMedia id, 100 per call (``asks``:
     see ``get_json``)."""
     out = []
     ids = [str(i) for i in ids]
