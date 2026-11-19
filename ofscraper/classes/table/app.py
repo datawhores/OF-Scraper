@@ -969,7 +969,10 @@ class InputApp(App):
 
             if not is_empty:
                 if key == "number":
-                    sort_val = int(raw_val or 0)
+                    # "number" restarts for each creator; "index" runs on
+                    # through all of them, so sorting by it keeps each
+                    # creator's rows together instead of A1, B1, A2, B2
+                    sort_val = int(x.get("index") or 0)
                 elif key == "post_media_count":
                     sort_val = int(raw_val or 0)
                 elif key == "price":
