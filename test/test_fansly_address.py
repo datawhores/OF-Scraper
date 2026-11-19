@@ -45,10 +45,10 @@ def link(signed_for, name="1.png"):
     return f"https://cdn3.fansly.com/100/{name}?Policy={encoded}&Key-Pair-Id=k&Signature=s"
 
 
-def reply(signed_for, links=2):
+def reply(signed_for, links=2, first=0):
     media = [
         {"id": str(n), "locations": [{"locationId": "1", "location": link(signed_for, f"{n}.png")}]}
-        for n in range(links)
+        for n in range(first, first + links)
     ]
     return {"success": True, "response": {"posts": [{"id": "5"}], "accountMedia": media}}
 
@@ -126,6 +126,29 @@ def test_each_range_is_tried_on_the_cdn_once():
     get(session)
     assert [signed_for for signed_for, _ in session.cdn_calls] == [OTHER, THIRD, OURS]
     assert session.api_calls == 3
+
+
+def test_a_second_files_link_is_tried_from_a_later_response_and_kept():
+    session = Session([reply(OURS), reply(OURS), reply(OURS, first=5), reply(OURS, first=9)])
+    for _ in range(4):
+        get(session)
+    # the same files again: no try; other files: one more try, then none
+    assert [signed_for for signed_for, _ in session.cdn_calls] == [OURS, OURS]
+    kept = address.accepted_links(link(OURS, "other.png"))
+    assert len(kept) == 2 and len({k.split("?")[0] for k in kept}) == 2
+    assert session.api_calls == 4
+
+
+def test_a_second_link_the_cdn_refuses_decides_nothing():
+    session = Session([reply(OURS), reply(OURS, first=5)])
+    get(session)
+    session.refused.add(OURS)
+    session.api_calls = 1
+    assert ranges(get(session)) == {OURS}
+    # not asked for again, and the range is still the accepted one
+    assert session.api_calls == 2 and session.dns_cleared == 0
+    assert address.is_accepted(link(OURS))
+    assert len(address.accepted_links(link(OURS, "other.png"))) == 1
 
 
 def test_the_try_fetches_one_byte_and_sends_no_api_credentials():

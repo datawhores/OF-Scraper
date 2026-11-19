@@ -25,6 +25,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.commands.scraper.actions.download.run import consumer
 from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    fansly_refresher,
+)
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.settings as settings
 import ofscraper.managers.manager as manager
@@ -105,6 +108,9 @@ async def process_dicts(username, model_id, medialist, posts, on_result=None):
         f"{'file' if concurrency_limit == 1 else 'files'} at a time"
     )
     common_globals.mainProcessVariableInit()
+    # the consumers take items from the end of the list
+    fansly_refresher.reset()
+    fansly_refresher.expect(reversed(medialist))
     task1 = None
     with progress_utils.setup_live("download"):
         try:
@@ -142,6 +148,7 @@ async def process_dicts(username, model_id, medialist, posts, on_result=None):
                             task.cancel()
                     await asyncio.gather(*consumers, return_exceptions=True)
         finally:
+            fansly_refresher.reset()
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread, cache.close
             )

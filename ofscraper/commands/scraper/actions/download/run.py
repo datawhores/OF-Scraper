@@ -35,6 +35,10 @@ from ofscraper.commands.scraper.actions.download.managers.main_download import (
 from ofscraper.commands.scraper.actions.download.managers.fansly_stream_download import (
     FanslyStreamDownloadManager,
 )
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    fansly_refresher,
+    fresh_before_download,
+)
 from ofscraper.classes.of.media import Media
 from ofscraper.sites.fansly import video as fansly_video
 
@@ -85,6 +89,8 @@ async def handle_one(data, task1, total, on_result=None):
         common_globals.log.traceback_(traceback.format_exc())
         media_type = "skipped"
         num_bytes_downloaded = 0
+    # finished: never fetched new links for again
+    fansly_refresher.done(ele)
     try:
         common_globals.total_bytes_downloaded = (
             common_globals.total_bytes_downloaded + num_bytes_downloaded
@@ -161,6 +167,9 @@ async def download(c, ele, model_id, username):
         # retries: the check table sends the same Media again, and it's
         # asked again then, as before (#350)
         ele.skip_script_answers = {}
+        # a link signed for an address range the CDN now refuses gets a new
+        # one first, usually fetched already for an earlier refusal
+        await fresh_before_download(ele)
         if fansly_video.uses_stream(ele):
             # None: the stream can't be used and the item has a direct file
             data = await FanslyStreamDownloadManager().stream_download(

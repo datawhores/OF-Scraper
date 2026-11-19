@@ -32,6 +32,7 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.utils.refresh import (
     refresh_media_link,
+    refused_url,
 )
 from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
 
@@ -83,7 +84,9 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             # a signed link answers 403 after an IP change; retrying it can't
             # help (#462), but a newly fetched link can
-            if not is_signed_cdn_forbidden(E) or not await refresh_media_link(ele):
+            if not is_signed_cdn_forbidden(E) or not await refresh_media_link(
+                ele, link=refused_url(E) or ele.url
+            ):
                 raise
         # once per item: the .part is kept and resumed with the new link
         return await self._main_download_attempts(c, ele)
