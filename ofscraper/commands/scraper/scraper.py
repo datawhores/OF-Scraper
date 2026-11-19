@@ -91,7 +91,13 @@ class scraperManager(CommandManager):
         # Fansly downloads each page as it is scanned (sites/fansly/pipeline.py)
         if fansly_pipeline.applies():
             self._data_helper(ele)
-            await fansly_pipeline.run(ele, c)
+            collection = None
+            if fansly_pipeline.ordered():
+                # the whole list first; links are fetched again per chunk
+                collection = await post_media_process(ele, c=c)
+                if collection is None:
+                    return
+            await fansly_pipeline.run(ele, c, collection)
             return
         await super()._process_user(ele, c, action_func)
 

@@ -302,10 +302,10 @@ class Harness:
             SimpleNamespace(mainProcessVariableInit=lambda: None, thread=self.pool),
         )
 
-    def run(self, active=True, ele=None):
+    def run(self, active=True, ele=None, collection=None):
         ele = ele or SimpleNamespace(name=NAME, id=MODEL_ID, active=active)
         try:
-            return asyncio.run(asyncio.wait_for(pipeline.run(ele, None), 10))
+            return asyncio.run(asyncio.wait_for(pipeline.run(ele, None, collection), 10))
         finally:
             self.pool.shutdown(wait=True)
             self.new_pool()
@@ -625,10 +625,11 @@ def test_ctrl_c_while_scanning_and_downloading_says_downloads_stop(
         ({"actions": ["like"]}, False),
         ({"actions": ["download", "like"]}, False),
         ({"users_first": True}, False),
-        ({"max_post_count": 10}, False),
-        ({"mediasort": "date"}, False),
-        ({"media_desc": True}, False),
         ({"text_only": True}, False),
+        # these need the whole list first, then download through the pipeline
+        ({"max_post_count": 10}, True),
+        ({"mediasort": "date"}, True),
+        ({"media_desc": True}, True),
     ],
 )
 def test_applies_only_to_plain_fansly_downloads(settings_stub, change, expected):
@@ -637,11 +638,26 @@ def test_applies_only_to_plain_fansly_downloads(settings_stub, change, expected)
     assert pipeline.applies() is expected
 
 
+@pytest.mark.parametrize(
+    "change, expected",
+    [
+        ({}, False),
+        ({"max_post_count": 10}, True),
+        ({"mediasort": "date"}, True),
+        ({"media_desc": True}, True),
+    ],
+)
+def test_runs_that_need_the_whole_list_are_ordered(settings_stub, change, expected):
+    for key, value in change.items():
+        setattr(settings_stub, key, value)
+    assert pipeline.ordered() is expected
+
+
 def test_the_scraper_hands_a_creator_to_the_pipeline_only_when_it_applies(monkeypatch):
     calls = []
 
-    async def pipeline_run(ele, c):
-        calls.append(("pipeline", ele.name, c))
+    async def pipeline_run(ele, c, collection=None):
+        calls.append(("pipeline", ele.name, c, collection))
 
     async def scan(ele, c=None):
         calls.append(("scan", ele.name, c))
@@ -652,14 +668,23 @@ def test_the_scraper_hands_a_creator_to_the_pipeline_only_when_it_applies(monkey
 
     monkeypatch.setattr(pipeline, "run", pipeline_run)
     monkeypatch.setattr(command, "post_media_process", scan)
+    monkeypatch.setattr(scraper, "post_media_process", scan)
     monkeypatch.setattr(command.CommandManager, "_data_helper", lambda *a: None)
     monkeypatch.setattr(command.CommandManager, "_avatar_helper", lambda *a: None)
     manager = scraper.scraperManager()
     ele = SimpleNamespace(name="a")
-    for applies in (True, False):
+    for applies, ordered in ((True, False), (True, True), (False, False)):
         monkeypatch.setattr(pipeline, "applies", lambda applies=applies: applies)
+        monkeypatch.setattr(pipeline, "ordered", lambda ordered=ordered: ordered)
         asyncio.run(manager._process_user(ele, "c", action))
-    assert calls == [("pipeline", "a", "c"), ("scan", "a", "c"), ("action", "a", "posts")]
+    assert calls == [
+        ("pipeline", "a", "c", None),
+        # a whole-list run scans first and hands the pipeline the result
+        ("scan", "a", "c"),
+        ("pipeline", "a", "c", "posts"),
+        ("scan", "a", "c"),
+        ("action", "a", "posts"),
+    ]
 
 
 @pytest.mark.parametrize("active", [True, False])

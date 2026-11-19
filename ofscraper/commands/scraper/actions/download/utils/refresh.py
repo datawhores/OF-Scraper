@@ -171,6 +171,53 @@ def _fansly_signatures(raw):
     return out
 
 
+SAME_LINK = "Fansly gave the same link again"
+
+
+def _fansly_ids(ele):
+    """The accountMedia id to ask for, or None when the item has none."""
+    details = ele.media.get("fansly") or {}
+    if not details.get("media"):
+        return None
+    return details.get("accountMediaId")
+
+
+def _apply_fansly(ele, item):
+    """Give ``ele`` the links of ``item``, an ``account/media`` answer.
+
+    Returns None when it did, otherwise why not (``SAME_LINK`` when the
+    answer carries no new signature). No network.
+    """
+    details = ele.media.get("fansly") or {}
+    old = details.get("media") or {}
+    part = "preview" if details.get("isPreview") else "media"
+    new = (item or {}).get(part) or {}
+    if str(new.get("id")) != str(old.get("id")):
+        return "the API didn't return this media"
+    if not _fansly_signatures(new) - _fansly_signatures(old):
+        return SAME_LINK
+    new_url = fansly_normalize.file_url(new)
+    if ele.url and (not new_url or not _same_file(ele.url, new_url)):
+        return "the new link is for a different file, not using it"
+    # the stream downloader reads its links from the raw Media
+    details["media"] = new
+    if new_url:
+        ele.media.setdefault("files", {}).setdefault("full", {})["url"] = new_url
+        ele.url = new_url
+    return None
+
+
+def apply_fansly_item(ele, item) -> bool:
+    """True when ``ele`` now has the links of ``item`` (see ``_apply_fansly``)."""
+    return _apply_fansly(ele, item) is None
+
+
+def _answer_for(found, account_media_id):
+    return next(
+        (x for x in found or [] if str(x.get("id")) == str(account_media_id)), {}
+    )
+
+
 async def _refresh_fansly(ele) -> bool:
     """Fansly: fetch the item's accountMedia again and use its links.
 
@@ -178,13 +225,10 @@ async def _refresh_fansly(ele) -> bool:
     request for that media, sometimes one signed for another address, which
     its CDN refuses (#536). So this asks a few times, until a link changes.
     """
-    details = ele.media.get("fansly") or {}
-    old = details.get("media") or {}
-    account_media_id = details.get("accountMediaId")
-    if not account_media_id or not old:
+    account_media_id = _fansly_ids(ele)
+    if not account_media_id:
         log.debug(f"Media {ele.id}: no way to fetch a new Fansly link")
         return False
-    part = "preview" if details.get("isPreview") else "media"
     for ask in range(FANSLY_ASKS):
         if ask:
             await asyncio.sleep(FANSLY_ASK_WAIT)
@@ -194,24 +238,12 @@ async def _refresh_fansly(ele) -> bool:
         except Exception as E:
             log.debug(f"Media {ele.id}: fetching a new link failed: {E}")
             return False
-        item = next(
-            (x for x in found or [] if str(x.get("id")) == str(account_media_id)), {}
-        )
-        new = item.get(part) or {}
-        if str(new.get("id")) != str(old.get("id")):
-            log.debug(f"Media {ele.id}: the API didn't return this media")
-            return False
-        if not _fansly_signatures(new) - _fansly_signatures(old):
+        problem = _apply_fansly(ele, _answer_for(found, account_media_id))
+        if problem == SAME_LINK:
             continue
-        new_url = fansly_normalize.file_url(new)
-        if ele.url and (not new_url or not _same_file(ele.url, new_url)):
-            log.debug(f"Media {ele.id}: the new link is for a different file, not using it")
+        if problem:
+            log.debug(f"Media {ele.id}: {problem}")
             return False
-        # the stream downloader reads its links from the raw Media
-        details["media"] = new
-        if new_url:
-            ele.media.setdefault("files", {}).setdefault("full", {})["url"] = new_url
-            ele.url = new_url
         log.info(
             f"Media {ele.id}: the download link was rejected (403), using a newly signed one"
         )
