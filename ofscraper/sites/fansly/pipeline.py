@@ -50,6 +50,7 @@ from ofscraper.data.posts import post as post_area
 from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.sites.fansly import incremental
 from ofscraper.sites.fansly import scrape as fansly_scrape
 from ofscraper.sites.fansly import video as fansly_video
 from ofscraper.utils.args.accessors.areas import get_download_area
@@ -163,6 +164,8 @@ class _Run:
         self.media = []  # every media queued, in order
         self.offered = set()  # post ids whose media was selected
         self.finished = []  # areas whose scan reached its end
+        # downloaded area -> (newest post id, oldest post id, scanned to the last page)
+        self.scanned = {}
         self.labels = {}  # label id -> label dict with its posts
         self.current = {}  # worker task -> the media it is downloading
         self.rows = set()  # media keys whose row is written this run
@@ -386,22 +389,54 @@ async def _take_page(run, area, posts, download, number):
 
 
 @free.space_checker
-async def _scan_area(run, area, download):
+async def _scan_area(run, area, download, early_stop=None):
     number = 0
+    newest = oldest = None
+    full = True
     async with contextlib.aclosing(PAGES[area](run)) as pages:
         async for posts in pages:
             number += 1
             await _take_page(run, area, posts, download, number)
+            ids = [p.id for p in posts]
+            newest = max(
+                (i for i in (newest, incremental.newest_id(ids)) if i is not None),
+                default=None,
+            )
+            oldest = min(
+                (i for i in (oldest, incremental.oldest_id(ids)) if i is not None),
+                default=None,
+            )
+            if early_stop and early_stop.after_page(ids):
+                full = False
+                log.info(
+                    f"[{run.username}] {area}: page {number} and older were scanned "
+                    "by an earlier run, stopping the scan. A post that appears "
+                    "later with an older date is found by the next full scan, at "
+                    f"least every {incremental.full_scan_days()} days "
+                    "(FANSLY_FULL_SCAN_DAYS)"
+                )
+                break
     run.finished.append(area)
+    if download:
+        # only a scan whose files are downloaded may mark the area
+        run.scanned[area] = (newest, oldest, full)
 
 
 @stop.fetching
 async def _produce(run):
     download_area = get_download_area()
+    areas = areas_for(run.ele, run.username)
     try:
-        for area in areas_for(run.ele, run.username):
+        # read what is recorded before this run writes any rows
+        early_stops = {}
+        for area in areas:
             try:
-                await _scan_area(run, area, area in download_area)
+                early_stops[area] = await incremental.early_stop_for(run.ele, area)
+            except Exception as E:
+                log.debug(f"{area}: could not read what is recorded, scanning fully: {E}")
+        for area in areas:
+            try:
+                await _scan_area(run, area, area in download_area, early_stops.get(area))
             except WorkersEnded:
                 raise
             except Exception as E:
@@ -553,6 +588,10 @@ async def _commit(run):
         for area in run.finished:
             if area in AFTER_CHECKED:
                 set_after_checks(run.model_id, area)
+        # the scan reached its end and every download ran: a later run may
+        # stop where this one began
+        for area, (newest, oldest, full) in run.scanned.items():
+            incremental.record(run.ele, area, newest, full, oldest=oldest)
         if run.labels:
             update_check(list(run.labels.values()), run.model_id, None, labels_api.API)
         await post_area.clean_stray_media(run.username, run.model_id, run.collection)

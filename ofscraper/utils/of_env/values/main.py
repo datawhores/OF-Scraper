@@ -110,6 +110,12 @@ def load_main_config():
     # Default: 8
     config["FANSLY_STREAM_SEGMENTS"] = int(os.getenv("OFSC_FANSLY_STREAM_SEGMENTS", "8"))
 
+    # FANSLY_FULL_SCAN_DAYS: A Fansly repeat run scans an area fully when its last full
+    # scan is older than this many days; otherwise it may stop where the last scan began.
+    # 0 scans fully every time.
+    # Default: 7
+    config["FANSLY_FULL_SCAN_DAYS"] = int(os.getenv("OFSC_FANSLY_FULL_SCAN_DAYS", "7"))
+
     # TEXT_TYPE_DEFAULT: Default text type processing.
     # Default: "letter"
     config["TEXT_TYPE_DEFAULT"] = os.getenv("OFSC_TEXT_TYPE_DEFAULT", "letter")

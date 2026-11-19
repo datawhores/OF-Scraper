@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+import ofscraper.data.api.common.pending as pending
 import ofscraper.data.api.labels as labels
 
 
@@ -322,11 +323,11 @@ def test_missing_media_filter_matches_the_timeline(monkeypatch):
     async def deleted(**kwargs):
         return {14}
 
-    monkeypatch.setattr(labels, "get_model_media_status", status)
-    monkeypatch.setattr(labels, "get_media_ids_downloaded_model", downloaded)
-    monkeypatch.setattr(labels, "get_deleted_post_ids", deleted)
+    monkeypatch.setattr(pending, "get_model_media_status", status)
+    monkeypatch.setattr(pending, "get_media_ids_downloaded_model", downloaded)
+    monkeypatch.setattr(pending, "get_deleted_post_ids", deleted)
     monkeypatch.setattr(
-        labels.settings,
+        pending.settings,
         "get_settings",
         lambda: SimpleNamespace(mediatypes=["Videos"]),
     )

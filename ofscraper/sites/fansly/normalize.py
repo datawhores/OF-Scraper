@@ -415,5 +415,10 @@ def model(account):
         "subscribedByData": None,
         "subscribedByExpireDate": iso(subscription.get("endsAt")) if subscription else None,
         "lastSeen": None,
-        "fansly": {"subscribed": bool(account.get("subscribed")), "following": bool(account.get("following"))},
+        "fansly": {
+            "subscribed": bool(account.get("subscribed")),
+            "following": bool(account.get("following")),
+            # what the account can see depends on the tier, too
+            "tierId": subscription.get("subscriptionTierId"),
+        },
     }
