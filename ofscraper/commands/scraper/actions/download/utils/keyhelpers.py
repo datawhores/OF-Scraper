@@ -72,25 +72,88 @@ def strip_pssh(path):
     return changed
 
 
+def default_kid(path):
+    """
+    The ID of the key an encrypted file needs (its tenc box), as lowercase
+    hex, or None if the file doesn't record one.
+    """
+    with open(path, "rb") as f:
+        while header := f.read(8):
+            if len(header) < 8:
+                return None
+            size, typ = struct.unpack(">I4s", header)
+            skip = size - 8
+            if size == 1:
+                skip = struct.unpack(">Q", f.read(8))[0] - 16
+            elif size == 0:
+                return None
+            if typ != b"moov":
+                if skip < 0:
+                    return None
+                f.seek(skip, 1)
+                continue
+            moov = f.read(skip)
+            pos = moov.find(b"tenc")
+            # tenc: size, type, version and flags, 4 bytes of settings, the
+            # 16-byte ID, then an optional constant IV
+            while pos >= 4:
+                if (
+                    struct.unpack(">I", moov[pos - 4 : pos])[0] >= 32
+                    and len(moov) >= pos + 28
+                ):
+                    return moov[pos + 12 : pos + 28].hex()
+                pos = moov.find(b"tenc", pos + 1)
+            return None
+    return None
+
+
+def key_id(key):
+    return key.strip().split(":")[0].replace("-", "").lower()
+
+
+def pick_key(keys, kid, id):
+    """
+    The "kid:key" pair whose ID is kid, or the first one when the file's ID
+    is unknown. A license can hold several keys (e.g. audio and video), and
+    decrypting with another track's key gives scrambled video (#551).
+    """
+    keys = [k.strip() for k in keys if k and k.strip()]
+    if not keys or not kid:
+        return keys[0] if keys else None
+    for key in keys:
+        if key_id(key) == kid:
+            return key
+    raise Exception(f"ID:{id} license has no key for this file's key ID {kid}")
+
+
 async def un_encrypt(item, c, ele, input_=None):
     try:
         setLog(input_ or common_globals.log)
         key = None
         keymode = settings.get_settings().key_mode
+        kid = default_kid(item["path"])
+        log.debug(f"{get_medialog(ele)} file key ID: {kid}")
+        # Saved under the key ID too, so tracks that need different keys
+        # don't share one entry, and entries saved by older versions,
+        # which may hold another track's key, aren't used
+        cache_name = f"{ele.license}#{kid}" if kid else ele.license
         past_key = (
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.thread, partial(cache.get, ele.license)
+                common_globals.thread, partial(cache.get, cache_name)
             )
             if of_env.getattr("USE_WIV_CACHE_KEY")
             else None
         )
+        if past_key and kid and key_id(past_key) != kid:
+            log.debug(f"{get_medialog(ele)} ignoring saved key for another key ID")
+            past_key = None
         if past_key:
             key = past_key
             log.debug(f"{get_medialog(ele)} got key rom cache: {key}")
         elif keymode == "manual":
-            key = await key_helper_manual(c, item["pssh"], ele.license, ele.id)
+            key = await key_helper_manual(c, item["pssh"], ele.license, ele.id, kid)
         elif keymode == "cdrm":
-            key = await key_helper_cdrm(c, item["pssh"], ele.license, ele.id)
+            key = await key_helper_cdrm(c, item["pssh"], ele.license, ele.id, kid)
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
         key = key.strip()
@@ -126,7 +189,7 @@ async def un_encrypt(item, c, ele, input_=None):
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
-                    cache.set, ele.license, None, expire=of_env.getattr("KEY_EXPIRY")
+                    cache.set, cache_name, None, expire=of_env.getattr("KEY_EXPIRY")
                 ),
             )
             raise Exception(f"{get_medialog(ele)} ffmpeg decryption failed")
@@ -145,7 +208,7 @@ async def un_encrypt(item, c, ele, input_=None):
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.thread,
                 partial(
-                    cache.set, ele.license, key, expire=of_env.getattr("KEY_EXPIRY")
+                    cache.set, cache_name, key, expire=of_env.getattr("KEY_EXPIRY")
                 ),
             )
             return item
@@ -157,7 +220,7 @@ def get_ffmpeg_key(key):
     return key.split(":")[1]
 
 
-async def key_helper_cdrm(c, pssh, licence_url, id):
+async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
     key = None
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
@@ -185,7 +248,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         ) as r:
             data = await r.json_()
             log.debug(f"cdrm json {data}")
-            key = data["message"]
+            # one "kid:key" pair per line when the license has several
+            key = pick_key(str(data["message"]).split(), kid, id)
         return key
     except Exception as E:
         log.traceback_(E)
@@ -193,7 +257,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         raise E
 
 
-async def key_helper_manual(c, pssh, licence_url, id):
+async def key_helper_manual(c, pssh, licence_url, id, kid=None):
     key = None
     log.debug(f"ID:{id} using manual key helper")
     try:
@@ -236,9 +300,15 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 cdm.parse_license(session_id, (data))
                 keys = cdm.get_keys(session_id)
                 cdm.close(session_id)
-            keyobject = list(filter(lambda x: x.type == "CONTENT", keys))[0]
-
-        key = "{}:{}".format(keyobject.kid.hex, keyobject.key.hex())
+        key = pick_key(
+            [
+                "{}:{}".format(k.kid.hex, k.key.hex())
+                for k in keys
+                if k.type == "CONTENT"
+            ],
+            kid,
+            id,
+        )
         return key
     except Exception as E:
         log.traceback_(E)
