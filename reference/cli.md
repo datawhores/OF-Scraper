@@ -370,6 +370,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 - Process media from posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- **Note:** On Fansly a timeline or message scan starts at this date instead of at the newest post, so the newer pages are not asked for; with `--after` only the pages of the range are. Walls (the Labels area) and purchases are scanned as without it.
 
 #### `--after`
 

@@ -289,6 +289,8 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Also reads:** `enable_auto_after`
 - When true and no `--after` is given, each area is scanned only from the newest previously scanned post, instead of from the start. Like and unlike actions and forced full scans still scan everything. `--no-cache` or cache-mode `disabled` turns it off for the run. The legacy key `advanced_options.enable_auto_after` is read when this key is missing.
 
+On Fansly download runs, the timeline and messages are paged newest first, and each finished scan of an area records the newest post it saw. The next run stops at the first page whose posts are all at or below that post, once no older post has media left to download. Only a scan that reached the last page (or stopped by this rule) in a run that was not stopped records it, and only when the area is downloaded from; runs that need the whole list first (`--max-post-count`, the sort options) never use it. A full scan happens on the first run of a creator, when the account's access to the creator changed (subscribed, following or tier), with `--post-id` or `--force-all`, when the last full scan of the area is older than `FANSLY_FULL_SCAN_DAYS` days (default 7), and with the full-scan cases above. A post that appears later with an older date, and media added later to a post already scanned, are only found by a full scan: `--after 2000` forces one.
+
 ### `advanced_options.default_user_list`
 
 - **Default:** `"main"` · **Read by:** `get_default_userlist()` in `ofscraper/utils/config/data.py`

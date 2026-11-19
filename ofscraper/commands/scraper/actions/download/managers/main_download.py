@@ -32,6 +32,7 @@ from ofscraper.commands.scraper.actions.download.utils.chunk import (
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
 from ofscraper.commands.scraper.actions.download.utils.refresh import (
     refresh_media_link,
+    refused_url,
 )
 from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
 
@@ -83,7 +84,9 @@ class MainDownloadManager(DownloadManager):
         except Exception as E:
             # a signed link answers 403 after an IP change; retrying it can't
             # help (#462), but a newly fetched link can
-            if not is_signed_cdn_forbidden(E) or not await refresh_media_link(ele):
+            if not is_signed_cdn_forbidden(E) or not await refresh_media_link(
+                ele, link=refused_url(E) or ele.url
+            ):
                 raise
         # once per item: the .part is kept and resumed with the new link
         return await self._main_download_attempts(c, ele)
@@ -210,7 +213,7 @@ class MainDownloadManager(DownloadManager):
                 data = self._reply_data(
                     r, total, resume_size, validator, common_logs.get_medialog(ele)
                 )
-                content_type = r.headers.get("content-type").split("/")[-1]
+                content_type = common.extension_for(r.headers.get("content-type"))
                 content_type = content_type or common.get_unknown_content_type(ele)
                 if not placeholderObj:
                     placeholderObj = await placeholder.Placeholders(
@@ -395,7 +398,8 @@ class MainDownloadManager(DownloadManager):
             data,
         )
 
-        content_type = data.get("content-type").split("/")[-1]
+        content_type = common.extension_for(data.get("content-type"))
+        content_type = content_type or common.get_unknown_content_type(ele)
         total = self._saved_total(data)
         resume_size = self._get_resume_size(tempholderObj)
         resume_size = self._resume_cleaner(

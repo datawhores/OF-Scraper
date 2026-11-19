@@ -28,14 +28,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.after import get_after_pre_checks
+from ofscraper.data.api.common.pending import get_posts_missing_media
 from ofscraper.db.operations_.labels import get_all_labels_posts
-from ofscraper.db.operations_.media import (
-    get_media_ids_downloaded_model,
-    get_model_media_status,
-)
-from ofscraper.db.operations_.posts import get_deleted_post_ids
 import ofscraper.utils.cache.cache as cache
-import ofscraper.utils.const as const
 import ofscraper.sites as sites
 from ofscraper.sites.fansly import scrape as fansly_scrape
 
@@ -46,18 +41,7 @@ API = "Labels"
 @run
 @stop.fetching
 async def get_labels(model_id, c=None, username=None):
-    labels_ = await get_labels_data(model_id, c=c)
-    labels_ = (
-        labels_
-        if not settings.get_settings().label
-        else list(
-            filter(
-                lambda x: (x.get("name") or "").lower()
-                in settings.get_settings().label,
-                labels_,
-            )
-        )
-    )
+    labels_ = only_asked_labels(await get_labels_data(model_id, c=c))
     known = await get_known_label_posts(labels_, model_id, username)
     # Check mode (no username) always scans fully and leaves the marks alone.
     data = await get_posts_for_labels(
@@ -66,6 +50,18 @@ async def get_labels(model_id, c=None, username=None):
     update_check(data, model_id, None, API)
 
     return data
+
+
+def only_asked_labels(labels_):
+    """With --label, only the labels named."""
+    if not settings.get_settings().label:
+        return labels_
+    return list(
+        filter(
+            lambda x: (x.get("name") or "").lower() in settings.get_settings().label,
+            labels_,
+        )
+    )
 
 
 # Labels whose scan reached the end in this run, per model. Their "finished"
@@ -108,35 +104,6 @@ def decode_label_name(label):
 
 def label_complete_key(model_id, label_id):
     return f"labels_v2_complete_{model_id}_{label_id}"
-
-
-async def get_posts_missing_media(model_id, username):
-    """
-    Post ids that still have media to download, filtered the same way as the
-    timeline's get_after: not downloaded, not deleted, not locked, and of a
-    media type this run downloads.
-    """
-    rows = await get_model_media_status(model_id=model_id, username=username)
-    if not rows:
-        return set()
-    downloaded = await get_media_ids_downloaded_model(
-        model_id=model_id, username=username
-    )
-    deleted = await get_deleted_post_ids(model_id=model_id, username=username)
-    active_media = settings.get_settings().mediatypes or ["Videos", "Audios", "Images"]
-    active_mapped = {const.MEDIA_ALIASES.get(m.lower(), m.lower()) for m in active_media}
-    return {
-        str(x.get("post_id"))
-        for x in rows
-        if x.get("downloaded") != 1
-        and x.get("media_id") not in downloaded
-        and x.get("post_id") not in deleted
-        and x.get("unlocked") != 0
-        and const.MEDIA_ALIASES.get(
-            str(x.get("media_type", "")).lower(), str(x.get("media_type", "")).lower()
-        )
-        in active_mapped
-    }
 
 
 async def get_known_label_posts(labels, model_id, username):

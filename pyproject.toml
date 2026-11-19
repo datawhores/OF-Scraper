@@ -15,7 +15,7 @@ dependencies = [
   "aioprocessing~=2.0.1",
   "arrow~=1.4.0",
   "browser-cookie3==0.20.1",
-  "beautifulsoup4~=4.14.3",
+  "beautifulsoup4>=4.14.3,<4.16.0",
   "certifi>=2026.10.18",
   "click>=8.5.1,<9",
   "cloup~=4.0.0",
@@ -54,7 +54,7 @@ test = [
   "random-emoji~=1.0.15",
   "pytest-mock~=3.17.0",
   # exact pin: a new ruff release can add findings to the same rules
-  "ruff==0.17.4",
+  "ruff==0.17.5",
 ]
 docs = ["sphinx-argparse>=0.5.2,<0.7.0"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]

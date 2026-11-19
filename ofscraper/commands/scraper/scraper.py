@@ -37,6 +37,8 @@ from ofscraper.scripts.after_download_action_script import after_download_action
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
 import ofscraper.sites.fansly.live as live
+import ofscraper.sites.fansly.pipeline as fansly_pipeline
+import ofscraper.sites as sites
 
 log = logging.getLogger("shared")
 
@@ -86,6 +88,20 @@ class scraperManager(CommandManager):
 
                 final_action()
 
+    async def _process_user(self, ele, c, action_func):
+        # Fansly downloads each page as it is scanned (sites/fansly/pipeline.py)
+        if fansly_pipeline.applies():
+            self._data_helper(ele)
+            collection = None
+            if fansly_pipeline.ordered():
+                # the whole list first; links are fetched again per chunk
+                collection = await post_media_process(ele, c=c)
+                if collection is None:
+                    return
+            await fansly_pipeline.run(ele, c, collection)
+            return
+        await super()._process_user(ele, c, action_func)
+
     @run_async
     async def _process_users_actions_user_first(self, userdata, session):
         data = await self._gather_user_first_data(
@@ -133,6 +149,10 @@ class scraperManager(CommandManager):
                             media=media,
                             model_id=model_id,
                             username=username,
+                            # Fansly: silent videos to check again (silent.py)
+                            all_media=(
+                                postcollection.all_media if sites.is_fansly() else None
+                            ),
                         )
                         manager.Manager.stats_manager.update_and_print_stats(
                             username, "download", media

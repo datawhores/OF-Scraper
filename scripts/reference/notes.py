@@ -19,6 +19,7 @@ Style:
 # extra notes for options, keyed by the option's dest (the name in the args)
 CLI = {
     "redownload": "Sets `force_all`, `--after 2000` and `--before` tomorrow for the run. Every item is scanned and downloaded again. The merge happens in `merged_settings`.",
+    "before": "On Fansly a timeline or message scan starts at this date instead of at the newest post, so the newer pages are not asked for; with `--after` only the pages of the range are. Walls (the Labels area) and purchases are scanned as without it.",
     "text_only": "Also turns on `--text`. Text files are written and media is skipped.",
     "original": "Turns off file name truncation for the run, whatever `file_options.truncation_default` says.",
     "no_auto_resume": "Turns `download_options.auto_resume` off for the run.",
@@ -60,9 +61,10 @@ Each kind of request has its own set of values. Rate limits use `<KIND>_SESSION_
 
 How the wait changes:
 - The wait starts at `*_MIN_SLEEP`.
-- On the first error, if `*_MIN_SLEEP` is 0, the wait becomes `*_SLEEP_INIT` seconds (or 1 if that is 0). Otherwise the first error already multiplies the wait.
-- Each error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`. This happens only if `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the last change, since the program started, or since the last per-creator reset.
-- After `*_SLEEP_DECAY_THRESHOLD` seconds without a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- The first error sets the wait to `*_SLEEP_INIT` seconds (or 1 if that is 0). If that is not above `*_MIN_SLEEP`, the wait becomes `*_MIN_SLEEP` times `*_SLEEP_INCREASE_FACTOR` instead.
+- A later error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, in two cases: the failed request was sent after the wait was last raised (it was refused even at the current pace), or `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the wait was last raised. Other errors belong to the same burst and change nothing.
+- After `*_SLEEP_DECAY_THRESHOLD` seconds without an error or a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- A request that gets a 429 is tried up to `RATE_LIMIT_NUM_TRIES` times instead of its usual number, so its tries last long enough for the growing wait to outlast the limit.
 
 How the waits combine:
 - `*_MIN_SLEEP` is also the minimum gap kept between requests.
@@ -136,7 +138,9 @@ ENV = {
     "modelPrompt": "Menu entries for filtering and sorting the creator list interactively. Not read from the environment.",
     "LOG_SUBPROCESS_LEVEL": "Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, and it is still read.",
     "MPD_SESSION_SLEEP_INIT": "Defined but not read anywhere. MPD requests use the standard `SESSION_*` values.",
-    "FANSLY_STREAM_SEGMENTS": "How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally; fetched files are kept so a stopped download resumes (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another, with no resume. Streams the local path can't handle still go to ffmpeg: HLS that is live (no `#EXT-X-ENDLIST`) or uses encryption other than AES-128, and DASH that is protected, live, has more than one period or uses unsupported addressing. The number of files downloaded at once is still set by `download_sems`.",
+    "SILENT_RECHECKS": "How many times a Fansly video saved without sound, because the CDN refused its separate audio track and the direct file couldn't give the sound, is checked again (`download/utils/silent.py`). A check asks for the audio playlist and its first file with new links, at the end of the run that saved it and once on each later download run of that creator that includes videos. If the audio is accepted, the video is downloaded again and replaces the silent file once the new copy passes its checks. After this many refused checks the video is kept as it is. A check that fails for another reason (network, rate limit) doesn't count. 0 turns the checks off.",
+    "FANSLY_STREAM_SEGMENTS":"How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally; fetched files are kept so a stopped download resumes (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another, with no resume. Streams the local path can't handle still go to ffmpeg: HLS that is live (no `#EXT-X-ENDLIST`) or uses encryption other than AES-128, and DASH that is protected, live, has more than one period or uses unsupported addressing. The number of files downloaded at once is still set by `download_sems`.",
+    "FANSLY_FULL_SCAN_DAYS": "How often, in days, a Fansly download run scans the timeline and messages of a creator in full. Between full scans a run stops an area where the last finished scan began (see `advanced_options.incremental_downloads`). A post that appears later with an older date is found by the next full scan, so this is the longest it can be missed. 0 scans fully every time (`ofscraper/sites/fansly/incremental.py`).",
     "DISK_SPACE_CHECK_PATH": "The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be.",
 }
 
@@ -161,11 +165,11 @@ ENV_DIRECT = {
 
 # (regular expression for the key, description); the first match is used
 ENV_PATTERNS = [
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_TIME_DIFF", "Seconds that must pass since the last change before another error raises the wait."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_TIME_DIFF", "Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_MAX", "The longest backoff wait, in seconds."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_FACTOR", "Each further error multiplies the wait by this."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without a change after which the wait shrinks."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without an error or a change after which the wait shrinks."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_FACTOR", "The wait is divided by this when it shrinks."),
     (r"[A-Z_]*SESSION(_403)?_MIN_SLEEP", "The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here."),
     (r"[A-Z_]+_SUBPROCESS_LEVEL", "Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off."),
@@ -216,7 +220,7 @@ PLACEHOLDERS = {
     "text": "For media: the post text, cleaned and truncated to `textlength`. It falls back to the file name, the date, or the media id. For text files: the sanitised, truncated post text.",
     "config": "An object: the parsed `config.json` as a dict. Use item syntax, for example `{config[file_options][date]}`. Attribute access does not work.",
     "args": "An object: the parsed command-line arguments (an `AutoDotDict`). Use attribute access, for example `{args.posts}`. A missing name gives `None`.",
-    "ext": "The file extension without the dot, for example `mp4` or `jpg`. It is `txt` for text files.",
+    "ext": "The file extension without the dot, for example `mp4` or `jpeg`. It comes from the download's content type: usually its subtype, but the usual extension where the subtype isn't one (`video/quicktime` is `mov`, `video/x-matroska` is `mkv`). A missing or generic type (`application/octet-stream`) gives `mp4` for videos and `jpg` for images. It is `txt` for text files.",
     "current_price": "`Free` if the creator's final current price is 0, else `Paid`. It is `MODEL_PRICE_PLACEHOLDER` (`Unknown_Price` by default) when the model isn't loaded.",
     "regular_price": "`Free` or `Paid`, from the creator's final regular price, or `MODEL_PRICE_PLACEHOLDER`.",
     "promo_price": "`Free` or `Paid`, from the creator's final promo price, or `MODEL_PRICE_PLACEHOLDER`.",
@@ -296,7 +300,7 @@ CONFIG = {
     "advanced_options.temp_dir": "The root folder for in-progress (`.part`) downloads. It is laid out with `dir_format`, like the final location. When unset, temp files are written under `save_location`. Surrounding quotes are stripped.",
     "advanced_options.remove_hash_match": "`true` hashes every download and deletes later files whose hash matches an earlier one for the same creator and media type. `false` only records hashes. `null` skips hashing.",
     "advanced_options.infinite_loop_action_mode": "When true, action mode (`--action`) asks after each run whether to continue, and offers another action instead of exiting.",
-    "advanced_options.incremental_downloads": "When true and no `--after` is given, each area is scanned only from the newest previously scanned post, instead of from the start. Like and unlike actions and forced full scans still scan everything. `--no-cache` or cache-mode `disabled` turns it off for the run. The legacy key `advanced_options.enable_auto_after` is read when this key is missing.",
+    "advanced_options.incremental_downloads": "When true and no `--after` is given, each area is scanned only from the newest previously scanned post, instead of from the start. Like and unlike actions and forced full scans still scan everything. `--no-cache` or cache-mode `disabled` turns it off for the run. The legacy key `advanced_options.enable_auto_after` is read when this key is missing.\n\nOn Fansly download runs, the timeline and messages are paged newest first, and each finished scan of an area records the newest post it saw. The next run stops at the first page whose posts are all at or below that post, once no older post has media left to download. Only a scan that reached the last page (or stopped by this rule) in a run that was not stopped records it, and only when the area is downloaded from; runs that need the whole list first (`--max-post-count`, the sort options) never use it. A full scan happens on the first run of a creator, when the account's access to the creator changed (subscribed, following or tier), with `--post-id` or `--force-all`, when the last full scan of the area is older than `FANSLY_FULL_SCAN_DAYS` days (default 7), and with the full-scan cases above. A post that appears later with an older date, and media added later to a post already scanned, are only found by a full scan: `--after 2000` forces one.",
     "advanced_options.default_user_list": "The OnlyFans user lists to select creators from when `-ul`/`--user-list` is not given. It is a list or a comma-separated string. The reserved names `ofscraper.main`, `ofscraper.active` and `ofscraper.expired` mean all, active and expired subscriptions. Names are matched case-insensitively.",
     "advanced_options.default_black_list": "The OnlyFans user lists whose members are excluded from selection when `-bl`/`--black-list` is not given. It is a list or a comma-separated string. Names are matched case-insensitively.",
     "advanced_options.logs_expire_time": "The age in hours after which `.log` files in the logging directory are deleted at cleanup, along with empty log folders. 0 disables it. Nothing is deleted unless `rotate_logs` is true.",

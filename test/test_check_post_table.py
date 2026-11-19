@@ -15,17 +15,23 @@ class _Settings(SimpleNamespace):
         return None
 
 
-def _media_obj(mid, pid, mtype, duration=None):
+def _media_obj(mid, pid, mtype, duration=None, canview=None):
     return SimpleNamespace(
         id=mid,
         post_id=pid,
         mediatype=mtype,
         numeric_duration=duration,
         duration=duration,
+        canview=canview,
     )
 
 
 def _post_obj(pid, price, opened, items, date="2024-05-01 12:00:00", text="bundle"):
+    # unless a test says otherwise, an item can be viewed when its post is
+    # bought or free, as OnlyFans reports it for a current subscription
+    for m in items:
+        if m.canview is None:
+            m.canview = bool(opened) or price == 0
     return SimpleNamespace(
         id=pid,
         price=price,
@@ -316,13 +322,13 @@ def test_post_audio_columns_hidden_by_default_and_columns_tab_v(stub_env, monkey
 
             hidden_cols = {"audios", "new_audios", "audio_length", "new_audio_length", "cost_per_audio", "new_cost_per_audio"}
             assert set(app.post_table.ordered_columns_keys) & hidden_cols == set()
-            assert "other_posts_with_media" not in app.table.ordered_columns_keys
+            assert "post_id" not in app.table.ordered_columns_keys
 
-            # Pressing h reveals extra columns on MediaTable (including other_posts_with_media)
+            # Pressing h reveals extra columns on MediaTable (including post_id)
             # without adding audio columns to PostTable
             await pilot.press("h")
             await pilot.pause()
-            assert "other_posts_with_media" in app.table.ordered_columns_keys
+            assert "post_id" in app.table.ordered_columns_keys
             assert set(app.post_table.ordered_columns_keys) & hidden_cols == set()
 
             # Click Columns (v) button on PostTable to open picker, enable Post Audio columns, and press v to return (session-only)
@@ -359,6 +365,8 @@ def test_post_audio_columns_hidden_by_default_and_columns_tab_v(stub_env, monkey
 
 
 def test_media_default_columns_and_protected_download_type(stub_env):
+    # a locked item with no link shows "protected", but only on screen: the
+    # row keeps "unknown", which the filters and the cart guards test for
     sample_row = {
         "index": 1,
         "number": 1,
@@ -379,25 +387,34 @@ def test_media_default_columns_and_protected_download_type(stub_env):
         "text": "locked video",
     }
 
+    # an unlocked item with no link is not protected, just unknown
+    open_row = dict(
+        sample_row,
+        index=2,
+        number=2,
+        download_cart="Unknown",
+        unlocked=True,
+        media_id=902,
+    )
+
     async def drive():
         app = table_app.InputApp()
-        app.table_data = [sample_row]
+        app.table_data = [sample_row, open_row]
         app.post_data = []
         app._sortkey = None
         app._reverse = False
         async with app.run_test(size=(250, 60)) as pilot:
             await pilot.pause()
 
+            # this fork's defaults (#470): ids and details hidden, type shown
             visible_default = set(app.table.ordered_columns_keys)
-            assert {"post_id", "media_id", "responsetype"} <= visible_default
-            assert "download_type" not in visible_default
+            assert not {"post_id", "media_id", "responsetype"} & visible_default
+            assert "download_type" in visible_default
 
-            # Toggle extra columns (h) to reveal download_type and verify "unknown" -> "protected"
-            await pilot.press("h")
-            await pilot.pause()
-            assert "download_type" in app.table.ordered_columns_keys
-            # "unknown" -> "protected" is caught when dicts are built into the UI.
-            assert True
+            assert app.table.get_cell("1", "download_type").plain == "protected"
+            assert app.table.get_cell("2", "download_type").plain == "unknown"
+            assert sample_row["download_type"] == "unknown"
+            assert open_row["download_type"] == "unknown"
 
     asyncio.run(drive())
 
@@ -437,5 +454,169 @@ def test_post_table_latest_date_filter_visible_and_works(stub_env, monkeypatch):
             await pilot.click("#post_filter")
             await pilot.pause()
             assert [r["post_id"] for r in app._filtered_post_rows] == [401]
+
+    asyncio.run(drive())
+
+
+# --- fixes made while bringing upstream #685 in ---
+
+
+class _CountingRows(list):
+    """Media rows that count how often they are walked through."""
+
+    def __init__(self, rows):
+        super().__init__(rows)
+        self.walks = 0
+
+    def __iter__(self):
+        self.walks += 1
+        return super().__iter__()
+
+
+def test_post_cart_sync_walks_the_media_rows_once(stub_env, monkeypatch):
+    # walking every media row for every post took 15 s at startup with 6,000
+    # posts and 18,000 media rows
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    posts = [
+        _post_obj(1000 + n, 0, 1, [_media_obj(n, 1000 + n, "images")])
+        for n in range(1, 51)
+    ]
+    app = table_app.InputApp()
+    app.post_data = post_metrics.build_post_centric_rows(posts, "creator_a", 1)
+    app.table_data = _CountingRows(
+        [_media_row(n, 1000 + n, n) for n in range(1, 51)]
+    )
+    app.table_data[0]["download_cart"] = "[added]"
+
+    app.sync_post_cart_states()
+
+    assert app.table_data.walks == 1
+    assert app.post_data[0]["download_cart"] == "[added (1/1)]"
+    assert {r["download_cart"] for r in app.post_data[1:]} == {"[]"}
+
+
+def test_a_post_that_cannot_be_viewed_is_locked_even_when_free(monkeypatch):
+    # an expired subscription: the post is free, but OnlyFans says canView
+    # false for its media
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    free_hidden = _post_obj(
+        10, 0, 0, [_media_obj(1, 10, "images", canview=False)], text="free"
+    )
+    paid = _post_obj(
+        20,
+        12.0,
+        0,
+        [_media_obj(1, 20, "images"), _media_obj(2, 20, "images")],
+        text="paid",
+    )
+
+    rows = post_metrics.build_post_centric_rows([free_hidden, paid], "creator_a", 1)
+
+    assert rows[0]["unlocked"] is False
+    assert rows[0]["download_cart"] == "Not Unlocked"
+    # media 1 isn't owned, so the paid post's two photos are both new
+    assert rows[1]["new_media"] == 2
+    assert rows[1]["new_cost_per_media"] == "$6.00"
+
+
+def test_a_free_preview_counts_as_owned_but_leaves_its_post_locked(monkeypatch):
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    teaser = _post_obj(
+        30,
+        10.0,
+        0,
+        [
+            _media_obj(5, 30, "images", canview=True),
+            _media_obj(6, 30, "videos", "0:00:10", canview=False),
+        ],
+    )
+
+    row = post_metrics.build_post_centric_rows([teaser], "creator_a", 1)[0]
+
+    assert row["unlocked"] is False
+    assert (row["total_media"], row["new_media"]) == (2, 1)
+
+
+def test_sorting_posts_by_number_keeps_each_creator_together(monkeypatch):
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    rows = []
+    for name, first in (("creator_a", 100), ("creator_b", 200)):
+        posts = [
+            _post_obj(first + n, 0, 1, [_media_obj(first + n, first + n, "images")])
+            for n in range(3)
+        ]
+        rows.extend(
+            post_metrics.build_post_centric_rows(
+                posts, name, 1, start_index=len(rows) + 1
+            )
+        )
+    app = table_app.InputApp()
+    app.post_data = list(reversed(rows))
+
+    app._post_reverse = False
+    app._post_sort_runner("number")
+    assert [(r["username"], r["number"]) for r in app.post_data] == [
+        ("creator_a", 1),
+        ("creator_a", 2),
+        ("creator_a", 3),
+        ("creator_b", 1),
+        ("creator_b", 2),
+        ("creator_b", 3),
+    ]
+
+
+def test_h_hides_saved_extra_columns_on_the_first_press(stub_env, monkeypatch):
+    # Save as Default stored the extra columns as showing while the h flag
+    # still said hidden, so the first h press added columns already there
+    cache_store = {
+        table_app.MEDIA_COLS_CACHE_KEY: list(table_app.get_col_names(show_extra=True)),
+        table_app.EXTRA_COLUMNS_CACHE_KEY: False,
+    }
+    monkeypatch.setattr(
+        table_app,
+        "cache",
+        SimpleNamespace(
+            get=lambda k, default=None: cache_store.get(k, default),
+            set=lambda k, v: cache_store.__setitem__(k, v),
+        ),
+    )
+
+    async def drive():
+        app = table_app.InputApp()
+        app.table_data = [_media_row(1, 101, 1)]
+        app.post_data = []
+        app._sortkey = None
+        app._reverse = False
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            assert table_app.EXTRA_COLUMNS <= set(app.table.ordered_columns_keys)
+            await pilot.press("h")
+            await pilot.pause()
+            assert not table_app.EXTRA_COLUMNS & set(app.table.ordered_columns_keys)
+
+    asyncio.run(drive())
+
+
+def test_posts_tab_hint_offers_only_keys_that_work_there(stub_env):
+    # o opens a folder from the media tab only
+    async def drive():
+        app = table_app.InputApp()
+        app.table_data = []
+        app.post_data = []
+        app._sortkey = None
+        app._reverse = False
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            hint = str(app.query_one("#post_table_instructions").render())
+            assert "(f)" in hint
+            assert "(o)" not in hint
 
     asyncio.run(drive())

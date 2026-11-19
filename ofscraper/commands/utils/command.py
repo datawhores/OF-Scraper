@@ -37,20 +37,24 @@ class CommandManager:
         async with session as c:
             for ele in userdata:
                 try:
-                    # reset user activity to initiial
-                    self._data_helper(ele)
-                    postcollection = await post_media_process(ele, c=c)
-                    if postcollection is None:
-                        continue  # the scrape failed and has said so
-                    self._avatar_helper(ele)
-                    # show progress bars/set string in action function
-                    await action_func(ele=ele, postcollection=postcollection)
+                    await self._process_user(ele, c, action_func)
                 except Exception as e:
                     log_user_failure(ele.name, e)
                     log.traceback_(f"failed with exception: {e}")
                     log.traceback_(traceback.format_exc())
                 finally:
                     progress_updater.activity.update_user(advance=1, visible=True)
+
+    async def _process_user(self, ele, c, action_func):
+        """Fetch one creator's data, then run the action on it."""
+        # reset user activity to initiial
+        self._data_helper(ele)
+        postcollection = await post_media_process(ele, c=c)
+        if postcollection is None:
+            return  # the scrape failed and has said so
+        self._avatar_helper(ele)
+        # show progress bars/set string in action function
+        await action_func(ele=ele, postcollection=postcollection)
 
     async def _gather_user_first_data(self, userdata: list, session, data_func):
         """

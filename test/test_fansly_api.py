@@ -456,12 +456,17 @@ def test_followed_accounts_are_paged_then_resolved(fansly, monkeypatch):
     assert [len(q["ids"].split(",")) for q in c.calls("account")] == [5, 2]
 
 
-def test_account_media_is_fetched_150_at_a_time():
+def test_account_media_is_fetched_100_at_a_time():
+    # as Fansly does: a call answers its first 100 ids and leaves out the rest
+    def answer(path, query):
+        return envelope([{"id": i} for i in query["ids"].split(",")[:100]])
+
     ids = [str(100000000000001000 + i) for i in range(301)]
-    c = FakeSession(lambda path, query: envelope([{"id": i} for i in query["ids"].split(",")]))
+    c = FakeSession(answer)
     out = asyncio.run(api.account_media(c, ids))
+    # every album image is answered: none is lost to a call that asked for too many
     assert [x["id"] for x in out] == ids
-    assert [len(q["ids"].split(",")) for q in c.calls("account/media")] == [150, 150, 1]
+    assert [len(q["ids"].split(",")) for q in c.calls("account/media")] == [100, 100, 100, 1]
 
 
 def test_purchases_become_paid_posts_of_that_creator():

@@ -170,10 +170,30 @@ def previous_download_filter(medialist, username=None, model_id=None):
         key=lambda item: (undated_first(item.post.date), item.id, item.count),
     )
 
+    media_ids = downloaded_media_ids(username=username, model_id=model_id)
     # Early Exit if forcing all
+    if media_ids is None:
+        return medialist
+
+    # Apply the filters to whichever pool we selected above
+    medialist = separate.separate_by_id(medialist, media_ids)
+    log.debug(
+        f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}"
+    )
+
+    medialist = separate.seperate_avatars(medialist)
+    log.debug("Removed previously downloaded avatars/headers")
+
+    log.debug(f"Final Number of media to download {len(medialist)} ")
+    return medialist
+
+
+def downloaded_media_ids(username=None, model_id=None):
+    """The media ids a run leaves out as already downloaded, or None when
+    --force-all downloads everything."""
     if settings.get_settings().force_all:
         log.info("forcing all media to be downloaded")
-        return medialist
+        return None
 
     # Determine the pool of already downloaded media. With
     # --retry-permanent-skips, the script's permanent skips aren't in it, so
@@ -201,18 +221,7 @@ def previous_download_filter(medialist, username=None, model_id=None):
         log.debug(
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )
-
-    # Apply the filters to whichever pool we selected above
-    medialist = separate.separate_by_id(medialist, media_ids)
-    log.debug(
-        f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}"
-    )
-
-    medialist = separate.seperate_avatars(medialist)
-    log.debug("Removed previously downloaded avatars/headers")
-
-    log.debug(f"Final Number of media to download {len(medialist)} ")
-    return medialist
+    return media_ids
 
 
 def media_id_filter(media):

@@ -14,6 +14,11 @@ class SelectField(Widget):
     SelectField SelectionList {
         height: auto;
     }
+    /* Vertical defaults to height 1fr, which inside an auto-height field
+       made each filter about 70 rows tall */
+    SelectField Vertical, SelectField Horizontal {
+        height: auto;
+    }
     """
 
     def __init__(self, name: str, classes=None, label: str | None = None) -> None:

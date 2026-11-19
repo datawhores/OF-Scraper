@@ -174,7 +174,7 @@ def composer():
                         "[bold ansi_blue]Post_Cart_Add:[/bold ansi_blue] Page (a) | All Filtered ([bold ansi_cyan]Shift+A[/bold ansi_cyan])\n"
                         "[bold ansi_green]Post_Cart_New:[/bold ansi_green] Page (e) | All New ([bold ansi_cyan]Shift+E[/bold ansi_cyan])\n"
                         "[bold ansi_red]Clear Cart:[/bold ansi_red] Page (c) | All Filtered ([bold ansi_cyan]Shift+C[/bold ansi_cyan]) | Nuke (x)\n"
-                        "[bold ansi_blue]Inspect Media:[/bold ansi_blue] Filter MediaTable by Post (f) | Open Folder (o)",
+                        "[bold ansi_blue]Inspect Media:[/bold ansi_blue] Filter MediaTable by Post (f)",
                         id="post_table_instructions",
                         markup=True,
                     )

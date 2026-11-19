@@ -39,7 +39,7 @@ def test_an_error_after_the_window_doubles_it():
     s = sleeper(min_sleep=0.5)
     s.toomany_req()
     # well past the 30 s window, never on its boundary
-    s._last_date = sm.arrow.now().shift(seconds=-60)
+    s._last_raise = sm.arrow.now().shift(seconds=-60)
     s.toomany_req()
     assert s.sleep == 5
 

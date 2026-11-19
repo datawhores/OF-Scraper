@@ -58,9 +58,10 @@ Each kind of request has its own set of values. Rate limits use `<KIND>_SESSION_
 
 How the wait changes:
 - The wait starts at `*_MIN_SLEEP`.
-- On the first error, if `*_MIN_SLEEP` is 0, the wait becomes `*_SLEEP_INIT` seconds (or 1 if that is 0). Otherwise the first error already multiplies the wait.
-- Each error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`. This happens only if `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the last change, since the program started, or since the last per-creator reset.
-- After `*_SLEEP_DECAY_THRESHOLD` seconds without a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- The first error sets the wait to `*_SLEEP_INIT` seconds (or 1 if that is 0). If that is not above `*_MIN_SLEEP`, the wait becomes `*_MIN_SLEEP` times `*_SLEEP_INCREASE_FACTOR` instead.
+- A later error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, in two cases: the failed request was sent after the wait was last raised (it was refused even at the current pace), or `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the wait was last raised. Other errors belong to the same burst and change nothing.
+- After `*_SLEEP_DECAY_THRESHOLD` seconds without an error or a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- A request that gets a 429 is tried up to `RATE_LIMIT_NUM_TRIES` times instead of its usual number, so its tries last long enough for the growing wait to outlast the limit.
 
 How the waits combine:
 - `*_MIN_SLEEP` is also the minimum gap kept between requests.
@@ -230,11 +231,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="session_sleep_init"></a>`SESSION_SLEEP_INIT` | `OFSC_SESSION_SLEEP_INIT` | `2.5` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="session_sleep_increase_time_diff"></a>`SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="session_sleep_init"></a>`SESSION_SLEEP_INIT` | `OFSC_SESSION_SLEEP_INIT` | `2.5` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="session_sleep_increase_time_diff"></a>`SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="session_sleep_max"></a>`SESSION_SLEEP_MAX` | `OFSC_SESSION_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="session_sleep_increase_factor"></a>`SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="session_sleep_decay_threshold"></a>`SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="session_sleep_decay_threshold"></a>`SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="session_sleep_decay_factor"></a>`SESSION_SLEEP_DECAY_FACTOR` | `OFSC_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="session_min_sleep"></a>`SESSION_MIN_SLEEP` | `OFSC_SESSION_MIN_SLEEP` | `0.5` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -242,11 +243,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="session_403_sleep_init"></a>`SESSION_403_SLEEP_INIT` | `OFSC_SESSION_403_SLEEP_INIT` | `15.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="session_403_sleep_increase_time_diff"></a>`SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="session_403_sleep_init"></a>`SESSION_403_SLEEP_INIT` | `OFSC_SESSION_403_SLEEP_INIT` | `15.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="session_403_sleep_increase_time_diff"></a>`SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="session_403_sleep_max"></a>`SESSION_403_SLEEP_MAX` | `OFSC_SESSION_403_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="session_403_sleep_increase_factor"></a>`SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="session_403_sleep_decay_threshold"></a>`SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without a change after which the wait shrinks. |
+| <a id="session_403_sleep_decay_threshold"></a>`SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="session_403_sleep_decay_factor"></a>`SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="session_403_min_sleep"></a>`SESSION_403_MIN_SLEEP` | `OFSC_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -254,11 +255,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="download_session_sleep_init"></a>`DOWNLOAD_SESSION_SLEEP_INIT` | `OFSC_DOWNLOAD_SESSION_SLEEP_INIT` | `0.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="download_session_sleep_increase_time_diff"></a>`DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="download_session_sleep_init"></a>`DOWNLOAD_SESSION_SLEEP_INIT` | `OFSC_DOWNLOAD_SESSION_SLEEP_INIT` | `0.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="download_session_sleep_increase_time_diff"></a>`DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DOWNLOAD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="download_session_sleep_max"></a>`DOWNLOAD_SESSION_SLEEP_MAX` | `OFSC_DOWNLOAD_SESSION_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="download_session_sleep_increase_factor"></a>`DOWNLOAD_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_DOWNLOAD_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="download_session_sleep_decay_threshold"></a>`DOWNLOAD_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_DOWNLOAD_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="download_session_sleep_decay_threshold"></a>`DOWNLOAD_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_DOWNLOAD_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="download_session_sleep_decay_factor"></a>`DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_DOWNLOAD_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="download_session_min_sleep"></a>`DOWNLOAD_SESSION_MIN_SLEEP` | `OFSC_DOWNLOAD_SESSION_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -266,11 +267,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="download_session_403_sleep_init"></a>`DOWNLOAD_SESSION_403_SLEEP_INIT` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_INIT` | `15.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="download_session_403_sleep_increase_time_diff"></a>`DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `80.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="download_session_403_sleep_init"></a>`DOWNLOAD_SESSION_403_SLEEP_INIT` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_INIT` | `15.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="download_session_403_sleep_increase_time_diff"></a>`DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `80.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="download_session_403_sleep_max"></a>`DOWNLOAD_SESSION_403_SLEEP_MAX` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="download_session_403_sleep_increase_factor"></a>`DOWNLOAD_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="download_session_403_sleep_decay_threshold"></a>`DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `70.0` | Seconds without a change after which the wait shrinks. |
+| <a id="download_session_403_sleep_decay_threshold"></a>`DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `70.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="download_session_403_sleep_decay_factor"></a>`DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_DOWNLOAD_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="download_session_403_min_sleep"></a>`DOWNLOAD_SESSION_403_MIN_SLEEP` | `OFSC_DOWNLOAD_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -278,11 +279,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdm_session_sleep_init"></a>`CDM_SESSION_SLEEP_INIT` | `OFSC_CDM_SESSION_SLEEP_INIT` | `0.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="cdm_session_sleep_increase_time_diff"></a>`CDM_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_CDM_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="cdm_session_sleep_init"></a>`CDM_SESSION_SLEEP_INIT` | `OFSC_CDM_SESSION_SLEEP_INIT` | `0.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="cdm_session_sleep_increase_time_diff"></a>`CDM_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_CDM_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="cdm_session_sleep_max"></a>`CDM_SESSION_SLEEP_MAX` | `OFSC_CDM_SESSION_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="cdm_session_sleep_increase_factor"></a>`CDM_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_CDM_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="cdm_session_sleep_decay_threshold"></a>`CDM_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_CDM_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="cdm_session_sleep_decay_threshold"></a>`CDM_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_CDM_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="cdm_session_sleep_decay_factor"></a>`CDM_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_CDM_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="cdm_session_min_sleep"></a>`CDM_SESSION_MIN_SLEEP` | `OFSC_CDM_SESSION_MIN_SLEEP` | `1.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -290,11 +291,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdm_session_403_sleep_init"></a>`CDM_SESSION_403_SLEEP_INIT` | `OFSC_CDM_SESSION_403_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="cdm_session_403_sleep_increase_time_diff"></a>`CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="cdm_session_403_sleep_init"></a>`CDM_SESSION_403_SLEEP_INIT` | `OFSC_CDM_SESSION_403_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="cdm_session_403_sleep_increase_time_diff"></a>`CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_CDM_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="cdm_session_403_sleep_max"></a>`CDM_SESSION_403_SLEEP_MAX` | `OFSC_CDM_SESSION_403_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="cdm_session_403_sleep_increase_factor"></a>`CDM_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_CDM_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="cdm_session_403_sleep_decay_threshold"></a>`CDM_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_CDM_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without a change after which the wait shrinks. |
+| <a id="cdm_session_403_sleep_decay_threshold"></a>`CDM_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_CDM_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="cdm_session_403_sleep_decay_factor"></a>`CDM_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_CDM_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="cdm_session_403_min_sleep"></a>`CDM_SESSION_403_MIN_SLEEP` | `OFSC_CDM_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -302,11 +303,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="like_session_sleep_init"></a>`LIKE_SESSION_SLEEP_INIT` | `OFSC_LIKE_SESSION_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="like_session_sleep_increase_time_diff"></a>`LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF` | `4.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="like_session_sleep_init"></a>`LIKE_SESSION_SLEEP_INIT` | `OFSC_LIKE_SESSION_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="like_session_sleep_increase_time_diff"></a>`LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_LIKE_SESSION_SLEEP_INCREASE_TIME_DIFF` | `4.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="like_session_sleep_max"></a>`LIKE_SESSION_SLEEP_MAX` | `OFSC_LIKE_SESSION_SLEEP_MAX` | `120.0` | The longest backoff wait, in seconds. |
 | <a id="like_session_sleep_increase_factor"></a>`LIKE_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_LIKE_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="like_session_sleep_decay_threshold"></a>`LIKE_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_LIKE_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="like_session_sleep_decay_threshold"></a>`LIKE_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_LIKE_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="like_session_sleep_decay_factor"></a>`LIKE_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_LIKE_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="like_session_min_sleep"></a>`LIKE_SESSION_MIN_SLEEP` | `OFSC_LIKE_SESSION_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -314,11 +315,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="like_session_403_sleep_init"></a>`LIKE_SESSION_403_SLEEP_INIT` | `OFSC_LIKE_SESSION_403_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="like_session_403_sleep_increase_time_diff"></a>`LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `4.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="like_session_403_sleep_init"></a>`LIKE_SESSION_403_SLEEP_INIT` | `OFSC_LIKE_SESSION_403_SLEEP_INIT` | `8.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="like_session_403_sleep_increase_time_diff"></a>`LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_LIKE_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `4.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="like_session_403_sleep_max"></a>`LIKE_SESSION_403_SLEEP_MAX` | `OFSC_LIKE_SESSION_403_SLEEP_MAX` | `120.0` | The longest backoff wait, in seconds. |
 | <a id="like_session_403_sleep_increase_factor"></a>`LIKE_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_LIKE_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="like_session_403_sleep_decay_threshold"></a>`LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without a change after which the wait shrinks. |
+| <a id="like_session_403_sleep_decay_threshold"></a>`LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_LIKE_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="like_session_403_sleep_decay_factor"></a>`LIKE_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_LIKE_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="like_session_403_min_sleep"></a>`LIKE_SESSION_403_MIN_SLEEP` | `OFSC_LIKE_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -326,11 +327,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="metadata_session_sleep_init"></a>`METADATA_SESSION_SLEEP_INIT` | `OFSC_METADATA_SESSION_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="metadata_session_sleep_increase_time_diff"></a>`METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF` | `35.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="metadata_session_sleep_init"></a>`METADATA_SESSION_SLEEP_INIT` | `OFSC_METADATA_SESSION_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="metadata_session_sleep_increase_time_diff"></a>`METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_METADATA_SESSION_SLEEP_INCREASE_TIME_DIFF` | `35.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="metadata_session_sleep_max"></a>`METADATA_SESSION_SLEEP_MAX` | `OFSC_METADATA_SESSION_SLEEP_MAX` | `60.0` | The longest backoff wait, in seconds. |
 | <a id="metadata_session_sleep_increase_factor"></a>`METADATA_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_METADATA_SESSION_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="metadata_session_sleep_decay_threshold"></a>`METADATA_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_METADATA_SESSION_SLEEP_DECAY_THRESHOLD` | `35.0` | Seconds without a change after which the wait shrinks. |
+| <a id="metadata_session_sleep_decay_threshold"></a>`METADATA_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_METADATA_SESSION_SLEEP_DECAY_THRESHOLD` | `35.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="metadata_session_sleep_decay_factor"></a>`METADATA_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_METADATA_SESSION_SLEEP_DECAY_FACTOR` | `2.0` | The wait is divided by this when it shrinks. |
 | <a id="metadata_session_min_sleep"></a>`METADATA_SESSION_MIN_SLEEP` | `OFSC_METADATA_SESSION_MIN_SLEEP` | `0.5` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -338,11 +339,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="metadata_session_403_sleep_init"></a>`METADATA_SESSION_403_SLEEP_INIT` | `OFSC_METADATA_SESSION_403_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="metadata_session_403_sleep_increase_time_diff"></a>`METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `35.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="metadata_session_403_sleep_init"></a>`METADATA_SESSION_403_SLEEP_INIT` | `OFSC_METADATA_SESSION_403_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="metadata_session_403_sleep_increase_time_diff"></a>`METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_METADATA_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `35.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="metadata_session_403_sleep_max"></a>`METADATA_SESSION_403_SLEEP_MAX` | `OFSC_METADATA_SESSION_403_SLEEP_MAX` | `60.0` | The longest backoff wait, in seconds. |
 | <a id="metadata_session_403_sleep_increase_factor"></a>`METADATA_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_METADATA_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="metadata_session_403_sleep_decay_threshold"></a>`METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD` | `30.0` | Seconds without a change after which the wait shrinks. |
+| <a id="metadata_session_403_sleep_decay_threshold"></a>`METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_METADATA_SESSION_403_SLEEP_DECAY_THRESHOLD` | `30.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="metadata_session_403_sleep_decay_factor"></a>`METADATA_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_METADATA_SESSION_403_SLEEP_DECAY_FACTOR` | `2.0` | The wait is divided by this when it shrinks. |
 | <a id="metadata_session_403_min_sleep"></a>`METADATA_SESSION_403_MIN_SLEEP` | `OFSC_METADATA_SESSION_403_MIN_SLEEP` | `2.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -350,11 +351,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="discord_session_sleep_init"></a>`DISCORD_SESSION_SLEEP_INIT` | `OFSC_DISCORD_SESSION_SLEEP_INIT` | `5.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="discord_session_sleep_increase_time_diff"></a>`DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="discord_session_sleep_init"></a>`DISCORD_SESSION_SLEEP_INIT` | `OFSC_DISCORD_SESSION_SLEEP_INIT` | `5.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="discord_session_sleep_increase_time_diff"></a>`DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DISCORD_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="discord_session_sleep_max"></a>`DISCORD_SESSION_SLEEP_MAX` | `OFSC_DISCORD_SESSION_SLEEP_MAX` | `60.0` | The longest backoff wait, in seconds. |
 | <a id="discord_session_sleep_increase_factor"></a>`DISCORD_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_DISCORD_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="discord_session_sleep_decay_threshold"></a>`DISCORD_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_DISCORD_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="discord_session_sleep_decay_threshold"></a>`DISCORD_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_DISCORD_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="discord_session_sleep_decay_factor"></a>`DISCORD_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_DISCORD_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="discord_session_min_sleep"></a>`DISCORD_SESSION_MIN_SLEEP` | `OFSC_DISCORD_SESSION_MIN_SLEEP` | `2.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -362,11 +363,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="discord_session_403_sleep_init"></a>`DISCORD_SESSION_403_SLEEP_INIT` | `OFSC_DISCORD_SESSION_403_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="discord_session_403_sleep_increase_time_diff"></a>`DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="discord_session_403_sleep_init"></a>`DISCORD_SESSION_403_SLEEP_INIT` | `OFSC_DISCORD_SESSION_403_SLEEP_INIT` | `4.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="discord_session_403_sleep_increase_time_diff"></a>`DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_DISCORD_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="discord_session_403_sleep_max"></a>`DISCORD_SESSION_403_SLEEP_MAX` | `OFSC_DISCORD_SESSION_403_SLEEP_MAX` | `300.0` | The longest backoff wait, in seconds. |
 | <a id="discord_session_403_sleep_increase_factor"></a>`DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_DISCORD_SESSION_403_SLEEP_INCREASE_FACTOR` | `4.0` | Each further error multiplies the wait by this. |
-| <a id="discord_session_403_sleep_decay_threshold"></a>`DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `60.0` | Seconds without a change after which the wait shrinks. |
+| <a id="discord_session_403_sleep_decay_threshold"></a>`DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_DISCORD_SESSION_403_SLEEP_DECAY_THRESHOLD` | `60.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="discord_session_403_sleep_decay_factor"></a>`DISCORD_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_DISCORD_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="discord_session_403_min_sleep"></a>`DISCORD_SESSION_403_MIN_SLEEP` | `OFSC_DISCORD_SESSION_403_MIN_SLEEP` | `30.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -374,11 +375,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="subscription_session_sleep_init"></a>`SUBSCRIPTION_SESSION_SLEEP_INIT` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_INIT` | `1.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="subscription_session_sleep_increase_time_diff"></a>`SUBSCRIPTION_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="subscription_session_sleep_init"></a>`SUBSCRIPTION_SESSION_SLEEP_INIT` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_INIT` | `1.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="subscription_session_sleep_increase_time_diff"></a>`SUBSCRIPTION_SESSION_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_INCREASE_TIME_DIFF` | `30.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="subscription_session_sleep_max"></a>`SUBSCRIPTION_SESSION_SLEEP_MAX` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="subscription_session_sleep_increase_factor"></a>`SUBSCRIPTION_SESSION_SLEEP_INCREASE_FACTOR` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_INCREASE_FACTOR` | `2.0` | Each further error multiplies the wait by this. |
-| <a id="subscription_session_sleep_decay_threshold"></a>`SUBSCRIPTION_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without a change after which the wait shrinks. |
+| <a id="subscription_session_sleep_decay_threshold"></a>`SUBSCRIPTION_SESSION_SLEEP_DECAY_THRESHOLD` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_DECAY_THRESHOLD` | `120.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="subscription_session_sleep_decay_factor"></a>`SUBSCRIPTION_SESSION_SLEEP_DECAY_FACTOR` | `OFSC_SUBSCRIPTION_SESSION_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="subscription_session_min_sleep"></a>`SUBSCRIPTION_SESSION_MIN_SLEEP` | `OFSC_SUBSCRIPTION_SESSION_MIN_SLEEP` | `0.5` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -386,11 +387,11 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="subscription_session_403_sleep_init"></a>`SUBSCRIPTION_SESSION_403_SLEEP_INIT` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_INIT` | `2.0` | The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0. |
-| <a id="subscription_session_403_sleep_increase_time_diff"></a>`SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the last change before another error raises the wait. |
+| <a id="subscription_session_403_sleep_init"></a>`SUBSCRIPTION_SESSION_403_SLEEP_INIT` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_INIT` | `2.0` | The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead. |
+| <a id="subscription_session_403_sleep_increase_time_diff"></a>`SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_TIME_DIFF` | `60.0` | Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once. |
 | <a id="subscription_session_403_sleep_max"></a>`SUBSCRIPTION_SESSION_403_SLEEP_MAX` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_MAX` | `180.0` | The longest backoff wait, in seconds. |
 | <a id="subscription_session_403_sleep_increase_factor"></a>`SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_FACTOR` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_INCREASE_FACTOR` | `1.5` | Each further error multiplies the wait by this. |
-| <a id="subscription_session_403_sleep_decay_threshold"></a>`SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without a change after which the wait shrinks. |
+| <a id="subscription_session_403_sleep_decay_threshold"></a>`SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD` | `65.0` | Seconds without an error or a change after which the wait shrinks. |
 | <a id="subscription_session_403_sleep_decay_factor"></a>`SUBSCRIPTION_SESSION_403_SLEEP_DECAY_FACTOR` | `OFSC_SUBSCRIPTION_SESSION_403_SLEEP_DECAY_FACTOR` | `1.5` | The wait is divided by this when it shrinks. |
 | <a id="subscription_session_403_min_sleep"></a>`SUBSCRIPTION_SESSION_403_MIN_SLEEP` | `OFSC_SUBSCRIPTION_SESSION_403_MIN_SLEEP` | `0.0` | The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
 
@@ -413,6 +414,7 @@ Defined in `ofscraper/utils/of_env/values/req/api.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="api_indvidiual_num_tries"></a>`API_INDVIDIUAL_NUM_TRIES` | `OFSC_API_INDIVIDUAL_NUM_TRIES` | `3` | Number of tries for individual API calls. |
+| <a id="rate_limit_num_tries"></a>`RATE_LIMIT_NUM_TRIES` | `OFSC_RATE_LIMIT_NUM_TRIES` | `8` | Number of tries for a request that keeps getting a |
 | <a id="api_paid_num_tries"></a>`API_PAID_NUM_TRIES` | `OFSC_API_PAID_NUM_TRIES` | `8` | Number of tries for paid content API calls. |
 | <a id="api_check_num_tries"></a>`API_CHECK_NUM_TRIES` | `OFSC_API_CHECK_NUM_TRIES` | `10` | Number of tries for API checks. |
 | <a id="api_num_tries"></a>`API_NUM_TRIES` | `OFSC_API_NUM_TRIES` | `10` | General number of tries for API calls (for messages, etc.). |
@@ -562,6 +564,8 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="threads_default"></a>`THREADS_DEFAULT` | `OFSC_THREADS_DEFAULT` | `2` | Default number of threads for operations. |
 | <a id="download_sem_default"></a>`DOWNLOAD_SEM_DEFAULT` | `OFSC_DOWNLOAD_SEM_DEFAULT` | `6` | Default semaphore limit for downloads. |
 | <a id="fansly_stream_segments"></a>`FANSLY_STREAM_SEGMENTS` | `OFSC_FANSLY_STREAM_SEGMENTS` | `8` | How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally; fetched files are kept so a stopped download resumes (`fansly_stream_download.py`). 0 leaves the whole stream to ffmpeg, one segment after another, with no resume. Streams the local path can't handle still go to ffmpeg: HLS that is live (no `#EXT-X-ENDLIST`) or uses encryption other than AES-128, and DASH that is protected, live, has more than one period or uses unsupported addressing. The number of files downloaded at once is still set by `download_sems`. |
+| <a id="silent_rechecks"></a>`SILENT_RECHECKS` | `OFSC_SILENT_RECHECKS` | `3` | How many times a Fansly video saved without sound, because the CDN refused its separate audio track and the direct file couldn't give the sound, is checked again (`download/utils/silent.py`). A check asks for the audio playlist and its first file with new links, at the end of the run that saved it and once on each later download run of that creator that includes videos. If the audio is accepted, the video is downloaded again and replaces the silent file once the new copy passes its checks. After this many refused checks the video is kept as it is. A check that fails for another reason (network, rate limit) doesn't count. 0 turns the checks off. |
+| <a id="fansly_full_scan_days"></a>`FANSLY_FULL_SCAN_DAYS` | `OFSC_FANSLY_FULL_SCAN_DAYS` | `7` | How often, in days, a Fansly download run scans the timeline and messages of a creator in full. Between full scans a run stops an area where the last finished scan began (see `advanced_options.incremental_downloads`). A post that appears later with an older date is found by the next full scan, so this is the longest it can be missed. 0 scans fully every time (`ofscraper/sites/fansly/incremental.py`). |
 | <a id="text_type_default"></a>`TEXT_TYPE_DEFAULT` | `OFSC_TEXT_TYPE_DEFAULT` | `'letter'` | Default text type processing. |
 | <a id="truncation_default"></a>`TRUNCATION_DEFAULT` | `OFSC_TRUNCATION_DEFAULT` | `True` | Whether truncation is enabled by default. |
 | <a id="filename_collision_default"></a>`FILENAME_COLLISION_DEFAULT` | `OFSC_FILENAME_COLLISION_DEFAULT` | `'media_id'` | What to do when a download's path is already |
