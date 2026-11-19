@@ -17,6 +17,7 @@ import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_exception_type
 
 import ofscraper.sites as sites
+import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
@@ -505,10 +506,14 @@ class sessionManager:
         ssl_context = self._get_ssl_context()
 
         if async_:
+            # the connector doesn't close a resolver it was given
+            self._resolver = fansly_address.Resolver()
             self._session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(
                     limit=self._connect_limit,
                     ssl=ssl_context,  # Passed to TCPConnector
+                    # which address a host's requests go to (Fansly, #536)
+                    resolver=self._resolver,
                 ),
                 timeout=aiohttp.ClientTimeout(
                     total=self._total_timeout,
@@ -538,6 +543,13 @@ class sessionManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._session:
             await self._session.__aexit__(exc_type, exc_val, exc_tb)
+            await self._resolver.close()
+
+    def clear_dns_cache(self):
+        """Resolve hosts again on the next request (async sessions)."""
+        connector = getattr(self._session, "connector", None)
+        if connector is not None:
+            connector.clear_dns_cache()
 
     def __enter__(self):
         self._set_session(async_=False)

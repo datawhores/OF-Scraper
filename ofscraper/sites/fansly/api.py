@@ -7,11 +7,13 @@ adds the Fansly headers for ``apiv3.fansly.com``. Responses come wrapped in
 
 import logging
 
-from ofscraper.sites.fansly import constants, normalize
+from ofscraper.sites.fansly import address, constants, normalize
 from ofscraper.sites.fansly.me import unwrap
 
 log = logging.getLogger("shared")
 
+# the API host has four addresses: the first ask, then one per address
+ADDRESS_ASKS = 5
 ACCOUNT_IDS_BATCH = 5
 ACCOUNT_MEDIA_BATCH = 150
 FOLLOWING_LIMIT = 50
@@ -27,8 +29,25 @@ def _ids(values):
 
 
 async def get_json(c, path):
-    async with c.requests_async(url=constants.api_url(path)) as r:
-        return unwrap(await r.json_())
+    """The payload of one API call.
+
+    A response whose links are signed for an address the CDN refuses (#536)
+    is asked for again from the API host's next address, up to
+    ``ADDRESS_ASKS`` times in all.
+    """
+    url = constants.api_url(path)
+    for ask in range(ADDRESS_ASKS):
+        async with c.requests_async(url=url) as r:
+            data = unwrap(await r.json_())
+        if await address.usable(c, data):
+            return data
+        log.debug(
+            f"Fansly: links signed for another address (ask {ask + 1} of {ADDRESS_ASKS})"
+        )
+        address.try_next_address(c, url)
+    log.debug("Fansly: still signed for another address, using the links as they are")
+    address.forget_refused()
+    return data
 
 
 # ------------------------------------------------------------------ accounts
