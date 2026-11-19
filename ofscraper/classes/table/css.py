@@ -5,7 +5,6 @@ Widgets = """
     
     Sidebar Widget {
         column-span: 4;
-        row-span: 2;
     }
     
     Screen {
@@ -53,7 +52,7 @@ Widgets = """
     Rule {
         margin: 0;
     }
-    #main_action_row {
+    #main_action_row, #post_action_row {
         height: 3;
         min-height: 3;
         max-height: 3;
@@ -123,8 +122,8 @@ Table = """
         height: 1fr;
     }
     
-    /* 1. Page Ceiling: Prevents headers from scrolling off-screen */
-    #table_page, #cart_page {
+/* 1. Page Ceiling: Prevents headers from scrolling off-screen */
+    #media_table_page, #post_table_page, #cart_page, #columns_page {
         height: 1fr; 
         width: 100%;
         layout: vertical;
@@ -133,7 +132,7 @@ Table = """
 
     /* 2. Container: Using 1fr here allows it to expand to fill the page,
        while padding-bottom: 1 protects the horizontal scrollbar. */
-    #table_main, #cart_table_main {
+    #media_table_main, #post_table_main, #cart_table_main {
         height: 1fr;
         width: 100%;
         padding-bottom: 1; 
@@ -141,15 +140,48 @@ Table = """
     
     /* 3. The Table: height: auto allows it to be small when empty.
        margin: 1 adds a clean buffer around the grid. */
-    #data_table, #cart_data_table {
+
+    #columns_action_row {
+        height: 3;
+        min-height: 3;
+        max-height: 3;
+        margin-top: 1;
+        margin-bottom: 1;
+    }
+
+    #columns_grid {
+        height: 1fr;
+        width: 100%;
+        layout: horizontal;
+        padding: 0 1 1 1;
+    }
+
+    .columns_panel {
+        width: 1fr;
+        height: 1fr;
+        margin: 0 1;
+        border: solid $primary;
+        padding: 1;
+    }
+
+    .columns_panel_title {
+        height: auto;
+        margin-bottom: 1;
+    }
+
+    .columns_panel SelectionList {
+        height: 1fr;
+        width: 100%;
+    }
+
+    #media_table, #post_table, #cart_data_table {
         margin: 1;
         height: auto; 
         width: 100%;
-    }
-"""
+    }"""
 
 Options = """
-    #options_sidebar, #download_option_sidebar {
+    #options_sidebar, #post_options_sidebar, #download_option_sidebar {
         width: 45%;
         dock: left;
         layer: sidebar;
@@ -158,22 +190,34 @@ Options = """
         height: 100vh;
     }
 
-    #main_options {
-        height: 150;
+    #main_options, #post_options {
+        height: auto;
         layout: grid;
-        grid-size: 4 60;
-        margin-top: 2;
+        grid-size: 4;
+        grid-rows: auto;
+        margin-top: 1;
+        padding-bottom: 2;
+    }
+    
+    #main_options Rule, #post_options Rule {
+        column-span: 4;
+        margin: 1 0;
     }
 
     /* Filter and Clear Filters share the top row */
-    #filter, #clear_filters {
+    #filter, #clear_filters, #post_filter, #post_clear_filters {
         column-span: 2;
     }
 
     /* Length holds two rows of 3-line inputs, more than 2 grid rows.
        It's set here because "Sidebar Widget" beats the field's DEFAULT_CSS */
     #main_options TimeField {
-        row-span: 3;
+    }
+
+    #post_options PostMediaField {
+    }
+
+    #post_options ResponseField {
     }
 
     /* a container is 1fr high by default, so each size field took half
@@ -192,7 +236,7 @@ Options = """
 
 CSS = (
     """
-    #post_id, #media_id {
+    #post_id, #media_id, #post_post_id, #post_min_new_media {
         column-span: 2;
     }
     """

@@ -40,6 +40,7 @@ from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.filters.media.filters import undated_first
+from ofscraper.classes.table.utils.post_metrics import build_post_centric_rows
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_files_downloaded,
@@ -58,6 +59,7 @@ console = console_.get_shared_console()
 
 ALL_MEDIA = {}
 ROWS = {}
+POST_ROWS = []
 MEDIA_KEY = ["id", "postid", "username"]
 check_user_dict = defaultdict(dict)
 # the thread that downloads what the table sends; one for the whole session
@@ -1015,20 +1017,21 @@ def thread_starters(ROWS_):
     start_table(ROWS_)
 
 
-def start_table(ROWS_):
+def start_table(ROWS_, POST_ROWS_=None):
     loop = system.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS = ROWS_
     # a Textual app runs once, so each table gets a new one
     app.app = app.InputApp()
-    app.app(table_data=ROWS)
+    app.app(table_data=ROWS, post_data=POST_ROWS_ if POST_ROWS_ is not None else POST_ROWS)
 
 
 def reset_table_data():
     """Forget the last table's rows and media, so a table opened again from
     the menu shows only what it was opened for (#425)."""
-    global ROWS
+    global ROWS, POST_ROWS
     ROWS = []
+    POST_ROWS = []
     check_user_dict.clear()
 
 
@@ -1072,7 +1075,7 @@ def checkmarkhelper(ele):
 
 
 async def row_gather(username, model_id):
-    global ROWS
+    global ROWS, POST_ROWS
     # with each file's directory and filename, for opening its folder (#424)
     downloaded = get_media_post_files_downloaded(model_id=model_id, username=username)
 
@@ -1159,3 +1162,15 @@ async def row_gather(username, model_id):
 
     ROWS = ROWS or []
     ROWS.extend(out)
+
+    POST_ROWS = POST_ROWS or []
+    posts_list = list(getattr(collection, "posts", None) or [])
+    try:
+        posts_list = sorted(posts_list, key=lambda x: undated_first(x.date), reverse=True)
+    except Exception:
+        pass
+    POST_ROWS.extend(
+        build_post_centric_rows(
+            posts_list, username=username, model_id=model_id, start_index=len(POST_ROWS) + 1
+        )
+    )

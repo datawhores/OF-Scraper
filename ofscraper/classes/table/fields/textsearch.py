@@ -1,45 +1,57 @@
 import re
 
-from textual.containers import Horizontal
-from textual.widgets import Checkbox, Input
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Checkbox, Input, Label
 
 
-class TextSearch(Horizontal):
+class TextSearch(Vertical):
     DEFAULT_CSS = """
-        TextSearch Input{
-    width:3fr;
+    TextSearch {
+        column-span: 4;
+        height: auto;
     }
 
-    TextSearch Checkbox{
-     width:2fr;
+    TextSearch Horizontal {
+        height: auto;
     }
 
-     TextSearch {
-    column-span:4;
+    TextSearch Input {
+        width: 3fr;
     }
-    
-"""
 
-    def __init__(self, name: str) -> None:
+    TextSearch Checkbox {
+        width: 2fr;
+    }
+    """
+
+    def __init__(self, name: str, label: str | None = None) -> None:
         name = name.lower()
         super().__init__(id=name)
         self.filter_name = name
+        self.label_text = label or "Post Text (partial/regex; Exact = full text)"
 
     def compose(self):
-        yield Input(
-            placeholder=f"{self.filter_name.capitalize()} Search",
-            id=f"{self.filter_name}_search",
-        )
-        yield Checkbox("Exact Match", False, id="exact_match")
-
+        yield Label(self.label_text)
+        with Horizontal():
+            yield Input(
+                placeholder=f"{self.filter_name.replace('post_', '').capitalize()} Search (e.g. solo or vid.*)",
+                id=f"{self.filter_name}_search",
+            )
+            exact_id = "exact_match" if self.filter_name == "text" else f"{self.filter_name}_exact_match"
+            yield Checkbox("Exact Match", False, id=exact_id)
 
     def update_table_val(self, val):
         self.query_one(Input).value = val
 
     def reset(self):
         self.query_one(f"#{self.filter_name}_search").value = ""
-        self.query_one("#exact_match").value = False
-    def compare(self,value):
-        if self.query_one(f"#{self.filter_name}_search").value=="":
+        self.query_one("#exact_match" if self.filter_name == "text" else f"#{self.filter_name}_exact_match").value = False
+
+    def compare(self, value):
+        search_val = self.query_one(f"#{self.filter_name}_search").value
+        if search_val == "":
             return True
-        return self.query_one(f"#{self.filter_name}_search").value.lower() ==value.lower() if self.query_one("#exact_match").value else re.search(self.query_one(f"#{self.filter_name}_search").value, value, flags=re.IGNORECASE) is not None
+        exact = self.query_one("#exact_match" if self.filter_name == "text" else f"#{self.filter_name}_exact_match").value
+        if exact:
+            return search_val.lower() == value.lower()
+        return re.search(search_val, value, flags=re.IGNORECASE) is not None

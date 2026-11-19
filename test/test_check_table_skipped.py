@@ -83,7 +83,7 @@ class _FakeApp:
 
     def query_one(self, selector):
         if selector is ContentSwitcher:
-            return SimpleNamespace(current="table_page")
+            return SimpleNamespace(current="media_table_page")
         return self.nodes[selector]
 
     def update_cart_info(self):
@@ -274,7 +274,7 @@ def test_add_new_still_leaves_a_downloaded_item_alone(run_queue):
 
 
 class _FakeDataTable:
-    id = "data_table"
+    id = "media_table"
     ordered_columns_keys = ["download_cart"]
 
     def __init__(self):
