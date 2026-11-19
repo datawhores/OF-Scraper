@@ -443,17 +443,30 @@ def local_playlist(text: str, base_url: str, prefix: str, shared=None) -> LocalP
     return LocalPlaylist("\n".join(out) + "\n", files)
 
 
-def local_join_command(ffmpeg, playlist, out_path, audio_playlist=None, dash=False) -> list:
+def local_join_command(
+    ffmpeg, playlist, out_path, audio_playlist=None, dash=False, audio_file=None,
+    video_delay=0.0,
+) -> list:
     """ffmpeg copy of local playlists (see ``local_playlist``) into one MP4,
     with the same output options as ``ffmpeg_command``. Only local files may
-    be read."""
+    be read.
+
+    ``audio_file``: a plain local media file whose first audio track is used
+    instead of an audio playlist (the direct file's sound). ``video_delay``:
+    seconds the video starts after the start of the output; ffmpeg would
+    otherwise start each input at its own first packet."""
     opts = ["-protocol_whitelist", "file,crypto"]
     if not dash:
         opts += ["-allowed_extensions", "ALL"]
     cmd = [str(ffmpeg), "-hide_banner", "-nostdin", "-loglevel", "error", "-y"]
+    if video_delay and video_delay >= 0.001:
+        cmd += ["-itsoffset", f"{video_delay:.6f}"]
     cmd += opts + ["-i", str(playlist)]
     if audio_playlist:
         cmd += opts + ["-i", str(audio_playlist), "-map", "0:v", "-map", "1:a"]
+    elif audio_file:
+        cmd += ["-protocol_whitelist", "file", "-i", str(audio_file),
+                "-map", "0:v", "-map", "1:a:0"]
     cmd += ["-c", "copy", "-f", "mp4", str(out_path)]
     return cmd
 

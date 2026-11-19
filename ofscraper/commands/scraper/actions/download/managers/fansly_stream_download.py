@@ -211,20 +211,103 @@ def _run_process(proc, cmd, timeout, cwd=None):
     return p.returncode, stderr
 
 
-def _packet_times(ffprobe, path, stream):
-    """Packet times (seconds) of one stream, read without decoding."""
+def _read_times(out, played=False):
+    """The times in ffprobe's ``time,flags`` lines. ``played``: leave out
+    packets the file marks as not played (the ``D`` flag)."""
+    times = []
+    for line in out.splitlines():
+        parts = line.strip().strip(",").split(",")
+        if played and len(parts) > 1 and "D" in parts[-1]:
+            continue
+        try:
+            times.append(float(parts[0]))
+        except ValueError:
+            pass  # N/A, or an empty line
+    return times
+
+
+def _packet_times(ffprobe, path, stream, played=False):
+    """Packet times (seconds) of one stream, read without decoding.
+
+    ``played``: only the packets that are played. An MP4 keeps packets it
+    marks as not played (an AAC encoder's lead-in, what an edit list cuts);
+    counted, they make a stream look longer than it plays."""
     out = subprocess.run(
         [str(ffprobe), "-v", "error", "-select_streams", stream,
-         "-show_entries", "packet=dts_time", "-of", "csv=p=0", str(path)],
+         "-show_entries", "packet=dts_time,flags", "-of", "csv=p=0", str(path)],
         capture_output=True, text=True, check=True,
     ).stdout
-    times = []
-    for value in out.split():
-        try:
-            times.append(float(value.strip(",")))
-        except ValueError:
-            pass  # N/A
-    return times
+    return _read_times(out, played)
+
+
+def _first_shown(ffprobe, path, stream):
+    """When the stream's first frame or sample is shown (seconds), or None.
+
+    Not its first packet's decode time: with B-frames that is earlier than
+    the first shown frame, by an amount that depends on the encoder's
+    settings, so it can't be compared between two encodings of one upload.
+    Packets the file marks as not played don't count, and a file cut without
+    re-encoding can start with any number of them, so every packet is read.
+    A cut can also fall inside a packet: that packet's time is before the
+    file's start (below zero), and it is played from the start."""
+    out = subprocess.run(
+        [str(ffprobe), "-v", "error", "-select_streams", stream,
+         "-show_entries", "packet=pts_time,flags", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    times = _read_times(out, played=True)
+    return max(0.0, min(times)) if times else None
+
+
+def _has_packets(ffprobe, path, stream) -> bool:
+    """True when ``path`` has at least one packet of ``stream``; reads only the first."""
+    out = subprocess.run(
+        [str(ffprobe), "-v", "error", "-select_streams", stream,
+         "-read_intervals", "%+#1", "-show_entries", "packet=stream_index",
+         "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    return out.returncode == 0 and bool(out.stdout.strip())
+
+
+def _codec(ffprobe, path, stream):
+    out = subprocess.run(
+        [str(ffprobe), "-v", "error", "-select_streams", stream,
+         "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    return out.stdout.strip().split("\n")[0].strip(",") if out.returncode == 0 else ""
+
+
+def _frame(times) -> float:
+    """The usual step between packets (one frame), in seconds."""
+    ts = sorted(times)
+    steps = [b - a for a, b in zip(ts, ts[1:]) if b > a]
+    steps.sort()
+    return steps[len(steps) // 2] if steps else 0.0
+
+
+def _audio_stream(ffprobe, path):
+    """True when ffprobe reads ``path`` and it has an audio stream, False when
+    it reads it and it has none, None when it can't read it (an error page, a
+    cut-off file): then nothing is known about the sound."""
+    out = subprocess.run(
+        [str(ffprobe), "-v", "error", "-show_entries", "stream=codec_type",
+         "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    kinds = {line.strip().strip(",") for line in out.stdout.split()}
+    if out.returncode != 0 or not kinds:
+        return None
+    return "audio" in kinds
+
+
+# the sound taken from the direct file: AAC, copied as it is (``-c copy``);
+# anything else falls back to the silent copy rather than re-encoding
+COPYABLE_AUDIO = {"aac"}
+# how many frames the direct file's video may differ in length from the
+# stream's before its sound is taken as out of step
+SOUND_FRAMES = 2
 
 
 class FanslyStreamDownloadManager(DownloadManager):
@@ -237,6 +320,9 @@ class FanslyStreamDownloadManager(DownloadManager):
 
     async def _stream_download(self, c, ele, username, model_id):
         medialog = common_logs.get_medialog(ele)
+        # the direct file can give the sound a refused audio track can't
+        self.ele = ele
+        self.audio_refused = None
         best = fansly_video.select_best(fansly_video.raw_media(ele))
         if not best or not best.is_stream:
             raise fansly_video.StreamError("no HLS or DASH stream to download")
@@ -287,6 +373,8 @@ class FanslyStreamDownloadManager(DownloadManager):
         placeholderObj = await placeholder.Placeholders(ele, "mp4").init()
         common_logs.path_to_file_logger(placeholderObj, ele, self.ctx.log, self.ctx.attempt)
         temp.unlink(missing_ok=True)
+        # a copy with the direct file's sound that a killed run left behind
+        temp.with_name(temp.name + ".sound").unlink(missing_ok=True)
 
         # BaseException: a cancelled run (Ctrl+C) also removes the .part
         try:
@@ -334,9 +422,14 @@ class FanslyStreamDownloadManager(DownloadManager):
         )
         await self._parallel_copy(c, playlists, temp, best.cookies, timeout, medialog)
 
-    def _warn_silent(self, medialog, what):
+    def _audio_was_refused(self, medialog, what):
+        # the warning waits: the direct file may still give the sound
+        self.audio_refused = what
+        self.ctx.log.info(f"{medialog} the CDN refused {what}")
+
+    def _warn_silent(self, medialog):
         self.ctx.log.warning(
-            f"{medialog} the CDN refused {what}; saving the video without sound"
+            f"{medialog} the CDN refused {self.audio_refused}; saving the video without sound"
         )
 
     async def _local_playlists(self, c, url, audio_url, cookies, medialog):
@@ -355,7 +448,7 @@ class FanslyStreamDownloadManager(DownloadManager):
                 except fansly_video.StreamError as e:
                     if not _refused(e):
                         raise
-                    self._warn_silent(medialog, "its audio playlist")
+                    self._audio_was_refused(medialog, "its audio playlist")
                 else:
                     audio = fansly_video.local_playlist(text, audio_url, "a", shared)
             return video, audio
@@ -368,7 +461,8 @@ class FanslyStreamDownloadManager(DownloadManager):
         then join them with ffmpeg. Keep completed files if the copy fails.
 
         The video's files come first. If the CDN then refuses the separate
-        audio track, the video is saved without sound and a warning says why."""
+        audio track, the sound is taken from the direct file; failing that,
+        the video is saved without sound and a warning says why."""
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout  # one limit for the fetch and the join
         folder = segment_folder(temp)
@@ -389,7 +483,7 @@ class FanslyStreamDownloadManager(DownloadManager):
                     except SegmentError as e:
                         if not _refused(e):
                             raise
-                        self._warn_silent(medialog, "its audio track")
+                        self._audio_was_refused(medialog, "its audio track")
                         audio = None
             except asyncio.TimeoutError:
                 raise StreamTimeout(
@@ -428,6 +522,11 @@ class FanslyStreamDownloadManager(DownloadManager):
                 cmd, temp, max(1.0, deadline - loop.time()),
                 "join the stream's segments", cwd=folder,
             )
+            if not audio and await self._needs_sound(temp):
+                await self._sound_from_direct(
+                    c, folder, temp, cmd[cmd.index("-i") + 1],
+                    isinstance(video, fansly_video.LocalDashTrack), deadline, medialog,
+                )
             complete = True
         finally:
             if isinstance(playlists[0], fansly_video.LocalDashTrack):
@@ -435,6 +534,216 @@ class FanslyStreamDownloadManager(DownloadManager):
                     (folder / name).unlink(missing_ok=True)
             if complete or not settings.get_settings().auto_resume:
                 shutil.rmtree(folder, ignore_errors=True)
+
+    async def _probe(self, fn, *args):
+        return await asyncio.get_running_loop().run_in_executor(
+            self.ctx.thread, partial(fn, *args)
+        )
+
+    async def _needs_sound(self, temp):
+        """True when the joined copy should have sound it lacks: its separate
+        audio track was refused, or its playlist says the video segments
+        carry sound and they don't."""
+        if getattr(self, "audio_refused", None):
+            return True
+        if not getattr(self, "audio_inside", False):
+            return False
+        ffprobe = get_ffprobe()
+        return bool(ffprobe) and not await self._probe(_has_packets, ffprobe, temp, "a:0")
+
+    async def _sound_from_direct(self, c, folder, temp, video_input, dash, deadline, medialog):
+        """Add the direct file's sound to the joined stream video.
+
+        The stream is chosen for its larger video; the direct MP4 of the same
+        upload usually carries the sound the stream's audio track lacks. The
+        result replaces ``temp`` only if it passes the checks. Anything else,
+        a failure of any kind included (ffmpeg's time limit, an ffprobe
+        error, a locked file, a full disk), keeps ``temp`` as the silent copy,
+        with a warning for a refused track."""
+        joined = temp.with_name(temp.name + ".sound")
+        try:
+            problem = await self._add_direct_sound(
+                c, folder, temp, joined, video_input, dash, deadline, medialog
+            )
+        except Exception as e:
+            problem = f"taking the sound from the direct file failed: {e}"
+        finally:
+            with contextlib.suppress(OSError):
+                joined.unlink(missing_ok=True)
+        if problem:
+            self.ctx.log.info(f"{medialog} {problem}")
+            if getattr(self, "audio_refused", None):
+                self._warn_silent(medialog)
+
+    async def _add_direct_sound(self, c, folder, temp, joined, video_input, dash, deadline,
+                                medialog):
+        """``_sound_from_direct``'s steps. Returns why the sound wasn't added,
+        or None when it was (or the video has no sound to add)."""
+        ele = getattr(self, "ele", None)
+        raw = fansly_video.raw_media(ele) if ele is not None else None
+        ffprobe = get_ffprobe()
+        loop = asyncio.get_running_loop()
+        if not (ele.url if ele is not None else None) or not fansly_video.has_direct(raw):
+            return "there is no direct file to take the sound from"
+        if not ffprobe:
+            return "ffprobe is not found to check the direct file's sound"
+        direct = folder / "direct.mp4"
+        try:
+            await self._fetch_direct(c, ele, direct, deadline)
+        except (SegmentError, asyncio.TimeoutError) as e:
+            return f"the direct file could not be fetched for its sound: {e}"
+        sound = await self._probe(_audio_stream, ffprobe, direct)
+        if sound is None:
+            # an error page or a cut-off file says nothing about the sound
+            return "the direct file could not be read to check its sound"
+        if not sound:
+            # evidence the video has no sound at all: nothing was lost
+            self.ctx.log.info(
+                f"{medialog} the direct file has no sound either; saving the video as it is"
+            )
+            self.audio_refused = None
+            self.audio_inside = False
+            return None
+        codec = await self._probe(_codec, ffprobe, direct, "a:0")
+        if codec not in COPYABLE_AUDIO:
+            return f"the direct file's sound is {codec or 'of an unknown kind'}, not AAC"
+        self._check_sound_space(temp, direct)
+        video_at, sound_at = [
+            await self._probe(_first_shown, ffprobe, direct, stream)
+            for stream in ("v:0", "a:0")
+        ]
+        frame = _frame(await self._probe(_packet_times, ffprobe, direct, "v:0", True))
+        if video_at is None or sound_at is None or not frame:
+            return "the direct file could not be measured"
+        # ffmpeg starts each input at its own first packet. The direct file's
+        # sound keeps its place from that file's start; the stream's video is
+        # given the place the direct file's video has. Most saved Fansly
+        # videos show their first frame two frames after the sound starts
+        # (frames stored ahead, no edit list). A later start than that is not
+        # carried over: nothing shows that the stream's video has it too.
+        late = video_at - sound_at
+        if late > SOUND_FRAMES * frame + 0.001:
+            return (
+                f"the direct file's video starts {late:.3f}s after its sound, more "
+                f"than {SOUND_FRAMES} frames, so the sound could be out of step "
+                "with the stream's video"
+            )
+        cmd = fansly_video.local_join_command(
+            get_ffmpeg(), video_input, joined.absolute(), dash=dash,
+            audio_file=direct.name, video_delay=max(0.0, late),
+        )
+        await self._run_cmd(
+            cmd, joined, max(1.0, deadline - loop.time()),
+            "add the direct file's sound", cwd=folder,
+        )
+        problem = await self._sound_mismatch(ffprobe, direct, joined, ele)
+        if problem:
+            return problem
+        joined.replace(temp)
+        self.ctx.log.info(
+            f"{medialog} took the sound from the direct file"
+            + (f" (the CDN refused {self.audio_refused})" if self.audio_refused else "")
+        )
+        self.audio_refused = None
+        return None
+
+    def _check_sound_space(self, temp, direct):
+        """Fail when the drive can't hold the copy with sound next to ``temp``."""
+        need = temp.stat().st_size + direct.stat().st_size + JOIN_SPACE_MARGIN
+        free = _free_space(pathlib.Path(temp).parent)
+        if free < need:
+            raise NotEnoughSpace(
+                f"not enough disk space to add the sound: needs about "
+                f"{format_size(need)}, {format_size(free)} free"
+            )
+
+    async def _fetch_direct(self, c, ele, path, deadline):
+        """The direct file into ``path``, kept for resume. A signed link the
+        CDN refuses gets a new one, once."""
+        loop = asyncio.get_running_loop()
+        for ask in range(2):
+            if path.is_file():
+                return
+            try:
+                # a signed URL: no CloudFront cookies
+                await asyncio.wait_for(
+                    self._fetch_segment(c, fansly_video.check_url(ele.url), path, None),
+                    max(0.01, deadline - loop.time()),
+                )
+                return
+            except fansly_video.StreamError as e:
+                raise SegmentError(str(e)) from e
+            except SegmentError as e:
+                if ask or not _refused(e):
+                    raise
+                # within the download's time limit, as the fetch is
+                if not await asyncio.wait_for(
+                    refresh_media_link(ele), max(0.01, deadline - loop.time())
+                ):
+                    raise
+
+    async def _sound_mismatch(self, ffprobe, direct, joined, ele):
+        """Why the joined copy can't be kept, or None.
+
+        Both files come from one upload, so their videos should line up. The
+        sound must keep the start it had against the direct file's video (the
+        join delays the stream's video for that), within one frame. The
+        starts compared are when each
+        stream is first shown (``_first_shown``). A trimmed or re-timed
+        rendition would put the sound out of step by the difference in
+        length."""
+        direct_video, direct_audio, joined_video, joined_audio = [
+            await self._probe(_packet_times, ffprobe, path, stream, True)
+            for path, stream in (
+                (direct, "v:0"), (direct, "a:0"), (joined, "v:0"), (joined, "a:0")
+            )
+        ]
+        if not (direct_video and direct_audio and joined_video and joined_audio):
+            return "the joined copy could not be measured"
+        frame = max(_frame(direct_video), _frame(joined_video))
+        margin = SOUND_FRAMES * frame + 0.001
+        shown = [
+            await self._probe(_first_shown, ffprobe, path, stream)
+            for path, stream in (
+                (direct, "v:0"), (direct, "a:0"), (joined, "v:0"), (joined, "a:0")
+            )
+        ]
+        if any(at is None for at in shown):
+            return "the joined copy could not be measured"
+        direct_offset = shown[1] - shown[0]
+        joined_offset = shown[3] - shown[2]
+        if abs(joined_offset - direct_offset) > frame + 0.001:
+            return (
+                f"the direct file's sound starts {direct_offset:+.3f}s from its video, "
+                f"but {joined_offset:+.3f}s from the stream's, so it would be out of step"
+            )
+        stream_length = fansly_video.timeline(joined_video)[0]
+        direct_length = fansly_video.timeline(direct_video)[0]
+        if not stream_length or not direct_length:
+            return "the joined copy could not be measured"
+        if abs(stream_length - direct_length) > margin:
+            return (
+                f"the direct file's video ({direct_length:.2f}s) and the stream's "
+                f"({stream_length:.2f}s) differ in length, so the sound would be out of step"
+            )
+        sound_length = fansly_video.timeline(joined_audio)[0]
+        # where each ends, not how long each is: the video may start after
+        # the sound (the delay the join gave it)
+        video_end = shown[2] + stream_length
+        sound_end = shown[3] + sound_length
+        if sound_end > video_end + margin:
+            return "the direct file's sound is longer than the stream's video"
+        short = max(fansly_video.SHORT_MIN, fansly_video.SHORT_SHARE * stream_length)
+        if sound_end < video_end - short:
+            return (
+                f"the direct file's sound covers {sound_length:.1f}s of the "
+                f"{stream_length:.1f}s video"
+            )
+        reason = fansly_video.incomplete_reason(
+            joined_video, joined_audio,
+            fansly_video.expected_duration(fansly_video.raw_media(ele)),
+        )
+        return f"the copy with the direct file's sound is incomplete: {reason}" if reason else None
 
     def _check_join_space(self, folder, temp, dash=False):
         """Fail with a clear message when the .part's drive can't hold the
