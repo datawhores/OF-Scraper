@@ -487,4 +487,4 @@ def test_downloaders_record_and_use_final_path(tmp_path, monkeypatch, downloader
     hashing.assert_awaited_once_with(final, manager.ctx.thread)
     assert dating.call_args.args[0] == final
     ele.add_filepath.assert_called_once_with(final)
-    manager._after_download_script.assert_awaited_once_with(final)
+    manager._after_download_script.assert_awaited_once_with(final, ele)

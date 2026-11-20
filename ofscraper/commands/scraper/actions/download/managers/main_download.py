@@ -381,7 +381,7 @@ class MainDownloadManager(DownloadManager):
         ele.add_filepath(path_to_file)
 
         # 6. Run Post-Download Scripts
-        await self._after_download_script(path_to_file)
+        await self._after_download_script(path_to_file, ele)
 
         return ele.mediatype, total
 

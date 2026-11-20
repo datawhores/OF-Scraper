@@ -90,6 +90,7 @@ class AltDownloadManager(DownloadManager):
             self.ctx.log.info(
                 f"{common_logs.get_medialog(ele)} DRM video skipped: CDM keys not found ({missing})"
             )
+            ele.download_reason = "CDM keys not found"
             return "forced_skipped", 0
         # the manifest, its files and the licence request carry the OnlyFans
         # login: a host outside the allowed list fails the item before any
@@ -518,7 +519,7 @@ class AltDownloadManager(DownloadManager):
             )
         ele.add_filepath(final_path)
 
-        await self._after_download_script(final_path)
+        await self._after_download_script(final_path, ele)
 
         audio_total = audio["total"] if audio else 0
         video_total = video["total"] if video else 0

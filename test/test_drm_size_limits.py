@@ -97,6 +97,7 @@ def _run(
     cache_error_always=False,
     file_part=None,
     ignore_range=False,
+    real_merge=False,
 ):
     """Download one item through the consumer: a DRM video, or with
     drm=False a non-DRM file. With chunked the server sends each whole file
@@ -112,7 +113,8 @@ def _run(
     is under "file", and "marked" is set when it's saved as downloaded
     without a file ("permanent" when skip_download_script skipped it for
     good). With ignore_range the server answers a range request as one
-    without it."""
+    without it. With real_merge the real _handle_result_alt runs: the caller
+    stubs what it calls (ffmpeg, the move, the database)."""
     monkeypatch.setattr(
         settings,
         "get_settings",
@@ -225,12 +227,13 @@ def _run(
         ("_get_data", _get_data),
         ("_set_data", _set_data),
         ("_media_item_keys_alt", _keys),
-        ("_handle_result_alt", _merge),
+        ("_handle_result_alt", None if real_merge else _merge),
         ("_add_download_job_task", _noop),
         ("_remove_download_job_task", _noop),
         ("_total_change_helper", _noop),
     ):
-        monkeypatch.setattr(M, name, fn)
+        if fn:
+            monkeypatch.setattr(M, name, fn)
     monkeypatch.setattr(M, "_downloadspace", lambda self: None)
 
     if script:

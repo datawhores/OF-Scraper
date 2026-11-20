@@ -372,6 +372,7 @@ class FanslyStreamDownloadManager(DownloadManager):
                 return None
             if isinstance(e, fansly_video.ProtectedStream):
                 self.ctx.log.info(f"{medialog} protected, not downloaded")
+                ele.download_reason = "protected stream"
                 shutil.rmtree(segment_folder(temp), ignore_errors=True)
                 return "forced_skipped", 0
             if isinstance(e, fansly_video.MissingAudio):
@@ -1133,5 +1134,5 @@ class FanslyStreamDownloadManager(DownloadManager):
         await self._remember_sound(model_id, ele, path_to_file)
         ele.add_filepath(path_to_file)
         ele.add_size(total)
-        await self._after_download_script(path_to_file)
+        await self._after_download_script(path_to_file, ele)
         return ele.mediatype, total
