@@ -14,7 +14,7 @@ A community-maintained fork of [datawhores/OF-Scraper](https://github.com/datawh
 [![Python 3.11 to 3.15](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.15-3776ab?logo=python&logoColor=white)](#install)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/cloakedkeys/OF-Scraper-Community/pkgs/container/of-scraper-community)
 [![Docs](https://img.shields.io/badge/docs-gitbook-00a8e8?logo=gitbook&logoColor=white)](https://cloakedkeys.gitbook.io/ofsc)
-[![License: MIT](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/LICENSE)
+[![License: GPL-3.0](https://img.shields.io/github/license/cloakedkeys/OF-Scraper-Community?color=lightgrey)](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/LICENSE)
 
 [Install](#install) · [Getting started](#getting-started) · [Docs](https://cloakedkeys.gitbook.io/ofsc) · [FAQ](#faq) · [Reference](https://github.com/cloakedkeys/OF-Scraper-Community/blob/main/reference/README.md) · [Releases](https://github.com/cloakedkeys/OF-Scraper-Community/releases) · [Report a problem](#reporting-a-problem)
 

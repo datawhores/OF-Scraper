@@ -4,6 +4,7 @@ dynamic = ["version"]
 description = "automatically scrape onlyfans"
 authors = [{ name = "datawhores", email = "datawhores@riseup.net" }]
 readme = "README.md"
+license = "GPL-3.0-or-later"
 # No upper bound: with one, pip on a newer Python skips every current release
 # and installs the newest old one without a bound (2.6.4.1, from 2023)
 # instead of failing.
