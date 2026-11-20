@@ -30,7 +30,7 @@ def test_command_line_and_config_accept_the_same_names():
         assert _parse(["-dr", name])["dynamic_rules"] == name
 
 
-@pytest.mark.parametrize("name", ["dv", "dev", "nope"])
+@pytest.mark.parametrize("name", ["dv", "dev", "nope", "datawhores"])
 def test_unknown_names_are_rejected(name):
     with pytest.raises(click.BadParameter):
         _parse(["-dr", name])

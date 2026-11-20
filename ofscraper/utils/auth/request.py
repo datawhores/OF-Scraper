@@ -33,9 +33,9 @@ curr_auth = None
 last_check = None
 
 # tried in order when the chosen source fails or gives an unusable rule:
-# digitalcriminals is the default and kept up to date, rafa is the next most
-# recently updated. datawhores' rule is obsolete (see OBSOLETE_RULE_PREFIXES)
-FALLBACK_SOURCES = ["digitalcriminals", "rafa"]
+# all three gave a rule OnlyFans accepted in a live check on 2026-11-19,
+# listed from the most recently updated
+FALLBACK_SOURCES = ["digitalcriminals", "rafa", "xagler"]
 
 
 class DynamicRuleUnavailable(Exception):
@@ -93,7 +93,6 @@ def _fetch_rule(source):
     return {
         "manual": get_request_auth_dynamic_rule_manual,
         "generic": get_request_auth_generic,
-        "datawhores": get_request_auth_datawhores,
         "xagler": get_request_auth_xagler,
         "rafa": get_request_auth_rafa,
         "digitalcriminals": get_request_auth_digitalcriminals,
@@ -133,7 +132,7 @@ def get_request_auth():
         source = "manual"
     elif of_env.getattr("DYNAMIC_GENERIC_URL") and dynamic in {"generic"}:
         source = "generic"
-    elif (dynamic) in {"datawhores", "xagler", "rafa", "digitalcriminals"}:
+    elif (dynamic) in {"xagler", "rafa", "digitalcriminals"}:
         source = dynamic
     elif dynamic == "manual":
         failures.append((dynamic, ValueError("OFSC_DYNAMIC_RULE_MANUAL isn't set")))
@@ -200,38 +199,6 @@ def get_request_auth_generic():
             return request_auth_helper_picker(content)
 
 
-def get_request_auth_deviint():
-    logging.getLogger("shared").debug("getting new signature with deviint")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-
-        with c.requests(
-            of_env.getattr("DEVIINT_URL"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
-
-
-def get_request_auth_datawhores():
-    logging.getLogger("shared").debug("getting new signature with datawhores")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-
-        with c.requests(
-            of_env.getattr("DATAWHORES_URL"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
-
-
 def get_request_auth_xagler():
     logging.getLogger("shared").debug("getting new signature with xagler")
 
@@ -259,22 +226,6 @@ def get_request_auth_rafa():
 
         with c.requests(
             of_env.getattr("RAFA_URL"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
-
-
-def get_request_auth_riley():
-    logging.getLogger("shared").debug("getting new signature with riley")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-
-        with c.requests(
-            of_env.getattr("RILEY_URL"),
         ) as r:
             content = r.json_()
             return request_auth_helper_picker(content)
@@ -308,7 +259,8 @@ SUFFIX_RULE_KEYS = [
     "checksum_constant",
 ]
 # The first field of the sign in rules that are complete but that OnlyFans no
-# longer accepts. 26974 is datawhores' rule, last updated in 2024
+# longer accepts, so a generic URL or manual rule still set to one is caught.
+# 26974 is a rule from 2024 that OnlyFans rejects
 OBSOLETE_RULE_PREFIXES = {"26974"}
 
 

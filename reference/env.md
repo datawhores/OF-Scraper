@@ -645,8 +645,8 @@ Defined in `ofscraper/utils/of_env/values/dynamic.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="dynamic_rule_manual"></a>`DYNAMIC_RULE_MANUAL` | `OFSC_DYNAMIC_RULE_MANUAL` | `None` | The specific manual dynamic rule to use. Defaults to None. |
-| <a id="dynamic_options"></a>`DYNAMIC_OPTIONS` | `OFSC_DYNAMIC_OPTIONS` | a list of 6 items (see the source) | List of available dynamic rule options. |
-| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 13 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
+| <a id="dynamic_options"></a>`DYNAMIC_OPTIONS` | `OFSC_DYNAMIC_OPTIONS` | `['digitalcriminals', 'manual', 'generic', 'xagler', 'rafa']` | List of available dynamic rule options. |
+| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 12 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
 | <a id="dynamic_rule_default"></a>`DYNAMIC_RULE_DEFAULT` | `OFSC_DYNAMIC_RULE_DEFAULT` | `'digital'` | The default dynamic rule when none is specified. |
 
 ## List names
@@ -852,10 +852,7 @@ Defined in `ofscraper/utils/of_env/values/url/dynamic.py`.
 | <a id="xagler_url"></a>`XAGLER_URL` | `OF_XAGLER_URL` | `'https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json'` | "https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json" |
 | <a id="rafa_url"></a>`RAFA_URL` | `OF_RAFA_URL` | `'https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json'` | "https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json" |
 | <a id="digitalcriminals"></a>`DIGITALCRIMINALS` | `OF_DIGITALCRIMINALS_URL` | `'https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json'` | "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json" |
-| <a id="datawhores_url"></a>`DATAWHORES_URL` | `OF_DATAWHORES_URL` | `'https://raw.githubusercontent.com/datawhores/onlyfans-dynamic-rules/main/dynamicRules.json'` | "https://raw.githubusercontent.com/datawhores/onlyfans-dynamic-rules/main/dynamicRules.json" |
-| <a id="deviint_url"></a>`DEVIINT_URL` | `OF_DEVIINT_URL` | `'https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json'` | Dynamic rules URL for Deviint |
-| <a id="riley_url"></a>`RILEY_URL` | `OF_RILEY_URL` | `'https://raw.githubusercontent.com/riley-access-labs/onlyfans-dynamic-rules-1/refs/heads/main/dynamicRules.json'` | Dynamic rules URL for Riley Access Labs |
-| <a id="dynamic_generic_url"></a>`DYNAMIC_GENERIC_URL` | `OF_DYNAMIC_GENERIC_URL` | `None` | None |
+| <a id="dynamic_generic_url"></a>`DYNAMIC_GENERIC_URL` | `OF_DYNAMIC_GENERIC_URL` | `None` | The URL of the dynamic rule that `advanced_options.dynamic-mode-default` `generic` fetches. Unset, `generic` can't be used and the fallback sources are tried instead. |
 
 ## Other addresses
 

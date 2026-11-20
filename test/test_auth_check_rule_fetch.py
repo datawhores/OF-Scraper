@@ -15,7 +15,7 @@ def rule_host_down(monkeypatch):
     monkeypatch.setattr(
         init.settings,
         "get_settings",
-        lambda: SimpleNamespace(anon=False, dynamic_rules="datawhores"),
+        lambda: SimpleNamespace(anon=False, dynamic_rules="xagler"),
     )
     monkeypatch.setattr(init.log, "traceback_", lambda *a, **k: None, raising=False)
     # no rule cached from an earlier check
@@ -32,7 +32,7 @@ def rule_host_down(monkeypatch):
         )
 
     # the fallback sources are down too
-    for source in ["datawhores", *auth_requests.FALLBACK_SOURCES]:
+    for source in ["xagler", *auth_requests.FALLBACK_SOURCES]:
         monkeypatch.setattr(auth_requests, f"get_request_auth_{source}", fetch_rule)
 
     def scrape_user():
@@ -50,5 +50,5 @@ def rule_host_down(monkeypatch):
 
 def test_failed_rule_fetch_is_not_repeated_by_me_retries(rule_host_down):
     assert init.getstatus() == "UNAVAILABLE"
-    # one fetch from each source
-    assert len(rule_host_down) == 1 + len(auth_requests.FALLBACK_SOURCES)
+    # one fetch from each source; the chosen one is also a fallback, asked once
+    assert len(rule_host_down) == len({"xagler", *auth_requests.FALLBACK_SOURCES})

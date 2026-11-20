@@ -17,6 +17,7 @@ import re
 from copy import deepcopy
 import arrow
 
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.data as config_data  # <-- IMPORTING THE REAL DATA.PY
 import ofscraper.utils.ads as ads
@@ -125,8 +126,11 @@ def _warn_rejected_dynamic_rule(args, used):
         and _warned_dynamic_rule != (configured, used)
     ):
         _warned_dynamic_rule = (configured, used)
+        removed = const.REMOVED_DYNAMIC_RULES.get(str(configured).lower())
         logging.getLogger("shared").warning(
-            f"dynamic-mode-default '{configured}' is not accepted; using '{used}'"
+            f"dynamic-mode-default '{configured}' is not accepted"
+            + (f" (removed: {removed})" if removed else "")
+            + f"; using '{used}'"
         )
 
 
