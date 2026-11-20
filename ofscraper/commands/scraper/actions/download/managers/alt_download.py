@@ -23,6 +23,7 @@ from ofscraper.commands.scraper.actions.utils.log import (
 )
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 import ofscraper.utils.auth.request as auth_requests
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 
 # the reply cache is read and written by DownloadManager; kept here for code
 # and tests that reach it through this module
@@ -225,11 +226,12 @@ class AltDownloadManager(DownloadManager):
                         return item
                     raise E
                 except Exception as E:
+                    # an aiohttp error's text holds the whole signed link
                     self.ctx.log.traceback_(
-                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
+                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {hide_links(traceback.format_exc(), hide_path=True)}"
                     )
                     self.ctx.log.traceback_(
-                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
+                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {hide_links(E, hide_path=True)}"
                     )
                     if self._skipped_by_size(ele, E):
                         # alt_download removes both tracks' parts
@@ -242,7 +244,7 @@ class AltDownloadManager(DownloadManager):
             _attempt = self._alt_attempt_get(item)
             url = _mpd_segment_url(ele.mpd, item["origname"])
             self.ctx.log.debug(
-                f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
+                f"{get_medialog(ele)} Attempting to download media {item['origname']} with {hide_link(url, hide_path=True)}"
             )
             self.ctx.log.debug(
                 f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
@@ -279,7 +281,7 @@ class AltDownloadManager(DownloadManager):
                 "Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}",
             }
             self.ctx.log.debug(
-                f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {url}"
+                f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {hide_link(url, hide_path=True)}"
             )
             async with c.requests_async(
                 url=url,
@@ -309,12 +311,12 @@ class AltDownloadManager(DownloadManager):
                 ):
                     raise Exception(
                         f"{get_medialog(ele)} DRM segment returned playlist "
-                        f"content-type={content_type!r} url={url}"
+                        f"content-type={content_type!r} url={hide_link(url, hide_path=True)}"
                     )
                 if total is not None and total <= 0:
                     raise Exception(
                         f"{get_medialog(ele)} DRM segment empty size "
-                        f"(content-type={content_type or 'unknown'}, url={url})"
+                        f"(content-type={content_type or 'unknown'}, url={hide_link(url, hide_path=True)})"
                     )
 
                 data = self._reply_data(

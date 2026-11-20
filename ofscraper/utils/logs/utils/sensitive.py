@@ -4,10 +4,12 @@ from typing import Any
 
 # --- Default Patterns (Regex or Plain Text) ---
 _DEFAULT_PATTERNS = {
-    # Redacts API keys and session tokens (Fixed to stop at whitespace)
-    r"&Policy=[^&\"'\s]+": "&Policy={hidden}",
-    r"&Signature=[^&\"'\s]+": "&Signature={hidden}",
-    r"&Key-Pair-Id=[^&\"'\s]+": "&Key-Pair-Id={hidden}",
+    # Redacts API keys and session tokens (Fixed to stop at whitespace).
+    # First in the query too: a DRM link gets them as separate params, so its
+    # query starts with ?Policy=
+    r"([?&])Policy=[^&\"'\s]+": r"\g<1>Policy={hidden}",
+    r"([?&])Signature=[^&\"'\s]+": r"\g<1>Signature={hidden}",
+    r"([?&])Key-Pair-Id=[^&\"'\s]+": r"\g<1>Key-Pair-Id={hidden}",
     # Redacts common sensitive info
     r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "{ip_address}",  # IP Addresses
     # Auth values by name, whatever the value. Masking by value covers only
@@ -35,6 +37,30 @@ _DEFAULT_PATTERNS = {
 
 # This dictionary will be populated at runtime by your add_sensitive_pattern function
 _USER_ADDED_PATTERNS = {}
+
+# A link inside other text, up to a space, quote or bracket: aiohttp's error
+# text writes url='...' or url=URL('...')
+_LINK = re.compile(r"\bhttps?://[^\s'\"<>()]+")
+
+
+def hide_link(url: Any, hide_path: bool = False) -> str:
+    """
+    A link as a log line shows it, with its query (a signed link's Policy,
+    Signature and Key-Pair-Id, the account's user id) as {hidden}. hide_path
+    also hides the path's longer names, which name the file, as get_url_log
+    does for a media link. Only for logging: the link sent is unchanged.
+    """
+    link, _, query = str(url).partition("?")
+    if hide_path:
+        site = re.match(r"[\w+.-]+://[^/]*", link)
+        start = site.end() if site else 0
+        link = link[:start] + re.sub(r"/\w{5}\w+", "/{hidden}", link[start:])
+    return f"{link}?{{hidden}}" if query else link
+
+
+def hide_links(text: Any, hide_path: bool = False) -> str:
+    """Text (an error, a traceback) with every link in it as hide_link shows it."""
+    return _LINK.sub(lambda m: hide_link(m.group(0), hide_path), str(text))
 
 
 def add_sensitive_pattern(pattern: Any, replacement: Any = "{hidden}"):

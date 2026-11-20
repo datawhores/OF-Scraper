@@ -21,6 +21,7 @@ import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 import ofscraper.utils.settings as settings
 from ofscraper.managers.sessionmanager.cert import (
     create_custom_ssl_context,
@@ -656,7 +657,7 @@ class sessionManager:
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait.wait_random(min=wait_min, max=wait_max),
             before=lambda x: (
-                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {hide_link(url)}")
                 if x.attempt_number > 1
                 else None
             ),
@@ -701,7 +702,7 @@ class sessionManager:
                         )
                         if not r.ok and r.status_code != 404:
                             error_text = r.text_()
-                            log.debug(f"[bold]failed: [bold] {r.url}")
+                            log.debug(f"[bold]failed: [bold] {hide_link(r.url)}")
                             log.debug(f"[bold]status: [bold] {r.status_code}")
                             log.debug(f"[bold]response text [/bold]: {error_text}")
                             log.debug(f"response headers {dict(r.headers)}")
@@ -719,8 +720,8 @@ class sessionManager:
                             r.raise_for_status()
 
                     except Exception as E:
-                        self._log.traceback_(E)
-                        self._log.traceback_(traceback.format_exc())
+                        self._log.traceback_(hide_links(E))
+                        self._log.traceback_(hide_links(traceback.format_exc()))
                         self._handle_error(E, exceptions, sent_at)
                         raise E
         yield r
@@ -771,7 +772,7 @@ class sessionManager:
             reraise=True,
             before_sleep=lambda retry_state: (
                 self._log.debug(
-                    f"Request failed for {url}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})"
+                    f"Request failed for {hide_link(url)}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})"
                 )
             ),
         ):
@@ -813,7 +814,7 @@ class sessionManager:
                     range_refused = r.status_code == 416 and "Range" in (headers or {})
                     if not r.ok and r.status_code != 404 and not range_refused:
                         error_text = await r.text_()
-                        self._log.debug(f"[bold]failed: [bold] {r.url}")
+                        self._log.debug(f"[bold]failed: [bold] {hide_link(r.url)}")
                         self._log.debug(f"[bold]status: [bold] {r.status_code}")
                         self._log.debug(f"[bold]response text [/bold]: {error_text}")
                         self._log.debug(f"response headers {dict(r.headers)}")
