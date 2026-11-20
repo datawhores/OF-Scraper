@@ -47,11 +47,12 @@ from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_files_downloaded,
 )
-from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.checkers import AuthCheckLeft, AuthCheckUnavailable, check_auth
 from ofscraper.utils.context.run_async import run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 import ofscraper.managers.manager as manager
 from ofscraper.commands.scraper.actions.download.download import process_dicts
+import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.main.close.final.final import final_action
 
@@ -133,7 +134,7 @@ def _process_queued_rows():
         log.info(f"Processing download batch for user: {username}")
         try:
             # Pass the user's entire batch to the processing function
-            _process_user_batch(
+            process_user_batch(
                 username, model_id, data["media"], data["posts"], data["rows"]
             )
 
@@ -193,20 +194,29 @@ def _get_data_from_row(row: dict):
     return fresh_media, fresh_post, username, model_obj.id
 
 
-def _process_user_batch(
+def process_user_batch(
     username: str, model_id: int, media_list: list, post_list: list, row_list: list
 ):
     """
     Processes all media items for a single user's batch.
+
+    Returns the batch's totals: "videos", "audios", "photos" and
+    "forced" (skipped: files already there), "failed" (rows still failed
+    after the retry) and "bytes" downloaded, for both passes. Each
+    process_dicts call starts its counts again, so the caller can't read them
+    afterwards.
     """
-    if _process_user_batch.counter == 0:
+    totals = dict.fromkeys(
+        ("videos", "audios", "photos", "forced", "failed", "bytes"), 0
+    )
+    if process_user_batch.counter == 0:
         log.info("Performing first-run CDM check...")
         if not network.check_cdm():
             # e.g. key mode cdrm, which is deprecated: the reason is shown above
             log.info("CDM check failed; DRM videos may not download. This check will not be repeated.")
         else:
             log.info("CDM check passed. This check will not be repeated.")
-    _process_user_batch.counter += 1
+    process_user_batch.counter += 1
 
     operations.table_init_create(model_id=model_id, username=username)
     try:
@@ -249,6 +259,7 @@ def _process_user_batch(
                     if retry:
                         log.info(f"Download failed for {media.filename}.")
                         app.app.update_cell_state(key, "[failed]", "bold red")
+                        totals["failed"] += 1
                         reported.add(i)
                     continue
                 failed.discard(i)
@@ -265,16 +276,26 @@ def _process_user_batch(
                     app.app.update_cell_state(key, "[downloaded]", "bold green")
                 reported.add(i)
 
+        # a call that returns before downloading leaves the last batch's
+        # bytes here
+        common_globals.total_bytes_downloaded = 0
         try:
             if not stop.requested.is_set():
-                process_dicts(
+                counts = process_dicts(
                     username, model_id,
                     [target_media[i] for i in indices],
                     [target_posts[i] for i in indices],
                     on_result=on_result,
                 )
+                # not its failed count: a file failed in the first pass can
+                # download in the retry, so "failed" counts the rows left
+                for name, count in zip(
+                    ("videos", "audios", "photos", "forced"), counts or ()
+                ):
+                    totals[name] += count
         except Exception as e:
             log.debug(f"Download batch failed: {e}")
+        totals["bytes"] += common_globals.total_bytes_downloaded
         if stop.requested.is_set():
             for i in set(indices) - reported:
                 media_list[i] = target_media[i]
@@ -285,6 +306,7 @@ def _process_user_batch(
             for i in sorted(set(indices) - reported):
                 log.info(f"Download failed for {target_media[i].filename}.")
                 app.app.update_cell_state(row_list[i][0], "[failed]", "bold red")
+                totals["failed"] += 1
         return sorted(failed)
 
     indices = list(range(len(media_list)))
@@ -303,10 +325,13 @@ def _process_user_batch(
             time.sleep(1)
             refresh_media(failed)
         download_batch(failed, retry=True)
+    return totals
 
 
 # Initialize counter on the function object
-_process_user_batch.counter = 0
+process_user_batch.counter = 0
+# the old name, which the GUI patch calls
+_process_user_batch = process_user_batch
 
 
 @run
@@ -445,9 +470,6 @@ def _no_fansly_stories(command):
 
 
 def _checker():
-    check_auth()
-    allow_check_dupes()
-    set_after_check_mode()
     try:
         if settings.get_settings().command == "post_check":
             post_checker()
@@ -457,6 +479,10 @@ def _checker():
             purchase_checker()
         elif settings.get_settings().command == "story_check":
             stories_checker()
+    except (AuthCheckUnavailable, AuthCheckLeft):
+        # the auth check runs in gather_rows now; its errors were never
+        # logged as tracebacks
+        raise
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -469,8 +495,32 @@ def set_after_check_mode():
     settings.update_args(args)
 
 
+def gather_rows(command):
+    """The rows the check table shows for ``command`` (post_check, msg_check,
+    paid_check or story_check), from the same scan of the creators and areas
+    in the settings, without opening the table or starting its download
+    thread. The check commands open the table on these; the GUI shows them
+    itself. Rows add to the last scan's: call reset_table_data() first for
+    a new table."""
+    runners = {
+        "post_check": post_check_runner,
+        "msg_check": message_checker_runner,
+        "paid_check": purchase_checker_runner,
+        "story_check": stories_checker_runner,
+    }
+    if command not in runners:
+        raise ValueError(f"Not a check command: {command}")
+    if _no_fansly_stories(command):
+        return []
+    check_auth()
+    allow_check_dupes()
+    set_after_check_mode()
+    runners[command]()
+    return ROWS or []
+
+
 def post_checker():
-    post_check_runner()
+    gather_rows("post_check")
     start_helper()
 
 
@@ -802,7 +852,7 @@ def start_helper():
 
 
 def message_checker():
-    message_checker_runner()
+    gather_rows("msg_check")
     start_helper()
 
 
@@ -927,7 +977,7 @@ async def message_check_retriver(forced=False, only_model_id=None):
 
 
 def purchase_checker():
-    purchase_checker_runner()
+    gather_rows("paid_check")
     start_helper()
 
 
@@ -1014,7 +1064,7 @@ async def purchase_check_retriver(forced=False, only_model_id=None):
 
 
 def stories_checker():
-    stories_checker_runner()
+    gather_rows("story_check")
     start_helper()
 
 
