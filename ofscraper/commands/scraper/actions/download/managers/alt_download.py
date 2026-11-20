@@ -283,9 +283,12 @@ class AltDownloadManager(DownloadManager):
             self.ctx.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             url = _mpd_segment_url(ele.mpd, item["origname"])
+            # hls_header ends without a ";", so join the two with one: run
+            # together, the last CloudFront cookie swallows auth_id
+            cookies = (ele.hls_header, auth_requests.get_cookies_str())
             headers = {
                 **(headers or {}),
-                "Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}",
+                "Cookie": "; ".join(x for x in cookies if x),
             }
             self.ctx.log.debug(
                 f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {hide_link(url, hide_path=True)}"
