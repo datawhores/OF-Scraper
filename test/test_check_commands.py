@@ -52,12 +52,22 @@ def test_get_paid_ids_passes_username_then_id(monkeypatch):
 
 def test_every_paid_lookup_in_check_passes_username_first():
     tree = ast.parse(pathlib.Path(check.__file__).read_text(encoding="utf-8"))
-    calls = [
-        n for n in ast.walk(tree)
-        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "get_paid_posts"
-    ]
-    assert len(calls) == 3
-    for call in calls:
+    def named(n, name):
+        f = n.func
+        return isinstance(f, ast.Name) and f.id == name or (
+            isinstance(f, ast.Attribute)
+            and f.attr == name.split(".")[-1]
+            and isinstance(f.value, ast.Name)
+            and f.value.id == name.split(".")[0]
+        )
+
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+    # OnlyFans' paid lookup is called only through _get_paid, which also
+    # picks Fansly's (model id first) for a Fansly profile
+    (onlyfans,) = [n for n in calls if named(n, "paid_.get_paid_posts")]
+    routed = [n for n in calls if named(n, "_get_paid")]
+    assert len(routed) == 3
+    for call in [onlyfans, *routed]:
         assert [a.id for a in call.args[:2]] == ["user_name", "model_id"], ast.unparse(call)
 
 
