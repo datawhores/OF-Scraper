@@ -9,7 +9,10 @@ log = logging.getLogger("shared")
 
 
 class AuthCheckUnavailable(Exception):
-    """The auth couldn't be checked (network or server problem)."""
+    """The auth couldn't be checked (network, server or dynamic rule problem).
+
+    The message says why, so a caller can show it without the log.
+    """
 
 
 class AuthCheckLeft(Exception):
@@ -24,11 +27,11 @@ def check_auth(include_main_menu=False):
 
         fansly_auth.load()
     while status != "UP":
-        status = init.getstatus()
+        status, message = init.auth_status()
         if status == "UNAVAILABLE":
             # the auth may be fine, so don't ask for it again. An ordinary
             # exception ends a one-off run but lets the daemon try its next pass
-            raise AuthCheckUnavailable("couldn't check the auth, see the error above")
+            raise AuthCheckUnavailable(f"Couldn't check the auth: {message}")
         if status != "UP":
             log.info("Auth Failed")
             if sites.is_fansly():

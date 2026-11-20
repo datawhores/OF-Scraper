@@ -12,7 +12,7 @@ class PromptAgain(Exception):
 @pytest.fixture
 def failed_auth(monkeypatch):
     """The auth check fails as bad auth; the auth prompt answers with `choice`."""
-    monkeypatch.setattr(init, "getstatus", lambda: "DOWN")
+    monkeypatch.setattr(init, "auth_status", lambda: ("DOWN", None))
     monkeypatch.setattr(checkers.auth_file, "read_auth", lambda: {})
     calls = []
 

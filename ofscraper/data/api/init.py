@@ -151,8 +151,18 @@ def unavailable_message(e: Exception) -> str | None:
 
 
 def getstatus():
+    return auth_status()[0]
+
+
+def auth_status():
+    """
+    Returns (status, message). status is UP, DOWN (the auth was rejected) or
+    UNAVAILABLE (the auth couldn't be checked). message says why it couldn't
+    be checked, for callers with no log to point to (a GUI dialog); it's None
+    for UP and DOWN.
+    """
     if settings.get_settings().anon:
-        return "UP"
+        return "UP", None
     try:
         # fetch the dynamic rule once, with its own retries. Otherwise each
         # retry of /me fetches it again, retries included. Fansly requests
@@ -164,13 +174,13 @@ def getstatus():
         # answer for anonymous runs, so it's only treated as bad auth here
         if not data.get("isAuth"):
             log.info("OnlyFans says this session isn't logged in")
-            return "DOWN"
-        return "UP"
+            return "DOWN", None
+        return "UP", None
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
         message = unavailable_message(e)
         if message:
             log.error(message)
-            return "UNAVAILABLE"
-        return "DOWN"
+            return "UNAVAILABLE", message
+        return "DOWN", None
