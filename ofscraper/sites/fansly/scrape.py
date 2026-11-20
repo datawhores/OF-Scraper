@@ -75,11 +75,25 @@ async def timeline_pages(model_id, username, c=None, post_id=None):
         before = start_before()
         if before is not None:
             log.debug(f"Fansly timeline: starting at --before for {username}")
+        # a check against the profile's counts, for a scan from the newest post
+        report = normalize.ScanReport() if before is None else None
         async with contextlib.aclosing(
-            api.timeline_pages(c, model_id, after=_after(), before=before)
+            api.timeline_pages(c, model_id, after=_after(), before=before, report=report)
         ) as pages:
             async for page in pages:
                 yield page
+        # not reached when the caller stops early: the counts would be partial
+        if report is not None:
+            await _log_report(c, report, model_id, username)
+
+
+async def _log_report(c, report, model_id, username):
+    try:
+        stats = await api.timeline_stats(c, model_id)
+    except Exception as e:  # the check is only a report
+        log.debug(f"Fansly media counts not read: {e}")
+        stats = None
+    log.info(report.summary(username, stats, after=_after()))
 
 
 async def get_timeline_posts(model_id, username, c=None, post_id=None):
@@ -148,7 +162,7 @@ async def paid_pages(model_id, username, c=None):
                 yield page
 
 
-async def get_models(usernames=None):
+async def get_models(usernames=None, c=None):
     """Creators to scrape, as OnlyFans-shaped model dicts.
 
     With usernames: every value goes to ``account?usernames=``, and the
@@ -160,7 +174,7 @@ async def get_models(usernames=None):
 
     usernames = [str(u) for u in (usernames or []) if u and u != "ALL"]
     ids = [u for u in usernames if u.isdigit()]
-    async with _session(None) as c:
+    async with _session(c) as c:
         if usernames:
             accounts = list(await api.accounts_by_username(c, usernames))
             if ids:

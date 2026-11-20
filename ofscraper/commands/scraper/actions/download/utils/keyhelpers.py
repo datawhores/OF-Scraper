@@ -31,6 +31,25 @@ def setLog(input_):
     log = input_
 
 
+def missing_cdm_keys():
+    """What manual key mode lacks to decrypt DRM videos, or None.
+
+    A blank path becomes Path("") == "." and fails with "Is a directory"
+    only after the whole video has been downloaded.
+    """
+    s = settings.get_settings()
+    if s.key_mode != "manual":
+        return None
+    problems = []
+    for name, value in (("client-id", s.client_id), ("private-key", s.private_key)):
+        value = str(value or "").strip()
+        if not value:
+            problems.append(f"{name} is not set")
+        elif not pathlib.Path(value).is_file():
+            problems.append(f"{name} file not found: {value}")
+    return "; ".join(problems) or None
+
+
 def strip_pssh(path):
     """
     Turn pssh boxes in a decrypted file into same-sized 'free' boxes.
@@ -149,7 +168,7 @@ async def un_encrypt(item, c, ele, input_=None):
             past_key = None
         if past_key:
             key = past_key
-            log.debug(f"{get_medialog(ele)} got key rom cache: {key}")
+            log.debug(f"{get_medialog(ele)} got key from cache")
         elif keymode == "manual":
             key = await key_helper_manual(c, item["pssh"], ele.license, ele.id, kid)
         elif keymode == "cdrm":
@@ -157,14 +176,14 @@ async def un_encrypt(item, c, ele, input_=None):
         if not key:
             raise Exception(f"{get_medialog(ele)} Could not get key")
         key = key.strip()
-        log.debug(f"{get_medialog(ele)} retrive new key: {key}")
+        log.debug(f"{get_medialog(ele)} key ready")
         newpath = pathlib.Path(
             re.sub(
                 r"\.part$", f".{item['ext']}", str(item["path"]), flags=re.IGNORECASE
             )
         )
         ffmpeg_key = get_ffmpeg_key(key)
-        log.debug(f"{get_medialog(ele)} got ffmpeg key {ffmpeg_key}")
+        log.debug(f"{get_medialog(ele)} got ffmpeg key")
         log.debug(
             f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}"
         )
@@ -247,7 +266,11 @@ async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
             skip_expection_check=True,
         ) as r:
             data = await r.json_()
-            log.debug(f"cdrm json {data}")
+            # the reply holds the content keys: log only its fields
+            log.debug(
+                f"ID:{id} cdrm reply fields: "
+                f"{list(data) if isinstance(data, dict) else type(data).__name__}"
+            )
             # one "kid:key" pair per line when the license has several
             key = pick_key(str(data["message"]).split(), kid, id)
         return key

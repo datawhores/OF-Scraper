@@ -546,7 +546,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="suppress_log_level"></a>`SUPPRESS_LOG_LEVEL` | `OFSC_SUPPRESS_LOG_LEVEL` | `21` | Log level to suppress output (integer representing level). |
 | <a id="resume_default"></a>`RESUME_DEFAULT` | `OFSC_RESUME_DEFAULT` | `True` | Whether to resume downloads by default. |
 | <a id="cachedefault"></a>`CACHEDEFAULT` | `OFSC_CACHE_DEFAULT` | `'sqlite'` | Default caching mechanism (e.g., "sqlite"). |
-| <a id="key_default"></a>`KEY_DEFAULT` | `OFSC_KEY_DEFAULT` | `'cdrm'` | Default key mode for content decryption. |
+| <a id="key_default"></a>`KEY_DEFAULT` | `OFSC_KEY_DEFAULT` | `'manual'` | Default key mode for content decryption. |
 | <a id="key_options"></a>`KEY_OPTIONS` | none (bare key only) | `['cdrm', 'manual']` | The allowed `cdm_options.key-mode-default` values, taken from `ofscraper/utils/const.py`. Not read from the environment. |
 | <a id="file_size_max_default"></a>`FILE_SIZE_MAX_DEFAULT` | `OFSC_FILE_SIZE_MAX_DEFAULT` | `0` | Default maximum file size allowed (bytes, 0 for no limit). |
 | <a id="file_size_min_default"></a>`FILE_SIZE_MIN_DEFAULT` | `OFSC_FILE_SIZE_MIN_DEFAULT` | `0` | Default minimum file size allowed (bytes, 0 for no limit). |

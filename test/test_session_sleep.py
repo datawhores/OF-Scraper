@@ -1,5 +1,9 @@
 import asyncio
+import threading
 
+import pytest
+
+import ofscraper.utils.context.run_async as run_async
 from ofscraper.managers.sessionmanager.sessionmanager import SessionSleep
 
 
@@ -35,6 +39,40 @@ def test_do_sleep_works_across_event_loops():
     sleeper = make_sleeper()
     contend(sleeper, "async_do_sleep")
     contend(sleeper, "async_do_sleep")
+
+
+@pytest.mark.parametrize("contended", [True, False])
+def test_threads_that_ended_do_not_keep_their_locks(contended):
+    # @run gives each thread its own loop and never closes it. A lock that
+    # was waited on holds its loop, so one lock and loop per thread used to
+    # stay for the whole run
+    sleeper = make_sleeper()
+    loops = []  # closed at the end: an unclosed loop warns when collected
+
+    @run_async.run
+    async def work():
+        loops.append(asyncio.get_running_loop())
+        if contended:
+            await asyncio.gather(sleeper.async_do_sleep(), sleeper.async_do_sleep())
+        else:
+            await sleeper.async_do_sleep()
+
+    async def later():
+        await sleeper.async_do_sleep()
+        return len(sleeper._alocks)
+
+    try:
+        for _ in range(5):
+            t = threading.Thread(target=work)
+            t.start()
+            t.join()
+        assert len({id(x) for x in loops}) == 5  # a loop per thread, none closed
+        # each thread's lock went when the next loop asked for one
+        assert len(sleeper._alocks) <= 1
+        assert asyncio.run(later()) == 1  # only the running loop's lock
+    finally:
+        for loop in loops:
+            loop.close()
 
 
 def test_toomany_req_works_across_event_loops():

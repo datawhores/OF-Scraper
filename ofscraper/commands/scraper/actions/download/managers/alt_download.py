@@ -81,6 +81,14 @@ class AltDownloadManager(DownloadManager):
         self.ctx.log.debug(
             f"{common_logs.get_medialog(ele)} Downloading with protected media downloader"
         )
+        # a video that can't be decrypted isn't downloaded; it isn't saved
+        # as done, so it downloads once the keys are there
+        missing = keyhelpers.missing_cdm_keys()
+        if missing:
+            self.ctx.log.info(
+                f"{common_logs.get_medialog(ele)} DRM video skipped: CDM keys not found ({missing})"
+            )
+            return "forced_skipped", 0
 
         sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
         self.ctx.log.debug(

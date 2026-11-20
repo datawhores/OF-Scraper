@@ -26,6 +26,15 @@ def test_letter_mode_truncates(fake_settings):
     assert base().text_trunicate("abcdefghij") == "abcde"
 
 
+@pytest.mark.parametrize(
+    "replacer,text,length",
+    [("_", "Good_luck", 5), (" ", "Good luck", 5), ("_", "Good__luck", 6), ("_", "Good _luck", 6)],
+)
+def test_letter_mode_cut_does_not_end_on_a_separator(fake_settings, replacer, text, length):
+    fake_settings(text_length=length, text_type="letter", space_replacer=replacer)
+    assert base().text_trunicate(text) == "Good"
+
+
 def test_zero_length_keeps_text(fake_settings):
     fake_settings(text_length=0)
     assert base().text_trunicate("a b c") == "a b c"

@@ -111,6 +111,33 @@ def test_an_item_stopped_before_it_started_ends_the_worker(env, monkeypatch):
     assert env.shown == []
 
 
+def test_an_item_with_no_link_fails_with_a_plain_reason(env, monkeypatch):
+    # locked media sent from the check table has no url and no mpd; the
+    # download returned None and handle_one crashed on len(None)
+    calls = []
+
+    class _Recorder:
+        def __getattr__(self, name):
+            return lambda *a, **k: calls.append((name, a[0] if a else None))
+
+    monkeypatch.setattr(common_globals, "log", _Recorder(), raising=False)
+    monkeypatch.setattr(run_mod, "fresh_before_download", _noop)
+    monkeypatch.setattr(run_mod, "get_medialog", lambda ele: "media")
+    item = Item(1)
+    item.url = item.mpd = None
+    results = []
+
+    asyncio.run(
+        run_mod.handle_one(
+            (None, item, 1, "a"), None, lambda: 1,
+            on_result=lambda ele, r: results.append(r),
+        )
+    )
+    assert results == ["failed"] and item.marked == "failed"
+    assert ("info", "media Not downloaded: it has no link (locked or removed)") in calls
+    assert not [name for name, _ in calls if name == "traceback_"]
+
+
 def test_consumer_runs_each_item_through_handle_one(env, monkeypatch):
     seen = []
 

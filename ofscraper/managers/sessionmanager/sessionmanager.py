@@ -6,7 +6,6 @@ import time
 import ssl
 import contextlib
 import traceback
-import weakref
 from typing import Optional, Dict, Union, AsyncGenerator, Any, Generator
 from urllib.parse import parse_qs, urlsplit
 
@@ -117,7 +116,7 @@ class SessionSleep:
         )  # <-- NEW: Tracks when the API was last hit
         # One asyncio.Lock per event loop: ofscraper runs async code in several
         # loops, and a single asyncio.Lock binds to the first loop that waits on it
-        self._alocks = weakref.WeakKeyDictionary()
+        self._alocks = {}
         self._alocks_guard = threading.Lock()
         self._lock = threading.Lock()
         self._init_sleep = (
@@ -176,6 +175,13 @@ class SessionSleep:
         with self._alocks_guard:
             lock = self._alocks.get(loop)
             if lock is None:
+                # Not a WeakKeyDictionary: a lock that has been waited on
+                # holds its loop, so the entry would never expire. @run
+                # never closes its loops, so drop the locks of every loop
+                # that isn't running: none of its tasks is inside the lock,
+                # and the loop gets a new one if it runs again.
+                for old in [x for x in self._alocks if not x.is_running()]:
+                    del self._alocks[old]
                 lock = self._alocks[loop] = asyncio.Lock()
         return lock
 

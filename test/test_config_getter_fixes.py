@@ -178,7 +178,7 @@ def test_logs_expire_number_is_still_read():
 @pytest.mark.parametrize("value", [5, True, ["manual"], {"mode": "manual"}])
 def test_key_mode_that_isnt_a_string_is_the_default(value):
     config = {"cdm_options": {"key-mode-default": value}}
-    assert data.get_key_mode(config=config) == "cdrm"
+    assert data.get_key_mode(config=config) == "manual"
 
 
 @pytest.mark.parametrize("value", [5, True, ["manual"], {"mode": "manual"}])
@@ -312,7 +312,7 @@ def test_rewrite_of_a_config_with_wrong_types_writes_the_defaults(config_path):
 
     assert written["file_options"]["text_type_default"] == "letter"
     assert written["download_options"]["filter"] == ["Images"]
-    assert written["cdm_options"]["key-mode-default"] == "cdrm"
+    assert written["cdm_options"]["key-mode-default"] == "manual"
     assert written["content_filter_options"]["file_size_min"] == 0
     assert written["content_filter_options"]["file_size_max"] == 0
     assert written["performance_options"]["download_limit"] == 0

@@ -356,7 +356,8 @@ EXPECTED_GETTERS = {
     "get_spacereplacer": (379, "1d5fb59f35b02f64"),
     "get_private_key": (166, "0b8c2980d5203ba5"),
     "get_client_id": (166, "c47f6c3ad54ad06f"),
-    "get_key_mode": (166, "832e762ef6fe2691"),
+    # default cdrm -> manual: cdrm is deprecated
+    "get_key_mode": (166, "47f07a3be33295dc"),
     "get_dynamic": (166, "5d329d06d09f54c6"),
     "get_dynamic_configured": (166, "cb19e4e268db322e"),
     "get_part_file_clean": (397, "2d28652912f25bcc"),
@@ -544,16 +545,17 @@ def _schema_results(path):
     return results
 
 
+# flat_legacy sets its key mode; the others take the default, now manual
 EXPECTED_SCHEMA = {
-    "false": "f0b5994259e22ccb",
-    "empty": "f0b5994259e22ccb",
-    "empty:written": "f0b5994259e22ccb",
+    "false": "d6423683ff8e0754",
+    "empty": "d6423683ff8e0754",
+    "empty:written": "d6423683ff8e0754",
     "flat_legacy": "b8cb0ac1bb9e775e",
     "flat_legacy:written": "b8cb0ac1bb9e775e",
-    "nested_legacy": "feb9fce2a65c72e5",
-    "nested_legacy:written": "feb9fce2a65c72e5",
-    "explicit_falsy": "495b75f8642de0d2",
-    "explicit_falsy:written": "495b75f8642de0d2",
+    "nested_legacy": "583519b14dc8a270",
+    "nested_legacy:written": "583519b14dc8a270",
+    "explicit_falsy": "a10565cf9f1b1f9f",
+    "explicit_falsy:written": "a10565cf9f1b1f9f",
 }
 
 
