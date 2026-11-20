@@ -853,6 +853,63 @@ def test_refused_audio_track_saves_the_video_and_logs_why(env, tmp_path, caplog,
     assert len(env.ffmpeg_runs) == 1
 
 
+@needs_ffmpeg
+@pytest.mark.parametrize("case", ["accepted_after_refresh", "refused_again", "no_direct_file"])
+def test_a_refused_video_segment_gets_new_links_then_the_direct_file(
+        env, tmp_path, monkeypatch, case):
+    segments = make_segments(tmp_path, "v", "-bsf:v", "dump_extra=freq=keyframe")
+    first, refused = list(segments)[:2]
+    raw = raw_media()
+    calls, asked = [], []
+
+    async def main_download(self, c, ele, username, model_id):
+        calls.append(ele.url)
+        return "Videos", 10
+
+    fast_retries(monkeypatch, attempts=1)
+    # one file at a time: the first is fetched before the second is refused
+    monkeypatch.setattr(stream_mod, "segment_limit", lambda: 1)
+    monkeypatch.setattr(run_mod.MainDownloadManager, "main_download", main_download)
+    with Server({}) as srv:
+        root = serve_hls(srv, raw, VIDEO_ONLY_MASTER, {"r2160": segments})
+        srv.refuse.add(f"{root}/r2160/{refused}")
+
+        async def refresh_media_link(ele):
+            asked.append(ele.id)
+            if case == "accepted_after_refresh":
+                srv.refuse.clear()
+            return True
+
+        monkeypatch.setattr(stream_mod, "refresh_media_link", refresh_media_link)
+        ele = make_ele(raw, direct=case != "no_direct_file")
+        result = download_locally(ele)
+    # new links once (#536), as for a refused playlist
+    assert asked == [ele.id]
+    seen = [path for path, _ in srv.seen]
+    if case == "accepted_after_refresh":
+        # the stream at its quality, with the file fetched before the refusal kept
+        assert result[0] == "Videos" and calls == []
+        assert files_in(env.out) == [f"{ele.filename}.mp4"]
+        assert len(env.marks) == 1 and len(env.ffmpeg_runs) == 1
+        assert seen.count(f"{root}/r2160/{first}") == 1
+        assert files_in(env.temp) == []
+        return
+    assert env.ffmpeg_runs == [] and env.marks == []
+    if case == "refused_again":
+        assert result == ("Videos", 10)
+        assert calls == [ele.url] and ele.url
+        # the stream's segments are no use to the direct file
+        assert files_in(env.out, env.temp) == []
+    else:
+        # nothing to fall back to: the item fails as before, and the
+        # fetched segments stay for the next run to resume from
+        assert result == ("skipped", 0) and calls == []
+        assert files_in(env.out) == [] and not list(env.temp.glob("*.part"))
+        folder = next(env.temp.glob(".*.segments"))
+        kept = [p for p in folder.iterdir() if p.suffix == ".ts"]
+        assert [p.read_bytes() for p in kept] == [segments[first]]
+
+
 # ------------------------------------------------------------------ sound from the direct file
 
 def serve_direct(srv, raw, tmp_path, *args, path=None):
