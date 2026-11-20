@@ -49,6 +49,11 @@ def load_api_limits_config():
         os.getenv("OFSC_API_INDIVIDUAL_NUM_TRIES", "3")
     )
 
+    # RATE_LIMIT_NUM_TRIES: Number of tries for a request that keeps getting a
+    # 429. The backoff wait grows between tries, so these span minutes.
+    # Default: 8
+    config["RATE_LIMIT_NUM_TRIES"] = int(os.getenv("OFSC_RATE_LIMIT_NUM_TRIES", "8"))
+
     # API_PAID_NUM_TRIES: Number of tries for paid content API calls.
     # Default: 8
     config["API_PAID_NUM_TRIES"] = int(os.getenv("OFSC_API_PAID_NUM_TRIES", "8"))

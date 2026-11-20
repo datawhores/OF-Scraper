@@ -104,7 +104,12 @@ class SessionSleep:
         increase_factor: Optional[float] = None,
         error_name: Optional[float] = None,
     ):
+        # _last_date: when the wait last changed. _last_error: when the last
+        # error came in, counted or not. _last_raise: when an error last
+        # raised the wait.
         self._last_date = arrow.now()
+        self._last_error = arrow.get(0)
+        self._last_raise = arrow.now()
         self._last_request_time = arrow.get(
             0
         )  # <-- NEW: Tracks when the API was last hit
@@ -148,7 +153,10 @@ class SessionSleep:
     def _maybe_decay_sleep(self):
         if not self._sleep or self._sleep <= self._min_sleep:
             return
-        if (arrow.now() - self._last_date).total_seconds() > self._decay_threshold:
+        # The wait shrinks only after a quiet spell: errors that came in while
+        # it could not rise yet still show the limit is in force
+        quiet_since = max(self._last_date, self._last_error)
+        if (arrow.now() - quiet_since).total_seconds() > self._decay_threshold:
             new_sleep = self._sleep / self._decay_factor
             # Dividing never reaches 0, so end the backoff once it gets small
             if new_sleep < BACKOFF_FLOOR:
@@ -238,8 +246,16 @@ class SessionSleep:
             self._last_request_time = arrow.now()
             return False
 
-    def toomany_req(self):
+    def toomany_req(self, sent_at=None):
+        """
+        Records a rate-limit error. sent_at is when the failed request went
+        out: a request sent after the wait was last raised was still refused
+        at the current pace, so the wait rises without waiting out the window.
+        Errors from requests sent before that are one burst and count once.
+        """
         log = logging.getLogger("shared")
+        now = arrow.now()
+        self._last_error = now
         # A sleep at the minimum gap is pacing, not backoff: "not self._sleep"
         # alone never fired when the gap is above 0
         if not self._sleep or self._sleep <= self._min_sleep:
@@ -251,11 +267,11 @@ class SessionSleep:
             log.debug(
                 f"SessionSleep: Backoff triggered => setting sleep to starting value: [{self._sleep:.2f} seconds] due to {self.error_name} error"
             )
-        elif (
-            arrow.now().float_timestamp - self._last_date.float_timestamp < self._difmin
+        elif not (sent_at is not None and sent_at > self._last_raise) and (
+            (now - self._last_raise).total_seconds() < self._difmin
         ):
             log.debug(
-                f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], last {self.error_name} error was less than {self._difmin}s ago"
+                f"SessionSleep: Backoff => not changing sleep [{self._sleep:.2f} seconds], it was raised less than {self._difmin}s ago"
             )
             return
         else:
@@ -264,15 +280,15 @@ class SessionSleep:
             log.debug(
                 f"SessionSleep: Backoff => increasing sleep by factor x{self._increase_factor} to: [{self._sleep:.2f} seconds] due to {self.error_name} error"
             )
-        self._last_date = arrow.now()
+        self._last_date = self._last_raise = arrow.now()
 
     def reset_sleep(self):
         self._sleep = self._min_sleep
-        self._last_date = arrow.now()
+        self._last_date = self._last_raise = arrow.now()
 
-    async def async_toomany_req(self):
+    async def async_toomany_req(self, sent_at=None):
         async with self._alock:
-            self.toomany_req()
+            self.toomany_req(sent_at)
 
     @property
     def sleep(self) -> Optional[float]:
@@ -442,11 +458,11 @@ class sessionManager:
             print_auth_warning(E)
             self._last_auth_warn_date = arrow.now()
 
-    def _handle_error(self, E: Exception, exceptions: list):
+    def _handle_error(self, E: Exception, exceptions: list, sent_at=None):
         if is_signed_cdn_forbidden(E):
             return
         if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
-            self._rate_limit_sleeper.toomany_req()
+            self._rate_limit_sleeper.toomany_req(sent_at)
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
             self._forbidden_sleeper.toomany_req()
@@ -454,11 +470,11 @@ class sessionManager:
             self.print_auth_warning(E)
             time.sleep(8)
 
-    async def _async_handle_error(self, E: Exception, exceptions: list):
+    async def _async_handle_error(self, E: Exception, exceptions: list, sent_at=None):
         if is_signed_cdn_forbidden(E):
             return
         if TOO_MANY in exceptions and is_provided_exception_number(E, 429, 504, 503):
-            await self._rate_limit_sleeper.async_toomany_req()
+            await self._rate_limit_sleeper.async_toomany_req(sent_at)
         elif FORBIDDEN in exceptions and is_provided_exception_number(E, 403):
             self.print_auth_warning(E)
             await self._forbidden_sleeper.async_toomany_req()
@@ -569,6 +585,29 @@ class sessionManager:
         self._rate_limit_sleeper.reset_sleep()
         self._forbidden_sleeper.reset_sleep()
 
+    def _stop_after(self, retries, exceptions):
+        """
+        Stops after `retries` attempts, or after RATE_LIMIT_NUM_TRIES when the
+        last failure was a 429 the backoff handles: the wait before each new
+        attempt grows, and the usual few attempts end before it can outlast
+        the limit.
+        """
+        rate_limit_tries = of_env.getattr("RATE_LIMIT_NUM_TRIES")
+
+        def stop(retry_state):
+            limit = retries
+            outcome = retry_state.outcome
+            if (
+                TOO_MANY in exceptions
+                and outcome is not None
+                and outcome.failed
+                and is_provided_exception_number(outcome.exception(), 429)
+            ):
+                limit = max(retries, rate_limit_tries)
+            return retry_state.attempt_number >= limit
+
+        return stop
+
     @contextlib.contextmanager
     def requests(
         self,
@@ -602,7 +641,7 @@ class sessionManager:
         for _ in Retrying(
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit))
             & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
-            stop=tenacity.stop.stop_after_attempt(retries),
+            stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait.wait_random(min=wait_min, max=wait_max),
             before=lambda x: (
                 log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
@@ -614,8 +653,10 @@ class sessionManager:
             r = None
             with self._sync_sem:
                 with _:
+                    sent_at = None
                     try:
                         self._wait_before_request()
+                        sent_at = arrow.now()
 
                         if (
                             SIGN in actions
@@ -668,7 +709,7 @@ class sessionManager:
                     except Exception as E:
                         self._log.traceback_(E)
                         self._log.traceback_(traceback.format_exc())
-                        self._handle_error(E, exceptions)
+                        self._handle_error(E, exceptions, sent_at)
                         raise E
         yield r
 
@@ -707,7 +748,7 @@ class sessionManager:
         # leaving both responses' connections open.
         r = None
         async for _ in AsyncRetrying(
-            stop=tenacity.stop.stop_after_attempt(retries),
+            stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
             # a cancel (Ctrl+C, a timeout around the call) stops the request:
             # tenacity's attempt swallows it, so it must not count as a failure
@@ -724,8 +765,10 @@ class sessionManager:
         ):
             with _:
                 await self._sem.acquire()
+                sent_at = None
                 try:
                     await self._async_wait_before_request()
+                    sent_at = arrow.now()
                     if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
                         headers = self._create_headers(
                             headers, url, SIGN in actions, FORCED_NEW in actions
@@ -772,7 +815,7 @@ class sessionManager:
                     if r is not None:
                         r.close()
                         r = None
-                    await self._async_handle_error(E, exceptions)
+                    await self._async_handle_error(E, exceptions, sent_at)
                     raise E
                 finally:
                     self._sem.release()

@@ -60,9 +60,10 @@ Each kind of request has its own set of values. Rate limits use `<KIND>_SESSION_
 
 How the wait changes:
 - The wait starts at `*_MIN_SLEEP`.
-- On the first error, if `*_MIN_SLEEP` is 0, the wait becomes `*_SLEEP_INIT` seconds (or 1 if that is 0). Otherwise the first error already multiplies the wait.
-- Each error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`. This happens only if `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the last change, since the program started, or since the last per-creator reset.
-- After `*_SLEEP_DECAY_THRESHOLD` seconds without a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- The first error sets the wait to `*_SLEEP_INIT` seconds (or 1 if that is 0). If that is not above `*_MIN_SLEEP`, the wait becomes `*_MIN_SLEEP` times `*_SLEEP_INCREASE_FACTOR` instead.
+- A later error multiplies the wait by `*_SLEEP_INCREASE_FACTOR`, up to `*_SLEEP_MAX`, in two cases: the failed request was sent after the wait was last raised (it was refused even at the current pace), or `*_SLEEP_INCREASE_TIME_DIFF` seconds have passed since the wait was last raised. Other errors belong to the same burst and change nothing.
+- After `*_SLEEP_DECAY_THRESHOLD` seconds without an error or a change, the wait is divided by `*_SLEEP_DECAY_FACTOR`, down to `*_MIN_SLEEP`. If the result would drop below 0.5 seconds, the wait goes straight to `*_MIN_SLEEP` and the backoff ends.
+- A request that gets a 429 is tried up to `RATE_LIMIT_NUM_TRIES` times instead of its usual number, so its tries last long enough for the growing wait to outlast the limit.
 
 How the waits combine:
 - `*_MIN_SLEEP` is also the minimum gap kept between requests.
@@ -161,11 +162,11 @@ ENV_DIRECT = {
 
 # (regular expression for the key, description); the first match is used
 ENV_PATTERNS = [
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "The wait the first error of this kind sets when `*_MIN_SLEEP` is 0 (0 means 1 second). Not used when `*_MIN_SLEEP` is above 0."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_TIME_DIFF", "Seconds that must pass since the last change before another error raises the wait."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_INIT", "The wait the first error of this kind sets (0 means 1 second). It must be above `*_MIN_SLEEP`, or the first error sets `*_MIN_SLEEP` times the increase factor instead."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_TIME_DIFF", "Seconds that must pass since the wait was last raised before an error from an earlier request raises it again. An error from a request sent after the last raise raises it at once."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_MAX", "The longest backoff wait, in seconds."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_INCREASE_FACTOR", "Each further error multiplies the wait by this."),
-    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without a change after which the wait shrinks."),
+    (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_THRESHOLD", "Seconds without an error or a change after which the wait shrinks."),
     (r"[A-Z_]*SESSION(_403)?_SLEEP_DECAY_FACTOR", "The wait is divided by this when it shrinks."),
     (r"[A-Z_]*SESSION(_403)?_MIN_SLEEP", "The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here."),
     (r"[A-Z_]+_SUBPROCESS_LEVEL", "Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off."),
