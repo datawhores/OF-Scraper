@@ -85,6 +85,33 @@ def ensure_allowed_download_url(url, kind="media"):
     raise RefusedHost(message)
 
 
+def drop_login_on_redirect(url, login):
+    """An aiohttp client middleware for a request to url that carries the
+    login headers named in login. aiohttp follows redirects itself, and on the
+    way to another host it drops only the cookies, so a host outside the list
+    would get the rest. A redirect to such a host is sent without them. The
+    first request, redirects on its own host and to allowed hosts go as before."""
+    first = _host(url)
+    login = tuple(login)
+
+    async def middleware(req, handler):
+        target = str(req.url)
+        if _host(target) != first and not is_allowed(target):
+            for name in login:
+                req.headers.popall(name, None)
+            host = _shown(target)
+            if host not in _warned:
+                _warned.add(host)
+                log.warning(
+                    f"a request was redirected to {host}, which isn't an allowed "
+                    "host for the OnlyFans login: it is sent without it. If it "
+                    "needs the login, add it to OFSC_MEDIA_HOST_SUFFIXES"
+                )
+        return await handler(req)
+
+    return middleware
+
+
 def download_actions(url):
     """The session actions for a plain file download from url. None keeps the
     download session's defaults, which send the OnlyFans login. A host

@@ -19,6 +19,7 @@ import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
 from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
@@ -760,6 +761,8 @@ class sessionManager:
         # every exception and would start a new request and yield again,
         # leaving both responses' connections open.
         r = None
+        # what the caller sent; the rest is the login the session adds
+        caller_headers = {k.lower() for k in (headers or {})}
         async for _ in AsyncRetrying(
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
@@ -788,6 +791,15 @@ class sessionManager:
                         )
                     if COOKIES in actions:
                         cookies = self._create_cookies()
+                    login = [
+                        k for k in (headers or {}) if k.lower() not in caller_headers
+                    ]
+                    # a redirect to a host outside the list gets no login
+                    guard = {}
+                    if redirects and login and not sites.is_fansly():
+                        guard["middlewares"] = (
+                            host_allowlist.drop_login_on_redirect(url, login),
+                        )
 
                     r = await self._aio_funct(
                         method,
@@ -807,6 +819,7 @@ class sessionManager:
                         json=json,
                         data=data,
                         ssl=self._get_ssl_context(),
+                        **guard,
                     )
 
                     # a 416 to a ranged request is an answer, not a failure:
