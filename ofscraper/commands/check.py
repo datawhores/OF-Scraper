@@ -1221,6 +1221,13 @@ async def row_gather(username, model_id):
             log.warning(f"Check table: couldn't sort media by date, left unsorted: {E!r}")
             sorted_media = list(media)
 
+    # the posts each media id appears in, built once: calling
+    # collection.posts_with_media_id per row rebuilds every media object each
+    # time, so for a creator with ~14,000 items the table never finished
+    posts_by_media = {}
+    for item in media:
+        posts_by_media.setdefault(item.id, set()).add(item.post_id)
+
     # "index" is the row's key in the table, so it must be unique across all
     # the creators in one table; "number" counts within this creator
     first_index = len(ROWS or []) + 1
@@ -1245,8 +1252,7 @@ async def row_gather(username, model_id):
         else:
             cart_state = "[]"
 
-        all_posts_with_this_media = collection.posts_with_media_id(ele.id)
-        other_posts = [p for p in all_posts_with_this_media if p != ele.post_id]
+        other_posts = [p for p in posts_by_media.get(ele.id, ()) if p != ele.post_id]
 
         out.append(
             {
