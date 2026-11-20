@@ -14,6 +14,7 @@ import ofscraper.commands.scraper.actions.utils.globals as common_globals  # noq
 import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
 import ofscraper.utils.dates as dates
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.ffprobe import verify_media_integrity
 from ofscraper.utils.cache.profile import set_profile_cache
@@ -203,6 +204,8 @@ class MainDownloadManager(DownloadManager):
                 headers=headers,
                 total_timeout=None,
                 read_timeout=get_chunk_timeout(),
+                # the OnlyFans login only for an allowed host
+                actions=host_allowlist.download_actions(ele.url),
             ) as r:
                 self._check_status(r, ele, headers)
                 asked = resume_size

@@ -131,6 +131,8 @@ def _run(
     )
     monkeypatch.setattr(common_globals, "log", _Log(), raising=False)
     monkeypatch.setattr(common_globals, "sem", asyncio.Semaphore(1), raising=False)
+    # the local server's manifest may be sent the login
+    monkeypatch.setenv("MEDIA_HOST_SUFFIXES", "127.0.0.1")
     for name in ("attempt", "attempt2"):
         monkeypatch.setattr(
             common_globals, name, contextvars.ContextVar(name, default=0), raising=False

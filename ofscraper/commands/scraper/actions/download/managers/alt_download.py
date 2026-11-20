@@ -29,6 +29,7 @@ from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 # and tests that reach it through this module
 import ofscraper.utils.cache.cache as cache  # noqa: F401
 import ofscraper.utils.dates as dates
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
@@ -90,6 +91,11 @@ class AltDownloadManager(DownloadManager):
                 f"{common_logs.get_medialog(ele)} DRM video skipped: CDM keys not found ({missing})"
             )
             return "forced_skipped", 0
+        # the manifest, its files and the licence request carry the OnlyFans
+        # login: a host outside the allowed list fails the item before any
+        # of them is sent
+        host_allowlist.ensure_allowed_download_url(ele.mpd, "DRM manifest")
+        host_allowlist.ensure_allowed_download_url(ele.license, "DRM licence")
 
         sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
         self.ctx.log.debug(

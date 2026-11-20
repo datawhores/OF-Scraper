@@ -873,3 +873,9 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 |---|---|---|---|
 | <a id="bad_url_host"></a>`BAD_URL_HOST` | `OFSC_BAD_URL_HOSTS` | a list of 3 items (see the source) | A set of regular expression patterns for "bad" URL hosts. |
 
+### Media Host
+
+| Key | Environment variable | Default | Description |
+|---|---|---|---|
+| <a id="media_host_suffixes"></a>`MEDIA_HOST_SUFFIXES` | `OFSC_MEDIA_HOST_SUFFIXES` | `[]` | Domains added to the built-in `onlyfans.com`: the hosts that may be sent the OnlyFans login (session cookies, login headers) with a download (`ofscraper/utils/host_allowlist.py`). A host matches a domain or any subdomain of it, so `cdn.example.com` allows `media.cdn.example.com` but not `evil-cdn.example.com`; only http and https links match. A normal file on a host outside the list is downloaded without the login, with one warning per host. A DRM video whose manifest or licence URL is on such a host isn't downloaded: the item fails with a warning naming the host. Adding a domain never removes the built-in ones. Fansly isn't checked: its token goes only to its API host. |
+

@@ -30,4 +30,15 @@ def load_other_urls_config():
             ".*\\.convert.onlyfans.com",
         }
 
+    # --- Media Host Configuration ---
+    # MEDIA_HOST_SUFFIXES: Domains added to onlyfans.com, the hosts that may be sent the OnlyFans login with a download.
+    # Default: []
+    # Expects a comma-separated string if provided via environment variable (e.g., "cdn.example.com,example.net")
+    media_host_env = os.getenv("OFSC_MEDIA_HOST_SUFFIXES")
+    config["MEDIA_HOST_SUFFIXES"] = (
+        [host.strip() for host in media_host_env.split(",") if host.strip()]
+        if media_host_env
+        else []
+    )
+
     return config
