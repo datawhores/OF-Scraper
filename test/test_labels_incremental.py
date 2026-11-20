@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+import ofscraper.data.api.common.pending as pending
 import ofscraper.data.api.labels as labels
 
 
@@ -139,6 +140,63 @@ def test_check_mode_leaves_the_marks_alone(fake_cache):
     collect(FakeClient(range(1, 21), fail_at=5))
     labels.commit_finished_labels(1)
     assert fake_cache.data[COMPLETE] is True
+
+
+@pytest.fixture
+def warnings_logged(monkeypatch):
+    logged = []
+    monkeypatch.setattr(
+        labels,
+        "log",
+        SimpleNamespace(
+            debug=lambda *a, **k: None,
+            traceback_=lambda *a, **k: None,
+            warning=logged.append,
+        ),
+    )
+    return logged
+
+
+class RaisingClient(FakeClient):
+    """Raises instead of answering at offset ``raise_at``."""
+
+    def __init__(self, ids, raise_at, **kwargs):
+        super().__init__(ids, **kwargs)
+        self.raise_at = raise_at
+
+    def requests_async(self, url, **kwargs):
+        response = super().requests_async(url, **kwargs)
+        if self.offsets[-1] == self.raise_at:
+            raise ConnectionError("connection reset")
+        return response
+
+
+def test_scan_cut_short_after_page_one_warns_once(warnings_logged):
+    collect(FakeClient(range(1, 21), fail_at=5))
+    assert len(warnings_logged) == 1
+    assert "favourites" in warnings_logged[0]
+    assert "stopped early" in warnings_logged[0]
+
+
+def test_scan_cut_short_by_an_error_on_page_two_warns_once(warnings_logged):
+    # the request raises rather than returning an error status
+    client = RaisingClient(range(1, 21), raise_at=5)
+    assert collect(client) == list(range(20, 15, -1))
+    assert client.offsets == [0, 5]
+    assert len(warnings_logged) == 1
+    assert "favourites" in warnings_logged[0]
+    assert "stopped early" in warnings_logged[0]
+
+
+def test_complete_scan_of_an_empty_label_does_not_warn(warnings_logged):
+    assert collect(FakeClient([])) == []
+    assert warnings_logged == []
+
+
+def test_complete_scan_does_not_warn(warnings_logged):
+    collect(FakeClient(range(1, 21)))
+    collect(FakeClient(range(1, 21)), known={str(i) for i in range(1, 21)})
+    assert warnings_logged == []
 
 
 def run_known(monkeypatch, prechecks, db_ids, username="creator", missing=()):
@@ -322,11 +380,11 @@ def test_missing_media_filter_matches_the_timeline(monkeypatch):
     async def deleted(**kwargs):
         return {14}
 
-    monkeypatch.setattr(labels, "get_model_media_status", status)
-    monkeypatch.setattr(labels, "get_media_ids_downloaded_model", downloaded)
-    monkeypatch.setattr(labels, "get_deleted_post_ids", deleted)
+    monkeypatch.setattr(pending, "get_model_media_status", status)
+    monkeypatch.setattr(pending, "get_media_ids_downloaded_model", downloaded)
+    monkeypatch.setattr(pending, "get_deleted_post_ids", deleted)
     monkeypatch.setattr(
-        labels.settings,
+        pending.settings,
         "get_settings",
         lambda: SimpleNamespace(mediatypes=["Videos"]),
     )

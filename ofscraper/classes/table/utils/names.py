@@ -20,12 +20,7 @@ col_names = (
 input_only_names = ("num_per_page", "page")
 
 PINNED_COLUMNS = ("number", "download_cart")
-EXTRA_COLUMNS = {
-    "download_type",
-    "other_posts_with_media",
-    "post_media_count",
-    "price",
-}
+EXTRA_COLUMNS = {"post_media_count", "responsetype", "price", "post_id", "media_id"}
 
 
 def get_col_names(show_extra=True):

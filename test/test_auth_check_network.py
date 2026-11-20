@@ -92,11 +92,14 @@ def test_network_and_server_errors_do_not_ask_for_auth(
 ):
     fail_auth_check(error)
     with caplog.at_level(logging.INFO, logger="shared"):
-        with pytest.raises(checkers.AuthCheckUnavailable):
+        with pytest.raises(checkers.AuthCheckUnavailable) as raised:
             checkers.check_auth()
 
     assert message in caplog.text
     assert "Auth Failed" not in caplog.text
+    # the reason travels with the exception, for a GUI dialog
+    assert str(raised.value).startswith("Couldn't check the auth: ")
+    assert message in str(raised.value)
 
 
 @pytest.mark.parametrize("status", [400, 401, 403])

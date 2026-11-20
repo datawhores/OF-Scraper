@@ -205,8 +205,8 @@ def _int(value) -> int:
 
 
 def master_renditions(text: str, base_url: str) -> list:
-    """(width, height, bandwidth, absolute url, audio group or None) for each
-    rendition in a master playlist."""
+    """(width, height, bandwidth, absolute url, audio group or None, codecs)
+    for each rendition in a master playlist."""
     out = []
     lines = [line.strip() for line in (text or "").splitlines()]
     for i, line in enumerate(lines):
@@ -219,8 +219,16 @@ def master_renditions(text: str, base_url: str) -> list:
         res = _RES.fullmatch(attrs.get("RESOLUTION", ""))
         w, h = (int(res.group(1)), int(res.group(2))) if res else (0, 0)
         out.append((w, h, _int(attrs.get("BANDWIDTH")), urljoin(base_url, uri),
-                    attrs.get("AUDIO") or None))
+                    attrs.get("AUDIO") or None, attrs.get("CODECS") or ""))
     return out
+
+
+# CODECS entries (RFC 6381) of audio formats HLS carries
+_AUDIO_CODECS = ("mp4a", "ac-3", "ec-3", "opus", "flac")
+
+
+def _has_audio(codecs: str) -> bool:
+    return any(c.strip().lower().startswith(_AUDIO_CODECS) for c in codecs.split(","))
 
 
 def _audio_url(text: str, base_url: str, group: str):
@@ -242,16 +250,29 @@ def _audio_url(text: str, base_url: str, group: str):
     return urljoin(base_url, pick["URI"]) if pick.get("URI") else None
 
 
-def best_rendition(text: str, base_url: str) -> tuple:
-    """(video url, audio url or None) of the largest rendition. A plain media
-    playlist is used as it is."""
+def best_rendition_info(text: str, base_url: str) -> tuple:
+    """(video url, separate audio url or None, audio inside the video) of the
+    largest rendition. A plain media playlist is used as it is.
+
+    When the rendition's CODECS name an audio format, its segments carry the
+    sound (RFC 8216 4.3.4.2 lists every format in them), so a separate audio
+    track is not fetched: it is a copy, and Fansly lists one for some older
+    videos that its CDN refuses. Its website plays the video segments alone.
+    """
     renditions = master_renditions(text, base_url)
     if renditions:
-        w, h, bw, url, group = max(renditions, key=lambda r: (r[0] * r[1], r[2]))
-        return url, _audio_url(text, base_url, group)
+        w, h, bw, url, group, codecs = max(renditions, key=lambda r: (r[0] * r[1], r[2]))
+        if _has_audio(codecs):
+            return url, None, True
+        return url, _audio_url(text, base_url, group), False
     if "#EXTINF" in (text or ""):
-        return base_url, None
+        return base_url, None, False
     raise EmptyMasterPlaylist("HLS master playlist lists no renditions; nothing to download")
+
+
+def best_rendition(text: str, base_url: str) -> tuple:
+    """(video url, separate audio url or None) of the largest rendition."""
+    return best_rendition_info(text, base_url)[:2]
 
 
 def best_rendition_url(text: str, base_url: str) -> str:
@@ -338,6 +359,16 @@ _REFUSED_TAGS = ("#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF",
                  "#EXT-X-SESSION-KEY")
 
 
+def first_media_url(files):
+    """The URL of the first of an HLS playlist's ``files`` that carries
+    media: not an AES key (``..._key0.bin``) and not an init segment
+    (``...init00000.m4s``), as ``local_playlist`` names them."""
+    for url, name in files:
+        if "_key" not in name and "init" not in name:
+            return url
+    return None
+
+
 def _local_name(prefix, index, url, fmp4):
     ext = os.path.splitext(urlparse(url).path)[1].lower()
     if ext not in _SEGMENT_EXTS:
@@ -422,17 +453,30 @@ def local_playlist(text: str, base_url: str, prefix: str, shared=None) -> LocalP
     return LocalPlaylist("\n".join(out) + "\n", files)
 
 
-def local_join_command(ffmpeg, playlist, out_path, audio_playlist=None, dash=False) -> list:
+def local_join_command(
+    ffmpeg, playlist, out_path, audio_playlist=None, dash=False, audio_file=None,
+    video_delay=0.0,
+) -> list:
     """ffmpeg copy of local playlists (see ``local_playlist``) into one MP4,
     with the same output options as ``ffmpeg_command``. Only local files may
-    be read."""
+    be read.
+
+    ``audio_file``: a plain local media file whose first audio track is used
+    instead of an audio playlist (the direct file's sound). ``video_delay``:
+    seconds the video starts after the start of the output; ffmpeg would
+    otherwise start each input at its own first packet."""
     opts = ["-protocol_whitelist", "file,crypto"]
     if not dash:
         opts += ["-allowed_extensions", "ALL"]
     cmd = [str(ffmpeg), "-hide_banner", "-nostdin", "-loglevel", "error", "-y"]
+    if video_delay and video_delay >= 0.001:
+        cmd += ["-itsoffset", f"{video_delay:.6f}"]
     cmd += opts + ["-i", str(playlist)]
     if audio_playlist:
         cmd += opts + ["-i", str(audio_playlist), "-map", "0:v", "-map", "1:a"]
+    elif audio_file:
+        cmd += ["-protocol_whitelist", "file", "-i", str(audio_file),
+                "-map", "0:v", "-map", "1:a:0"]
     cmd += ["-c", "copy", "-f", "mp4", str(out_path)]
     return cmd
 

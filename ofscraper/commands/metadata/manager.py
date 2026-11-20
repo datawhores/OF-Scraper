@@ -27,6 +27,7 @@ from ofscraper.db.operations_.media import (
 from ofscraper.commands.scraper.actions.utils.retries import get_download_retries
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 from ofscraper.managers.sessionmanager.sessionmanager import FORCED_NEW, SIGN
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
@@ -213,6 +214,11 @@ class MetaDataManager:
                 if ele.mpd and of_env.getattr("ALT_FORCE_KEY")
                 else []
             )
+            # the OnlyFans login only for an allowed host; this request only
+            # reads the reply's headers, so another host gets it without
+            no_login = host_allowlist.download_actions(url)
+            if no_login is not None:
+                actions = no_login
             common_globals.attempt.set(common_globals.attempt.get() + 1)
             common_globals.log.debug(
                 f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{get_download_retries()}]  Getting data for metadata insert"

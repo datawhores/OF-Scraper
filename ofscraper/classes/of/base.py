@@ -40,6 +40,8 @@ class base:
     def file_cleanup(self, text):
         text = str(text)
         text = re.sub("<[^>]*>", "", text)
+        # Fansly text is plain already (normalize._item_dict); removing the
+        # codes again would drop an escaped "\[s:lg\]", shown as "[s:lg]"
         text = re.sub(r'[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
@@ -49,6 +51,9 @@ class base:
     def db_cleanup(self, string):
         string = string or ""
         string = re.sub("<[^>]*>", "", string)
+        # Fansly text is plain already (normalize._item_dict): removing the
+        # codes again would turn an escaped "\*sale\*", shown as "*sale*",
+        # into "sale"
         string = " ".join(string.split())
         string = BeautifulSoup(string, html_parser).get_text()
         return string

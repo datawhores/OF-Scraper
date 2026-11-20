@@ -16,7 +16,7 @@ def load_dynamic_rules_config():
     config["DYNAMIC_RULE_MANUAL"] = os.getenv("OFSC_DYNAMIC_RULE_MANUAL", None)
 
     # DYNAMIC_OPTIONS: List of available dynamic rule options.
-    # Default: ["digitalcriminals", "manual", "generic", "xagler", "rafa", "datawhores"]
+    # Default: ["digitalcriminals", "manual", "generic", "xagler", "rafa"]
     dynamic_options_env = os.getenv("OFSC_DYNAMIC_OPTIONS")
     if dynamic_options_env:
         config["DYNAMIC_OPTIONS"] = [

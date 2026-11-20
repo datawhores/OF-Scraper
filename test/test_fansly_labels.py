@@ -463,24 +463,47 @@ def test_post_in_timeline_and_wall_is_downloaded_once(fansly, tmp_db, monkeypatc
     assert {r[0] for r in label_rows(tmp_db)} == {int(WALL_ONE), int(WALL_TWO)}
 
 
-@pytest.mark.parametrize("site", ["fansly", "onlyfans"])
-def test_skipped_labels_are_logged_for_inactive_creators(fansly, monkeypatch, site):
+def areas_run_for_inactive_creator(fansly, monkeypatch, site, skip):
+    """The areas process_tasks fetches for a creator without an active subscription."""
     fansly.site = site
+    fansly.skip_unavailable_content = skip
     called, infos = [], []
 
-    async def fake_labels(*a, **k):
-        called.append("labels")
-        return [], labels_api.API
+    def fake(area):
+        async def run(*a, **k):
+            called.append(area)
+            return None  # nothing to add to the post collection
 
-    monkeypatch.setattr(post, "process_labels", fake_labels)
+        return run
+
+    monkeypatch.setattr(post, "process_timeline_posts", fake("Timeline"))
+    monkeypatch.setattr(post, "process_labels", fake("Labels"))
     monkeypatch.setattr(post.log, "info", lambda msg, *a, **k: infos.append(str(msg)))
-    monkeypatch.setattr(post, "get_final_posts_area", lambda: {"Labels"})
+    monkeypatch.setattr(post, "get_final_posts_area", lambda: {"Timeline", "Labels"})
     monkeypatch.setattr(post, "get_like_area", lambda: set())
-    monkeypatch.setattr(post, "get_download_area", lambda: {"Labels"})
+    monkeypatch.setattr(post, "get_download_area", lambda: {"Timeline", "Labels"})
     monkeypatch.setattr(post.progress_utils, "setup_live", lambda *a, **k: contextlib.nullcontext())
-    fansly.skip_unavailable_content = False
     asyncio.run(post.process_tasks(CREATOR_ID, CREATOR, SimpleNamespace(active=False)))
+    return sorted(called), infos
+
+
+@pytest.mark.parametrize("skip", [True, False])
+def test_fansly_wall_is_scanned_without_an_active_subscription(fansly, monkeypatch, skip):
+    # public and follower-only Fansly posts can be seen without a subscription
+    called, infos = areas_run_for_inactive_creator(fansly, monkeypatch, "fansly", skip)
+    assert called == ["Labels", "Timeline"]
+    assert not any("Skipping" in m for m in infos)
+
+
+def test_onlyfans_wall_is_skipped_without_an_active_subscription(fansly, monkeypatch):
+    called, infos = areas_run_for_inactive_creator(fansly, monkeypatch, "onlyfans", True)
     assert called == []
+    assert any("Skipping wall" in m and CREATOR in m for m in infos)
+
+
+def test_onlyfans_labels_skip_is_logged_for_inactive_creators(fansly, monkeypatch):
+    called, infos = areas_run_for_inactive_creator(fansly, monkeypatch, "onlyfans", False)
+    assert called == ["Timeline"]
     assert any("Skipping labels" in m and CREATOR in m for m in infos)
 
 

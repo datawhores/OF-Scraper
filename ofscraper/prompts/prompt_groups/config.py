@@ -370,7 +370,12 @@ def cdm_config():
                 "name": "key-mode-default",
                 "message": "Select default key mode for decryption",
                 "default": data.get_key_mode(),
-                "choices": of_env.getattr("KEY_OPTIONS"),
+                "choices": [
+                    Choice(x, "cdrm (deprecated: the service no longer works)")
+                    if x == "cdrm"
+                    else x
+                    for x in of_env.getattr("KEY_OPTIONS")
+                ],
             },
             {
                 "type": "filepath",

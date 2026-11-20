@@ -15,9 +15,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
-
-KID = "a7e61c373e219033c21091fa607bf3b8"
-KEY = "00112233445566778899aabbccddeeff"
+from test.test_drm_key_id import AUDIO_KEY, AUDIO_KID, VIDEO_KEY, VIDEO_KID, _encrypted_file
 
 
 def _logged(log):
@@ -26,16 +24,15 @@ def _logged(log):
 
 @pytest.mark.parametrize("cached", [False, True])
 def test_un_encrypt_logs_no_key(monkeypatch, tmp_path, cached):
-    part = tmp_path / "tempvid.part"
-    part.write_bytes(b"encrypted")
-    saved = {"lic": f"{KID}:{KEY}"} if cached else {}
+    part = _encrypted_file(tmp_path / "tempvid.part", VIDEO_KID)
+    saved = {f"lic#{VIDEO_KID}": f"{VIDEO_KID}:{VIDEO_KEY}"} if cached else {}
     monkeypatch.setattr(keyhelpers.settings, "get_settings", lambda: SimpleNamespace(key_mode="manual"))
     real_getattr = keyhelpers.of_env.getattr
     monkeypatch.setattr(keyhelpers.of_env, "getattr", lambda key, default=None:
                         True if key == "USE_WIV_CACHE_KEY" else real_getattr(key, default))
     monkeypatch.setattr(keyhelpers.cache, "get", lambda name: saved.get(name))
     monkeypatch.setattr(keyhelpers.cache, "set", lambda name, value, **kw: saved.__setitem__(name, value))
-    monkeypatch.setattr(keyhelpers, "key_helper_manual", AsyncMock(return_value=f"{KID}:{KEY}"))
+    monkeypatch.setattr(keyhelpers, "key_helper_manual", AsyncMock(return_value=f"{VIDEO_KID}:{VIDEO_KEY}"))
     monkeypatch.setattr(keyhelpers, "get_ffmpeg", lambda: "ffmpeg")
     monkeypatch.setattr(keyhelpers, "strip_pssh", Mock(return_value=0))
     monkeypatch.setattr(keyhelpers.stop, "check", lambda: None)
@@ -59,7 +56,7 @@ def test_un_encrypt_logs_no_key(monkeypatch, tmp_path, cached):
 
     asyncio.run(go())
     assert log.debug.called
-    assert KEY not in _logged(log)
+    assert VIDEO_KEY not in _logged(log)
 
 
 def test_cdrm_reply_is_not_logged(monkeypatch):
@@ -69,14 +66,15 @@ def test_cdrm_reply_is_not_logged(monkeypatch):
     monkeypatch.setattr(keyhelpers, "get_cmd_download_req_retries", lambda: 1)
     log = Mock()
     monkeypatch.setattr(keyhelpers, "log", log)
+    message = f"{AUDIO_KID}:{AUDIO_KEY}\n{VIDEO_KID}:{VIDEO_KEY}"
 
     @contextlib.asynccontextmanager
     async def requests_async(**kw):
-        yield SimpleNamespace(json_=AsyncMock(return_value={"message": f"{KID}:{KEY}"}))
+        yield SimpleNamespace(json_=AsyncMock(return_value={"message": message}))
 
     c = SimpleNamespace(requests_async=requests_async)
-    assert asyncio.run(keyhelpers.key_helper_cdrm(c, "pssh", "https://lic", 1)) == f"{KID}:{KEY}"
+    asyncio.run(keyhelpers.key_helper_cdrm(c, "pssh", "https://lic", 1, VIDEO_KID))
 
     logged = _logged(log)
     assert "message" in logged  # the reply's fields are still logged
-    assert KEY not in logged
+    assert AUDIO_KEY not in logged and VIDEO_KEY not in logged

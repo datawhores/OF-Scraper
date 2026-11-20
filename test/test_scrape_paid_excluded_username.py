@@ -161,6 +161,17 @@ def test_deleted_model_matches_recorded_username(paid_run):
     assert "dave" not in db_calls
 
 
+def test_names_come_from_resolve_paid_username(paid_run, monkeypatch):
+    # The GUI reuses this helper, so the CLI must go through it too.
+    async def resolve(model_id):
+        return f"resolved_{model_id}"
+
+    monkeypatch.setattr(post, "resolve_paid_username", resolve)
+    yielded, _, _ = paid_run(())
+
+    assert _names(yielded) == [f"resolved_{model_id}" for model_id in PROFILES]
+
+
 def test_deleted_model_without_recorded_username_is_not_matched(paid_run):
     # Only the placeholder is known, which is not the model's real name.
     yielded, _, _ = paid_run(("eve",))

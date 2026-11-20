@@ -40,7 +40,7 @@ def batch(monkeypatch):
     monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(
         current_model_manager=SimpleNamespace(get_model=lambda _: SimpleNamespace(
             active=True, expired_string=None))))
-    monkeypatch.setattr(check._process_user_batch, "counter", 0)
+    monkeypatch.setattr(check.process_user_batch, "counter", 0)
     media = [_media(i) for i in range(4)]
     fresh = [_media(i) for i in range(4)]
     collection = SimpleNamespace(find_media_item=lambda mid: media[mid])
@@ -53,11 +53,12 @@ def batch(monkeypatch):
     def go():
         posts = [m.post for m in media]
         rows = [(str(m.id), {}) for m in media]
-        check._process_user_batch("a creator", 1, media, posts, rows)
+        state.totals = check.process_user_batch("a creator", 1, media, posts, rows)
         return posts
 
-    return SimpleNamespace(go=go, media=media, fresh=fresh, updates=updates,
-                           refill=refill, cdm=cdm, record=record)
+    state = SimpleNamespace(go=go, media=media, fresh=fresh, updates=updates,
+                            refill=refill, cdm=cdm, record=record)
+    return state
 
 
 def test_cart_sends_all_files_and_updates_each_row_before_batch_returns(monkeypatch, batch):
@@ -138,6 +139,51 @@ def test_unreported_file_is_failed_after_one_refill_and_retry(monkeypatch, batch
         (("3", "[failed]", "bold red"),),
     ]
     assert caplog.messages.count("Download failed for file3.jpg.") == 1
+
+
+def test_batch_totals_add_up_both_passes_with_bytes_and_failures(monkeypatch, batch):
+    from ofscraper.commands.scraper.actions.utils import globals as common_globals
+
+    calls = []
+
+    def process(username, model_id, media, posts, on_result=None):
+        calls.append(len(media))
+        # a real call resets the counters, then counts this pass only
+        if len(calls) == 1:
+            common_globals.total_bytes_downloaded = 300
+            for m, result in zip(media, ["downloaded", "downloaded", "skipped", "failed"]):
+                on_result(m, result)
+            return (1, 0, 1, 1, 1)
+        common_globals.total_bytes_downloaded = 50
+        on_result(media[0], "failed")
+        return (0, 0, 0, 0, 1)
+
+    monkeypatch.setattr(check, "process_dicts", process)
+    monkeypatch.setattr(common_globals, "total_bytes_downloaded", 0)
+    batch.go()
+    assert calls == [4, 1]
+    # the retry's reset can't lose the first pass's bytes; a file failed in
+    # the first pass and again in the retry counts once
+    assert batch.totals == {"videos": 1, "audios": 0, "photos": 1,
+                            "forced": 1, "failed": 1, "bytes": 350}
+
+
+def test_batch_totals_skip_the_last_batchs_bytes_when_nothing_downloads(monkeypatch, batch):
+    from ofscraper.commands.scraper.actions.utils import globals as common_globals
+
+    def process(username, model_id, media, posts, on_result=None):
+        # returned before downloading (e.g. text only): counters untouched
+        return (0, 0, 0, 0, 0)
+
+    monkeypatch.setattr(check, "process_dicts", process)
+    monkeypatch.setattr(common_globals, "total_bytes_downloaded", 999)
+    batch.go()
+    assert batch.totals == {"videos": 0, "audios": 0, "photos": 0,
+                            "forced": 0, "failed": 4, "bytes": 0}
+
+
+def test_old_batch_name_still_works_for_the_gui_patch():
+    assert check._process_user_batch is check.process_user_batch
 
 
 @pytest.mark.parametrize("callback", [False, True], ids=["normal-scrape", "callback"])

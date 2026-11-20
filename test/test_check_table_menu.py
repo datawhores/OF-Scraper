@@ -21,6 +21,7 @@ import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as prompt_convert
 import ofscraper.prompts.prompt_groups.actions as actions_prompt
 import ofscraper.prompts.prompts as prompts
+import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.menu as menu
@@ -290,6 +291,51 @@ def test_run_again_loop_opens_the_table(session, monkeypatch):
     assert [run[0] for run in session.runs] == ["download", "table", "download"]
     assert session.runs[1][1] == "msg_check"
     assert session.runs[2] == ("download", NORMAL, "OF-Scraper")
+
+
+@pytest.mark.parametrize("command", list(TABLES.values()))
+def test_gather_rows_returns_the_tables_rows_without_opening_it(session, command):
+    # what a GUI calls to show the rows itself
+    session.args = check_menu.check_args(session.args, command, CREATORS)
+
+    rows = check.gather_rows(command)
+
+    assert session.tables == []
+    assert check._download_worker is None
+    # the check command's settings, as for the table
+    assert (session.args.after, session.args.force_all) == (0, True)
+    # the check command still opens the table, on the same rows
+    check.reset_table_data()
+    check.checker(menu=True)
+    assert session.tables == [rows]
+    assert rows == [{"username": name, "command": command} for name in CREATORS]
+
+
+def test_gather_rows_refuses_fansly_stories_and_unknown_commands(session):
+    session.args.site = "fansly"
+    assert check.gather_rows("story_check") == []
+    assert session.runs == []
+    with pytest.raises(ValueError):
+        check.gather_rows("download")
+
+
+@pytest.mark.parametrize(
+    "error", [checkers.AuthCheckUnavailable, checkers.AuthCheckLeft]
+)
+def test_a_failing_auth_check_logs_no_traceback(session, monkeypatch, error):
+    session.args = check_menu.check_args(session.args, "post_check", CREATORS)
+
+    def fail(**kwargs):
+        raise error("no auth")
+
+    logged = []
+    monkeypatch.setattr(check, "check_auth", fail)
+    monkeypatch.setattr(check.log, "traceback_", logged.append, raising=False)
+
+    with pytest.raises(error):
+        check.checker(menu=True)
+    assert logged == []
+    assert session.runs == []
 
 
 def test_tables_share_one_download_thread(session, monkeypatch):

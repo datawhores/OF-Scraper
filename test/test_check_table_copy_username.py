@@ -110,8 +110,6 @@ def test_right_click_copies_the_username(start):
 
 def test_right_click_copies_other_posts_with_media(start):
     async def steps(app, pilot, table, notices):
-        await pilot.press("h")
-        await _settle(pilot)
         # the cell shows [111, 222]: a click on an id copies that id
         await _click(pilot, table, 0, "other_posts_with_media", button=3, char=1)
         assert app.clipboard == "111"

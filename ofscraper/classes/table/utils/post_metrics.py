@@ -65,6 +65,12 @@ def _sort_new_cost(
     return price / new_denominator
 
 
+def _viewable(media) -> bool:
+    # the media table's "Unlocked" test: OnlyFans' canView for the item, with
+    # None (canView: null) read as locked
+    return bool(getattr(media, "canview", False))
+
+
 def build_post_centric_rows(posts: list, username: str, model_id: int, start_index: int = 1) -> list[dict]:
     """Aggregate Post objects into post-centric rows with All vs. New media economics."""
     try:
@@ -76,12 +82,11 @@ def build_post_centric_rows(posts: list, username: str, model_id: int, start_ind
     unlocked_or_free_ids = set(downloaded_ids)
 
     for post in posts:
-        is_accessible = bool(post.opened) or float(post.price or 0) == 0
         for m in post.all_media:
             if m.id is None:
                 continue
             media_to_posts[m.id].add(post.id)
-            if is_accessible:
+            if _viewable(m):
                 unlocked_or_free_ids.add(m.id)
 
     rows = []
@@ -92,7 +97,9 @@ def build_post_centric_rows(posts: list, username: str, model_id: int, start_ind
 
         row_num = len(rows) + 1
         price = float(post.price or 0.0)
-        is_unlocked = bool(post.opened) or price == 0
+        # free or bought is not enough: a free post of an expired
+        # subscription can't be viewed either
+        is_unlocked = all(_viewable(m) for m in all_items)
 
         # 1. All-Media Metrics
         total_media = len(all_items)

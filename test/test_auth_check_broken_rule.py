@@ -16,7 +16,7 @@ class AuthPrompted(Exception):
 @pytest.fixture
 def rule_host_replies(monkeypatch):
     """The dynamic-rule host answers with the given JSON."""
-    settings = SimpleNamespace(anon=False, dynamic_rules="datawhores")
+    settings = SimpleNamespace(anon=False, dynamic_rules="xagler")
     monkeypatch.setattr(init.settings, "get_settings", lambda: settings)
     monkeypatch.setattr(init.log, "traceback_", lambda *a, **k: None, raising=False)
     monkeypatch.setattr(checkers.auth_file, "read_auth", lambda: {})
@@ -70,8 +70,9 @@ def test_broken_rule_is_reported_as_unusable(rule_host_replies, caplog, content,
         with pytest.raises(checkers.AuthCheckUnavailable):
             checkers.check_auth()
 
-    assert "The dynamic rule (datawhores) is unusable" in caplog.text
-    assert detail in caplog.text
+    # every source sends the same reply here, so the fallbacks fail too
+    assert f"xagler: unusable rule: {detail}" in caplog.text
+    assert "This isn't a problem with your auth" in caplog.text
     assert "Auth Failed" not in caplog.text
 
 

@@ -16,10 +16,13 @@ import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_exception_type
 
 import ofscraper.sites as sites
+import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.auth.utils.warning.print import print_auth_warning
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 import ofscraper.utils.settings as settings
 from ofscraper.managers.sessionmanager.cert import (
     create_custom_ssl_context,
@@ -37,6 +40,17 @@ HEADERS = "create_header"
 
 # A backoff that decays below this many seconds ends (drops to *_MIN_SLEEP)
 BACKOFF_FLOOR = 0.5
+
+# httpx request extension holding a request's redirect guard; httpx copies a
+# request's extensions to each redirect it follows
+LOGIN_GUARD = "ofscraper_login_guard"
+
+
+def _run_login_guard(request):
+    """httpx request event hook: runs before the first request and each redirect."""
+    guard = request.extensions.get(LOGIN_GUARD)
+    if guard:
+        guard(request)
 
 
 def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
@@ -511,10 +525,14 @@ class sessionManager:
         ssl_context = self._get_ssl_context()
 
         if async_:
+            # the connector doesn't close a resolver it was given
+            self._resolver = fansly_address.Resolver()
             self._session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(
                     limit=self._connect_limit,
                     ssl=ssl_context,  # Passed to TCPConnector
+                    # which address a host's requests go to (Fansly, #683)
+                    resolver=self._resolver,
                 ),
                 timeout=aiohttp.ClientTimeout(
                     total=self._total_timeout,
@@ -533,6 +551,8 @@ class sessionManager:
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
                 ),
+                # a redirect to a host outside the list gets no login
+                event_hooks={"request": [_run_login_guard]},
             )
         self._async = async_
         return self._session
@@ -544,6 +564,13 @@ class sessionManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._session:
             await self._session.__aexit__(exc_type, exc_val, exc_tb)
+            await self._resolver.close()
+
+    def clear_dns_cache(self):
+        """Resolve hosts again on the next request (async sessions)."""
+        connector = getattr(self._session, "connector", None)
+        if connector is not None:
+            connector.clear_dns_cache()
 
     def __enter__(self):
         self._set_session(async_=False)
@@ -637,14 +664,20 @@ class sessionManager:
         retries = retries if retries is not None else self._retries
         wait_min = wait_min if wait_min is not None else self._wait_min
         wait_max = wait_max if wait_max is not None else self._wait_max
+        # what the caller sent; the rest is the login the session adds
+        caller_headers = {k.lower() for k in (headers or {})}
 
         for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit))
+            # no dynamic rule: every rule source was already tried, so a retry
+            # would only ask them all again
+            retry=retry_if_not_exception_type(
+                (KeyboardInterrupt, SystemExit, auth_requests.DynamicRuleUnavailable)
+            )
             & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait.wait_random(min=wait_min, max=wait_max),
             before=lambda x: (
-                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {hide_link(url)}")
                 if x.attempt_number > 1
                 else None
             ),
@@ -668,6 +701,19 @@ class sessionManager:
                             )
                         if COOKIES in actions:
                             cookies = self._create_cookies()
+                        login = [
+                            k
+                            for k in (headers or {})
+                            if k.lower() not in caller_headers
+                        ]
+                        # a redirect to a host outside the list gets no login
+                        guard = {}
+                        if redirects and login and not sites.is_fansly():
+                            guard["extensions"] = {
+                                LOGIN_GUARD: host_allowlist.drop_login_on_redirect_sync(
+                                    url, login
+                                )
+                            }
 
                         r = self._httpx_funct(
                             method,
@@ -686,10 +732,11 @@ class sessionManager:
                                 pool=pool_connect_timeout or self._pool_connect_timeout,
                                 read=read_timeout or self._read_timeout,
                             ),
+                            **guard,
                         )
                         if not r.ok and r.status_code != 404:
                             error_text = r.text_()
-                            log.debug(f"[bold]failed: [bold] {r.url}")
+                            log.debug(f"[bold]failed: [bold] {hide_link(r.url)}")
                             log.debug(f"[bold]status: [bold] {r.status_code}")
                             log.debug(f"[bold]response text [/bold]: {error_text}")
                             log.debug(f"response headers {dict(r.headers)}")
@@ -707,8 +754,8 @@ class sessionManager:
                             r.raise_for_status()
 
                     except Exception as E:
-                        self._log.traceback_(E)
-                        self._log.traceback_(traceback.format_exc())
+                        self._log.traceback_(hide_links(E))
+                        self._log.traceback_(hide_links(traceback.format_exc()))
                         self._handle_error(E, exceptions, sent_at)
                         raise E
         yield r
@@ -747,19 +794,27 @@ class sessionManager:
         # every exception and would start a new request and yield again,
         # leaving both responses' connections open.
         r = None
+        # what the caller sent; the rest is the login the session adds
+        caller_headers = {k.lower() for k in (headers or {})}
         async for _ in AsyncRetrying(
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
             # a cancel (Ctrl+C, a timeout around the call) stops the request:
-            # tenacity's attempt swallows it, so it must not count as a failure
+            # tenacity's attempt swallows it, so it must not count as a failure.
+            # No dynamic rule: every rule source was already tried
             retry=retry_if_not_exception_type(
-                (KeyboardInterrupt, SystemExit, asyncio.CancelledError)
+                (
+                    KeyboardInterrupt,
+                    SystemExit,
+                    asyncio.CancelledError,
+                    auth_requests.DynamicRuleUnavailable,
+                )
             )
             & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             reraise=True,
             before_sleep=lambda retry_state: (
                 self._log.debug(
-                    f"Request failed for {url}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})"
+                    f"Request failed for {hide_link(url)}. Retrying in {retry_state.next_action.sleep:.2f}s (Attempt {retry_state.attempt_number + 1})"
                 )
             ),
         ):
@@ -775,6 +830,15 @@ class sessionManager:
                         )
                     if COOKIES in actions:
                         cookies = self._create_cookies()
+                    login = [
+                        k for k in (headers or {}) if k.lower() not in caller_headers
+                    ]
+                    # a redirect to a host outside the list gets no login
+                    guard = {}
+                    if redirects and login and not sites.is_fansly():
+                        guard["middlewares"] = (
+                            host_allowlist.drop_login_on_redirect(url, login),
+                        )
 
                     r = await self._aio_funct(
                         method,
@@ -794,6 +858,7 @@ class sessionManager:
                         json=json,
                         data=data,
                         ssl=self._get_ssl_context(),
+                        **guard,
                     )
 
                     # a 416 to a ranged request is an answer, not a failure:
@@ -801,7 +866,7 @@ class sessionManager:
                     range_refused = r.status_code == 416 and "Range" in (headers or {})
                     if not r.ok and r.status_code != 404 and not range_refused:
                         error_text = await r.text_()
-                        self._log.debug(f"[bold]failed: [bold] {r.url}")
+                        self._log.debug(f"[bold]failed: [bold] {hide_link(r.url)}")
                         self._log.debug(f"[bold]status: [bold] {r.status_code}")
                         self._log.debug(f"[bold]response text [/bold]: {error_text}")
                         self._log.debug(f"response headers {dict(r.headers)}")

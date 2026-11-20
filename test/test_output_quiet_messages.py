@@ -11,7 +11,6 @@ import io
 import sys
 from types import SimpleNamespace
 
-import httpx
 import pytest
 
 import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
@@ -77,7 +76,7 @@ def test_print_selection_shows_the_queued_names(monkeypatch, screen):
 
 
 @pytest.mark.parametrize("screen", MODES, indirect=True)
-def test_cdm_check_failure_shows(monkeypatch, screen):
+def test_cdrm_deprecation_shows(monkeypatch, screen):
     import ofscraper.sites as sites
     import ofscraper.utils.system.network as network
 
@@ -85,70 +84,10 @@ def test_cdm_check_failure_shows(monkeypatch, screen):
     monkeypatch.setattr(
         network.settings, "get_settings", lambda: SimpleNamespace(key_mode="cdrm")
     )
-    monkeypatch.setattr(network.time, "sleep", lambda s: None)
-
-    def timed_out(**kwargs):
-        raise httpx.TimeoutException("timed out")
-
-    monkeypatch.setattr(network.sessionManager, "sessionManager", timed_out)
     assert network.check_cdm() is False
     out = screen.buf.getvalue()
     assert "Key Mode" not in out  # the ordinary status line stays hidden
-    assert "timed out and seems to be down" in out
-
-
-@pytest.mark.parametrize("screen", MODES, indirect=True)
-def test_cdm_check_error_status_shows(monkeypatch, screen):
-    import ofscraper.sites as sites
-    import ofscraper.utils.system.network as network
-
-    monkeypatch.setattr(sites, "is_fansly", lambda: False)
-    monkeypatch.setattr(
-        network.settings, "get_settings", lambda: SimpleNamespace(key_mode="cdrm")
-    )
-    monkeypatch.setattr(network.time, "sleep", lambda s: None)
-
-    class _Resp:
-        ok = False
-        status = 500
-        headers = {}
-
-        def text_(self):
-            return ""
-
-    class _Ctx:
-        def __init__(self, value):
-            self.value = value
-
-        def __enter__(self):
-            return self.value
-
-        def __exit__(self, *exc):
-            return False
-
-    session = SimpleNamespace(requests=lambda **kw: _Ctx(_Resp()))
-    monkeypatch.setattr(network.sessionManager, "sessionManager", lambda **kw: _Ctx(session))
-    assert network.check_cdm() is False
-    assert "CDM return an error" in screen.buf.getvalue()
-
-
-@pytest.mark.parametrize("screen", MODES, indirect=True)
-def test_cdm_check_exception_shows(monkeypatch, screen):
-    import ofscraper.sites as sites
-    import ofscraper.utils.system.network as network
-
-    monkeypatch.setattr(sites, "is_fansly", lambda: False)
-    monkeypatch.setattr(
-        network.settings, "get_settings", lambda: SimpleNamespace(key_mode="cdrm")
-    )
-    monkeypatch.setattr(network.time, "sleep", lambda s: None)
-
-    def broken(**kwargs):
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(network.sessionManager, "sessionManager", broken)
-    assert network.check_cdm() is False
-    assert "has an issue boom" in screen.buf.getvalue()
+    assert out.count("cdrm is deprecated") == 1
 
 
 @pytest.mark.parametrize("screen", MODES, indirect=True)

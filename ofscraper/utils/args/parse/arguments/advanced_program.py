@@ -22,7 +22,7 @@ no_api_cache_option = click.option(
 key_mode_option = click.option(
     "-k",
     "--key-mode",
-    help="Key mode for decrypting content",
+    help="Key mode for decrypting content (cdrm is deprecated: its service no longer works)",
     default=None,
     type=click.Choice(KEY_OPTIONS),
 )

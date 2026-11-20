@@ -361,7 +361,7 @@ def _alt(downloader, ele):
 def refresher(monkeypatch):
     calls = []
 
-    async def fake(ele):
+    async def fake(ele, link=None):
         calls.append(ele)
         if ele.protected:
             ele.media["files"]["drm"] = _drm("new")

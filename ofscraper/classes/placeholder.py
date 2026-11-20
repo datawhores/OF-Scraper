@@ -80,8 +80,25 @@ def _is_site_specific(fmt):
     return bool(fields & _SITE_SPECIFIC_FIELDS)
 
 
+def _names_site(fmt):
+    """True when ``fmt`` uses {site_name} (or {sitename})."""
+    return any(
+        name and name.split(".")[0].split("[")[0] in {"site_name", "sitename"}
+        for _, name, _, _ in string.Formatter().parse(fmt or "")
+    )
+
+
 def default_media_root():
-    """Save location; Fansly profiles save under ``<save location>/Fansly``."""
+    """Save location; Fansly profiles save under ``<save location>/Fansly``,
+    unless ``dir_format`` or ``file_format`` already names the site with
+    {site_name}: then each site's folder comes from the template, and Fansly
+    files don't get a second ``Fansly`` folder. Only the media folder: the
+    database path and the {save_location} and {root} values keep the
+    ``Fansly`` folder either way."""
+    if sites.is_fansly() and (
+        _names_site(data.get_dirformat()) or _names_site(data.get_fileformat())
+    ):
+        return pathlib.Path(common_paths.get_save_location())
     return pathlib.Path(site_save_location())
 
 
@@ -92,8 +109,10 @@ class basePlaceholder:
     def create_variables_base(self):
         _, my_username = me.parse_user()
         my_id = "anon" if settings.get_settings().anon else me.get_id()
-        # {save_location} and {root} share the media folder's site root, so a
-        # metadata path built from them can't reach an OnlyFans user_data.db
+        # {save_location} and {root} keep the site root (<save location>/Fansly
+        # on Fansly runs) even when {site_name} drops it from the media
+        # folder, so a metadata path built from them can't reach an OnlyFans
+        # user_data.db
         save_location = site_save_location()
         self._variables = {
             "config_path": common_paths.get_config_home(),

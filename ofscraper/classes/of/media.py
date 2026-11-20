@@ -17,6 +17,7 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.args.accessors.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.dates as dates
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.logs.utils.sensitive as sensitive
 
@@ -477,6 +478,9 @@ class Media(base.base):
             return
         if self._cached_mpd:
             return self._cached_mpd
+        # the manifest request carries the OnlyFans login, and every command
+        # that names a DRM file (download, metadata) reads it here first
+        host_allowlist.ensure_allowed_download_url(self.mpd, "DRM manifest")
         params = {
             "Policy": self.policy,
             "Key-Pair-Id": self.keypair,

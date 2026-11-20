@@ -91,9 +91,6 @@ class InputApp(App):
             )
         except Exception:
             self.show_extra_columns = False
-        self._load_column_preferences()
-        self.visible_media_cols = list(get_col_names(show_extra=False))
-        self.visible_post_cols = list(get_post_col_names(show_extra=False))
         self._prev_tab = "table"
         self._load_column_preferences()
         self.init_table()
@@ -314,6 +311,7 @@ class InputApp(App):
             pass
         if isinstance(saved_media, (list, tuple, set)):
             self.visible_media_cols = self._normalize_col_list(saved_media, all_media)
+            self._match_extra_flag_to_columns()
         else:
             self.visible_media_cols = list(get_col_names(show_extra=self.show_extra_columns))
         if isinstance(saved_post, (list, tuple, set)):
@@ -323,10 +321,17 @@ class InputApp(App):
             self.visible_post_cols = list(get_post_col_names(show_extra=False))
         self._sync_column_selectors()
 
+    def _match_extra_flag_to_columns(self) -> None:
+        # h shows the extra columns when the flag is off and hides them when
+        # it is on, so the flag must say whether they are showing now, or the
+        # next h press changes nothing
+        self.show_extra_columns = EXTRA_COLUMNS <= set(self.visible_media_cols)
+
     def _save_column_preferences(self) -> None:
         try:
             cache.set(MEDIA_COLS_CACHE_KEY, list(self.visible_media_cols))
             cache.set(POST_COLS_CACHE_KEY, list(self.visible_post_cols))
+            cache.set(EXTRA_COLUMNS_CACHE_KEY, self.show_extra_columns)
         except Exception:
             pass
 
@@ -360,6 +365,7 @@ class InputApp(App):
         p_sel = self.query_one("#post_columns_list", SelectionList)
         self.visible_media_cols = self._normalize_col_list(m_sel.selected, all_media)
         self.visible_post_cols = self._normalize_col_list(p_sel.selected, all_post)
+        self._match_extra_flag_to_columns()
         if save:
             self._save_column_preferences()
         self._rebuild_all_tables_for_columns()
@@ -963,7 +969,10 @@ class InputApp(App):
 
             if not is_empty:
                 if key == "number":
-                    sort_val = int(raw_val or 0)
+                    # "number" restarts for each creator; "index" runs on
+                    # through all of them, so sorting by it keeps each
+                    # creator's rows together instead of A1, B1, A2, B2
+                    sort_val = int(x.get("index") or 0)
                 elif key == "post_media_count":
                     sort_val = int(raw_val or 0)
                 elif key == "price":
@@ -1079,8 +1088,6 @@ class InputApp(App):
 
             # 4. Add the rows to the table
             for count, row_dict in enumerate(cart_rows[start : start + num_page]):
-                if row_dict.get("download_type") == "unknown":
-                    row_dict["download_type"] = "protected"
                 styled_row = get_styled(row_dict, cart_table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 cart_table.add_row(
@@ -1154,8 +1161,6 @@ class InputApp(App):
 
             # 3. Add the rows to the table
             for count, row_dict in enumerate(rows[start : start + num_page]):
-                if row_dict.get("download_type") == "unknown":
-                    row_dict["download_type"] = "protected"
                 styled_row = get_styled(row_dict, self.table.ordered_columns_keys)
                 key = str(row_dict["index"])
                 self.table.add_row(
@@ -1283,20 +1288,30 @@ class InputApp(App):
     # ==========================================
     # --- PostTable Methods & Cart Sync ---
     # ==========================================
-    def _media_rows_for_post(self, prow: dict) -> list[dict]:
-        pid = str(prow.get("post_id"))
-        uname = str(prow.get("username") or "").lower()
-        return [
-            r for r in self.table_data
-            if str(r.get("post_id")) == pid and str(r.get("username") or "").lower() == uname
-        ]
+    @staticmethod
+    def _post_key(row: dict) -> tuple:
+        return (str(row.get("post_id")), str(row.get("username") or "").lower())
+
+    def _media_rows_by_post(self) -> dict:
+        # one pass over the media rows; looking each post up in this index
+        # keeps a sync of many posts from scanning every media row per post
+        index = {}
+        for r in self.table_data:
+            index.setdefault(self._post_key(r), []).append(r)
+        return index
+
+    def _media_rows_for_post(self, prow: dict, index: dict | None = None) -> list[dict]:
+        if index is None:
+            index = self._media_rows_by_post()
+        return index.get(self._post_key(prow), [])
 
     def sync_post_cart_states(self) -> None:
+        index = self._media_rows_by_post()
         for prow in self.post_data:
             if not prow.get("unlocked"):
                 prow["download_cart"] = "Not Unlocked"
                 continue
-            mrows = self._media_rows_for_post(prow)
+            mrows = self._media_rows_for_post(prow, index)
             eligible = [r for r in mrows if r.get("unlocked") and r.get("download_type") != "unknown"]
             if not eligible:
                 prow["download_cart"] = "Not Unlocked"
@@ -1332,10 +1347,11 @@ class InputApp(App):
         self.sync_post_cart_states()
 
     def _add_posts_to_cart(self, post_rows: list, new_only: bool = False) -> None:
+        index = self._media_rows_by_post()
         for prow in post_rows:
             if not prow.get("unlocked"):
                 continue
-            for r in self._media_rows_for_post(prow):
+            for r in self._media_rows_for_post(prow, index):
                 if not r.get("unlocked") or r.get("download_type") == "unknown":
                     continue
                 if new_only and r.get("downloaded"):
@@ -1349,8 +1365,9 @@ class InputApp(App):
         self.update_cart_info()
 
     def _clear_posts_from_cart(self, post_rows: list) -> None:
+        index = self._media_rows_by_post()
         for prow in post_rows:
-            for r in self._media_rows_for_post(prow):
+            for r in self._media_rows_for_post(prow, index):
                 if r.get("download_cart") == "[added]":
                     r["download_cart"] = "[]"
         self.sync_post_cart_states()
@@ -1426,6 +1443,10 @@ class InputApp(App):
                 is_empty = str(raw) == "Probably Deleted"
                 group = (0 if is_empty else 1) if self._post_reverse else (1 if is_empty else 0)
                 return (group, 0 if is_empty else arrow.get(raw).timestamp())
+            if key == "number":
+                # "number" restarts for each creator; "index" runs on through
+                # all of them, so sorting by it keeps each creator's posts together
+                return (0, int(x.get("index") or 0))
             if key in {"number", "post_id", "total_media", "new_media", "photos", "new_photos", "videos", "new_videos", "audios", "new_audios", "shared_bundles"}:
                 return (0, int(raw or 0))
             return (0, str(raw or ""))
@@ -1495,8 +1516,6 @@ class InputApp(App):
                 self.post_page = total_pages
             start = (self.post_page - 1) * num_page
             for count, row_dict in enumerate(rows[start : start + num_page]):
-                if row_dict.get("download_type") == "unknown":
-                    row_dict["download_type"] = "protected"
                 styled_row = get_post_styled(row_dict, table.ordered_columns_keys)
                 table.add_row(*styled_row, height=None, key=str(row_dict["index"]), label=str(start + count + 1))
             try:

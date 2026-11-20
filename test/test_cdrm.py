@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import pytest
 
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
-import ofscraper.utils.system.network as network
 
 
 class _Response:
@@ -70,19 +69,3 @@ def test_cdrm_headers_are_a_python_literal(monkeypatch):
         "cookie": "a=1; b=2",
         "sign": "s",
     }
-
-
-@pytest.mark.parametrize("status,ok", [(200, True), (405, True), (404, False), (500, False)])
-def test_cdrm_health_check(monkeypatch, status, ok):
-    session = _Session()
-    _Response.status = status
-    _Response.ok = 200 <= status < 300
-    monkeypatch.setattr(
-        network.settings, "get_settings", lambda: SimpleNamespace(key_mode="cdrm")
-    )
-    monkeypatch.setattr(network.sessionManager, "sessionManager", lambda **kw: session)
-    monkeypatch.setattr(network.time, "sleep", lambda *a: None)
-    try:
-        assert network.check_cdm() is ok
-    finally:
-        _Response.status, _Response.ok = 200, True

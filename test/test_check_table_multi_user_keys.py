@@ -109,7 +109,33 @@ def test_table_opens_with_two_creators(rows, monkeypatch, tmp_path):
         app._reverse = False
         async with app.run_test(size=(245, 60)) as pilot:
             await pilot.pause()
-            # sorted by number, the two creators' rows interleave
             assert app.table.row_count == 5
 
     asyncio.run(run())
+
+
+def test_sorting_by_number_keeps_each_creator_together(rows):
+    # "number" restarts for each creator, so sorting on it alone gave
+    # first 1, second 1, first 2, second 2, first 3
+    app = table_app.InputApp()
+    app.table_data = list(reversed(rows))
+
+    app._reverse = False
+    app._sort_runner("number")
+    assert [(r["username"], r["number"]) for r in app.table_data] == [
+        ("first", 1),
+        ("first", 2),
+        ("first", 3),
+        ("second", 1),
+        ("second", 2),
+    ]
+
+    app._reverse = True
+    app._sort_runner("number")
+    assert [(r["username"], r["number"]) for r in app.table_data] == [
+        ("second", 2),
+        ("second", 1),
+        ("first", 3),
+        ("first", 2),
+        ("first", 1),
+    ]

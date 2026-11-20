@@ -113,6 +113,10 @@ def get_styled(row, columns=None):
             styled_row.append(
                 Text(str(row[key]), style="bold dark_sea_green1")
             )
+        elif key == "download_type" and row[key] == "unknown" and not row.get("unlocked"):
+            # a locked item has no link yet; only the label changes, so the
+            # filters and the cart still see "unknown"
+            styled_row.append(Text("protected", style="bold medium_spring_green"))
         elif  key=="number":
             styled_row.append(
                 Text(str(row[key]), style="bold bright_white")

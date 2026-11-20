@@ -15,7 +15,7 @@ on:
       - '**.md'
       - 'docs/**'
       - 'media/**'
-      - 'LICENSE'
+      - 'LICENSE*'
       - '.github/ISSUE_TEMPLATE/**'
 permissions:
   contents: read

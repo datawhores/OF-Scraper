@@ -23,11 +23,13 @@ from ofscraper.commands.scraper.actions.utils.log import (
 )
 from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 import ofscraper.utils.auth.request as auth_requests
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 
 # the reply cache is read and written by DownloadManager; kept here for code
 # and tests that reach it through this module
 import ofscraper.utils.cache.cache as cache  # noqa: F401
 import ofscraper.utils.dates as dates
+import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffprobe import verify_media_integrity
@@ -88,7 +90,13 @@ class AltDownloadManager(DownloadManager):
             self.ctx.log.info(
                 f"{common_logs.get_medialog(ele)} DRM video skipped: CDM keys not found ({missing})"
             )
+            ele.download_reason = "CDM keys not found"
             return "forced_skipped", 0
+        # the manifest, its files and the licence request carry the OnlyFans
+        # login: a host outside the allowed list fails the item before any
+        # of them is sent
+        host_allowlist.ensure_allowed_download_url(ele.mpd, "DRM manifest")
+        host_allowlist.ensure_allowed_download_url(ele.license, "DRM licence")
 
         sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
         self.ctx.log.debug(
@@ -225,11 +233,12 @@ class AltDownloadManager(DownloadManager):
                         return item
                     raise E
                 except Exception as E:
+                    # an aiohttp error's text holds the whole signed link
                     self.ctx.log.traceback_(
-                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {traceback.format_exc()}"
+                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {hide_links(traceback.format_exc(), hide_path=True)}"
                     )
                     self.ctx.log.traceback_(
-                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {E}"
+                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] {hide_links(E, hide_path=True)}"
                     )
                     if self._skipped_by_size(ele, E):
                         # alt_download removes both tracks' parts
@@ -242,7 +251,7 @@ class AltDownloadManager(DownloadManager):
             _attempt = self._alt_attempt_get(item)
             url = _mpd_segment_url(ele.mpd, item["origname"])
             self.ctx.log.debug(
-                f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
+                f"{get_medialog(ele)} Attempting to download media {item['origname']} with {hide_link(url, hide_path=True)}"
             )
             self.ctx.log.debug(
                 f"{get_medialog(ele)} [attempt {_attempt.get()}/{get_download_retries()}] download temp path {placeholderObj.tempfilepath}"
@@ -274,12 +283,15 @@ class AltDownloadManager(DownloadManager):
             self.ctx.log.debug(f"{get_medialog(ele)} resume header {headers}")
             params = get_alt_params(ele)
             url = _mpd_segment_url(ele.mpd, item["origname"])
+            # hls_header ends without a ";", so join the two with one: run
+            # together, the last CloudFront cookie swallows auth_id
+            cookies = (ele.hls_header, auth_requests.get_cookies_str())
             headers = {
                 **(headers or {}),
-                "Cookie": f"{ele.hls_header}{auth_requests.get_cookies_str()}",
+                "Cookie": "; ".join(x for x in cookies if x),
             }
             self.ctx.log.debug(
-                f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {url}"
+                f"{get_medialog(ele)} [attempt {self._alt_attempt_get(item).get()}/{get_download_retries()}] Downloading media with url  {hide_link(url, hide_path=True)}"
             )
             async with c.requests_async(
                 url=url,
@@ -309,12 +321,12 @@ class AltDownloadManager(DownloadManager):
                 ):
                     raise Exception(
                         f"{get_medialog(ele)} DRM segment returned playlist "
-                        f"content-type={content_type!r} url={url}"
+                        f"content-type={content_type!r} url={hide_link(url, hide_path=True)}"
                     )
                 if total is not None and total <= 0:
                     raise Exception(
                         f"{get_medialog(ele)} DRM segment empty size "
-                        f"(content-type={content_type or 'unknown'}, url={url})"
+                        f"(content-type={content_type or 'unknown'}, url={hide_link(url, hide_path=True)})"
                     )
 
                 data = self._reply_data(
@@ -408,7 +420,8 @@ class AltDownloadManager(DownloadManager):
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
     ):
         tempPlaceholder = await placeholder.tempFilePlaceholder(
-            ele, f"temp_{ele.id or await ele.final_filename}.mp4"
+            # with the post: two posts' copies of one media can merge at once
+            ele, f"temp_{ele.id or await ele.final_filename}_{ele.post_id}.mp4"
         ).init()
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
@@ -476,6 +489,8 @@ class AltDownloadManager(DownloadManager):
                 temp_path,
                 sharedPlaceholderObj.trunicated_filepath,
                 ele,
+                username=username,
+                model_id=model_id,
             ),
         )
 
@@ -507,7 +522,7 @@ class AltDownloadManager(DownloadManager):
             )
         ele.add_filepath(final_path)
 
-        await self._after_download_script(final_path)
+        await self._after_download_script(final_path, ele)
 
         audio_total = audio["total"] if audio else 0
         video_total = video["total"] if video else 0
