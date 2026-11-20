@@ -126,6 +126,7 @@ def _run(
             size_max=size_max,
             skip_download_script=None,
             quality=None,
+            key_mode="cdrm",
         ),
     )
     monkeypatch.setattr(common_globals, "log", _Log(), raising=False)
