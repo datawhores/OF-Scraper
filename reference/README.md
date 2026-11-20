@@ -84,7 +84,7 @@ Upstream's docs don't cover these:
   - Fansly labels (`-o labels`, `labels+`, `labels*`): each wall, a named tab on the creator's profile, is a label. The main "Posts" wall is the whole timeline, so it's skipped. With the default `dir_format`, wall posts are saved with the timeline and their labels are recorded in the `labels` table. Add `{label}` to `dir_format` for a folder per wall. Other areas (pinned, archived, stories, highlights, streams, profile) are skipped on Fansly.
   - HLS/DASH video.
   - Livestream recording (`--live`, `--live-watch`, `--live-interval`, `--live-max`, `--live-chat`).
-  - Fansly media save under `<save location>/Fansly`.
+  - Fansly media save under `<save location>/Fansly`, unless `dir_format` or `file_format` uses `{site_name}`, which then names each site's folder.
   - Fansly databases carry a `site` row in `schema_flags`.
 - **`file_options.filename_collision`** (environment default `FILENAME_COLLISION_DEFAULT`): decides what happens when two media would get the same file name.
 - **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See `COLLISION_RECOVERY.md`.

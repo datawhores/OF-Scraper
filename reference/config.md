@@ -46,7 +46,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `"{home_directory}/Data/ofscraper"` · **Read by:** `get_save_location()` in `ofscraper/utils/paths/common.py`
 - **Default from:** [`SAVE_PATH_DEFAULT`](env.md#save_path_default)
-- The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it. Surrounding quotes from the Windows "Copy as path" command are stripped.
+- The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it, unless `dir_format` or `file_format` uses `{site_name}` (or `{sitename}`): then each site's folder comes from the template, so `{site_name}/{model_username}/...` gives `<save location>/Onlyfans/...` and `<save location>/Fansly/...`. The database path and the `{save_location}` and `{root}` values keep the `Fansly` subfolder either way. Surrounding quotes from the Windows "Copy as path" command are stripped.
 
 ### `file_options.dir_format`
 

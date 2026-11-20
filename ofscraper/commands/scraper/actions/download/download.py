@@ -44,11 +44,12 @@ def save_path_str(username=None, model_id=None):
     """The "Saving files to ..." progress line. The path is filled in first
     and escaped after, so brackets in it or in the filled-in names show as
     they are."""
-    # the site's media root: <save location>/Fansly on Fansly runs
+    # the site's media root: <save location>/Fansly on Fansly runs, unless the
+    # templates name the site with {site_name}
     path = format_safe(
         str(
             pathlib.Path(
-                placeholder.site_save_location(),
+                placeholder.default_media_root(),
                 config_data.get_dirformat(),
                 config_data.get_fileformat(),
             )
@@ -58,6 +59,8 @@ def save_path_str(username=None, model_id=None):
         model_username=username,
         modelusername=username,
         modelid=model_id,
+        site_name=sites.site_name(),
+        sitename=sites.site_name(),
     )
     return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]"
 
