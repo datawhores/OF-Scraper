@@ -352,6 +352,9 @@ def test_drm_merge_failure_cleans_parts_unless_stopped(
                             return_value=SimpleNamespace(tempfilepath=merged))))
     monkeypatch.setattr(alt_download, "path_to_file_logger", Mock())
     monkeypatch.setattr(alt_download, "get_ffmpeg", lambda: "ffmpeg")
+    # manual key mode is the default: without CDM files on this machine (CI)
+    # the video would be skipped before the merge this test is about
+    monkeypatch.setattr(alt_download.keyhelpers, "missing_cdm_keys", lambda: None)
     monkeypatch.setattr(alt_download, "verify_media_integrity", Mock(return_value=False))
     monkeypatch.setattr(cls, "_alt_download_downloader", AsyncMock(side_effect=lambda item, *a, **k: item))
     monkeypatch.setattr(cls, "_media_item_post_process_alt", AsyncMock(return_value=None))
