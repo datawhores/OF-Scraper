@@ -376,7 +376,12 @@ async def scrape_posts_labels(c, label, model_id, offset=0, known=None, track=Fa
         finally:
             if task:
                 progress_utils.api.remove_job_task(task)
-    if finished and track:
+    if not finished:
+        log.warning(
+            f"{API}: scan of label {label['name']} stopped early (error or rate limit), "
+            "some of its posts may be missing"
+        )
+    elif track:
         mark_label_finished(model_id, label["id"])
 
 
