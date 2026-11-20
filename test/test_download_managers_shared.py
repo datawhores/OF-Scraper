@@ -42,7 +42,7 @@ def _setup(monkeypatch):
     monkeypatch.setattr(ad, "temp_file_logger", lambda *a, **k: None)
 
 
-ELE = SimpleNamespace(id=1, post_id=2, username="u", filename="f", url="x")
+ELE = SimpleNamespace(id=1, post_id=2, username="u", filename="f", url="x", mediatype="Videos")
 
 
 def _manager(drm):
@@ -248,6 +248,17 @@ def test_resume_from_a_finished_part(tmp_path, monkeypatch, fake_cache, drm):
         total, placeholderObj, check = result
         assert (total, placeholderObj.content_type, check) == (10, "mp4", True)
     assert holder.tempfilepath.read_bytes() == b"x" * 10
+
+
+@pytest.mark.parametrize(
+    "content_type, ext",
+    [("video/quicktime", "mov"), ("application/octet-stream", "mp4"), ("video/mp4", "mp4")],
+)
+def test_resume_names_the_file_by_its_format(tmp_path, monkeypatch, fake_cache, content_type, ext):
+    holder = _holder(tmp_path, 10)
+    data = {"content-total": 10, "content-type": content_type, "validator": "v"}
+    _, placeholderObj, _ = _resume(False, data, holder, monkeypatch)
+    assert placeholderObj.content_type == ext
 
 
 @DRM
