@@ -48,6 +48,22 @@ def test_strip_pssh_leaves_clean_file_alone(tmp_path):
     assert f.read_bytes() == data
 
 
+@pytest.mark.parametrize("tail", [b"", b"\x00" * 7])
+def test_strip_pssh_stops_at_cut_off_64_bit_header(tmp_path, tail):
+    # a last box that says "64-bit size follows" but ends before the size
+    pssh = _box(b"pssh", b"\x00" * 40)
+    moov = _box(b"moov", _box(b"mvhd", b"\x00" * 100) + pssh)
+    cut = struct.pack(">I4s", 1, b"free") + tail
+    data = _box(b"ftyp", b"isom") + pssh + moov
+    f = tmp_path / "a.mp4"
+    f.write_bytes(data + cut)
+
+    assert strip_pssh(f) == 2
+    out = f.read_bytes()
+    assert out[: len(data)] == data.replace(b"pssh", b"free")
+    assert out[len(data) :] == cut
+
+
 FFMPEG = shutil.which("ffmpeg")
 KEY = "00112233445566778899aabbccddeeff"
 
