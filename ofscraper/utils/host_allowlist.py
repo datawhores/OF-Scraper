@@ -85,31 +85,57 @@ def ensure_allowed_download_url(url, kind="media"):
     raise RefusedHost(message)
 
 
+def _login_to_drop(url, login):
+    """For a request to url that carries the login headers named in login:
+    given the URL of a hop on its way (the first request or a redirect), the
+    headers to send it without. A host other than the first one and outside
+    the list gets none of them; the first host and allowed hosts keep them."""
+    first = _host(url)
+    login = tuple(login)
+
+    def to_drop(target):
+        if _host(target) == first or is_allowed(target):
+            return ()
+        host = _shown(target)
+        if host not in _warned:
+            _warned.add(host)
+            log.warning(
+                f"a request was redirected to {host}, which isn't an allowed "
+                "host for the OnlyFans login: it is sent without it. If it "
+                "needs the login, add it to OFSC_MEDIA_HOST_SUFFIXES"
+            )
+        return login
+
+    return to_drop
+
+
 def drop_login_on_redirect(url, login):
     """An aiohttp client middleware for a request to url that carries the
     login headers named in login. aiohttp follows redirects itself, and on the
     way to another host it drops only the cookies, so a host outside the list
     would get the rest. A redirect to such a host is sent without them. The
     first request, redirects on its own host and to allowed hosts go as before."""
-    first = _host(url)
-    login = tuple(login)
+    to_drop = _login_to_drop(url, login)
 
     async def middleware(req, handler):
-        target = str(req.url)
-        if _host(target) != first and not is_allowed(target):
-            for name in login:
-                req.headers.popall(name, None)
-            host = _shown(target)
-            if host not in _warned:
-                _warned.add(host)
-                log.warning(
-                    f"a request was redirected to {host}, which isn't an allowed "
-                    "host for the OnlyFans login: it is sent without it. If it "
-                    "needs the login, add it to OFSC_MEDIA_HOST_SUFFIXES"
-                )
+        for name in to_drop(str(req.url)):
+            req.headers.popall(name, None)
         return await handler(req)
 
     return middleware
+
+
+def drop_login_on_redirect_sync(url, login):
+    """The same for httpx, as a function the client's request event hook runs
+    before each hop. httpx follows redirects itself too, and on the way to
+    another host it drops only Authorization (and the request's cookies)."""
+    to_drop = _login_to_drop(url, login)
+
+    def guard(request):
+        for name in to_drop(str(request.url)):
+            request.headers.pop(name, None)
+
+    return guard
 
 
 def download_actions(url):

@@ -41,6 +41,17 @@ HEADERS = "create_header"
 # A backoff that decays below this many seconds ends (drops to *_MIN_SLEEP)
 BACKOFF_FLOOR = 0.5
 
+# httpx request extension holding a request's redirect guard; httpx copies a
+# request's extensions to each redirect it follows
+LOGIN_GUARD = "ofscraper_login_guard"
+
+
+def _run_login_guard(request):
+    """httpx request event hook: runs before the first request and each redirect."""
+    guard = request.extensions.get(LOGIN_GUARD)
+    if guard:
+        guard(request)
+
 
 def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     """Utility to check if an exception's status code matches given numbers."""
@@ -540,6 +551,8 @@ class sessionManager:
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
                 ),
+                # a redirect to a host outside the list gets no login
+                event_hooks={"request": [_run_login_guard]},
             )
         self._async = async_
         return self._session
@@ -651,6 +664,8 @@ class sessionManager:
         retries = retries if retries is not None else self._retries
         wait_min = wait_min if wait_min is not None else self._wait_min
         wait_max = wait_max if wait_max is not None else self._wait_max
+        # what the caller sent; the rest is the login the session adds
+        caller_headers = {k.lower() for k in (headers or {})}
 
         for _ in Retrying(
             retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit))
@@ -682,6 +697,19 @@ class sessionManager:
                             )
                         if COOKIES in actions:
                             cookies = self._create_cookies()
+                        login = [
+                            k
+                            for k in (headers or {})
+                            if k.lower() not in caller_headers
+                        ]
+                        # a redirect to a host outside the list gets no login
+                        guard = {}
+                        if redirects and login and not sites.is_fansly():
+                            guard["extensions"] = {
+                                LOGIN_GUARD: host_allowlist.drop_login_on_redirect_sync(
+                                    url, login
+                                )
+                            }
 
                         r = self._httpx_funct(
                             method,
@@ -700,6 +728,7 @@ class sessionManager:
                                 pool=pool_connect_timeout or self._pool_connect_timeout,
                                 read=read_timeout or self._read_timeout,
                             ),
+                            **guard,
                         )
                         if not r.ok and r.status_code != 404:
                             error_text = r.text_()
