@@ -31,6 +31,25 @@ def setLog(input_):
     log = input_
 
 
+def missing_cdm_keys():
+    """What manual key mode lacks to decrypt DRM videos, or None.
+
+    A blank path becomes Path("") == "." and fails with "Is a directory"
+    only after the whole video has been downloaded.
+    """
+    s = settings.get_settings()
+    if s.key_mode != "manual":
+        return None
+    problems = []
+    for name, value in (("client-id", s.client_id), ("private-key", s.private_key)):
+        value = str(value or "").strip()
+        if not value:
+            problems.append(f"{name} is not set")
+        elif not pathlib.Path(value).is_file():
+            problems.append(f"{name} file not found: {value}")
+    return "; ".join(problems) or None
+
+
 def strip_pssh(path):
     """
     Turn pssh boxes in a decrypted file into same-sized 'free' boxes.
