@@ -995,8 +995,8 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `cdm_options.key-mode-default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Key mode for decrypting content
-- **Note:** `cdrm` posts the request headers, cookies included, to cdrm-project.com. `manual` uses the local CDM files (`--private-key`, `--client-id`).
+- Key mode for decrypting content (cdrm is deprecated: its service no longer works)
+- **Note:** `manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works (it was also sent the request headers, cookies included), and each run that uses it warns.
 
 #### `--private-key`
 

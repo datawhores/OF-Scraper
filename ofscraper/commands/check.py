@@ -202,7 +202,8 @@ def _process_user_batch(
     if _process_user_batch.counter == 0:
         log.info("Performing first-run CDM check...")
         if not network.check_cdm():
-            log.info("CDM check raised an error. This check will not be repeated.")
+            # e.g. key mode cdrm, which is deprecated: the reason is shown above
+            log.info("CDM check failed; DRM videos may not download. This check will not be repeated.")
         else:
             log.info("CDM check passed. This check will not be repeated.")
     _process_user_batch.counter += 1
