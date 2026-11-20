@@ -106,7 +106,10 @@ def default_kid(path):
             size, typ = struct.unpack(">I4s", header)
             skip = size - 8
             if size == 1:
-                skip = struct.unpack(">Q", f.read(8))[0] - 16
+                # a 64-bit size cut off by the end of the file
+                if len(large := f.read(8)) < 8:
+                    return None
+                skip = struct.unpack(">Q", large)[0] - 16
             elif size == 0:
                 return None
             if typ != b"moov":

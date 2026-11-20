@@ -41,6 +41,14 @@ def test_default_kid_is_none_for_a_clear_file(tmp_path):
     assert keyhelpers.default_kid(f) is None
 
 
+@pytest.mark.parametrize("tail", [b"", b"\x00" * 7])
+def test_default_kid_is_none_at_a_cut_off_64_bit_header(tmp_path, tail):
+    # a .part that ends in a box saying "64-bit size follows", before any moov
+    f = tmp_path / "v.part"
+    f.write_bytes(_box(b"ftyp", b"isom") + struct.pack(">I4s", 1, b"mdat") + tail)
+    assert keyhelpers.default_kid(f) is None
+
+
 FFMPEG = shutil.which("ffmpeg")
 
 
