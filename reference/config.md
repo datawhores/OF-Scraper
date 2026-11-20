@@ -262,7 +262,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `false` · **Read by:** `get_sanitizeDB()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default)
-- When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, the raw API text is stored. It does not affect file names.
+- When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, the raw API text is stored. It does not affect file names. Fansly style codes (`[s:lg]`, `[c:blue]`, `**bold**`, `*italic*`, `~~`, `[text](url)` links keep only their text, and a backslash-escaped character is kept without its backslash) are always removed, whatever this is set to: from the database, `.txt` files, file names, text filters and script input. Text saved by earlier versions keeps them until a `--metadata` run rewrites it, and `stash_sync` copies the saved text as it is.
 
 ### `advanced_options.temp_dir`
 
