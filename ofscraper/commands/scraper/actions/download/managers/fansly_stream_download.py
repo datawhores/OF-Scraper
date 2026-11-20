@@ -441,7 +441,7 @@ class FanslyStreamDownloadManager(DownloadManager):
     async def _fresh_stream(self, c, ele, e):
         """(best, url, audio url) from new links after the CDN refused one of
         the stream's video files. Fansly sometimes signs the links for another
-        address (#536), so they are asked for again, once, as for a refused
+        address (#683), so they are asked for again, once, as for a refused
         playlist. Raises ``e`` again when there are none to use."""
         if not _refused(e) or not await refresh_media_link(ele):
             raise e
