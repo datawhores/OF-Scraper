@@ -192,7 +192,7 @@ class MainDownloadManager(DownloadManager):
             headers = self._get_resume_header(resume_size, total, validator)
             saved_total, total = total, None
             self.ctx.log.debug(
-                f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] Downloading media with url {ele.url}"
+                f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] Downloading media with url {common_logs.get_url_log(ele)}"
             )
 
             async with c.requests_async(
@@ -384,7 +384,7 @@ class MainDownloadManager(DownloadManager):
 
     async def _fresh_data_handler_main(self, ele, tempholderObj):
         self.ctx.log.debug(
-            f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] fresh download for media {ele.url}"
+            f"{common_logs.get_medialog(ele)} [attempt {self.ctx.attempt.get()}/{get_download_retries()}] fresh download for media {common_logs.get_url_log(ele)}"
         )
         resume_size = self._get_resume_size(tempholderObj)
         self.ctx.log.debug(

@@ -44,11 +44,13 @@ def temp_file_logger(placeholderObj, ele, innerlog=None, attempt=None):
 
 def get_url_log(ele):
     url = ele.url or ele.mpd
+    # the query holds the link's signature and the account's user id (u=)
+    url, query, _ = url.partition("?")
     url = re.sub(r"/\w{5}\w+", "/{hidden}", url)
     if ele.url:
         # plain replace: a filename such as "design (7)" isn't a valid pattern
         url = url.replace(ele.filename, "{hidden}")
-    return url
+    return f"{url}?{{hidden}}" if query else url
 
 
 def log_download_progress(media_type):
