@@ -53,20 +53,20 @@ class base:
         length = int(settings.get_settings().text_length)
         if length == 0:
             return text
-        elif settings.get_settings().text_type == "letter":
-            return f"{''.join(list(text)[:length])}"
+        sep = settings.get_settings().space_replacer or " "
+        if settings.get_settings().text_type == "letter":
+            text = "".join(list(text)[:length])
         else:
             # text has usually been through file_cleanup already, which swaps
             # spaces for space_replacer, so words are split on that. If the
             # original text already contained that character (e.g. "_" in a
             # caption with "_" as the replacer), it also counts as a word
             # break; the original spaces can't be told apart at this point.
-            sep = settings.get_settings().space_replacer or " "
-            if sep not in text:
-                sep = " "
-            words = [x for x in text.split(sep) if x]
-            text = sep.join(words[:length])
-        text = re.sub(" +$", "", text)
+            word_sep = sep if sep in text else " "
+            words = [x for x in text.split(word_sep) if x]
+            text = word_sep.join(words[:length])
+        # a cut can end on a separator; don't leave "Good_" or "Good "
+        text = re.sub(f"(?:{re.escape(sep)}| )+$", "", text)
         return text
 
     def file_cleanup(self, text):
