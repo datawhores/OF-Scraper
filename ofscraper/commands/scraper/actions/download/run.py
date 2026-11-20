@@ -201,6 +201,13 @@ async def download(c, ele, model_id, username):
                 await _clear_silent_flag(model_id, ele)
         elif data is None and ele.mpd:
             data = await AltDownloadManager().alt_download(c, ele, username, model_id)
+        if data is None:
+            # nothing to fetch: locked media, sent from the check table, has
+            # no link; a run's own filters leave it out
+            common_globals.log.info(
+                f"{get_medialog(ele)} Not downloaded: it has no link (locked or removed)"
+            )
+            return "skipped", 0
         common_globals.log.debug(f"{get_medialog(ele)} Download finished")
         return data
     except Exception as E:
