@@ -138,6 +138,20 @@ def get_request_auth():
         failures.append((dynamic, ValueError("OFSC_DYNAMIC_RULE_MANUAL isn't set")))
     elif dynamic == "generic":
         failures.append((dynamic, ValueError("OF_DYNAMIC_GENERIC_URL isn't set")))
+    elif dynamic:
+        # e.g. a name OFSC_DYNAMIC_OPTIONS still lists: the switch to a
+        # fallback is logged with this reason
+        removed = const.REMOVED_DYNAMIC_RULES.get(str(dynamic).lower())
+        failures.append(
+            (
+                dynamic,
+                ValueError(
+                    f"removed because {removed}"
+                    if removed
+                    else "not a known dynamic rule"
+                ),
+            )
+        )
     # the chosen source first; the fallbacks only if it gives no usable rule
     sources = [source] if source else []
     sources += [name for name in FALLBACK_SOURCES if name != source]

@@ -16,6 +16,8 @@ Given/When/Then:
    sent, and the caller gets DynamicRuleUnavailable.
 7. Given digitalcriminals and rafa fail, then xagler is tried last; datawhores
    is neither offered nor fetched.
+7. Given a removed or unknown rule name reaches the request code, then the
+   fallback is used and the log line says why.
 """
 
 import asyncio
@@ -166,18 +168,38 @@ def test_xagler_is_the_last_fallback(hosts, monkeypatch, caplog):
     assert "Using the xagler dynamic rule instead" in caplog.text
 
 
-def test_datawhores_is_not_offered_or_fetched(hosts, monkeypatch):
+def test_datawhores_is_not_offered_or_fetched(hosts, monkeypatch, caplog):
     import ofscraper.utils.const as const
 
     assert "datawhores" not in const.DYNAMIC_OPTIONS
     assert "datawhores" not in request.of_env.getattr("DYNAMIC_OPTIONS_ALL")
-    # a name that reaches the request code anyway is not fetched
+    # a name that reaches the request code anyway (e.g. OFSC_DYNAMIC_OPTIONS
+    # still lists it) is not fetched, and the switch says why
     choose(monkeypatch, "datawhores")
     hosts.replies.update(digitalcriminals=rule("100"))
-    auth = request.get_request_auth()
+    with caplog.at_level(logging.INFO, logger="shared"):
+        auth = request.get_request_auth()
 
     assert auth[1] == "100:{}:{:x}:2"
     assert hosts.asked == ["digitalcriminals"]
+    assert (
+        "Using the digitalcriminals dynamic rule instead (datawhores: removed "
+        "because OnlyFans no longer accepts its rule)" in caplog.text
+    )
+
+
+def test_unknown_rule_name_falls_back_with_reason(hosts, monkeypatch, caplog):
+    choose(monkeypatch, "madeup")
+    hosts.replies.update(digitalcriminals=rule("100"))
+    with caplog.at_level(logging.INFO, logger="shared"):
+        auth = request.get_request_auth()
+
+    assert auth[1] == "100:{}:{:x}:2"
+    assert hosts.asked == ["digitalcriminals"]
+    assert (
+        "Using the digitalcriminals dynamic rule instead (madeup: not a known "
+        "dynamic rule)" in caplog.text
+    )
 
 
 def test_manual_rule_not_set_falls_back(hosts, monkeypatch, caplog):
