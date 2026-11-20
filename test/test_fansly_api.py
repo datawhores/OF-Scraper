@@ -523,6 +523,7 @@ def path_env(monkeypatch, tmp_path):
                         lambda *a, **k: str(tmp_path / "data"))
     monkeypatch.setattr(placeholder.data, "get_dirformat",
                         lambda *a, **k: "{model_username}/{response_type}/{media_type}/")
+    monkeypatch.setattr(placeholder.data, "get_fileformat", lambda *a, **k: "{filename}.{ext}")
     return tmp_path
 
 
@@ -534,6 +535,63 @@ def test_fansly_files_go_under_a_fansly_folder(fansly, path_env, cls):
     # an explicit root (the temp folder) is left alone
     path = asyncio.run(holder.getmediadir(root=path_env / "tmp", create=False))
     assert pathlib.Path(path) == path_env / "tmp" / CREATOR / "Timeline" / "Videos"
+
+
+SITE_DIR_FORMAT = "{site_name}/{model_username}/{response_type}/{media_type}/"
+
+
+@pytest.mark.parametrize("cls", ["Placeholders", "Textholders"])
+def test_site_name_in_dir_format_skips_the_fansly_folder(fansly, path_env, monkeypatch, cls):
+    # the templates name the site, so each site gets one folder of its own
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: SITE_DIR_FORMAT)
+    ele = SimpleNamespace(username=CREATOR, model_id=CREATOR_ID)
+    path = asyncio.run(getattr(placeholder, cls)(ele, "mp4").getmediadir(create=False))
+    assert pathlib.Path(path) == path_env / "data" / "Fansly" / CREATOR / "Timeline" / "Videos"
+    fansly.site = "onlyfans"
+    path = asyncio.run(getattr(placeholder, cls)(ele, "mp4").getmediadir(create=False))
+    assert pathlib.Path(path) == path_env / "data" / "Onlyfans" / CREATOR / "Timeline" / "Videos"
+
+
+@pytest.mark.parametrize(
+    "fmt,names",
+    [
+        ("{site_name}/{model_username}", True),
+        ("{sitename}/{model_username}", True),
+        ("{model_username}/{site_name!s:>3}", True),
+        ("{model_username}/{response_type}", False),
+        ("{save_location}/{model_username}", False),
+        ("", False),
+        (None, False),
+    ],
+)
+def test_which_templates_name_the_site(fmt, names):
+    assert placeholder._names_site(fmt) is names
+
+
+def test_site_name_in_file_format_skips_the_fansly_folder(fansly, path_env, monkeypatch):
+    monkeypatch.setattr(placeholder.data, "get_fileformat",
+                        lambda *a, **k: "{site_name}_{filename}.{ext}")
+    holder = placeholder.Placeholders(SimpleNamespace(username=CREATOR, model_id=CREATOR_ID), "mp4")
+    path = asyncio.run(holder.getmediadir(create=False))
+    assert pathlib.Path(path) == path_env / "data" / CREATOR / "Timeline" / "Videos"
+
+
+@pytest.mark.parametrize(
+    "fmt",
+    [
+        "{configpath}/{profile}/.data/{model_id}",
+        "{configpath}/{profile}/.data/{model_username}",
+        "{save_location}/{model_username}/metadata",
+        "{root}/{model_username}/metadata",
+    ],
+)
+def test_site_name_in_dir_format_leaves_the_database_path_alone(fansly, path_env, monkeypatch,
+                                                                fmt):
+    monkeypatch.setattr(placeholder.data, "get_metadata", lambda *a, **k: fmt)
+    before = placeholder.databasePlaceholder().databasePathHelper(CREATOR_ID, CREATOR)
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: SITE_DIR_FORMAT)
+    after = placeholder.databasePlaceholder().databasePathHelper(CREATOR_ID, CREATOR)
+    assert after == before
 
 
 # ------------------------------------------------------------------ review fixes
@@ -581,6 +639,19 @@ def test_saving_files_message_shows_the_fansly_folder(fansly, path_env, monkeypa
     monkeypatch.setattr(download.config_data, "get_fileformat", lambda *a, **k: "f.{ext}")
     shown = download.save_path_str(CREATOR, CREATOR_ID)
     assert str(path_env / "data" / "Fansly" / CREATOR / "x" / "f.{ext}") in shown
+
+
+def test_saving_files_message_with_site_name_has_one_fansly_folder(fansly, path_env, monkeypatch):
+    from ofscraper.commands.scraper.actions.download import download
+
+    monkeypatch.setattr(download.config_data, "get_dirformat",
+                        lambda *a, **k: "{site_name}/{model_username}/x")
+    monkeypatch.setattr(download.config_data, "get_fileformat", lambda *a, **k: "f.{ext}")
+    monkeypatch.setattr(placeholder.data, "get_dirformat",
+                        lambda *a, **k: "{site_name}/{model_username}/x")
+    shown = download.save_path_str(CREATOR, CREATOR_ID)
+    assert str(path_env / "data" / "Fansly" / CREATOR / "x" / "f.{ext}") in shown
+    assert "{site_name}" not in shown
 
 
 def priced(item_id, dollars):

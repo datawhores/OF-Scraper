@@ -3,10 +3,14 @@ DYNAMIC_OPTIONS = [
     "digitalcriminals",
     "manual",
     "generic",
-    "datawhores",
     "xagler",
     "rafa",
 ]
+# rules that were removed, and why; a config.json that still names one falls
+# back to the default with this reason in the warning
+REMOVED_DYNAMIC_RULES = {
+    "datawhores": "OnlyFans no longer accepts its rule",
+}
 # other names accepted for a dynamic rule, and the rule each one picks
 DYNAMIC_ALIASES = {
     "dc": "digitalcriminals",

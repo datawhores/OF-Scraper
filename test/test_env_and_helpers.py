@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 from ofscraper.commands.scraper.actions.download.managers.alt_download import (
@@ -8,7 +6,6 @@ from ofscraper.commands.scraper.actions.download.managers.alt_download import (
 from ofscraper.prompts.prompt_validators import format_list, jsonloader, parse_list
 from ofscraper.utils.dates import format_seconds
 from ofscraper.utils.of_env.values.system import load_system_config
-from ofscraper.utils.separate import separate_by_id
 
 
 @pytest.mark.parametrize(
@@ -55,11 +52,6 @@ def test_log_subprocess_level_env(monkeypatch, env, expected):
 )
 def test_mpd_segment_url(mpd, segment, expected):
     assert _mpd_segment_url(mpd, segment) == expected
-
-
-def test_separate_by_id():
-    items = [SimpleNamespace(id=i) for i in (1, 2, 3)]
-    assert [x.id for x in separate_by_id(items, [2])] == [1, 3]
 
 
 @pytest.mark.parametrize(

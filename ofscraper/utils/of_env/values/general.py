@@ -82,7 +82,7 @@ def load_general_config():
         "OFSC_FILTER_SELF_MEDIA", "True"
     ).lower() in ("true", "1")
 
-    # ALLOW_DUPE_MEDIA: Whether to allow duplicate media downloads.
+    # ALLOW_DUPE_MEDIA: The default for --allow-dupes: download media that is in several posts once for each post. The option overrides it for one run.
     # Default: False
     config["ALLOW_DUPE_MEDIA"] = os.getenv(
         "OFSC_ALLOW_DUPE_MEDIA", "False"

@@ -521,7 +521,7 @@ Defined in `ofscraper/utils/of_env/values/general.py`.
 | <a id="continue_bool"></a>`CONTINUE_BOOL` | `OFSC_CONTINUE_BOOL` | `True` | General boolean flag for continuing operations. |
 | <a id="file_count_placeholder"></a>`FILE_COUNT_PLACEHOLDER` | `OFSC_FILE_COUNT_PLACEHOLDER` | `True` | Flag related to file count display or logic. |
 | <a id="filter_self_media"></a>`FILTER_SELF_MEDIA` | `OFSC_FILTER_SELF_MEDIA` | `True` | Whether to filter media belonging to self-profile. |
-| <a id="allow_dupe_media"></a>`ALLOW_DUPE_MEDIA` | `OFSC_ALLOW_DUPE_MEDIA` | `False` | Whether to allow duplicate media downloads. |
+| <a id="allow_dupe_media"></a>`ALLOW_DUPE_MEDIA` | `OFSC_ALLOW_DUPE_MEDIA` | `False` | The default for --allow-dupes: download media that is in several posts once for each post. The option overrides it for one run. |
 
 ### Data Processing and File Handling
 
@@ -645,8 +645,8 @@ Defined in `ofscraper/utils/of_env/values/dynamic.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="dynamic_rule_manual"></a>`DYNAMIC_RULE_MANUAL` | `OFSC_DYNAMIC_RULE_MANUAL` | `None` | The specific manual dynamic rule to use. Defaults to None. |
-| <a id="dynamic_options"></a>`DYNAMIC_OPTIONS` | `OFSC_DYNAMIC_OPTIONS` | a list of 6 items (see the source) | List of available dynamic rule options. |
-| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 13 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
+| <a id="dynamic_options"></a>`DYNAMIC_OPTIONS` | `OFSC_DYNAMIC_OPTIONS` | `['digitalcriminals', 'manual', 'generic', 'xagler', 'rafa']` | List of available dynamic rule options. |
+| <a id="dynamic_options_all"></a>`DYNAMIC_OPTIONS_ALL` | `OFSC_DYNAMIC_OPTIONS_ALL` | a list of 12 items (see the source) | Comprehensive list of all dynamic rule options including aliases. |
 | <a id="dynamic_rule_default"></a>`DYNAMIC_RULE_DEFAULT` | `OFSC_DYNAMIC_RULE_DEFAULT` | `'digital'` | The default dynamic rule when none is specified. |
 
 ## List names
@@ -852,10 +852,7 @@ Defined in `ofscraper/utils/of_env/values/url/dynamic.py`.
 | <a id="xagler_url"></a>`XAGLER_URL` | `OF_XAGLER_URL` | `'https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json'` | "https://raw.githubusercontent.com/xagler/dynamic-rules/main/onlyfans.json" |
 | <a id="rafa_url"></a>`RAFA_URL` | `OF_RAFA_URL` | `'https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json'` | "https://raw.githubusercontent.com/rafa-9/dynamic-rules/main/rules.json" |
 | <a id="digitalcriminals"></a>`DIGITALCRIMINALS` | `OF_DIGITALCRIMINALS_URL` | `'https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json'` | "https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json" |
-| <a id="datawhores_url"></a>`DATAWHORES_URL` | `OF_DATAWHORES_URL` | `'https://raw.githubusercontent.com/datawhores/onlyfans-dynamic-rules/main/dynamicRules.json'` | "https://raw.githubusercontent.com/datawhores/onlyfans-dynamic-rules/main/dynamicRules.json" |
-| <a id="deviint_url"></a>`DEVIINT_URL` | `OF_DEVIINT_URL` | `'https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json'` | Dynamic rules URL for Deviint |
-| <a id="riley_url"></a>`RILEY_URL` | `OF_RILEY_URL` | `'https://raw.githubusercontent.com/riley-access-labs/onlyfans-dynamic-rules-1/refs/heads/main/dynamicRules.json'` | Dynamic rules URL for Riley Access Labs |
-| <a id="dynamic_generic_url"></a>`DYNAMIC_GENERIC_URL` | `OF_DYNAMIC_GENERIC_URL` | `None` | None |
+| <a id="dynamic_generic_url"></a>`DYNAMIC_GENERIC_URL` | `OF_DYNAMIC_GENERIC_URL` | `None` | The URL of the dynamic rule that `advanced_options.dynamic-mode-default` `generic` fetches. Unset, `generic` can't be used and the fallback sources are tried instead. |
 
 ## Other addresses
 
@@ -872,4 +869,10 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="bad_url_host"></a>`BAD_URL_HOST` | `OFSC_BAD_URL_HOSTS` | a list of 3 items (see the source) | A set of regular expression patterns for "bad" URL hosts. |
+
+### Media Host
+
+| Key | Environment variable | Default | Description |
+|---|---|---|---|
+| <a id="media_host_suffixes"></a>`MEDIA_HOST_SUFFIXES` | `OFSC_MEDIA_HOST_SUFFIXES` | `[]` | Domains added to the built-in `onlyfans.com`: the hosts that may be sent the OnlyFans login (session cookies, login headers) with a download (`ofscraper/utils/host_allowlist.py`). A host matches a domain or any subdomain of it, so `cdn.example.com` allows `media.cdn.example.com` but not `evil-cdn.example.com`; only http and https links match. A normal file on a host outside the list is downloaded without the login, with one warning per host. A DRM video whose manifest or licence URL is on such a host isn't downloaded: the item fails with a warning naming the host. Adding a domain never removes the built-in ones. Fansly isn't checked: its token goes only to its API host. |
 

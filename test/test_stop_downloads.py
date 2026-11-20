@@ -47,7 +47,7 @@ def test_stop_running_batch_keeps_part_and_never_finalises(
 ):
     stop = stop_signal
     parts = []
-    media = [SimpleNamespace(id=i, url="file", mpd=None, filename="file",
+    media = [SimpleNamespace(id=i, url="file", mpd=None, license=None, filename="file",
                              post_id=1, mediatype="videos", add_size=Mock(),
                              mark_download_failed=Mock(), mark_download_succeeded=Mock())
              for i in range(4)]
@@ -94,6 +94,7 @@ def test_stop_running_batch_keeps_part_and_never_finalises(
         monkeypatch.setattr(alt_download.placeholder, "Placeholders",
                             lambda *a: SimpleNamespace(init=AsyncMock(return_value=object())))
         monkeypatch.setattr(alt_download, "path_to_file_logger", Mock())
+        monkeypatch.setattr(alt_download.host_allowlist, "ensure_allowed_download_url", lambda url, kind="": url)
 
     async def transfer(self, *args, **kwargs):
         ele = args[2] if drm else args[1]
@@ -351,7 +352,11 @@ def test_drm_merge_failure_cleans_parts_unless_stopped(
                         lambda *a: SimpleNamespace(init=AsyncMock(
                             return_value=SimpleNamespace(tempfilepath=merged))))
     monkeypatch.setattr(alt_download, "path_to_file_logger", Mock())
+    monkeypatch.setattr(alt_download.host_allowlist, "ensure_allowed_download_url", lambda url, kind="": url)
     monkeypatch.setattr(alt_download, "get_ffmpeg", lambda: "ffmpeg")
+    # manual key mode is the default: without CDM files on this machine (CI)
+    # the video would be skipped before the merge this test is about
+    monkeypatch.setattr(alt_download.keyhelpers, "missing_cdm_keys", lambda: None)
     monkeypatch.setattr(alt_download, "verify_media_integrity", Mock(return_value=False))
     monkeypatch.setattr(cls, "_alt_download_downloader", AsyncMock(side_effect=lambda item, *a, **k: item))
     monkeypatch.setattr(cls, "_media_item_post_process_alt", AsyncMock(return_value=None))
@@ -378,7 +383,7 @@ def test_drm_merge_failure_cleans_parts_unless_stopped(
 
     async def go():
         ele = SimpleNamespace(id=1, post_id=1, mediatype="videos", duration=1,
-                              url=None, mpd="https://example.invalid/manifest.mpd",
+                              url=None, mpd="https://example.invalid/manifest.mpd", license=None,
                               add_size=Mock(), mpd_audio=track(tracks[0]),
                               mpd_video=track(tracks[1]))
         error = asyncio.CancelledError if stopped else Exception

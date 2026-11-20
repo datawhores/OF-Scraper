@@ -43,7 +43,7 @@ def onlyfans_profile(monkeypatch):
     real = settings.get_settings()
     # site set explicitly: the developer's own profile may be a Fansly one
     stub = SimpleNamespace(
-        **{**dict(real), "anon": False, "dynamic_rules": "datawhores", "site": "onlyfans"}
+        **{**dict(real), "anon": False, "dynamic_rules": "xagler", "site": "onlyfans"}
     )
     monkeypatch.setattr(settings, "get_settings", lambda: stub)
     monkeypatch.setattr(auth_requests.auth_file, "read_auth", lambda: dict(FAKE_AUTH))

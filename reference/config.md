@@ -46,7 +46,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `"{home_directory}/Data/ofscraper"` · **Read by:** `get_save_location()` in `ofscraper/utils/paths/common.py`
 - **Default from:** [`SAVE_PATH_DEFAULT`](env.md#save_path_default)
-- The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it. Surrounding quotes from the Windows "Copy as path" command are stripped.
+- The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it, unless `dir_format` or `file_format` uses `{site_name}` (or `{sitename}`): then each site's folder comes from the template, so `{site_name}/{model_username}/...` gives `<save location>/Onlyfans/...` and `<save location>/Fansly/...`. The database path and the `{save_location}` and `{root}` values keep the `Fansly` subfolder either way. Surrounding quotes from the Windows "Copy as path" command are stripped.
 
 ### `file_options.dir_format`
 
@@ -99,7 +99,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `"media_id"` · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default)
-- What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept.
+- What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
 
 ## `download_options`
 
@@ -231,7 +231,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default:** `"digital"` · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default)
 - **CLI override:** `--dynamic-rules`
-- Which source of OnlyFans request-signing rules to use. The values are `datawhores`, `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`; the config menu lists and saves it as `digital`), `generic` (needs `OFSC_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). An unknown value falls back to the default and logs a warning. Anything that yields no rule falls back to `datawhores`. The `-dr`/`--dynamic-rules` option overrides it.
+- Which source of OnlyFans request-signing rules to use. The values are `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`; the config menu lists and saves it as `digital`), `generic` (needs `OF_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). An unknown value falls back to the default and logs a warning. `datawhores` was removed because OnlyFans no longer accepts its rule, so a config that still names it falls back the same way, and the warning says why. When the chosen source fails, isn't set up, or sends a rule that can't be used (incomplete, or obsolete like a 2024 rule OnlyFans rejects), `digitalcriminals`, then `rafa`, then `xagler` are tried, and the one used is logged. If none gives a usable rule, the auth check reports that it couldn't check the auth, not bad auth, and the next request tries again. The `-dr`/`--dynamic-rules` option overrides it.
 
 ### `advanced_options.skip_unavailable_content`
 
@@ -262,7 +262,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `false` · **Read by:** `get_sanitizeDB()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default)
-- When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, the raw API text is stored. It does not affect file names.
+- When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, the raw API text is stored. It does not affect file names. Fansly style codes (`[s:lg]`, `[c:blue]`, `**bold**`, `*italic*`, `~~`, `[text](url)` links keep only their text, and a backslash-escaped character is kept without its backslash) are always removed, whatever this is set to: from the database, `.txt` files, file names, text filters and script input. Text saved by earlier versions keeps them until a `--metadata` run rewrites it, and `stash_sync` copies the saved text as it is.
 
 ### `advanced_options.temp_dir`
 

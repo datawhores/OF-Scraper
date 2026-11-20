@@ -240,7 +240,13 @@ def describe(entry, texts, username, message_ids=frozenset(), purchase_types=Non
 
 
 def plain_text(text):
-    """Fansly captions are plain text; trim each line."""
+    """Fansly captions are plain text; trim each line.
+
+    The style codes come off when a post is scanned (normalize._item_dict), so
+    they aren't removed again here: that would turn an escaped "\\*sale\\*",
+    saved as "*sale*", into "sale". Rows saved before then are rewritten by a
+    --metadata run.
+    """
     return "\n".join(line.strip() for line in (text or "").splitlines()).strip()
 
 

@@ -4,6 +4,7 @@ import pathlib
 import platform
 import errno
 import shutil
+import sqlite3
 import tempfile
 import time
 from collections.abc import Iterable
@@ -16,6 +17,7 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as path_utils
+import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 
 try:
@@ -27,7 +29,7 @@ MAX_CANDIDATES = 1000
 STALE_STAGING_SECONDS = 24 * 60 * 60
 
 
-def moveHelper(temp, path_to_file, ele, log_=None):
+def moveHelper(temp, path_to_file, ele, log_=None, username=None, model_id=None):
     """
     Move a finished download into place and return the path it ended up at.
 
@@ -41,16 +43,25 @@ def moveHelper(temp, path_to_file, ele, log_=None):
     filesystem decides whether a name is taken, so its own case rules apply.
     Callers must record the returned path. filename_collision "overwrite"
     keeps the old behaviour: the larger file wins.
+
+    With allow-dupes, each post's copy of a media gets its own file: an
+    identical file is this download only if the database records it for
+    this media and post. Otherwise it's another post's copy, left alone.
+    username and model_id are the run's creator, whose database that is.
     """
     log_ = log_ or logging.getLogger("shared")
     path_to_file = pathlib.Path(path_to_file)
-    if str(config_data.get_filename_collision()).lower() == "overwrite":
+    per_post = settings.allow_dupes()
+    own = _own_file(ele, username, model_id) if per_post else None
+    if str(config_data.get_filename_collision()).lower() == "overwrite" and (
+        not per_post or not path_to_file.exists() or path_to_file == own
+    ):
         return _move_overwrite(temp, path_to_file, ele, log_)
     for candidate in _candidates(path_to_file, ele.id):
         if _reserve(candidate):
             _replace_reserved(temp, candidate)
             break
-        if _same_content(temp, candidate):
+        if (not per_post or candidate == own) and _same_content(temp, candidate):
             pathlib.Path(temp).unlink(missing_ok=True)
             break
     else:
@@ -60,6 +71,21 @@ def moveHelper(temp, path_to_file, ele, log_=None):
             f"{get_medialog(ele)} {path_to_file.name} holds another file; saved as {candidate.name}"
         )
     return candidate
+
+
+def _own_file(ele, username, model_id):
+    """The file the creator's database records for this media and post, or
+    None. Only reads: a missing database isn't created."""
+    from ofscraper.db.operations_.media import get_media_post_files_downloaded
+
+    try:
+        files = get_media_post_files_downloaded(
+            model_id=model_id, username=username, media_id=ele.id, read_only=True
+        )
+    except (OSError, sqlite3.Error):
+        return None
+    directory, filename = (files or {}).get((ele.id, ele.post_id), (None, None))
+    return pathlib.Path(directory, filename) if directory and filename else None
 
 
 def _reserve(path):
