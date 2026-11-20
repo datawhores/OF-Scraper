@@ -345,7 +345,14 @@ class MainDownloadManager(DownloadManager):
         # name if a different file already has this one (#48)
         path_to_file = await asyncio.get_event_loop().run_in_executor(
             self.ctx.thread,
-            partial(common_paths.moveHelper, temp, path_to_file, ele),
+            partial(
+                common_paths.moveHelper,
+                temp,
+                path_to_file,
+                ele,
+                username=username,
+                model_id=model_id,
+            ),
         )
 
         (common_paths.addGlobalDir(path_to_file.parent, self.ctx.dirSet))

@@ -1061,7 +1061,14 @@ class FanslyStreamDownloadManager(DownloadManager):
             # can end up under another name if a different file already has this one (#48)
             path_to_file = await loop.run_in_executor(
                 self.ctx.thread,
-                partial(common_paths.moveHelper, temp, placeholderObj.trunicated_filepath, ele),
+                partial(
+                    common_paths.moveHelper,
+                    temp,
+                    placeholderObj.trunicated_filepath,
+                    ele,
+                    username=username,
+                    model_id=model_id,
+                ),
             )
         common_paths.addGlobalDir(path_to_file.parent, self.ctx.dirSet)
         if ele.postdate:

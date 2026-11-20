@@ -99,7 +99,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `"media_id"` · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default)
-- What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept.
+- What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
 
 ## `download_options`
 

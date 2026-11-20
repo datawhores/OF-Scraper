@@ -16,11 +16,6 @@ import ofscraper.utils.me as me_util
 from ofscraper.utils.cache.profile import is_profile_cached
 
 
-def separate_by_id(data: list, media_ids: list) -> list:
-    media_ids = set(media_ids)
-    return list(filter(lambda x: x.id not in media_ids, data))
-
-
 def seperate_avatars(data):
     return list(filter(lambda x: seperate_avatar_helper(x) is False, data))
 

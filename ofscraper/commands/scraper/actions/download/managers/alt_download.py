@@ -416,7 +416,8 @@ class AltDownloadManager(DownloadManager):
         self, sharedPlaceholderObj, ele, audio, video, username, model_id
     ):
         tempPlaceholder = await placeholder.tempFilePlaceholder(
-            ele, f"temp_{ele.id or await ele.final_filename}.mp4"
+            # with the post: two posts' copies of one media can merge at once
+            ele, f"temp_{ele.id or await ele.final_filename}_{ele.post_id}.mp4"
         ).init()
         temp_path = tempPlaceholder.tempfilepath
         temp_path.unlink(missing_ok=True)
@@ -484,6 +485,8 @@ class AltDownloadManager(DownloadManager):
                 temp_path,
                 sharedPlaceholderObj.trunicated_filepath,
                 ele,
+                username=username,
+                model_id=model_id,
             ),
         )
 

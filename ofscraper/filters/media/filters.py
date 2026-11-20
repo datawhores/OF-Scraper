@@ -11,6 +11,7 @@ import ofscraper.utils.me as me_util
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model_sync,
+    get_media_post_ids_downloaded,
 )
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.scripts.skip_download_script import retry_permanent_skips
@@ -28,13 +29,19 @@ def sort_by_date(media):
     return sorted(media, key=lambda x: undated_first(x.date))
 
 
+def media_key(item):
+    """What makes a media one download: its id, or with allow-dupes its id
+    and post, so each post gets its own copy."""
+    return (item.id, item.post_id) if settings.allow_dupes() else item.id
+
+
 # dupe filters that prioritize viewable
 def dupefiltermedia(media):
     output = defaultdict(lambda: None)
     media = sorted(
         media, key=lambda item: (undated_first(item.post.date), item.id, item.count)
     )
-    if of_env.getattr("ALLOW_DUPE_MEDIA"):
+    if settings.allow_dupes():
         for item in media:
             if not output[(item.id, item.post_id)]:
                 output[(item.id, item.post_id)] = item
@@ -176,7 +183,7 @@ def previous_download_filter(medialist, username=None, model_id=None):
         return medialist
 
     # Apply the filters to whichever pool we selected above
-    medialist = separate.separate_by_id(medialist, media_ids)
+    medialist = [m for m in medialist if media_key(m) not in media_ids]
     log.debug(
         f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}"
     )
@@ -189,8 +196,9 @@ def previous_download_filter(medialist, username=None, model_id=None):
 
 
 def downloaded_media_ids(username=None, model_id=None):
-    """The media ids a run leaves out as already downloaded, or None when
-    --force-all downloads everything."""
+    """The media a run leaves out as already downloaded, or None when
+    --force-all downloads everything. Media ids, or with allow-dupes
+    (media id, post id) pairs: compare them with ``media_key``."""
     if settings.get_settings().force_all:
         log.info("forcing all media to be downloaded")
         return None
@@ -201,7 +209,20 @@ def downloaded_media_ids(username=None, model_id=None):
     retry = retry_permanent_skips()
     if retry:
         log.info("offering permanently skipped media to the skip script again")
-    if settings.get_settings().force_model_unique:
+    if settings.allow_dupes():
+        # a copy downloaded for one post doesn't count for the others
+        media_ids = set(
+            get_media_post_ids_downloaded(
+                model_id=model_id,
+                username=username,
+                model_only=settings.get_settings().force_model_unique,
+                without_permanent_skips=retry,
+            )
+        )
+        log.debug(
+            f"Number of downloaded media and post pairs in database: {len(media_ids)}"
+        )
+    elif settings.get_settings().force_model_unique:
         log.info(f"Downloading unique media for model: {username}")
         media_ids = set(
             get_media_ids_downloaded_model_sync(

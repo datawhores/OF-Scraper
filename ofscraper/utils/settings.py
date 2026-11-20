@@ -91,6 +91,12 @@ def setup_settings():
     return merged
 
 
+def allow_dupes():
+    """True when media in several posts is downloaded once per post
+    (`allow_dupe_downloads`, merged in merged_settings)."""
+    return bool(getattr(get_settings(), "allow_dupe_downloads", False))
+
+
 def resetUserFilters():
     global settings
     write_args.setArgs(resetUserFiltersArgs())
@@ -248,6 +254,14 @@ def merged_settings():
 
     # --- Environment Files ---
     merged.env_files = chosen_env_files(args)
+
+    # --- Duplicate media: --allow-dupes/--no-allow-dupes, else ALLOW_DUPE_MEDIA ---
+    allow_dupe_downloads = getattr(args, "allow_dupe_downloads", None)
+    merged.allow_dupe_downloads = (
+        bool(of_env.getattr("ALLOW_DUPE_MEDIA"))
+        if allow_dupe_downloads is None
+        else allow_dupe_downloads
+    )
 
     # --- CLI Overrides ---
     merged.text = args.text or args.text_only
