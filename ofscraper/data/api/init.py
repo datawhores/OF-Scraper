@@ -24,7 +24,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console
 import ofscraper.utils.settings as settings
 from . import me
-from ofscraper.utils.auth.request import UnusableDynamicRule
+from ofscraper.utils.auth.request import DynamicRuleUnavailable
 
 log = logging.getLogger("shared")
 
@@ -134,7 +134,7 @@ def unavailable_message(e: Exception) -> str | None:
             f"{_host(e)} returned {status}: the server had an "
             "error. Try again later."
         )
-    if isinstance(e, UnusableDynamicRule):
+    if isinstance(e, DynamicRuleUnavailable):
         return str(e)
     # aiohttp's json() refuses a reply that isn't labelled JSON. A 4xx one
     # is left to the auth check, like any other 4xx

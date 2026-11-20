@@ -31,7 +31,9 @@ def rule_host_down(monkeypatch):
             request=httpx.Request("GET", "https://raw.githubusercontent.com/rule"),
         )
 
-    monkeypatch.setattr(auth_requests, "get_request_auth_datawhores", fetch_rule)
+    # the fallback sources are down too
+    for source in ["datawhores", *auth_requests.FALLBACK_SOURCES]:
+        monkeypatch.setattr(auth_requests, f"get_request_auth_{source}", fetch_rule)
 
     def scrape_user():
         # each /me attempt signs its request, which needs the rule
@@ -48,4 +50,5 @@ def rule_host_down(monkeypatch):
 
 def test_failed_rule_fetch_is_not_repeated_by_me_retries(rule_host_down):
     assert init.getstatus() == "UNAVAILABLE"
-    assert len(rule_host_down) == 1
+    # one fetch from each source
+    assert len(rule_host_down) == 1 + len(auth_requests.FALLBACK_SOURCES)

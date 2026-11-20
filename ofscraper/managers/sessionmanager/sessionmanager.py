@@ -668,7 +668,11 @@ class sessionManager:
         caller_headers = {k.lower() for k in (headers or {})}
 
         for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt, SystemExit))
+            # no dynamic rule: every rule source was already tried, so a retry
+            # would only ask them all again
+            retry=retry_if_not_exception_type(
+                (KeyboardInterrupt, SystemExit, auth_requests.DynamicRuleUnavailable)
+            )
             & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait.wait_random(min=wait_min, max=wait_max),
@@ -796,9 +800,15 @@ class sessionManager:
             stop=self._stop_after(retries, exceptions),
             wait=tenacity.wait_random(min=wait_min, max=wait_max),
             # a cancel (Ctrl+C, a timeout around the call) stops the request:
-            # tenacity's attempt swallows it, so it must not count as a failure
+            # tenacity's attempt swallows it, so it must not count as a failure.
+            # No dynamic rule: every rule source was already tried
             retry=retry_if_not_exception_type(
-                (KeyboardInterrupt, SystemExit, asyncio.CancelledError)
+                (
+                    KeyboardInterrupt,
+                    SystemExit,
+                    asyncio.CancelledError,
+                    auth_requests.DynamicRuleUnavailable,
+                )
             )
             & retry_if_exception(lambda e: not is_signed_cdn_forbidden(e)),
             reraise=True,

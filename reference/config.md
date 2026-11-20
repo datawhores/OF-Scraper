@@ -231,7 +231,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - **Default:** `"digital"` · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default)
 - **CLI override:** `--dynamic-rules`
-- Which source of OnlyFans request-signing rules to use. The values are `datawhores`, `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`; the config menu lists and saves it as `digital`), `generic` (needs `OFSC_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). An unknown value falls back to the default and logs a warning. Anything that yields no rule falls back to `datawhores`. The `-dr`/`--dynamic-rules` option overrides it.
+- Which source of OnlyFans request-signing rules to use. The values are `datawhores`, `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`; the config menu lists and saves it as `digital`), `generic` (needs `OFSC_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). An unknown value falls back to the default and logs a warning. When the chosen source fails, isn't set up, or sends a rule that can't be used (incomplete, or obsolete like the current `datawhores` rule), `digitalcriminals` and then `rafa` are tried, and the one used is logged. If none gives a usable rule, the auth check reports that it couldn't check the auth, not bad auth, and the next request tries again. The `-dr`/`--dynamic-rules` option overrides it.
 
 ### `advanced_options.skip_unavailable_content`
 
