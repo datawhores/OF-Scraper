@@ -24,6 +24,20 @@ def check_cdm():
     keymode = settings.get_settings().key_mode
     console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
     if keymode == "manual":
+        import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
+
+        missing = keyhelpers.missing_cdm_keys()
+        if missing:
+            # shown even with --no-rich or low output: it explains the skips
+            alert.print(
+                f"[yellow]CDM keys not detected ({missing}).\n"
+                "This may affect the download of files with DRM: they're skipped "
+                "until client-id and private-key are set under cdm_options.\n"
+                "https://cloakedkeys.gitbook.io/ofsc/cdm-options\n[/yellow]"
+            )
+            # debug: the console already shows it
+            log.debug(f"CDM keys not detected ({missing}); DRM files will be skipped")
+            return True
         console.print(
             "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/yellow]"
         )

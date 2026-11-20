@@ -73,7 +73,7 @@ def test_stop_running_batch_keeps_part_and_never_finalises(
         monkeypatch.setattr(g, "log", Mock())
 
     monkeypatch.setattr(download.common_globals, "mainProcessVariableInit", init)
-    monkeypatch.setattr(download.settings, "get_settings", lambda: SimpleNamespace(text=False, text_only=False, download_limit=0))
+    monkeypatch.setattr(download.settings, "get_settings", lambda: SimpleNamespace(text=False, text_only=False, download_limit=0, key_mode="cdrm"))
     monkeypatch.setattr(download, "get_max_workers", lambda: 2)
     monkeypatch.setattr(download.manager, "Manager", SimpleNamespace(session=SimpleNamespace(get_download_session=session)))
     monkeypatch.setattr(download.progress_utils, "setup_live", lambda _: nullcontext())
