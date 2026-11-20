@@ -15,6 +15,7 @@ Each media dict also carries the Fansly details under ``"fansly"``:
 import json
 import logging
 import re
+from collections import Counter
 
 import arrow
 
@@ -193,6 +194,77 @@ class Lookup:
         }
 
 
+class ScanReport:
+    """What one timeline scan found and what it couldn't use, to compare with
+    the counts Fansly shows on the profile (``timelineStats``)."""
+
+    def __init__(self):
+        self.posts = 0
+        # accountMedia id -> (kind, access)
+        self.account_media = {}
+        # kind -> uses, counting a file once per post it's in
+        self.uses = Counter()
+        self.dropped = Counter()
+        self.backfill_asked = 0
+        self.backfill_returned = 0
+
+    def drop(self, why):
+        self.dropped[why] += 1
+
+    def saw(self, account_media):
+        media = account_media.get("media") or {}
+        kind = media_type(media.get("mimetype")) or f"mimetype {media.get('mimetype')!r}"
+        self.uses[kind] += 1
+        self.account_media.setdefault(
+            str(account_media.get("id")), (kind, bool(account_media.get("access")))
+        )
+
+    def distinct(self, kind, locked=None):
+        return sum(
+            1
+            for k, access in self.account_media.values()
+            if k == kind and (locked is None or locked != access)
+        )
+
+    def summary(self, username, stats=None, after=None):
+        lines = [f"Fansly timeline check for {username}:"]
+        if stats:
+            lines.append(
+                "  Fansly counts: "
+                # the bundle counts are part of the totals, not extra
+                f"{stats.get('imageCount', '?')} images ({stats.get('bundleImageCount', '?')} of them in bundles), "
+                f"{stats.get('videoCount', '?')} videos ({stats.get('bundleVideoCount', '?')} of them in bundles), "
+                f"{stats.get('bundleCount', '?')} bundles"
+            )
+            lines.append(
+                "  (Fansly's counts include reposts and media no longer on any post, "
+                "so they can be higher than what the scan finds)"
+            )
+        else:
+            lines.append("  Fansly counts: not available")
+        if after:
+            lines.append(f"  only posts after {arrow.get(after).format('YYYY-MM-DD')} were scanned")
+        lines.append(f"  scan found {self.posts} posts")
+        for kind in ("photo", "video", "audio"):
+            lines.append(
+                f"  {kind}s: {self.distinct(kind)} distinct ({self.distinct(kind, locked=True)} locked), "
+                f"{self.uses[kind]} counting repeats"
+            )
+        other = {k: v for k, v in self.uses.items() if k not in ("photo", "video", "audio")}
+        if other:
+            lines.append(f"  not downloadable: {dict(other)}")
+        if self.backfill_asked:
+            lines.append(
+                f"  bundle media fetched separately: {self.backfill_returned} of {self.backfill_asked} returned"
+            )
+        if self.dropped:
+            for why, n in self.dropped.most_common():
+                lines.append(f"  not used: {n} x {why}")
+        else:
+            lines.append("  not used: nothing")
+        return "\n".join(lines)
+
+
 def bundle_member_ids(bundle):
     content = bundle.get("bundleContent") or []
     if content:
@@ -205,28 +277,43 @@ def _attachments(item):
     return sorted(item.get("attachments") or [], key=lambda x: x.get("pos") or 0)
 
 
-def attached(item, lookup, _seen=None):
-    """``(accountMedia, bundle or None)`` pairs for an item's attachments, in order."""
+def attached(item, lookup, _seen=None, report=None):
+    """``(accountMedia, bundle or None)`` pairs for an item's attachments, in order.
+
+    With ``report`` (a ScanReport), each attachment that gives nothing is
+    counted with the reason."""
     seen = _seen if _seen is not None else {str(item.get("id"))}
+    drop = report.drop if report is not None else (lambda why: None)
     for attachment in _attachments(item):
         kind = attachment.get("contentType")
         content_id = str(attachment.get("contentId"))
         if kind == ACCOUNT_MEDIA:
             if content_id in lookup.account_media:
                 yield lookup.account_media[content_id], None
+            else:
+                drop("media Fansly didn't send")
         elif kind == BUNDLE:
             bundle = lookup.bundles.get(content_id)
             if not bundle:
+                drop("bundle Fansly didn't send")
                 continue
             for member in bundle_member_ids(bundle):
                 if member in lookup.account_media:
                     yield lookup.account_media[member], bundle
-        elif kind == AGGREGATED_POST and content_id not in seen:
+                else:
+                    drop("bundle member Fansly didn't send")
+        elif kind == AGGREGATED_POST:
+            if content_id in seen:
+                continue
             seen.add(content_id)
             inner = lookup.aggregated.get(content_id)
             if inner:
                 # an aggregated post shares the outer response's side lists
-                yield from attached(inner, lookup, seen)
+                yield from attached(inner, lookup, seen, report)
+            else:
+                drop("shared post Fansly didn't send")
+        else:
+            drop(f"attachment type {kind} (not media)")
 
 
 def missing_account_media_ids(response):
@@ -271,9 +358,13 @@ def _price(pairs):
     return total
 
 
-def _item_dict(item, lookup, response_type):
+def _item_dict(item, lookup, response_type, report=None):
     created = iso(item.get("createdAt"))
-    pairs = list(attached(item, lookup))
+    pairs = list(attached(item, lookup, report=report))
+    if report is not None:
+        report.posts += 1
+        for account_media, _ in pairs:
+            report.saw(account_media)
     media = [m for account_media, _ in pairs for m in media_for(account_media, created)]
     out = {
         "id": int(item["id"]),
@@ -294,17 +385,19 @@ def _item_dict(item, lookup, response_type):
     return out
 
 
-def posts(response, extra_account_media=()):
+def posts(response, extra_account_media=(), report=None):
     """Post dicts for a timeline or ``post?ids=`` response."""
     response = response or {}
     lookup = Lookup(response, extra_account_media)
     out = []
     for post in response.get("posts") or []:
         if post.get("id") is None:
+            if report is not None:
+                report.drop("post without an id")
             continue
         if not post.get("createdAt"):
             log.warning(f"Fansly: post {post['id']} has no date")
-        out.append(_item_dict(post, lookup, "post"))
+        out.append(_item_dict(post, lookup, "post", report))
     return out
 
 

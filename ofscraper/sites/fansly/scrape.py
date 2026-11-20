@@ -75,11 +75,25 @@ async def timeline_pages(model_id, username, c=None, post_id=None):
         before = start_before()
         if before is not None:
             log.debug(f"Fansly timeline: starting at --before for {username}")
+        # a check against the profile's counts, for a scan from the newest post
+        report = normalize.ScanReport() if before is None else None
         async with contextlib.aclosing(
-            api.timeline_pages(c, model_id, after=_after(), before=before)
+            api.timeline_pages(c, model_id, after=_after(), before=before, report=report)
         ) as pages:
             async for page in pages:
                 yield page
+        # not reached when the caller stops early: the counts would be partial
+        if report is not None:
+            await _log_report(c, report, model_id, username)
+
+
+async def _log_report(c, report, model_id, username):
+    try:
+        stats = await api.timeline_stats(c, model_id)
+    except Exception as e:  # the check is only a report
+        log.debug(f"Fansly media counts not read: {e}")
+        stats = None
+    log.info(report.summary(username, stats, after=_after()))
 
 
 async def get_timeline_posts(model_id, username, c=None, post_id=None):
