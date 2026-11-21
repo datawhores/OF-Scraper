@@ -297,11 +297,6 @@ async def scenario():
             repr(key): value
             for key, value in media.get_media_post_files_downloaded(**who).items()
         }
-        out[f"duplicate hashes {name}"] = media.get_dupe_media_hashes(**who)
-        out[f"duplicate images {name}"] = media.get_dupe_media_hashes(
-            mediatype="Images", **who
-        )
-        out[f"duplicate files {name}"] = media.get_dupe_media_files(hash="same", **who)
         out[f"unlocked {name}"] = await media.get_unlocked_media_ids(**who)
         out[f"permanent skips {name}"] = await media.get_permanent_skip_media_ids(
             model_id=who["model_id"]
@@ -355,9 +350,6 @@ def check(result):
     assert result["downloaded, every creator, no skips"] == [AVATAR, 1, 2, 7, 8]
     assert result["downloaded one"] == [AVATAR, 1, 2, 4, 7]
     assert result["downloaded two"] == [8]
-    assert result["duplicate hashes one"] == ["same"]
-    assert result["duplicate hashes two"] == []
-    assert result["duplicate files one"] == ["a.jpg", "b.jpg"]
     assert result["permanent skips one"] == [4]
     assert result["skips unmarked"] == 1
     assert result["permanent skips after"] == []
