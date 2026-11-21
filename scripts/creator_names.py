@@ -112,6 +112,22 @@ def select(data_dir, find=None, show_all=False):
     return rows
 
 
+def _warn_on_postgres():
+    """With PostgreSQL on, say that this script works on the user_data.db
+    files. The sentence is the scraper's, from the checkout this script is in
+    (as scripts/reference/build_reference.py finds it). A copy of the script
+    used somewhere else may have no scraper to ask, and then says nothing."""
+    root = str(pathlib.Path(__file__).resolve().parents[1])
+    sys.path.insert(0, root)
+    try:
+        from ofscraper.db.postgres import warn_sqlite_files
+    except ImportError:
+        return
+    finally:
+        sys.path.remove(root)
+    warn_sqlite_files("creator_names.py")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -127,6 +143,7 @@ def main(argv=None):
     )
     ap.add_argument("--csv", type=pathlib.Path, help="also write the listing to a CSV file")
     args = ap.parse_args(argv)
+    _warn_on_postgres()
 
     if args.add:
         model_id, name = args.add

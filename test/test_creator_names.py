@@ -1,14 +1,21 @@
 import contextlib
 import csv
 import importlib.util
+import os
 import pathlib
 import sqlite3
+import subprocess
+import sys
 
 import pytest
 
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+URL_KEY = "OFSC_DATABASE_URL"
+URL = "postgresql://user:password@localhost/db"
+
 _spec = importlib.util.spec_from_file_location(
     "creator_names",
-    pathlib.Path(__file__).resolve().parents[1] / "scripts" / "creator_names.py",
+    ROOT / "scripts" / "creator_names.py",
 )
 creator_names = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(creator_names)
@@ -132,6 +139,47 @@ def test_cli_lists_and_writes_csv(tmp_path, capsys):
     assert "folder if deleted: current_name" in out
     with open(out_csv, newline="", encoding="utf-8") as fh:
         assert list(csv.reader(fh))[1] == ["1", "2", "current_name", "old_name", "current_name"]
+
+
+def test_cli_says_it_works_on_sqlite_files_while_postgresql_is_on(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv(URL_KEY, URL)
+    _account(tmp_path, 1, ["current_name", "old_name"], media=2)
+    path = list(sys.path)
+    assert creator_names.main(["--data-dir", str(tmp_path)]) == 0
+    said = capsys.readouterr()
+    assert said.err.startswith("warning: PostgreSQL is on (OFSC_DATABASE_URL is set)")
+    assert "creator_names.py works on the user_data.db files" in said.err
+    assert "password" not in said.err
+    # the listing still comes
+    assert "current_name   also known as: old_name" in said.out
+    assert sys.path == path
+
+
+def test_cli_says_nothing_about_postgresql_while_it_is_off(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv(URL_KEY, raising=False)
+    _account(tmp_path, 1, ["current_name", "old_name"], media=2)
+    assert creator_names.main(["--data-dir", str(tmp_path)]) == 0
+    said = capsys.readouterr()
+    assert said.err == ""
+    assert "current_name   also known as: old_name" in said.out
+
+
+def test_run_as_a_script_it_says_so_with_nothing_put_on_pythons_path(tmp_path):
+    """As a user starts it, from the repo root: the scraper beside the script
+    is found without PYTHONPATH, installed or not."""
+    _account(tmp_path, 1, ["current_name", "old_name"], media=2)
+    env = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
+    result = subprocess.run(
+        [sys.executable, "scripts/creator_names.py", "--data-dir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={**env, URL_KEY: URL},
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stderr.startswith("warning: PostgreSQL is on (OFSC_DATABASE_URL is set)")
+    assert "creator_names.py works on the user_data.db files" in result.stderr
+    assert "current_name   also known as: old_name" in result.stdout
 
 
 def test_cli_add_reports_a_missing_account(tmp_path, capsys):

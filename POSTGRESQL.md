@@ -66,7 +66,10 @@ Afterwards the `user_data.db` files are no longer used. Keep them: there is no c
 ## What doesn't work with it yet
 
 - **Existing libraries start empty** until you bring your `user_data.db` files in (see above). Until then the scraper treats everything as new.
-- **Tools that read `user_data.db` files** keep reading those files and don't see PostgreSQL: Merge Databases, `stash_sync`, `recover_collisions`, `scripts/creator_names.py`, and the GUI patch.
+- **Tools that read `user_data.db` files** keep reading those files and don't see PostgreSQL: Merge Databases, `stash_sync`, `recover_collisions`, `scripts/creator_names.py`, and the GUI patch. Nothing scraped since you turned PostgreSQL on is in those files, and what a tool changes in them does not reach PostgreSQL.
+  - `stash_sync`, `recover_collisions` and `scripts/creator_names.py` say so when they start, if `OFSC_DATABASE_URL` is set in the environment they are run in. They don't read the scraper's settings, so they say nothing when the address is only in an env file that `config.json` names.
+  - Merge Databases says so on its screen.
+  - The GUI patch doesn't say so.
 - **Going back** to SQLite files with what PostgreSQL holds isn't built. Unsetting `OFSC_DATABASE_URL` returns to your SQLite files as they were.
 
 ## Developing

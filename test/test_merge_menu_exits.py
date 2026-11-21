@@ -5,10 +5,14 @@ itself is a stub, so the tests check which questions are asked and whether a
 merge runs.
 """
 
+import io
+
 import ofscraper.__main__  # noqa: F401  (import order avoids a circular import)
 
 import pytest
+from rich.console import Console
 
+import ofscraper.db.postgres as postgres
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.merge as merge_utils
 
@@ -100,3 +104,38 @@ def test_confirm_yes_runs_the_merge(monkeypatch):
     )
     assert merges == [("source", "merged")]
     assert asked == ["backup", "folder", "new_db", "confirm", "another"]
+
+
+@pytest.fixture
+def screen(monkeypatch):
+    """What the merge screen prints, in a console wide enough not to wrap."""
+    printed = io.StringIO()
+    monkeypatch.setattr(merge_utils, "console", Console(file=printed, width=1000))
+    return printed
+
+
+def test_the_screen_says_it_works_on_sqlite_files_while_postgresql_is_on(monkeypatch, screen):
+    # not through the environment: the scraper keeps what it read there
+    monkeypatch.setattr(postgres, "enabled", lambda: True)
+    asked, merges = run_screen(
+        monkeypatch, backup=[True], confirm=[True], another=[False]
+    )
+    # on the screen itself, so that no --output level hides it
+    assert screen.getvalue() == (
+        "PostgreSQL is on (OFSC_DATABASE_URL is set), but Merge Databases works"
+        " on the user_data.db files, not PostgreSQL. It does not see anything"
+        " scraped since PostgreSQL was turned on, and what it changes in those"
+        " files does not reach PostgreSQL. See POSTGRESQL.md.\n"
+    )
+    # the merge still runs
+    assert merges == [("source", "merged")]
+    assert asked == ["backup", "folder", "new_db", "confirm", "another"]
+
+
+def test_the_screen_says_nothing_about_postgresql_while_it_is_off(monkeypatch, screen):
+    monkeypatch.setattr(postgres, "enabled", lambda: False)
+    asked, merges = run_screen(
+        monkeypatch, backup=[True], confirm=[True], another=[False]
+    )
+    assert screen.getvalue() == ""
+    assert merges == [("source", "merged")]
