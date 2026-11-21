@@ -48,11 +48,11 @@ def load_network_config():
     else:
         config["TOTAL_TIMEOUT"] = None
 
-    # KEEP_ALIVE: Keep-alive duration for connections (seconds).
+    # KEEP_ALIVE: The most idle connections the sync client keeps open to use again. A count, not a time. The async client, which downloads, has no such limit.
     # Default: 20
     config["KEEP_ALIVE"] = int(os.getenv("OFSC_KEEP_ALIVE", "20"))
 
-    # KEEP_ALIVE_EXP: Keep-alive expiration duration (seconds).
+    # KEEP_ALIVE_EXP: How long an idle connection is kept open to use again (seconds). Applies to both clients.
     # Default: 10
     config["KEEP_ALIVE_EXP"] = int(os.getenv("OFSC_KEEP_ALIVE_EXP", "10"))
 

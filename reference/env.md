@@ -164,8 +164,8 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 | <a id="max_connections"></a>`MAX_CONNECTIONS` | `OFSC_MAX_CONNECTIONS` | `200` | Maximum number of simultaneous network connections. |
 | <a id="api_max_connection"></a>`API_MAX_CONNECTION` | `OFSC_API_MAX_CONNECTION` | `100` | Maximum number of API connections. |
 | <a id="total_timeout"></a>`TOTAL_TIMEOUT` | `OFSC_TOTAL_TIMEOUT` | `None` | Total timeout for operations (seconds). Defaults to None. |
-| <a id="keep_alive"></a>`KEEP_ALIVE` | `OFSC_KEEP_ALIVE` | `20` | Keep-alive duration for connections (seconds). |
-| <a id="keep_alive_exp"></a>`KEEP_ALIVE_EXP` | `OFSC_KEEP_ALIVE_EXP` | `10` | Keep-alive expiration duration (seconds). |
+| <a id="keep_alive"></a>`KEEP_ALIVE` | `OFSC_KEEP_ALIVE` | `20` | The most idle connections the sync client keeps open to use again. A count, not a time. The async client, which downloads, has no such limit. |
+| <a id="keep_alive_exp"></a>`KEEP_ALIVE_EXP` | `OFSC_KEEP_ALIVE_EXP` | `10` | How long an idle connection is kept open to use again (seconds). Applies to both clients. |
 
 ### Proxies
 
