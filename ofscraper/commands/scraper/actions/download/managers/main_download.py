@@ -85,9 +85,11 @@ class MainDownloadManager(DownloadManager):
             return await self._main_download_attempts(c, ele)
         except Exception as E:
             # a signed link answers 403 after an IP change; retrying it can't
-            # help (#462), but a newly fetched link can
+            # help (#462), but a newly fetched link can. So can the same
+            # link, when the site still gives it: the refusal was one CDN
+            # address's, and that address isn't used again (#620)
             if not is_signed_cdn_forbidden(E) or not await refresh_media_link(
-                ele, link=refused_url(E) or ele.url
+                ele, link=refused_url(E) or ele.url, refusal=E
             ):
                 raise
         # once per item: the .part is kept and resumed with the new link
