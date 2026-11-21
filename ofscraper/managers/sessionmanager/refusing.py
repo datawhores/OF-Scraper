@@ -13,8 +13,10 @@ another: the connection the refusal came over is closed (a later request
 could reuse it), and the address is left out of the host's addresses, which
 is what new connections are made from. Every session then looks hosts up
 again before its next request (``times_left``): the addresses it saved may
-hold the one that was left. When every address of a host has refused, all
-are used again.
+hold the one that was left. A kept-alive connection to it that is still in
+a pool is closed when a request comes to use it, before anything is sent,
+and that request goes over another connection (``Request``). When every
+address of a host has refused, all are used again.
 
 Nothing here logs an address.
 """
@@ -45,7 +47,12 @@ class Response(aiohttp.ClientResponse):
     end. A refusal's body is short: by the time it is seen, the connection
     is back in the pool, and when its session has closed (a protected
     video's manifest is read through a session of its own), the connection
-    no longer tells its address."""
+    no longer tells its address.
+
+    A connection that answered 403 isn't kept. Where connections are used
+    again (#556) it would be the next one handed out, so the request made
+    after a refusal, and most that follow, would go to the same address
+    whether or not that address is left."""
 
     came_over = None
     came_from = None
@@ -54,7 +61,38 @@ class Response(aiohttp.ClientResponse):
         self.came_over = connection.transport
         peer = self.came_over and self.came_over.get_extra_info("peername")
         self.came_from = peer[0] if peer else None
-        return await super().start(connection)
+        protocol = connection.protocol
+        await super().start(connection)
+        if self.status == 403:
+            if self.connection is None:
+                # the whole answer is in and the connection back in the pool
+                if self.came_over is not None:
+                    self.came_over.close()
+            elif protocol is not None:
+                # closed, not kept, once the answer is read
+                protocol.force_close()
+        return self
+
+
+class Request(aiohttp.ClientRequest):
+    """Sends nothing over a connection to an address that was left: a
+    kept-alive one opened before then, or a new one made from addresses
+    saved before then. aiohttp closes the connection this fails on and sends
+    the request again, once; after that the session's own retries do."""
+
+    async def send(self, conn):
+        if goes_to_one_left(self.url.host, conn.transport):
+            raise aiohttp.ServerDisconnectedError(
+                "the connection is to an address that is no longer used"
+            )
+        return await super().send(conn)
+
+
+def goes_to_one_left(host, transport) -> bool:
+    """True when ``transport`` is a connection to an address of ``host``
+    that was left."""
+    peer = transport and transport.get_extra_info("peername")
+    return bool(peer) and peer[0] in _refusing.get(host, ())
 
 
 def leave(response) -> bool:
