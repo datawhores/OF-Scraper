@@ -168,8 +168,6 @@ def test_media_reads_of_a_table_from_before_model_id_are_not_filtered(tmp_path):
     assert sorted(asyncio.run(media.get_media_ids(**read))) == [1, 2]
     assert sorted(media.get_media_post_ids(**read)) == [(1, 10), (2, 10)]
     assert len(media.get_media_post_files_downloaded(**read)) == 2
-    assert media.get_dupe_media_hashes(**read) == ["same"]
-    assert len(media.get_dupe_media_files(hash="same", **read)) == 2
 
 
 @pytest.fixture
@@ -288,27 +286,26 @@ def test_duplicate_files_are_only_looked_for_within_the_creator(
     # both creators have a file with the hash "same". Neither has two, so
     # there's nothing to remove: before, the two counted as duplicates and
     # one creator's file was deleted
-    assert media.get_dupe_media_hashes(model_id=ONE, db_path=db) == []
-    assert media.get_dupe_media_hashes(model_id=TWO, db_path=db) == []
+    images = dict(db_path=db, mediatypes=("Images",))
+    assert media.get_dupe_media_copies(model_id=ONE, **images) == []
+    assert media.get_dupe_media_copies(model_id=TWO, **images) == []
 
     # a real duplicate inside one creator is still found, with its own files
     execute(
         db,
-        "INSERT INTO medias (media_id, post_id, model_id, downloaded, filename,"
-        " hash, size, media_type) VALUES (?,?,?,?,?,?,?,?)",
-        [(4, 11, ONE, 1, "/one/copy.jpg", "same", 5, "Images")],
+        "INSERT INTO medias (media_id, post_id, model_id, downloaded, directory,"
+        " filename, hash, size, media_type) VALUES (?,?,?,?,?,?,?,?,?)",
+        [(4, 11, ONE, 1, "/one", "/one/copy.jpg", "same", 5, "Images")],
     )
-    assert media.get_dupe_media_hashes(model_id=ONE, db_path=db) == ["same"]
-    assert media.get_dupe_media_hashes(
-        model_id=ONE, db_path=db, mediatype="Images"
-    ) == ["same"]
-    assert media.get_dupe_media_hashes(
-        model_id=ONE, db_path=db, mediatype="Videos"
-    ) == []
-    assert sorted(
-        media.get_dupe_media_files(model_id=ONE, db_path=db, hash="same")
-    ) == ["/one/a.jpg", "/one/copy.jpg"]
-    assert media.get_dupe_media_hashes(model_id=TWO, db_path=db) == []
+    assert [
+        row["filename"] for row in media.get_dupe_media_copies(model_id=ONE, **images)
+    ] == ["/one/a.jpg", "/one/copy.jpg"]
+    assert (
+        media.get_dupe_media_copies(model_id=ONE, db_path=db, mediatypes=("Videos",))
+        == []
+    )
+    # the other creator's file has that hash too, and still isn't a duplicate
+    assert media.get_dupe_media_copies(model_id=TWO, **images) == []
 
 
 def test_removing_duplicates_leaves_the_other_creators_file(tmp_path, monkeypatch):

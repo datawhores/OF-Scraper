@@ -96,23 +96,6 @@ directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 
 
-# {filters}: the media type and the creator, see get_dupe_media_hashes
-mediaDupeHashes = """
-WITH x AS (
-    SELECT hash, size
-    FROM medias
-    WHERE hash IS NOT NULL AND size IS NOT NULL{filters}
-)
-SELECT hash
-FROM x
-GROUP BY hash, size
-HAVING COUNT(*) > 1;
-"""
-mediaDupeFiles = """
-SELECT filename
-FROM medias
-where hash=(?)
-"""
 mediaInsertAPI = """INSERT INTO medias(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
@@ -479,31 +462,6 @@ def get_media_post_files_downloaded(
             (row["media_id"], row["post_id"]): (row["directory"], row["filename"])
             for row in cur.fetchall()
         }
-
-
-@wrapper.operation_wrapper
-def get_dupe_media_hashes(
-    model_id=None, username=None, conn=None, mediatype=None, **kwargs
-) -> list:
-    """The hashes more than one of the creator's files have. Another
-    creator's files in the same database don't count: remove_dupes_hash
-    deletes all but one of the files it gets."""
-    with contextlib.closing(conn.cursor()) as cur:
-        filters, params = db_columns.creator_filter(cur, "medias", model_id)
-        if mediatype:
-            filters, params = filters + " AND media_type = ?", params + [mediatype]
-        cur.execute(mediaDupeHashes.format(filters=filters), params)
-        return [dict(row)["hash"] for row in cur.fetchall()]
-
-
-@wrapper.operation_wrapper
-def get_dupe_media_files(
-    model_id=None, username=None, conn=None, hash=None, **kwargs
-) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        creator, params = db_columns.creator_filter(cur, "medias", model_id)
-        cur.execute(mediaDupeFiles + creator, [hash] + params)
-        return [dict(row)["filename"] for row in cur.fetchall()]
 
 
 # {creator}: the creator's rows only. A row that names no creator isn't read:
