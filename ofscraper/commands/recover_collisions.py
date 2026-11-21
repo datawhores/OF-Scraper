@@ -151,13 +151,27 @@ def recover(database, apply=False, path_root=None):
                         "WHERE model_id IS ? AND media_id = ? AND downloaded = 1",
                         owner,
                     ).rowcount
-            conn.commit()
-            return result
-        except BaseException:
+            if not undo_created:
+                conn.commit()
+                return result
+        except BaseException as error:
+            # nothing was kept, so the undo file is of no use
             conn.rollback()
             if undo_created:
-                undo_file.unlink(missing_ok=True)
+                _remove_unused(undo_file, error)
             raise
+        # From here on the undo file is never removed, as with PostgreSQL:
+        # once the commit has begun, the undo file is the only way back.
+        try:
+            conn.commit()
+        except BaseException as error:
+            raise _unconfirmed(
+                error,
+                f"The undo file is kept: {undo_file}. Run this with --undo and that"
+                " file, without --apply, to see whether the changes arrived.",
+                saved_to="the database file",
+            ) from error
+        return result
 
 
 def undo(database, undo_file, apply=False):
@@ -293,13 +307,13 @@ def _remove_unused(undo_file, error):
         ) from error
 
 
-def _unconfirmed(error, then):
+def _unconfirmed(error, then, saved_to="PostgreSQL"):
     """What stopped a commit that had begun, as the sentence to end on: it
     isn't known whether the changes were kept, and `then` says what to do."""
     unconfirmed = postgres.Unconfirmed(
         f"{error} {then}"
         if isinstance(error, postgres.Unconfirmed)
-        else "This was stopped while the changes were being saved to PostgreSQL,"
+        else f"This was stopped while the changes were being saved to {saved_to},"
         f" so it isn't known whether they were. {then}"
     )
     unconfirmed.interrupted = (
