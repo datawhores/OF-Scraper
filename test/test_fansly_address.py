@@ -278,13 +278,14 @@ def test_the_resolver_steers_the_default_resolvers_answer():
 
 
 def test_an_async_session_resolves_through_the_steering_resolver():
-    # wrapped by the resolver that leaves out refusing addresses (#620)
+    # wrapped by the resolver that leaves out refusing addresses (#620), and
+    # that by the one that keeps the addresses (#622)
     async def run():
         async with sm.sessionManager() as c:
-            connector = c._session.connector
-            assert isinstance(connector._resolver._inner, address.Resolver)
-            connector._cached_hosts.add(("host.invalid", 443), [])
+            kept = c._session.connector._resolver
+            assert isinstance(kept._inner._inner, address.Resolver)
+            kept._answers[("host.invalid", 443, 2)] = [[], 0, 0]
             c.clear_dns_cache()
-            assert ("host.invalid", 443) not in connector._cached_hosts
+            assert kept._answers == {}
 
     asyncio.run(run())

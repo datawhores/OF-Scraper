@@ -19,7 +19,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_e
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.managers.sessionmanager.refusing as refusing
-import ofscraper.managers.sessionmanager.connector as connector
+import ofscraper.managers.sessionmanager.addresses as addresses
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.host_allowlist as host_allowlist
@@ -564,8 +564,12 @@ class sessionManager:
         ssl_context = self._get_ssl_context()
 
         if async_:
-            # the connector doesn't close a resolver it was given
-            self._resolver = refusing.Resolver(fansly_address.Resolver())
+            # the connector doesn't close a resolver it was given. The
+            # outermost keeps each host's addresses for a while, in place of
+            # aiohttp's own cache (see use_dns_cache below)
+            self._resolver = addresses.Resolver(
+                refusing.Resolver(fansly_address.Resolver())
+            )
             # how long an idle connection is kept, as for the sync client
             # below (#627); aiohttp's own default is 15. Kept for no time
             # means closed after use: given 0, aiohttp would never close an
@@ -578,13 +582,18 @@ class sessionManager:
             self._session = aiohttp.ClientSession(
                 # which connection a refusal came over (#620)
                 response_class=refusing.Response,
-                # a clear of the saved addresses fails no waiting request (#622)
-                connector=connector.Connector(
+                connector=aiohttp.TCPConnector(
                     limit=self._connect_limit,
                     **idle,
                     ssl=ssl_context,  # Passed to TCPConnector
                     # which address a host's requests go to (Fansly, #683)
                     resolver=self._resolver,
+                    # aiohttp's own address cache is off. Clearing it,
+                    # which we do on purpose (#683, #620), fails the
+                    # requests waiting on a lookup with a KeyError (#622,
+                    # aio-libs/aiohttp#14427). addresses.Resolver keeps the
+                    # addresses instead, until an aiohttp release has the fix
+                    use_dns_cache=False,
                 ),
                 timeout=aiohttp.ClientTimeout(
                     total=self._total_timeout,
@@ -656,9 +665,9 @@ class sessionManager:
 
     def clear_dns_cache(self):
         """Resolve hosts again on the next request (async sessions)."""
-        connector = getattr(self._session, "connector", None)
-        if connector is not None:
-            connector.clear_dns_cache()
+        resolver = getattr(self, "_resolver", None)
+        if resolver is not None:
+            resolver.clear()
 
     def __enter__(self):
         self._set_session(async_=False)

@@ -210,7 +210,8 @@ def test_an_async_session_resolves_through_both_resolvers(monkeypatch):
 
     async def run():
         async with sm.sessionManager() as c:
-            resolver = c._session.connector._resolver
+            # inside the resolver that keeps the addresses (#622)
+            resolver = c._session.connector._resolver._inner
             assert isinstance(resolver, refusing.Resolver)
             # Fansly's steering still applies (#683)
             assert isinstance(resolver._inner, address.Resolver)

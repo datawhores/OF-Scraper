@@ -18,10 +18,11 @@ import warnings
 import aiohttp
 import httpx
 import pytest
+from aiohttp.resolver import DefaultResolver
 
 import ofscraper.__main__  # noqa: F401  resolves the settings/console import cycle
+from ofscraper.managers.sessionmanager.addresses import Resolver
 from ofscraper.managers.sessionmanager.cert import create_custom_ssl_context
-from ofscraper.managers.sessionmanager.connector import Connector
 
 # OP_NO_SSLv3 | OP_NO_TLSv1 | OP_NO_TLSv1_1 as raw bits; the named constants
 # are deprecated
@@ -90,14 +91,22 @@ def _aiohttp(ctx, port):
 
 
 def _session_connector(ctx, port):
-    """aiohttp through the connector the session manager uses (#622)."""
+    """aiohttp with its connector set up as the session manager's: the
+    resolver keeps the addresses (#622)."""
 
     async def go():
-        async with aiohttp.ClientSession(
-            connector=Connector(ssl=ctx), trust_env=False
-        ) as s:
-            async with s.get(f"https://{HOST}:{port}/"):
-                pass
+        resolver = Resolver(DefaultResolver())
+        try:
+            async with aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(
+                    ssl=ctx, resolver=resolver, use_dns_cache=False
+                ),
+                trust_env=False,
+            ) as s:
+                async with s.get(f"https://{HOST}:{port}/"):
+                    pass
+        finally:
+            await resolver.close()
 
     asyncio.run(go())
 
