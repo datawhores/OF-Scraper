@@ -200,9 +200,9 @@ def test_a_new_link_is_said_to_be_new(fetchers, caplog):
     assert "still the current one" not in caplog.text
 
 
-def _refusal():
+def _refusal(url=OLD):
     """A 403 that came with the session's way to leave the address."""
-    error = _forbidden()
+    error = _forbidden(url)
     error.leave_address = Mock()
     return error
 
@@ -335,14 +335,29 @@ def test_drm_video_gets_a_new_signature(fetchers):
 
 
 def test_drm_new_signature_leaves_no_address(fetchers, caplog):
-    # a protected video has no link of its own to compare: no address is
-    # found at fault
+    # the old signature ran out or was for another address: every address
+    # of the file host refuses it, so none is at fault
     fetchers.timeline.return_value = _raw_drm("new")
     refusal = _refusal()
     with caplog.at_level("INFO", logger="shared"):
         assert _refresh(_media(raw=_raw_drm("old")), refusal) is True
     refusal.leave_address.assert_not_called()
     assert "using a newly signed one" in caplog.text
+
+
+def test_drm_same_signature_again_is_one_to_try(fetchers, caplog):
+    # the site still gives the refused signature: it is good, and the file
+    # host's other addresses take it (#623)
+    fetchers.timeline.return_value = _raw_drm("old")
+    ele = _media(raw=_raw_drm("old"))
+    refusal = _refusal()
+    with caplog.at_level("INFO", logger="shared"):
+        assert _refresh(ele, refusal) is True
+    assert get_alt_params(ele)["Signature"] == "signature-old"
+    # and the address that refused it is left
+    refusal.leave_address.assert_called_once_with()
+    assert "is still the current one, trying it again" in caplog.text
+    assert "newly signed" not in caplog.text
 
 
 def test_drm_highlight_gets_a_new_signature(fetchers):
@@ -355,7 +370,6 @@ def test_drm_highlight_gets_a_new_signature(fetchers):
 @pytest.mark.parametrize(
     "reply",
     [
-        _raw_drm("old"),  # the same signature
         _raw_drm("new", mpd="https://cdn3.onlyfans.com/dash/files/a/b/other.mpd"),
         _raw(link=NEW),  # no longer DRM
         {
@@ -363,13 +377,15 @@ def test_drm_highlight_gets_a_new_signature(fetchers):
             "media": [{"id": 7, "type": "video", "files": {"drm": {"manifest": {"dash": MPD}}}}],
         },
     ],
-    ids=["same-signature", "other-manifest", "not-drm", "no-signature"],
+    ids=["other-manifest", "not-drm", "no-signature"],
 )
 def test_unusable_drm_reply_keeps_the_signature(fetchers, reply):
     fetchers.timeline.return_value = reply
     ele = _media(raw=_raw_drm("old"))
-    assert _refresh(ele) is False
+    refusal = _refusal()
+    assert _refresh(ele, refusal) is False
     assert get_alt_params(ele)["Signature"] == "signature-old"
+    refusal.leave_address.assert_not_called()
 
 
 # ---- the downloaders --------------------------------------------------------
@@ -528,6 +544,30 @@ def test_drm_second_signed_403_fails_without_another_refresh(refresher):
         _alt(downloader, ele)
     assert caught.value is second
     assert len(refresher) == 1
+
+
+def test_drm_refused_signature_the_site_still_gives_is_tried_once_more(fetchers):
+    # the real refresh, with the site answering with the same signature (#623)
+    fetchers.timeline.return_value = _raw_drm("old")
+    ele = _media(raw=_raw_drm("old"))
+    refusal = _refusal(DRM_403)
+    downloader = _AltDownloader([refusal, ("Videos", 10)])
+    assert _alt(downloader, ele) == ("Videos", 10)
+    assert downloader.signatures == ["signature-old", "signature-old"]
+    fetchers.timeline.assert_called_once_with(100)
+    # and the address that refused it is left before the new try
+    refusal.leave_address.assert_called_once_with()
+
+
+def test_drm_same_signature_refused_twice_fails_without_a_third_try(fetchers):
+    fetchers.timeline.return_value = _raw_drm("old")
+    second = _forbidden(DRM_403)
+    downloader = _AltDownloader([_forbidden(DRM_403), second])
+    with pytest.raises(aiohttp.ClientResponseError) as caught:
+        _alt(downloader, _media(raw=_raw_drm("old")))
+    assert caught.value is second
+    assert downloader.signatures == ["signature-old", "signature-old"]
+    fetchers.timeline.assert_called_once_with(100)
 
 
 def test_drm_no_new_signature_raises_the_original_403(monkeypatch):
