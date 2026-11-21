@@ -195,6 +195,65 @@ def test_undo_file_failure_does_not_change_flags(database, tmp_path, monkeypatch
     assert flags(database) == [(1, 1), (2, 1)]
 
 
+def opened_as(monkeypatch, factory):
+    """The command's own connection (the one opened by URI) made by `factory`."""
+    connect = sqlite3.connect
+
+    def opening(*args, **kwargs):
+        if kwargs.get("uri"):
+            kwargs["factory"] = factory
+        return connect(*args, **kwargs)
+
+    monkeypatch.setattr(sqlite3, "connect", opening)
+
+
+class StoppedAfterCommit(sqlite3.Connection):
+    def commit(self):
+        super().commit()
+        raise KeyboardInterrupt
+
+
+class StoppedBeforeCommit(sqlite3.Connection):
+    def execute(self, sql, *args):
+        if sql.startswith("UPDATE"):
+            raise KeyboardInterrupt
+        return super().execute(sql, *args)
+
+
+def test_a_stop_after_the_commit_keeps_the_undo_file(database, tmp_path, monkeypatch, capsys):
+    add(database, 1, tmp_path / "same.jpg")
+    add(database, 2, tmp_path / "same.jpg")
+    with monkeypatch.context() as patched:
+        opened_as(patched, StoppedAfterCommit)
+        with pytest.raises(SystemExit) as stopped:
+            try:
+                main([str(database), "--apply"])
+            except KeyboardInterrupt:
+                # as it was: pytest would stop the whole run on it
+                pytest.fail("the stop came through as it was, unexplained")
+    # the changes were kept, and so is the way back
+    assert stopped.value.code == 130
+    assert flags(database) == [(1, 0), (2, 0)]
+    (undo_file,) = tmp_path.glob("*.collision-undo-*")
+    said = capsys.readouterr().err
+    assert "it isn't known whether they were" in said
+    assert f"The undo file is kept: {undo_file}" in said
+    assert "without --apply" in said
+    assert undo(database, undo_file, apply=True)["rows_to_restore"] == 2
+    assert flags(database) == [(1, 1), (2, 1)]
+
+
+def test_a_stop_before_the_commit_removes_the_undo_file(database, tmp_path, monkeypatch):
+    add(database, 1, tmp_path / "same.jpg")
+    add(database, 2, tmp_path / "same.jpg")
+    with monkeypatch.context() as patched:
+        opened_as(patched, StoppedBeforeCommit)
+        with pytest.raises(KeyboardInterrupt):
+            recover(database, apply=True)
+    assert flags(database) == [(1, 1), (2, 1)]
+    assert not list(tmp_path.glob("*.collision-undo-*"))
+
+
 def test_undo_restores_only_changed_rows_and_is_repeatable(database, tmp_path):
     add(database, 1, tmp_path / "same.jpg")
     add(database, 2, tmp_path / "same.jpg")
