@@ -92,6 +92,29 @@ def is_signed_cdn_forbidden(exception: Exception) -> bool:
         return False
 
 
+def _reuses_connections(url) -> bool:
+    """True for Fansly's CDN hosts (cdn*.fansly.com), whose requests may
+    reuse a kept-alive connection.
+
+    aiohttp reuses a connection only for a request with the same SSL setting
+    object as the one that opened it, and every other request gets a new
+    context, so a new connection. That stays so for OnlyFans, and for
+    Fansly's API host: a refused link moves its requests to another of its
+    addresses (#555), which a kept-alive connection would bypass."""
+    try:
+        host = urlsplit(str(url)).hostname or ""
+    except ValueError:
+        return False
+    return host.endswith(".fansly.com") and host.split(".")[0].startswith("cdn")
+
+
+def _request_ssl(url, new_context):
+    """The ssl argument of an aiohttp request to url. True means the
+    connector's own context, built from the same setting when the session
+    was created, so the TLS handshake is the same."""
+    return True if _reuses_connections(url) else new_context()
+
+
 class BareSession:
     @staticmethod
     @contextmanager
@@ -857,7 +880,7 @@ class sessionManager:
                         params=params,
                         json=json,
                         data=data,
-                        ssl=self._get_ssl_context(),
+                        ssl=_request_ssl(url, self._get_ssl_context),
                         **guard,
                     )
 
