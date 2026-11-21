@@ -100,19 +100,25 @@ def is_signed_cdn_forbidden(exception: Exception) -> bool:
 
 
 def _reuses_connections(url) -> bool:
-    """True for Fansly's CDN hosts (cdn*.fansly.com), whose requests may
-    reuse a kept-alive connection.
+    """True for the file hosts (cdn*.fansly.com, cdn*.onlyfans.com), whose
+    requests may reuse a kept-alive connection.
 
     aiohttp reuses a connection only for a request with the same SSL setting
     object as the one that opened it, and every other request gets a new
-    context, so a new connection. That stays so for OnlyFans, and for
-    Fansly's API host: a refused link moves its requests to another of its
-    addresses (#555), which a kept-alive connection would bypass."""
+    context, so a new connection. That stays so for the API hosts. On
+    Fansly a refused link moves the API host's requests to another of its
+    addresses (#555), which a kept-alive connection would bypass.
+
+    A kept-alive connection stays on one address of its host. When an
+    address of OnlyFans' file host refuses good links, the connections to
+    it are closed as they come up for use (#620, ``refusing.Request``)."""
     try:
         host = urlsplit(str(url)).hostname or ""
     except ValueError:
         return False
-    return host.endswith(".fansly.com") and host.split(".")[0].startswith("cdn")
+    return host.endswith((".fansly.com", ".onlyfans.com")) and host.split(".")[
+        0
+    ].startswith("cdn")
 
 
 def _request_ssl(url, new_context):
@@ -574,6 +580,8 @@ class sessionManager:
                     sock_connect=self._pool_connect_timeout,
                     sock_read=self._read_timeout,
                 ),
+                # no request over a connection to an address that was left
+                request_class=refusing.Request,
             )
         else:
             self._session = httpx.Client(
