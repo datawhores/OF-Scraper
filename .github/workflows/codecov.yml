@@ -120,4 +120,4 @@ jobs:
         env:
           OFSC_TEST_POSTGRES_URL: postgresql://postgres:only-for-this-job@localhost:5432/ofscraper_test
         # -rs lists skipped tests: none of these may skip here
-        run: uv run --frozen pytest test/test_db_postgres.py test/test_db_postgres_live.py -rs
+        run: uv run --frozen pytest test/test_db_postgres.py test/test_db_postgres_live.py test/test_postgres_import.py test/test_postgres_import_live.py -rs

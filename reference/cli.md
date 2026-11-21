@@ -96,6 +96,17 @@ Accepts 86 options. Its `--help` summary: Uses API to modify db files without th
 
 Accepts 61 options. Its `--help` summary: Print information from the database.
 
+### `postgres_import` (separate entry point)
+
+`python -m ofscraper.commands.postgres_import FOLDER [--apply] [--skip-bad-files]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). It brings the `user_data.db` files found under FOLDER into the PostgreSQL database that `OFSC_DATABASE_URL` names. The files are only copied: each copy is brought up to date the way a scan would, and its rows are converted to PostgreSQL's column types and written to the schema of the file's site. Without `--apply` it only reports what would be brought in and what stands in the way: a value a column can't hold, a creator found in two files, a creator PostgreSQL already has rows for, a file from a newer version. With `--apply` everything goes in in one transaction.
+
+Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
+
+- `FOLDER`: folder to search for user_data.db files
+- `--apply`: write to PostgreSQL; without it, only report
+- `--skip-bad-files`: with --apply, bring in the files that can be and leave out the rest
+- `--staging`: folder for the working copies, which need as much room as the files (default: the system's temporary folder)
+
 ### `recover_collisions` (separate entry point)
 
 `python -m ofscraper.commands.recover_collisions DB [--apply] [--undo FILE] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). It works offline on one creator's `user_data.db` and finds recorded paths that different media share. It prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews the restore of those flags, or with `--apply` performs it. It never touches media files and doesn't contact OnlyFans.

@@ -182,6 +182,37 @@ TABLE_COLUMNS = {
     )
     for table, create in TABLES.items()
 }
+_COLUMN_LINES = {
+    table: [
+        line.split()
+        for line in create.splitlines()[2:]
+        if line.startswith("    ") and not line.strip().startswith("UNIQUE")
+    ]
+    for table, create in TABLES.items()
+}
+# each column's type, and the columns that can't be empty: what the import
+# of SQLite files converts and checks by
+COLUMN_TYPES = {
+    table: {words[0]: words[1].rstrip(",") for words in lines}
+    for table, lines in _COLUMN_LINES.items()
+}
+REQUIRED = {
+    table: {
+        words[0]
+        for words in lines
+        if "NOT NULL" in " ".join(words) or "PRIMARY KEY" in " ".join(words)
+    }
+    for table, lines in _COLUMN_LINES.items()
+}
+# the columns that together name one row of a table
+UNIQUE_KEYS = {
+    table: [
+        tuple(part.strip() for part in line.split("(")[1].rstrip("),").split(","))
+        for line in create.splitlines()
+        if line.strip().startswith("UNIQUE")
+    ]
+    for table, create in TABLES.items()
+}
 # The unique keys start with the row's own id; nearly every read asks for one
 # creator's rows
 CREATOR_INDEXES = ("medias", "posts", "messages", "stories", "others", "products", "labels")
@@ -713,11 +744,12 @@ class PostgresBackend:
 
     # --- the tables ---
 
-    def create_tables(self, flags):
+    def create_tables(self, flags, schema=None):
         """Make the site's schema and tables if they aren't there. `flags`
         (the upgrade steps this build knows) are recorded as done when the
-        tables are first made, since they're made at the current layout."""
-        schema = self.where({}, False)
+        tables are first made, since they're made at the current layout.
+        `schema` names another site's than the current one."""
+        schema = schema or self.where({}, False)
         with self._lock:
             if (url(), schema) in self._ready:
                 return

@@ -33,6 +33,28 @@ The password is never written to the log. If a special character in it breaks th
 
 At startup the scraper connects once and says which server it is using. If it can't (no server, a refused login, no such database, a server older than 15), it stops there with one sentence saying which.
 
+## Bringing your existing databases in
+
+Turning PostgreSQL on doesn't move what your `user_data.db` files hold. A separate command does:
+
+```
+python -m ofscraper.commands.postgres_import <folder>
+```
+
+`<folder>` is searched for `user_data.db` files; your profile's `.data` folder is the usual one. `OFSC_DATABASE_URL` says where they go, as above. Don't run the scraper while this runs: a file that is written to while it is being copied is refused.
+
+Run like that, it only reports: how many files, creators and rows it found for each site, and anything that stands in the way. Nothing is written to PostgreSQL. Add `--apply` to bring the files in.
+
+- **Your files are never changed.** Each one is copied to a working folder, and the copy is brought up to date the way a scan would, so files last used by an old version come in too. The working copies need as much room as the files; `--staging <folder>` chooses where they go.
+- **All or nothing.** Every file goes in together. If anything fails part way, PostgreSQL keeps none of it, and you can run the command again.
+- **Each file goes to its site's tables**, OnlyFans or Fansly.
+- **A creator comes from one file.** If two files hold rows for the same creator (after a rename, or a changed `metadata` setting), put them together with Merge Databases first.
+- **A creator PostgreSQL already has rows for is refused**, so a file can't be brought in twice. Creators it doesn't have yet can be brought in later.
+- **A value PostgreSQL's column can't hold stops the file**, and is listed with its table, row and column: an id that isn't a number, a yes/no column holding something else, a date that can't be read. Empty dates become empty. Two rows that would be the same row once a missing creator is filled in stop it too.
+- **`--skip-bad-files`** brings in the files that can be, and leaves out (and lists) the ones that can't.
+
+Afterwards the `user_data.db` files are no longer used. Keep them: there is no command yet for going back.
+
 ## What is different
 
 - **One database for every creator.** Each site gets its own schema (`onlyfans`, `fansly`), holding the same tables a `user_data.db` has. Every row carries its creator's `model_id`.
@@ -43,7 +65,7 @@ At startup the scraper connects once and says which server it is using. If it ca
 
 ## What doesn't work with it yet
 
-- **Existing libraries start empty.** Turning this on doesn't bring your `user_data.db` files in, so the scraper treats everything as new. Moving existing files in is tracked in [#608](https://github.com/cloakedkeys/OF-Scraper-Community/issues/608).
+- **Existing libraries start empty** until you bring your `user_data.db` files in (see above). Until then the scraper treats everything as new.
 - **Tools that read `user_data.db` files** keep reading those files and don't see PostgreSQL: Merge Databases, `stash_sync`, `recover_collisions`, `scripts/creator_names.py`, and the GUI patch.
 - **Going back** to SQLite files with what PostgreSQL holds isn't built. Unsetting `OFSC_DATABASE_URL` returns to your SQLite files as they were.
 
