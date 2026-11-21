@@ -35,6 +35,10 @@ The listing shows that name as "folder if deleted". If you changed
 DELETED_MODEL_PLACEHOLDER, set OFSC_DELETED_MODEL_PLACEHOLDER to the same value when you
 run this script.
 
+This script only records names: files already downloaded stay in the folder of the name
+they were saved under. To move them to the current name's folder, see MOVING_FILES.md
+(python -m ofscraper.commands.move_creator_files).
+
 --add appends a name and ignores one already recorded. --seen DATE says when the name was
 in use: 2024-03-01, or with a time, 2024-03-01T09:30:00+00:00 (without an offset the time
 is UTC). A new name gets DATE as both of its dates. For a name already recorded, the dates
