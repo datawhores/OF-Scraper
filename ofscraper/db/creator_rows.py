@@ -28,6 +28,14 @@ also take:
                           holds what was read from it
     commit()              keep the changes; without it none is kept
 
+For what select() and change() can't ask (scripts/creator_names.py: a count,
+an order of its own, a row added), PostgresRows also takes a query of the
+caller's own, which names a table as f"{rows.schema}.{table}":
+
+    query(sql, params)    its rows
+    write(sql, params)    how many rows it wrote; only when opened for
+                          changes, and kept only by commit()
+
 Nothing here reads the scraper's settings.
 """
 
@@ -122,7 +130,7 @@ class PostgresRows:
         self.name = f"PostgreSQL: {site}, creator {model_id}"
         self.creator = str(model_id)
         self._reader = reader
-        self._schema = postgres.schema_name(site)
+        self.schema = postgres.schema_name(site)
         self._columns = columns
 
     def tables(self):
@@ -134,7 +142,7 @@ class PostgresRows:
     def select(self, table, columns, where=""):
         # profiles names a creator by user_id, every other table by model_id
         creator = "user_id" if table == "profiles" else "model_id"
-        query = f"SELECT {', '.join(columns)} FROM {self._schema}.{table} WHERE {creator} = ?"
+        query = f"SELECT {', '.join(columns)} FROM {self.schema}.{table} WHERE {creator} = ?"
         if where:
             query += f" AND ({where})"
         return self._reader.rows(f"{query} ORDER BY id", [self.model_id])
@@ -155,11 +163,19 @@ class PostgresRows:
         if not to or {"id", creator} & set(to):
             raise ValueError("a row's id and its creator can't be changed")
         query = (
-            f"UPDATE {self._schema}.{table} SET {', '.join(f'{column} = ?' for column in to)}"
+            f"UPDATE {self.schema}.{table} SET {', '.join(f'{column} = ?' for column in to)}"
             f" WHERE {creator} = ? AND id = ?"
             + "".join(f" AND {column} IS NOT DISTINCT FROM ?" for column in was)
         )
         return self._reader.change(query, [*to.values(), self.model_id, row_id, *was.values()]) == 1
+
+    def query(self, query, params=()):
+        """The rows of a query of the caller's own (see the module's notes)."""
+        return self._reader.rows(query, params)
+
+    def write(self, query, params=()):
+        """Run an INSERT or UPDATE of the caller's own: how many rows it wrote."""
+        return self._reader.change(query, params)
 
     def commit(self):
         """Keep every change made through this connection. Whatever stops

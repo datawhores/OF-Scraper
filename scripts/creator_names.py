@@ -60,13 +60,20 @@ full dates) and pass --force. When no name of the account has a date, any --seen
 that, and without --seen only a name that comes first in alphabetical order does. The
 placeholder can't be made the folder name while another name is recorded.
 
-OnlyFans only: Fansly databases ({model_id}/fansly/user_data.db) aren't read.
+The files are OnlyFans only: Fansly databases ({model_id}/fansly/user_data.db) aren't
+read. With --postgres [--site onlyfans|fansly] (default onlyfans), the script lists and
+adds names in that site's tables in the PostgreSQL database OFSC_DATABASE_URL names in
+the environment it is run in (not the scraper's settings or env files), in place of the
+files: the same listing, CSV, folder name and refusals, for the creators PostgreSQL has
+rows for. --add there is one transaction, kept only if nothing is refused. It needs the
+PostgreSQL driver and the scraper this script is in (run it from that checkout).
 """
 
 import argparse
 import contextlib
 import csv
 import datetime
+import importlib
 import os
 import pathlib
 import sqlite3
@@ -103,6 +110,10 @@ UPDATE profiles SET
         WHEN last_seen_at IS NULL OR last_seen_at < ? THEN ? ELSE last_seen_at END
 WHERE user_id = ? AND username = ?
 """
+# a name is added once, on either engine (as the scraper's profileInsert)
+ADD_NAME = "INSERT INTO profiles (user_id, username) VALUES (?, ?) ON CONFLICT DO NOTHING"
+SITES = ("onlyfans", "fansly")
+SEEN = ("first_seen_at", "last_seen_at")
 
 
 class FolderNameWouldChange(Exception):
@@ -180,9 +191,10 @@ def accounts(data_dir):
         yield model_id, [r[0] for r in found], media, folder, [r[1:] for r in found]
 
 
-def add_name(data_dir, model_id, name, force=False, seen=None):
+def add_name(data_dir, model_id, name, force=False, seen=None, postgres=None):
     """Record `name` for `model_id`, seen at `seen` if that is given (see parse_seen).
-    Returns True if a row was added, False if it existed.
+    Returns True if a row was added, False if it existed. With `postgres`
+    (creator_rows, database URL, site), in that site's tables instead of the file.
 
     Raises FolderNameWouldChange, without changing anything, if the name or the date
     would change the folder name OF-Scraper uses for the account once it's deleted,
@@ -198,38 +210,99 @@ def add_name(data_dir, model_id, name, force=False, seen=None):
             f"--seen: {name!r} is the placeholder OF-Scraper gives a deleted account whose "
             "name it doesn't know, not a name the creator had. It never has a date."
         )
+    if postgres:
+        return pg_add_name(*postgres, model_id, name, when, force)
     db = pathlib.Path(data_dir) / str(model_id) / "user_data.db"
     if not db.exists():
         raise FileNotFoundError(f"no OF-Scraper database for account {model_id}: {db}")
+    # closed without a commit, nothing is kept
     with contextlib.closing(sqlite3.connect(db)) as con:
-        if when and not _has_dates(con):
-            raise ValueError(
-                f"--seen: the database of account {model_id} doesn't keep dates yet. Run "
-                "OF-Scraper on the creator once, or add the name without --seen."
-            )
-        before = folder_name(con, model_id)
-        added = con.execute(
-            "INSERT OR IGNORE INTO profiles (user_id, username) VALUES (?, ?)",
-            (int(model_id), name),
-        ).rowcount
-        if when:
-            con.execute(WIDEN_DATES, (when, when, when, when, int(model_id), name))
-        after = folder_name(con, model_id)
-        if before is not None and after != before and not force:
-            con.rollback()
-            raise FolderNameWouldChange(
-                f"adding {name!r}{f' as seen {when}' if when else ''} would change the "
-                f"folder name OF-Scraper uses for account {model_id} once it's deleted, "
-                f"from {before!r} to {after!r}. Nothing was changed; pass --force to do "
-                "it anyway."
-            )
+        added = _add(
+            lambda query, params: con.execute(query, params).rowcount,
+            lambda: folder_name(con, model_id), _has_dates(con), model_id, name, when, force,
+        )
         con.commit()
+    return added
+
+
+def _add(execute, folder, dated, model_id, name, when, force):
+    """Add the name (and its date) with execute(query, params), which returns how many
+    rows it wrote, and compare folder() before and after."""
+    if when and not dated:
+        raise ValueError(
+            f"--seen: the database of account {model_id} doesn't keep dates yet. Run "
+            "OF-Scraper on the creator once, or add the name without --seen."
+        )
+    before = folder()
+    added = execute(ADD_NAME, (int(model_id), name))
+    if when:
+        execute(WIDEN_DATES, (when, when, when, when, int(model_id), name))
+    after = folder()
+    if before is not None and after != before and not force:
+        raise FolderNameWouldChange(
+            f"adding {name!r}{f' as seen {when}' if when else ''} would change the "
+            f"folder name OF-Scraper uses for account {model_id} once it's deleted, "
+            f"from {before!r} to {after!r}. Nothing was changed; pass --force to do "
+            "it anyway."
+        )
     return bool(added)
 
 
-def select(data_dir, find=None, show_all=False):
+# --- PostgreSQL: the same, on a site's tables (rows: creator_rows.PostgresRows) ---
+
+
+def _in_schema(rows, query):
+    # the queries rewritten here name "profiles" only as the table
+    return query.replace("profiles", f"{rows.schema}.profiles")
+
+
+def _pg_dated(rows):
+    return "last_seen_at" in rows.columns("profiles")
+
+
+def pg_folder_name(rows):
+    """folder_name, for a creator in PostgreSQL."""
+    found = rows.query(
+        _in_schema(rows, FOLDER_NAME if _pg_dated(rows) else FOLDER_NAME_UNDATED),
+        (rows.model_id, *placeholder_names(rows.model_id)),
+    )
+    return found[0][0] if found else None
+
+
+def _pg_account(rows):
+    """A row of accounts(), for a creator in PostgreSQL."""
+    names = rows.select(
+        "profiles", ["username", *(SEEN if _pg_dated(rows) else ("NULL", "NULL"))]
+    )
+    media = rows.query(f"SELECT count(*) FROM {rows.schema}.medias WHERE model_id = ?", [rows.model_id])
+    dates = [tuple(r[1:]) for r in names]
+    return str(rows.model_id), [r[0] for r in names], media[0][0], pg_folder_name(rows), dates
+
+
+def pg_accounts(creator_rows, database_url, site):
+    """accounts(), for each creator PostgreSQL has rows for in the site's tables."""
+    with creator_rows.in_postgres(database_url, [site]) as creators:
+        return [_pg_account(rows) for rows in creators]
+
+
+def pg_add_name(creator_rows, database_url, site, model_id, name, when, force):
+    """add_name's change, in one transaction: closed without a commit, nothing is kept."""
+    with creator_rows.in_postgres(database_url, [site], write=True) as creators:
+        rows = next((r for r in creators if str(r.model_id) == str(model_id)), None)
+        if rows is None:
+            raise FileNotFoundError(f"PostgreSQL has no creator {model_id} in its {site} tables")
+        added = _add(
+            lambda query, params: rows.write(_in_schema(rows, query), params),
+            lambda: pg_folder_name(rows), _pg_dated(rows), model_id, name, when, force,
+        )
+        rows.commit()
+    return added
+
+
+def select(data_dir, find=None, show_all=False, found=None):
+    """The accounts to list: from the files in data_dir, or from `found` (pg_accounts)."""
     rows = []
-    for row in accounts(data_dir):
+    for row in accounts(data_dir) if found is None else found:
         names = row[1]
         if find is not None:
             if any(n.lower() == find.lower() for n in names):
@@ -239,20 +312,18 @@ def select(data_dir, find=None, show_all=False):
     return rows
 
 
-def _warn_on_postgres():
-    """With PostgreSQL on, say that this script works on the user_data.db
-    files. The sentence is the scraper's, from the checkout this script is in
-    (as scripts/reference/build_reference.py finds it). A copy of the script
-    used somewhere else may have no scraper to ask, and then says nothing."""
+def _scraper(module):
+    """A module of the scraper in the checkout this script is in (as
+    scripts/reference/build_reference.py finds it). None for a copy of the script
+    used somewhere else, which may have no scraper to ask."""
     root = str(pathlib.Path(__file__).resolve().parents[1])
     sys.path.insert(0, root)
     try:
-        from ofscraper.db.postgres import warn_sqlite_files
+        return importlib.import_module(module)
     except ImportError:
-        return
+        return None
     finally:
         sys.path.remove(root)
-    warn_sqlite_files("creator_names.py")
 
 
 def _shown(name, first, last):
@@ -271,7 +342,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("--data-dir", type=pathlib.Path, default=DEFAULT_DATA_DIR)
+    ap.add_argument("--data-dir", type=pathlib.Path)
+    ap.add_argument("--postgres", action="store_true", help="use $OFSC_DATABASE_URL, not the files")
+    ap.add_argument("--site", choices=SITES, help="with --postgres: the site (default: onlyfans)")
     ap.add_argument("--all", action="store_true", help="list every account")
     ap.add_argument("--find", metavar="NAME", help="accounts that ever used NAME")
     ap.add_argument("--add", nargs=2, metavar=("MODEL_ID", "NAME"), help="record a name")
@@ -288,7 +361,29 @@ def main(argv=None):
     )
     ap.add_argument("--csv", type=pathlib.Path, help="also write the listing to a CSV file")
     args = ap.parse_args(argv)
-    _warn_on_postgres()
+    # Only this script's own environment says where PostgreSQL is
+    database_url = os.environ.get("OFSC_DATABASE_URL", "").strip()
+    creator_rows = _scraper("ofscraper.db.creator_rows") if args.postgres else None
+    for wrong, said in (
+        (args.postgres and args.data_dir is not None, "give --data-dir or --postgres, not both"),
+        (args.site is not None and not args.postgres, "--site goes with --postgres"),
+        (args.postgres and not database_url, "--postgres needs OFSC_DATABASE_URL set in the "
+         "environment this is run in (an env file of the scraper's isn't read)"),
+        (args.postgres and creator_rows is None, "--postgres needs the scraper this script "
+         "is in: run it from the scraper's checkout, with the scraper installed"),
+    ):
+        if wrong:
+            print(said, file=sys.stderr)
+            return 1
+    failed, postgres = (FileNotFoundError, ValueError, FolderNameWouldChange), None
+    if creator_rows:
+        failed += (creator_rows.postgres.PostgresUnavailable,)
+        postgres = (creator_rows, database_url, args.site or SITES[0])
+    elif (engine := _scraper("ofscraper.db.postgres")) is not None:
+        # with PostgreSQL on, say that this works on the files, in the scraper's
+        # sentence; a copy of the script without a scraper beside it says nothing
+        engine.warn_sqlite_files("creator_names.py")
+    data_dir = args.data_dir or DEFAULT_DATA_DIR
 
     if args.seen is not None and not args.add:
         print("--seen goes with --add MODEL_ID NAME", file=sys.stderr)
@@ -296,16 +391,22 @@ def main(argv=None):
 
     if args.add:
         model_id, name = args.add
+        # what the driver and the server say comes with the password hidden already
         try:
-            added = add_name(args.data_dir, model_id, name, force=args.force, seen=args.seen)
-        except (FileNotFoundError, ValueError, FolderNameWouldChange) as e:
+            added = add_name(data_dir, model_id, name, args.force, args.seen, postgres)
+        except failed as e:
             print(e, file=sys.stderr)
             return 1
         seen = f", seen {parse_seen(args.seen)}" if args.seen is not None else ""
         print(f"{'Added' if added else 'Already recorded'}: {name.strip()} -> {model_id}{seen}")
         return 0
 
-    rows = select(args.data_dir, find=args.find, show_all=args.all)
+    try:
+        found = pg_accounts(*postgres) if postgres else None
+    except failed as e:
+        print(e, file=sys.stderr)
+        return 1
+    rows = select(data_dir, find=args.find, show_all=args.all, found=found)
     # Row order is the order names were recorded, not the order of the renames, so the
     # first recorded name is shown apart from the others rather than as a timeline.
     for model_id, names, media, folder, dates in rows:

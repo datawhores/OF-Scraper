@@ -112,7 +112,8 @@ class Server:
             # no column types: a value stays as `kept` made it
             rest = ", ".join(c for c in columns if c != "id")
             first = "id INTEGER PRIMARY KEY, " if "id" in columns else ""
-            self.db.execute(f"CREATE TABLE {schema}.{table} ({first}{rest})")
+            unique = f", UNIQUE ({', '.join(SHARED[table])})" if table in SHARED else ""
+            self.db.execute(f"CREATE TABLE {schema}.{table} ({first}{rest}{unique})")
             self.db.executemany(
                 "INSERT INTO information_schema.columns VALUES (?, ?, ?)",
                 [(schema, table, column) for column in columns],
@@ -244,6 +245,8 @@ class Reader:
             return "coalesce", TYPE_NAMES[kinds[call.group(1)]]
         if text.isdigit():
             return "?column?", "int4"
+        if text.lower() == "count(*)":
+            return "count", "int8"
         # information_schema's names
         return text, "text"
 
@@ -299,6 +302,14 @@ class Writer(Reader):
         self._changed = True
         if self.server.change_error:
             raise self.server.change_error
+        if "CASE" in query or query.startswith("INSERT"):
+            # a statement of scripts/creator_names.py's: a date is the only
+            # value that is kept otherwise than it is sent
+            values = [
+                kept(value, "TIMESTAMPTZ") if _ISO.match(str(value)) else value
+                for value in params
+            ]
+            return self.server.db.execute(query, values).rowcount
         table = re.match(r"UPDATE \w+\.(\w+) SET ", query).group(1)
         kinds = postgres.COLUMN_TYPES[table]
         columns = re.findall(r"(\w+) (?:=|IS NOT DISTINCT FROM) \?", query)
@@ -341,3 +352,4 @@ class Writer(Reader):
 
 
 _KINDS = {name: kind for kind, name in TYPE_NAMES.items()}
+_ISO = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d")
