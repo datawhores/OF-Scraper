@@ -194,12 +194,15 @@ A legacy table for paid products. It is created and migrated, but no current cod
 
 ## `profiles`
 
-The usernames the creator account has been seen under in this database.
+The usernames the creator account has been seen under in this database, and when each was first and last seen.
 
-**Written by:** `write_profile_table` (`ofscraper/db/operations_/profile.py`) adds a row each time the account is seen under a new username. `table_init_create` in `ofscraper/db/operations.py` calls it at the start of every per-creator run (action mode, `metadata` command, manual/url mode, check command).
+**Written by:** `write_profile_table` (`ofscraper/db/operations_/profile.py`) adds a row each time the account is seen under a new username, with the time in both `first_seen_at` and `last_seen_at`. `table_init_create` in `ofscraper/db/operations.py` calls it at the start of every per-creator run (action mode, `metadata` command, manual/url mode, check command).
 
-- **Repeat runs:** the insert uses `WHERE NOT EXISTS`, so repeat runs under the same name add nothing.
-- **Migration and merge:** migration rebuilds the table once (`rebuild_profiles_table`, flag `profile_username_constraint_modified`). It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in. Merge and migration use this table to find the single model id of an old database.
+- **Repeat runs:** a run under a name already recorded adds nothing. It moves that row's `last_seen_at` to the time of the run, at most once in 12 hours (`SEEN_EVERY`), because one run starts a creator more than once. When another of the creator's names was seen since, the date is always moved, so the name in use is the one with the newest date. `first_seen_at` is written once. A call writes one row at most, and the date only ever moves forward: the statement leaves it alone when another program has moved it further meanwhile.
+- **Names without dates:** a row recorded before the two columns existed has none until the account is next processed under that name, and then only `last_seen_at`. A name added with `scripts/creator_names.py --add` has none unless `--seen` gives one. The placeholder rows never have dates: `DELETED_MODEL_PLACEHOLDER` and `<placeholder>_<model id>`, which are written for a deleted account whose name isn't known.
+- **Deleted accounts:** for an account the site no longer has, `get_profile_info` picks the name its folder is named after from this table. It is the name with the newest `last_seen_at`; of two seen at the same second, the row added later. When none of the account's names has a date, it is the first by name, as it was before the dates were kept. A placeholder row is picked only when the account has no other name. A run for a deleted account under the name picked this way moves that name's `last_seen_at` like any other run.
+- **Migration and merge:** the upgrade step `profiles_seen_at` adds the two columns, empty, to a database made before them. Migration also rebuilds the table once (`rebuild_profiles_table`, flag `profile_username_constraint_modified`). It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies in the rows the target doesn't have, with their dates. A name both databases have keeps its row in the target, and its dates are widened (`profileWiden`): the earlier `first_seen_at` and the later `last_seen_at` are kept, and a date is never emptied. A dated name that a merge brings in counts like any other: when the names already there have no dates, it becomes the one a deleted account goes by. Merge and migration use this table to find the single model id of an old database.
+- **PostgreSQL:** a database made before the two columns gets them when the scraper next starts (`ADDED_COLUMNS` in `ofscraper/db/postgres.py`). `postgres_import` and `postgres_export` carry the dates. For a name PostgreSQL already has, the import widens the dates the same way.
 - **Unique key:** `UNIQUE (user_id, username)`.
 
 **Unique:** (`user_id`, `username`)
@@ -209,6 +212,8 @@ The usernames the creator account has been seen under in this database.
 | `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
 | `user_id` | INTEGER | yes |  | The creator account id. It has the same value as `model_id` elsewhere, and is named `user_id` for legacy reasons. |
 | `username` | VARCHAR | yes |  | The username the account had when it was seen. |
+| `first_seen_at` | TIMESTAMP |  |  | When the scraper first worked on the account under this username: ISO text in UTC, to the second (`2024-03-01T09:30:00+00:00`). Empty (NULL) when that isn't known. |
+| `last_seen_at` | TIMESTAMP |  |  | When the scraper last worked on the account under this username, in the same form. Empty (NULL) when that isn't known. |
 
 ## `schema_flags`
 
@@ -238,6 +243,7 @@ Flag names:
 - `posts_mentions`: `posts.mentions` column added.
 - `messages_group_id`: `messages.group_id` column added.
 - `media_skip_permanent`: `medias.skip_permanent` column added.
+- `profiles_seen_at`: `profiles.first_seen_at` and `profiles.last_seen_at` columns added.
 - `stories_model_id`: `stories.model_id` column added.
 - `labels_model_id`: `labels.model_id` column added.
 - `products_model_id`: `products.model_id` column added.

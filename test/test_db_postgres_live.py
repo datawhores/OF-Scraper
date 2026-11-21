@@ -14,6 +14,7 @@ import urllib.parse
 import uuid
 from types import SimpleNamespace
 
+import arrow
 import pytest
 import tenacity
 
@@ -22,13 +23,26 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.db.operations_.others as others
 import ofscraper.db.operations_.posts as posts
+import ofscraper.db.operations_.profile as profile
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.postgres as postgres
 import ofscraper.filters.media.filters as filters
 import ofscraper.utils.settings as settings
 import ofscraper.sites as sites
 from ofscraper.db.difference import ALL_FLAGS
-from test.db_scenario import ONE, TWO, NAMES, check, post, scenario, table_rows
+from test.db_scenario import (
+    ONE,
+    TWO,
+    NAMES,
+    Clock,
+    after_start,
+    check,
+    name_before_the_dates,
+    post,
+    record_names,
+    scenario,
+    table_rows,
+)
 from test.test_db_postgres import sqlite_columns
 
 URL = os.environ.get("OFSC_TEST_POSTGRES_URL", "")
@@ -191,6 +205,220 @@ def test_starting_again_adds_nothing_and_marks_no_step_done(pg):
     assert flags == set(ALL_FLAGS) - {"media_hash"}
     assert sorted(row["model_id"] for row in table_rows("models", **CREATOR)) == [5, ONE]
     assert len(table_rows("profiles", **CREATOR)) == 2
+
+
+# --- tables made before the dates of a creator's names were kept (#643) ---
+
+
+def before_the_dates():
+    """Leave the tables as the version before made them, and start anew."""
+    run_sql("ALTER TABLE profiles DROP COLUMN first_seen_at")
+    run_sql("ALTER TABLE profiles DROP COLUMN last_seen_at")
+    run_sql("DELETE FROM schema_flags WHERE flag_name = 'profiles_seen_at'")
+    # a new run: nothing is remembered about the tables
+    postgres.POSTGRES.shutdown()
+
+
+def profile_columns(schema):
+    with psycopg.connect(URL) as conn:
+        return [
+            row[0]
+            for row in conn.execute(
+                "SELECT column_name FROM information_schema.columns"
+                " WHERE table_schema = %s AND table_name = 'profiles'"
+                " ORDER BY ordinal_position",
+                [schema],
+            )
+        ]
+
+
+def profile_rows(schema):
+    with psycopg.connect(URL) as conn:
+        return conn.execute(f"SELECT * FROM {schema}.profiles ORDER BY id").fetchall()
+
+
+def name_of_a_deleted_account():
+    async def go():
+        return await profile.get_profile_info(**CREATOR)
+
+    return asyncio.run(go())
+
+
+def test_tables_made_before_the_dates_get_the_columns_and_keep_their_rows(
+    pg, monkeypatch
+):
+    clock = Clock()
+    monkeypatch.setattr(profile, "_now", clock)
+    start()
+    record_names(["zeta_name", "alpha_name"], **CREATOR)
+    before_the_dates()
+    assert profile_columns(pg) == ["id", "user_id", "username"]
+    before = profile_rows(pg)
+    assert [row[1:] for row in before] == [
+        (ONE, NAMES[ONE]),
+        (ONE, "zeta_name"),
+        (ONE, "alpha_name"),
+    ]
+    # read as they are, before anything is changed: the name is the one the
+    # version before gave
+    assert name_of_a_deleted_account() == name_before_the_dates(**CREATOR)
+    assert profile_columns(pg) == ["id", "user_id", "username"]
+
+    clock.later(days=1)
+    start(model_id=ONE, username="zeta_name")
+
+    assert profile_columns(pg) == [
+        "id",
+        "user_id",
+        "username",
+        "first_seen_at",
+        "last_seen_at",
+    ]
+    assert set(others.get_schema_changes(**CREATOR)) == set(ALL_FLAGS)
+    # each row with the id it had; the only date is of the name this run
+    # is under
+    rows = profile_rows(pg)
+    assert [row[:3] for row in rows] == before
+    assert [row[3] for row in rows] == [None, None, None]
+    assert [row[4] and arrow.get(row[4]).to("UTC").isoformat() for row in rows] == [
+        None,
+        after_start(days=1),
+        None,
+    ]
+    assert name_of_a_deleted_account() == "zeta_name"
+
+
+def test_tables_brought_up_to_date_are_left_alone_at_the_next_start(pg, monkeypatch):
+    clock = Clock()
+    monkeypatch.setattr(profile, "_now", clock)
+    start()
+    before_the_dates()
+    start()
+    rows = profile_rows(pg)
+    flags = sorted(others.get_schema_changes(**CREATOR))
+    # the step is not marked again once it is done
+    run_sql("DELETE FROM schema_flags WHERE flag_name = 'profiles_seen_at'")
+
+    postgres.POSTGRES.shutdown()
+    clock.later(minutes=5)
+    start()
+
+    assert profile_rows(pg) == rows
+    assert len(profile_columns(pg)) == 5
+    assert sorted(others.get_schema_changes(**CREATOR)) == [
+        flag for flag in flags if flag != "profiles_seen_at"
+    ]
+
+
+def test_tables_with_one_of_the_columns_get_the_other(pg):
+    # the change is one transaction, so a table isn't left like this: it is
+    # put right all the same
+    start()
+    run_sql("ALTER TABLE profiles DROP COLUMN last_seen_at")
+    run_sql("DELETE FROM schema_flags WHERE flag_name = 'profiles_seen_at'")
+    postgres.POSTGRES.shutdown()
+
+    start()
+
+    assert sorted(profile_columns(pg)) == sorted(postgres.TABLE_COLUMNS["profiles"])
+    assert set(others.get_schema_changes(**CREATOR)) == set(ALL_FLAGS)
+
+
+def test_two_programs_bringing_the_tables_up_to_date_at_once_both_succeed(pg, no_wait):
+    import concurrent.futures
+
+    start()
+    before_the_dates()
+
+    def make():
+        engine = postgres.PostgresBackend()
+        try:
+            engine.create_tables(ALL_FLAGS)
+        finally:
+            engine.shutdown()
+
+    with concurrent.futures.ThreadPoolExecutor(4) as workers:
+        for done in [workers.submit(make) for _ in range(4)]:
+            done.result()
+
+    assert len(profile_columns(pg)) == 5
+    assert set(others.get_schema_changes(**CREATOR)) == set(ALL_FLAGS)
+    assert len(profile_rows(pg)) == 1
+
+
+def test_names_without_dates_go_by_the_databases_own_order(pg):
+    # the order of names is the database's, as it was before the dates:
+    # whatever it is here, the name is the first in it
+    start()
+    run_sql("DELETE FROM profiles")
+    record_names(["moe", "Zed", "abe", "Abe", "_abe"], **CREATOR)
+    first = run_sql(
+        "SELECT username FROM profiles WHERE user_id = ? ORDER BY username LIMIT 1",
+        [ONE],
+        read_only=True,
+    )[0][0]
+
+    assert name_of_a_deleted_account() == first == name_before_the_dates(**CREATOR)
+    # and the same after the tables are read as they were before the dates
+    before_the_dates()
+    assert name_of_a_deleted_account() == first
+
+
+def last_seen(schema):
+    """{name: when it was last seen, in UTC}."""
+    return {
+        row[2]: row[4] and arrow.get(row[4]).to("UTC").isoformat()
+        for row in profile_rows(schema)
+    }
+
+
+def test_a_date_another_program_moved_meanwhile_is_not_moved_back(pg, monkeypatch):
+    # two programs start the same creator: each reads the name's date and
+    # then writes its own time, and nothing keeps the other out between
+    clock = Clock()
+    monkeypatch.setattr(profile, "_now", clock)
+    start()
+    clock.later(days=1)
+    decide = profile._seen_again
+    others_time = after_start(days=1, seconds=5)
+
+    def meanwhile(seen, username, now):
+        # the other program's clock is seconds ahead of this one's
+        with psycopg.connect(URL, autocommit=True) as conn:
+            conn.execute(f"UPDATE {pg}.profiles SET last_seen_at = %s", [others_time])
+        return decide(seen, username, now)
+
+    monkeypatch.setattr(profile, "_seen_again", meanwhile)
+
+    start()
+
+    assert last_seen(pg) == {NAMES[ONE]: others_time}
+
+
+def test_the_statement_that_moves_a_date_only_moves_it_forward(pg):
+    start()
+    run_sql("DELETE FROM profiles")
+    dates = {
+        "older": after_start(seconds=-1),
+        "same": after_start(),
+        "newer": after_start(seconds=1),
+        "undated": None,
+    }
+    for name, date in dates.items():
+        run_sql(
+            "INSERT INTO profiles (user_id, username, last_seen_at) VALUES (?, ?, ?)",
+            [ONE, name, date],
+        )
+
+    for name in dates:
+        run_sql(profile.profileSeenAgain, [after_start(), ONE, name, after_start(), None])
+
+    assert last_seen(pg) == {
+        "older": after_start(),
+        "same": after_start(),
+        "newer": after_start(seconds=1),
+        "undated": after_start(),
+    }
 
 
 def test_each_site_has_its_own_tables(monkeypatch):

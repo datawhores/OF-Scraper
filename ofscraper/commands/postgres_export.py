@@ -124,12 +124,41 @@ class Database(importer.Target):
                 ).fetchall()
             }
 
+    def lacking(self, site, table):
+        """The columns added since PostgreSQL could first be used
+        (postgres.ADDED_COLUMNS) that the site's table hasn't got. The
+        scraper adds them when it starts, and this command only reads: a
+        database last used by an earlier version is still without them."""
+        added = {
+            column
+            for _flag, name, columns in postgres.ADDED_COLUMNS
+            if name == table
+            for column in columns
+        }
+        if not added:
+            return added
+        with self.conn.cursor() as cur:
+            there = {
+                row[0]
+                for row in cur.execute(
+                    "SELECT column_name FROM information_schema.columns"
+                    " WHERE table_schema = ? AND table_name = ?",
+                    [postgres.schema_name(site), table],
+                ).fetchall()
+            }
+        return added - there
+
     def rows(self, site, table, columns, creator):
         """One creator's rows of a table, oldest first, as the scraper reads
-        them: a yes or no as 1 or 0, a date as ISO text."""
+        them: a yes or no as 1 or 0, a date as ISO text. A column the table
+        hasn't got yet (see lacking) is read as empty."""
+        lacking = self.lacking(site, table)
+        listed = ", ".join(
+            f"NULL AS {column}" if column in lacking else column for column in columns
+        )
         with self.conn.cursor() as cur:
             return cur.execute(
-                f"SELECT {', '.join(columns)} FROM {postgres.schema_name(site)}.{table}"
+                f"SELECT {listed} FROM {postgres.schema_name(site)}.{table}"
                 f" WHERE {CREATOR_COLUMN.get(table, 'model_id')} = ? ORDER BY id",
                 [creator],
             ).fetchall()

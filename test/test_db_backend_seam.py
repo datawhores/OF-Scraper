@@ -256,7 +256,10 @@ def test_the_profile_checks_ask_the_engine(tmp_path, monkeypatch):
         )
 
     # the first check opens (and so creates) the file, which has no table yet
-    assert asyncio.run(go()) == (False, True, "a", [{"user_id": 5, "username": "a"}])
+    before, after, name, profiles = asyncio.run(go())
+    assert (before, after, name) == (False, True, "a")
+    # each with the dates the name was seen at (test_profile_seen_dates)
+    assert [(row["user_id"], row["username"]) for row in profiles] == [(5, "a")]
     assert asked == ["profiles", "profiles"]
 
 

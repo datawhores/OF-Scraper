@@ -400,15 +400,9 @@ class MergeDatabase:
     async def merge_profiles_helper(self, old_db):
         keys = self._profile_key
         inserts_old_db = await get_all_profiles(db_path=old_db)
-        await write_profile_table_transition(
-            list(
-                filter(
-                    lambda x: tuple(x[key] for key in keys) not in self._curr_profiles,
-                    inserts_old_db,
-                )
-            ),
-            db_path=self._new_db,
-        )
+        # every name, also the ones the merged database has: such a name
+        # keeps its row there, and gets the dates of both
+        await write_profile_table_transition(inserts_old_db, db_path=self._new_db)
         self._curr_profiles.update(
             map(lambda x: tuple(x[key] for key in keys), inserts_old_db)
         )

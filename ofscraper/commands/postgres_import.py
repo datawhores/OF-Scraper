@@ -538,16 +538,23 @@ class Target:
             ).fetchone()[0]
 
     def write(self, site, table, columns, rows):
-        """Add rows to a table; returns how many are new there."""
+        """Add rows to a table; returns how many are new there. A name the
+        table already has keeps its row: only its dates are widened to take
+        the file's in, which adds no row and isn't counted."""
         name = f"{postgres.schema_name(site)}.{table}"
         listed = ", ".join(columns)
         with self.conn.cursor() as cur:
             if table in SHARED_TABLES:
                 before = self.count(site, table)
                 marks = ", ".join("?" for _ in columns)
+                profile = _app().profile
+                kept = (
+                    profile.profileWiden
+                    if table == "profiles" and set(profile.SEEN_COLUMNS) <= set(columns)
+                    else " ON CONFLICT DO NOTHING"
+                )
                 cur.executemany(
-                    f"INSERT INTO {name} ({listed}) VALUES ({marks})"
-                    " ON CONFLICT DO NOTHING",
+                    f"INSERT INTO {name} ({listed}) VALUES ({marks}){kept}",
                     rows,
                 )
                 return self.count(site, table) - before

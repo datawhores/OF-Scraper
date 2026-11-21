@@ -165,6 +165,86 @@ def test_a_second_trip_changes_nothing(tmp_path, pg):
         assert layout(second / name) == layout(first / name)
 
 
+def dated_names(path):
+    """Names with the dates they were seen at (#643), as the scraper saves
+    them, beside the file's one name without."""
+    sql(
+        path,
+        "INSERT INTO profiles (user_id, username, first_seen_at, last_seen_at)"
+        " VALUES (111, ?, ?, ?)",
+        [
+            ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+            ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+        ],
+    )
+    return path
+
+
+NAMES_AND_DATES = (
+    "SELECT username, first_seen_at, last_seen_at FROM profiles ORDER BY id"
+)
+
+
+def test_the_dates_of_a_creators_names_go_in_and_come_back_out(tmp_path, pg):
+    folder = tmp_path / "data"
+    original = dated_names(canonical(current_file(folder / "111" / DATABASE, 111)))
+    bring_in(folder)
+    # kept as moments
+    assert server(
+        "SELECT username, first_seen_at IS NULL, last_seen_at >= first_seen_at,"
+        " CAST(EXTRACT(EPOCH FROM last_seen_at) AS BIGINT)"
+        f" FROM {pg['onlyfans']}.profiles ORDER BY id"
+    ) == [
+        ("a_creator", True, None, None),
+        ("newer_name", False, True, 1711963800),
+        ("half_dated", True, None, 1706745600),
+    ]
+    out = tmp_path / "out"
+
+    code, said = run(out, apply=True)
+
+    assert code == 0, said
+    assert sql(out / "111" / DATABASE, NAMES_AND_DATES) == [
+        ("a_creator", None, None),
+        ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+        ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+    ]
+    assert dump(out / "111" / DATABASE) == dump(original)
+
+
+def test_tables_made_before_the_dates_are_written_out_without_them(tmp_path, pg):
+    # the scraper gives the tables their new columns when it starts, and
+    # this command only reads: it may be the first of this version to run
+    folder = tmp_path / "data"
+    dated_names(current_file(folder / "111" / DATABASE, 111))
+    bring_in(folder)
+    postgres.POSTGRES.shutdown()
+    schema = pg["onlyfans"]
+    with psycopg.connect(URL, autocommit=True) as conn:
+        conn.execute(f"ALTER TABLE {schema}.profiles DROP COLUMN first_seen_at")
+        conn.execute(f"ALTER TABLE {schema}.profiles DROP COLUMN last_seen_at")
+        conn.execute(
+            f"DELETE FROM {schema}.schema_flags WHERE flag_name = 'profiles_seen_at'"
+        )
+    out = tmp_path / "out"
+
+    code, said = run(out, apply=True)
+
+    assert code == 0, said
+    assert sql(out / "111" / DATABASE, NAMES_AND_DATES) == [
+        ("a_creator", None, None),
+        ("newer_name", None, None),
+        ("half_dated", None, None),
+    ]
+    assert others.get_schema_changes(db_path=out / "111" / DATABASE) == set(ALL_FLAGS)
+    # PostgreSQL was only read: its table is as it was
+    assert server(
+        "SELECT column_name FROM information_schema.columns"
+        f" WHERE table_schema = '{schema}' AND table_name = 'profiles'"
+        " ORDER BY ordinal_position"
+    ) == [("id",), ("user_id",), ("username",)]
+
+
 def test_what_a_scan_saved_comes_out_as_the_scraper_reads_it(tmp_path, pg):
     # two creators, saved through the functions a scan uses
     on_postgres = asyncio.run(scenario())

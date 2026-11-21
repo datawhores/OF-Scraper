@@ -6,6 +6,7 @@ drops them.
 """
 
 import asyncio
+import datetime
 import os
 import uuid
 
@@ -21,7 +22,7 @@ import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
 from ofscraper.db.difference import ALL_FLAGS
 from test.db_scenario import plain
-from test.import_files import current_file, file_2023, sql
+from test.import_files import current_file, file_2023, sql, without_the_dates
 
 URL = os.environ.get("OFSC_TEST_POSTGRES_URL", "")
 if not URL:
@@ -194,6 +195,145 @@ def test_another_creator_can_be_brought_in_later(tmp_path, pg):
     assert code == 0, said
     assert counts(pg["onlyfans"])["medias"] == 8
     assert counts(pg["onlyfans"])["models"] == 3
+
+
+def names_and_dates(schema):
+    """Each name with the moments it was seen at, in UTC."""
+    utc = datetime.timezone.utc
+    return [
+        (name, *(moment and moment.astimezone(utc).isoformat() for moment in seen))
+        for name, *seen in server(
+            f"SELECT username, first_seen_at, last_seen_at FROM {schema}.profiles"
+            " ORDER BY id"
+        )
+    ]
+
+
+def test_the_dates_of_a_creators_names_are_brought_in(tmp_path, pg):
+    folder = tmp_path / "data"
+    path = current_file(folder / "111" / "user_data.db", 111)
+    sql(
+        path,
+        "INSERT INTO profiles (user_id, username, first_seen_at, last_seen_at)"
+        " VALUES (111, ?, ?, ?)",
+        [
+            ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+            ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+        ],
+    )
+    # a file from before the dates were kept has none to bring
+    without_the_dates(current_file(folder / "222" / "user_data.db", 222, name="b_creator"))
+
+    code, said = run(folder, apply=True)
+
+    assert code == 0, said
+    assert sorted(names_and_dates(pg["onlyfans"])) == [
+        ("a_creator", None, None),
+        ("b_creator", None, None),
+        ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+        ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+    ]
+
+
+EARLIER, EARLY, LATE, LATER = (
+    "2024-01-01T00:00:00+00:00",
+    "2024-02-01T00:00:00+00:00",
+    "2024-06-01T00:00:00+00:00",
+    "2024-07-01T00:00:00+00:00",
+)
+
+
+@pytest.mark.parametrize(
+    "has, brought, after",
+    [
+        # the server has the name without dates, and the file has them
+        ((None, None), (EARLY, LATE), (EARLY, LATE)),
+        # a date is never emptied
+        ((EARLY, LATE), (None, None), (EARLY, LATE)),
+        ((None, LATE), (EARLY, None), (EARLY, LATE)),
+        # the file's dates are older than the server's, then newer
+        ((EARLY, LATER), (EARLIER, LATE), (EARLIER, LATER)),
+        ((EARLIER, LATE), (EARLY, LATER), (EARLIER, LATER)),
+        # wider, then narrower
+        ((EARLY, LATE), (EARLIER, LATER), (EARLIER, LATER)),
+        ((EARLIER, LATER), (EARLY, LATE), (EARLIER, LATER)),
+        ((EARLY, LATE), (EARLY, LATE), (EARLY, LATE)),
+    ],
+)
+def test_a_name_the_server_already_has_gets_the_dates_of_both(
+    tmp_path, pg, has, brought, after
+):
+    schema = pg["onlyfans"]
+    assert run(library(tmp_path), apply=True)[0] == 0
+    # the scraper has started on the creator here, and saved nothing yet
+    with psycopg.connect(URL, autocommit=True) as conn:
+        conn.execute(
+            f"INSERT INTO {schema}.profiles"
+            " (user_id, username, first_seen_at, last_seen_at)"
+            " VALUES (333, 'a_third', %s, %s)",
+            list(has),
+        )
+    its_row = f"SELECT id, user_id FROM {schema}.profiles WHERE username = 'a_third'"
+    # where the server keeps the row: it moves when the row is written again
+    its_place = f"SELECT ctid::text FROM {schema}.profiles WHERE username = 'a_third'"
+    held, place = server(its_row), server(its_place)
+    names = counts(schema)["profiles"]
+    later = tmp_path / "later"
+    path = current_file(later / "333" / "user_data.db", 333, name="a_third")
+    sql(path, "UPDATE profiles SET first_seen_at = ?, last_seen_at = ?", [brought])
+    sql(
+        path,
+        "INSERT INTO profiles (user_id, username, last_seen_at)"
+        f" VALUES (333, 'another_name', '{EARLIER}')",
+    )
+
+    code, said = run(later, apply=True)
+
+    assert code == 0, said
+    assert names_and_dates(schema)[-2:] == [
+        ("a_third", *after),
+        ("another_name", None, EARLIER),
+    ]
+    # the row it had, and one row more for the name that is new
+    assert server(its_row) == held
+    assert counts(schema)["profiles"] == names + 1
+    # and a row whose dates stay as they are isn't written at all
+    assert (server(its_place) == place) is (after == has)
+    # a date that was widened is no row added: the count is the file's
+    # posts, media and the like, as for any file
+    assert "onlyfans: 8 rows added." in said
+
+
+def test_tables_made_before_the_dates_get_the_columns_when_a_file_is_brought_in(
+    tmp_path, pg
+):
+    schema = pg["onlyfans"]
+    first = tmp_path / "first"
+    current_file(first / "111" / "user_data.db", 111)
+    assert run(first, apply=True)[0] == 0
+    postgres.POSTGRES.shutdown()
+    with psycopg.connect(URL, autocommit=True) as conn:
+        conn.execute(f"ALTER TABLE {schema}.profiles DROP COLUMN first_seen_at")
+        conn.execute(f"ALTER TABLE {schema}.profiles DROP COLUMN last_seen_at")
+        conn.execute(
+            f"DELETE FROM {schema}.schema_flags WHERE flag_name = 'profiles_seen_at'"
+        )
+    later = tmp_path / "later"
+    path = current_file(later / "333" / "user_data.db", 333, name="a_third")
+    sql(
+        path,
+        "UPDATE profiles SET first_seen_at = '2024-03-01T09:30:00+00:00',"
+        " last_seen_at = '2024-04-01T09:30:00+00:00'",
+    )
+
+    code, said = run(later, apply=True)
+
+    assert code == 0, said
+    assert names_and_dates(schema) == [
+        ("a_creator", None, None),
+        ("a_third", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+    ]
+    assert counts(schema)["schema_flags"] == len(ALL_FLAGS)
 
 
 def test_a_bad_file_leaves_the_server_as_it_was(tmp_path, pg):

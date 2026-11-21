@@ -130,6 +130,15 @@ def file_before_newest_columns(path, creator):
     return path
 
 
+def without_the_dates(path):
+    """A database as it was before the dates of a creator's names were kept
+    (#643): no first_seen_at or last_seen_at, and the upgrade step not done."""
+    for column in ("first_seen_at", "last_seen_at"):
+        sql(path, f"ALTER TABLE profiles DROP COLUMN {column}")
+    sql(path, "DELETE FROM schema_flags WHERE flag_name = 'profiles_seen_at'")
+    return path
+
+
 def file_2023(path, creator, name="a_creator"):
     """A database last used by the 2023 release."""
     path.parent.mkdir(parents=True, exist_ok=True)

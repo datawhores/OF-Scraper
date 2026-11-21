@@ -11,12 +11,14 @@ import pathlib
 import sqlite3
 from types import SimpleNamespace
 
+import arrow
 import pytest
 
 import ofscraper.classes.of.posts as posts_
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.data.posts.post as post
 import ofscraper.db.operations as operations
+import ofscraper.db.operations_.profile as profile
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download import download
 from ofscraper.db.operations_.media import batch_mediainsert
@@ -77,9 +79,11 @@ FLAGS = [
     "others_model_id_constraint_added", "posts_is_deleted", "posts_mentions", "posts_model_id",
     "posts_model_id_constraint_added", "posts_opened", "posts_pinned", "posts_purchase_type",
     "posts_stream", "products_model_id", "products_model_id_constraint_added",
-    "profile_username_constraint_modified", "stories_model_id",
+    "profile_username_constraint_modified", "profiles_seen_at", "stories_model_id",
     "stories_model_id_constraint_added",
 ]
+# when the run starts on the creator: the name is seen then (#643)
+STARTED = "2024-07-01T12:00:00+00:00"
 EXPECTED_ROWS = {
     "labels": (["id", "label_id", "name", "type", "post_id", "model_id"], []),
     "medias": (
@@ -113,7 +117,10 @@ EXPECTED_ROWS = {
         ["id", "post_id", "text", "price", "paid", "archived", "created_at", "title", "model_id"],
         [],
     ),
-    "profiles": (["id", "user_id", "username"], [(1, 12345, "pinmodel")]),
+    "profiles": (
+        ["id", "user_id", "username", "first_seen_at", "last_seen_at"],
+        [(1, 12345, "pinmodel", STARTED, STARTED)],
+    ),
     "schema_flags": (["flag_name", "flag_value"], [(f, "1") for f in FLAGS]),
     "stories": (POST_COLS, []),
 }
@@ -128,6 +135,7 @@ def tmp_db(monkeypatch, tmp_path):
         lambda self, model_id, model_username: db,
     )
     monkeypatch.setattr(operations, "create_backup", lambda *a, **k: None)
+    monkeypatch.setattr(profile, "_now", lambda: arrow.get(STARTED))
     return db
 
 

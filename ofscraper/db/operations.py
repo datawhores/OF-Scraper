@@ -107,7 +107,8 @@ async def table_init_create(model_id=None, username=None, **kwargs):
     engine = wrapper.backend_for({})
     if engine.born_current:
         # PostgreSQL: one set of tables for every creator, made once at the
-        # current layout. No file to back up and no upgrade steps to run
+        # current layout. No file to back up and no upgrade steps to run:
+        # tables an earlier version made get the columns added since
         await asyncio.get_running_loop().run_in_executor(
             wrapper._DB_POOL, engine.create_tables, ALL_FLAGS
         )
