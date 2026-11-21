@@ -9,6 +9,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 1
+      # Optional: wait longer for major/minor Python package releases
+      # semver-major-days: 7
+      # semver-minor-days: 3
+      # semver-patch-days: 1
     # Leave a pyproject.toml range alone when it already allows the new version
     # (only uv.lock changes); raise it only when a release falls outside it.
     versioning-strategy: "increase-if-necessary"
@@ -30,6 +36,8 @@ updates:
       - "/.github/actions/*"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 1
     open-pull-requests-limit: 5
     commit-message:
       prefix: "ci"
@@ -44,6 +52,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 1
     open-pull-requests-limit: 3
     commit-message:
       prefix: "build"
