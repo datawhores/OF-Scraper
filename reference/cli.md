@@ -130,11 +130,14 @@ Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
 
 ### `stash_sync` (separate entry point)
 
-`python -m ofscraper.commands.stash_sync PATH... [--apply] [--scan] [--path-map LOCAL=STASH]`. It uses argparse and is not part of the CLI (see `STASH.md`). It reads creators' `user_data.db` files offline (a folder such as `<profile>/.data` is searched for them) and, over Stash's GraphQL API, fills empty fields of each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. A Fansly database (`schema_flags` `site=fansly`) gets the `Fansly` studio and links, @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. It never overwrites a value already in Stash, and without `--apply` it only prints a JSON report. It doesn't contact OnlyFans or Fansly.
+`python -m ofscraper.commands.stash_sync (PATH... | --postgres [--site SITE] [--creator NAME]) [--apply] [--scan] [--path-map LOCAL=STASH]`. It uses argparse and is not part of the CLI (see `STASH.md`). It reads creators' `user_data.db` files offline (a folder such as `<profile>/.data` is searched for them), or with `--postgres` the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (read-only; every creator of both sites unless `--site` or `--creator` narrow it), and, over Stash's GraphQL API, fills empty fields of each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. A Fansly database (`schema_flags` `site=fansly`) gets the `Fansly` studio and links, @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. It never overwrites a value already in Stash, and without `--apply` it only prints a JSON report. It doesn't contact OnlyFans or Fansly.
 
-Run `python -m ofscraper.commands.stash_sync PATH... [OPTIONS]`.
+Run `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`.
 
 - `PATHS`: user_data.db files, or folders to search for them (e.g. <profile>/.data)
+- `--postgres`: read the PostgreSQL database $OFSC_DATABASE_URL names instead of user_data.db files; give no paths with it
+- `--site`: with --postgres, only this site's creators (default: both sites)
+- `--creator`: with --postgres, only the creators with this id (on either site) or with this username now or before, in any case; it can match more than one (default: every creator); repeatable
 - `--apply`: write to Stash; without it, only report
 - `--url`: Stash GraphQL URL (default http://localhost:9999/graphql, or $STASH_URL)
 - `--api-key`: Stash API key, if Stash has a password (default $STASH_API_KEY)

@@ -41,6 +41,9 @@ CHECKOUT_TIMEOUT = 30
 # out of memory or connections, or a cancelled query
 RETRY_STATES = frozenset({"40001", "40P01", "55P03", "57P01", "57P02", "57P03"})
 CONNECT_TIMEOUT = 15
+# the longest one read on a tool's own connection (Reader) may take, in
+# seconds: what the scraper's database timeout is unless it is changed
+READ_TIMEOUT = 300
 
 # Made at the current layout: the steps that upgrade an old SQLite file never
 # run here. test_db_postgres compares these with SQLite's tables, column by
@@ -247,7 +250,9 @@ def sqlite_files_notice(tool):
 def warn_sqlite_files(tool):
     """Says sqlite_files_notice on stderr (stdout may be a report that
     another program reads), for a tool that is run on its own, without the
-    scraper: stash_sync, recover_collisions, scripts/creator_names.py.
+    scraper: recover_collisions, scripts/creator_names.py. (stash_sync can
+    read PostgreSQL, and has a sentence of its own for when it is given
+    files.)
 
     Only the environment the tool is run in is looked at. A URL that is only
     in one of the scraper's env files is not seen: these tools don't read the
@@ -831,3 +836,68 @@ class PostgresBackend:
 
 
 POSTGRES = PostgresBackend()
+
+
+class Reader:
+    """A connection of its own for a tool that is run without the scraper
+    (see creator_rows). The scraper's settings, pool and current site aren't
+    used, so the URL is handed in and a query names its schema.
+
+    Nothing can be written through it, and every read sees the database as
+    it was at the first one. Values come out as the engine's do. What goes
+    wrong is a PostgresUnavailable: one sentence, without the login."""
+
+    def __init__(self, database_url):
+        psycopg = _driver()[0]
+        self._url = database_url
+        self._errors = (psycopg.Error,)
+        self._conn = None
+        try:
+            self._conn = psycopg.connect(
+                database_url,
+                connect_timeout=CONNECT_TIMEOUT,
+                # a server that is gone without saying so is noticed in a
+                # minute or two, not waited for
+                keepalives_idle=30,
+                keepalives_interval=10,
+                keepalives_count=3,
+                # no statement is kept on the server: a pooler may hand the
+                # next one to another connection
+                prepare_threshold=None,
+                application_name="ofscraper",
+                context=_adapters(),
+                cursor_factory=_cursor_class(),
+                row_factory=row_factory,
+            )
+            # as the pool sets a connection up (see _open_pool)
+            self._conn.execute("SET TIME ZONE 'UTC'")
+            self._conn.execute("SET DateStyle TO 'ISO, YMD'")
+            # the server ends a read that waits on another program's lock,
+            # or that takes too long, and the read fails
+            self._conn.execute(f"SET lock_timeout = {CHECKOUT_TIMEOUT * 1000}")
+            self._conn.execute(f"SET statement_timeout = {READ_TIMEOUT * 1000}")
+            self._conn.commit()
+            # from here on: one read-only transaction, one view of the rows
+            self._conn.read_only = True
+            self._conn.isolation_level = psycopg.IsolationLevel.REPEATABLE_READ
+        except psycopg.Error as E:
+            self.close()
+            raise POSTGRES._unavailable(E, database_url) from E
+
+    def rows(self, query, params=()):
+        """Every row of a query, written as the table modules write theirs
+        (`?` for a value)."""
+        try:
+            with self._conn.cursor() as cur:
+                return cur.execute(query, params).fetchall()
+        except self._errors as E:
+            detail = masked(" ".join(str(E).split()), self._url)[:300]
+            raise PostgresUnavailable(
+                f"Can't read the PostgreSQL database at {describe(self._url)}."
+                f" ({detail})"
+            ) from E
+
+    def close(self):
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None

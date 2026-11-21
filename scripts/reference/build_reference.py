@@ -507,7 +507,7 @@ SEPARATE_COMMANDS = {
     "postgres_export": "FOLDER [OPTIONS]",
     "postgres_import": "FOLDER [OPTIONS]",
     "recover_collisions": "DATABASE [OPTIONS]",
-    "stash_sync": "PATH... [OPTIONS]",
+    "stash_sync": "(PATH... | --postgres) [OPTIONS]",
 }
 
 

@@ -6,6 +6,9 @@ in and the creator, studio and tags are added. Fansly posts and messages also
 get a gallery each. Nothing set in Stash is overwritten or removed, so running
 it again changes nothing. The one exception is the wrong Fansly message link
 earlier versions added, which is replaced.
+
+With --postgres the rows come from the PostgreSQL database OFSC_DATABASE_URL
+names, in place of user_data.db files (see POSTGRESQL.md). It is only read.
 """
 
 import argparse
@@ -13,7 +16,6 @@ import html
 import json
 import os
 import re
-import sqlite3
 import sys
 import time
 import urllib.error
@@ -21,8 +23,8 @@ import urllib.parse
 import urllib.request
 from collections import defaultdict
 from contextlib import closing
-from pathlib import Path
 
+import ofscraper.db.creator_rows as creator_rows
 import ofscraper.db.postgres as postgres
 from ofscraper.sites.fansly.constants import ORIGIN as FANSLY_ORIGIN
 from ofscraper.sites.fansly.normalize import hashtags
@@ -52,6 +54,13 @@ MENTION_RE = re.compile(r"(?<![\w.@])@([A-Za-z0-9_](?:[A-Za-z0-9_.-]*[A-Za-z0-9_
 TEXT_TABLES = ("posts", "messages", "stories", "others", "products")
 # OnlyFans media types Stash indexes, and the query that finds them
 KINDS = {"Videos": "scene", "Images": "image"}
+# said when the command is given files while PostgreSQL is on (#631)
+FILES_NOTICE = (
+    f"PostgreSQL is on ({postgres.URL_KEY} is set), but stash_sync works on the"
+    " user_data.db files it was given, not PostgreSQL. They hold nothing"
+    " scraped since PostgreSQL was turned on. To read PostgreSQL, give"
+    " --postgres in place of the files. See POSTGRESQL.md."
+)
 
 
 class StashError(Exception):
@@ -94,19 +103,8 @@ class StashClient:
 
 
 # --- reading model databases ---------------------------------------------
-
-
-def find_databases(paths):
-    """Expand directories (e.g. a profile's .data) into their user_data.db files."""
-    found = []
-    for p in map(Path, paths):
-        if p.is_dir():
-            found.extend(sorted(p.rglob("user_data.db")))
-        elif p.is_file():
-            found.append(p)
-        else:
-            raise FileNotFoundError(p)
-    return found
+# A creator's rows come from a user_data.db or from PostgreSQL, and are asked
+# for the same way from both (see creator_rows)
 
 
 def clean_text(text):
@@ -126,60 +124,55 @@ def make_title(text, limit=100):
     return first if len(first) <= limit else first[: limit - 1].rstrip() + "…"
 
 
-def columns(conn, table):
-    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
-
-
-def connect(database):
-    uri = Path(database).resolve().as_uri()
-    return sqlite3.connect(f"{uri}?mode=ro", uri=True)
-
-
 def site_of(database):
     """The site a database belongs to: Fansly databases carry a site flag."""
-    with closing(connect(database)) as conn:
-        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_flags'").fetchone():
-            return "onlyfans"
-        row = conn.execute("SELECT flag_value FROM schema_flags WHERE flag_name = 'site'").fetchone()
-    return str(row[0]).lower() if row and row[0] else "onlyfans"
+    with closing(creator_rows.FileRows(database)) as rows:
+        return rows.site
 
 
 def read_model(database, site=ONLYFANS):
     """Return the model's username and its downloaded media, grouped by file path."""
-    with closing(connect(database)) as conn:
-        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        username = None
-        if "profiles" in tables:
-            row = conn.execute("SELECT username FROM profiles ORDER BY id DESC LIMIT 1").fetchone()
-            username = row[0] if row else None
+    with closing(creator_rows.FileRows(database)) as rows:
+        return read_rows(rows, site)
 
-        # a bought message is saved in posts too, under the message's ID
-        message_ids = (
-            {str(r[0]) for r in conn.execute("SELECT post_id FROM messages")} if "messages" in tables else set()
-        )
-        texts = {}
-        for table in reversed(TEXT_TABLES):  # earlier tables win
-            if table in tables:
-                for post_id, text in conn.execute(f"SELECT post_id, text FROM {table}"):
-                    if text or str(post_id) not in texts:
-                        texts[str(post_id)] = (table, text)
-        # Newer databases record what a purchase was (posts.purchase_type, OnlyFans)
-        # and a message's conversation (messages.group_id, Fansly). Databases are
-        # opened read-only and not upgraded, so a missing column counts as empty.
-        purchase_types = optional_column(conn, tables, "posts", "purchase_type")
-        group_ids = optional_column(conn, tables, "messages", "group_id")
 
-        media_columns = columns(conn, "medias")
-        date_col = "posted_at" if "posted_at" in media_columns else "created_at"
-        preview_col = "preview" if "preview" in media_columns else "0"
-        rows = conn.execute(
-            f"SELECT media_id, post_id, directory, filename, api_type, media_type, "
-            f"COALESCE({date_col}, created_at), {preview_col} FROM medias "
-            "WHERE downloaded = 1 AND filename IS NOT NULL AND filename != ''"
-        ).fetchall()
+def read_rows(rows, site=ONLYFANS):
+    """read_model for a creator's rows that are open: a user_data.db's or PostgreSQL's."""
+    tables = rows.tables()
+    username = None
+    if "profiles" in tables:
+        # the one saved last, which has the highest id
+        profiles = rows.select("profiles", ["username", "id"])
+        username = max(profiles, key=lambda row: sqlite_order(row[1]))[0] if profiles else None
+
+    # a bought message is saved in posts too, under the message's ID
+    message_ids = (
+        {str(r[0]) for r in rows.select("messages", ["post_id"])} if "messages" in tables else set()
+    )
+    texts = {}
+    for table in reversed(TEXT_TABLES):  # earlier tables win
+        if table in tables:
+            for post_id, text in rows.select(table, ["post_id", "text"]):
+                if text or str(post_id) not in texts:
+                    texts[str(post_id)] = (table, text)
+    # Newer databases record what a purchase was (posts.purchase_type, OnlyFans)
+    # and a message's conversation (messages.group_id, Fansly). Databases are
+    # opened read-only and not upgraded, so a missing column counts as empty.
+    purchase_types = optional_column(rows, tables, "posts", "purchase_type")
+    group_ids = optional_column(rows, tables, "messages", "group_id")
+
+    media_columns = rows.columns("medias")
+    date_col = "posted_at" if "posted_at" in media_columns else "created_at"
+    preview_col = "preview" if "preview" in media_columns else "0"
+    media = rows.select(
+        "medias",
+        ["media_id", "post_id", "directory", "filename", "api_type", "media_type",
+         f"COALESCE({date_col}, created_at)", preview_col],
+        "downloaded = TRUE AND filename IS NOT NULL AND filename != ''",
+    )
 
     files = {}
-    for media_id, post_id, directory, filename, api_type, media_type, posted, preview in rows:
+    for media_id, post_id, directory, filename, api_type, media_type, posted, preview in media:
         path = os.path.join(directory or "", filename)
         entry = files.setdefault(
             path,
@@ -204,15 +197,41 @@ def read_model(database, site=ONLYFANS):
     return username, list(files.values())
 
 
-def optional_column(conn, tables, table, column):
+def sqlite_order(value):
+    """Where SQLite's ORDER BY puts a value: nothing, numbers, text, the rest."""
+    if value is None:
+        return (0, 0)
+    if isinstance(value, (int, float)):
+        return (1, value)
+    if isinstance(value, str):
+        return (2, value)
+    return (3, bytes(value))
+
+
+def optional_column(rows, tables, table, column):
     """{post_id: value} for the rows where this column is set; {} if it doesn't exist."""
-    if table not in tables or column not in columns(conn, table):
+    if table not in tables or column not in rows.columns(table):
         return {}
     return {
         str(post_id): value
-        for post_id, value in conn.execute(f"SELECT post_id, {column} FROM {table} WHERE {column} IS NOT NULL")
+        for post_id, value in rows.select(table, ["post_id", column], f"{column} IS NOT NULL")
         if value
     }
+
+
+def read_creators(creators):
+    """Read each creator's rows, closing them as it goes: what sync works from."""
+    models = []
+    skipped = []
+    for rows in creators:
+        with closing(rows):
+            site = rows.site
+            if site not in SITES:
+                skipped.append({"database": rows.name, "skipped": f"{site} database; this site isn't supported"})
+                continue
+            username, files = read_rows(rows, site)
+        models.append((rows, site, username, files))
+    return models, skipped
 
 
 def describe(entry, texts, username, message_ids=frozenset(), purchase_types=None):
@@ -516,17 +535,15 @@ def sync(
     mappings=(),
     do_scan=False,
     sample=10,
+    read=None,
 ):
-    """Sync every database; studio and tag_prefix, when given, apply to every site."""
-    models = []
-    skipped = []
-    for database in find_databases(databases):
-        site = site_of(database)
-        if site not in SITES:
-            skipped.append({"database": str(database), "skipped": f"{site} database; this site isn't supported"})
-            continue
-        username, files = read_model(database, site)
-        models.append((database, site, username, files))
+    """Sync every database; studio and tag_prefix, when given, apply to every site.
+
+    read is what read_creators gave for rows that were read already
+    (PostgreSQL's, so that its connection is closed before Stash is asked
+    anything); the databases are then not looked at.
+    """
+    models, skipped = read_creators(creator_rows.files(databases)) if read is None else read
 
     studios = {}
     if studio is not None:
@@ -618,8 +635,8 @@ def sync(
         return galleries[key]
 
     report = {"apply": apply, "models": [], "totals": defaultdict(int)}
-    for database, site, username, files in models:
-        name = username or Path(database).parent.name
+    for rows, site, username, files in models:
+        name = username or rows.creator
         extra = {"urls": [SITES[site]["creator_url"].format(username)]} if username else {}
         prefix = SITES[site]["tag_prefix"] if tag_prefix is None else tag_prefix
         creator_id = None
@@ -660,7 +677,7 @@ def sync(
         if not performer_checked:
             creator_id = find_or_create(client, "performer", name, False)
         model = {
-            "database": str(database),
+            "database": rows.name,
             "performer": name,
             "performer_exists": creator_id is not None,
             "files": len(files),
@@ -686,7 +703,10 @@ def sync(
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("paths", nargs="+", help="user_data.db files, or folders to search for them (e.g. <profile>/.data)")
+    parser.add_argument("paths", nargs="*", help="user_data.db files, or folders to search for them (e.g. <profile>/.data)")
+    parser.add_argument("--postgres", action="store_true", help=f"read the PostgreSQL database ${postgres.URL_KEY} names instead of user_data.db files; give no paths with it")
+    parser.add_argument("--site", choices=list(SITES), help="with --postgres, only this site's creators (default: both sites)")
+    parser.add_argument("--creator", action="append", default=[], metavar="NAME", help="with --postgres, only the creators with this id (on either site) or with this username now or before, in any case; it can match more than one (default: every creator); repeatable")
     parser.add_argument("--apply", action="store_true", help="write to Stash; without it, only report")
     parser.add_argument("--url", default=os.environ.get("STASH_URL", DEFAULT_URL), help=f"Stash GraphQL URL (default {DEFAULT_URL}, or $STASH_URL)")
     parser.add_argument("--api-key", default=os.environ.get("STASH_API_KEY"), help="Stash API key, if Stash has a password (default $STASH_API_KEY)")
@@ -704,8 +724,32 @@ def main(argv=None):
             parser.error(f"--path-map needs LOCAL=STASH, got {item!r}")
         mappings.append(tuple(item.split("=", 1)))
 
-    postgres.warn_sqlite_files("stash_sync")
+    # Only this command's own environment says where PostgreSQL is: the
+    # scraper's settings and env files aren't read
+    database_url = os.environ.get(postgres.URL_KEY, "").strip()
+    if args.postgres:
+        if args.paths:
+            parser.error("give user_data.db files or --postgres, not both")
+        if not all(name.strip() for name in args.creator):
+            parser.error("--creator needs a username or an id, and was given none")
+        if not database_url:
+            parser.error(
+                f"--postgres needs {postgres.URL_KEY} set in the environment this is run in"
+                " (an env file of the scraper's isn't read); see POSTGRESQL.md"
+            )
+    elif args.site or args.creator:
+        parser.error("--site and --creator go with --postgres; with files, give that site's folder or that creator's user_data.db")
+    elif not args.paths:
+        parser.error("the following arguments are required: paths, or --postgres")
+    elif database_url:
+        print(f"warning: {FILES_NOTICE}", file=sys.stderr)
+
     try:
+        read = None
+        if args.postgres:
+            sites = [args.site] if args.site else list(SITES)
+            with creator_rows.in_postgres(database_url, sites, args.creator) as creators:
+                read = read_creators(creators)
         report = sync(
             args.paths,
             StashClient(args.url, args.api_key),
@@ -716,9 +760,11 @@ def main(argv=None):
             organized=args.organized,
             mappings=mappings,
             do_scan=args.scan,
+            read=read,
         )
-    except (StashError, FileNotFoundError) as e:
-        print(f"error: {e}", file=sys.stderr)
+    except (StashError, FileNotFoundError, creator_rows.NotFound, postgres.PostgresUnavailable) as e:
+        # the address holds a password: a message never repeats it
+        print(f"error: {postgres.masked(e, database_url) if args.postgres else e}", file=sys.stderr)
         return 1
     print(json.dumps(report, indent=2, ensure_ascii=False))
     return 0
