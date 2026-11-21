@@ -566,6 +566,9 @@ class sessionManager:
                 # a clear of the saved addresses fails no waiting request (#622)
                 connector=connector.Connector(
                     limit=self._connect_limit,
+                    # how long an idle connection is kept, as for the sync
+                    # client below (#627); aiohttp's own default is 15
+                    keepalive_timeout=self._keep_alive_exp,
                     ssl=ssl_context,  # Passed to TCPConnector
                     # which address a host's requests go to (Fansly, #683)
                     resolver=self._resolver,
