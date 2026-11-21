@@ -139,7 +139,7 @@ def _same_file(old_url, new_url):
 
 def _use_new_url(ele, media):
     old_url, new_url = ele.url, media.url
-    if not new_url or new_url == old_url:
+    if not new_url:
         return "the API returned no new link"
     if not _same_file(old_url, new_url):
         return "the new link is for a different file, not using it"
@@ -716,14 +716,19 @@ async def _refresh_fansly_refused(ele, link) -> bool:
     return True
 
 
-async def refresh_media_link(ele, link=None) -> bool:
+async def refresh_media_link(ele, link=None, refusal=None) -> bool:
     """Give ``ele`` a newly signed link (or DRM signature) for the same file.
 
     ``link``: the link the CDN refused, when known. On Fansly a refused link
     signed for an address range also gets new links for the waiting items
     signed for that range (``FanslyRefresher``).
 
-    Returns True if it changed. Any failure is logged and returns False, so the
+    ``refusal``: the error the CDN's 403 raised, when known. When the site
+    still gives the refused link, the address that refused it is left
+    (#620).
+
+    Returns True if there is a link to try: a new one, or the same one when
+    the site still gives it. Any failure is logged and returns False, so the
     download fails as it would have without a refresh.
     """
     if ele.media.get("fansly"):
@@ -758,11 +763,27 @@ async def refresh_media_link(ele, link=None) -> bool:
     if not media:
         log.debug(f"Media {ele.id}: the API returned the item without this media")
         return False
+    # The site can give the refused link again: it hasn't expired and is
+    # signed for this address. So one address of the file host refused a
+    # good link. Its other addresses take it: the one that refused is left
+    # (sessionmanager/refusing.py), and the same link counts as a link to
+    # try (#620).
+    still_current = not protected and media.url == ele.url
     problem = (_use_new_signature if protected else _use_new_url)(ele, media)
     if problem:
         log.debug(f"Media {ele.id}: {problem}")
         return False
-    log.info(
-        f"Media {ele.id}: the download link was rejected (403), using a newly signed one"
-    )
+    if still_current:
+        leave_address = getattr(refusal, "leave_address", None)
+        if leave_address:
+            leave_address()
+        log.info(
+            f"Media {ele.id}: the download link was rejected (403) but is still"
+            " the current one, trying it again"
+        )
+    else:
+        log.info(
+            f"Media {ele.id}: the download link was rejected (403), using a"
+            " newly signed one"
+        )
     return True

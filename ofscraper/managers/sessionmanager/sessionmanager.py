@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import threading
 from contextlib import contextmanager
@@ -17,6 +18,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_e
 
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
+import ofscraper.managers.sessionmanager.refusing as refusing
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.host_allowlist as host_allowlist
@@ -65,6 +67,21 @@ def is_provided_exception_number(exception: Exception, *numbers: int) -> bool:
     return status_code in numbers
 
 
+def is_signed_cdn_url(url) -> bool:
+    """True for a signed link to a file on OnlyFans' or Fansly's CDN."""
+    if not url:
+        return False
+    parsed = urlsplit(str(url))
+    host = parsed.hostname or ""
+    # Fansly's CDN links are signed the same way, and Fansly sometimes
+    # gives out one signed for another address (#683)
+    return (
+        host.endswith((".onlyfans.com", ".fansly.com"))
+        and host.split(".")[0].startswith("cdn")
+        and {"Policy", "Signature", "Key-Pair-Id"}.issubset(parse_qs(parsed.query))
+    )
+
+
 def is_signed_cdn_forbidden(exception: Exception) -> bool:
     """Retrying a rejected signed CDN URL cannot renew its credentials."""
     try:
@@ -74,19 +91,9 @@ def is_signed_cdn_forbidden(exception: Exception) -> bool:
             url = exception.request_info.real_url
         else:
             url = exception.request.url
-        if not url:
-            return False
-        parsed = urlsplit(str(url))
-        host = parsed.hostname or ""
         # Use the actual request URL, including separately supplied params. Do not
         # classify API 403s or depend on CloudFront's optional error body/headers.
-        # Fansly's CDN links are signed the same way, and Fansly sometimes
-        # gives out one signed for another address (#683)
-        return (
-            host.endswith((".onlyfans.com", ".fansly.com"))
-            and host.split(".")[0].startswith("cdn")
-            and {"Policy", "Signature", "Key-Pair-Id"}.issubset(parse_qs(parsed.query))
-        )
+        return is_signed_cdn_url(url)
     except Exception:
         # Exception request metadata may be absent or raise when accessed.
         return False
@@ -386,6 +393,8 @@ class sessionManager:
             else of_env.getattr("KEEP_ALIVE_EXP")
         )
         self._proxy = proxy if proxy is not None else of_env.getattr("PROXY")
+        # refusing.times_left() when hosts were last looked up from nothing
+        self._addresses_left = refusing.times_left()
         self._sem = sem or asyncio.BoundedSemaphore(
             sem_count
             if sem_count is not None
@@ -526,8 +535,10 @@ class sessionManager:
 
         if async_:
             # the connector doesn't close a resolver it was given
-            self._resolver = fansly_address.Resolver()
+            self._resolver = refusing.Resolver(fansly_address.Resolver())
             self._session = aiohttp.ClientSession(
+                # which connection a refusal came over (#620)
+                response_class=refusing.Response,
                 connector=aiohttp.TCPConnector(
                     limit=self._connect_limit,
                     ssl=ssl_context,  # Passed to TCPConnector
@@ -565,6 +576,40 @@ class sessionManager:
         if self._session:
             await self._session.__aexit__(exc_type, exc_val, exc_tb)
             await self._resolver.close()
+
+    def _offer_to_leave_address(self, E, r):
+        """Give the error for a refused signed link on OnlyFans' file host
+        the way to stop using the address that refused it:
+        ``E.leave_address()`` (#620).
+
+        Whether the address is at fault is the caller's to find out: a link
+        that ran out is refused the same way (#462). Not through a proxy,
+        where the connection is the proxy's, and not on Fansly, which has
+        its own handling of refused links (#683)."""
+        if (
+            getattr(r, "status_code", None) != 403
+            or self._proxy
+            or sites.is_fansly()
+            or not is_signed_cdn_url(r.url)
+        ):
+            return
+        E.leave_address = functools.partial(self._leave_refusing_address, r)
+
+    def _leave_refusing_address(self, r):
+        if refusing.leave(r):
+            self._log.debug(
+                "an address of the file host refused a link that is still"
+                " good: not using that address again"
+            )
+
+    def _drop_left_addresses(self):
+        """Look hosts up again when an address was left since this session
+        last did: its saved addresses may still hold it (#620). Another
+        session can have left it."""
+        left = refusing.times_left()
+        if left != self._addresses_left:
+            self._addresses_left = left
+            self.clear_dns_cache()
 
     def clear_dns_cache(self):
         """Resolve hosts again on the next request (async sessions)."""
@@ -823,6 +868,7 @@ class sessionManager:
                 sent_at = None
                 try:
                     await self._async_wait_before_request()
+                    self._drop_left_addresses()
                     sent_at = arrow.now()
                     if SIGN in actions or FORCED_NEW in actions or HEADERS in actions:
                         headers = self._create_headers(
@@ -878,6 +924,7 @@ class sessionManager:
                         r.raise_for_status()
                 except Exception as E:
                     if r is not None:
+                        self._offer_to_leave_address(E, r)
                         r.close()
                         r = None
                     await self._async_handle_error(E, exceptions, sent_at)
