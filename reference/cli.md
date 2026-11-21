@@ -119,14 +119,20 @@ Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
 
 ### `recover_collisions` (separate entry point)
 
-`python -m ofscraper.commands.recover_collisions DB [--apply] [--undo FILE] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). It works offline on one creator's `user_data.db` and finds recorded paths that different media share. It prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews the restore of those flags, or with `--apply` performs it. It never touches media files and doesn't contact OnlyFans.
+`python -m ofscraper.commands.recover_collisions (DB | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--undo FILE] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). It works offline on one creator's `user_data.db` and finds recorded paths that different media share. It prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews the restore of those flags, or with `--apply` performs it. It never touches media files and doesn't contact OnlyFans.
 
-Run `python -m ofscraper.commands.recover_collisions DATABASE [OPTIONS]`.
+With `--postgres` it works on one creator's rows in the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (see `POSTGRESQL.md`), and finds and changes what it would in a file with the same rows. `--creator` names the creator by username or id and must fit exactly one: a name more than one creator goes by (an id both sites have, an id that is another creator's username, a username two creators have had) is refused with a list of them, and needs `--site` or a username or id that only one of them has. Without `--apply` the connection is read-only. With it, everything is one transaction: the undo file is written first, to `--undo-dir`, which `--apply` needs (a folder that is kept; in Docker a mounted one), each row is changed only while it still holds what was read from it, and a row the scraper changed meanwhile stops the run with nothing changed. Once the changes are being saved, the undo file is kept whatever stops the command (a lost connection, Ctrl-C), and the command says that it isn't known whether they were. The report also says which creator the name turned out to be (`creator`: site, id, username). The undo file names a row by its media and post ids, not by its `id`, and records what the row held and the server and database it was made on; `--undo` restores all of its rows or none, and refuses another creator, another site, an undo file written for a `user_data.db`, and rows that have changed since. A path that is a full path only on another system than the one the command runs on is refused.
+
+Run `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --creator NAME) [OPTIONS]`.
 
 - `DATABASE`: One model's user_data.db
 - `--apply`: Apply the previewed recovery or undo operation
 - `--undo`: Preview restoring flags from a recovery undo file
 - `--path-root`: Original working directory for relative recorded paths
+- `--postgres`: Work on the PostgreSQL database $OFSC_DATABASE_URL names instead of a user_data.db; give --creator and no database with it
+- `--site`: With --postgres, the creator's site (default: the site that has the creator)
+- `--creator`: With --postgres, the one creator to work on, by a username or id that no other creator has
+- `--undo-dir`: With --postgres, the folder --apply writes the undo file to: needed with --apply, and it must be a folder that is kept (in Docker, a mounted one)
 
 ### `stash_sync` (separate entry point)
 

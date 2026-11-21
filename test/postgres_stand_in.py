@@ -1,6 +1,7 @@
 """A stand-in for a PostgreSQL server, for the tests of the tools that read
-one without the scraper (test_stash_sync_postgres.py). It takes the place of
-postgres.Reader.
+one without the scraper (test_stash_sync_postgres.py) or change one
+(test_collision_recovery_postgres.py). It takes the place of postgres.Reader
+and postgres.Writer.
 
 What it models is the server: SQLite runs the queries, with one attached
 database per schema, and keeps each value as the server keeps it (a date as
@@ -33,6 +34,9 @@ TYPE_NAMES = {
 }
 # one row per key (the import leaves out a row that is already there)
 SHARED = {"profiles": ("user_id", "username"), "models": ("model_id",)}
+# taken when this is first imported, before a test puts the stand-in's Writer
+# in postgres.Writer's place
+REAL_COMMIT = postgres.Writer.commit
 
 
 def kept(value, kind):
@@ -78,6 +82,16 @@ class Server:
         self.events = []
         # a table whose reads fail, as a lost connection would
         self.fails_on = None
+        # for a Writer: called once, before its first change (what another
+        # program does between a tool's reads and its changes); an error
+        # its changes raise; what its connection's commit raises without
+        # keeping the changes, or after it kept them (the answer never came)
+        self.before_change = None
+        self.change_error = None
+        self.commit_error = None
+        self.commit_answer_lost = None
+        self._open = False
+        self._kept_elsewhere = []
 
     def make(self, site, without=()):
         """The site's schema and tables, as the engine makes them. `without`
@@ -153,6 +167,17 @@ class Server:
     def reader(self, database_url):
         return Reader(self, database_url)
 
+    def writer(self, database_url):
+        return Writer(self, database_url)
+
+    def elsewhere(self, statement, params=()):
+        """A change another program makes and keeps (the scraper, still
+        running). Made while a tool's transaction is open, it outlives that
+        transaction being rolled back."""
+        self.db.execute(statement, list(params))
+        if self._open:
+            self._kept_elsewhere.append((statement, list(params)))
+
     def close(self):
         self.db.close()
 
@@ -225,6 +250,94 @@ class Reader:
     def close(self):
         self.closed = True
         self.server.events.append(("close",))
+
+
+def given(value, kind):
+    """A value a query was sent with, as the server reads it for a column of
+    this type: the engine sends numbers and booleans as untyped text."""
+    if value is None:
+        return None
+    if kind == "TEXT":
+        return str(value)
+    if kind == "BIGINT":
+        return int(value)
+    if kind == "BOOLEAN":
+        return {"1": 1, "0": 0, "True": 1, "False": 0}[str(value)]
+    return kept(value, kind)
+
+
+class Writer(Reader):
+    """postgres.Writer, changing the stand-in: its changes are kept by
+    commit() and gone without it.
+
+    What it is not: a server's transaction. Its reads see what another
+    program changed after its first read (a server's don't), and no change
+    is refused because another program changed the same row (a server
+    refuses it). A test says what a server would do with change_error, or
+    lets the tool find the row changed (before_change, elsewhere). Rows
+    aren't locked, and a column takes any value."""
+
+    def __init__(self, server, database_url):
+        import psycopg
+
+        super().__init__(server, database_url)
+        server.events.append(("open for changes",))
+        server.db.execute("SAVEPOINT tool")
+        server._open = True
+        self._changed = False
+        # what postgres.Writer's own commit() needs of a connection
+        self._conn = SimpleNamespace(commit=self._keep)
+        self._errors = (psycopg.Error,)
+        self._url = database_url
+
+    def change(self, query, params=()):
+        self.server.events.append(("change", query))
+        assert not self.closed, "change after the connection was closed"
+        assert self.server._open, "change after the commit"
+        if not self._changed and self.server.before_change:
+            self.server.before_change()
+        self._changed = True
+        if self.server.change_error:
+            raise self.server.change_error
+        table = re.match(r"UPDATE \w+\.(\w+) SET ", query).group(1)
+        kinds = postgres.COLUMN_TYPES[table]
+        columns = re.findall(r"(\w+) (?:=|IS NOT DISTINCT FROM) \?", query)
+        assert len(columns) == len(params) == query.count("?")
+        values = [given(value, kinds[column]) for column, value in zip(columns, params)]
+        # SQLite's own spelling of it
+        return self.server.db.execute(
+            query.replace(" IS NOT DISTINCT FROM ", " IS "), values
+        ).rowcount
+
+    # the real one, over _keep: what it makes of a commit that goes wrong is
+    # the engine's to say
+    commit = REAL_COMMIT
+
+    def _keep(self):
+        """The connection's commit."""
+        self.server.events.append(("commit",))
+        assert not self.closed and self.server._open
+        if self.server.commit_error:
+            raise self.server.commit_error
+        self.server.db.execute("RELEASE tool")
+        self._end()
+        if self.server.commit_answer_lost:
+            raise self.server.commit_answer_lost
+
+    def close(self):
+        if self.server._open:
+            self.server.db.execute("ROLLBACK TO tool")
+            self.server.db.execute("RELEASE tool")
+            kept_elsewhere = list(self.server._kept_elsewhere)
+            self._end()
+            for statement, params in kept_elsewhere:
+                self.server.db.execute(statement, params)
+        if not self.closed:
+            super().close()
+
+    def _end(self):
+        self.server._open = False
+        self.server._kept_elsewhere.clear()
 
 
 _KINDS = {name: kind for kind, name in TYPE_NAMES.items()}

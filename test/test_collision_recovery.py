@@ -161,7 +161,9 @@ def test_cli_says_it_works_on_sqlite_files_while_postgresql_is_on(database, tmp_
     main([str(database)])
     said = capsys.readouterr()
     assert said.err.startswith("warning: PostgreSQL is on (OFSC_DATABASE_URL is set)")
-    assert "recover_collisions works on the user_data.db files" in said.err
+    assert "recover_collisions works on the user_data.db file it was given" in said.err
+    # it can work on PostgreSQL, and says how
+    assert "give --postgres and --creator in place of the file" in said.err
     assert "password" not in said.err
     # the report still comes, and is all there is on stdout
     assert json.loads(said.out)["media_to_mark"] == 2
