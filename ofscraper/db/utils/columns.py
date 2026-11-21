@@ -21,6 +21,15 @@ def creator_filter(cur, table, model_id, joiner="AND"):
     return f" {joiner} (model_id=(?) OR model_id IS NULL)", [model_id]
 
 
+def same_creator(model_id):
+    """(sql, params) for "the row is model_id's", to fill a query's {creator}.
+    model_id may be None: a row saved before the column was filled in has
+    none. SQLite's `model_id IS ?` says the same, but only SQLite has it."""
+    if model_id is None:
+        return "model_id IS NULL", []
+    return "model_id = ?", [model_id]
+
+
 def select_list(present, columns):
     """The select list for `columns`, given the table's columns (`present`).
 

@@ -23,6 +23,7 @@ import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.rebuild as rebuild
 import ofscraper.db.utils.columns as db_columns
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.others import schemaInsert
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 from ofscraper.utils.context.run_async import run
 
@@ -77,7 +78,7 @@ mediaSelectTransition = [
     ("skip_permanent", "NULL"),
 ]
 
-mediaUpdateAPI = """Update 'medias'
+mediaUpdateAPI = """Update medias
 SET
 media_id=?,post_id=?,link=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
@@ -85,12 +86,12 @@ WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 
 # skip_permanent: 1 when skip_download_script skipped the item for good (it's
 # saved as downloaded with no file); every other download write clears it
-mediaUpdateDownload = """Update 'medias'
+mediaUpdateDownload = """Update medias
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?);"""
 # the same for one post's copy, with allow-dupes
-mediaUpdateDownloadPost = """Update 'medias'
+mediaUpdateDownloadPost = """Update medias
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
@@ -113,13 +114,13 @@ SELECT filename
 FROM medias
 where hash=(?)
 """
-mediaInsertAPI = """INSERT INTO 'medias'(
+mediaInsertAPI = """INSERT INTO medias(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
 created_at,posted_at,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
-mediaInsertTransition = """INSERT INTO 'medias'(
+mediaInsertTransition = """INSERT INTO medias(
 media_id,post_id,link,directory,
 filename,size,api_type,
 media_type,preview,linked,
@@ -127,45 +128,48 @@ downloaded,created_at,posted_at,hash,model_id,duration,unlocked,skip_permanent)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDownloadForce = """
-Update 'medias'
+Update medias
 SET
-unlocked=0
+unlocked=FALSE
 WHERE media_id=(?) and model_id=(?);
 """
-mediaDownloadSelect = """
+_mediaDownloadSelect = """
 SELECT  
 directory,filename,size,
 downloaded,hash,skip_permanent
 FROM medias where media_id=(?) and model_id=(?)
 """
+# the first row is the one used: say which, as only SQLite has an order of
+# its own (the unique key's)
+mediaDownloadSelect = _mediaDownloadSelect + " ORDER BY post_id"
 # the same for one post's copy, with allow-dupes
-mediaDownloadSelectPost = mediaDownloadSelect + " and post_id=(?)"
+mediaDownloadSelectPost = _mediaDownloadSelect + " and post_id=(?)"
 allIDCheck = """
 SELECT media_id FROM medias
 """
 allDLIDCheck = """
-SELECT media_id FROM medias where downloaded=(1)
+SELECT media_id FROM medias where downloaded=TRUE
 """
 allDLModelIDCheck = """
-SELECT media_id FROM medias where downloaded=(1) and model_id=(?)
+SELECT media_id FROM medias where downloaded=TRUE and model_id=(?)
 """
 # the same, leaving out permanent skip_download_script skips, which
 # --retry-permanent-skips offers to the script again (#354)
 allDLIDCheckNoPermanentSkips = """
-SELECT media_id FROM medias where downloaded=(1) and skip_permanent IS NOT 1
+SELECT media_id FROM medias where downloaded=TRUE and (skip_permanent IS NULL OR skip_permanent <> TRUE)
 """
 allDLModelIDCheckNoPermanentSkips = """
-SELECT media_id FROM medias where downloaded=(1) and model_id=(?) and skip_permanent IS NOT 1
+SELECT media_id FROM medias where downloaded=TRUE and model_id=(?) and (skip_permanent IS NULL OR skip_permanent <> TRUE)
 """
 allPostIDCheck = """
 SELECT media_id, post_id FROM medias
 """
 
 allPostIDDLCheck = """
-SELECT media_id, post_id FROM medias where downloaded=(1)
+SELECT media_id, post_id FROM medias where downloaded=TRUE
 """
 allPostFileDLCheck = """
-SELECT media_id, post_id, directory, filename FROM medias where downloaded=(1)
+SELECT media_id, post_id, directory, filename FROM medias where downloaded=TRUE
 """
 # the per-area queries below are filled in by execute_area_media. New
 # columns go at the end, so existing ones keep their place in the CSV.
@@ -233,7 +237,7 @@ WHERE LOWER(api_type) IN ('message', 'messages')
 {model_filter}
 """
 unlockedMediaCheck = """
-SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=(1) AND downloaded=(0)
+SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=TRUE AND downloaded=FALSE
 """
 
 # Before #326 a file skipped by a size limit was saved as downloaded with no
@@ -244,33 +248,34 @@ SIZE_SKIP_LABEL = "Forced_skippeds"
 SIZE_SKIP_REPAIR_FLAG = "media_size_skip_repaired"
 sizeSkipLabelled = """
 SELECT DISTINCT media_id, model_id FROM medias
-WHERE media_type = ? AND downloaded = 1 AND media_id IS NOT NULL
+WHERE media_type = ? AND downloaded = TRUE AND media_id IS NOT NULL
 """
+# {creator} in the queries below is filled by db_columns.same_creator
 # a row with anything recorded about a file is not the bug's
 mediaHasFile = """
 SELECT 1 FROM medias
-WHERE media_id = ? AND model_id IS ?
+WHERE media_id = ? AND {creator}
 AND (filename IS NOT NULL OR directory IS NOT NULL OR size IS NOT NULL OR hash IS NOT NULL)
 LIMIT 1
 """
 # a permanent skip_download_script skip (#351) is saved as downloaded with no
 # file on purpose: it counts as a file, so the repair leaves its media alone
 mediaHasFileOrPermanentSkip = mediaHasFile.replace(
-    "OR hash IS NOT NULL)", "OR hash IS NOT NULL OR skip_permanent = 1)"
+    "OR hash IS NOT NULL)", "OR hash IS NOT NULL OR skip_permanent = TRUE)"
 )
 # un-marks a permanent skip_download_script skip (#354): NULL, as a skip for
 # one run leaves the row
 permanentSkipUnmark = """
 UPDATE medias SET downloaded = NULL, skip_permanent = NULL
-WHERE media_id = ? AND model_id IS ? AND skip_permanent = 1
+WHERE media_id = ? AND {creator} AND skip_permanent = TRUE
 """
 permanentSkipIDs = """
-SELECT DISTINCT media_id FROM medias WHERE model_id IS ? AND skip_permanent = 1
+SELECT DISTINCT media_id FROM medias WHERE {creator} AND skip_permanent = TRUE
 """
 # NULL, as a size skip leaves the row now
 sizeSkipUnmark = """
 UPDATE medias SET downloaded = NULL
-WHERE media_id = ? AND model_id IS ? AND downloaded = 1
+WHERE media_id = ? AND {creator} AND downloaded = TRUE
 AND filename IS NULL AND directory IS NULL AND size IS NULL AND hash IS NULL
 """
 
@@ -451,7 +456,7 @@ def get_media_post_ids_downloaded(
     if model_only:
         query, params = query + " and model_id=(?)", [model_id]
     if without_permanent_skips:
-        query += " and skip_permanent IS NOT 1"
+        query += " and (skip_permanent IS NULL OR skip_permanent <> TRUE)"
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(query, params)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
@@ -993,21 +998,19 @@ def repair_size_skipped_media(
             # the repair also works on a table without it
             has_file = (
                 mediaHasFileOrPermanentSkip
-                if any(
-                    col[1] == "skip_permanent"
-                    for col in cur.execute("PRAGMA table_info('medias')").fetchall()
-                )
+                if _has_skip_permanent(cur)
                 else mediaHasFile
             )
             changed = 0
-            for pair in sorted(media, key=str):
-                if cur.execute(has_file, pair).fetchone():
+            for media_id, creator_id in sorted(media, key=str):
+                creator, params = db_columns.same_creator(creator_id)
+                params = [media_id] + params
+                if cur.execute(has_file.format(creator=creator), params).fetchone():
                     continue
-                changed += cur.execute(sizeSkipUnmark, pair).rowcount
-            cur.execute(
-                "INSERT OR REPLACE INTO schema_flags (flag_name, flag_value) VALUES (?, ?);",
-                [SIZE_SKIP_REPAIR_FLAG, 1],
-            )
+                changed += cur.execute(
+                    sizeSkipUnmark.format(creator=creator), params
+                ).rowcount
+            cur.execute(schemaInsert, [SIZE_SKIP_REPAIR_FLAG, 1])
             conn.commit()
             return changed
         except sqlite3.Error as e:
@@ -1034,10 +1037,7 @@ def get_media_ids_downloaded_model_sync(
 
 
 def _has_skip_permanent(cur):
-    return any(
-        col[1] == "skip_permanent"
-        for col in cur.execute("PRAGMA table_info('medias')").fetchall()
-    )
+    return "skip_permanent" in db_columns.table_columns(cur, "medias")
 
 
 @run
@@ -1048,7 +1048,8 @@ def get_permanent_skip_media_ids(model_id=None, conn=None, **kwargs) -> set:
     with contextlib.closing(conn.cursor()) as cur:
         if not _has_skip_permanent(cur):
             return set()
-        cur.execute(permanentSkipIDs, [model_id])
+        creator, params = db_columns.same_creator(model_id)
+        cur.execute(permanentSkipIDs.format(creator=creator), params)
         return {row["media_id"] for row in cur.fetchall()}
 
 
@@ -1066,10 +1067,10 @@ def unmark_permanent_skips(media_ids, model_id=None, conn=None, **kwargs) -> int
             if not _has_skip_permanent(cur):
                 return 0
             changed = 0
+            creator, params = db_columns.same_creator(model_id)
+            unmark = permanentSkipUnmark.format(creator=creator)
             for media_id in sorted(set(media_ids), key=str):
-                changed += cur.execute(
-                    permanentSkipUnmark, [media_id, model_id]
-                ).rowcount
+                changed += cur.execute(unmark, [media_id] + params).rowcount
             conn.commit()
             return changed
         except sqlite3.Error as e:

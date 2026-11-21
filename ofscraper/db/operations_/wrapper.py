@@ -70,10 +70,24 @@ def _database_path(kwargs, read_only):
     ).resolve()
 
 
+# The queries use TRUE and FALSE (SQLite 3.23) and INSERT ... ON CONFLICT
+# (3.24, from 2018), which other databases understand too
+MIN_SQLITE = (3, 24, 0)
+
+
+def _check_sqlite_version():
+    if sqlite3.sqlite_version_info < MIN_SQLITE:
+        raise DatabaseUnreadable(
+            f"this Python's SQLite is {sqlite3.sqlite_version}; "
+            f"{'.'.join(map(str, MIN_SQLITE[:2]))} or newer is needed"
+        )
+
+
 def _connect(database_path, read_only, **kwargs):
     """Open the database. A caller that only reads passes read_only=True
     (#373): the file is opened read-only, so it isn't created, its journal
     mode isn't changed, and a read-only file can be read."""
+    _check_sqlite_version()
     if read_only:
         if not database_path.is_file():
             raise DatabaseMissing(f"no database at {database_path}")

@@ -47,16 +47,16 @@ PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
-messagesInsert = """INSERT INTO 'messages'(
+messagesInsert = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,group_id)
             VALUES (?, ?,?,?,?,?,?,?,?);"""
-messagesInsertTransition = """INSERT INTO 'messages'(
+messagesInsertTransition = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,is_deleted,group_id)
             VALUES (?, ?,?,?,?,?,?,?,?,?);"""
 messagesUpdate = """UPDATE messages
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=0
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=FALSE
 WHERE post_id = ? and model_id=(?);"""
 # fills group_id of rows saved before it existed, on every scan; a message
 # never changes conversation, so the metadata update leaves it alone
@@ -85,18 +85,18 @@ SELECT created_at,post_id FROM messages where model_id=(?)
 """
 messageIgnoreGhost = """
 UPDATE messages
-SET is_deleted = 1
+SET is_deleted = TRUE
 WHERE post_id = (?) AND model_id = (?);
 """
 
 messageUnmarkGhost = """
 UPDATE messages
-SET is_deleted = 0
-WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
+SET is_deleted = FALSE
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = TRUE;
 """
 
 deletedMessagesCheck = """
-SELECT post_id FROM messages WHERE is_deleted = 1 AND model_id = (?)
+SELECT post_id FROM messages WHERE is_deleted = TRUE AND model_id = (?)
 """
 
 

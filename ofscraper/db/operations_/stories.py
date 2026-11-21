@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS stories (
 	UNIQUE (post_id,model_id)
 )
 """
-storiesInsert = """INSERT INTO 'stories'(
+storiesInsert = """INSERT INTO stories(
 post_id, text,price,paid,archived,created_at,model_id)
             VALUES (?, ?,?,?,?,?,?);"""
 storiesUpdate = """UPDATE stories

@@ -50,11 +50,11 @@ CREATE TABLE IF NOT EXISTS posts (
 	UNIQUE (post_id,model_id)
 )
 """
-postInsert = """INSERT INTO 'posts'(
+postInsert = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,purchase_type,mentions)
 VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
-postInsertTransition = """INSERT INTO 'posts'(
+postInsertTransition = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted,purchase_type,mentions)
 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
@@ -62,7 +62,7 @@ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 # purchase_type isn't updated here: postFillMissing sets it once, and a
 # timeline scan of a bought post must not clear it
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0,
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=FALSE,
 mentions = COALESCE(?, mentions)
 WHERE post_id = ? and model_id=(?);"""
 
@@ -73,27 +73,27 @@ WHERE post_id = ? AND model_id = (?) AND (purchase_type IS NULL OR mentions IS N
 
 postIgnoreGhost = """
 UPDATE posts
-SET is_deleted = 1
+SET is_deleted = TRUE
 WHERE post_id = (?) AND model_id = (?);
 """
 
 postUnmarkGhost = """
 UPDATE posts
-SET is_deleted = 0
-WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
+SET is_deleted = FALSE
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = TRUE;
 """
 
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE archived=(0) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE archived=FALSE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 archivedPostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE archived=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE archived=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 streamsPostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE stream=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE stream=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 
 # columns a later version added are (name, stand-in when missing): see
@@ -119,7 +119,7 @@ SELECT post_id FROM posts
 """
 
 deletedPostsCheck = """
-SELECT post_id FROM posts WHERE is_deleted = 1 AND model_id = (?)
+SELECT post_id FROM posts WHERE is_deleted = TRUE AND model_id = (?)
 """
 
 
