@@ -59,11 +59,14 @@ CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value 
 """
 
 schemaAll = """
-SELECT flag_name FROM schema_flags WHERE flag_value = 1;
+SELECT flag_name FROM schema_flags WHERE flag_value = '1';
 """
+# sets a flag whether or not it's there (INSERT OR REPLACE is SQLite's own
+# spelling of this)
 schemaInsert = """
-INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
-VALUES (?, ?);
+INSERT INTO schema_flags (flag_name, flag_value)
+VALUES (?, ?)
+ON CONFLICT (flag_name) DO UPDATE SET flag_value = excluded.flag_value;
 """
 # columns a later version added are (name, stand-in when missing): see
 # db_columns.select_all
@@ -76,7 +79,7 @@ othersSelectTransition = [
     "created_at",
     ("model_id", "NULL"),
 ]
-othersInsert = """INSERT INTO 'others'(
+othersInsert = """INSERT INTO others(
 post_id, text,price,paid,archived,
 created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
@@ -90,7 +93,7 @@ productsSelectTransition = [
     "title",
     ("model_id", "NULL"),
 ]
-productsInsert = """INSERT INTO 'products'(
+productsInsert = """INSERT INTO products(
 post_id, text,price,paid,archived,
 created_at,title,model_id)
 VALUES (?, ?,?,?,?,?,?,?);"""
@@ -178,8 +181,9 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None, **kwargs):
 
 
 siteInsert = """
-INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
-VALUES ('site', ?);
+INSERT INTO schema_flags (flag_name, flag_value)
+VALUES ('site', ?)
+ON CONFLICT (flag_name) DO UPDATE SET flag_value = excluded.flag_value;
 """
 siteSelect = """
 SELECT flag_value FROM schema_flags WHERE flag_name = 'site';
