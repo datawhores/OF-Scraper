@@ -34,8 +34,19 @@ STASH_SYNC = (
 )
 
 
+# and so can recover_collisions (--postgres --creator)
+RECOVER_COLLISIONS = (
+    "PostgreSQL is on (OFSC_DATABASE_URL is set), but recover_collisions works"
+    " on the user_data.db file it was given, not PostgreSQL. The file holds"
+    " nothing scraped since PostgreSQL was turned on, and what is changed in it"
+    " does not reach PostgreSQL. To work on PostgreSQL, give --postgres and"
+    " --creator in place of the file. See POSTGRESQL.md."
+)
+OWN_SENTENCE = {"stash_sync": STASH_SYNC, "recover_collisions": RECOVER_COLLISIONS}
+
+
 def said_by(tool):
-    return STASH_SYNC if tool == "stash_sync" else SENTENCE.format(tool=tool)
+    return OWN_SENTENCE.get(tool) or SENTENCE.format(tool=tool)
 
 
 # each tool as a user starts it, given a folder that holds one empty database.

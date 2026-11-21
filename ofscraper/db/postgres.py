@@ -259,9 +259,9 @@ def sqlite_files_notice(tool):
 def warn_sqlite_files(tool):
     """Says sqlite_files_notice on stderr (stdout may be a report that
     another program reads), for a tool that is run on its own, without the
-    scraper: recover_collisions, scripts/creator_names.py. (stash_sync can
-    read PostgreSQL, and has a sentence of its own for when it is given
-    files.)
+    scraper: scripts/creator_names.py. (stash_sync and recover_collisions
+    can work on PostgreSQL, and have a sentence of their own for when they
+    are given files.)
 
     Only the environment the tool is run in is looked at. A URL that is only
     in one of the scraper's env files is not seen: these tools don't read the
@@ -941,3 +941,92 @@ class Reader:
         if self._conn is not None:
             self._conn.close()
             self._conn = None
+
+
+class ChangedMeanwhile(PostgresUnavailable):
+    """A change that wasn't made because another program (the scraper, still
+    running) changed or holds the same rows. Nothing was kept."""
+
+
+class Unconfirmed(PostgresUnavailable):
+    """Keeping the changes was begun and didn't end well (the connection
+    went, or the program was stopped), so it isn't known whether they were
+    kept. Whoever gets this must not tidy up as if they weren't."""
+
+    # it was stopped from the keyboard (Ctrl-C), not by the connection
+    interrupted = False
+
+
+class Writer(Reader):
+    """A Reader that can also change rows, for a tool that is run without
+    the scraper and changes what the scraper saved (see creator_rows).
+
+    What it reads and changes is one transaction. Nothing is kept until
+    commit(); close() without it leaves the database as it was. Every read
+    sees the database as it was at the first one, and the server refuses a
+    change to a row that another program changed after that: a
+    ChangedMeanwhile, after which nothing can be kept.
+
+    The Reader's timeouts hold here too. A change waits CHECKOUT_TIMEOUT
+    for a row another program holds (the scraper's own writes take a
+    moment), and no statement may take longer than READ_TIMEOUT: a change
+    names one row by its id, so only the first read of a creator's rows
+    comes anywhere near that."""
+
+    # another program got there first: it changed the row since the first
+    # read (40001), holds it (55P03), or each waits for the other (40P01)
+    _MEANWHILE = frozenset({"40001", "40P01", "55P03"})
+
+    def __init__(self, database_url):
+        super().__init__(database_url)
+        try:
+            self._conn.read_only = False
+        except self._errors as E:
+            self.close()
+            raise POSTGRES._unavailable(E, database_url) from E
+
+    def change(self, query, params=()):
+        """Run an UPDATE, written as rows() takes a query. Returns how many
+        rows it changed."""
+        try:
+            with self._conn.cursor() as cur:
+                return cur.execute(query, params).rowcount
+        except self._errors as E:
+            detail = masked(" ".join(str(E).split()), self._url)[:300]
+            if getattr(E, "sqlstate", None) in self._MEANWHILE:
+                raise ChangedMeanwhile(
+                    "Another program changed or is using the same rows of the"
+                    f" PostgreSQL database at {describe(self._url)} (is the"
+                    f" scraper running?). Nothing was changed. ({detail})"
+                ) from E
+            raise PostgresUnavailable(
+                f"Can't change the PostgreSQL database at {describe(self._url)}."
+                f" Nothing was changed. ({detail})"
+            ) from E
+
+    def commit(self):
+        """Keep what was changed.
+
+        Once this has begun, whatever stops it is an Unconfirmed: a lost
+        connection, but also Ctrl-C or the program being told to end, which
+        the driver passes on whether or not the server had kept the changes
+        by then."""
+        try:
+            self._conn.commit()
+        except BaseException as E:
+            if isinstance(E, self._errors):
+                detail = masked(" ".join(str(E).split()), self._url)[:300]
+                said = (
+                    "The connection to the PostgreSQL database at"
+                    f" {describe(self._url)} was lost while the changes were being"
+                    f" saved, so it isn't known whether they were. ({detail})"
+                )
+            else:
+                said = (
+                    "This was stopped while the changes were being saved to the"
+                    f" PostgreSQL database at {describe(self._url)}, so it isn't"
+                    " known whether they were."
+                )
+            unconfirmed = Unconfirmed(said)
+            unconfirmed.interrupted = isinstance(E, KeyboardInterrupt)
+            raise unconfirmed from E
