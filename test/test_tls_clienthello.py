@@ -21,6 +21,7 @@ import pytest
 
 import ofscraper.__main__  # noqa: F401  resolves the settings/console import cycle
 from ofscraper.managers.sessionmanager.cert import create_custom_ssl_context
+from ofscraper.managers.sessionmanager.connector import Connector
 
 # OP_NO_SSLv3 | OP_NO_TLSv1 | OP_NO_TLSv1_1 as raw bits; the named constants
 # are deprecated
@@ -88,7 +89,25 @@ def _aiohttp(ctx, port):
     asyncio.run(go())
 
 
-TRANSPORTS = {"raw": _raw, "httpx": _httpx, "aiohttp": _aiohttp}
+def _session_connector(ctx, port):
+    """aiohttp through the connector the session manager uses (#622)."""
+
+    async def go():
+        async with aiohttp.ClientSession(
+            connector=Connector(ssl=ctx), trust_env=False
+        ) as s:
+            async with s.get(f"https://{HOST}:{port}/"):
+                pass
+
+    asyncio.run(go())
+
+
+TRANSPORTS = {
+    "raw": _raw,
+    "httpx": _httpx,
+    "aiohttp": _aiohttp,
+    "session-connector": _session_connector,
+}
 
 
 def _client_hello(ctx, transport):
@@ -192,6 +211,14 @@ def test_client_hello_session_id_stays_empty(transport):
     # 32-byte session ID, which changes the fingerprint (issue #110)
     hello = _client_hello(create_custom_ssl_context(), transport)
     assert _fingerprint(hello)["session_id_len"] == 0
+
+
+def test_the_session_connector_sends_what_plain_aiohttp_sends():
+    # the connector only changes how a host is looked up (#622)
+    ctx = create_custom_ssl_context()
+    assert _fingerprint(_client_hello(ctx, "session-connector")) == _fingerprint(
+        _client_hello(ctx, "aiohttp")
+    )
 
 
 def test_httpx_transport_offers_h2():
