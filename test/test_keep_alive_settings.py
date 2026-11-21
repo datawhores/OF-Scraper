@@ -133,4 +133,47 @@ def test_both_clients_get_the_setting(monkeypatch):
 
 
 def test_the_default_is_ten_seconds():
-    assert of_env.getattr("KEEP_ALIVE_EXP") == 10
+    # whatever the machine that runs the tests has set
+    with of_env.builtin_defaults():
+        assert of_env.getattr("KEEP_ALIVE_EXP") == 10
+
+
+@pytest.mark.parametrize("seconds", [0, -5])
+def test_kept_for_no_time_means_closed_after_use(seconds):
+    """Given 0, aiohttp never closed an idle connection: it only cleans up
+    for a time above 0 (#637)."""
+    transports = []
+
+    async def go():
+        async def handle(request):
+            transports.append(request.transport)
+            return web.Response(body=b"x" * 100)
+
+        app = web.Application()
+        app.router.add_get("/{path}", handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "127.0.0.1", 0)
+        await site.start()
+        port = site._server.sockets[0].getsockname()[1]
+        try:
+            async with sm.sessionManager(
+                retries=1,
+                wait_min=0,
+                wait_max=0,
+                log=logging.getLogger("test"),
+                keep_alive_exp=seconds,
+            ) as c:
+                for i in range(3):
+                    async with c.requests_async(
+                        url=f"http://files.example:{port}/f{i}"
+                    ) as r:
+                        assert await r.read_() == b"x" * 100
+                # time for the server to see each connection closed
+                await asyncio.sleep(0.5)
+                return [t.is_closing() for t in transports]
+        finally:
+            await runner.cleanup()
+
+    # while the session is still open: none is left open and idle
+    assert asyncio.run(go()) == [True, True, True]

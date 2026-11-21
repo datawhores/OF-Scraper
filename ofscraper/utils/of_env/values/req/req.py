@@ -52,7 +52,7 @@ def load_network_config():
     # Default: 20
     config["KEEP_ALIVE"] = int(os.getenv("OFSC_KEEP_ALIVE", "20"))
 
-    # KEEP_ALIVE_EXP: How long an idle connection is kept open to use again (seconds). Applies to both clients.
+    # KEEP_ALIVE_EXP: How long an idle connection is kept open to use again (seconds). Applies to both clients. 0 keeps none: each connection is closed after use.
     # Default: 10
     config["KEEP_ALIVE_EXP"] = int(os.getenv("OFSC_KEEP_ALIVE_EXP", "10"))
 
