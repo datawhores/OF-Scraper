@@ -25,6 +25,19 @@ SENTENCE = (
     " since PostgreSQL was turned on, and what it changes in those files does"
     " not reach PostgreSQL. See POSTGRESQL.md."
 )
+# stash_sync can read PostgreSQL (--postgres): given files, it says how
+STASH_SYNC = (
+    "PostgreSQL is on (OFSC_DATABASE_URL is set), but stash_sync works on the"
+    " user_data.db files it was given, not PostgreSQL. They hold nothing"
+    " scraped since PostgreSQL was turned on. To read PostgreSQL, give"
+    " --postgres in place of the files. See POSTGRESQL.md."
+)
+
+
+def said_by(tool):
+    return STASH_SYNC if tool == "stash_sync" else SENTENCE.format(tool=tool)
+
+
 # each tool as a user starts it, given a folder that holds one empty database.
 # stash_sync gets a folder without one, and so has nothing to ask Stash about
 # (test_stash_sync has it say so during a real sync)
@@ -164,7 +177,7 @@ def test_each_tool_says_so_and_still_runs(folder, tool):
     assert off.returncode == 0, off.stderr
     assert off.stderr == ""
     assert on.returncode == 0, on.stderr
-    assert on.stderr == "warning: " + SENTENCE.format(tool=tool) + "\n"
+    assert on.stderr == "warning: " + said_by(tool) + "\n"
     # what the tool reports is the same, and only that is on stdout
     assert on.stdout == off.stdout != ""
 
@@ -180,9 +193,7 @@ def test_a_setting_the_scraper_cant_read_doesnt_stop_a_tool(folder, tool, url):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout
-    assert result.stderr == (
-        "warning: " + SENTENCE.format(tool=tool) + "\n" if url else ""
-    )
+    assert result.stderr == ("warning: " + said_by(tool) + "\n" if url else "")
 
 
 def test_the_tools_dont_load_the_scraper(folder):
