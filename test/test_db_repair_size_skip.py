@@ -15,6 +15,8 @@ per-creator start-up (`table_init_create`).
 
 import asyncio
 import contextlib
+import os
+import pathlib
 import shutil
 import sqlite3
 
@@ -23,9 +25,10 @@ import pytest
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.merge as merge
 import ofscraper.db.operations as operations
+import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.transition as transition
 import ofscraper.utils.cache.cache as cache
-from ofscraper.db.backup import create_backup
+from ofscraper.db.backup import create_backup, media_labelled_in_backups
 from ofscraper.db.difference import get_group_difference
 from ofscraper.db.operations_.media import get_media_ids_downloaded_model_sync
 from ofscraper.db.operations_.profile import write_models_table, write_profile_table
@@ -224,6 +227,39 @@ def test_backups_are_only_read(old_db):
     call(transition.repair_tables, db_path=old_db)
 
     assert {p.name: p.read_bytes() for p in folder.iterdir()} == before
+
+
+def test_backups_on_a_network_path_are_read(tmp_path):
+    # the database folder on a network share, reached through the admin share
+    if os.name != "nt" or not tmp_path.drive.endswith(":"):
+        pytest.skip("UNC paths are Windows paths")
+    shared = pathlib.Path(rf"\\localhost\{tmp_path.drive[0]}$" + str(tmp_path)[2:])
+    try:
+        reachable = shared.is_dir()
+    except OSError:
+        reachable = False
+    if not reachable:
+        pytest.skip("the localhost admin share isn't reachable")
+    db = tmp_path / "data" / "user_data.db"
+    db.parent.mkdir()
+    labelled_only_in_a_backup(db, "user_data_copy_1.db")
+
+    found = media_labelled_in_backups(shared / "data" / "user_data.db", "Forced_skippeds")
+
+    assert found == {(2, MODEL_ID)}
+
+
+def test_a_backup_is_opened_the_way_other_read_only_databases_are(model_db, monkeypatch):
+    # that way works for a network path, a drive path and a POSIX path
+    labelled_only_in_a_backup(model_db, "user_data_copy_1.db")
+    opened = []
+    address = wrapper._read_only_uri
+    monkeypatch.setattr(
+        wrapper, "_read_only_uri", lambda path: opened.append(path) or address(path)
+    )
+
+    assert media_labelled_in_backups(model_db, "Forced_skippeds") == {(2, MODEL_ID)}
+    assert [path.name for path in opened] == ["user_data_copy_1.db"]
 
 
 def test_an_unreadable_backup_is_skipped(old_db):
