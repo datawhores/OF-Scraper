@@ -48,6 +48,7 @@ Which site a run uses is decided in this order:
 - **Media:** files go under the save location, through `dir_format` and `file_format`. Downloads are written as `.part` files (in `advanced_options.temp_dir` when set) and then moved into place. `--no-auto-resume` deletes leftover `.part` files instead of resuming them.
 - **`db --export PATH`:** writes a CSV.
 - **`recover_collisions --apply`:** resets `downloaded` flags and writes an undo file beside the database.
+- **`postgres_export --apply`:** writes a new `user_data.db` for each creator PostgreSQL has rows for, under the folder it is given. It never changes a file that is already there.
 - **Logs and cache:** logs go to the `logging` folder. The cache goes to the profile's cache folder. `--no-cache` and `--no-api-cache` stop cache writes.
 
 ## Default folder layout
@@ -92,6 +93,7 @@ Upstream's docs don't cover these:
 - **`scripts/creator_names.py`**: lists and records the usernames a creator account has had.
 - **PostgreSQL** (`OFSC_DATABASE_URL`): keeps the database in one PostgreSQL database, not in a SQLite file per creator. See `POSTGRESQL.md`.
 - **`postgres_import`** (`python -m ofscraper.commands.postgres_import`): brings existing `user_data.db` files into that PostgreSQL database. See `POSTGRESQL.md`.
+- **`postgres_export`** (`python -m ofscraper.commands.postgres_export`): writes what that PostgreSQL database holds back to one `user_data.db` per creator. See `POSTGRESQL.md`.
 - **`OF_READ_TIMEOUT`**: a default read timeout for requests.
 - **`LABELS_CONCURRENCY`**: a concurrency default for label scans.
 - **Behaviour changes** listed in the release notes. For example, `--before` and `--after` accept `MM/DD/YYYY` and relative dates, a failed run exits with status 1, and command-line mistakes print a usage message.

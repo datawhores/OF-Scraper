@@ -96,6 +96,16 @@ Accepts 86 options. Its `--help` summary: Uses API to modify db files without th
 
 Accepts 61 options. Its `--help` summary: Print information from the database.
 
+### `postgres_export` (separate entry point)
+
+`python -m ofscraper.commands.postgres_export FOLDER [--apply] [--site SITE]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). The other direction of `postgres_import`: it writes what the PostgreSQL database that `OFSC_DATABASE_URL` names holds back to SQLite files, one per creator, at `FOLDER/<model_id>/user_data.db` (the layout of a profile's `.data` folder with the default `metadata`). PostgreSQL is only read, in one read-only transaction. Without `--apply` it only reports which files would be written. A `user_data.db` that already exists is never changed: its creator is left out and listed, and another FOLDER gets their rows out. Each file is made by the code that makes a new creator's database (so it has today's tables and every upgrade step recorded), under a `.partial` name beside its place, read back the way the import reads a file, and only then given its name. `--site` chooses the site when PostgreSQL has rows for more than one.
+
+Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
+
+- `FOLDER`: folder the user_data.db files go under, one folder per creator
+- `--apply`: write the files; without it, only report
+- `--site`: the site whose creators are written; needed only when PostgreSQL has rows for more than one site
+
 ### `postgres_import` (separate entry point)
 
 `python -m ofscraper.commands.postgres_import FOLDER [--apply] [--skip-bad-files]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). It brings the `user_data.db` files found under FOLDER into the PostgreSQL database that `OFSC_DATABASE_URL` names. The files are only copied: each copy is brought up to date the way a scan would, and its rows are converted to PostgreSQL's column types and written to the schema of the file's site. Without `--apply` it only reports what would be brought in and what stands in the way: a value a column can't hold, a creator found in two files, a creator PostgreSQL already has rows for, a file from a newer version. With `--apply` everything goes in in one transaction.
