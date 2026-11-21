@@ -55,7 +55,7 @@ test = [
   "random-emoji~=1.0.15",
   "pytest-mock~=3.17.0",
   # exact pin: a new ruff release can add findings to the same rules
-  "ruff==0.17.5",
+  "ruff==0.17.6",
 ]
 docs = ["sphinx-argparse>=0.5.2,<0.7.0"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
