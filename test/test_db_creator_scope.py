@@ -320,16 +320,17 @@ def test_removing_duplicates_leaves_the_other_creators_file(tmp_path, monkeypatc
 
     asyncio.run(make())
     files = {}
-    for name, model_id in (("one.jpg", ONE), ("two.jpg", TWO)):
+    for name, model_id in (("one.jpg", ONE), ("two.jpg", TWO), ("again.jpg", 0)):
         files[model_id] = tmp_path / name
         files[model_id].write_bytes(b"same bytes")
     execute(
         path,
-        "INSERT INTO medias (media_id, post_id, model_id, downloaded, filename,"
-        " hash, size) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO medias (media_id, post_id, model_id, downloaded, directory,"
+        " filename, hash, size, media_type) VALUES (?,?,?,?,?,?,?,?,'Images')",
         [
-            (1, 10, ONE, 1, str(files[ONE]), "same", 10),
-            (1, 10, TWO, 1, str(files[TWO]), "same", 10),
+            (1, 10, ONE, 1, str(tmp_path), files[ONE].name, "same", 10),
+            (2, 10, TWO, 1, str(tmp_path), files[TWO].name, "same", 10),
+            (3, 11, TWO, 1, str(tmp_path), files[0].name, "same", 10),
         ],
     )
     real = settings.get_settings()
@@ -341,15 +342,17 @@ def test_removing_duplicates_leaves_the_other_creators_file(tmp_path, monkeypatc
     monkeypatch.setattr(settings, "get_settings", lambda: Stub(hash=True))
     monkeypatch.setattr(
         hash_,
-        "get_dupe_media_hashes",
-        lambda **kwargs: media.get_dupe_media_hashes(db_path=path, **kwargs),
+        "get_dupe_media_copies",
+        lambda **kwargs: media.get_dupe_media_copies(db_path=path, **kwargs),
     )
     monkeypatch.setattr(
         hash_,
-        "get_dupe_media_files",
-        lambda **kwargs: media.get_dupe_media_files(db_path=path, **kwargs),
+        "point_media_at_kept_files",
+        lambda changes, **kwargs: media.point_media_at_kept_files(
+            changes, db_path=path, **kwargs
+        ),
     )
 
-    hash_.remove_dupes_hash("creator_two", TWO)
+    assert hash_.remove_dupes_hash("creator_two", TWO, ["Images"]) == [files[0]]
 
     assert files[ONE].is_file() and files[TWO].is_file()

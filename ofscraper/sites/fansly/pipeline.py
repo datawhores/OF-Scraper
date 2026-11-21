@@ -41,6 +41,7 @@ import ofscraper.utils.system.free as free
 from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.download import (
     recheck_silent,
+    remove_downloads_with_hashes,
     save_path_str,
 )
 from ofscraper.commands.scraper.actions.download.run import handle_one
@@ -747,6 +748,8 @@ async def run(ele, c, collection=None):
         if not stopped:
             # videos saved without sound: check their audio again (silent.py)
             await recheck_silent(username, model_id, run_.collection.all_media)
+            # off the event loop: it hashes the files it is about to delete
+            await asyncio.to_thread(remove_downloads_with_hashes, username, model_id)
         if not stopped and collection is None:
             await _commit(run_)
         text_posts = run_.collection.get_posts_for_text_download()

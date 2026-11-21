@@ -506,6 +506,80 @@ def get_dupe_media_files(
         return [dict(row)["filename"] for row in cur.fetchall()]
 
 
+# {creator}: the creator's rows only. A row that names no creator isn't read:
+# in a database several creators share it could be anyone's.
+# {types}: a ? for each media type
+mediaDupeCopies = """
+SELECT media_type, hash, media_id, directory, filename
+FROM medias
+WHERE {creator} AND media_type IN ({types}) AND hash IS NOT NULL
+AND directory IS NOT NULL AND filename IS NOT NULL
+AND hash IN (
+    SELECT hash
+    FROM medias
+    WHERE {creator} AND media_type IN ({types}) AND hash IS NOT NULL
+    GROUP BY hash
+    HAVING COUNT(DISTINCT media_id) > 1
+)
+ORDER BY media_type, hash, id
+"""
+
+mediaPointAtKeptFile = """
+UPDATE medias
+SET directory = ?, filename = ?
+WHERE media_id = ? AND {creator} AND directory = ? AND filename = ?
+"""
+
+
+@wrapper.operation_wrapper
+def get_dupe_media_copies(
+    model_id=None, username=None, conn=None, mediatypes=(), **kwargs
+) -> list:
+    """The creator's saved files that share a hash with another of its media
+    of the same type: rows of media_type, hash, media_id, directory and
+    filename, each hash's rows together and the one saved first (the lowest
+    row) first. remove_dupes_hash keeps the first file and deletes the
+    others, so the order and the creator matter."""
+    if model_id is None or not mediatypes:
+        return []
+    creator, params = db_columns.same_creator(model_id)
+    params = params + list(mediatypes)
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(
+            mediaDupeCopies.format(
+                creator=creator, types=",".join("?" * len(mediatypes))
+            ),
+            params + params,
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+@wrapper.operation_wrapper
+def point_media_at_kept_files(
+    changes, model_id=None, username=None, conn=None, **kwargs
+):
+    """After duplicate files were removed: make the rows that named a removed
+    file name the kept file, which has the same content. `changes` is
+    (removed row, kept row) pairs of get_dupe_media_copies rows."""
+    creator, params = db_columns.same_creator(model_id)
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(
+            mediaPointAtKeptFile.format(creator=creator),
+            [
+                [
+                    kept["directory"],
+                    kept["filename"],
+                    removed["media_id"],
+                    *params,
+                    removed["directory"],
+                    removed["filename"],
+                ]
+                for removed, kept in changes
+            ],
+        )
+        conn.commit()
+
+
 @wrapper.operation_wrapper_async
 def mark_media_as_downloaded(
     media,

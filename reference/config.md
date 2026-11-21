@@ -274,7 +274,7 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 
 - **Default:** `null` · **Read by:** `get_hash()` in `ofscraper/utils/config/data.py`
 - **Default from:** [`HASHED_DEFAULT`](env.md#hashed_default)
-- `true` hashes every download and deletes later files whose hash matches an earlier one for the same creator and media type. `false` only records hashes. `null` skips hashing.
+- `true` hashes every download and, after each creator's downloads, deletes later files whose hash matches an earlier one for the same creator and media type. The copy saved first is kept. A file is only deleted when its content still matches the kept file's; a file that several posts share, and with `--allow-dupes` a media's copy per post, are left alone. The first run with it on also removes the duplicates recorded by earlier runs. The database then names the kept file for the media whose copy was removed. Nothing is removed in a text-only run, from the check table, or once a stop is asked for. Only `true` deletes; as `OFSC_HASHED_DEFAULT`, that is `true`, `1`, `yes` or `on`. `false` only records hashes. `null` skips hashing.
 
 ### `advanced_options.infinite_loop_action_mode`
 
