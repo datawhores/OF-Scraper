@@ -177,6 +177,11 @@ class SQLiteBackend:
     name = "sqlite"
     # what a wrapped function catches to roll back (see DB_ERRORS)
     errors = (sqlite3.Error,)
+    operational_errors = (sqlite3.OperationalError,)
+    # a file is made at the first layout and upgraded step by step
+    born_current = False
+    # a file is its creator's own, unless `metadata` was changed to share one
+    holds_every_creator = False
 
     def where(self, kwargs, read_only):
         """The operation's database: what connect opens and messages name."""
@@ -242,6 +247,10 @@ class SQLiteBackend:
         """The names of the columns `table` has (none if there's no table)."""
         return {row[1] for row in cur.execute(f"PRAGMA table_info('{table}')")}
 
+    def date_value(self, value):
+        """A date as it's saved: as it came."""
+        return value
+
 
 SQLITE = SQLiteBackend()
 # every engine in use, for telling one's errors and connections from another's
@@ -254,11 +263,29 @@ DB_ERRORS = SQLITE.errors
 OPERATIONAL_ERRORS = (sqlite3.OperationalError,)
 
 
+def _add_backend(backend):
+    global DB_ERRORS, OPERATIONAL_ERRORS
+    if backend not in _BACKENDS:
+        # first, since its errors need the driver, which may not be installed
+        errors, operational = backend.errors, backend.operational_errors
+        _BACKENDS.append(backend)
+        DB_ERRORS += errors
+        OPERATIONAL_ERRORS += operational
+
+
 def backend_for(kwargs):
-    """The engine an operation runs on. An operation given db_path names a
+    """The engine an operation runs on: PostgreSQL when a database URL is
+    set (OFSC_DATABASE_URL), SQLite when not. An operation given db_path names a
     SQLite file, whichever engine keeps the creators' data: merge, the
     upgrade of one file, and the tests work on files."""
-    return SQLITE
+    if kwargs.get("db_path"):
+        return SQLITE
+    import ofscraper.db.postgres as postgres
+
+    if not postgres.enabled():
+        return SQLITE
+    _add_backend(postgres.POSTGRES)
+    return postgres.POSTGRES
 
 
 def backend_of(conn_or_cur):
@@ -267,6 +294,11 @@ def backend_of(conn_or_cur):
         if backend.owns(conn_or_cur):
             return backend
     return SQLITE
+
+
+def date_value(conn_or_cur, value):
+    """A date as the connection's engine saves it."""
+    return backend_of(conn_or_cur).date_value(value)
 
 
 def database_exists(model_id=None, username=None, db_path=None):

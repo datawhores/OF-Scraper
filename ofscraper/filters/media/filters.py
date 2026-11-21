@@ -5,6 +5,7 @@ from collections import defaultdict
 
 import arrow
 
+import ofscraper.db.operations_.wrapper as db_wrapper
 import ofscraper.utils.separate as separate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.me as me_util
@@ -195,6 +196,19 @@ def previous_download_filter(medialist, username=None, model_id=None):
     return medialist
 
 
+def per_creator():
+    """Whether "already downloaded" goes by the creator's own media only.
+
+    It does with force_model_unique. Without it, it goes by everything in
+    the database, which for a SQLite file is its creator's media, so a run
+    doesn't leave media out because another creator has it. A database that
+    holds every creator (PostgreSQL) keeps to that: the creator's own."""
+    return (
+        bool(settings.get_settings().force_model_unique)
+        or db_wrapper.backend_for({}).holds_every_creator
+    )
+
+
 def downloaded_media_ids(username=None, model_id=None):
     """The media a run leaves out as already downloaded, or None when
     --force-all downloads everything. Media ids, or with allow-dupes
@@ -215,14 +229,14 @@ def downloaded_media_ids(username=None, model_id=None):
             get_media_post_ids_downloaded(
                 model_id=model_id,
                 username=username,
-                model_only=settings.get_settings().force_model_unique,
+                model_only=per_creator(),
                 without_permanent_skips=retry,
             )
         )
         log.debug(
             f"Number of downloaded media and post pairs in database: {len(media_ids)}"
         )
-    elif settings.get_settings().force_model_unique:
+    elif per_creator():
         log.info(f"Downloading unique media for model: {username}")
         media_ids = set(
             get_media_ids_downloaded_model_sync(

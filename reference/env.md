@@ -700,6 +700,7 @@ Defined in `ofscraper/utils/of_env/values/system.py`.
 | <a id="log_subprocess_level"></a>`LOG_SUBPROCESS_LEVEL` | `OFSC_LOG_SUBPROCESS_LEVEL`, `OFSC_LOG_SUBPROCESS_LEVELL` | `10` | Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, and it is still read. |
 | <a id="ffmpeg_subprocess_level"></a>`FFMPEG_SUBPROCESS_LEVEL` | `OFSC_FFMPEG_SUBPROCESS_LEVEL` | `10` | Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ffprobe_subprocess_level"></a>`FFPROBE_SUBPROCESS_LEVEL` | `OFSC_FFPROBE_SUBPROCESS_LEVEL` | `10` | Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
+| <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | `OFSC_DATABASE_URL` | `''` | A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image). |
 | <a id="disk_space_check_path"></a>`DISK_SPACE_CHECK_PATH` | `OFSC_DISK_SPACE_CHECK_PATH` | `'/'` | The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be. |
 
 ## Menu choices

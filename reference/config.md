@@ -322,6 +322,11 @@ On Fansly download runs, the timeline and messages are paged newest first, and e
 - **Also reads:** `script_options`, `scripts`
 - A list of `.env`, `.yaml`/`.yml` or `.json` files whose values are loaded as environment variables (`OFSC_*` overrides) before settings are built. Later files override earlier ones. Before them, the app loads a `.env` file found by python-dotenv. It searches upward from `ofscraper/utils/of_env/`, and from the working folder only in the standalone binaries, the REPL or a debugger. The `--env-files` option replaces this list for one run.
 
+### `advanced_options.database_url`
+
+- **Default:** `"Not set in this file. To use PostgreSQL, set the OFSC_DATABASE_URL environment variable, or put it in a file listed in env_files (it holds a password). See POSTGRESQL.md."` · **Read by:** `get_database_url_note()` in `ofscraper/utils/config/data.py`
+- Not a setting: a note for anyone who looks for the PostgreSQL address here. The address is the [`OFSC_DATABASE_URL`](env.md#ofsc_database_url) environment default, which is kept out of this file because it holds a password (see `POSTGRESQL.md`). Whatever is written in this key is ignored and replaced by the note.
+
 ## `script_options`
 
 ### `script_options.after_action_script`

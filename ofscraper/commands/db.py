@@ -1,5 +1,4 @@
 import logging
-import sqlite3
 import time
 import datetime
 from collections import OrderedDict
@@ -25,6 +24,7 @@ from ofscraper.db.operations_.media import (
     get_permanent_skip_media_ids,
     unmark_permanent_skips,
 )
+import ofscraper.db.operations_.wrapper as db_wrapper
 from ofscraper.db.operations_.wrapper import DatabaseMissing
 from ofscraper.utils.logs.other import add_other_handler
 from ofscraper.utils.context.run_async import run as run_async
@@ -421,7 +421,7 @@ def db():
                 f"{model.name} has no database yet, skipping"
             )
             continue
-        except sqlite3.DatabaseError as error:
+        except db_wrapper.DB_ERRORS as error:
             # one creator's broken database doesn't stop the others
             logging.getLogger("shared").warning(
                 f"{model.name}: can't read the database at "

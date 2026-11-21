@@ -47,6 +47,9 @@ def load_system_config():
         os.getenv("OFSC_FFPROBE_SUBPROCESS_LEVEL", "10")
     )
 
+    # OFSC_DATABASE_URL: A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image).
+    config["OFSC_DATABASE_URL"] = os.getenv("OFSC_DATABASE_URL", "")
+
     # Free Space
     config["DISK_SPACE_CHECK_PATH"] = os.getenv("OFSC_DISK_SPACE_CHECK_PATH", "/")
 

@@ -11,6 +11,7 @@ r"""
 
 """
 
+import asyncio
 import logging
 
 from rich.console import Console
@@ -19,6 +20,7 @@ import ofscraper.classes.labels as labels
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.sites as sites
 from ofscraper.db.backup import create_backup
+from ofscraper.db.difference import ALL_FLAGS
 from ofscraper.db.operations_.labels import (
     create_labels_table,
     make_label_table_changes,
@@ -102,6 +104,24 @@ async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
 
 @run
 async def table_init_create(model_id=None, username=None, **kwargs):
+    engine = wrapper.backend_for({})
+    if engine.born_current:
+        # PostgreSQL: one set of tables for every creator, made once at the
+        # current layout. No file to back up and no upgrade steps to run
+        await asyncio.get_running_loop().run_in_executor(
+            wrapper._DB_POOL, engine.create_tables, ALL_FLAGS
+        )
+    else:
+        await _prepare_file(model_id, username)
+    await write_profile_table(model_id=model_id, username=username)
+    await write_models_table(model_id=model_id, username=username)
+    # OnlyFans databases stay exactly as before; other sites are recorded
+    if sites.is_fansly():
+        await write_site_flag(sites.FANSLY, model_id=model_id, username=username)
+
+
+async def _prepare_file(model_id, username):
+    """Make the creator's SQLite file, or bring an older one up to date."""
     new_db = not wrapper.database_exists(model_id, username)
     await create_tables(model_id=model_id, username=username)
     # read before the periodic copy below can replace the backup that has them
@@ -111,8 +131,3 @@ async def table_init_create(model_id=None, username=None, **kwargs):
     await modify_tables(
         model_id, username, new_db=new_db, backup_labels=backup_labels
     )
-    await write_profile_table(model_id=model_id, username=username)
-    await write_models_table(model_id=model_id, username=username)
-    # OnlyFans databases stay exactly as before; other sites are recorded
-    if sites.is_fansly():
-        await write_site_flag(sites.FANSLY, model_id=model_id, username=username)

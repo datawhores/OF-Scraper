@@ -4,7 +4,6 @@ import pathlib
 import platform
 import errno
 import shutil
-import sqlite3
 import tempfile
 import time
 from collections.abc import Iterable
@@ -76,13 +75,14 @@ def moveHelper(temp, path_to_file, ele, log_=None, username=None, model_id=None)
 def _own_file(ele, username, model_id):
     """The file the creator's database records for this media and post, or
     None. Only reads: a missing database isn't created."""
+    import ofscraper.db.operations_.wrapper as db_wrapper
     from ofscraper.db.operations_.media import get_media_post_files_downloaded
 
     try:
         files = get_media_post_files_downloaded(
             model_id=model_id, username=username, media_id=ele.id, read_only=True
         )
-    except (OSError, sqlite3.Error):
+    except (OSError, *db_wrapper.DB_ERRORS):
         return None
     directory, filename = (files or {}).get((ele.id, ele.post_id), (None, None))
     return pathlib.Path(directory, filename) if directory and filename else None
