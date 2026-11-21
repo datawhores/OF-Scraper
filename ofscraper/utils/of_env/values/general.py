@@ -76,7 +76,7 @@ def load_general_config():
         "OFSC_FILE_COUNT_PLACEHOLDER", "True"
     ).lower() in ("true", "1")
 
-    # FILTER_SELF_MEDIA: Whether to filter media belonging to self-profile.
+    # FILTER_SELF_MEDIA: Whether to skip the account's own media: the media in messages you sent, and your own profile's media when you scrape it. Set it to False to download them.
     # Default: True
     config["FILTER_SELF_MEDIA"] = os.getenv(
         "OFSC_FILTER_SELF_MEDIA", "True"
