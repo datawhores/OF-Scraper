@@ -139,7 +139,8 @@ downloaded,hash,skip_permanent
 FROM medias where media_id=(?) and model_id=(?)
 """
 # the first row is the one used: say which, as only SQLite has an order of
-# its own (the unique key's)
+# its own (the unique key's). PostgreSQL keeps post_id as text here, so its
+# first is the first in text order
 mediaDownloadSelect = _mediaDownloadSelect + " ORDER BY post_id"
 # the same for one post's copy, with allow-dupes
 mediaDownloadSelectPost = _mediaDownloadSelect + " and post_id=(?)"
@@ -554,8 +555,8 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.mediatype.capitalize(),
                     media.preview,
                     media.linked,
-                    media.date,
-                    media.postdate,
+                    wrapper.date_value(conn, media.date),
+                    wrapper.date_value(conn, media.postdate),
                     model_id,
                     media.duration_string,
                     media.canview,
@@ -582,8 +583,8 @@ def update_media_table_via_api_batch(
                     media.responsetype.capitalize(),
                     media.mediatype.capitalize(),
                     media.preview,
-                    media.date,
-                    media.postdate,
+                    wrapper.date_value(conn, media.date),
+                    wrapper.date_value(conn, media.postdate),
                     model_id,
                     media.duration_string,
                     media.canview,
@@ -854,8 +855,8 @@ def update_media_table_via_api_helper(
         media.responsetype.capitalize(),
         media.mediatype.capitalize(),
         media.preview,
-        media.date,
-        media.postdate,
+        wrapper.date_value(conn, media.date),
+        wrapper.date_value(conn, media.postdate),
         model_id,
         media.duration_string,
         media.canview,

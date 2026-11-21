@@ -83,7 +83,7 @@ RUN \
     WHEEL_FILE=$(ls *.whl) && \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential libyaml-dev libyaml-0-2 && \
-    uv pip install "${WHEEL_FILE}[ffmpeg]" -v && \
+    uv pip install "${WHEEL_FILE}[ffmpeg,postgres]" -v && \
     rm "${WHEEL_FILE}" && \
     # PyYAML has no 3.15 wheel; libyaml-dev lets it build its C extension.
     # libyaml-0-2 was installed explicitly, so --auto-remove keeps it.

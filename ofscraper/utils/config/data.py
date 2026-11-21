@@ -352,6 +352,21 @@ def get_env_files(config=None):
     return val or []
 
 
+# config.json can't hold comments, so this note is a key of its own, for
+# anyone who looks for the database setting in the file. It isn't read as a
+# setting: whatever the file holds there is replaced by the note
+DATABASE_URL_NOTE = (
+    "Not set in this file. To use PostgreSQL, set the OFSC_DATABASE_URL"
+    " environment variable, or put it in a file listed in env_files (it holds"
+    " a password). See POSTGRESQL.md."
+)
+
+
+@wrapper.config_reader
+def get_database_url_note(config=None):
+    return DATABASE_URL_NOTE
+
+
 @wrapper.config_reader
 def get_metadata(config=None):
     if config is False:

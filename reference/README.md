@@ -90,6 +90,7 @@ Upstream's docs don't cover these:
 - **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See `COLLISION_RECOVERY.md`.
 - **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See `STASH.md`.
 - **`scripts/creator_names.py`**: lists and records the usernames a creator account has had.
+- **PostgreSQL** (`OFSC_DATABASE_URL`): keeps the database in one PostgreSQL database, not in a SQLite file per creator. See `POSTGRESQL.md`.
 - **`OF_READ_TIMEOUT`**: a default read timeout for requests.
 - **`LABELS_CONCURRENCY`**: a concurrency default for label scans.
 - **Behaviour changes** listed in the release notes. For example, `--before` and `--after` accept `MM/DD/YYYY` and relative dates, a failed run exits with status 1, and command-line mistakes print a usage message.

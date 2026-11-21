@@ -14,6 +14,7 @@ services:
       # - USER_ID=${USER_ID}   # Host user's UID (e.g., set via 'export USER_ID=$(id -u)' on host)
       # - GROUP_ID=${GROUP_ID} # Host user's GID (e.g., set via 'export GROUP_ID=$(id -g)' on host)
       # - GROUP_NAME=mygroup # Optional: If you want a custom group name different from USER_NAME
+      # - OFSC_DATABASE_URL=postgresql://user:password@host:5432/database # Optional: keep the database in PostgreSQL, not in SQLite files (see POSTGRESQL.md)
     volumes:
       # Mount your configuration directory (replace ./config/ with your host path)
       - ./config/:/home/ofscraper/.config/ofscraper/
