@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
@@ -41,7 +40,7 @@ CREATE TABLE IF NOT EXISTS stories (
 	UNIQUE (post_id,model_id)
 )
 """
-storiesInsert = """INSERT INTO 'stories'(
+storiesInsert = """INSERT INTO stories(
 post_id, text,price,paid,archived,created_at,model_id)
             VALUES (?, ?,?,?,?,?,?);"""
 storiesUpdate = """UPDATE stories
@@ -88,7 +87,7 @@ def write_stories_table(
                     data.price,
                     data.paid,
                     data.archived,
-                    data.date,
+                    wrapper.date_value(conn, data.date),
                     model_id,
                 ),
                 stories,
@@ -144,7 +143,7 @@ def update_stories_table(
                     data.price,
                     data.paid,
                     data.archived,
-                    data.date,
+                    wrapper.date_value(conn, data.date),
                     model_id,
                     data.id,
                     model_id,
@@ -159,7 +158,8 @@ def update_stories_table(
 @wrapper.operation_wrapper_async
 def get_all_stories_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allStoriesCheck)
+        creator, params = db_columns.creator_filter(cur, "stories", model_id, "WHERE")
+        cur.execute(allStoriesCheck + creator, params)
         return list(map(lambda x: x[0], cur.fetchall()))
 
 
@@ -189,7 +189,7 @@ def add_column_stories_ID(conn=None, **kwargs):
 
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 

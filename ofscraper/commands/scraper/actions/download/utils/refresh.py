@@ -147,17 +147,21 @@ def _use_new_url(ele, media):
     return None
 
 
+def _signature(ele):
+    """What signs a protected video's manifest and segments."""
+    return (ele.media.get("files", {}).get("drm") or {}).get("signature")
+
+
 def _use_new_signature(ele, media):
     old_mpd, new_mpd = ele.mpd, media.mpd if media.protected else None
     if not new_mpd:
         return "the API returned no DRM manifest"
     if not _same_file(old_mpd, new_mpd):
         return "the new manifest is for a different file, not using it"
-    old_drm = ele.media.get("files", {}).get("drm") or {}
     new_drm = media.media.get("files", {}).get("drm") or {}
     new_signature = new_drm.get("signature")
-    if not new_signature or new_signature == old_drm.get("signature"):
-        return "the API returned no new signature"
+    if not new_signature:
+        return "the API returned no signature"
     # the parsed manifest stays: same file, same segment names
     ele.media.setdefault("files", {})["drm"] = copy.deepcopy(new_drm)
     return None
@@ -767,12 +771,14 @@ async def refresh_media_link(ele, link=None, refusal=None) -> bool:
     # signed for this address. So one address of the file host refused a
     # good link. Its other addresses take it: the one that refused is left
     # (sessionmanager/refusing.py), and the same link counts as a link to
-    # try (#620).
-    still_current = not protected and media.url == ele.url
+    # try (#620). A protected video is signed by its signature instead: the
+    # same holds when the site still gives that one (#623).
+    before = _signature(ele) if protected else ele.url
     problem = (_use_new_signature if protected else _use_new_url)(ele, media)
     if problem:
         log.debug(f"Media {ele.id}: {problem}")
         return False
+    still_current = before == (_signature(ele) if protected else ele.url)
     if still_current:
         leave_address = getattr(refusal, "leave_address", None)
         if leave_address:

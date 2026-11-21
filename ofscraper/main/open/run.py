@@ -7,8 +7,22 @@ import ofscraper.utils.context.exit as exit_context
 from ofscraper.managers.manager import start_manager
 
 
+def check_database():
+    """With PostgreSQL configured, connect before any work starts: a server
+    that can't be used stops the run here with one sentence."""
+    import ofscraper.db.postgres as postgres
+
+    if postgres.enabled():
+        version = postgres.POSTGRES.check()
+        logging.getLogger("shared").info(
+            f"Using the PostgreSQL database at {postgres.describe()} "
+            f"(server version {version})"
+        )
+
+
 def main():
     try:
+        check_database()
         start_manager()
     except SystemExit as exc:
         if exc.code == 130:

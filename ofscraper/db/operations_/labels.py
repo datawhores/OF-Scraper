@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
@@ -41,12 +40,12 @@ CREATE TABLE IF NOT EXISTS labels (
     UNIQUE (post_id,label_id,model_id)
 )
 """
-labelInsert = """INSERT INTO 'labels'(
+labelInsert = """INSERT INTO labels(
 label_id,name, type, post_id,model_id)
 VALUES ( ?,?,?,?,?);"""
 
 
-labelUpdate = """Update 'labels'
+labelUpdate = """Update labels
 SET label_id=?,name=?,type=?,post_id=?,model_id=?
 WHERE label_id=(?) and model_id=(?) and post_id=(?);"""
 
@@ -161,7 +160,7 @@ def add_column_labels_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE labels ADD COLUMN model_id INTEGER;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Raise the error for handling
 

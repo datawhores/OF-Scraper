@@ -282,6 +282,9 @@ class Harness:
             )
 
         m.setattr(pipeline, "recheck_silent", recheck)
+        m.setattr(
+            pipeline, "remove_downloads_with_hashes", self.record("duplicate cleanup")
+        )
 
         async def strays(username, model_id, collection):
             self.events.append("strays")
@@ -504,6 +507,9 @@ def test_end_of_creator_steps_run_once_with_everything(harness, settings_stub):
     assert len(harness.calls["processed"]) == 1
     # one text download, for every post of the run
     assert [sorted(p.id for p in posts) for posts in harness.calls["text"]] == [[1, 2, 3, 5]]
+    # duplicate files are removed once the creator's downloads are done (#609)
+    assert harness.calls["duplicate cleanup"] == [((NAME, MODEL_ID), {})]
+    assert harness.index("duplicate cleanup") > harness.index("silent recheck")
     # stray cleanup sees every post scanned
     (collection,) = harness.calls["strays"]
     assert sorted(p.id for p in collection.posts) == [1, 2, 3, 5]
@@ -549,6 +555,7 @@ def test_a_stop_ends_the_scan_and_leaves_queued_files_unstarted(harness):
     assert "processed" not in harness.calls
     assert "after check" not in harness.calls
     assert "labels committed" not in harness.calls
+    assert "duplicate cleanup" not in harness.calls
 
 
 def test_a_stop_during_a_stream_does_not_wait_for_the_video(harness, monkeypatch):

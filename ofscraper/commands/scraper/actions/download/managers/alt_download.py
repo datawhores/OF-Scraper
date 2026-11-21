@@ -68,9 +68,11 @@ class AltDownloadManager(DownloadManager):
                 return await self._alt_download_item(c, ele, username, model_id)
             except Exception as E:
                 # a signed manifest or segment answers 403 after an IP change;
-                # a newly fetched signature can fix it (#489)
+                # a newly fetched signature can fix it (#489). So can the same
+                # one, when the site still gives it: the refusal was one CDN
+                # address's, and that address isn't used again (#623)
                 if not is_signed_cdn_forbidden(E) or not await refresh_media_link(
-                    ele
+                    ele, refusal=E
                 ):
                     raise
             # once per item: finished tracks are kept, a partial one resumes

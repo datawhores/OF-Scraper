@@ -112,6 +112,7 @@ GETTER_PATHS = {
         "scripts.env_files",
         "script_options.env_files",
     ],
+    "get_database_url_note": ["database_url", "advanced_options.database_url"],
     "get_metadata": ["metadata"],
     "get_download_limit": ["download_limit", "performance_options.download_limit"],
     "get_ffmpeg": ["ffmpeg", "binary_options.ffmpeg"],
@@ -316,6 +317,8 @@ def _dump(name, obj):
 # the refactor and updated only by deliberate fixes
 EXPECTED_GETTERS = {
     "get_main_profile": (25, "13e26f74f27d2d82"),
+    # a note, not a setting: the same text whatever the file holds
+    "get_database_url_note": (166, "547aefc30f48fa7d"),
     "get_filesize_max": (712, "b813936078f849ae"),
     "get_filesize_min": (403, "fba4568c65171252"),
     "get_min_length": (403, "b6017c91205f6c89"),
@@ -547,15 +550,15 @@ def _schema_results(path):
 
 # flat_legacy sets its key mode; the others take the default, now manual
 EXPECTED_SCHEMA = {
-    "false": "d6423683ff8e0754",
-    "empty": "d6423683ff8e0754",
-    "empty:written": "d6423683ff8e0754",
-    "flat_legacy": "b8cb0ac1bb9e775e",
-    "flat_legacy:written": "b8cb0ac1bb9e775e",
-    "nested_legacy": "583519b14dc8a270",
-    "nested_legacy:written": "583519b14dc8a270",
-    "explicit_falsy": "a10565cf9f1b1f9f",
-    "explicit_falsy:written": "a10565cf9f1b1f9f",
+    "false": "25df51e4abe3c47b",
+    "empty": "25df51e4abe3c47b",
+    "empty:written": "25df51e4abe3c47b",
+    "flat_legacy": "384d63ec957bf2ed",
+    "flat_legacy:written": "384d63ec957bf2ed",
+    "nested_legacy": "757f497b89ca2989",
+    "nested_legacy:written": "757f497b89ca2989",
+    "explicit_falsy": "13578dd7de7e4174",
+    "explicit_falsy:written": "13578dd7de7e4174",
 }
 
 

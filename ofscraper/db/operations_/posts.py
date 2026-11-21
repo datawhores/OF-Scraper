@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 import arrow
 from rich.console import Console
@@ -50,11 +49,11 @@ CREATE TABLE IF NOT EXISTS posts (
 	UNIQUE (post_id,model_id)
 )
 """
-postInsert = """INSERT INTO 'posts'(
+postInsert = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,purchase_type,mentions)
 VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
-postInsertTransition = """INSERT INTO 'posts'(
+postInsertTransition = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted,purchase_type,mentions)
 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
@@ -62,7 +61,7 @@ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 # purchase_type isn't updated here: postFillMissing sets it once, and a
 # timeline scan of a bought post must not clear it
 postUpdate = """UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=0,
+SET text = ?, price = ?, paid = ?, archived = ?, pinned=?,stream=?,opened=?,created_at = ?, model_id=?, is_deleted=FALSE,
 mentions = COALESCE(?, mentions)
 WHERE post_id = ? and model_id=(?);"""
 
@@ -73,27 +72,27 @@ WHERE post_id = ? AND model_id = (?) AND (purchase_type IS NULL OR mentions IS N
 
 postIgnoreGhost = """
 UPDATE posts
-SET is_deleted = 1
+SET is_deleted = TRUE
 WHERE post_id = (?) AND model_id = (?);
 """
 
 postUnmarkGhost = """
 UPDATE posts
-SET is_deleted = 0
-WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
+SET is_deleted = FALSE
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = TRUE;
 """
 
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE archived=(0) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE archived=FALSE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 archivedPostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE archived=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE archived=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 streamsPostInfo = """
 SELECT created_at,post_id FROM posts 
-WHERE stream=(1) AND model_id=(?) AND (is_deleted = 0 OR is_deleted IS NULL)
+WHERE stream=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 
 # columns a later version added are (name, stand-in when missing): see
@@ -119,7 +118,7 @@ SELECT post_id FROM posts
 """
 
 deletedPostsCheck = """
-SELECT post_id FROM posts WHERE is_deleted = 1 AND model_id = (?)
+SELECT post_id FROM posts WHERE is_deleted = TRUE AND model_id = (?)
 """
 
 
@@ -137,7 +136,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwa
                     data.pinned,
                     data.stream,
                     data.opened,
-                    data.date,
+                    wrapper.date_value(conn, data.date),
                     model_id,
                     data.purchase_type,
                     data.db_mentions,
@@ -200,7 +199,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None, **k
                     data.pinned,
                     data.stream,
                     data.opened,
-                    data.date,
+                    wrapper.date_value(conn, data.date),
                     model_id,
                     data.db_mentions,
                     data.id,
@@ -250,7 +249,8 @@ def create_post_table(model_id=None, username=None, conn=None, db_path=None, **k
 @wrapper.operation_wrapper_async
 def get_all_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allPOSTCheck)
+        creator, params = db_columns.creator_filter(cur, "posts", model_id, "WHERE")
+        cur.execute(allPOSTCheck + creator, params)
         return [dict(row)["post_id"] for row in cur.fetchall()]
 
 
@@ -287,7 +287,7 @@ def add_column_post_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN model_id INTEGER;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -308,7 +308,7 @@ def add_column_post_pinned(conn=None, **kwargs):
             # Commit changes
             conn.commit()
 
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -328,7 +328,7 @@ def add_column_post_stream(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN stream BOOLEAN;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -348,7 +348,7 @@ def add_column_post_opened(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN opened BOOLEAN;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -384,7 +384,7 @@ def add_column_post_is_deleted(conn=None, **kwargs):
                     "ALTER TABLE posts ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -399,7 +399,7 @@ def add_column_post_purchase_type(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE posts ADD COLUMN purchase_type VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -414,7 +414,7 @@ def add_column_post_mentions(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE posts ADD COLUMN mentions VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 

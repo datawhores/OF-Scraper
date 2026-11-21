@@ -26,7 +26,7 @@ def replace_table(conn, table, create_sql, insert_sql, rows):
         raise ValueError(f"create statement does not create table {table}")
     new_insert_sql, count = re.subn(
         rf"(INSERT INTO\s+)'?{table}'?(?=\s*\()",
-        rf"\g<1>'{new}'",
+        rf"\g<1>{new}",
         insert_sql,
         count=1,
         flags=re.IGNORECASE,

@@ -111,7 +111,10 @@ SECTION_KEYS = {
     "performance_options": ["download_limit", "download_sems"],
     "content_filter_options": ["block_ads", "file_size_max", "file_size_min", "length_max",
                                "length_min"],
-    "advanced_options": ["cache-mode", "default_black_list", "default_user_list", "downloadbars",
+    # database_url was added on purpose (#608): a note, not a setting, saying
+    # where the PostgreSQL address is set
+    "advanced_options": ["cache-mode", "database_url", "default_black_list", "default_user_list",
+                         "downloadbars",
                          "dynamic-mode-default", "env_files", "incremental_downloads",
                          "infinite_loop_action_mode", "logs_expire_time", "remove_hash_match",
                          "rotate_logs", "sanitize_text", "skip_unavailable_content", "ssl_verify",

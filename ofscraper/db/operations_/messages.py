@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 import arrow
 from rich.console import Console
@@ -47,16 +46,16 @@ PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
-messagesInsert = """INSERT INTO 'messages'(
+messagesInsert = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,group_id)
             VALUES (?, ?,?,?,?,?,?,?,?);"""
-messagesInsertTransition = """INSERT INTO 'messages'(
+messagesInsertTransition = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,is_deleted,group_id)
             VALUES (?, ?,?,?,?,?,?,?,?,?);"""
 messagesUpdate = """UPDATE messages
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=0
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?, is_deleted=FALSE
 WHERE post_id = ? and model_id=(?);"""
 # fills group_id of rows saved before it existed, on every scan; a message
 # never changes conversation, so the metadata update leaves it alone
@@ -85,18 +84,18 @@ SELECT created_at,post_id FROM messages where model_id=(?)
 """
 messageIgnoreGhost = """
 UPDATE messages
-SET is_deleted = 1
+SET is_deleted = TRUE
 WHERE post_id = (?) AND model_id = (?);
 """
 
 messageUnmarkGhost = """
 UPDATE messages
-SET is_deleted = 0
-WHERE post_id = (?) AND model_id = (?) AND is_deleted = 1;
+SET is_deleted = FALSE
+WHERE post_id = (?) AND model_id = (?) AND is_deleted = TRUE;
 """
 
 deletedMessagesCheck = """
-SELECT post_id FROM messages WHERE is_deleted = 1 AND model_id = (?)
+SELECT post_id FROM messages WHERE is_deleted = TRUE AND model_id = (?)
 """
 
 
@@ -119,7 +118,7 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.price,
                     message.paid,
                     message.archived,
-                    message.date,
+                    wrapper.date_value(conn, message.date),
                     message.fromuser,
                     model_id,
                     message.id,
@@ -157,7 +156,7 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.price,
                     message.paid,
                     message.archived,
-                    message.date,
+                    wrapper.date_value(conn, message.date),
                     message.fromuser,
                     model_id,
                     message.group_id,
@@ -213,7 +212,10 @@ def replace_messages_table(inputData: list, model_id=None, conn=None, **kwargs):
 @wrapper.operation_wrapper_async
 def get_all_messages_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allMessagesCheck)
+        creator, params = db_columns.creator_filter(
+            cur, "messages", model_id, "WHERE"
+        )
+        cur.execute(allMessagesCheck + creator, params)
         return [dict(row)["post_id"] for row in cur.fetchall()]
 
 
@@ -255,7 +257,7 @@ def add_column_messages_ID(conn=None, **kwargs):
 
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -369,7 +371,7 @@ def add_column_message_is_deleted(conn=None, **kwargs):
                     "ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -384,6 +386,6 @@ def add_column_message_group_id(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE messages ADD COLUMN group_id VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e

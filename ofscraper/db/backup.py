@@ -20,6 +20,7 @@ import arrow
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.db.difference import get_group_difference
@@ -86,8 +87,10 @@ def media_labelled_in_backups(database_path, label):
         {*folder.glob("user_data_copy_*.db"), *folder.glob("old_schema_*.db")}
     )
     for path in backups:
-        # immutable: no lock, no -wal or -shm file left beside the backup
-        uri = f"{path.resolve().as_uri()}?mode=ro&immutable=1"
+        # immutable: no lock, no -wal or -shm file left beside the backup.
+        # The address is made as for any read-only database: Path.as_uri()
+        # gives one SQLite can't open for a network path
+        uri = f"{wrapper._read_only_uri(path.resolve())}&immutable=1"
         try:
             with contextlib.closing(sqlite3.connect(uri, uri=True)) as conn:
                 columns = {

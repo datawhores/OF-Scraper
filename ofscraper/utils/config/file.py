@@ -5,6 +5,7 @@ import re
 
 from ofscraper.utils.markup import escape_text
 
+import ofscraper.utils.config.data as data
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
 import ofscraper.utils.of_env.of_env as of_env
@@ -102,8 +103,24 @@ def write_config(updated_config):
         f.write(json.dumps(updated_config, indent=4))
 
 
+def _database_url_written(config):
+    """True when a config.json holds something other than the note where the
+    note goes: an address someone wrote there, which isn't read."""
+    config = config.get("config") or config
+    written = data._first(config, "database_url", "advanced_options.database_url")
+    return bool(written) and written != data.DATABASE_URL_NOTE
+
+
 def auto_update_config(config: dict) -> dict:
     log.info("Auto updating config...")
+    if _database_url_written(config):
+        # said without the value: it may hold a password
+        log.warning(
+            "advanced_options.database_url in config.json is not read, and"
+            " what was written there has been replaced by a note. To use"
+            " PostgreSQL, set the OFSC_DATABASE_URL environment variable"
+            " (see POSTGRESQL.md)."
+        )
     # keys missing from the file get the built-in defaults, not environment
     # values; the environment still applies at runtime
     with of_env.builtin_defaults():

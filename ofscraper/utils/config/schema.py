@@ -67,6 +67,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "logs_expire_time": data.get_logs_expire(config=config),
             "ssl_verify": data.get_ssl_verify(config=config),
             "env_files": data.get_env_files(config=config),
+            "database_url": data.get_database_url_note(config=config),
         },
         "script_options": {
             "after_action_script": data.get_after_action_script(config=config),

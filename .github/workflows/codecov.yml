@@ -74,3 +74,50 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: false
+  # the optional PostgreSQL database, on the oldest PostgreSQL release still
+  # supported and the newest, against a real server
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.11"
+            postgres-version: "15"
+          - python-version: "3.15.2"
+            postgres-version: "18"
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          # a throwaway server that lives for this job only
+          POSTGRES_PASSWORD: only-for-this-job
+          POSTGRES_DB: ofscraper_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # version-pioneer derives the package version from git tags
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --frozen --extra test --extra postgres
+      - name: create required folder
+        run: mkdir -p /home/runner/.config/ofscraper/main_profile
+      - name: Run the PostgreSQL tests
+        env:
+          OFSC_TEST_POSTGRES_URL: postgresql://postgres:only-for-this-job@localhost:5432/ofscraper_test
+        # -rs lists skipped tests: none of these may skip here
+        run: uv run --frozen pytest test/test_db_postgres.py test/test_db_postgres_live.py test/test_postgres_import.py test/test_postgres_import_live.py -rs

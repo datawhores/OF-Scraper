@@ -56,7 +56,7 @@ def empty(conn=None, **kwargs):
         ]
         for query in queries:
             cur.execute(query)
-            count = cur.fetchone()
-            if dict(count)["COUNT(*)"] > 0:
+            # by position: the column's name differs between databases
+            if cur.fetchone()[0] > 0:
                 return False
         return True

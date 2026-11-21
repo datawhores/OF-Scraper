@@ -13,12 +13,9 @@ r"""
 
 import contextlib
 import logging
-import pathlib
-import sqlite3
 
 from rich.console import Console
 
-import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.rebuild as rebuild
 
@@ -43,33 +40,25 @@ CREATE TABLE IF NOT EXISTS models (
 	UNIQUE (model_id)
 )
 """
+# the first row is the one used: say which, as only SQLite has an order of
+# its own (the unique key's)
 userNameList = """
-SELECT username FROM profiles where user_id=(?)
+SELECT username FROM profiles where user_id=(?) ORDER BY username
 """
 
-profileTableCheck = """
-SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
-"""
+# a row is added once (INSERT ... SELECT ?, ? WHERE NOT EXISTS gives the
+# values no type outside SQLite)
 profileInsert = """
-INSERT INTO 'profiles' (user_id, username)
-SELECT ?, ?
-WHERE NOT EXISTS (
-  SELECT 1 FROM 'profiles'
-  WHERE user_id = ? AND username = ?
-);
+INSERT INTO profiles (user_id, username) VALUES (?, ?) ON CONFLICT DO NOTHING;
 """
 
 
-profileInsertTransition = """INSERT INTO 'profiles'(
+profileInsertTransition = """INSERT INTO profiles(
 user_id,username)
             VALUES (?, ?);
 """
 modelInsert = """
-INSERT INTO models (model_id)
-SELECT ?
-WHERE NOT EXISTS (
-  SELECT 1 FROM models WHERE model_id = ?
-);
+INSERT INTO models (model_id) VALUES (?) ON CONFLICT DO NOTHING;
 """
 profilesALL = """
 select user_id,username from profiles
@@ -87,16 +76,13 @@ SELECT DISTINCT user_id FROM profiles
 
 @wrapper.operation_wrapper_async
 def get_profile_info(model_id=None, username=None, conn=None, **kwargs) -> list:
-    database_path = placeholder.databasePlaceholder().databasePathHelper(
-        model_id, username
-    )
-    if not pathlib.Path(database_path).exists():
+    if not wrapper.database_exists(model_id, username):
         return None
     with contextlib.closing(conn.cursor()) as cur:
         try:
             cur.execute(userNameList, ([model_id]))
             return (list(map(lambda x: x[0], cur.fetchall())) or [None])[0]
-        except sqlite3.OperationalError:
+        except wrapper.OPERATIONAL_ERRORS:
             pass
         except Exception as E:
             raise E
@@ -114,8 +100,7 @@ def create_profile_table(
 @wrapper.operation_wrapper_async
 def write_profile_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [model_id, username, model_id, username]
-        cur.execute(profileInsert, insertData)
+        cur.execute(profileInsert, [model_id, username])
         conn.commit()
 
 
@@ -147,31 +132,23 @@ def replace_profiles_table(inputData, conn=None, **kwargs):
 
 @wrapper.operation_wrapper_async
 def check_profile_table_exists(model_id=None, username=None, conn=None, **kwargs):
-    database_path = placeholder.databasePlaceholder().databasePathHelper(
-        model_id, username
-    )
-    if not pathlib.Path(database_path).exists():
+    if not wrapper.database_exists(model_id, username):
         return False
     with contextlib.closing(conn.cursor()) as cur:
-        if len(cur.execute(profileTableCheck).fetchall()) > 0:
-            return True
-        return False
+        return wrapper.backend_of(cur).table_exists(cur, "profiles")
 
 
 @wrapper.operation_wrapper_async
 def get_all_profiles(
     model_id=None, username=None, conn=None, db_path=None, **kwargs
 ) -> list:
-    database_path = db_path or placeholder.databasePlaceholder().databasePathHelper(
-        model_id, username
-    )
-    if not pathlib.Path(database_path).exists():
+    if not wrapper.database_exists(model_id, username, db_path):
         return None
     with contextlib.closing(conn.cursor()) as cur:
         try:
             profiles = [dict(row) for row in (cur.execute(profilesALL).fetchall())]
             return profiles
-        except sqlite3.OperationalError:
+        except wrapper.OPERATIONAL_ERRORS:
             pass
         except Exception as E:
             raise E
@@ -189,7 +166,7 @@ def create_models_table(
 @wrapper.operation_wrapper_async
 def write_models_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(modelInsert, [model_id, model_id])
+        cur.execute(modelInsert, [model_id])
         conn.commit()
 
 

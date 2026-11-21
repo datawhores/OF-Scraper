@@ -70,10 +70,24 @@ def _database_path(kwargs, read_only):
     ).resolve()
 
 
+# The queries use TRUE and FALSE (SQLite 3.23) and INSERT ... ON CONFLICT
+# (3.24, from 2018), which other databases understand too
+MIN_SQLITE = (3, 24, 0)
+
+
+def _check_sqlite_version():
+    if sqlite3.sqlite_version_info < MIN_SQLITE:
+        raise DatabaseUnreadable(
+            f"this Python's SQLite is {sqlite3.sqlite_version}; "
+            f"{'.'.join(map(str, MIN_SQLITE[:2]))} or newer is needed"
+        )
+
+
 def _connect(database_path, read_only, **kwargs):
     """Open the database. A caller that only reads passes read_only=True
     (#373): the file is opened read-only, so it isn't created, its journal
     mode isn't changed, and a read-only file can be read."""
+    _check_sqlite_version()
     if read_only:
         if not database_path.is_file():
             raise DatabaseMissing(f"no database at {database_path}")
@@ -119,15 +133,16 @@ def _has_code(error, codes, messages):
 
 def _busy(error):
     """Whether `error` is a busy or locked database."""
-    return _has_code(error, _BUSY_CODES, _BUSY_MESSAGES)
+    return any(backend.busy(error) for backend in _BACKENDS)
 
 
 def _retryable(error):
     """Whether a retry can fix `error`: a busy or locked database, or
     another condition that clears up on its own. A mistake in the wrapped
     function's SQL (a syntax error, no such table), a read-only or full
-    database and one that can't be opened aren't retried."""
-    return _has_code(error, _RETRY_CODES, _RETRY_MESSAGES)
+    database and one that can't be opened aren't retried. Each engine
+    knows its own errors and says no to another's."""
+    return any(backend.retryable(error) for backend in _BACKENDS)
 
 
 def _retry(work):
@@ -150,52 +165,179 @@ def _log_failure(error, db_timeout):
         log.info(f"Database is busy. Current timeout is {db_timeout}s.")
 
 
+class SQLiteBackend:
+    """One SQLite file per creator, at the `metadata` path or the
+    operation's db_path.
+
+    These methods are all the wrapper asks of a database engine, so that
+    another engine can stand in by providing the same ones (#608). The
+    wrapped functions get a connection and write their own SQL.
+    """
+
+    name = "sqlite"
+    # what a wrapped function catches to roll back (see DB_ERRORS)
+    errors = (sqlite3.Error,)
+    operational_errors = (sqlite3.OperationalError,)
+    # a file is made at the first layout and upgraded step by step
+    born_current = False
+    # a file is its creator's own, unless `metadata` was changed to share one
+    holds_every_creator = False
+
+    def where(self, kwargs, read_only):
+        """The operation's database: what connect opens and messages name."""
+        return _database_path(kwargs, read_only)
+
+    def connect(self, where, read_only, *, timeout, check_same_thread):
+        """A configured connection with its transaction begun."""
+        conn = _connect(
+            where, read_only, check_same_thread=check_same_thread, timeout=timeout
+        )
+        try:
+            # 1. Set the PRAGMAs FIRST (configure the engine)
+            if not read_only:
+                conn.execute("PRAGMA journal_mode=WAL;")
+                conn.execute("PRAGMA synchronous=NORMAL;")
+            # The RAM-safe speed boosters
+            conn.execute("PRAGMA mmap_size=268435456;")
+            conn.execute("PRAGMA cache_size=-32768;")
+            conn.row_factory = sqlite3.Row
+
+            # 2. THEN grab the write lock (a read takes a read lock)
+            conn.execute("BEGIN;" if read_only else "BEGIN IMMEDIATE;")
+        except BaseException:
+            self.close(conn)
+            raise
+        return conn
+
+    def close(self, conn):
+        """Done with the connection: what wasn't committed is rolled back."""
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    def final_error(self, error, read_only, where):
+        return _final_error(error, read_only, where)
+
+    def retryable(self, error):
+        return _has_code(error, _RETRY_CODES, _RETRY_MESSAGES)
+
+    def busy(self, error):
+        return _has_code(error, _BUSY_CODES, _BUSY_MESSAGES)
+
+    def database_exists(self, model_id=None, username=None, db_path=None):
+        """Whether the creator has a database yet: its file is there."""
+        path = db_path or placeholder.databasePlaceholder().databasePathHelper(
+            model_id, username
+        )
+        return pathlib.Path(path).exists()
+
+    def owns(self, conn_or_cur):
+        """Whether a connection or cursor is this engine's."""
+        return isinstance(conn_or_cur, (sqlite3.Connection, sqlite3.Cursor))
+
+    def table_exists(self, cur, table):
+        return bool(
+            cur.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", [table]
+            ).fetchall()
+        )
+
+    def table_columns(self, cur, table):
+        """The names of the columns `table` has (none if there's no table)."""
+        return {row[1] for row in cur.execute(f"PRAGMA table_info('{table}')")}
+
+    def date_value(self, value):
+        """A date as it's saved: as it came."""
+        return value
+
+
+SQLITE = SQLiteBackend()
+# every engine in use, for telling one's errors and connections from another's
+_BACKENDS = [SQLITE]
+# What a wrapped function catches to roll back before raising again
+# (DB_ERRORS), and what a read of a table that may not be there yet catches
+# (OPERATIONAL_ERRORS). Read them as wrapper.DB_ERRORS at the except, not
+# with a from-import: an added engine adds its own.
+DB_ERRORS = SQLITE.errors
+OPERATIONAL_ERRORS = (sqlite3.OperationalError,)
+
+
+def _add_backend(backend):
+    global DB_ERRORS, OPERATIONAL_ERRORS
+    if backend not in _BACKENDS:
+        # first, since its errors need the driver, which may not be installed
+        errors, operational = backend.errors, backend.operational_errors
+        _BACKENDS.append(backend)
+        DB_ERRORS += errors
+        OPERATIONAL_ERRORS += operational
+
+
+def backend_for(kwargs):
+    """The engine an operation runs on: PostgreSQL when a database URL is
+    set (OFSC_DATABASE_URL), SQLite when not. An operation given db_path names a
+    SQLite file, whichever engine keeps the creators' data: merge, the
+    upgrade of one file, and the tests work on files."""
+    if kwargs.get("db_path"):
+        return SQLITE
+    import ofscraper.db.postgres as postgres
+
+    if not postgres.enabled():
+        return SQLITE
+    _add_backend(postgres.POSTGRES)
+    return postgres.POSTGRES
+
+
+def backend_of(conn_or_cur):
+    """The engine a connection or cursor belongs to."""
+    for backend in _BACKENDS:
+        if backend.owns(conn_or_cur):
+            return backend
+    return SQLITE
+
+
+def date_value(conn_or_cur, value):
+    """A date as the connection's engine saves it."""
+    return backend_of(conn_or_cur).date_value(value)
+
+
+def database_exists(model_id=None, username=None, db_path=None):
+    """Whether the creator (or db_path) has a database yet."""
+    return backend_for({"db_path": db_path}).database_exists(
+        model_id, username, db_path
+    )
+
+
 def _run_operation(func, args, kwargs, *, read_only, db_timeout, check_same_thread):
     """One try of a database operation: open the database, configure it,
     begin a transaction, call func(*args, **kwargs, conn=conn) and close
     the connection. The wrapper doesn't commit: func commits what it keeps,
     and closing rolls back the rest.
 
-    An error is logged (see _log_failure) and raised as _final_error makes
-    it, `from` the error if that differs.
+    An error is logged (see _log_failure) and raised as the engine's
+    final_error makes it, `from` the error if that differs.
     """
+    backend = backend_for(kwargs)
     conn = None
-    database_path = None
+    where = None
     try:
-        database_path = _database_path(kwargs, read_only)
-        conn = _connect(
-            database_path,
+        where = backend.where(kwargs, read_only)
+        conn = backend.connect(
+            where,
             read_only,
             check_same_thread=check_same_thread,
             timeout=db_timeout,
         )
-
-        # 1. Set the PRAGMAs FIRST (configure the engine)
-        if not read_only:
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA synchronous=NORMAL;")
-        # The RAM-safe speed boosters
-        conn.execute("PRAGMA mmap_size=268435456;")
-        conn.execute("PRAGMA cache_size=-32768;")
-        conn.row_factory = sqlite3.Row
-
-        # 2. THEN grab the write lock (a read takes a read lock)
-        conn.execute("BEGIN;" if read_only else "BEGIN IMMEDIATE;")
-
-        # 3. Execute the database logic
         return func(*args, **kwargs, conn=conn)
     except Exception as E:
         _log_failure(E, db_timeout)
-        failure = _final_error(E, read_only, database_path)
+        failure = backend.final_error(E, read_only, where)
         if failure is not E:
             raise failure from E
         raise
     finally:
         if conn:
-            try:
-                conn.close()
-            except Exception:
-                pass
+            backend.close(conn)
 
 
 def _refuse_conn(func, kwargs):

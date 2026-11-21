@@ -11,6 +11,7 @@ Each creator has one SQLite file, `user_data.db`. It sits in the folder given by
 - **Merging:** the Merge Databases menu option (`ofscraper/db/merge.py`) creates and migrates a target `user_data.db`. It then copies in rows from every `user_data.db` found under a chosen folder, skipping rows whose key is already present. Each source must contain exactly one numeric model id in `profiles`.
 - **Fansly:** Fansly runs use separate files. When the `metadata` template has no site-specific field (`save_location`, `root`, `site_name`, `model_id` and their aliases), a `Fansly` subfolder is added before `user_data.db`, so Fansly rows don't land in the OnlyFans file. Fansly databases carry a `schema_flags` row `site=fansly`.
 - **Read-only users:** the `db` command and the hash-based duplicate checks only read the database. The exception is `db --unmark-permanent-skips`, which un-marks the selected permanent skips.
+- **PostgreSQL:** when the `OFSC_DATABASE_URL` environment default holds a URL, the same tables live in one PostgreSQL database instead (`ofscraper/db/postgres.py`): one schema per site, every creator's rows together and told apart by `model_id`, with 64-bit ids, booleans and timestamps as column types. No `user_data.db` is read or written then, except by the tools that are given a file. See `POSTGRESQL.md`.
 
 The tables and columns below are what a new database has after `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables` run. The create statements are in `ofscraper/db/operations_/`.
 
@@ -150,7 +151,7 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 - **Deleted posts:** `mark_post_as_deleted` sets `is_deleted=1` for posts that the timeline, archived and streams scanners (`ofscraper/data/api/`) expected from the database but the API skipped past.
 - **Migration and merge:** migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
 - **Deletes:** the app never deletes rows.
-- **Unique key:** `UNIQUE (post_id, model_id)`. The code looks up existing post ids (across all `model_id`s in the file) and chooses insert or update itself.
+- **Unique key:** `UNIQUE (post_id, model_id)`. The code looks up the creator's existing post ids (its `model_id`, and rows that have none) and chooses insert or update itself.
 
 **Unique:** (`post_id`, `model_id`)
 
