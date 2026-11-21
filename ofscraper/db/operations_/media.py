@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 from collections import defaultdict
 
 import arrow
@@ -303,7 +302,7 @@ def add_column_media_hash(
                 cur.execute("ALTER TABLE medias ADD COLUMN hash VARCHAR;")
                 # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -322,7 +321,7 @@ def add_column_media_unlocked(model_id=None, username=None, conn=None, **kwargs)
                 cur.execute("ALTER TABLE medias ADD COLUMN unlocked BOOL;")
                 # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -342,7 +341,7 @@ def add_column_media_posted_at(conn=None, **kwargs):
                 cur.execute("ALTER TABLE medias ADD COLUMN posted_at TIMESTAMP;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -363,7 +362,7 @@ def add_column_media_ID(model_id=None, username=None, conn=None, **kwargs):
 
                 # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -378,7 +377,7 @@ def add_column_media_skip_permanent(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE medias ADD COLUMN skip_permanent BOOL;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -397,7 +396,7 @@ def add_column_media_duration(model_id=None, username=None, conn=None, **kwargs)
                 cur.execute("ALTER TABLE medias ADD COLUMN duration VARCHAR;")
                 # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -1013,7 +1012,7 @@ def repair_size_skipped_media(
             cur.execute(schemaInsert, [SIZE_SKIP_REPAIR_FLAG, 1])
             conn.commit()
             return changed
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -1073,6 +1072,6 @@ def unmark_permanent_skips(media_ids, model_id=None, conn=None, **kwargs) -> int
                 changed += cur.execute(unmark, [media_id] + params).rowcount
             conn.commit()
             return changed
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e

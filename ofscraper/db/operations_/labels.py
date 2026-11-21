@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
@@ -161,7 +160,7 @@ def add_column_labels_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE labels ADD COLUMN model_id INTEGER;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Raise the error for handling
 

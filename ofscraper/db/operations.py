@@ -16,7 +16,7 @@ import logging
 from rich.console import Console
 
 import ofscraper.classes.labels as labels
-import ofscraper.classes.placeholder as placeholder
+import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.sites as sites
 from ofscraper.db.backup import create_backup
 from ofscraper.db.operations_.labels import (
@@ -102,11 +102,7 @@ async def create_tables(model_id=None, username=None, db_path=None, **kwargs):
 
 @run
 async def table_init_create(model_id=None, username=None, **kwargs):
-    new_db = (
-        not placeholder.databasePlaceholder()
-        .databasePathHelper(model_id, username)
-        .exists()
-    )
+    new_db = not wrapper.database_exists(model_id, username)
     await create_tables(model_id=model_id, username=username)
     # read before the periodic copy below can replace the backup that has them
     backup_labels = size_skip_labels_in_backups(model_id=model_id, username=username)

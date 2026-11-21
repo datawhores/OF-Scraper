@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 import arrow
 from rich.console import Console
@@ -258,7 +257,7 @@ def add_column_messages_ID(conn=None, **kwargs):
 
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -372,7 +371,7 @@ def add_column_message_is_deleted(conn=None, **kwargs):
                     "ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -387,6 +386,6 @@ def add_column_message_group_id(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE messages ADD COLUMN group_id VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
