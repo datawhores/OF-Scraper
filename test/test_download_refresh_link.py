@@ -111,8 +111,8 @@ def fetchers(monkeypatch):
     )
 
 
-def _refresh(ele):
-    return asyncio.run(refresh.refresh_media_link(ele))
+def _refresh(ele, refusal=None):
+    return asyncio.run(refresh.refresh_media_link(ele, refusal=refusal))
 
 
 # ---- normal files -----------------------------------------------------------
@@ -162,12 +162,12 @@ def test_area_without_a_fetch_is_left_alone(fetchers):
         {"error": True},
         _raw(post_id=999, link=NEW),  # another post
         _raw(media_id=8, link=NEW),  # the post no longer has this media
-        _raw(link=OLD),  # the same link again
+        _raw(media_id=7, link=None),  # no link for it
         _raw(link="https://cdn2.onlyfans.com/files/a/b/other.mp4?Policy=new"),
         _raw(link="https://cdn3.onlyfans.com/files/a/b/clip.mp4?Policy=new"),
         RuntimeError("API down"),
     ],
-    ids=["none", "error", "other-post", "no-media", "same-link",
+    ids=["none", "error", "other-post", "no-media", "no-link",
          "other-path", "other-host", "raises"],
 )
 def test_unusable_reply_keeps_the_link(fetchers, reply):
@@ -178,6 +178,60 @@ def test_unusable_reply_keeps_the_link(fetchers, reply):
     ele = _media()
     assert _refresh(ele) is False
     assert ele.url == OLD
+
+
+def test_the_same_link_again_is_a_link_to_try(fetchers, caplog):
+    # the site still gives the refused link: it hasn't expired and is signed
+    # for this address, and the file host's other addresses take it (#620)
+    fetchers.timeline.return_value = _raw(link=OLD)
+    ele = _media()
+    with caplog.at_level("INFO", logger="shared"):
+        assert _refresh(ele) is True
+    assert ele.url == OLD
+    assert "is still the current one, trying it again" in caplog.text
+    assert "newly signed" not in caplog.text
+
+
+def test_a_new_link_is_said_to_be_new(fetchers, caplog):
+    ele = _media()
+    with caplog.at_level("INFO", logger="shared"):
+        assert _refresh(ele) is True
+    assert "using a newly signed one" in caplog.text
+    assert "still the current one" not in caplog.text
+
+
+def _refusal():
+    """A 403 that came with the session's way to leave the address."""
+    error = _forbidden()
+    error.leave_address = Mock()
+    return error
+
+
+def test_the_address_that_refused_a_link_the_site_still_gives_is_left(fetchers):
+    fetchers.timeline.return_value = _raw(link=OLD)
+    refusal = _refusal()
+    assert _refresh(_media(), refusal) is True
+    refusal.leave_address.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [_raw(link=NEW), _raw(media_id=7, link=None), None],
+    ids=["new-link", "no-link", "no-post"],
+)
+def test_an_address_is_not_left_when_the_link_is_not_the_same(fetchers, reply):
+    # the link ran out or was signed for another address: every address of
+    # the file host refuses it, so none is at fault (#462)
+    fetchers.timeline.return_value = reply
+    refusal = _refusal()
+    _refresh(_media(), refusal)
+    refusal.leave_address.assert_not_called()
+
+
+def test_a_refusal_without_a_way_to_leave_the_address_is_fine(fetchers):
+    # through a proxy, or an error that isn't the session's
+    fetchers.timeline.return_value = _raw(link=OLD)
+    assert _refresh(_media(), _forbidden()) is True
 
 
 # ---- stories and highlights -------------------------------------------------
@@ -280,6 +334,17 @@ def test_drm_video_gets_a_new_signature(fetchers):
     }
 
 
+def test_drm_new_signature_leaves_no_address(fetchers, caplog):
+    # a protected video has no link of its own to compare: no address is
+    # found at fault
+    fetchers.timeline.return_value = _raw_drm("new")
+    refusal = _refusal()
+    with caplog.at_level("INFO", logger="shared"):
+        assert _refresh(_media(raw=_raw_drm("old")), refusal) is True
+    refusal.leave_address.assert_not_called()
+    assert "using a newly signed one" in caplog.text
+
+
 def test_drm_highlight_gets_a_new_signature(fetchers):
     fetchers.api[_stories_url()] = [_raw_drm("new")]
     ele = _media("stories", raw=_raw_drm("old"))
@@ -361,7 +426,7 @@ def _alt(downloader, ele):
 def refresher(monkeypatch):
     calls = []
 
-    async def fake(ele, link=None):
+    async def fake(ele, link=None, refusal=None):
         calls.append(ele)
         if ele.protected:
             ele.media["files"]["drm"] = _drm("new")
@@ -391,6 +456,30 @@ def test_second_signed_403_fails_without_another_refresh(refresher):
         _main(downloader, ele)
     assert caught.value is second
     assert len(refresher) == 1
+
+
+def test_a_refused_link_the_site_still_gives_is_tried_once_more(fetchers):
+    # the real refresh, with the site answering with the same link (#620)
+    fetchers.timeline.return_value = _raw(link=OLD)
+    ele = _media()
+    refusal = _refusal()
+    downloader = _MainDownloader([refusal, (10, "part", None)])
+    assert _main(downloader, ele) == (10, "part", None)
+    assert downloader.urls == [OLD, OLD]
+    fetchers.timeline.assert_called_once_with(100)
+    # and the address that refused it is left before the new try
+    refusal.leave_address.assert_called_once_with()
+
+
+def test_the_same_link_refused_twice_fails_without_a_third_try(fetchers):
+    fetchers.timeline.return_value = _raw(link=OLD)
+    second = _forbidden()
+    downloader = _MainDownloader([_forbidden(), second])
+    with pytest.raises(aiohttp.ClientResponseError) as caught:
+        _main(downloader, _media())
+    assert caught.value is second
+    assert downloader.urls == [OLD, OLD]
+    fetchers.timeline.assert_called_once_with(100)
 
 
 def test_no_new_link_raises_the_original_403(monkeypatch):
