@@ -19,6 +19,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_e
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.managers.sessionmanager.refusing as refusing
+import ofscraper.managers.sessionmanager.connector as connector
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.host_allowlist as host_allowlist
@@ -539,7 +540,8 @@ class sessionManager:
             self._session = aiohttp.ClientSession(
                 # which connection a refusal came over (#620)
                 response_class=refusing.Response,
-                connector=aiohttp.TCPConnector(
+                # a clear of the saved addresses fails no waiting request (#622)
+                connector=connector.Connector(
                     limit=self._connect_limit,
                     ssl=ssl_context,  # Passed to TCPConnector
                     # which address a host's requests go to (Fansly, #683)
