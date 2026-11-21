@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
@@ -132,7 +131,7 @@ def add_column_other_ID(conn=None, **kwargs):
 
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -152,7 +151,7 @@ def add_column_products_ID(conn=None, **kwargs):
 
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 

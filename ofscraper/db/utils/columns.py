@@ -1,6 +1,10 @@
 def table_columns(cur, table):
     """The names of the columns `table` has."""
-    return {row[1] for row in cur.execute(f"PRAGMA table_info('{table}')")}
+    # imported here: this module has no imports of its own, and so can be
+    # imported before anything else
+    import ofscraper.db.operations_.wrapper as wrapper
+
+    return wrapper.backend_of(cur).table_columns(cur, table)
 
 
 def creator_filter(cur, table, model_id, joiner="AND"):

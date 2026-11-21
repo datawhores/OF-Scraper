@@ -13,7 +13,6 @@ r"""
 
 import contextlib
 import logging
-import sqlite3
 
 import arrow
 from rich.console import Console
@@ -288,7 +287,7 @@ def add_column_post_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN model_id INTEGER;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -309,7 +308,7 @@ def add_column_post_pinned(conn=None, **kwargs):
             # Commit changes
             conn.commit()
 
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -329,7 +328,7 @@ def add_column_post_stream(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN stream BOOLEAN;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -349,7 +348,7 @@ def add_column_post_opened(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN opened BOOLEAN;")
             # Commit changes
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e  # Rollback in case of errors
 
@@ -385,7 +384,7 @@ def add_column_post_is_deleted(conn=None, **kwargs):
                     "ALTER TABLE posts ADD COLUMN is_deleted BOOLEAN DEFAULT 0;"
                 )
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -400,7 +399,7 @@ def add_column_post_purchase_type(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE posts ADD COLUMN purchase_type VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
@@ -415,7 +414,7 @@ def add_column_post_mentions(conn=None, **kwargs):
             if cur.fetchone()[0] == 0:
                 cur.execute("ALTER TABLE posts ADD COLUMN mentions VARCHAR;")
             conn.commit()
-        except sqlite3.Error as e:
+        except wrapper.DB_ERRORS as e:
             conn.rollback()
             raise e
 
