@@ -566,15 +566,22 @@ class sessionManager:
         if async_:
             # the connector doesn't close a resolver it was given
             self._resolver = refusing.Resolver(fansly_address.Resolver())
+            # how long an idle connection is kept, as for the sync client
+            # below (#627); aiohttp's own default is 15. Kept for no time
+            # means closed after use: given 0, aiohttp would never close an
+            # idle connection (#637)
+            idle = (
+                {"keepalive_timeout": self._keep_alive_exp}
+                if self._keep_alive_exp > 0
+                else {"force_close": True}
+            )
             self._session = aiohttp.ClientSession(
                 # which connection a refusal came over (#620)
                 response_class=refusing.Response,
                 # a clear of the saved addresses fails no waiting request (#622)
                 connector=connector.Connector(
                     limit=self._connect_limit,
-                    # how long an idle connection is kept, as for the sync
-                    # client below (#627); aiohttp's own default is 15
-                    keepalive_timeout=self._keep_alive_exp,
+                    **idle,
                     ssl=ssl_context,  # Passed to TCPConnector
                     # which address a host's requests go to (Fansly, #683)
                     resolver=self._resolver,
