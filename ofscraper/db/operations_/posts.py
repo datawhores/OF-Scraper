@@ -250,7 +250,8 @@ def create_post_table(model_id=None, username=None, conn=None, db_path=None, **k
 @wrapper.operation_wrapper_async
 def get_all_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allPOSTCheck)
+        creator, params = db_columns.creator_filter(cur, "posts", model_id, "WHERE")
+        cur.execute(allPOSTCheck + creator, params)
         return [dict(row)["post_id"] for row in cur.fetchall()]
 
 

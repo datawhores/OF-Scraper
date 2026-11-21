@@ -159,7 +159,8 @@ def update_stories_table(
 @wrapper.operation_wrapper_async
 def get_all_stories_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allStoriesCheck)
+        creator, params = db_columns.creator_filter(cur, "stories", model_id, "WHERE")
+        cur.execute(allStoriesCheck + creator, params)
         return list(map(lambda x: x[0], cur.fetchall()))
 
 
