@@ -520,7 +520,7 @@ Defined in `ofscraper/utils/of_env/values/general.py`.
 | <a id="app_token"></a>`APP_TOKEN` | `OFSC_APP_TOKEN` | `'33d57ade8c02dbc5a333db99ff9ae26a'` | A generic application token (example, usually sensitive and not hardcoded). |
 | <a id="continue_bool"></a>`CONTINUE_BOOL` | `OFSC_CONTINUE_BOOL` | `True` | General boolean flag for continuing operations. |
 | <a id="file_count_placeholder"></a>`FILE_COUNT_PLACEHOLDER` | `OFSC_FILE_COUNT_PLACEHOLDER` | `True` | Flag related to file count display or logic. |
-| <a id="filter_self_media"></a>`FILTER_SELF_MEDIA` | `OFSC_FILTER_SELF_MEDIA` | `True` | Whether to filter media belonging to self-profile. |
+| <a id="filter_self_media"></a>`FILTER_SELF_MEDIA` | `OFSC_FILTER_SELF_MEDIA` | `True` | Whether to skip the account's own media: the media in messages you sent, and your own profile's media when you scrape it. Set it to False to download them. |
 | <a id="allow_dupe_media"></a>`ALLOW_DUPE_MEDIA` | `OFSC_ALLOW_DUPE_MEDIA` | `False` | The default for --allow-dupes: download media that is in several posts once for each post. The option overrides it for one run. |
 
 ### Data Processing and File Handling

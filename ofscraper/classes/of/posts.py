@@ -6,6 +6,7 @@ import ofscraper.classes.of.base as base
 import ofscraper.classes.of.media as Media
 import ofscraper.utils.config.data as data
 import ofscraper.filters.media.filters as helpers
+import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")
 
@@ -325,7 +326,11 @@ class Post(base.base):
     @property
     def media(self) -> list[Media.Media]:
         """Returns a list of all viewable media objects for this post."""
-        if int(self.fromuser) != int(self.model_id):
+        if int(self.fromuser) != int(self.model_id) and of_env.getattr(
+            "FILTER_SELF_MEDIA"
+        ):
+            # a message the account sent: its media is kept only with the
+            # FILTER_SELF_MEDIA setting off
             return []
         media_items = map(
             lambda x: Media.Media(x[1], x[0], self), enumerate(self.post_media)
