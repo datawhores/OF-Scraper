@@ -805,6 +805,8 @@ def test_a_failure_part_way_leaves_nothing_and_a_rerun_works(tmp_path):
 
 
 def test_a_refusal_by_the_server_is_said_without_the_password(tmp_path, monkeypatch):
+    # the password is found as the driver reads the address
+    pytest.importorskip("psycopg")
     folder = tmp_path / "data"
     current_file(folder / "user_data.db", 111)
     monkeypatch.setenv(postgres.URL_KEY, "postgresql://me:s3cret-word@localhost/db")

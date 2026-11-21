@@ -897,6 +897,9 @@ def test_a_read_the_server_ends_for_taking_too_long_is_one_sentence(monkeypatch,
 
 
 def test_cli_never_repeats_the_address_or_its_password(monkeypatch, capsys):
+    # the password is found as the driver reads the address
+    pytest.importorskip("psycopg")
+
     def refuses(url):
         raise postgres.PostgresUnavailable(f"could not connect to {url} (password s3cret-word)")
 

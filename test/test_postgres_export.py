@@ -765,6 +765,9 @@ def test_a_run_that_stops_part_way_leaves_no_half_made_file(tmp_path):
 
 
 def test_a_stop_before_any_file_says_nothing_was_written(tmp_path, monkeypatch):
+    # the password is found by reading the address as PostgreSQL does, which
+    # needs the driver; without it no server error can happen at all
+    pytest.importorskip("psycopg")
     database = two_creators(tmp_path)
     out = tmp_path / "out"
     monkeypatch.setenv(postgres.URL_KEY, "postgresql://me:s3cret-word@localhost/db")
