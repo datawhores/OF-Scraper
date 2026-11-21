@@ -504,6 +504,7 @@ def render_cli(notes):
 
 # argparse tools under ofscraper/commands that aren't part of the CLI: module -> usage
 SEPARATE_COMMANDS = {
+    "move_creator_files": "(DATABASE | --postgres --creator NAME) [OPTIONS]",
     "postgres_export": "FOLDER [OPTIONS]",
     "postgres_import": "FOLDER [OPTIONS]",
     "recover_collisions": "(DATABASE | --postgres --creator NAME) [OPTIONS]",

@@ -48,6 +48,7 @@ Which site a run uses is decided in this order:
 - **Media:** files go under the save location, through `dir_format` and `file_format`. Downloads are written as `.part` files (in `advanced_options.temp_dir` when set) and then moved into place. `--no-auto-resume` deletes leftover `.part` files instead of resuming them.
 - **`db --export PATH`:** writes a CSV.
 - **`recover_collisions --apply`:** resets `downloaded` flags and writes an undo file beside the database. With `--postgres` the flags are in PostgreSQL, and the undo file goes to `--undo-dir`, which `--apply` then needs.
+- **`move_creator_files --apply`:** moves a creator's recorded files from the folder of another of their names to the current name's, and updates `directory` in their media rows. It replaces and deletes no file; it removes only folders the move left empty.
 - **`postgres_export --apply`:** writes a new `user_data.db` for each creator PostgreSQL has rows for, under the folder it is given. It never changes a file that is already there.
 - **Logs and cache:** logs go to the `logging` folder. The cache goes to the profile's cache folder. `--no-cache` and `--no-api-cache` stop cache writes.
 
@@ -91,6 +92,7 @@ Upstream's docs don't cover these:
 - **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See `COLLISION_RECOVERY.md`.
 - **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See `STASH.md`.
 - **`scripts/creator_names.py`**: lists and records the usernames a creator account has had.
+- **`move_creator_files`** (`python -m ofscraper.commands.move_creator_files`): moves a creator's downloaded files to the folder of their current name and updates the recorded folders. See `MOVING_FILES.md`.
 - **PostgreSQL** (`OFSC_DATABASE_URL`): keeps the database in one PostgreSQL database, not in a SQLite file per creator. See `POSTGRESQL.md`.
 - **`postgres_import`** (`python -m ofscraper.commands.postgres_import`): brings existing `user_data.db` files into that PostgreSQL database. See `POSTGRESQL.md`.
 - **`postgres_export`** (`python -m ofscraper.commands.postgres_export`): writes what that PostgreSQL database holds back to one `user_data.db` per creator. See `POSTGRESQL.md`.

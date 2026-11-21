@@ -133,6 +133,10 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
 - **Given a `user_data.db`, it still works on that file.** With `OFSC_DATABASE_URL` set it then says that the file holds nothing scraped since PostgreSQL was turned on. A file and `--postgres` together are refused.
 - **Behind a connection pooler** that hands each transaction to another server connection (PgBouncer in transaction mode), the time zone and the timeouts the command sets may not hold. Give it the server's own address.
 
+## Moving a creator's files
+
+`move_creator_files` (see `MOVING_FILES.md`) works on PostgreSQL when it is given `--postgres --creator <username or id>` in place of the path to a `user_data.db`, with `--site` if more than one creator goes by that name. The database and the creator are found as `recover_collisions --postgres` finds them (see above), and it moves what it would with a `user_data.db` that has the same rows. Close the scraper first: PostgreSQL does not lock it out as a file does. The rows are changed in one transaction that is saved at the end. If the scraper changed one of them meanwhile, no row is changed, and the files moved so far stay at their new places. If the connection is lost while the changes are being saved, it isn't known whether they were kept. Either way, run the same command again to finish.
+
 ## What is different
 
 - **One database for every creator.** Each site gets its own schema (`onlyfans`, `fansly`), holding the same tables a `user_data.db` has. Every row carries its creator's `model_id`.
@@ -149,10 +153,10 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
   - `scripts/creator_names.py` says so when it starts, if `OFSC_DATABASE_URL` is set in the environment it is run in. It doesn't read the scraper's settings, so it says nothing when the address is only in an env file that `config.json` names.
   - Merge Databases says so on its screen.
   - The GUI patch doesn't say so.
-  - `stash_sync` and `recover_collisions` work on PostgreSQL when you tell them to: see "Syncing to Stash" and "Recovering filename collisions" above.
+  - `stash_sync`, `recover_collisions` and `move_creator_files` work on PostgreSQL when you tell them to: see "Syncing to Stash", "Recovering filename collisions" and "Moving a creator's files" above.
 
 ## Developing
 
-`test/test_db_postgres_live.py` runs the engine against a real server, and `test/test_postgres_import_live.py` and `test/test_postgres_export_live.py` the two commands above. They are skipped unless `OFSC_TEST_POSTGRES_URL` names a server the tests may use; each test works in schemas of its own and drops them. CI runs them against the oldest and newest supported PostgreSQL. `test/test_stash_sync_postgres_live.py` does the same for `stash_sync --postgres`, and `test/test_collision_recovery_postgres_live.py` for `recover_collisions --postgres`.
+`test/test_db_postgres_live.py` runs the engine against a real server, and `test/test_postgres_import_live.py` and `test/test_postgres_export_live.py` the two commands above. They are skipped unless `OFSC_TEST_POSTGRES_URL` names a server the tests may use; each test works in schemas of its own and drops them. CI runs them against the oldest and newest supported PostgreSQL. `test/test_stash_sync_postgres_live.py` does the same for `stash_sync --postgres`, `test/test_collision_recovery_postgres_live.py` for `recover_collisions --postgres`, and `test/test_move_creator_files_postgres_live.py` for `move_creator_files --postgres`.
 
 A column added to a SQLite table also needs adding to `TABLES` in `ofscraper/db/postgres.py`, with the step that adds it to PostgreSQL databases made before: an entry in `ADDED_COLUMNS` there. At each start `create_tables` asks which of those columns the tables have and adds the ones that are missing. `test/test_db_postgres.py` fails until the two match.

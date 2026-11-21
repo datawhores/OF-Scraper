@@ -96,6 +96,26 @@ Accepts 86 options. Its `--help` summary: Uses API to modify db files without th
 
 Accepts 61 options. Its `--help` summary: Print information from the database.
 
+### `move_creator_files` (separate entry point)
+
+`python -m ofscraper.commands.move_creator_files (DB | --postgres --creator NAME [--site SITE]) [--apply] [--to NAME] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `MOVING_FILES.md`). It works offline on one creator's `user_data.db`: it moves the files the database records under another of the creator's names to the folder of their current name, and sets `directory` in their `medias` rows to match. It goes only by the recorded paths, never by the scraper's settings. Without `--apply` it prints a JSON report and changes nothing.
+
+- **The name the files go to** is the one seen last (`profiles.last_seen_at`). If the names have no dates and there is more than one, it asks for `--to NAME`, which must be a name the database records.
+- **What is moved:** a recorded folder with exactly one part that is another of the creator's names, in small letters as the scraper writes it, followed by one or two of the scraper's own folders (`Posts`, `Images`). A path where the name is followed by anything else (a folder above the library with the same name), or where `{first_letter}` above it would change, is left and listed. That part becomes the new name; nothing else in the path changes, and a file's own name never does.
+- **Each file on its own:** a file at its old place is renamed to its new place if that is free. A file that is at the new place already only gets its rows changed, if its size is the one recorded. If both places hold a file, both stay and the rows are left. It never replaces or deletes a file, and touches only the files the database records for the creator. Old folders the move left empty are removed.
+- **No undo file.** The row changes are saved together at the end. A run that stops part way is finished by running the same command again, and `--to OLDNAME --apply` moves everything back under the old name.
+- **With `--postgres`** it works on one creator's rows in the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (see `POSTGRESQL.md`). `--creator` names the creator as for `recover_collisions`.
+
+Run `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --creator NAME) [OPTIONS]`.
+
+- `DATABASE`: One creator's user_data.db
+- `--apply`: Move the files and change the rows; without it, only report
+- `--to`: The recorded name whose folder the files go to (default: the name seen last)
+- `--path-root`: Original working directory for relative recorded paths
+- `--postgres`: Work on the PostgreSQL database $OFSC_DATABASE_URL names instead of a user_data.db; give --creator and no database with it
+- `--site`: With --postgres, the creator's site (default: the site that has the creator)
+- `--creator`: With --postgres, the one creator to work on, by a username or id that no other creator has
+
 ### `postgres_export` (separate entry point)
 
 `python -m ofscraper.commands.postgres_export FOLDER [--apply] [--site SITE]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). The other direction of `postgres_import`: it writes what the PostgreSQL database that `OFSC_DATABASE_URL` names holds back to SQLite files, one per creator, at `FOLDER/<model_id>/user_data.db` (the layout of a profile's `.data` folder with the default `metadata`). PostgreSQL is only read, in one read-only transaction. Without `--apply` it only reports which files would be written. A `user_data.db` that already exists is never changed: its creator is left out and listed, and another FOLDER gets their rows out. Each file is made by the code that makes a new creator's database (so it has today's tables and every upgrade step recorded), under a `.partial` name beside its place, read back the way the import reads a file, and only then given its name. `--site` chooses the site when PostgreSQL has rows for more than one.
