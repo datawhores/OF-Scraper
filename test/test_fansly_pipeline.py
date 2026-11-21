@@ -27,6 +27,7 @@ import ofscraper.commands.utils.command as command
 import ofscraper.data.api.labels as labels_api
 import ofscraper.data.posts.post as post
 import ofscraper.db.operations as operations
+import ofscraper.db.operations_.profile as profile
 import ofscraper.filters.media.filters as filters
 import ofscraper.sites.fansly.incremental as incremental
 import ofscraper.sites.fansly.pipeline as pipeline
@@ -1176,6 +1177,10 @@ def two_dbs(monkeypatch, tmp_path):
         lambda self, mid, name: current["db"],
     )
     monkeypatch.setattr(operations, "create_backup", lambda *a, **k: None)
+    # one moment for both runs: the dates a name was seen on are the time of
+    # the run, and the two databases are compared row for row
+    seen = arrow.get("2026-01-01T00:00:00+00:00")
+    monkeypatch.setattr(profile, "_now", lambda: seen)
     return current
 
 

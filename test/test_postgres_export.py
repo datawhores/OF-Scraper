@@ -556,6 +556,75 @@ def test_a_creator_with_only_a_name_gets_a_file(tmp_path):
     assert sql(path, "SELECT model_id FROM models") == [(333,)]
 
 
+def test_the_dates_of_a_creators_names_come_back(tmp_path):
+    folder = tmp_path / "data"
+    original = canonical(current_file(folder / "111" / DATABASE, 111))
+    sql(
+        original,
+        "INSERT INTO profiles (user_id, username, first_seen_at, last_seen_at)"
+        " VALUES (111, ?, ?, ?)",
+        [
+            ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+            ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+        ],
+    )
+    out = tmp_path / "out"
+
+    code, said = run(out, holding(folder), apply=True)
+
+    assert code == 0, said
+    assert sql(
+        out / "111" / DATABASE,
+        "SELECT username, first_seen_at, last_seen_at FROM profiles ORDER BY id",
+    ) == [
+        ("a_creator", None, None),
+        ("newer_name", "2024-03-01T09:30:00+00:00", "2024-04-01T09:30:00+00:00"),
+        ("half_dated", None, "2024-02-01T00:00:00+00:00"),
+    ]
+    # as the scraper wrote them: the file comes back row for row
+    assert dump(out / "111" / DATABASE) == dump(original)
+
+
+def test_a_date_written_another_way_comes_back_as_the_same_moment(tmp_path):
+    folder = tmp_path / "data"
+    path = current_file(folder / "111" / DATABASE, 111)
+    # no offset, another offset, and a number of seconds
+    sql(
+        path,
+        "INSERT INTO profiles (user_id, username, first_seen_at, last_seen_at)"
+        " VALUES (111, 'by_hand', '2023-01-05 10:00:00', '2024-03-05T08:30:00+02:00')",
+    )
+    sql(path, "UPDATE profiles SET last_seen_at = 1709285400 WHERE username = 'a_creator'")
+    out = tmp_path / "out"
+
+    code, said = run(out, holding(folder), apply=True)
+
+    assert code == 0, said
+    assert sql(
+        out / "111" / DATABASE,
+        "SELECT username, first_seen_at, last_seen_at FROM profiles ORDER BY id",
+    ) == [
+        ("a_creator", None, "2024-03-01T09:30:00+00:00"),
+        ("by_hand", "2023-01-05T10:00:00+00:00", "2024-03-05T06:30:00+00:00"),
+    ]
+
+
+def test_names_postgresql_holds_without_dates_come_back_without(tmp_path):
+    # rows as a database from before the dates gives them: see
+    # test_a_database_from_before_the_dates_is_read_as_having_none
+    database = Database(
+        {("onlyfans", "profiles"): [{"user_id": 333, "username": "old_name"}]}
+    )
+    out = tmp_path / "out"
+
+    code, said = run(out, database, apply=True)
+
+    assert code == 0, said
+    assert sql(out / "333" / DATABASE, "SELECT * FROM profiles") == [
+        (1, 333, "old_name", None, None)
+    ]
+
+
 # --- a file that is already there ---
 
 
@@ -1170,24 +1239,72 @@ def real_database(conn):
     return database
 
 
+PROFILE_COLUMNS = ["user_id", "username", "first_seen_at", "last_seen_at"]
+
+
+def profiles_with(*columns):
+    """A server whose profiles table has these columns."""
+
+    def answer(query):
+        if "information_schema.columns" in query:
+            return [(column,) for column in columns]
+        return [(1, "a")]
+
+    return answer
+
+
 def test_the_server_is_asked_for_one_creators_rows_oldest_first():
-    conn = Connection(lambda query: [(1, "a")])
+    conn = Connection(profiles_with("id", *PROFILE_COLUMNS))
     database = real_database(conn)
 
     assert database.rows("fansly", "medias", ["media_id", "link"], 111) == [(1, "a")]
-    database.rows("onlyfans", "profiles", ["user_id", "username"], 222)
+    database.rows("onlyfans", "profiles", PROFILE_COLUMNS, 222)
 
     assert conn.asked == [
         (
             "SELECT media_id, link FROM fansly.medias WHERE model_id = ? ORDER BY id",
             [111],
         ),
+        # whether the table has the columns added since PostgreSQL could
+        # first be used
         (
-            "SELECT user_id, username FROM onlyfans.profiles WHERE user_id = ?"
-            " ORDER BY id",
+            "SELECT column_name FROM information_schema.columns"
+            " WHERE table_schema = ? AND table_name = ?",
+            ["onlyfans", "profiles"],
+        ),
+        (
+            "SELECT user_id, username, first_seen_at, last_seen_at"
+            " FROM onlyfans.profiles WHERE user_id = ? ORDER BY id",
             [222],
         ),
     ]
+
+
+def test_a_database_from_before_the_dates_is_read_as_having_none():
+    # the scraper gives the table its new columns when it starts, and this
+    # command only reads: it may be the first of this version to see it
+    conn = Connection(profiles_with("id", "user_id", "username"))
+
+    real_database(conn).rows("onlyfans", "profiles", PROFILE_COLUMNS, 222)
+
+    assert conn.asked[-1] == (
+        "SELECT user_id, username, NULL AS first_seen_at, NULL AS last_seen_at"
+        " FROM onlyfans.profiles WHERE user_id = ? ORDER BY id",
+        [222],
+    )
+
+
+def test_only_a_column_added_since_is_ever_read_as_empty():
+    # a table that lacks any other column is a database that isn't the
+    # scraper's: the server's refusal says so
+    conn = Connection(profiles_with("id", "username"))
+    database = real_database(conn)
+
+    assert database.lacking("onlyfans", "profiles") == {"first_seen_at", "last_seen_at"}
+    assert database.lacking("onlyfans", "medias") == set()
+    database.rows("onlyfans", "profiles", ["user_id", "username"], 222)
+
+    assert conn.asked[-1][0].startswith("SELECT user_id, username FROM")
 
 
 def test_every_creator_the_tables_name_is_counted():

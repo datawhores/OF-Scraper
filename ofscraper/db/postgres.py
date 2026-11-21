@@ -164,6 +164,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     username TEXT NOT NULL,
+    first_seen_at TIMESTAMPTZ,
+    last_seen_at TIMESTAMPTZ,
     UNIQUE (user_id, username)
 )""",
     "models": """
@@ -220,6 +222,13 @@ UNIQUE_KEYS = {
 # The unique keys start with the row's own id; nearly every read asks for one
 # creator's rows
 CREATOR_INDEXES = ("medias", "posts", "messages", "stories", "others", "products", "labels")
+# The columns added since the first version that could use PostgreSQL, each
+# with the upgrade step that adds it to a SQLite file: (step, table, columns).
+# A database made before a step gets its columns at the next start (see
+# PostgresBackend._add_columns); a new one is made with them
+ADDED_COLUMNS = (
+    ("profiles_seen_at", "profiles", ("first_seen_at", "last_seen_at")),
+)
 
 
 class PostgresUnavailable(RuntimeError):
@@ -778,7 +787,8 @@ class PostgresBackend:
         """Make the site's schema and tables if they aren't there. `flags`
         (the upgrade steps this build knows) are recorded as done when the
         tables are first made, since they're made at the current layout.
-        `schema` names another site's than the current one."""
+        Tables an earlier version made get the columns added since (see
+        _add_columns). `schema` names another site's than the current one."""
         schema = schema or self.where({}, False)
         with self._lock:
             if (url(), schema) in self._ready:
@@ -810,6 +820,8 @@ class PostgresBackend:
                             " VALUES (?, '1') ON CONFLICT (flag_name) DO NOTHING",
                             [(flag,) for flag in sorted(flags)],
                         )
+                    else:
+                        self._add_columns(cur)
                 conn.commit()
             except self.errors as E:
                 raise self._unavailable(E, url()) from E
@@ -817,6 +829,34 @@ class PostgresBackend:
                 self.close(conn)
             self._ready.add((url(), schema))
             self._pool(schema, timeout)._ofscraper_tables_made = True
+
+    def _add_columns(self, cur):
+        """Give tables made by an earlier version the columns added since
+        (ADDED_COLUMNS), and record each step as done. Run at every start,
+        under create_tables' lock: it asks which columns are there, and
+        changes a table only when one is missing. The new columns are empty
+        in the rows already there."""
+        for flag, table, columns in ADDED_COLUMNS:
+            there = {
+                row[0]
+                for row in cur.execute(
+                    "SELECT column_name FROM information_schema.columns"
+                    " WHERE table_schema = current_schema() AND table_name = ?",
+                    [table],
+                ).fetchall()
+            }
+            missing = [column for column in columns if column not in there]
+            for column in missing:
+                cur.execute(
+                    f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS"
+                    f" {column} {COLUMN_TYPES[table][column]}"
+                )
+            if missing:
+                cur.execute(
+                    "INSERT INTO schema_flags (flag_name, flag_value)"
+                    " VALUES (?, '1') ON CONFLICT (flag_name) DO NOTHING",
+                    [flag],
+                )
 
     def check(self):
         """The startup check: connect, and stop with one sentence if the

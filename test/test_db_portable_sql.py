@@ -246,9 +246,16 @@ def test_the_first_username_is_the_first_by_name(db, monkeypatch):
         lambda self, model_id, model_username: db,
     )
 
+    # names without dates, as they were recorded when this order was all
+    # there was to go by (test_profile_seen_dates has the names with dates)
+    with contextlib.closing(sqlite3.connect(db)) as conn:
+        conn.executemany(
+            "INSERT INTO profiles (user_id, username) VALUES (5, ?)",
+            [("zed",), ("abe",), ("moe",)],
+        )
+        conn.commit()
+
     async def go():
-        for name in ("zed", "abe", "moe"):
-            await profile.write_profile_table(model_id=5, username=name, db_path=db)
         return await profile.get_profile_info(model_id=5, username="x", db_path=db)
 
     assert asyncio.run(go()) == "abe"
