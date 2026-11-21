@@ -96,23 +96,12 @@ directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 
 
-mediaDupeHashesMedia = """
-WITH x AS (
-    SELECT hash, size
-    FROM medias
-    WHERE hash IS NOT NULL AND size IS NOT NULL AND media_type = ?
-)
-SELECT hash
-FROM x
-GROUP BY hash, size
-HAVING COUNT(*) > 1;
-"""
-
+# {filters}: the media type and the creator, see get_dupe_media_hashes
 mediaDupeHashes = """
 WITH x AS (
     SELECT hash, size
     FROM medias
-    WHERE hash IS NOT NULL AND size IS NOT NULL
+    WHERE hash IS NOT NULL AND size IS NOT NULL{filters}
 )
 SELECT hash
 FROM x
@@ -411,14 +400,17 @@ def add_column_media_duration(model_id=None, username=None, conn=None, **kwargs)
 @wrapper.operation_wrapper_async
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allIDCheck)
+        creator, params = db_columns.creator_filter(cur, "medias", model_id, "WHERE")
+        cur.execute(allIDCheck + creator, params)
         return [dict(row)["media_id"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
 def get_media_ids_downloaded(conn=None, without_permanent_skips=False, **kwargs) -> list:
-    """without_permanent_skips leaves out the permanent skip_download_script
-    skips (#354)."""
+    """Every creator's downloaded media in the database: this is the list
+    for "unique media across all models". get_media_ids_downloaded_model_sync
+    is one creator's. without_permanent_skips leaves out the permanent
+    skip_download_script skips (#354)."""
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(
             allDLIDCheckNoPermanentSkips if without_permanent_skips else allDLIDCheck
@@ -437,7 +429,8 @@ def get_media_ids_downloaded_model(model_id=None, conn=None, **kwargs) -> list:
 @wrapper.operation_wrapper
 def get_media_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allPostIDCheck)
+        creator, params = db_columns.creator_filter(cur, "medias", model_id, "WHERE")
+        cur.execute(allPostIDCheck + creator, params)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]
 
 
@@ -450,8 +443,10 @@ def get_media_post_ids_downloaded(
     without_permanent_skips=False,
     **kwargs,
 ) -> list:
-    """model_only keeps the rows of model_id; without_permanent_skips leaves
-    out the permanent skip_download_script skips (#354)."""
+    """Every creator's rows in the database (the list for "unique media
+    across all models"), or with model_only the rows of model_id;
+    without_permanent_skips leaves out the permanent skip_download_script
+    skips (#354)."""
     query, params = allPostIDDLCheck, []
     if model_only:
         query, params = query + " and model_id=(?)", [model_id]
@@ -470,10 +465,11 @@ def get_media_post_files_downloaded(
     the check table can open the file's folder (#424). Directory and filename
     are None when no file was recorded. media_id limits it to one media."""
     with contextlib.closing(conn.cursor()) as cur:
-        if media_id is None:
-            cur.execute(allPostFileDLCheck)
-        else:
-            cur.execute(allPostFileDLCheck + " and media_id=(?)", [media_id])
+        query, params = db_columns.creator_filter(cur, "medias", model_id)
+        query = allPostFileDLCheck + query
+        if media_id is not None:
+            query, params = query + " and media_id=(?)", params + [media_id]
+        cur.execute(query, params)
         return {
             (row["media_id"], row["post_id"]): (row["directory"], row["filename"])
             for row in cur.fetchall()
@@ -484,11 +480,14 @@ def get_media_post_files_downloaded(
 def get_dupe_media_hashes(
     model_id=None, username=None, conn=None, mediatype=None, **kwargs
 ) -> list:
+    """The hashes more than one of the creator's files have. Another
+    creator's files in the same database don't count: remove_dupes_hash
+    deletes all but one of the files it gets."""
     with contextlib.closing(conn.cursor()) as cur:
+        filters, params = db_columns.creator_filter(cur, "medias", model_id)
         if mediatype:
-            cur.execute(mediaDupeHashesMedia, [mediatype])
-        else:
-            cur.execute(mediaDupeHashes)
+            filters, params = filters + " AND media_type = ?", params + [mediatype]
+        cur.execute(mediaDupeHashes.format(filters=filters), params)
         return [dict(row)["hash"] for row in cur.fetchall()]
 
 
@@ -497,7 +496,8 @@ def get_dupe_media_files(
     model_id=None, username=None, conn=None, hash=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(mediaDupeFiles, [hash])
+        creator, params = db_columns.creator_filter(cur, "medias", model_id)
+        cur.execute(mediaDupeFiles + creator, [hash] + params)
         return [dict(row)["filename"] for row in cur.fetchall()]
 
 

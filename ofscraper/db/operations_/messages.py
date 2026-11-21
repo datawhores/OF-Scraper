@@ -213,7 +213,10 @@ def replace_messages_table(inputData: list, model_id=None, conn=None, **kwargs):
 @wrapper.operation_wrapper_async
 def get_all_messages_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(allMessagesCheck)
+        creator, params = db_columns.creator_filter(
+            cur, "messages", model_id, "WHERE"
+        )
+        cur.execute(allMessagesCheck + creator, params)
         return [dict(row)["post_id"] for row in cur.fetchall()]
 
 

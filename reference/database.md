@@ -150,7 +150,7 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 - **Deleted posts:** `mark_post_as_deleted` sets `is_deleted=1` for posts that the timeline, archived and streams scanners (`ofscraper/data/api/`) expected from the database but the API skipped past.
 - **Migration and merge:** migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
 - **Deletes:** the app never deletes rows.
-- **Unique key:** `UNIQUE (post_id, model_id)`. The code looks up existing post ids (across all `model_id`s in the file) and chooses insert or update itself.
+- **Unique key:** `UNIQUE (post_id, model_id)`. The code looks up the creator's existing post ids (its `model_id`, and rows that have none) and chooses insert or update itself.
 
 **Unique:** (`post_id`, `model_id`)
 
