@@ -23,6 +23,7 @@ from collections import defaultdict
 from contextlib import closing
 from pathlib import Path
 
+import ofscraper.db.postgres as postgres
 from ofscraper.sites.fansly.constants import ORIGIN as FANSLY_ORIGIN
 from ofscraper.sites.fansly.normalize import hashtags
 
@@ -703,6 +704,7 @@ def main(argv=None):
             parser.error(f"--path-map needs LOCAL=STASH, got {item!r}")
         mappings.append(tuple(item.split("=", 1)))
 
+    postgres.warn_sqlite_files("stash_sync")
     try:
         report = sync(
             args.paths,

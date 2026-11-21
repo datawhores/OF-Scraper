@@ -10,6 +10,8 @@ import uuid
 from collections import defaultdict
 from contextlib import closing
 
+import ofscraper.db.postgres as postgres
+
 
 def find_collisions(conn, path_root=None):
     """Group distinct media by their recorded path or existing file identity."""
@@ -144,6 +146,7 @@ def main(argv=None):
     parser.add_argument("--undo", type=Path, help="Preview restoring flags from a recovery undo file")
     parser.add_argument("--path-root", type=Path, help="Original working directory for relative recorded paths")
     args = parser.parse_args(argv)
+    postgres.warn_sqlite_files("recover_collisions")
     try:
         result = (undo(args.database, args.undo, apply=args.apply) if args.undo
                   else recover(args.database, apply=args.apply, path_root=args.path_root))

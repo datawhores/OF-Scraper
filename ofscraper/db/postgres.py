@@ -17,6 +17,7 @@ URL is set.
 import atexit
 import functools
 import logging
+import os
 import re
 import sys
 import threading
@@ -230,6 +231,30 @@ def url():
 
 def enabled():
     return bool(url())
+
+
+def sqlite_files_notice(tool):
+    """What a tool that still works on the user_data.db files tells its user
+    while PostgreSQL is on (#631). The caller knows whether it is on."""
+    return (
+        f"PostgreSQL is on ({URL_KEY} is set), but {tool} works on the"
+        " user_data.db files, not PostgreSQL. It does not see anything scraped"
+        " since PostgreSQL was turned on, and what it changes in those files"
+        " does not reach PostgreSQL. See POSTGRESQL.md."
+    )
+
+
+def warn_sqlite_files(tool):
+    """Says sqlite_files_notice on stderr (stdout may be a report that
+    another program reads), for a tool that is run on its own, without the
+    scraper: stash_sync, recover_collisions, scripts/creator_names.py.
+
+    Only the environment the tool is run in is looked at. A URL that is only
+    in one of the scraper's env files is not seen: these tools don't read the
+    scraper's settings, which would bring the scraper's own environment,
+    errors and start-up time into them."""
+    if os.environ.get(URL_KEY, "").strip():
+        print(f"warning: {sqlite_files_notice(tool)}", file=sys.stderr)
 
 
 def masked(text, database_url=None):
