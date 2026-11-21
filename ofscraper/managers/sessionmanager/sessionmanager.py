@@ -907,6 +907,9 @@ class sessionManager:
         # per-request cookies: build_request merges them with the client's
         # cookies for this request only, without touching the client's jar
         request = self._session.build_request(method.upper(), **kwargs)
+        self._send_request_cookies_once(
+            request, kwargs.get("cookies"), kwargs.get("headers")
+        )
         t = self._session.send(request, follow_redirects=follow_redirects)
         t.ok = not t.is_error
         t.json_ = t.json
@@ -915,6 +918,25 @@ class sessionManager:
         t.iter_chunked = t.iter_bytes
         t.read_ = t.read
         return t
+
+    def _send_request_cookies_once(self, request, cookies, headers=None):
+        """
+        The client's jar keeps the cookies the server sets. build_request adds
+        the request's own cookies next to them, so once the server set a
+        `sess`, each request sent two. Like aiohttp, send only the request's
+        cookie of a name; the jar itself and its other cookies stay as they are.
+        A Cookie header the caller wrote is sent as written, as httpx does.
+        """
+        if not cookies or "cookie" not in request.headers:
+            return
+        if "cookie" in httpx.Headers(headers or {}):
+            return
+        merged = httpx.Cookies(self._session.cookies)
+        for name in cookies:
+            merged.delete(name)
+        merged.update(cookies)
+        del request.headers["cookie"]
+        merged.set_cookie_header(request)
 
     async def _aio_funct(self, method, *args, **kwargs):
         r = await self._session._request(method, *args, **kwargs)
