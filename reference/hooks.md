@@ -1,6 +1,6 @@
 # Hooks for add-ons
 
-Code that runs in the same process as the scraper, such as the GUI patch or a plugin, can use the functions and events on this page instead of shipping changed copies of the scraper's files. Each entry gives the module, how to call it, what it gives back, and how it behaves with PostgreSQL on. The [GUI patch migration map](#gui-patch-migration-map) at the end says which part of the GUI patch's copied files each one can replace.
+Code that runs in the same process as the scraper, such as the GUI patch or a plugin, can use the functions and events on this page instead of shipping changed copies of the scraper's files. Each entry gives the module, how to call it, what it gives back, and, where it matters, how it behaves with PostgreSQL on. The [GUI patch migration map](#gui-patch-migration-map) at the end says which part of the GUI patch's copied files each one can replace.
 
 This file is written by hand. Check an entry against the code before relying on it.
 
@@ -50,7 +50,9 @@ Subscribers get these keyword arguments:
 | `item_downloaded` | `ele`, `path` (a `pathlib.Path`) | a media file has been saved at `path` and recorded in the database |
 | `item_finished` | `ele`, `username`, `result`, `reason` | the download loop has counted one item |
 
-- `item_downloaded` is sent before `after_download_script` runs, and a stop during the script still counts the item as downloaded. It's sent for normal files, DRM videos and Fansly HLS/DASH streams. The Fansly check of videos saved without sound, which runs after a run's downloads, also sends it when it saves a video again with sound, with no `item_finished` after it.
+- `item_downloaded` is sent before `after_download_script` runs, and a stop during the script still counts the item as downloaded.
+- It's sent for normal files, DRM videos and Fansly HLS/DASH streams.
+- The Fansly check of videos saved without sound runs after a run's downloads. When it saves a video again with sound, it also sends `item_downloaded`, with no `item_finished` after it.
 - An item a stop ended before it started gets no `item_finished`.
 
 `item_finished`'s `result` and `reason`:
@@ -104,7 +106,7 @@ rows = gather_rows("post_check")
 
 | `command` | Result |
 |---|---|
-| `post_check`, `msg_check`, `paid_check`, `story_check` | the rows of that check command's table |
+| `post_check`, `msg_check`, `paid_check`, `story_check` (except `story_check` on Fansly) | the rows of that check command's table |
 | `story_check` on Fansly | logs an error and returns `[]` |
 | anything else | raises `ValueError` |
 
@@ -171,8 +173,6 @@ if status == "UNAVAILABLE":
 
 `UNAVAILABLE` covers a network or proxy failure, a server error, a reply that isn't JSON, or no usable dynamic rule: the cases [`unavailable_message`](#unavailable_messagee) lists.
 
-**PostgreSQL:** not involved.
-
 ### `check_auth(include_main_menu=False)`
 
 **Module:** `ofscraper.utils.checkers` · **Execution:** sync · **Returns:** None once the auth is `UP`
@@ -198,8 +198,6 @@ except AuthCheckUnavailable as e:
 On Fansly the login prompt has no quit choice, so `check_auth()` asks again until the auth is `UP`.
 
 > ⚠️ **A rejected auth opens a terminal prompt.** When the auth is rejected and `auth_fail` is off, `check_auth()` opens the terminal's auth prompt (`make.make_auth`; on Fansly its login prompt). The core does this in GUI mode too.
-
-**PostgreSQL:** not involved.
 
 ### `unavailable_message(e)`
 
