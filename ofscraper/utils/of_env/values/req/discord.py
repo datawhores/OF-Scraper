@@ -12,6 +12,7 @@ def load_discord_config():
 
     # --- Discord Configuration ---
     # DISCORD_TOTAL_TIMEOUT: Total timeout for Discord operations (seconds). Defaults to None.
+    #
     # If set via environment, it will be an integer; otherwise, it remains None.
     discord_total_timeout_env = os.getenv("OFSC_DISCORD_TOTAL_TIMEOUT", None)
     if discord_total_timeout_env is not None:

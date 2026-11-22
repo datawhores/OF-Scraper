@@ -17,7 +17,7 @@ def load_general_paths_config():
         "OFSC_SKIP_FILENAME_RETRIVAL", "False"
     ).lower() in ("true", "1")
 
-    # SKIP_MEDIADIR_RETRIVAL: Flag to skip media directory retrieval d
+    # SKIP_MEDIADIR_RETRIVAL: Flag to skip media directory retrieval
     # during filename generation
     # Default: False
     config["SKIP_MEDIADIR_RETRIVAL"] = os.getenv(

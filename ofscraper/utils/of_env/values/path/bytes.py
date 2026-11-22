@@ -30,6 +30,7 @@ def load_path_bytes_config():
     config["NORMAL_CHAR_SIZE_UNIX"] = int(os.getenv("NORMAL_CHAR_SIZE_UNIX", "2"))
 
     # UTF: UTF encoding setting (e.g., "utf-8", "utf-16"). Defaults to None.
+    #
     # If set via environment, it will be a string; otherwise, it remains None.
     config["UTF"] = os.getenv("UTF", None)
     # No explicit type conversion needed if it's expected to be a string or None.
