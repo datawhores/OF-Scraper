@@ -520,7 +520,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `posts` · **Type:** one of `Highlights`, `All`, `Archived`, `Messages`, `Timeline`, `Pinned`, `Streams`, `Stories`, `Purchased`, `Profile`, `Labels`, `Labels+`, `Labels*`; repeatable · **Default:** `[]`
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Select areas for batch actions (comma or space separated). Note: 'all' excludes labels. To include them, use 'all,labels' or specific tags like 'labels+' or 'labels*'.
+- Select areas for batch actions (comma or space separated). Note: 'all' excludes labels unless OFSC_INCLUDE_LABELS_ALL is on. To include them, use 'all,labels' or specific tags like 'labels+' or 'labels*'.
 
 #### `--download-area`
 
