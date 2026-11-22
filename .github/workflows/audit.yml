@@ -4,8 +4,22 @@ permissions:
 on:
   push:
     branches: main
+    # doc-only changes don't change the dependencies
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'media/**'
+      - 'LICENSE*'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: main
+    # doc-only changes don't change the dependencies
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'media/**'
+      - 'LICENSE*'
+      - '.github/ISSUE_TEMPLATE/**'
   # new advisories land without any change on our side, so check weekly too
   schedule:
     - cron: '17 6 * * 1'

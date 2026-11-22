@@ -2,7 +2,7 @@
 
 By default the scraper keeps one SQLite file (`user_data.db`) per creator. Nothing needs installing, and that stays the default.
 
-As an option, it can keep every creator's rows in one PostgreSQL database instead. That is useful if you want one place to query and back up, or you run the scraper from more than one machine against the same library.
+As an option, it can keep every creator's rows in one PostgreSQL database instead. That is useful if you want one place to query and back up, or you run the scraper from more than one machine against the same library. When two runs save the same post, message, media, story or label at once, the second keeps the first one's row and goes on.
 
 ## What you need
 
@@ -50,7 +50,7 @@ Run like that, it only reports: how many files, creators and rows it found for e
 - **Your files are never changed.** Each one is copied to a working folder, and the copy is brought up to date the way a scan would, so files last used by an old version come in too. The working copies need as much room as the files; `--staging <folder>` chooses where they go.
 - **All or nothing.** Every file goes in together. If anything fails part way, PostgreSQL keeps none of it, and you can run the command again.
 - **Each file goes to its site's tables**, OnlyFans or Fansly.
-- **A creator comes from one file.** If two files hold rows for the same creator (after a rename, or a changed `metadata` setting), put them together with Merge Databases first.
+- **A creator comes from one file.** If two files hold rows for the same creator (after a rename, or a changed `metadata` setting), put them together with Merge Databases first. With PostgreSQL on, Merge Databases then prints the `postgres_import` command for the folder it wrote the merged file to.
 - **A creator PostgreSQL already has rows for is refused**, so a file can't be brought in twice. Creators it doesn't have yet can be brought in later.
 - **A creator's names come with the dates they were seen at**, where the file has them. A name PostgreSQL already has (the scraper has started on the creator there, and saved nothing yet) keeps its row, and its dates are widened to take the file's in: the earlier first-seen date and the later last-seen date are kept, and a date is never emptied. That adds no row, so it isn't in the count of rows added. A deleted account goes by the name seen last, so a name the file brings with a newer date than any PostgreSQL has becomes that name.
 - **A value PostgreSQL's column can't hold stops the file**, and is listed with its table, row and column: an id that isn't a number, a yes/no column holding something else, a date that can't be read. Empty dates become empty. Two rows that would be the same row once a missing creator is filled in stop it too.
@@ -142,6 +142,7 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
 ## What is different
 
 - **One database for every creator.** Each site gets its own schema (`onlyfans`, `fansly`), holding the same tables a `user_data.db` has. Every row carries its creator's `model_id`.
+- **One database for every profile too.** The schemas are per site, not per profile, so switching profiles doesn't switch the data. The scraper says so when you switch.
 - **Real column types.** Ids are 64-bit numbers (media, post and label ids are text: a few of them are words or hashes), yes/no columns are booleans and dates are timestamps, so other tools can query the database directly.
 - **Already-downloaded media is still judged per creator.** A run skips media the database says is downloaded. A SQLite file is one creator's, so media was never skipped because another creator had it, and it isn't with PostgreSQL either: only the creator's own rows count. (`--force-model-unique` therefore changes nothing here.)
 - **No automatic backup copies.** The scraper copies a SQLite file before it upgrades it. For PostgreSQL, back up with `pg_dump`.
@@ -158,6 +159,6 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
 
 ## Developing
 
-`test/test_db_postgres_live.py` runs the engine against a real server, and `test/test_postgres_import_live.py` and `test/test_postgres_export_live.py` the two commands above. They are skipped unless `OFSC_TEST_POSTGRES_URL` names a server the tests may use; each test works in schemas of its own and drops them. CI runs them against the oldest and newest supported PostgreSQL. `test/test_stash_sync_postgres_live.py` does the same for `stash_sync --postgres`, `test/test_collision_recovery_postgres_live.py` for `recover_collisions --postgres`, `test/test_move_creator_files_postgres_live.py` for `move_creator_files --postgres`, and `test/test_creator_names_postgres_live.py` for `scripts/creator_names.py --postgres`.
+`test/test_db_postgres_live.py` runs the engine against a real server, and `test/test_postgres_import_live.py` and `test/test_postgres_export_live.py` the two commands above. They are skipped unless `OFSC_TEST_POSTGRES_URL` names a server the tests may use; each test works in schemas of its own and drops them. CI runs them against PostgreSQL 15 to 19. `test/test_stash_sync_postgres_live.py` does the same for `stash_sync --postgres`, `test/test_collision_recovery_postgres_live.py` for `recover_collisions --postgres`, `test/test_move_creator_files_postgres_live.py` for `move_creator_files --postgres`, `test/test_creator_names_postgres_live.py` for `scripts/creator_names.py --postgres`, and `test/test_postgres_server_checks_live.py` for two runs writing at once and for `remove_hash_match`.
 
 A column added to a SQLite table also needs adding to `TABLES` in `ofscraper/db/postgres.py`, with the step that adds it to PostgreSQL databases made before: an entry in `ADDED_COLUMNS` there. At each start `create_tables` asks which of those columns the tables have and adds the ones that are missing. `test/test_db_postgres.py` fails until the two match.
