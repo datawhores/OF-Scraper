@@ -581,7 +581,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="hashed_default"></a>`HASHED_DEFAULT` | `OFSC_HASHED_DEFAULT` | `None` | Default hashing setting. Defaults to None. |
 | <a id="blocked_ads_default"></a>`BLOCKED_ADS_DEFAULT` | `OFSC_BLOCKED_ADS_DEFAULT` | `False` | Whether ads are blocked by default. |
 | <a id="default_log_level"></a>`DEFAULT_LOG_LEVEL` | `OFSC_DEFAULT_LOG_LEVEL` | `'DEBUG'` | Default logging level. |
-| <a id="include_labels_all"></a>`INCLUDE_LABELS_ALL` | `OFSC_INCLUDE_LABELS_ALL` | `False` | Whether to include all labels by default. |
+| <a id="include_labels_all"></a>`INCLUDE_LABELS_ALL` | `OFSC_INCLUDE_LABELS_ALL` | `False` | Whether the 'all' area also includes labels. |
 | <a id="labels_concurrency"></a>`LABELS_CONCURRENCY` | `OFSC_LABELS_CONCURRENCY` | `2` | How many labels are paged at the same time. |
 | <a id="discord_thread_override"></a>`DISCORD_THREAD_OVERRIDE` | `OFSC_DISCORD_THREAD_OVERRIDE` | `False` | Whether to override Discord threading. |
 | <a id="discord_async"></a>`DISCORD_ASYNC` | `OFSC_DISCORD_ASYNC` | `False` | Whether Discord integration is asynchronous. |

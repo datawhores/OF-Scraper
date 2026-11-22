@@ -210,7 +210,7 @@ def load_main_config():
     # Default: "DEBUG"
     config["DEFAULT_LOG_LEVEL"] = os.getenv("OFSC_DEFAULT_LOG_LEVEL", "DEBUG")
 
-    # INCLUDE_LABELS_ALL: Whether to include all labels by default.
+    # INCLUDE_LABELS_ALL: Whether the 'all' area also includes labels.
     # Default: False
     config["INCLUDE_LABELS_ALL"] = os.getenv(
         "OFSC_INCLUDE_LABELS_ALL", "False"
