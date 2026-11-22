@@ -11,6 +11,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
 from ofscraper.utils.live.updater import activity
 import ofscraper.utils.settings as settings
+import ofscraper.utils.username_match as username_match
 
 
 async def get_models(all_main_models: bool = False) -> list:
@@ -79,9 +80,20 @@ async def get_via_list(count):
     out.extend(expired_subscriptions)
     out.extend(other_subscriptions)
     black_list = await lists.get_blacklist()
-    out = list(filter(lambda x: x.get("id") not in black_list, out))
     models_objects = list(map(lambda x: models.Model(x), out))
-    return models_objects
+    # -u names the list doesn't have, such as a creator's old name, are
+    # looked up one by one (#662). One already listed gets the name instead.
+    usernames = settings.get_settings().usernames
+    if usernames and "ALL" not in usernames:
+        _, missing = username_match.select_models(models_objects, usernames)
+        if missing:
+            listed = {m.id: m.model for m in models_objects}
+            for ele in await individual.get_subscription(missing):
+                if ele["id"] in listed:
+                    listed[ele["id"]]["looked_up_as"] = ele["looked_up_as"]
+                else:
+                    models_objects.append(models.Model(ele))
+    return [m for m in models_objects if m.id not in black_list]
 
 
 async def get_via_individual():

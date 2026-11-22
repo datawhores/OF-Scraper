@@ -30,8 +30,11 @@ def matches_account(name, account_id, keys) -> bool:
 
 
 def model_matches(model, keys) -> bool:
-    """True if a model's username or account id is one of ``keys``."""
-    return matches_account(model.name, model.id, keys)
+    """True if a model's username, account id, or a name it was looked up
+    as (a creator's old name) is one of ``keys``."""
+    return matches_account(model.name, model.id, keys) or not keys.isdisjoint(
+        username_keys(model.model.get("looked_up_as"))
+    )
 
 
 def select_models(models, names):
@@ -45,5 +48,6 @@ def select_models(models, names):
     for m in selected:
         found.add(username_key(m.name))
         found.add(str(m.id))
+        found |= username_keys(m.model.get("looked_up_as"))
     unmatched = [x for x in (names or []) if x and username_key(x) not in found]
     return selected, unmatched
