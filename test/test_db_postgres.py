@@ -101,6 +101,8 @@ def test_the_startup_check_does_nothing_for_sqlite(monkeypatch):
 
 
 def test_the_startup_check_asks_the_server_when_a_url_is_set(monkeypatch, caplog):
+    # the server is named as the driver reads the address
+    pytest.importorskip("psycopg")
     monkeypatch.setenv(postgres.URL_KEY, URL)
     monkeypatch.setattr(postgres.POSTGRES, "check", lambda: "16.4")
 
@@ -256,6 +258,8 @@ def test_force_model_unique_asks_for_the_creators_own_media_on_either(monkeypatc
     ],
 )
 def test_the_password_is_found_in_either_spelling(url, password):
+    # as the driver reads the address
+    pytest.importorskip("psycopg")
     secrets = postgres._secrets(url)
     if password is None:
         assert secrets == []
@@ -278,14 +282,18 @@ def test_the_password_is_found_in_either_spelling(url, password):
         "postgresql://scraper:SECRETpw@more@db.example/library",
     ],
 )
-def test_a_password_in_a_url_that_isnt_read_as_meant_is_still_hidden(url):
+def test_a_url_that_isnt_read_as_meant_is_one_sentence_without_it(url):
+    # what the driver says of it quotes the address: it isn't shown at all
+    psycopg = pytest.importorskip("psycopg")
     said = [
-        f'missing "=" after "{url}" in connection info string',
-        "failed to resolve host 'SECRETpw@db.example': Name or service not known",
-        "password authentication failed (SECRETpw)",
+        psycopg.ProgrammingError(f'missing "=" after "{url}" in connection info string'),
+        psycopg.OperationalError("failed to resolve host 'SECRETpw@db.example': Name or service not known"),
     ]
-    for text in said:
-        assert "SECRETpw" not in postgres.masked(text, url)
+    for error in said:
+        message = str(postgres.POSTGRES._unavailable(error, url))
+        assert "SECRETpw" not in message
+        assert postgres.URL_KEY in message
+    assert postgres.describe(url) == "the configured database"
 
 
 def test_only_the_variable_with_the_scrapers_name_turns_postgresql_on(monkeypatch):
@@ -300,6 +308,7 @@ def test_only_the_variable_with_the_scrapers_name_turns_postgresql_on(monkeypatc
 
 
 def test_messages_name_the_server_and_never_the_login():
+    pytest.importorskip("psycopg")
     assert postgres.describe(URL) == "db.example:5433/library"
     assert postgres.describe("host=db.example password=x") == "the configured database"
     masked = postgres.masked(f"could not connect to {URL}: s3cr@t-word", URL)
@@ -310,6 +319,8 @@ def test_messages_name_the_server_and_never_the_login():
 def test_the_password_is_hidden_from_every_log_line(monkeypatch):
     import ofscraper.utils.logs.utils.sensitive as sensitive
 
+    # the password is found as the driver reads the address
+    pytest.importorskip("psycopg")
     monkeypatch.setattr(sensitive, "_USER_ADDED_PATTERNS", {})
     postgres.POSTGRES._hide_password(URL)
 
