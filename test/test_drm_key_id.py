@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
+from test.test_cdrm import use_cdrm_url
 
 VIDEO_KID = "a7e61c373e219033c21091fa607bf3b8"
 AUDIO_KID = "0123456789abcdef0123456789abcdef"
@@ -110,6 +111,7 @@ def test_manual_key_helper_returns_the_key_for_the_file(monkeypatch, tmp_path):
 
 
 def test_cdrm_key_helper_returns_the_key_for_the_file(monkeypatch):
+    use_cdrm_url(monkeypatch)
     monkeypatch.setattr(keyhelpers.auth_requests, "make_headers", lambda: {})
     monkeypatch.setattr(keyhelpers.auth_requests, "get_cookies_str", lambda: "")
     monkeypatch.setattr(keyhelpers.auth_requests, "create_sign", lambda url, headers: None)

@@ -863,7 +863,7 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdrm"></a>`CDRM` | `OFSC_CDRM_URL` | `'https://cdrm-project.com/api/decrypt'` | URL for the CDM decryption API. |
+| <a id="cdrm"></a>`CDRM` | `OFSC_CDRM_URL` | `'https://cdrm-project.com/api/decrypt'` | URL of the decryption API that key mode cdrm sends the request headers, cookies included, to. The default, cdrm-project.com, no longer works and isn't contacted: protected videos fail with a message to use key mode manual. Set it only to a server you run yourself. |
 
 ### Bad URL Host
 

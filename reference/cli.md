@@ -1057,7 +1057,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Config fallback:** `cdm_options.key-mode-default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 - Key mode for decrypting content (cdrm is deprecated: its service no longer works)
-- **Note:** `manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works (it was also sent the request headers, cookies included), and each run that uses it warns.
+- **Note:** `manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos fail with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.
 
 #### `--private-key`
 

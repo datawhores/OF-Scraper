@@ -11,7 +11,10 @@ def load_other_urls_config():
     config = {}
 
     # --- CDM URL Configuration ---
-    # CDRM: URL for the CDM decryption API.
+    # CDRM: URL of the decryption API that key mode cdrm sends the request
+    # headers, cookies included, to. The default, cdrm-project.com, no longer
+    # works and isn't contacted: protected videos fail with a message to use
+    # key mode manual. Set it only to a server you run yourself.
     # Default: "https://cdrm-project.com/api/decrypt"
     config["CDRM"] = os.getenv("OFSC_CDRM_URL", "https://cdrm-project.com/api/decrypt")
 

@@ -4,6 +4,7 @@ import re
 import struct
 import traceback
 from functools import partial
+from urllib.parse import urlsplit
 
 from pywidevine.cdm import Cdm
 from pywidevine.device import Device
@@ -21,6 +22,7 @@ from ofscraper.commands.scraper.actions.utils.retries import (
 from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
+from ofscraper.utils.system.network import CDRM_DEPRECATED
 import ofscraper.managers.manager as manager
 
 log = None
@@ -245,9 +247,27 @@ def get_ffmpeg_key(key):
     return key.split(":")[1]
 
 
+def cdrm_retired(url):
+    """True when url points at cdrm-project.com, which no longer works.
+    It isn't sent the headers and cookies; a self-hosted server set in
+    OFSC_CDRM_URL still is (#677)."""
+    host = (urlsplit(str(url or "")).hostname or "").lower().rstrip(".")
+    return host == "cdrm-project.com" or host.endswith(".cdrm-project.com")
+
+
+_cdrm_retired_logged = False
+
+
 async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
+    global _cdrm_retired_logged
     key = None
     log.debug(f"ID:{id} using cdrm auto key helper")
+    if cdrm_retired(of_env.getattr("CDRM")):
+        if not _cdrm_retired_logged:
+            _cdrm_retired_logged = True
+            log.error(f"Nothing was sent to cdrm-project.com. {CDRM_DEPRECATED}")
+        log.debug(f"ID:{id} no key: key mode cdrm, cdrm-project.com not contacted")
+        return None
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
