@@ -232,11 +232,12 @@ class Post(base.base):
                 return "Messages"
             return res_type
 
-        # Check boolean flags
-        if self.pinned:
-            return "Pinned"
+        # Check boolean flags; archived before pinned, as the folder
+        # (modified_responsetype) does
         if self.archived:
             return "Archived"
+        if self.pinned:
+            return "Pinned"
         if self.stream:
             return "Streams"
 
@@ -355,8 +356,9 @@ class Post(base.base):
     @property
     def modified_responsetype(self):
         if self.archived:
-            # Check if user has a custom Archived label, otherwise default to "Archived"
-            return data.get_archived_responsetype() or "Archived"
+            # Check if user has a custom Archived label, otherwise default to "Archived";
+            # capitalized like the other response types
+            return (data.get_archived_responsetype() or "Archived").capitalize()
         else:
             # 1. Normalize the key to lowercase for dictionary lookup
             response_key = self.responsetype.lower()
