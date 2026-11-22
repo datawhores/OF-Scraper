@@ -127,6 +127,35 @@ def test_profile_created_confirmation_shows(monkeypatch, screen):
 
 
 @pytest.mark.parametrize("screen", MODES, indirect=True)
+@pytest.mark.parametrize("change", ["change_default_profile", "change_active_profile"])
+@pytest.mark.parametrize("on", [True, False])
+def test_switching_profiles_says_postgresql_is_shared(monkeypatch, screen, change, on):
+    import ofscraper.utils.profiles.manage as manage
+
+    switched = []
+    monkeypatch.setattr(manage.postgres, "enabled", lambda: on)
+    monkeypatch.setattr(manage.tools, "print_profiles", lambda: None)
+    monkeypatch.setattr(manage.profile_data, "get_profile_names", lambda: ["other"])
+    monkeypatch.setattr(manage.prompts, "get_profile_prompt", lambda names: "other")
+    monkeypatch.setattr(
+        manage.manager,
+        "Manager",
+        SimpleNamespace(
+            profile_manager=SimpleNamespace(
+                switch_profile=lambda *a, **k: switched.append(a)
+            )
+        ),
+    )
+    getattr(manage, change)()
+    assert switched == [("other",)]
+    notice = (
+        "All profiles use the same PostgreSQL database, so switching profiles"
+        " doesn't switch the scraper's data."
+    )
+    assert screen.buf.getvalue() == (notice + "\n" if on else "")
+
+
+@pytest.mark.parametrize("screen", MODES, indirect=True)
 def test_discord_debug_tip_shows(monkeypatch, screen):
     import ofscraper.utils.logs.logs as logs
 

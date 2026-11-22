@@ -120,3 +120,52 @@ def test_no_console_interrupt_and_exit_still_end_the_menu(monkeypatch, screen, e
         menu.main_menu_action()
     assert asked == ["merge"]
     assert "failed" not in screen.getvalue()
+
+
+# --- the main menu says which database is in use ---
+
+
+def _main_menu_instruction(monkeypatch):
+    import ofscraper.prompts.prompt_groups.menu as menu_prompts
+
+    shown = {}
+
+    def selection(**kwargs):
+        shown.update(kwargs)
+        return "Quit"
+
+    monkeypatch.setattr(menu_prompts.promptClasses, "getChecklistSelection", selection)
+    assert menu_prompts.main_prompt() == "quit"
+    return shown["instruction"]
+
+
+def test_main_menu_names_the_postgresql_server_without_the_login(monkeypatch):
+    import ofscraper.db.postgres as postgres
+
+    monkeypatch.setattr(
+        postgres, "url", lambda: "postgresql://scraper:s3cret-word@db.example:5433/library"
+    )
+    try:
+        import psycopg  # noqa: F401
+    except ImportError:  # without the driver the address isn't read
+        where = "the configured database"
+    else:
+        where = "db.example:5433/library"
+    instruction = _main_menu_instruction(monkeypatch)
+    assert instruction == f"(Database: PostgreSQL, {where})"
+    assert "s3cret-word" not in instruction and "scraper:" not in instruction
+
+
+def test_main_menu_points_to_the_metadata_setting_on_sqlite(monkeypatch):
+    import ofscraper.db.postgres as postgres
+    import ofscraper.utils.config.data as data
+
+    def unreadable(*args, **kwargs):
+        raise AssertionError("the config was read")
+
+    monkeypatch.setattr(postgres, "url", lambda: "")
+    # the menu doesn't read the config, which may not be readable
+    monkeypatch.setattr(data, "get_metadata", unreadable)
+    assert _main_menu_instruction(monkeypatch) == (
+        "(Database: user_data.db files, see the metadata setting)"
+    )
