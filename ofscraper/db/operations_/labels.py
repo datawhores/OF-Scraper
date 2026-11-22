@@ -42,7 +42,10 @@ CREATE TABLE IF NOT EXISTS labels (
 """
 labelInsert = """INSERT INTO labels(
 label_id,name, type, post_id,model_id)
-VALUES ( ?,?,?,?,?);"""
+VALUES ( ?,?,?,?,?)"""
+# a scan's insert: a label's post another run saved since this one read them
+# is already there (#657). Merges and rebuilds keep the plain insert
+labelInsertNew = labelInsert + " ON CONFLICT DO NOTHING;"
 
 
 labelUpdate = """Update labels
@@ -90,7 +93,7 @@ def write_labels_table(
                 posts,
             )
         )
-        curr.executemany(labelInsert, insertData)
+        curr.executemany(labelInsertNew, insertData)
         conn.commit()
 
 
