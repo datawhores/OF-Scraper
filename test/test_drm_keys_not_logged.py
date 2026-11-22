@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
+from test.test_cdrm import use_cdrm_url
 from test.test_drm_key_id import AUDIO_KEY, AUDIO_KID, VIDEO_KEY, VIDEO_KID, _encrypted_file
 
 
@@ -60,6 +61,7 @@ def test_un_encrypt_logs_no_key(monkeypatch, tmp_path, cached):
 
 
 def test_cdrm_reply_is_not_logged(monkeypatch):
+    use_cdrm_url(monkeypatch)
     monkeypatch.setattr(keyhelpers.auth_requests, "make_headers", lambda: {})
     monkeypatch.setattr(keyhelpers.auth_requests, "get_cookies_str", lambda: "")
     monkeypatch.setattr(keyhelpers.auth_requests, "create_sign", lambda url, headers: None)
