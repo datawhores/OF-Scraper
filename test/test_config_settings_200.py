@@ -173,24 +173,20 @@ def test_rejected_dynamic_rule_is_logged_once(config, caplog, monkeypatch):
     assert f"'{default}'" in warnings[0].getMessage()
 
 
-def test_saved_datawhores_falls_back_and_says_why(config, caplog, monkeypatch):
+def test_saved_datawhores_is_kept_as_an_alias(config, caplog, monkeypatch):
     import logging
 
     import ofscraper.utils.settings as settings
 
     monkeypatch.setattr(settings, "_warned_dynamic_rule", None)
-    config["advanced_options"] = {"dynamic-mode-default": "datawhores"}
+    config["advanced_options"] = {"dynamic-mode-default": "DataWhores"}
     with caplog.at_level(logging.WARNING, logger="shared"):
         merged = settings.merged_settings()
-    default = data.of_env.getattr("DYNAMIC_RULE_DEFAULT")
-    assert merged.dynamic_rules == default
-    assert (
-        "dynamic-mode-default 'datawhores' is not accepted (removed: OnlyFans no "
-        f"longer accepts its rule); using '{default}'"
-    ) in caplog.text
-    # the file is rewritten with the default, not left naming datawhores
+    assert merged.dynamic_rules == "datawhores"
+    assert "dynamic-mode-default" not in caplog.text
+    # the file keeps naming datawhores, not the default
     new = schema.get_current_config_schema(config)
-    assert new["advanced_options"]["dynamic-mode-default"] == default
+    assert new["advanced_options"]["dynamic-mode-default"] == "datawhores"
 
 
 def test_accepted_dynamic_rule_is_not_logged(config, caplog):
@@ -215,6 +211,7 @@ def test_every_accepted_dynamic_alias_picks_its_rule(monkeypatch):
         "digital": "digitalcriminals",
         "digitals": "digitalcriminals",
         "digitalcriminal": "digitalcriminals",
+        "datawhores": "digitalcriminals",
         "manual": "manual",
         "generic": "generic",
     }
