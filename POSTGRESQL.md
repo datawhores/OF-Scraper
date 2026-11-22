@@ -155,7 +155,7 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
 - **Tools that read `user_data.db` files** keep reading those files and don't see PostgreSQL: Merge Databases and parts of the GUI patch. Nothing scraped since you turned PostgreSQL on is in those files, and what a tool changes in them does not reach PostgreSQL.
   - Merge Databases says so on its screen.
   - In the GUI patch, scraping, downloads, metadata updates and the check tables go through the scraper, so they use PostgreSQL.
-  - Other parts of the GUI read the `user_data.db` files themselves, so they see only the old files, and the GUI doesn't say so. Each can use PostgreSQL once the GUI reads through the scraper's database functions instead:
+  - Other parts of the GUI read the `user_data.db` files themselves, so they see only the old files, and the GUI doesn't say so. Each can use PostgreSQL once the GUI reads through the scraper's database functions instead ([reference/hooks.md](reference/hooks.md#database-reads) says how to call them):
     - **Results table:** `get_all_medias_sync` for the media, `get_post_info` for each post's price and text.
     - **Purge, which deletes the downloaded files:** `get_media_post_files_downloaded`. The purge also deletes the creator's `user_data.db`; with PostgreSQL on, the creator's rows in PostgreSQL stay.
     - **Showing only what is new since the last run:** the GUI takes the newest `posted_at` in the file's media. The newest `posted_at` of the `get_all_medias_sync` rows, leaving out empty ones, is the same date.
@@ -165,5 +165,7 @@ python -m ofscraper.commands.recover_collisions --postgres --creator <username o
 ## Developing
 
 `test/test_db_postgres_live.py` runs the engine against a real server, and `test/test_postgres_import_live.py` and `test/test_postgres_export_live.py` the two commands above. They are skipped unless `OFSC_TEST_POSTGRES_URL` names a server the tests may use; each test works in schemas of its own and drops them. CI runs them against PostgreSQL 15 to 19. `test/test_stash_sync_postgres_live.py` does the same for `stash_sync --postgres`, `test/test_collision_recovery_postgres_live.py` for `recover_collisions --postgres`, `test/test_move_creator_files_postgres_live.py` for `move_creator_files --postgres`, `test/test_creator_names_postgres_live.py` for `scripts/creator_names.py --postgres`, and `test/test_postgres_server_checks_live.py` for two runs writing at once and for `remove_hash_match`.
+
+The database operations in `ofscraper/db/operations_/` write their SQL once, for both engines. `backend_for` in `ofscraper/db/operations_/wrapper.py` picks the engine for each call: PostgreSQL when `OFSC_DATABASE_URL` is set, else SQLite. A call given `db_path=` always works on that SQLite file; Merge Databases and the upgrade of one file use that. `ofscraper/db/postgres.py` turns the `?` placeholders into the driver's and sets the schema to the current site's.
 
 A column added to a SQLite table also needs adding to `TABLES` in `ofscraper/db/postgres.py`, with the step that adds it to PostgreSQL databases made before: an entry in `ADDED_COLUMNS` there. At each start `create_tables` asks which of those columns the tables have and adds the ones that are missing. `test/test_db_postgres.py` fails until the two match.
