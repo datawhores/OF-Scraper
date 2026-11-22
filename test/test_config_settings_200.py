@@ -97,6 +97,25 @@ def test_responsetype_message_renames_message_folder(config):
     assert post.modified_responsetype == "Chats"
 
 
+def test_responsetype_archived_is_capitalised_like_the_others(config):
+    import ofscraper.classes.of.posts as posts
+
+    config["responsetype"] = {"archived": "old stuff", "timeline": "wall"}
+    archived = posts.Post({"id": 1, "isArchived": True}, 1, "a_creator")
+    timeline = posts.Post({"id": 2}, 1, "a_creator", responsetype="Timeline")
+    assert timeline.modified_responsetype == "Wall"
+    assert archived.modified_responsetype == "Old stuff"
+
+
+def test_post_both_pinned_and_archived_is_archived_like_its_folder(config):
+    import ofscraper.classes.of.posts as posts
+
+    config["responsetype"] = {"archived": "Archived", "pinned": "Posts"}
+    post = posts.Post({"id": 1, "isPinned": True, "isArchived": True}, 1, "a_creator")
+    assert post.responsetype == "Archived"
+    assert post.modified_responsetype == "Archived"
+
+
 # 4. download_sems <= 0
 
 
