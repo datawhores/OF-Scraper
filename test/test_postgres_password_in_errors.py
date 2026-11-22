@@ -25,6 +25,9 @@ READABLE = [
     ("postgresql://scraper@db.example/library?password=hunter2", "hunter2"),
     ("host=db.example dbname=library user=scraper password=Hg@Lm?k#9", "Hg@Lm?k#9"),
     ("host=db.example dbname=library password='Rf Yt@Ou'", "Rf Yt@Ou"),
+    # a quoted password with a space, followed by another setting (#654)
+    ("password='a b' host=db.example dbname=library", "a b"),
+    ("password=s3cret host=db.example dbname=library", "s3cret"),
 ]
 
 # addresses it can't read, or reads another way than meant
@@ -140,6 +143,55 @@ def test_the_words_around_the_password_stay(psycopg, password):
     for word in ("only", "for", "this", "the", "password", "read-only"):
         assert word in shown
     assert postgres.describe(address) == "db.example:5432/library"
+
+
+# #654: an unquoted password ends at the space, and the rest is read as
+# another setting, which the driver's errors quote: every value is hidden
+@pytest.mark.parametrize("setting", ["host", "hostaddr", "sslmode", "dbname", "user"])
+def test_every_value_of_a_keyword_address_is_hidden(psycopg, setting):
+    address = f"host=db.example dbname=library user=scraper password=Xy7 {setting}=Zebra9"
+    said = f'connection to server failed: invalid {setting} value: "Zebra9" (given Xy7)'
+    shown = postgres.masked(said, address)
+    assert "Xy7" not in shown and "Zebra9" not in shown
+    assert shown == f'connection to server failed: invalid {setting} value: "{{hidden}}" (given {{hidden}})'
+
+
+SPLIT = "host=db.example user=scraper password=Xy7"
+
+
+@pytest.mark.parametrize(
+    "address, host",
+    [
+        # each host of a list is quoted on its own
+        (f"{SPLIT} host=Qw8Secret.invalid,Zebra9Secret.invalid", "Qw8Secret.invalid"),
+        (f"{SPLIT} host=Qw8Secret.invalid,Zebra9Secret.invalid", "Zebra9Secret.invalid"),
+        # a :// that isn't at the start doesn't make it a URL
+        (f"{SPLIT} host=Zebra9Secret.invalid application_name=a://b", "Zebra9Secret.invalid"),
+        (f"{SPLIT}://Zebra9Secret.invalid host=Zebra9Secret.invalid", "Zebra9Secret.invalid"),
+    ],
+)
+def test_a_keyword_host_is_hidden_in_a_list_or_beside_a_url(psycopg, address, host):
+    said = f"connection failed: failed to resolve host '{host}': No such host is known."
+    assert postgres.masked(said, address) == said.replace(host, "{hidden}")
+
+
+def test_a_one_character_keyword_value_is_not_hidden(psycopg):
+    address = f"{SPLIT} host=Zebra9 connect_timeout=1"
+    said = "match 1 host (Zebra9, Xy7)"
+    assert postgres.masked(said, address) == "match 1 host ({hidden}, {hidden})"
+
+
+def test_the_values_of_a_keyword_address_are_hidden_from_messages_only(psycopg, monkeypatch):
+    monkeypatch.setattr(sensitive, "_USER_ADDED_PATTERNS", {})
+    address = "host=db.example sslmode=require user=scraper password=Xy7 host=Zebra9"
+    postgres.POSTGRES._hide_password(address)
+    line = "sslmode is require (Xy7)"
+    for pattern, replacement in sensitive._USER_ADDED_PATTERNS.items():
+        line = re.sub(pattern, replacement, line)
+    assert line == "sslmode is require ({hidden})"
+    assert postgres.masked('could not translate host name "Zebra9"', address) == (
+        'could not translate host name "{hidden}"'
+    )
 
 
 def test_a_one_character_password_is_not_hidden_from_every_log_line(psycopg, monkeypatch):

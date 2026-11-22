@@ -20,6 +20,8 @@ Set `OFSC_DATABASE_URL` to the database's address:
 OFSC_DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
+PostgreSQL's keyword form (`host=... user=... password=...`) works too. In it, quote a password that has spaces (`password='a b'`), or use the URL form above.
+
 Any of these works:
 
 - An environment variable. In `docker-compose.yml`, add it under `environment:`.
