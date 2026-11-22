@@ -10,7 +10,7 @@ This reference covers everything the program can be told to do. It is written fo
 | [placeholders.md](placeholders.md) | The names usable in `dir_format`, `file_format`, `metadata` and text file names |
 | [database.md](database.md) | The tables in each creator's `user_data.db`: columns, unique keys, and what writes each row |
 
-`scripts/reference/build_reference.py` generates those five files from the code. It takes the descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file is written by hand.
+`scripts/reference/build_reference.py` generates those five files from the code. It takes the descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file and [hooks.md](hooks.md) are written by hand.
 
 ## Where a setting's value comes from
 
@@ -100,16 +100,9 @@ Upstream's docs don't cover these:
 - **`LABELS_CONCURRENCY`**: a concurrency default for label scans.
 - **Behaviour changes** listed in the release notes. For example, `--before` and `--after` accept `MM/DD/YYYY` and relative dates, a failed run exits with status 1, and command-line mistakes print a usage message.
 
-## Download events
+## Hooks for add-ons
 
-Code running in the same process, such as a GUI, can follow downloads without changing the download code. `ofscraper/utils/events.py` has `subscribe(name, fn)` and `unsubscribe(name, fn)`. Subscribers get keyword arguments:
-
-- **`item_downloaded(ele, path)`:** a media file has been saved at `path` and recorded in the database. It's sent before `after_download_script` runs, and a stop during the script still counts the item as downloaded. Sent for normal files, DRM videos and Fansly HLS/DASH streams. The Fansly check of videos saved without sound, which runs after a run's downloads, also sends it when it saves a video again with sound, with no `item_finished` after it.
-- **`item_finished(ele, username, result, reason)`:** the download loop has counted one item. `result` is `downloaded`, `failed`, `skipped` or `stopped`. `reason` is None unless the item failed or was skipped:
-  - skipped: `size limit`, `skip_download_script`, `CDM keys not found`, `protected stream`, or `skipped`.
-  - failed: `no link` (locked or removed media), or the error's text with links removed (also JSON-escaped and percent-encoded ones; a link without a scheme keeps its address but loses everything after the `?`) and cookies and the home folder's name hidden as in the logs. `download failed` when there's no error.
-
-A subscriber can be a plain function or an `async def` one. It runs in the download's thread and holds up that download until it returns. An error in a subscriber is logged at debug level and doesn't affect the download. To stop downloads from another thread, call `ofscraper.commands.scraper.actions.download.stop.request()`.
+Code running in the same process, such as the GUI patch or a plugin, can follow downloads, stop them, gather check-table rows, check the auth and read the database without changing the scraper's files. [hooks.md](hooks.md) lists these functions and events.
 
 ## Keeping this up to date
 
