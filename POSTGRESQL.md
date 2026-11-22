@@ -54,7 +54,7 @@ Run like that, it only reports: how many files, creators and rows it found for e
 - **A creator PostgreSQL already has rows for is refused**, so a file can't be brought in twice. Creators it doesn't have yet can be brought in later.
 - **A creator's names come with the dates they were seen at**, where the file has them. A name PostgreSQL already has (the scraper has started on the creator there, and saved nothing yet) keeps its row, and its dates are widened to take the file's in: the earlier first-seen date and the later last-seen date are kept, and a date is never emptied. That adds no row, so it isn't in the count of rows added. A deleted account goes by the name seen last, so a name the file brings with a newer date than any PostgreSQL has becomes that name.
 - **A value PostgreSQL's column can't hold stops the file**, and is listed with its table, row and column: an id that isn't a number, a yes/no column holding something else, a date that can't be read. Empty dates become empty. Two rows that would be the same row once a missing creator is filled in stop it too.
-- **`--skip-bad-files`** brings in the files that can be, and leaves out (and lists) the ones that can't.
+- **`--skip-bad-files`** brings in the files that can be, and leaves out (and lists) the ones that can't. The exit code is then 1 if any file was left out, and 0 only if every file came in; the list printed says which.
 
 Afterwards the `user_data.db` files are no longer used. Keep them anyway, as your copy from before the switch.
 
