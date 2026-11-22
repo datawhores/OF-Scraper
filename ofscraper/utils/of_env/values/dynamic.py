@@ -27,6 +27,7 @@ def load_dynamic_rules_config():
 
 
     # DYNAMIC_OPTIONS_ALL: Comprehensive list of all dynamic rule options including aliases.
+    #
     # This list is derived from DYNAMIC_OPTIONS, so it should be built after DYNAMIC_OPTIONS is set.
     dynamic_options_all_env = os.getenv("OFSC_DYNAMIC_OPTIONS_ALL")
     if dynamic_options_all_env:

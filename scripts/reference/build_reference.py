@@ -655,10 +655,31 @@ def env_sources():
                 if key not in found and key in keys:
                     text = "\n".join(window)
                     envs = list(dict.fromkeys(re.findall(r'getenv\(\s*"([A-Za-z0-9_]+)"', text)))
-                    m = re.search(r"#\s*" + re.escape(key) + r"\s*:\s*(.+)", text)
-                    found[key] = (rel(path), section, envs, m.group(1).strip() if m else "")
+                    found[key] = (rel(path), section, envs, comment_description(key, window))
                 prev_end = max(prev_end, end)
     return found
+
+
+def comment_description(key, lines):
+    """The text of the `# KEY: ...` comment in `lines`, with the comment lines
+    that follow it joined on, up to a blank comment, `# Default:`,
+    `# Environment variable:`, another `# NAME:` or a line that isn't a
+    comment."""
+    for i, line in enumerate(lines):
+        m = re.match(r"\s*#\s*" + re.escape(key) + r"\s*:\s*(.+)", line)
+        if not m:
+            continue
+        parts = [m.group(1).strip()]
+        for after in lines[i + 1 :]:
+            text = after.strip()
+            if not text.startswith("#"):
+                break
+            text = text.lstrip("#").strip()
+            if not text or re.match(r"(Default|Environment variable|[A-Z][A-Z0-9_]*)\s*:", text):
+                break
+            parts.append(text)
+        return " ".join(parts)
+    return ""
 
 
 def direct_env():

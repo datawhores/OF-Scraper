@@ -133,6 +133,26 @@ def test_every_environment_default_is_described(build, notes, environment):
         assert any(re.fullmatch(pattern, key) for key in keys), f"{pattern} matches nothing"
 
 
+def test_a_comment_over_several_lines_is_the_whole_description(build):
+    lines = [
+        "    # KEY: First line,",
+        "    # second line.",
+        "    #",
+        "    # A note for whoever changes the code.",
+        "    # OTHER: Not this one,",
+        "    # but this one.",
+        "    # Default: 1",
+    ]
+    assert build.comment_description("KEY", lines) == "First line, second line."
+    assert build.comment_description("OTHER", lines) == "Not this one, but this one."
+
+
+def test_an_environment_default_keeps_the_end_of_its_comment(build, environment):
+    comment = build.env_sources()["OF_READ_TIMEOUT"][3]
+    assert comment.startswith("Longest wait for the next piece of a response")
+    assert comment.endswith("0 means no limit (the session manager turns it into None).")
+
+
 def test_every_placeholder_is_described(build, notes, environment):
     names = set(build.placeholder_table())
     assert sorted(names - set(notes.PLACEHOLDERS)) == [], "placeholders missing from notes"

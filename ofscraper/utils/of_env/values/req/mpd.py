@@ -16,6 +16,7 @@ def load_mpd_config():
     config["MPD_CONNECT_TIMEOUT"] = int(os.getenv("OFSC_MPD_CONNECT_TIMEOUT", "45"))
 
     # MPD_TOTAL_TIMEOUT: Total timeout for MPD operations (seconds). Defaults to None.
+    #
     # If set via environment, it will be an integer; otherwise, it remains None.
     mpd_total_timeout_env = os.getenv("OFSC_MPD_TOTAL_TIMEOUT", None)
     if mpd_total_timeout_env is not None:
