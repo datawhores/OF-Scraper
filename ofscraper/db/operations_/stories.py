@@ -42,7 +42,10 @@ CREATE TABLE IF NOT EXISTS stories (
 """
 storiesInsert = """INSERT INTO stories(
 post_id, text,price,paid,archived,created_at,model_id)
-            VALUES (?, ?,?,?,?,?,?);"""
+            VALUES (?, ?,?,?,?,?,?)"""
+# a scan's insert: a story another run saved since this one read the ids is
+# already there (#657). Merges and rebuilds keep the plain insert
+storiesInsertNew = storiesInsert + " ON CONFLICT DO NOTHING;"
 storiesUpdate = """UPDATE stories
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ? and model_id=(?);"""
@@ -93,7 +96,7 @@ def write_stories_table(
                 stories,
             )
         )
-        cur.executemany(storiesInsert, insertData)
+        cur.executemany(storiesInsertNew, insertData)
         conn.commit()
 
 

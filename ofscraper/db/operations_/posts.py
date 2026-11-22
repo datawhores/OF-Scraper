@@ -49,9 +49,10 @@ CREATE TABLE IF NOT EXISTS posts (
 	UNIQUE (post_id,model_id)
 )
 """
+# a post another run saved since this one read the ids is already there (#657)
 postInsert = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,purchase_type,mentions)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"""
 
 postInsertTransition = """INSERT INTO posts(
 post_id, text,price,paid,archived,pinned,stream,opened,created_at,model_id,is_deleted,purchase_type,mentions)

@@ -7,6 +7,7 @@ own create and migration code.
 
 import asyncio
 import contextlib
+import inspect
 import sqlite3
 from types import SimpleNamespace
 
@@ -18,6 +19,7 @@ import ofscraper.db.merge as merge
 import ofscraper.db.operations as operations
 import ofscraper.db.operations_.labels as labels
 import ofscraper.db.operations_.media as media
+import ofscraper.db.operations_.messages as messages
 import ofscraper.db.operations_.others as others
 import ofscraper.db.operations_.posts as posts
 import ofscraper.db.operations_.profile as profile
@@ -30,6 +32,7 @@ from ofscraper.db.operations_.messages import (
 )
 from ofscraper.db.operations_.profile import write_models_table, write_profile_table
 from ofscraper.db.transition import modify_tables
+from test import db_scenario as scene
 
 MODEL_ID = 12345
 USERNAME = "dbmodel"
@@ -255,6 +258,36 @@ def test_message_seen_again_on_a_normal_run_is_no_longer_flagged_deleted(
 
     assert asyncio.run(run()) == set()
     assert rows(tmp_db, "messages", ["post_id", "is_deleted"]) == [(901, 0)]
+
+
+# the insert a scan makes for what it read as missing (#657)
+NEW_ROW_WRITES = {
+    "posts": lambda who: posts.write_post_table([scene.post(1)], **who),
+    "messages": lambda who: messages.write_messages_table([scene.message(1)], **who),
+    "stories": lambda who: stories.write_stories_table([scene.story(1)], **who),
+    "labels": lambda who: labels.write_labels_table(
+        SimpleNamespace(label_id=7, name="label", type="custom"), [scene.post(1)], **who
+    ),
+    "medias": lambda who: media.write_media_table_via_api_batch(
+        [scene.item(1, 1)], **who
+    ),
+}
+
+
+@pytest.mark.parametrize("table", list(NEW_ROW_WRITES))
+def test_a_row_another_run_saved_first_is_not_an_error(tmp_db, table):
+    # two runs both read the row as missing; the second insert finds it there
+    who = dict(model_id=MODEL_ID, username=USERNAME)
+
+    async def run():
+        await operations.table_init_create(**who)
+        for _ in range(2):
+            written = NEW_ROW_WRITES[table](who)
+            if inspect.isawaitable(written):
+                await written
+
+    asyncio.run(run())
+    assert rows(tmp_db, table, ["post_id"]) == [(1,)]
 
 
 def test_model_id_rebuild_keeps_every_row_and_column(tmp_path):

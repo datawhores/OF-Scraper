@@ -96,11 +96,13 @@ directory=?,filename=?,size=?,downloaded=?,hash=?,skip_permanent=?
 WHERE media_id=(?) and model_id=(?) and post_id=(?);"""
 
 
+# a media item another run saved since this one read the ids is already there
+# (#657); the download columns are written later by an UPDATE either way
 mediaInsertAPI = """INSERT INTO medias(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
 created_at,posted_at,model_id,duration,unlocked)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"""
 
 mediaInsertTransition = """INSERT INTO medias(
 media_id,post_id,link,directory,

@@ -46,10 +46,11 @@ PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
+# a message another run saved since this one read the ids is already there (#657)
 messagesInsert = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,group_id)
-            VALUES (?, ?,?,?,?,?,?,?,?);"""
+            VALUES (?, ?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING;"""
 messagesInsertTransition = """INSERT INTO messages(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id,is_deleted,group_id)
