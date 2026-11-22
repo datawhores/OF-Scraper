@@ -4,10 +4,15 @@ The option callback lowercases every name, but Fansly keeps a creator's
 capitals, so an exact comparison never matched "SomeCreator".
 """
 
+import asyncio
+import contextlib
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
+import ofscraper.data.api.subscriptions.individual as individual
+import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.filters.models.other as other
 from ofscraper.classes.of.models import Model
 from ofscraper.managers import model as model_manager
@@ -139,3 +144,115 @@ def test_excluded_account_id_drops_creator(monkeypatch):
     assert other.is_excluded_username("SomeCreator", 111)
     assert not other.is_excluded_username("SomeCreator", 222)
     assert not other.is_excluded_username("SomeCreator")
+
+
+def _renamed_creator(monkeypatch):
+    """OnlyFans answers a creator's old name with the current one (#662).
+    Returns the names looked up one by one."""
+    looked_up = []
+
+    async def profile(c, account):
+        looked_up.append(account)
+        if account in ("oldname", "newname"):
+            return {"id": 111, "username": "newname"}
+
+    monkeypatch.setattr(individual.profile, "scrape_profile_helper_async", profile)
+    session = SimpleNamespace(aget_subscription_session=lambda **k: contextlib.nullcontext())
+    monkeypatch.setattr(individual.manager, "Manager", SimpleNamespace(session=session))
+    monkeypatch.setattr(individual.progress_utils, "userlist", MagicMock())
+    return looked_up
+
+
+def _looked_up(names):
+    async def lookup():
+        return await individual.get_subscription(names)
+
+    return [Model(x) for x in asyncio.run(lookup())]
+
+
+def _select_warnings(monkeypatch, usernames, daemon, models):
+    warnings = []
+    monkeypatch.setattr(model_manager.log, "warning", lambda msg, *a, **k: warnings.append(msg))
+    mm = _manager(monkeypatch, _parsed(usernames), daemon, models)
+    return [m.name for m in mm._select_models_scraper()], warnings
+
+
+@pytest.mark.parametrize("daemon", [False, True], ids=["interactive", "daemon"])
+def test_old_name_selects_the_account_it_leads_to(monkeypatch, daemon):
+    _renamed_creator(monkeypatch)
+    found = _looked_up(["oldname", "nosuchcreator"])
+    selected, warnings = _select_warnings(
+        monkeypatch, "oldname,nosuchcreator", daemon, found
+    )
+
+    assert selected == ["newname"]
+    assert len(warnings) == 1
+    assert "nosuchcreator" in warnings[0]
+    assert "oldname" not in warnings[0]
+
+
+@pytest.mark.parametrize("daemon", [False, True], ids=["interactive", "daemon"])
+def test_old_and_new_name_both_select_the_account(monkeypatch, daemon):
+    _renamed_creator(monkeypatch)
+    found = _looked_up(["oldname", "newname"])
+    selected, warnings = _select_warnings(monkeypatch, "oldname,newname", daemon, found)
+
+    assert selected == ["newname"]
+    assert warnings == []
+
+
+def _subscription_list(monkeypatch, usernames, black_list=()):
+    async def subs(count, account="active"):
+        return [{"id": 111, "username": "newname"}] if account == "active" else []
+
+    async def none():
+        return []
+
+    async def blacklist():
+        return black_list
+
+    monkeypatch.setattr(retriver.subscriptions, "get_subscriptions", subs)
+    monkeypatch.setattr(retriver.lists, "get_otherlist", none)
+    monkeypatch.setattr(retriver.lists, "get_blacklist", blacklist)
+    monkeypatch.setattr(retriver.console, "get_shared_console", MagicMock)
+    monkeypatch.setattr(
+        retriver.settings,
+        "get_settings",
+        lambda: SimpleNamespace(usernames=_parsed(usernames)),
+    )
+    return asyncio.run(retriver.get_via_list([1, 0]))
+
+
+@pytest.mark.parametrize("daemon", [False, True], ids=["interactive", "daemon"])
+def test_old_name_not_in_the_list_is_looked_up(monkeypatch, daemon):
+    looked_up = _renamed_creator(monkeypatch)
+    found = _subscription_list(monkeypatch, "oldname")
+    selected, warnings = _select_warnings(monkeypatch, "oldname", daemon, found)
+
+    assert looked_up == ["oldname"]
+    # the listed account takes the old name, no second copy
+    assert [(m.name, m.id) for m in found] == [("newname", 111)]
+    assert selected == ["newname"]
+    assert warnings == []
+
+
+@pytest.mark.parametrize(
+    "usernames, looked_up_names",
+    [("newname", []), ("oldname", ["oldname"])],
+    ids=["current name", "old name"],
+)
+def test_blacklisted_account_stays_out(monkeypatch, usernames, looked_up_names):
+    looked_up = _renamed_creator(monkeypatch)
+    found = _subscription_list(monkeypatch, usernames, black_list={111})
+
+    assert looked_up == looked_up_names
+    assert found == []
+
+
+@pytest.mark.parametrize("usernames", ["newname", "111", "ALL"])
+def test_names_in_the_list_are_not_looked_up(monkeypatch, usernames):
+    looked_up = _renamed_creator(monkeypatch)
+    found = _subscription_list(monkeypatch, usernames)
+
+    assert looked_up == []
+    assert [m.name for m in found] == ["newname"]
