@@ -108,6 +108,58 @@ def test_the_downloaded_files_of_a_creator_are_its_own(db):
     ) == {(1, 10): ("/one", "/one/a.jpg")}
 
 
+def in_running_loop(read, **kwargs):
+    """read(**kwargs) called from a coroutine, as the GUI calls it: a plain
+    function inside a running event loop, which can't await."""
+
+    async def call():
+        return read(**kwargs)
+
+    return asyncio.run(call())
+
+
+def test_the_post_prices_and_texts_of_a_creator_are_its_own(db):
+    # the GUI's table shows them beside get_all_medias_sync's rows
+    for table, price in (("posts", 1), ("messages", 2), ("stories", 3)):
+        execute(
+            db,
+            f"UPDATE {table} SET price=?, text=? WHERE post_id=? AND model_id=?",
+            [
+                (price, f"{table} {post} {who}", post, who)
+                for post, who in ((10, ONE), (11, ONE), (10, TWO), (22, TWO))
+            ],
+        )
+    execute(db, "INSERT INTO messages (post_id, model_id) VALUES (?, ?)", [(33, ONE)])
+
+    info = in_running_loop(
+        media.get_post_info, model_id=ONE, db_path=db, read_only=True
+    )
+    # a post, a message and a story with the same id: the post's is kept
+    assert info == {
+        10: {"price": 1, "text": f"posts 10 {ONE}"},
+        11: {"price": 1, "text": f"posts 11 {ONE}"},
+        33: {"price": None, "text": None},
+    }
+    assert in_running_loop(media.get_post_info, model_id=TWO, db_path=db) == {
+        10: {"price": 1, "text": f"posts 10 {TWO}"},
+        22: {"price": 1, "text": f"posts 22 {TWO}"},
+    }
+
+
+def test_the_media_rows_a_creator_has_are_its_own_without_awaiting(db):
+    # get_all_medias' rows, for the GUI, which can't await
+    for who in (ONE, TWO):
+        rows = in_running_loop(
+            media.get_all_medias_sync, model_id=who, db_path=db, read_only=True
+        )
+        assert rows == asyncio.run(media.get_all_medias(model_id=who, db_path=db))
+        assert {row["model_id"] for row in rows} == {who}
+    assert [
+        (row["media_id"], row["post_id"])
+        for row in in_running_loop(media.get_all_medias_sync, model_id=TWO, db_path=db)
+    ] == [(1, 10), (3, 22)]
+
+
 def test_a_read_without_a_creator_is_the_whole_database(db):
     # tools that read a database by its path (merge, the tests) give no creator
     assert sorted(asyncio.run(posts.get_all_post_ids(db_path=db))) == [10, 10, 11, 22]

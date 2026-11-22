@@ -378,6 +378,8 @@ async def scenario():
         )
         out[f"status {name}"] = await media.get_model_media_status(**who)
         out[f"all media {name}"] = await media.get_all_medias(**who)
+        out[f"all media sync {name}"] = media.get_all_medias_sync(**who)
+        out[f"post info {name}"] = media.get_post_info(**who)
         for area in ("timeline", "archived", "pinned", "stories", "highlights", "streams", "messages"):
             read = getattr(media, f"get_{area}_media")
             out[f"{area} media {name}"] = await read(**who)
@@ -452,6 +454,16 @@ def check(result):
     assert result["permanent skips after"] == []
     assert result["previous download"]["size"] == 5
     assert result["previous download, none"] is None
+    # a creator's own posts, messages and stories only
+    assert sorted(result["post info one"], key=int) == [
+        "10", "11", "12", "30", "31", "32", "40", "41", "43", str(BIG)
+    ]
+    assert sorted(result["post info two"], key=int) == ["10", "22", "30", "40"]
+    assert result["post info one"]["11"] == {"price": 4.99, "text": "text of 11"}
+    assert result["post info one"]["31"] == {"price": 12.5, "text": "message 31"}
+    assert result["post info one"]["40"] == {"price": 0, "text": "story 40"}
+    assert result["all media sync one"] == result["all media one"]
+    assert result["all media sync two"] == result["all media two"]
     big = [row for row in result["all media one"] if row["media_id"] == BIG + 1]
     assert big and big[0]["post_id"] == BIG
     saved = {(row["model_id"], row["post_id"]): row for row in result["table posts"]}
