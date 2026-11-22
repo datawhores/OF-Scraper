@@ -3,6 +3,7 @@ import shutil
 
 from rich import print
 
+import ofscraper.db.postgres as postgres
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.paths.common as common_paths
@@ -22,12 +23,25 @@ def change_default_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())
     manager.Manager.profile_manager.switch_profile(profile,permanent=True)
+    postgres_profiles_notice()
 
 
 def change_active_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())
     manager.Manager.profile_manager.switch_profile(profile,permanent=False)
+    postgres_profiles_notice()
+
+
+def postgres_profiles_notice():
+    # PostgreSQL's tables are per site, not per profile
+    if postgres.enabled():
+        console.get_console().print(
+            "All profiles use the same PostgreSQL database, so switching"
+            " profiles doesn't switch the scraper's data."
+        )
+
+
 def delete_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())

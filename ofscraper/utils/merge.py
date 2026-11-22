@@ -29,6 +29,25 @@ def merge_runner():
             else:
                 return
         completed, skipped, failed = merge_loop(curr_folder, new_db)
+        if postgres.enabled() and completed:
+            folder = str(merge.MergeDatabase().get_new_db(new_db).parent)
+            # a backslash right before the closing quote would escape it on
+            # Windows ("D:\" reads as D:"), so it is doubled
+            if folder.endswith("\\"):
+                folder += "\\"
+            console.print("To bring the merged file into PostgreSQL, run:")
+            # on one line and as written, so that it can be copied
+            console.print(
+                f'python -m ofscraper.commands.postgres_import "{folder}"',
+                soft_wrap=True,
+                markup=False,
+                emoji=False,
+                highlight=False,
+            )
+            console.print(
+                "It only reports what it would do. Then run it again with"
+                " --apply to bring the file in."
+            )
         if not prompts.confirm_db_continue(completed, skipped, failed):
             break
 

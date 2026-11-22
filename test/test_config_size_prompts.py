@@ -251,3 +251,29 @@ def test_download_menu_saves_free_space_in_bytes(monkeypatch, saved):
     result = config_prompts.download_config()
 
     assert result["system_free_min"] == 20 * GB
+
+
+# --- the metadata prompt and PostgreSQL ---------------------------------------
+
+
+@pytest.mark.parametrize(
+    "on, instruction",
+    [
+        (
+            True,
+            "With PostgreSQL on, the scraper doesn't use this folder. It's"
+            " where the user_data.db files go if PostgreSQL is turned off",
+        ),
+        (False, "Where should metadata files be saved"),
+    ],
+)
+def test_the_metadata_prompt_says_what_the_folder_is_for(monkeypatch, saved, on, instruction):
+    monkeypatch.setattr(config_prompts.postgres, "enabled", lambda: on)
+    for name in ("get_main_profile", "get_metadata", "get_discord"):
+        monkeypatch.setattr(config_prompts.data, name, lambda **k: "value")
+    answers = _Answers(monkeypatch, [])
+
+    config_prompts.general_config()
+
+    asked = {q["name"]: q for q in answers.asked}
+    assert asked["metadata"]["option_instruction"] == instruction
