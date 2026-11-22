@@ -221,6 +221,9 @@ FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages')
 {model_filter}
 """
+postPriceText = """
+SELECT post_id, price, text FROM {table}
+"""
 unlockedMediaCheck = """
 SELECT media_id, post_id FROM medias WHERE model_id=(?) AND unlocked=TRUE AND downloaded=FALSE
 """
@@ -753,6 +756,35 @@ def get_all_medias(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         execute_area_media(cur, getAllMedia, model_id, mediaSelectTransition)
         return [dict(row) for row in cur.fetchall()]
+
+
+@wrapper.operation_wrapper
+def get_all_medias_sync(model_id=None, username=None, conn=None, **kwargs) -> list:
+    """get_all_medias, for a caller that can't await (the GUI)."""
+    with contextlib.closing(conn.cursor()) as cur:
+        execute_area_media(cur, getAllMedia, model_id, mediaSelectTransition)
+        return [dict(row) for row in cur.fetchall()]
+
+
+@wrapper.operation_wrapper
+def get_post_info(model_id=None, username=None, conn=None, **kwargs) -> dict:
+    """{post_id: {"price": ..., "text": ...}} for one creator's posts,
+    messages and stories, as saved (an empty one is None), for the GUI's
+    table of get_all_medias_sync rows. Not async: the GUI can't await.
+
+    A post id is unique per creator within a table only, so a post, a
+    message and a story may share one. The tables are read in that order
+    and the first row with an id keeps it, as the GUI's own read did."""
+    info = {}
+    with contextlib.closing(conn.cursor()) as cur:
+        for table in ("posts", "messages", "stories"):
+            creator, params = db_columns.creator_filter(cur, table, model_id, "WHERE")
+            cur.execute(postPriceText.format(table=table) + creator, params)
+            for row in cur.fetchall():
+                info.setdefault(
+                    row["post_id"], {"price": row["price"], "text": row["text"]}
+                )
+    return info
 
 
 @run
