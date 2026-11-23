@@ -11,31 +11,31 @@ def load_cdm_config():
     config = {}
 
     # --- CDM Configuration ---
-    # CDM_TEST_TIMEOUT: Timeout for CDM tests (seconds).
+    # CDM_TEST_TIMEOUT: Defined but not read anywhere.
     # Default: 30
     config["CDM_TEST_TIMEOUT"] = int(os.getenv("OFSC_CDM_TEST_TIMEOUT", "30"))
 
-    # CDM_TIMEOUT: General timeout for CDM operations (seconds).
+    # CDM_TIMEOUT: Total request timeout, in seconds, for CDM licence requests.
     # Default: 40
     config["CDM_TIMEOUT"] = int(os.getenv("OFSC_CDM_TIMEOUT", "40"))
 
-    # CDM_MIN_WAIT: Minimum wait time before retrying a CDM operation (seconds).
+    # CDM_MIN_WAIT: Defined but not read anywhere.
     # Default: 1.5
     config["CDM_MIN_WAIT"] = float(os.getenv("OFSC_CDM_MIN_WAIT", "1.5"))
 
-    # CDM_MAX_WAIT: Maximum wait time before retrying a CDM operation (seconds).
+    # CDM_MAX_WAIT: Defined but not read anywhere.
     # Default: 6
     config["CDM_MAX_WAIT"] = float(os.getenv("OFSC_CDM_MAX_WAIT", "6"))
 
-    # CDM_NUM_TRIES: Number of retries for general CDM operations.
+    # CDM_NUM_TRIES: Maximum number of attempts for CDM licence requests outside check mode.
     # Default: 8
     config["CDM_NUM_TRIES"] = int(os.getenv("OFSC_CDM_NUM_TRIES", "8"))
 
-    # CDM_NUM_TRIES_CHECK: Number of retries for CDM checks.
+    # CDM_NUM_TRIES_CHECK: Maximum number of attempts for CDM licence requests in check mode (`*_check` commands).
     # Default: 1
     config["CDM_NUM_TRIES_CHECK"] = int(os.getenv("OFSC_CDM_NUM_TRIES_CHECK", "1"))
 
-    # CDM_TEST_NUM_TRIES: Number of retries for CDM tests.
+    # CDM_TEST_NUM_TRIES: Defined but not read anywhere.
     # Default: 2
     config["CDM_TEST_NUM_TRIES"] = int(os.getenv("OFSC_CDM_TEST_NUM_TRIES", "2"))
 

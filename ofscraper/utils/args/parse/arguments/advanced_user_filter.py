@@ -77,7 +77,7 @@ renewal_price_max_option = click.option(
 last_seen_before_option = click.option(
     "-lsb",
     "--last-seen-before",
-    help="Filter accounts by last seen being at or before the given date (YYYY-MM-DD format)",
+    help="Filter accounts by last seen being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),
@@ -86,7 +86,7 @@ last_seen_before_option = click.option(
 last_seen_after_option = click.option(
     "-lsa",
     "--last-seen-after",
-    help="Filter accounts by last seen being at or after the given date (YYYY-MM-DD format)",
+    help="Filter accounts by last seen being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),
@@ -95,7 +95,7 @@ last_seen_after_option = click.option(
 expired_after_option = click.option(
     "-ea",
     "--expired-after",
-    help="Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD format)",
+    help="Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),
@@ -104,7 +104,7 @@ expired_after_option = click.option(
 expired_before_option = click.option(
     "-eb",
     "--expired-before",
-    help="Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD format)",
+    help="Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),
@@ -113,7 +113,7 @@ expired_before_option = click.option(
 subscribed_after_option = click.option(
     "-sa",
     "--subscribed-after",
-    help="Filter accounts by subscription date being after the given date (YYYY-MM-DD format)",
+    help="Filter accounts by subscription date being after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),
@@ -122,7 +122,7 @@ subscribed_after_option = click.option(
 subscribed_before_option = click.option(
     "-sb",
     "--subscribed-before",
-    help="Filter accounts by sub date being at or before the given date (YYYY-MM-DD format)",
+    help="Filter accounts by subscription date being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')",
     default=None,
     required=False,
     type=ArrowType(),

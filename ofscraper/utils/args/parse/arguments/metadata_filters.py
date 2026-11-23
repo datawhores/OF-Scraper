@@ -28,8 +28,8 @@ lock_option = click.option(
     "unlocked",
     help="""
         \b
-        Flag for filtering accounts based on whether media is unlocked
-        [select one --unlock or --locked]""",
+        Filter media by whether it's unlocked.
+        [select one --unlocked or --locked]""",
     default=None,
     required=False,
     is_flag=True,
@@ -41,7 +41,7 @@ downloaded_option = click.option(
     "downloaded",
     help="""
         \b
-        Flag for filtering accounts based on whether media is downloaded
+        Filter media by whether it's downloaded.
         [select one --downloaded or --not-downloaded]""",
     default=None,
     required=False,
@@ -51,13 +51,13 @@ downloaded_option = click.option(
 posted_after = click.option(
     "-pf",
     "--posted-after",
-    help="Filter out posts posted on or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Only media from posts posted on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').",
     type=ArrowType(),
 )
 posted_before = click.option(
     "-pb",
     "--posted-before",
-    help="Filter out posts posted at on or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Only media from posts posted on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').",
     type=ArrowType(),
 )
 
@@ -65,13 +65,13 @@ posted_before = click.option(
 created_after = click.option(
     "-cf",
     "--created-after",
-    help="Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Only media created on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').",
     type=ArrowType(),
 )
 created_before = click.option(
     "-cb",
     "--created-before",
-    help="Process media  created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Only media created on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').",
     type=ArrowType(),
 )
 
@@ -82,7 +82,7 @@ preview_option = click.option(
     "preview",
     help="""
         \b
-        Flag for filtering accounts based on preview status.
+        Filter media by preview status.
         [select one --preview or --no-preview]""",
     default=None,
     required=False,

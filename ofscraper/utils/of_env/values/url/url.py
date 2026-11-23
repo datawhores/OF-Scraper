@@ -11,13 +11,13 @@ def load_api_endpoints_config():
     config = {}
 
     # --- OnlyFans API Endpoints ---
-    # initEP: Initial API endpoint for session initialization.
+    # initEP: Initial API endpoint for session initialisation.
     # Default: "https://onlyfans.com/api2/v2/init"
     config["initEP"] = os.getenv(
         "OFSC_API_INIT_EP", "https://onlyfans.com/api2/v2/init"
     )
 
-    # LICENCE_URL: URL for media DRM license acquisition.
+    # LICENCE_URL: URL for media DRM licence acquisition.
     # Default: "https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine"
     config["LICENCE_URL"] = os.getenv(
         "OFSC_API_LICENCE_URL",
@@ -161,7 +161,7 @@ def load_api_endpoints_config():
         "https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&id={}&order=desc&skip_users=all&skip_users_dups=1",
     )
 
-    # favoriteEP: Endpoint for favoriting/unfavoriting a post.
+    # favoriteEP: Endpoint for liking or unliking a post.
     # Default: "https://onlyfans.com/api2/v2/posts/{}/favorites/{}"
     config["favoriteEP"] = os.getenv(
         "OFSC_API_FAVORITE_EP", "https://onlyfans.com/api2/v2/posts/{}/favorites/{}"
@@ -171,7 +171,7 @@ def load_api_endpoints_config():
     # Default: "https://onlyfans.com/{}/{}"
     config["postURL"] = os.getenv("OFSC_POST_URL", "https://onlyfans.com/{}/{}")
 
-    # donateEP: Donation endpoint (Buy Me A Coffee example).
+    # donateEP: The original author's donation link.
     # Default: "https://www.buymeacoffee.com/excludedBittern"
     config["donateEP"] = os.getenv(
         "OFSC_DONATE_EP", "https://www.buymeacoffee.com/excludedBittern"

@@ -10,8 +10,8 @@ from ofscraper.utils.args.parse.group_bundles.check import main_check
 def manual_args(func):
     @click.command(
         "manual",
-        help="Manually download media by providing a list of urls or IDs",
-        short_help="Manually download media by providing a list of urls or IDs",
+        help="Manually download media by providing a list of URLs or IDs",
+        short_help="Manually download media by providing a list of URLs or IDs",
         show_constraints=True,
     )
     @common_args

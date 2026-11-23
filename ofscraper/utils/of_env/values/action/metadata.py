@@ -11,7 +11,7 @@ def load_metadata_config():
     config = {}
 
     # --- Metadata Configuration ---
-    # REMOVE_UNVIEWABLE_METADATA: Flag to determine if unviewable metadata should be removed (boolean)
+    # REMOVE_UNVIEWABLE_METADATA: Defined but not read anywhere.
     # Default: False
     # Environment variable will be parsed: "True", "true", "1" -> True; "False", "false", "0" -> False
     remove_unviewable_metadata_env = os.getenv("REMOVE_UNVIEWABLE_METADATA", "False")
@@ -20,7 +20,7 @@ def load_metadata_config():
         "1",
     )
 
-    # QUALITY_UNKNOWN_DEFAULT: Default quality setting for unknown metadata
+    # QUALITY_UNKNOWN_DEFAULT: Fallback value for the `{quality}` placeholder when a media item's quality isn't known (such as non-videos or text files).
     # Default: "source"
     config["QUALITY_UNKNOWN_DEFAULT"] = os.getenv("QUALITY_UNKNOWN_DEFAULT", "source")
     config["ALT_FORCE_KEY"] = os.getenv("OFSC_ALT_FORCE_KEY", "True").lower() in (

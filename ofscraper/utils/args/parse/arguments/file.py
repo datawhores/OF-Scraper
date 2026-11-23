@@ -10,16 +10,16 @@ original_filename_option = click.option(
 text_type_option = click.option(
     "-tt",
     "--text-type",
-    help="set length based on word or letter",
+    help="Measure text length by word or letter",
     type=click.Choice(["word", "letter"], case_sensitive=False),
 )
 
 space_replacer_option = click.option(
     "-sr",
     "--space-replacer",
-    help="character to replace spaces with",
+    help="Character to replace spaces with",
 )
 
 text_length_option = click.option(
-    "-tl", "--textlength", help="max length of text", type=click.INT
+    "-tl", "--textlength", help="Max length of text", type=click.INT
 )

@@ -11,11 +11,11 @@ def load_date_config():
     config = {}
 
     # --- Date Format Configuration ---
-    # PROMPT_DATE_FORMAT: Date format used for user prompts or display.
+    # PROMPT_DATE_FORMAT: Arrow date format for default last-seen dates in the interactive account filter prompts.
     # Default: "YYYY-MM-DD"
     config["PROMPT_DATE_FORMAT"] = os.getenv("OFSC_PROMPT_DATE_FORMAT", "YYYY-MM-DD")
 
-    # API_DATE_FORMAT: Date format used for API interactions.
+    # API_DATE_FORMAT: Arrow date/time format used for scan-range logs and `ofscraper db` date columns.
     # Default: "YYYY-MM-DD HH:mm:ss"
     config["API_DATE_FORMAT"] = os.getenv("OFSC_API_DATE_FORMAT", "YYYY-MM-DD HH:mm:ss")
 

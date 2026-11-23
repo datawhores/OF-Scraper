@@ -17,7 +17,7 @@ discord_log_level_option = click.option(
     "-dc",
     "--discord",
     "discord_level",
-    help="Set discord log level",
+    help="Set Discord log level",
     type=click.Choice(
         ["OFF", "LOW", "NORMAL"],
         case_sensitive=False,
@@ -45,6 +45,6 @@ console_rich_toggle = click.option(
     "--no-live",
     "--no-rich",
     "no_rich",
-    help="Turn off rich ui live display features",
+    help="Turn off Rich UI live display features",
     is_flag=True,
 )

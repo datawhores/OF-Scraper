@@ -14,6 +14,7 @@ import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 quality_option = click.option(
     "-q",
     "--quality",
+    help="Lowest video quality to accept (downloads the smallest available at or above it, or source)",
     type=click.Choice(["240", "720", "source"], case_sensitive=False),
 )
 
@@ -62,14 +63,14 @@ media_id_filter = click.option(
 length_max = click.option(
     "-lx",
     "--length-max",
-    help="max duration in seconds (whole number, e.g. 90); only applies to videos",
+    help="Max duration in seconds (whole number, e.g. 90); only applies to videos",
     required=False,
     type=click.IntRange(min=0),
 )
 length_min = click.option(
     "-lm",
     "--length-min",
-    help="min duration in seconds (whole number, e.g. 90); only applies to videos",
+    help="Min duration in seconds (whole number, e.g. 90); only applies to videos",
     required=False,
     type=click.IntRange(min=0),
 )
@@ -88,11 +89,7 @@ media_sort_option = click.option(
     "-mst",
     "--media-sort",
     "mediasort",
-    help="""
-    \b
-    Changes media processing order before actions
-    Example: for download
-    """,
+    help="Changes media processing order before actions (e.g. for download)",
     default=None,
     required=False,
     type=click.Choice(
@@ -109,10 +106,7 @@ media_sort_option = click.option(
 media_desc_option = click.option(
     "-mdc",
     "--media-desc",
-    help="""
-    \b
-    Sort the media list in descending order
-    """,
+    help="Sort the media list in descending order",
     is_flag=True,
     default=False,
 )
@@ -143,7 +137,7 @@ force_model_unique_option = click.option(
 before_option = click.option(
     "-be",
     "--before",
-    help="Process media from posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Process media from posts at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads",
     type=ArrowType(),
     callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
 )
@@ -151,7 +145,7 @@ before_option = click.option(
 after_option = click.option(
     "-af",
     "--after",
-    help="Process media from posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+    help="Process media from posts at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads",
     type=ArrowType(),
 )
 

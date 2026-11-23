@@ -11,15 +11,12 @@ def load_other_urls_config():
     config = {}
 
     # --- CDM URL Configuration ---
-    # CDRM: URL of the decryption API that key mode cdrm sends the request
-    # headers, cookies included, to. The default, cdrm-project.com, no longer
-    # works and isn't contacted: protected videos fail with a message to use
-    # key mode manual. Set it only to a server you run yourself.
+    # CDRM: URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is sent the request headers, cookies included. The default, `cdrm-project.com`, isn't contacted: protected videos fail with a message to use `manual` key mode. Set it only to a server you run yourself.
     # Default: "https://cdrm-project.com/api/decrypt"
     config["CDRM"] = os.getenv("OFSC_CDRM_URL", "https://cdrm-project.com/api/decrypt")
 
     # --- Bad URL Host Configuration ---
-    # BAD_URL_HOST: A set of regular expression patterns for "bad" URL hosts.
+    # BAD_URL_HOST: Regular expressions for hosts whose media is skipped and recorded in the database as downloaded with no file (a comma-separated list can be given in `OFSC_BAD_URL_HOSTS`).
     # Default: {".*\\.upload.onlyfans.com", "of2transcoder.s3-accelerate.amazonaws.com", ".*\\.convert.onlyfans.com"}
     # Expects a comma-separated string if provided via environment variable (e.g., "pattern1,pattern2")
     bad_url_host_env = os.getenv("OFSC_BAD_URL_HOSTS")

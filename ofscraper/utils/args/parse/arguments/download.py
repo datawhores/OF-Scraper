@@ -4,7 +4,7 @@ from humanfriendly import parse_size
 no_auto_resume_option = click.option(
     "-ar",
     "--no-auto-resume",
-    help="Cleanup temp .part files (removes resume ability)",
+    help="Clean up temp .part files (removes resume ability)",
     default=False,
     is_flag=True,
 )
@@ -29,7 +29,7 @@ download_sem_option = click.option(
     "--sems",
     "--sem",
     "download_sem",
-    help="Number of concurrent downloads per thread",
+    help="Number of downloads at the same time (overrides performance_options.download_sems).",
     default=None,
     type=int,
 )
@@ -40,8 +40,8 @@ download_limit_option = click.option(
     "download_limit",
     help="""
     \b
-    Maximum download speed per second
-    can parse Human readable string '10MB' or int representing bytes per second
+    Maximum download speed per second.
+    Accepts a human-readable size ('10MB') or bytes per second.
     """,
     default=None,
     type=parse_size,

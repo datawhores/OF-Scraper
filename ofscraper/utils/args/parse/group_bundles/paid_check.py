@@ -13,9 +13,9 @@ def paid_check_args(func):
         short_help="""\b
                 Produces a media table from purchases with filterable entries and quick downloads""",
         help="""
-    The paid_check subcommand gathers information on media content from purchases
-    It presents this data in a table format with filtering options for focused searches 
-    Allows unlocked media entries to be directly downloaded through the table
+    The paid_check subcommand gathers information on media content from purchases.
+    It presents this data in a table format with filtering options for focused searches.
+    Allows unlocked media entries to be directly downloaded through the table.
     """,
         show_constraints=True,
     )
