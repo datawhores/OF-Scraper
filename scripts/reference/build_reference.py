@@ -851,7 +851,7 @@ def _render_env_file_tables(path, title, active_sections, sources, values, notes
             )
         out.append("\n")
         for key, env_text, val, desc in detailed:
-            out.append(f'{detail_level} <a id="{anchor(key)}-details"></a>`{key}`\n\n')
+            out.append(f"{detail_level} `{key}` details\n\n")
             out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
             out.append(f"{desc}\n\n")
     return "".join(out)

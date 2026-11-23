@@ -185,19 +185,19 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="naming_script_default"></a>`OFSC_NAMING_SCRIPT_DEFAULT`<br>Key: `NAMING_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.naming_script`. |
 | <a id="download_limit_default"></a>`OFSC_DOWNLOAD_LIMIT_DEFAULT`<br>Key: `DOWNLOAD_LIMIT_DEFAULT` | **Default:** `0`. Default for `performance_options.download_limit` (maximum download speed in bytes per second; 0 means unlimited). |
 
-##### <a id="fansly_stream_segments-details"></a>`FANSLY_STREAM_SEGMENTS`
+##### `FANSLY_STREAM_SEGMENTS` details
 
 **Environment variable:** `OFSC_FANSLY_STREAM_SEGMENTS` · **Default:** `8`
 
 How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally (`fansly_stream_download.py`). Fetched segments are kept so a stopped download can resume. 0 hands the whole stream to ffmpeg, one segment at a time, with no resume. Streams the local downloader can't handle still go to ffmpeg: live HLS (no `#EXT-X-ENDLIST`), HLS with encryption other than AES-128, and DASH that is protected, live, multi-period or uses unsupported addressing. Total concurrent downloads are still capped by `download_sems`.
 
-##### <a id="silent_rechecks-details"></a>`SILENT_RECHECKS`
+##### `SILENT_RECHECKS` details
 
 **Environment variable:** `OFSC_SILENT_RECHECKS` · **Default:** `3`
 
 How many times to recheck a Fansly video that was saved without sound because the CDN refused its separate audio track and the direct file had no audio (`download/utils/silent.py`). Each check fetches the audio playlist and its first segment with fresh links, once at the end of the run that saved it and once on each later download run for that creator that includes videos. If the audio succeeds, the video is downloaded again and replaces the silent file once it passes checks. After this many refused checks, the video is kept as is. Checks that fail for other reasons (network, rate limit) don't count. 0 turns rechecks off.
 
-##### <a id="fansly_full_scan_days-details"></a>`FANSLY_FULL_SCAN_DAYS`
+##### `FANSLY_FULL_SCAN_DAYS` details
 
 **Environment variable:** `OFSC_FANSLY_FULL_SCAN_DAYS` · **Default:** `7`
 
@@ -338,7 +338,7 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 | <a id="keep_alive"></a>`OFSC_KEEP_ALIVE`<br>Key: `KEEP_ALIVE` | **Default:** `20`. The most idle connections the sync client keeps open to use again. A count, not a time. The async client, which downloads, has no such limit. |
 | <a id="keep_alive_exp"></a>`OFSC_KEEP_ALIVE_EXP`<br>Key: `KEEP_ALIVE_EXP` | **Default:** `10`. How long an idle connection is kept open to use again (seconds). Applies to both clients. 0 keeps none: each connection is closed after use. |
 
-##### <a id="of_read_timeout-details"></a>`OF_READ_TIMEOUT`
+##### `OF_READ_TIMEOUT` details
 
 **Environment variable:** `OFSC_READ_TIMEOUT` · **Default:** `60`
 
@@ -499,25 +499,25 @@ Defined in `ofscraper/utils/of_env/values/live.py`.
 | <a id="supress_subscription_display"></a>`OFSC_SUPRESS_SUBSCRIPTION_DISPLAY`<br>Key: `SUPRESS_SUBSCRIPTION_DISPLAY` | **Default:** `None`. Hides the subscription progress display when on. [Details](#supress_subscription_display-details). |
 | <a id="supress_like_display"></a>`OFSC_SUPRESS_LIKE_DISPLAY`<br>Key: `SUPRESS_LIKE_DISPLAY` | **Default:** `None`. Hides the like progress display when on. [Details](#supress_like_display-details). |
 
-##### <a id="supress_api_display-details"></a>`SUPRESS_API_DISPLAY`
+##### `SUPRESS_API_DISPLAY` details
 
 **Environment variable:** `OFSC_SUPRESS_API_DISPLAY` · **Default:** `None`
 
 Hides the API progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
 
-##### <a id="supress_download_display-details"></a>`SUPRESS_DOWNLOAD_DISPLAY`
+##### `SUPRESS_DOWNLOAD_DISPLAY` details
 
 **Environment variable:** `OFSC_SUPRESS_DOWNLOAD_DISPLAY` · **Default:** `None`
 
 Hides the download progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
 
-##### <a id="supress_subscription_display-details"></a>`SUPRESS_SUBSCRIPTION_DISPLAY`
+##### `SUPRESS_SUBSCRIPTION_DISPLAY` details
 
 **Environment variable:** `OFSC_SUPRESS_SUBSCRIPTION_DISPLAY` · **Default:** `None`
 
 Hides the subscription progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
 
-##### <a id="supress_like_display-details"></a>`SUPRESS_LIKE_DISPLAY`
+##### `SUPRESS_LIKE_DISPLAY` details
 
 **Environment variable:** `OFSC_SUPRESS_LIKE_DISPLAY` · **Default:** `None`
 
@@ -541,7 +541,7 @@ Defined in `ofscraper/utils/of_env/values/system.py`.
 | <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | **Default:** `''`. A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. [Details](#ofsc_database_url-details). |
 | <a id="disk_space_check_path"></a>`OFSC_DISK_SPACE_CHECK_PATH`<br>Key: `DISK_SPACE_CHECK_PATH` | **Default:** `'/'`. The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be. |
 
-##### <a id="ofsc_database_url-details"></a>`OFSC_DATABASE_URL`
+##### `OFSC_DATABASE_URL` details
 
 **Environment variable:** `OFSC_DATABASE_URL` · **Default:** `''`
 

@@ -66,7 +66,7 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 |---|---|
 | <a id="cdrm"></a>`OFSC_CDRM_URL`<br>Key: `CDRM` | **Default:** `'https://cdrm-project.com/api/decrypt'`. URL of a self-hosted decryption server for the deprecated `cdrm` key mode. [Details](#cdrm-details). |
 
-#### <a id="cdrm-details"></a>`CDRM`
+#### `CDRM` details
 
 **Environment variable:** `OFSC_CDRM_URL` · **Default:** `'https://cdrm-project.com/api/decrypt'`
 
@@ -84,7 +84,7 @@ URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is
 |---|---|
 | <a id="media_host_suffixes"></a>`OFSC_MEDIA_HOST_SUFFIXES`<br>Key: `MEDIA_HOST_SUFFIXES` | **Default:** `[]`. Extra domains (added to the built-in `onlyfans.com`) allowed to receive OnlyFans login cookies and headers during downloads (`ofscraper/utils/host_allowlist.py`). [Details](#media_host_suffixes-details). |
 
-#### <a id="media_host_suffixes-details"></a>`MEDIA_HOST_SUFFIXES`
+#### `MEDIA_HOST_SUFFIXES` details
 
 **Environment variable:** `OFSC_MEDIA_HOST_SUFFIXES` · **Default:** `[]`
 
