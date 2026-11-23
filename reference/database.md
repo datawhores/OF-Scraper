@@ -2,27 +2,11 @@
 
 # Database reference (`user_data.db`)
 
-Each creator has one SQLite file, `user_data.db`. It sits in the folder given by the `metadata` config value (default `{configpath}/{profile}/.data/{model_id}`). `databasePlaceholder.databasePathHelper` in `ofscraper/classes/placeholder.py` fills in the placeholders (`username`, `model_username`, `first_letter`, `model_id`, plus the common ones) and appends `user_data.db`.
-
-- **Connections:** `ofscraper/db/operations_/wrapper.py` opens a connection for each operation, in WAL mode, so `user_data.db-wal` and `-shm` files sit next to the database. Writes go through one worker thread and are retried on "database is locked".
-- **Backups:** they go to a `backup` folder beside the database (`ofscraper/db/backup.py`).
-  - At the start of a per-creator run, `table_init_create` copies the database to `backup/user_data_copy_N.db`, with N rotating through 1 to 5. It copies when the `DBINTERVAL` setting (default 86400 seconds) has passed since the last copy, or when the backup folder is empty. It makes no copy of a database created in that run.
-  - Before any pending schema migration, it also writes `backup/old_schema_{model_id}_{timestamp}_db_backup.db`. The name is `old_schema_db_backup.db` when there is no model id. It checks that the copy has the same size, and restores it if the migration raises. A database created in that run (a first scrape, or a new Merge Databases target) gets no `old_schema_*` backup.
-- **Merging:** the Merge Databases menu option (`ofscraper/db/merge.py`) creates and migrates a target `user_data.db`. It then copies in rows from every `user_data.db` found under a chosen folder, skipping rows whose key is already present. Each source must contain exactly one numeric model id in `profiles`.
-- **Fansly:** Fansly runs use separate files. When the `metadata` template has no site-specific field (`save_location`, `root`, `site_name`, `model_id` and their aliases), a `Fansly` subfolder is added before `user_data.db`, so Fansly rows don't land in the OnlyFans file. Fansly databases carry a `schema_flags` row `site=fansly`.
-- **Read-only users:** the `db` command and the hash-based duplicate checks only read the database. The exception is `db --unmark-permanent-skips`, which un-marks the selected permanent skips.
-- **PostgreSQL:** when `OFSC_DATABASE_URL` holds a URL, the same tables live in one PostgreSQL database instead (`ofscraper/db/postgres.py`): one schema per site, with all creators' rows together separated by `model_id`, using 64-bit IDs, booleans and timestamps. No `user_data.db` is read or written while PostgreSQL is on, except by tools given a file path.
-  - `stash_sync` reads PostgreSQL when run with `--postgres`.
-  - `recover_collisions` and `move_creator_files` work on one creator's rows in PostgreSQL when run with `--postgres --creator NAME`, in one transaction that updates each row only if it still matches what was read.
-  - All three go through `ofscraper/db/creator_rows.py`. Given a SQLite file while PostgreSQL is on, each says it's working on the file.
-  - `scripts/creator_names.py` reads and adds names in PostgreSQL with `--postgres`, and prints a notice on stderr (`sqlite_files_notice`) when given SQLite files while PostgreSQL is on.
-  - Merge Databases works on SQLite files only and says so on its screen.
-  - Standalone tools (`stash_sync`, `recover_collisions`, `move_creator_files`, `scripts/creator_names.py`) read `OFSC_DATABASE_URL` only from the environment they are run in, not from scraper env files. See `POSTGRESQL.md`.
-
-The tables and columns below are what a new database has after `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables` run. The create statements are in `ofscraper/db/operations_/`.
+The tables and columns below are what a new `user_data.db` has after `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables` run (`ofscraper/db/operations_/`). See [How the database works](#how-the-database-works) for connections, backups, merging, Fansly separation and PostgreSQL.
 
 ## Contents
 
+- [Quick reference](#quick-reference)
 - [`labels`](#labels)
 - [`medias`](#medias)
 - [`messages`](#messages)
@@ -33,10 +17,40 @@ The tables and columns below are what a new database has after `ofscraper.db.ope
 - [`profiles`](#profiles)
 - [`schema_flags`](#schema_flags)
 - [`stories`](#stories)
+- [How the database works](#how-the-database-works)
+
+## Quick reference
+
+| Table | Unique key | Summary |
+|---|---|---|
+| [`labels`](#labels) | (`post_id`, `label_id`, `model_id`) | Links the creator's post labels (collections) to posts. |
+| [`medias`](#medias) | (`media_id`, `model_id`, `post_id`) | One row per media item (image, video, audio) seen in a post, message, story or other area. |
+| [`messages`](#messages) | (`post_id`, `model_id`) | One row per direct message seen in the chat with the creator, from either side. |
+| [`models`](#models) | (`model_id`) | The creator account ids whose data is stored in this database. |
+| [`others`](#others) | (`post_id`, `model_id`) | A legacy table for content outside the main areas. |
+| [`posts`](#posts) | (`post_id`, `model_id`) | One row per timeline, pinned, archived, streams, paid or label post seen for the creator. |
+| [`products`](#products) | (`post_id`, `model_id`) | A legacy table for paid products. |
+| [`profiles`](#profiles) | (`user_id`, `username`) | The usernames the creator account has been seen under in this database, and when each was first and last seen. |
+| [`schema_flags`](#schema_flags) | (`flag_name`) | Key/value markers that record which schema migrations have run on this file, plus the site the database belongs to. |
+| [`stories`](#stories) | (`post_id`, `model_id`) | One row per story or highlight story seen for the creator. |
 
 ## `labels`
 
 Links the creator's post labels (collections) to posts. One row per (label, post) pair. On Fansly a label is a wall, a named tab on the creator's profile. The main "Posts" wall holds the whole timeline, so it isn't a label.
+
+**Unique:** (`post_id`, `label_id`, `model_id`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `label_id` | INTEGER | The site label id. On Fansly, the wall id. |
+| `name` | VARCHAR | The label name. On Fansly, the wall name without trailing spaces. |
+| `type` | VARCHAR | The label type from the API. `wall` for Fansly walls. |
+| `post_id` | INTEGER | The id of a post carrying the label. |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `make_label_table_changes` (`ofscraper/db/operations_/labels.py`) runs when the Labels area is scraped (`process_labels` in `ofscraper/data/posts/post.py`). The check command also runs it.
 
@@ -47,20 +61,38 @@ Links the creator's post labels (collections) to posts. One row per (label, post
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, label_id, model_id)`. The application chooses insert or update for each label.
 
-**Unique:** (`post_id`, `label_id`, `model_id`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `label_id` | INTEGER |  |  | The site label id. On Fansly, the wall id. |
-| `name` | VARCHAR |  |  | The label name. On Fansly, the wall name without trailing spaces. |
-| `type` | VARCHAR |  |  | The label type from the API. `wall` for Fansly walls. |
-| `post_id` | INTEGER |  |  | The id of a post carrying the label. |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
+</details>
 
 ## `medias`
 
 One row per media item (image, video, audio) seen in a post, message, story or other area. It holds the item's API metadata and, once handled, where it was saved and whether it counts as downloaded.
+
+**Unique:** (`media_id`, `model_id`, `post_id`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `media_id` | INTEGER | The site media id. |
+| `post_id` | INTEGER (not null) | The id of the post, message or story the media belongs to. |
+| `link` | VARCHAR | The download URL, or the MPD manifest URL for DRM video. `NULL` when the API gave neither. |
+| `directory` | VARCHAR | The folder the file was saved to. Set on download or by the `metadata` command. |
+| `filename` | VARCHAR | The file name the media was saved under. |
+| `size` | INTEGER | The saved file size in bytes. |
+| `api_type` | VARCHAR | The area the media came from, as a capitalised response type (Timeline, Archived, Pinned, Streams, Messages, Stories, Highlights, Paid, Profile and so on). |
+| `media_type` | VARCHAR | The capitalised media type (Images, Videos, Audios and so on). |
+| `preview` | INTEGER | 1 if the media is a preview, else 0. On OnlyFans, the post carries preview media. On Fansly, the item is flagged `isPreview`. |
+| `linked` | BOOL | 1 if the API gave a URL or MPD for the media, else 0. |
+| `downloaded` | BOOL | 1 once the media counts as downloaded (file saved, forced, or marked by the `metadata` command). Otherwise 0 or `NULL`. Used to skip already-downloaded media. |
+| `created_at` | TIMESTAMP | The media creation time from the API (`createdAt`, else `postedAt`, else the post date). |
+| `posted_at` | TIMESTAMP | The date of the parent post or message. |
+| `duration` | VARCHAR | The media duration as a formatted string. `NULL` when unknown. |
+| `unlocked` | BOOL | 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
+| `hash` | VARCHAR | The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+| `skip_permanent` | BOOL | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. `--retry-permanent-skips` and `ofscraper db --unmark-permanent-skips` undo it. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** Scraping calls `batch_mediainsert` (`ofscraper/db/operations_/media.py`). Scraping means any action-mode run (download, like, unlike), the `metadata` command, manual/url mode and the check/table mode. The callers are `ofscraper/data/posts/post.py`, `commands/manual.py` and `commands/check.py`.
 
@@ -75,33 +107,30 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 - **Deletes:** nothing in the app deletes rows.
 - **Unique key:** `UNIQUE (media_id, model_id, post_id)`. There is no `ON CONFLICT` clause. The code reads the existing `(media_id, post_id)` pairs and chooses insert or update itself. Merge dedupes on `(media_id, model_id)` only.
 
-**Unique:** (`media_id`, `model_id`, `post_id`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `media_id` | INTEGER |  |  | The site media id. |
-| `post_id` | INTEGER | yes |  | The id of the post, message or story the media belongs to. |
-| `link` | VARCHAR |  |  | The download URL, or the MPD manifest URL for DRM video. `NULL` when the API gave neither. |
-| `directory` | VARCHAR |  |  | The folder the file was saved to. Set on download or by the `metadata` command. |
-| `filename` | VARCHAR |  |  | The file name the media was saved under. |
-| `size` | INTEGER |  |  | The saved file size in bytes. |
-| `api_type` | VARCHAR |  |  | The area the media came from, as a capitalised response type (Timeline, Archived, Pinned, Streams, Messages, Stories, Highlights, Paid, Profile and so on). |
-| `media_type` | VARCHAR |  |  | The capitalised media type (Images, Videos, Audios and so on). |
-| `preview` | INTEGER |  |  | 1 if the media is a preview, else 0. On OnlyFans, the post carries preview media. On Fansly, the item is flagged `isPreview`. |
-| `linked` | BOOL |  |  | 1 if the API gave a URL or MPD for the media, else 0. |
-| `downloaded` | BOOL |  |  | 1 once the media counts as downloaded (file saved, forced, or marked by the `metadata` command). Otherwise 0 or `NULL`. Used to skip already-downloaded media. |
-| `created_at` | TIMESTAMP |  |  | The media creation time from the API (`createdAt`, else `postedAt`, else the post date). |
-| `posted_at` | TIMESTAMP |  |  | The date of the parent post or message. |
-| `duration` | VARCHAR |  |  | The media duration as a formatted string. `NULL` when unknown. |
-| `unlocked` | BOOL |  |  | 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
-| `hash` | VARCHAR |  |  | The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
-| `skip_permanent` | BOOL |  |  | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. `--retry-permanent-skips` and `ofscraper db --unmark-permanent-skips` undo it. |
+</details>
 
 ## `messages`
 
 One row per direct message seen in the chat with the creator, from either side.
+
+**Unique:** (`post_id`, `model_id`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | INTEGER (not null) | The site message id. |
+| `text` | VARCHAR | The message text. It is sanitised first when the `sanitize-db-text` option is on. |
+| `price` | INTEGER | The message price (0 when free). |
+| `paid` | BOOLEAN | Truthy when the message is open or opened, has viewable media, or has a price. |
+| `archived` | BOOLEAN | 1 if the API marks the message archived (normally 0). |
+| `created_at` | TIMESTAMP | The message date. |
+| `user_id` | INTEGER | The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
+| `model_id` | INTEGER | The creator account id the chat belongs to. |
+| `is_deleted` | BOOLEAN (default `0`) | 1 when a scan decided the message no longer exists. Default 0. |
+| `group_id` | VARCHAR | Fansly only: the conversation id (`groupId`), so a message's page is its conversation's, `https://fansly.com/messages/<group_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `make_messages_table_changes` (`ofscraper/db/operations_/messages.py`) runs when the Messages area is scraped (`process_messages` in `ofscraper/data/posts/post.py`). Manual/url mode and the check command also run it.
 
@@ -111,57 +140,75 @@ One row per direct message seen in the chat with the creator, from either side.
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, model_id)`. The application chooses insert or update based on the existing message ids.
 
-**Unique:** (`post_id`, `model_id`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER | yes |  | The site message id. |
-| `text` | VARCHAR |  |  | The message text. It is sanitised first when the `sanitize-db-text` option is on. |
-| `price` | INTEGER |  |  | The message price (0 when free). |
-| `paid` | BOOLEAN |  |  | Truthy when the message is open or opened, has viewable media, or has a price. |
-| `archived` | BOOLEAN |  |  | 1 if the API marks the message archived (normally 0). |
-| `created_at` | TIMESTAMP |  |  | The message date. |
-| `user_id` | INTEGER |  |  | The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
-| `model_id` | INTEGER |  |  | The creator account id the chat belongs to. |
-| `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the message no longer exists. Default 0. |
-| `group_id` | VARCHAR |  |  | Fansly only: the conversation id (`groupId`), so a message's page is its conversation's, `https://fansly.com/messages/<group_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link. |
+</details>
 
 ## `models`
 
 The creator account ids whose data is stored in this database.
 
-**Written by:** `write_models_table` (`ofscraper/db/operations_/profile.py`) inserts the model id if it is not already present. `table_init_create` calls it on every per-creator run. The Merge Databases menu adds the model id of each merged database. The insert uses `WHERE NOT EXISTS`. Unique key: `UNIQUE (model_id)`.
-
 **Unique:** (`model_id`)
 
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `model_id` | INTEGER | yes |  | The creator account id. |
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `model_id` | INTEGER (not null) | The creator account id. |
+
+<details>
+<summary>Write and migration details</summary>
+
+**Written by:** `write_models_table` (`ofscraper/db/operations_/profile.py`) inserts the model id if it is not already present. `table_init_create` calls it on every per-creator run. The Merge Databases menu adds the model id of each merged database. The insert uses `WHERE NOT EXISTS`. Unique key: `UNIQUE (model_id)`.
+
+</details>
 
 ## `others`
 
 A legacy table for content outside the main areas. It is created and migrated, but no current code path writes rows to it.
 
-**Written by:** The table is only created (`create_others_table`), rebuilt once by migration (`rebuild_others_table`) and copied by the Merge Databases menu. No scrape, download or command inserts rows, so it is normally empty. As with `products`, the rebuild copies every row into the new table in one transaction before the old table is dropped. Unique key: `UNIQUE (post_id, model_id)`.
-
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER | yes |  | The id of the item. |
-| `text` | VARCHAR |  |  | The text. |
-| `price` | INTEGER |  |  | The price. |
-| `paid` | INTEGER |  |  | The paid flag. |
-| `archived` | BOOLEAN |  |  | The archived flag. |
-| `created_at` | TIMESTAMP |  |  | The creation date. |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | INTEGER (not null) | The id of the item. |
+| `text` | VARCHAR | The text. |
+| `price` | INTEGER | The price. |
+| `paid` | INTEGER | The paid flag. |
+| `archived` | BOOLEAN | The archived flag. |
+| `created_at` | TIMESTAMP | The creation date. |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+
+<details>
+<summary>Write and migration details</summary>
+
+**Written by:** The table is only created (`create_others_table`), rebuilt once by migration (`rebuild_others_table`) and copied by the Merge Databases menu. No scrape, download or command inserts rows, so it is normally empty. As with `products`, the rebuild copies every row into the new table in one transaction before the old table is dropped. Unique key: `UNIQUE (post_id, model_id)`.
+
+</details>
 
 ## `posts`
 
 One row per timeline, pinned, archived, streams, paid or label post seen for the creator.
+
+**Unique:** (`post_id`, `model_id`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | INTEGER (not null) | The site post id. |
+| `text` | VARCHAR | The post text. It is sanitised first when the `sanitize-db-text` option is on. |
+| `price` | INTEGER | The post price (0 when free). |
+| `paid` | INTEGER | Truthy when the post is open or opened, has viewable media, or has a price. |
+| `archived` | BOOLEAN | 1 if the API marks the post archived. |
+| `pinned` | BOOLEAN | 1 if the API marks the post pinned. |
+| `stream` | BOOLEAN | 1 if the post has a stream id (a streams post). |
+| `opened` | BOOLEAN | 1 if the API marks the post opened. |
+| `created_at` | TIMESTAMP | The post date (`postedAt`, else `createdAt`). |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+| `is_deleted` | BOOLEAN (default `0`) | 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
+| `purchase_type` | VARCHAR | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). It is `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches), for Fansly purchases, and for rows saved before the column existed. A bought message saved by `paid_check` or `msg_check` still goes to `messages` without a purchase type. A later timeline or messages scan never clears it, and a purchase scan fills it in for an existing row. `stash_sync` links a bought post's file to its page when this is `post`. |
+| `mentions` | VARCHAR | Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `make_post_table_changes` (`ofscraper/db/operations_/posts.py`) runs on every scrape from `ofscraper/data/posts/post.py`. It covers the timeline, pinned, archived, streams and paid areas, and the posts inside labels via `make_label_table_changes`. Manual/url mode and the check command reach it through `make_changes_to_content_tables`.
 
@@ -171,48 +218,49 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, model_id)`. The code looks up the creator's existing post ids (its `model_id`, and rows that have none) and chooses insert or update itself.
 
-**Unique:** (`post_id`, `model_id`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER | yes |  | The site post id. |
-| `text` | VARCHAR |  |  | The post text. It is sanitised first when the `sanitize-db-text` option is on. |
-| `price` | INTEGER |  |  | The post price (0 when free). |
-| `paid` | INTEGER |  |  | Truthy when the post is open or opened, has viewable media, or has a price. |
-| `archived` | BOOLEAN |  |  | 1 if the API marks the post archived. |
-| `pinned` | BOOLEAN |  |  | 1 if the API marks the post pinned. |
-| `stream` | BOOLEAN |  |  | 1 if the post has a stream id (a streams post). |
-| `opened` | BOOLEAN |  |  | 1 if the API marks the post opened. |
-| `created_at` | TIMESTAMP |  |  | The post date (`postedAt`, else `createdAt`). |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
-| `is_deleted` | BOOLEAN |  | `0` | 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
-| `purchase_type` | VARCHAR |  |  | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). It is `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches), for Fansly purchases, and for rows saved before the column existed. A bought message saved by `paid_check` or `msg_check` still goes to `messages` without a purchase type. A later timeline or messages scan never clears it, and a purchase scan fills it in for an existing row. `stash_sync` links a bought post's file to its page when this is `post`. |
-| `mentions` | VARCHAR |  |  | Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
+</details>
 
 ## `products`
 
 A legacy table for paid products. It is created and migrated, but no current code path writes rows to it.
 
-**Written by:** The table is only created (`create_products_table`), rebuilt once by migration (`rebuild_products_table`) and copied by the Merge Databases menu (`ofscraper/db/operations_/others.py`, `ofscraper/db/merge.py`). No scrape, download or command inserts rows, so it is normally empty. The rebuild copies every row into the new table in one transaction before the old table is dropped. Unique key: `UNIQUE (post_id, model_id)`.
-
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER | yes |  | The id of the product or its post. |
-| `text` | VARCHAR |  |  | The product text. |
-| `price` | INTEGER |  |  | The price. |
-| `paid` | INTEGER |  |  | The paid flag. |
-| `archived` | BOOLEAN |  |  | The archived flag. |
-| `created_at` | TIMESTAMP |  |  | The creation date. |
-| `title` | VARCHAR |  |  | The product title. |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | INTEGER (not null) | The id of the product or its post. |
+| `text` | VARCHAR | The product text. |
+| `price` | INTEGER | The price. |
+| `paid` | INTEGER | The paid flag. |
+| `archived` | BOOLEAN | The archived flag. |
+| `created_at` | TIMESTAMP | The creation date. |
+| `title` | VARCHAR | The product title. |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+
+<details>
+<summary>Write and migration details</summary>
+
+**Written by:** The table is only created (`create_products_table`), rebuilt once by migration (`rebuild_products_table`) and copied by the Merge Databases menu (`ofscraper/db/operations_/others.py`, `ofscraper/db/merge.py`). No scrape, download or command inserts rows, so it is normally empty. The rebuild copies every row into the new table in one transaction before the old table is dropped. Unique key: `UNIQUE (post_id, model_id)`.
+
+</details>
 
 ## `profiles`
 
 The usernames the creator account has been seen under in this database, and when each was first and last seen.
+
+**Unique:** (`user_id`, `username`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `user_id` | INTEGER (not null) | The creator account id. It has the same value as `model_id` elsewhere, and is named `user_id` for legacy reasons. |
+| `username` | VARCHAR (not null) | The username the account had when it was seen. |
+| `first_seen_at` | TIMESTAMP | When the scraper first worked on the account under this username: ISO text in UTC, to the second (`2024-03-01T09:30:00+00:00`). Empty (NULL) when that isn't known. |
+| `last_seen_at` | TIMESTAMP | When the scraper last worked on the account under this username, in the same form. Empty (NULL) when that isn't known. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `write_profile_table` (`ofscraper/db/operations_/profile.py`) adds a row each time the account is seen under a new username, with the time in both `first_seen_at` and `last_seen_at`. `table_init_create` in `ofscraper/db/operations.py` calls it at the start of every per-creator run (action mode, `metadata` command, manual/url mode, check command).
 
@@ -223,19 +271,21 @@ The usernames the creator account has been seen under in this database, and when
 - **PostgreSQL:** a database made before the two columns gets them when the scraper next starts (`ADDED_COLUMNS` in `ofscraper/db/postgres.py`). `postgres_import` and `postgres_export` carry the dates. For a name PostgreSQL already has, the import widens the dates the same way.
 - **Unique key:** `UNIQUE (user_id, username)`.
 
-**Unique:** (`user_id`, `username`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `user_id` | INTEGER | yes |  | The creator account id. It has the same value as `model_id` elsewhere, and is named `user_id` for legacy reasons. |
-| `username` | VARCHAR | yes |  | The username the account had when it was seen. |
-| `first_seen_at` | TIMESTAMP |  |  | When the scraper first worked on the account under this username: ISO text in UTC, to the second (`2024-03-01T09:30:00+00:00`). Empty (NULL) when that isn't known. |
-| `last_seen_at` | TIMESTAMP |  |  | When the scraper last worked on the account under this username, in the same form. Empty (NULL) when that isn't known. |
+</details>
 
 ## `schema_flags`
 
 Key/value markers that record which schema migrations have run on this file, plus the site the database belongs to.
+
+**Unique:** (`flag_name`)
+
+| Column | Type | Description |
+|---|---|---|
+| `flag_name` | TEXT (PK) | The migration flag name (see the flag list above) or `site`. |
+| `flag_value` | TEXT | 1 for a completed migration step (only rows with value 1 count as done). For the `site` row, the site name. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `modify_tables` in `ofscraper/db/transition.py` compares the flags with the list in `ofscraper/db/difference.py`. `table_init_create` calls it on every per-creator run, and merge calls it too. For each missing flag, it runs the matching change, and then `add_flag_schema` writes `flag_name=<flag>` and `flag_value=1`. A brand-new database has no flags, so it goes through every rebuild once too.
 
@@ -278,16 +328,27 @@ Flag names:
 - `media_size_skip_repaired`: a one-time repair run after the changes above (`repair_tables`). Before #326, files skipped by a size limit were saved as downloaded with no file and media type `Forced_skippeds`. The repair resets `downloaded` to `NULL` on rows for that media (same `media_id` and `model_id`, any post) that are marked downloaded with no `directory`, `filename`, `size` or `hash`. It finds affected media by that label in `medias` and in read-only `user_data_copy_N.db` / `old_schema_*` backups (read before the run writes new backups, since a new copy could replace one that still has the label). Media with a file recorded on any row, media with a permanent `skip_download_script` skip (`skip_permanent = 1`), and all other fileless downloaded rows are left alone. The `old_schema_*` backup taken first preserves the original rows. The flag is written in the same transaction.
 - `site`: not a migration flag. The value is the site name (`fansly`) for a Fansly database. The row is absent for OnlyFans.
 
-**Unique:** (`flag_name`)
-
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `flag_name` (primary key) | TEXT |  |  | The migration flag name (see the flag list above) or `site`. |
-| `flag_value` | TEXT |  |  | 1 for a completed migration step (only rows with value 1 count as done). For the `site` row, the site name. |
+</details>
 
 ## `stories`
 
 One row per story or highlight story seen for the creator.
+
+**Unique:** (`post_id`, `model_id`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | INTEGER (not null) | The site story id. |
+| `text` | VARCHAR | The story text, else its title, else an empty string. |
+| `price` | INTEGER | The price (normally 0). |
+| `paid` | INTEGER | The paid/open flag, computed as for posts. |
+| `archived` | BOOLEAN | The archived flag from the API (normally 0). |
+| `created_at` | TIMESTAMP | The story date. |
+| `model_id` | INTEGER | The creator account id the row belongs to. |
+
+<details>
+<summary>Write and migration details</summary>
 
 **Written by:** `make_stories_table_changes` (`ofscraper/db/operations_/stories.py`) runs when the Stories or Highlights areas are scraped (`ofscraper/data/posts/post.py`). Manual/url mode and the check command also run it.
 
@@ -296,16 +357,23 @@ One row per story or highlight story seen for the creator.
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, model_id)`. The application inserts ids that are not already present.
 
-**Unique:** (`post_id`, `model_id`)
+</details>
 
-| Column | Type | Not null | Default | Description |
-|---|---|---|---|---|
-| `id` (primary key) | INTEGER | yes |  | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER | yes |  | The site story id. |
-| `text` | VARCHAR |  |  | The story text, else its title, else an empty string. |
-| `price` | INTEGER |  |  | The price (normally 0). |
-| `paid` | INTEGER |  |  | The paid/open flag, computed as for posts. |
-| `archived` | BOOLEAN |  |  | The archived flag from the API (normally 0). |
-| `created_at` | TIMESTAMP |  |  | The story date. |
-| `model_id` | INTEGER |  |  | The creator account id the row belongs to. |
+## How the database works
 
+Each creator has one SQLite file, `user_data.db`. It sits in the folder given by the `metadata` config value (default `{configpath}/{profile}/.data/{model_id}`). `databasePlaceholder.databasePathHelper` in `ofscraper/classes/placeholder.py` fills in the placeholders (`username`, `model_username`, `first_letter`, `model_id`, plus the common ones) and appends `user_data.db`.
+
+- **Connections:** `ofscraper/db/operations_/wrapper.py` opens a connection for each operation, in WAL mode, so `user_data.db-wal` and `-shm` files sit next to the database. Writes go through one worker thread and are retried on "database is locked".
+- **Backups:** they go to a `backup` folder beside the database (`ofscraper/db/backup.py`).
+  - At the start of a per-creator run, `table_init_create` copies the database to `backup/user_data_copy_N.db`, with N rotating through 1 to 5. It copies when the `DBINTERVAL` setting (default 86400 seconds) has passed since the last copy, or when the backup folder is empty. It makes no copy of a database created in that run.
+  - Before any pending schema migration, it also writes `backup/old_schema_{model_id}_{timestamp}_db_backup.db`. The name is `old_schema_db_backup.db` when there is no model id. It checks that the copy has the same size, and restores it if the migration raises. A database created in that run (a first scrape, or a new Merge Databases target) gets no `old_schema_*` backup.
+- **Merging:** the Merge Databases menu option (`ofscraper/db/merge.py`) creates and migrates a target `user_data.db`. It then copies in rows from every `user_data.db` found under a chosen folder, skipping rows whose key is already present. Each source must contain exactly one numeric model id in `profiles`.
+- **Fansly:** Fansly runs use separate files. When the `metadata` template has no site-specific field (`save_location`, `root`, `site_name`, `model_id` and their aliases), a `Fansly` subfolder is added before `user_data.db`, so Fansly rows don't land in the OnlyFans file. Fansly databases carry a `schema_flags` row `site=fansly`.
+- **Read-only users:** the `db` command and the hash-based duplicate checks only read the database. The exception is `db --unmark-permanent-skips`, which un-marks the selected permanent skips.
+- **PostgreSQL:** when `OFSC_DATABASE_URL` holds a URL, the same tables live in one PostgreSQL database instead (`ofscraper/db/postgres.py`): one schema per site, with all creators' rows together separated by `model_id`, using 64-bit IDs, booleans and timestamps. No `user_data.db` is read or written while PostgreSQL is on, except by tools given a file path.
+  - `stash_sync` reads PostgreSQL when run with `--postgres`.
+  - `recover_collisions` and `move_creator_files` work on one creator's rows in PostgreSQL when run with `--postgres --creator NAME`, in one transaction that updates each row only if it still matches what was read.
+  - All three go through `ofscraper/db/creator_rows.py`. Given a SQLite file while PostgreSQL is on, each says it's working on the file.
+  - `scripts/creator_names.py` reads and adds names in PostgreSQL with `--postgres`, and prints a notice on stderr (`sqlite_files_notice`) when given SQLite files while PostgreSQL is on.
+  - Merge Databases works on SQLite files only and says so on its screen.
+  - Standalone tools (`stash_sync`, `recover_collisions`, `move_creator_files`, `scripts/creator_names.py`) read `OFSC_DATABASE_URL` only from the environment they are run in, not from scraper env files. See `POSTGRESQL.md`.
