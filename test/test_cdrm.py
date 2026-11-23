@@ -211,6 +211,37 @@ def test_cdrm_unavailable_only_for_the_retired_default(monkeypatch):
     assert keyhelpers.cdrm_unavailable() is False
 
 
+@pytest.mark.parametrize("empty", ["", "   ", None])
+def test_empty_cdrm_url_skips_drm_before_download(monkeypatch, empty):
+    real_getattr = keyhelpers.of_env.getattr
+    monkeypatch.setattr(
+        keyhelpers.of_env,
+        "getattr",
+        lambda key, default=None: empty if key == "CDRM" else real_getattr(key, default),
+    )
+
+    result, ele, log, placeholders, session = _run_drm_item(monkeypatch)
+
+    assert result == ("forced_skipped", 0)
+    placeholders.assert_not_called()
+    assert session.calls == []
+    assert ele.download_reason == "key mode cdrm has no server"
+
+
+@pytest.mark.parametrize("empty", ["", "   ", None])
+def test_empty_cdrm_url_sends_nothing_in_key_helper(monkeypatch, empty):
+    real_getattr = keyhelpers.of_env.getattr
+    monkeypatch.setattr(
+        keyhelpers.of_env,
+        "getattr",
+        lambda key, default=None: empty if key == "CDRM" else real_getattr(key, default),
+    )
+    monkeypatch.setattr(keyhelpers, "log", Mock())
+    session = _Session()
+    assert asyncio.run(keyhelpers.key_helper_cdrm(session, "pssh", "https://lic", 1)) is None
+    assert session.calls == []
+
+
 @pytest.mark.parametrize(
     "url, retired",
     [

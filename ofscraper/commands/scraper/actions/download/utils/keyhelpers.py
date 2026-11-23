@@ -256,12 +256,13 @@ def cdrm_retired(url):
 
 
 def cdrm_unavailable():
-    """True when key mode cdrm has no server to ask: OFSC_CDRM_URL is the
-    retired cdrm-project.com, the default. Its DRM videos can't get a key,
-    so they're skipped before download (#681)."""
+    """True when key mode cdrm has no server to ask: OFSC_CDRM_URL is empty
+    or the retired cdrm-project.com, the default. Its DRM videos can't get
+    a key, so they're skipped before download (#681, #696)."""
     if settings.get_settings().key_mode != "cdrm":
         return False
-    return cdrm_retired(of_env.getattr("CDRM"))
+    url = str(of_env.getattr("CDRM") or "").strip()
+    return not url or cdrm_retired(url)
 
 
 _cdrm_retired_logged = False
@@ -271,11 +272,12 @@ async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
     global _cdrm_retired_logged
     key = None
     log.debug(f"ID:{id} using cdrm auto key helper")
-    if cdrm_retired(of_env.getattr("CDRM")):
+    cdrm_url = str(of_env.getattr("CDRM") or "").strip()
+    if not cdrm_url or cdrm_retired(cdrm_url):
         if not _cdrm_retired_logged:
             _cdrm_retired_logged = True
             log.error(f"Nothing was sent to cdrm-project.com. {CDRM_DEPRECATED}")
-        log.debug(f"ID:{id} no key: key mode cdrm, cdrm-project.com not contacted")
+        log.debug(f"ID:{id} no key: key mode cdrm, no cdrm server configured")
         return None
     try:
         log.debug(f"ID:{id} pssh: {pssh is not None}")
