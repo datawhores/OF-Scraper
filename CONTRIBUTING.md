@@ -14,9 +14,9 @@ Thanks for helping.
    ```sh
    uv sync --python 3.15 --extra test
    ```
-3. **Run the test suite** (warnings count as failures):
+3. **Run the test suite** (warnings count as failures; add `-m "not slow"` for a fast local loop):
    ```sh
-   python -m pytest test
+   python -m pytest -n auto test
    ```
 4. **Open a PR** against `main`.
 

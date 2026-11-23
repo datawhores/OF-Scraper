@@ -20,6 +20,7 @@ from types import SimpleNamespace
 
 import aiohttp
 import pytest
+
 from aiohttp import web
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
@@ -170,11 +171,13 @@ def _profile(request, host):
 @pytest.mark.parametrize(
     "host", ["cdn3.fansly.com", "cdn2.onlyfans.com", "cdn3.onlyfans.com"]
 )
+@pytest.mark.slow
 def test_file_host_requests_share_one_connection(request, ssl_verify, host):
     _profile(request, host)
     assert len(set(_client_ports(host))) == 1
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("host", ["apiv3.fansly.com", "onlyfans.com"])
 def test_api_requests_keep_a_new_connection_each(request, ssl_verify, host):
     _profile(request, host)

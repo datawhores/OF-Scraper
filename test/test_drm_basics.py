@@ -1,10 +1,14 @@
-"""Content keys never reach the log.
+"""DRM key redaction, license URLs, and ffmpeg version checks."""
 
-The debug log is what people attach to bug reports, and a content key
-decrypts the video for anyone who has it. un_encrypt logged the key it got
-(from the cache or a key helper) and the key handed to ffmpeg, and the cdrm
-helper logged its whole reply, keys included.
-"""
+# ----------------------------------------------------------------------
+# From test_drm_keys_not_logged.py
+# Content keys never reach the log.
+#
+# The debug log is what people attach to bug reports, and a content key
+# decrypts the video for anyone who has it. un_encrypt logged the key it got
+# (from the cache or a key helper) and the key handed to ffmpeg, and the cdrm
+# helper logged its whole reply, keys included.
+# ----------------------------------------------------------------------
 
 import asyncio
 import contextlib
@@ -80,3 +84,72 @@ def test_cdrm_reply_is_not_logged(monkeypatch):
     logged = _logged(log)
     assert "message" in logged  # the reply's fields are still logged
     assert AUDIO_KEY not in logged and VIDEO_KEY not in logged
+
+# ----------------------------------------------------------------------
+# From test_drm_license_url.py
+# ----------------------------------------------------------------------
+
+import pytest
+
+import ofscraper.classes.of.posts as posts_
+from ofscraper.classes.of.media import Media
+
+
+def _media(post_data, responsetype=None):
+    post = posts_.Post(post_data, 1, "model", responsetype=responsetype)
+    media = Media({"id": 111}, 0, post)
+    media.mpd = "https://cdn/manifest.mpd"
+    return media
+
+
+@pytest.mark.parametrize(
+    "post_data,responsetype,kind",
+    [
+        ({"id": 5, "responseType": "post"}, None, "post"),
+        ({"id": 5, "responseType": "message"}, None, "message"),
+        ({"id": 5, "responseType": "post", "isArchived": True}, None, "post"),
+        ({"id": 5}, "streams", "post"),
+        # purchased tab: the raw responseType decides (#49)
+        ({"id": 5, "responseType": "post"}, "Paid", "post"),
+        ({"id": 5, "responseType": "message"}, "Paid", "message"),
+        ({"id": 5}, "Paid", "message"),
+    ],
+)
+def test_license_endpoint(post_data, responsetype, kind):
+    url = _media(post_data, responsetype).license
+    assert f"/users/media/111/drm/{kind}/5?" in url
+
+# ----------------------------------------------------------------------
+# From test_ffmpeg_version.py
+# ----------------------------------------------------------------------
+
+from types import SimpleNamespace
+
+import pytest
+
+import ofscraper.utils.system.ffmpeg as ffmpeg
+
+
+def _fake_version(monkeypatch, line):
+    monkeypatch.setattr(ffmpeg.shutil, "which", lambda p: p)
+    monkeypatch.setattr(
+        ffmpeg, "run", lambda *a, **k: SimpleNamespace(stdout=line, stderr="")
+    )
+
+
+@pytest.mark.parametrize(
+    "line,ok",
+    [
+        ("ffmpeg version 5.1.6 Copyright", False),
+        ("ffmpeg version 6.1.1 Copyright", True),
+        ("ffmpeg version 7.1.1-essentials_build Copyright", True),
+        # 8+ decrypts the same; it used to be rejected
+        ("ffmpeg version 8.1.2-essentials_build Copyright", True),
+        ("ffmpeg version 9.0.2-full_build Copyright", True),
+        ("ffmpeg version N-118000-gabcdef Copyright", True),
+        ("not ffmpeg", False),
+    ],
+)
+def test_ffmpeg_version_gate(monkeypatch, line, ok):
+    _fake_version(monkeypatch, line)
+    assert ffmpeg._is_valid_ffmpeg("ffmpeg") is ok

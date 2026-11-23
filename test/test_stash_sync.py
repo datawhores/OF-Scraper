@@ -12,6 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 from test_fansly_api import DM_CREATOR, DM_CREATOR_ID, FakeSession, both_routes, envelope, fansly, load  # noqa: F401
 
 import ofscraper.classes.of.posts as posts_
@@ -445,6 +446,7 @@ def by_file(stash, name):
     return next(i for kind in stash.items.values() for i in kind.values() if Path(i["path"]).name == name)
 
 
+@pytest.mark.slow
 def test_fansly_and_onlyfans_end_to_end(library, fansly_library, stash_server, tmp_path, capsys):
     of_db, of_dir = library
     _, _, fansly_files = fansly_library
@@ -588,6 +590,7 @@ def test_one_site_with_studio_keeps_its_link(library):
         ([f"https://OnlyFans.com/{MENTION_POST}/someone"], False),
     ],
 )
+@pytest.mark.slow
 def test_gallery_with_the_code_is_reused_only_if_unlinked_or_fansly(fansly_library, tmp_path, urls, reused):
     _, _, files = fansly_library
     stash = FakeStash()
@@ -846,6 +849,7 @@ def test_fansly_message_link_is_added_to_a_gallery_made_before(fansly_library, t
     assert by_file(stash, "100000000000000229.jpg")["urls"] == [MESSAGE_URL]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("group", ["", "1_%", "../x"])
 def test_fansly_conversation_id_that_is_not_a_number_gives_no_link(fansly_library, group):
     db, _, files = fansly_library
@@ -891,6 +895,7 @@ def test_fansly_old_message_link_is_replaced_and_other_links_kept(fansly_library
     assert item["urls"] == [mine, other_old, unrelated, wildcard, MESSAGE_URL]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("stored", ["[]", json.dumps([{"listed": "listedonly"}]), "not json"])
 def test_fansly_stored_mentions_dont_change_performers(make_fansly, stored):
     # Which field of an accountMentions entry holds the username isn't known
@@ -977,6 +982,7 @@ def test_onlyfans_creator_with_underscore_gets_its_own_performer(library):
     assert len(stash.created) == before
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("apply", [True, False])
 def test_studio_name_stash_would_refuse_stops_before_any_change(library, fansly_library, stash_server, tmp_path,
                                                                  capsys, apply):
@@ -1070,6 +1076,7 @@ def test_cli_says_nothing_about_postgresql_while_it_is_off(library, stash_server
     assert json.loads(said.out)["totals"]["to_update"] == 1
 
 
+@pytest.mark.slow
 def test_unreachable_stash_exits_with_error(library, capsys):
     db, _ = library
     assert stash_sync.main([str(db), "--url", "http://127.0.0.1:9/graphql"]) == 1

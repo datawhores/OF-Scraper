@@ -1,4 +1,9 @@
-"""Cart batches report each file as it finishes, and retry only failures (#439)."""
+"""Check-table cart batching and failed-post refresh."""
+
+# ----------------------------------------------------------------------
+# From test_check_cart_batch.py
+# Cart batches report each file as it finishes, and retry only failures (#439).
+# ----------------------------------------------------------------------
 
 import asyncio
 import logging
@@ -389,3 +394,273 @@ def test_stop_during_refill_keeps_worker_alive_for_next_cart(monkeypatch, batch)
         thread.join(3)
         clear()
     assert not thread.is_alive()
+
+# ----------------------------------------------------------------------
+# From test_check_refill_382.py
+# A failed download in a check table refreshes only its own creator (#382).
+# ----------------------------------------------------------------------
+
+import asyncio
+import contextlib
+from types import SimpleNamespace
+
+import pytest
+
+import ofscraper.commands.check as check
+
+IDS = {"creator_a": "111", "creator_b": "222"}
+NAMES = {v: k for k, v in IDS.items()}
+
+
+def _refill(monkeypatch, command, model_id):
+    fetched = []
+    processed = []
+
+    def fetch(*args, **kwargs):
+        # every API fake records the model id it was asked for
+        model = next(str(a) for a in args if str(a) in NAMES)
+
+        async def inner():
+            fetched.append(model)
+            return []
+
+        return inner()
+
+    async def nothing(*args, **kwargs):
+        return None
+
+    async def fake_process(username, model_id, posts):
+        processed.append(str(model_id))
+
+    @contextlib.asynccontextmanager
+    async def fake_session(**kwargs):
+        yield object()
+
+    current = SimpleNamespace(
+        command=command,
+        force=False,
+        file=None,
+        url=list(IDS),
+        check_usernames=list(IDS),
+        file_usernames=None,
+        check_area=["Timeline"],
+        timeline_strict=False,
+    )
+    monkeypatch.setattr(check.settings, "get_settings", lambda: current)
+    monkeypatch.setattr(check.manager, "Manager", SimpleNamespace(session=SimpleNamespace(aget_ofsession=fake_session)))
+    monkeypatch.setattr(check.auth_requests, "make_headers", lambda: None)
+    monkeypatch.setattr(check.profile, "get_id", lambda name, **kw: IDS[name])
+    monkeypatch.setattr(check.profile, "scrape_profile", lambda name: {"username": NAMES.get(name, name)})
+    monkeypatch.setattr(check, "read_check", lambda *a: None)
+    monkeypatch.setattr(check, "set_check", lambda *a: None)
+    monkeypatch.setattr(check, "process_post_media", fake_process)
+    for name in ("table_init_create", "make_post_table_changes", "make_messages_table_changes"):
+        monkeypatch.setattr(check.operations, name, nothing)
+    monkeypatch.setattr(check.timeline, "get_timeline_posts", fetch)
+    monkeypatch.setattr(check.messages_, "get_messages", fetch)
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    monkeypatch.setattr(check.highlights, "get_stories_post", fetch)
+    monkeypatch.setattr(check.highlights, "get_highlight_post", fetch)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        check.data_refill(model_id)
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+    return fetched, processed
+
+
+@pytest.mark.parametrize("command", ["post_check", "msg_check", "paid_check", "story_check"])
+def test_refill_fetches_and_processes_only_the_failing_creator(monkeypatch, command):
+    fetched, processed = _refill(monkeypatch, command, 222)
+    assert fetched and set(fetched) == {"222"}
+    assert processed == ["222"]
+
+# ----------------------------------------------------------------------
+# From test_check_refresh_failed.py
+# Refresh failed cart posts without scanning the creator's whole history.
+# ----------------------------------------------------------------------
+
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+import ofscraper.commands.check as check
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.classes.of.media import Media
+# batch fixture is defined above (from test_check_cart_batch.py)
+
+# The shared batch fixture fakes the refresh; these tests need the real one.
+_real_refresh_failed_posts = check._refresh_failed_posts
+
+
+def _post(post_id, media_ids, area="post", link="old"):
+    return {"id": post_id, "responseType": area, "media": [
+        {"id": mid, "type": "photo", "files": {"full": {"url": link}}}
+        for mid in media_ids
+    ]}
+
+
+@pytest.fixture
+def refresh_batch(monkeypatch, batch):
+    stop.clear()
+    monkeypatch.setattr(check, "_refresh_failed_posts", _real_refresh_failed_posts)
+    collection = check.PostCollection(username="a creator", model_id=1)
+    collection.add_posts([_post(100, [0, 1]), _post(101, [2]), _post(102, [3])])
+    monkeypatch.setitem(check.check_user_dict, "1", {"collection": collection})
+    monkeypatch.setattr(check, "insert_media", AsyncMock())
+    monkeypatch.setattr(Media, "filename", property(lambda self: f"file{self.id}.jpg"))
+    calls = []
+
+    def process(username, model_id, media, posts, on_result):
+        if stop.requested.is_set():
+            return
+        calls.append(list(media))
+        for item in media:
+            on_result(item, "failed" if len(calls) == 1 and item.id in batch.failed_ids
+                      else "downloaded")
+
+    monkeypatch.setattr(check, "process_dicts", process)
+
+    @asynccontextmanager
+    async def session(**kwargs):
+        yield "session"
+
+    monkeypatch.setattr(check.manager.Manager, "session", SimpleNamespace(aget_ofsession=session), raising=False)
+    batch.calls = calls
+    batch.collection = collection
+    batch.failed_ids = {0, 1}
+    yield batch
+    stop.clear()
+
+
+def test_failed_timeline_fetches_post_once_and_retries_new_link(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    fetch = Mock(return_value=_post(100, [0, 1], link="fresh"))
+    monkeypatch.setattr(check, "get_individual_timeline_post", fetch)
+    batch.go()
+    fetch.assert_called_once_with(100)
+    batch.refill.assert_not_called()
+    assert [[m.id for m in call] for call in batch.calls] == [[0, 1, 2, 3], [0, 1]]
+    assert [m.url for m in batch.calls[1]] == ["fresh", "fresh"]
+
+
+def test_failed_message_uses_message_fetcher(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.collection.add_posts([_post(100, [0, 1], "message")], overwrite=True)
+    fetch = AsyncMock(return_value=_post(100, [0, 1], "message", "fresh"))
+    monkeypatch.setattr(check.messages_, "get_individual_messages_post", fetch)
+    batch.go()
+    fetch.assert_awaited_once_with(1, 100, "session")
+    batch.refill.assert_not_called()
+    assert [m.url for m in batch.calls[1]] == ["fresh", "fresh"]
+
+
+@pytest.mark.parametrize("area", ["profile", "stories", "highlights"])
+def test_unsupported_area_falls_back_once(monkeypatch, refresh_batch, area):
+    batch = refresh_batch
+    batch.collection.add_posts([check.posts_.Post(_post(100, [0, 1]), 1, "a creator", area)], overwrite=True)
+    stories = AsyncMock(return_value=[])
+    highlights = AsyncMock(return_value=[])
+    monkeypatch.setattr(check.highlights, "get_individual_stories", stories)
+    monkeypatch.setattr(check.highlights, "get_individual_highlights", highlights)
+    batch.go()
+    stories.assert_not_called()
+    highlights.assert_not_called()
+    batch.refill.assert_called_once_with(1)
+    assert len(batch.calls) == 2
+
+
+@pytest.mark.parametrize("result", [None, {"error": True}, RuntimeError("fetch failed")])
+def test_failed_single_fetch_falls_back_once(monkeypatch, refresh_batch, result):
+    batch = refresh_batch
+    fetch = Mock(side_effect=result) if isinstance(result, Exception) else Mock(return_value=result)
+    monkeypatch.setattr(check, "get_individual_timeline_post", fetch)
+    batch.go()
+    fetch.assert_called_once_with(100)
+    batch.refill.assert_called_once_with(1)
+    assert len(batch.calls) == 2
+
+
+def test_stop_during_refresh_restores_pending_rows(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.failed_ids = {0, 1, 2}
+
+    def fetch(post_id):
+        stop.request()
+        return _post(post_id, [0, 1], link="fresh")
+
+    fetch = Mock(side_effect=fetch)
+    monkeypatch.setattr(check, "get_individual_timeline_post", fetch)
+    batch.go()
+    fetch.assert_called_once_with(100)
+    assert len(batch.calls) == 1
+    batch.refill.assert_not_called()
+    assert batch.updates.call_args_list[-3:] == [
+        (("0", "[added]", "bold light_goldenrod2"),),
+        (("1", "[added]", "bold light_goldenrod2"),),
+        (("2", "[added]", "bold light_goldenrod2"),),
+    ]
+
+
+def test_failed_paid_posts_fetch_list_once_and_retry_new_links(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.failed_ids = {0, 1, 2}
+    batch.collection.add_posts([
+        check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid"),
+        check.posts_.Post(_post(101, [2]), 1, "a creator", "paid"),
+    ], overwrite=True)
+    fetch = Mock(return_value=[
+        _post(100, [0, 1], link="fresh"),
+        _post(101, [2], link="fresh"),
+    ])
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    batch.go()
+    fetch.assert_called_once_with("a creator", 1)
+    batch.refill.assert_not_called()
+    assert [[m.id for m in call] for call in batch.calls] == [[0, 1, 2, 3], [0, 1, 2]]
+    assert [m.url for m in batch.calls[1]] == ["fresh", "fresh", "fresh"]
+
+
+def test_missing_paid_post_falls_back_once(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.failed_ids = {0, 1, 2}
+    batch.collection.add_posts([
+        check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid"),
+        check.posts_.Post(_post(101, [2]), 1, "a creator", "paid"),
+    ], overwrite=True)
+    fetch = Mock(return_value=[_post(100, [0, 1], link="fresh")])
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    batch.go()
+    fetch.assert_called_once_with("a creator", 1)
+    batch.refill.assert_called_once_with(1)
+    assert len(batch.calls) == 2
+
+
+def test_stop_exception_during_paid_refresh_restores_pending_rows(monkeypatch, refresh_batch):
+    batch = refresh_batch
+    batch.collection.add_posts([
+        check.posts_.Post(_post(100, [0, 1]), 1, "a creator", "paid")
+    ], overwrite=True)
+
+    def fetch(username, model_id):
+        stop.request()
+        raise stop.DownloadsStopped
+
+    fetch = Mock(side_effect=fetch)
+    monkeypatch.setattr(check.paid_, "get_paid_posts", fetch)
+    batch.go()
+    fetch.assert_called_once_with("a creator", 1)
+    assert len(batch.calls) == 1
+    batch.refill.assert_not_called()
+    check.time.sleep.assert_not_called()
+    assert batch.updates.call_args_list == [
+        (("2", "[downloaded]", "bold green"),),
+        (("3", "[downloaded]", "bold green"),),
+        (("0", "[added]", "bold light_goldenrod2"),),
+        (("1", "[added]", "bold light_goldenrod2"),),
+    ]
