@@ -782,6 +782,17 @@ def env_section_title(section, notes):
     return re.sub(r" Configuration$", "", section)
 
 
+def env_key_cell(key, envs):
+    """Compact Variable / Key cell keeping the key's anchor intact."""
+    a = f'<a id="{anchor(key)}"></a>'
+    if not envs:
+        return f"{a}`{key}` (bare key only)"
+    if envs == [key]:
+        return f"{a}`{key}`"
+    env_list = ", ".join(f"`{e}`" for e in envs)
+    return f"{a}{env_list} (`{key}`)"
+
+
 def render_env(notes):
     from ofscraper.utils.of_env import get_all_configs
 
@@ -800,6 +811,10 @@ def render_env(notes):
     unused = [p for p in titles if p not in found]
     if unused:
         raise ValueError(f"notes.ENV_FILES lists files with no defaults: {', '.join(unused)}")
+    grouped_files = [ENV_VALUES_DIR + name for _g, names in notes.ENV_GROUPS for name in names]
+    ungrouped = [p for p in titles if p not in grouped_files]
+    if ungrouped:
+        raise ValueError(f"notes.ENV_GROUPS is missing: {', '.join(ungrouped)}")
     files = [p for p in titles if p in found]
     file_sections = {}
     unused_rows = []
@@ -817,15 +832,21 @@ def render_env(notes):
                 active_sections.append(section)
         if active_sections:
             file_sections[path] = active_sections
+
+    active_groups = [
+        (group_title, [ENV_VALUES_DIR + name for name in names if ENV_VALUES_DIR + name in file_sections])
+        for group_title, names in notes.ENV_GROUPS
+    ]
+    active_groups = [(t, ps) for t, ps in active_groups if ps]
+
     out.append("## Contents\n\n")
-    out.append("- [Rate-limit and backoff settings](#rate-limit-and-backoff-settings)\n")
     out.append("- [Read directly from the environment](#read-directly-from-the-environment)\n")
-    for path in file_sections:
-        out.append(f"- [{titles[path]}](#{anchor(titles[path])})\n")
+    for group_title, _ps in active_groups:
+        out.append(f"- [{group_title}](#{anchor(group_title)})\n")
     if unused_rows:
         out.append("- [Unused legacy defaults](#unused-legacy-defaults)\n")
     out.append("\n")
-    out.append("## Rate-limit and backoff settings\n\n" + notes.ENV_SLEEPER.strip() + "\n\n")
+
     out.append("## Read directly from the environment\n\n")
     out.append(
         "The app reads these with `os.getenv` where it uses them, not through"
@@ -837,47 +858,52 @@ def render_env(notes):
             f"| `{name}` | {cell(code(default))} | `{path}` | {cell(notes.ENV_DIRECT[name].strip())} |\n"
         )
     out.append("\n")
-    for path, active_sections in file_sections.items():
-        out.append(f"## {titles[path]}\n\nDefined in `{path}`.\n\n")
-        for section in active_sections:
-            # a file with one section needs no subheading under its own title
-            if section and len(active_sections) > 1:
-                out.append(f"### {env_section_title(section, notes)}\n\n")
-            out.append("| Key | Environment variable | Default | Description |\n|---|---|---|---|\n")
-            detailed = []
-            for key, (p, s, envs, comment) in sources.items():
-                if p != path or s != section:
-                    continue
-                desc = env_description(key, comment, notes)
-                if unused_note(desc) is not None:
-                    continue
-                env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
-                if len(desc) > 240:
-                    first = first_sentence(desc)
-                    table_desc = f"{first} [Details](#{anchor(key)}-details)."
-                    detailed.append((key, env_text, values[key], desc))
-                else:
-                    table_desc = desc
-                out.append(
-                    f'| <a id="{anchor(key)}"></a>`{key}` | {env_text}'
-                    f" | {cell(value_text(values[key]))}"
-                    f" | {cell(table_desc)} |\n"
-                )
-            out.append("\n")
-            for key, env_text, val, desc in detailed:
-                out.append(f'#### <a id="{anchor(key)}-details"></a>`{key}`\n\n')
-                out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
-                out.append(f"{desc}\n\n")
+
+    for group_title, paths in active_groups:
+        out.append(f"## {group_title}\n\n")
+        if group_title == "Network, retries and rate limits":
+            out.append(notes.ENV_SLEEPER.strip() + "\n\n")
+        for path in paths:
+            active_sections = file_sections[path]
+            out.append(f"### {titles[path]}\n\nDefined in `{path}`.\n\n")
+            for section in active_sections:
+                if section and len(active_sections) > 1:
+                    out.append(f"#### {env_section_title(section, notes)}\n\n")
+                out.append("| Variable / Key | Default | Description |\n|---|---|---|\n")
+                detailed = []
+                for key, (p, s, envs, comment) in sources.items():
+                    if p != path or s != section:
+                        continue
+                    desc = env_description(key, comment, notes)
+                    if unused_note(desc) is not None:
+                        continue
+                    env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
+                    if len(desc) > 240:
+                        first = first_sentence(desc)
+                        table_desc = f"{first} [Details](#{anchor(key)}-details)."
+                        detailed.append((key, env_text, values[key], desc))
+                    else:
+                        table_desc = desc
+                    out.append(
+                        f"| {env_key_cell(key, envs)}"
+                        f" | {cell(value_text(values[key]))}"
+                        f" | {cell(table_desc)} |\n"
+                    )
+                out.append("\n")
+                for key, env_text, val, desc in detailed:
+                    out.append(f'##### <a id="{anchor(key)}-details"></a>`{key}`\n\n')
+                    out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
+                    out.append(f"{desc}\n\n")
+
     if unused_rows:
         out.append("## Unused legacy defaults\n\n")
         out.append(
             "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.\n\n"
-            "| Key | Environment variable | Default | Defined in | Note |\n|---|---|---|---|---|\n"
+            "| Variable / Key | Default | Defined in | Note |\n|---|---|---|---|\n"
         )
         for key, p, envs, val, note in unused_rows:
-            env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
             out.append(
-                f'| <a id="{anchor(key)}"></a>`{key}` | {env_text}'
+                f"| {env_key_cell(key, envs)}"
                 f" | {cell(value_text(val))} | `{p}` | {cell(note)} |\n"
             )
         out.append("\n")

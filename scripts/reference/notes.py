@@ -109,6 +109,32 @@ ENV_FILES = {
     "url/other_url.py": "Other addresses",
 }
 
+# High-level chapters that group ENV_FILES into fewer top-level headings in env.md.
+ENV_GROUPS = [
+    ("Downloads and actions", ["action/download.py", "action/like.py", "action/metadata.py", "general.py"]),
+    (
+        "Config defaults, dates and paths",
+        [
+            "main.py",
+            "date.py",
+            "time.py",
+            "dynamic.py",
+            "list.py",
+            "path/files.py",
+            "path/general.py",
+            "path/length.py",
+            "path/bytes.py",
+        ],
+    ),
+    (
+        "Network, retries and rate limits",
+        ["req/req.py", "req/api.py", "req/ratelimit.py", "req/auth.py", "req/anon.py", "req/git.py"],
+    ),
+    ("DRM, CDM and Discord", ["req/mpd.py", "req/cdm.py", "req/discord.py"]),
+    ("Logging, progress and UI", ["logger.py", "live.py", "system.py", "prompts.py"]),
+    ("API addresses and URLs", ["url/url.py", "url/dynamic.py", "url/other_url.py"]),
+]
+
 # Subsection titles taken from the source comments that read badly as headings.
 # Anything not listed has a trailing " Configuration" removed.
 ENV_SECTION_TITLES = {
