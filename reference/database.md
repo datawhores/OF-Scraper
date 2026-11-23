@@ -21,7 +21,18 @@ Each creator has one SQLite file, `user_data.db`. It sits in the folder given by
 
 The tables and columns below are what a new database has after `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables` run. The create statements are in `ofscraper/db/operations_/`.
 
-Tables: [`labels`](#labels), [`medias`](#medias), [`messages`](#messages), [`models`](#models), [`others`](#others), [`posts`](#posts), [`products`](#products), [`profiles`](#profiles), [`schema_flags`](#schema_flags), [`stories`](#stories).
+## Contents
+
+- [`labels`](#labels)
+- [`medias`](#medias)
+- [`messages`](#messages)
+- [`models`](#models)
+- [`others`](#others)
+- [`posts`](#posts)
+- [`products`](#products)
+- [`profiles`](#profiles)
+- [`schema_flags`](#schema_flags)
+- [`stories`](#stories)
 
 ## `labels`
 
