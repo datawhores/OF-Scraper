@@ -22,66 +22,66 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 
 ## Quick reference
 
-| Key | Default | CLI override | Env default |
-|---|---|---|---|
-| [`main_profile`](#main_profile) | `"main_profile"` | none | [`PROFILE_DEFAULT`](env.md#profile_default), [`mainProfile`](env.md#mainprofile) |
-| [`metadata`](#metadata) | `"{configpath}/{profile}/.data/{model_id}"` | none | [`METADATA_DEFAULT`](env.md#metadata_default) |
-| [`discord`](#discord) | `""` | `--discord` | [`DISCORD_DEFAULT`](env.md#discord_default) |
-| [`file_options.save_location`](#file_optionssave_location) | `"{home_directory}/Data/ofscraper"` | none | [`SAVE_PATH_DEFAULT`](env.md#save_path_default) |
-| [`file_options.dir_format`](#file_optionsdir_format) | `"{model_username}/{responsetype}/{mediatype}/"` | none | [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) |
-| [`file_options.file_format`](#file_optionsfile_format) | `"{filename}.{ext}"` | none | [`FILE_FORMAT_DEFAULT`](env.md#file_format_default) |
-| [`file_options.textlength`](#file_optionstextlength) | `0` | `--textlength` | [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) |
-| [`file_options.space_replacer`](#file_optionsspace_replacer) | `" "` | `--space-replacer` | [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) |
-| [`file_options.date`](#file_optionsdate) | `"MM-DD-YYYY"` | none | [`DATE_DEFAULT`](env.md#date_default) |
-| [`file_options.text_type_default`](#file_optionstext_type_default) | `"letter"` | `--text-type` | [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) |
-| [`file_options.truncation_default`](#file_optionstruncation_default) | `true` | `--original` | [`TRUNCATION_DEFAULT`](env.md#truncation_default) |
-| [`file_options.filename_collision`](#file_optionsfilename_collision) | `"media_id"` | none | [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) |
-| [`download_options.filter`](#download_optionsfilter) | `["Images", "Audios", "Videos"]` | `--mediatype` | [`FILTER_DEFAULT`](env.md#filter_default) |
-| [`download_options.auto_resume`](#download_optionsauto_resume) | `true` | `--no-auto-resume` | [`RESUME_DEFAULT`](env.md#resume_default) |
-| [`download_options.system_free_min`](#download_optionssystem_free_min) | `0` | `system_free_min` | [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) |
-| [`download_options.max_post_count`](#download_optionsmax_post_count) | `0` | `--max-post-count` | [`MAX_COUNT_DEFAULT`](env.md#max_count_default) |
-| [`download_options.verify_all_integrity`](#download_optionsverify_all_integrity) | `false` | none | [`VERIFY_ALL_INTEGRITY`](env.md#verify_all_integrity) |
-| [`binary_options.ffmpeg`](#binary_optionsffmpeg) | `""` | none | [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) |
-| [`cdm_options.private-key`](#cdm_optionsprivate-key) | `null` | `--private-key` | none |
-| [`cdm_options.client-id`](#cdm_optionsclient-id) | `null` | `--client-id` | none |
-| [`cdm_options.key-mode-default`](#cdm_optionskey-mode-default) | `"manual"` | `--key-mode` | [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options) |
-| [`performance_options.download_sems`](#performance_optionsdownload_sems) | `6` | `--downloadsem` | [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default) |
-| [`performance_options.download_limit`](#performance_optionsdownload_limit) | `0` | `--download-limit` | [`DOWNLOAD_LIMIT_DEFAULT`](env.md#download_limit_default) |
-| [`content_filter_options.block_ads`](#content_filter_optionsblock_ads) | `false` | none | [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default) |
-| [`content_filter_options.file_size_max`](#content_filter_optionsfile_size_max) | `0` | `--size-max` | [`FILE_SIZE_MAX_DEFAULT`](env.md#file_size_max_default) |
-| [`content_filter_options.file_size_min`](#content_filter_optionsfile_size_min) | `0` | `--size-min` | [`FILE_SIZE_MIN_DEFAULT`](env.md#file_size_min_default) |
-| [`content_filter_options.length_max`](#content_filter_optionslength_max) | `0` | `--length-max` | [`MAX_LENGTH_DEFAULT`](env.md#max_length_default) |
-| [`content_filter_options.length_min`](#content_filter_optionslength_min) | `0` | `--length-min` | [`MIN_LENGTH_DEFAULT`](env.md#min_length_default) |
-| [`advanced_options.dynamic-mode-default`](#advanced_optionsdynamic-mode-default) | `"digital"` | `--dynamic-rules` | [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default) |
-| [`advanced_options.skip_unavailable_content`](#advanced_optionsskip_unavailable_content) | `true` | none | [`SKIP_UNAVAILABLE_DEFAULT`](env.md#skip_unavailable_default) |
-| [`advanced_options.downloadbars`](#advanced_optionsdownloadbars) | `false` | `--downloadbars` | [`PROGRESS_DEFAULT`](env.md#progress_default) |
-| [`advanced_options.cache-mode`](#advanced_optionscache-mode) | `"sqlite"` | none | [`CACHEDEFAULT`](env.md#cachedefault) |
-| [`advanced_options.rotate_logs`](#advanced_optionsrotate_logs) | `true` | none | [`ROTATE_DEFAULT`](env.md#rotate_default) |
-| [`advanced_options.sanitize_text`](#advanced_optionssanitize_text) | `false` | none | [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default) |
-| [`advanced_options.temp_dir`](#advanced_optionstemp_dir) | `null` | none | [`TEMP_FOLDER_DEFAULT`](env.md#temp_folder_default) |
-| [`advanced_options.remove_hash_match`](#advanced_optionsremove_hash_match) | `null` | none | [`HASHED_DEFAULT`](env.md#hashed_default) |
-| [`advanced_options.infinite_loop_action_mode`](#advanced_optionsinfinite_loop_action_mode) | `false` | none | [`INFINITE_LOOP_DEFAULT`](env.md#infinite_loop_default) |
-| [`advanced_options.incremental_downloads`](#advanced_optionsincremental_downloads) | `true` | none | [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default) |
-| [`advanced_options.default_user_list`](#advanced_optionsdefault_user_list) | `"main"` | `--user_list` | [`DEFAULT_USER_LIST`](env.md#default_user_list) |
-| [`advanced_options.default_black_list`](#advanced_optionsdefault_black_list) | `[]` | `--black_list` | [`DEFAULT_BLACK_LIST`](env.md#default_black_list) |
-| [`advanced_options.logs_expire_time`](#advanced_optionslogs_expire_time) | `0` | none | none |
-| [`advanced_options.ssl_verify`](#advanced_optionsssl_verify) | `"custom"` | none | [`SSL_VALIDATION_DEFAULT`](env.md#ssl_validation_default) |
-| [`advanced_options.env_files`](#advanced_optionsenv_files) | `[]` | none | none |
-| [`advanced_options.database_url`](#advanced_optionsdatabase_url) | see below | none | none |
-| [`script_options.after_action_script`](#script_optionsafter_action_script) | `null` | `--after-action-script` | [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) |
-| [`script_options.post_script`](#script_optionspost_script) | `null` | `--post-script` | [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) |
-| [`script_options.naming_script`](#script_optionsnaming_script) | `null` | `--naming-script` | [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) |
-| [`script_options.after_download_script`](#script_optionsafter_download_script) | `null` | `--after-download-script` | [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) |
-| [`script_options.skip_download_script`](#script_optionsskip_download_script) | `null` | `--skip-download-script` | [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) |
-| [`responsetype.timeline`](#responsetypetimeline) | `"Posts"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.message`](#responsetypemessage) | `"Messages"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.archived`](#responsetypearchived) | `"Archived"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.paid`](#responsetypepaid) | `"Messages"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.stories`](#responsetypestories) | `"Stories"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.highlights`](#responsetypehighlights) | `"Stories"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.profile`](#responsetypeprofile) | `"Profile"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.pinned`](#responsetypepinned) | `"Posts"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
-| [`responsetype.streams`](#responsetypestreams) | `"Streams"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| Key | Default & overrides |
+|---|---|
+| [`main_profile`](#main_profile) | **Default:** `"main_profile"` · **Env:** [`PROFILE_DEFAULT`](env.md#profile_default), [`mainProfile`](env.md#mainprofile) |
+| [`metadata`](#metadata) | **Default:** `"{configpath}/{profile}/.data/{model_id}"` · **Env:** [`METADATA_DEFAULT`](env.md#metadata_default) |
+| [`discord`](#discord) | **Default:** `""` · **CLI:** `--discord` · **Env:** [`DISCORD_DEFAULT`](env.md#discord_default) |
+| [`file_options.save_location`](#file_optionssave_location) | **Default:** `"{home_directory}/Data/ofscraper"` · **Env:** [`SAVE_PATH_DEFAULT`](env.md#save_path_default) |
+| [`file_options.dir_format`](#file_optionsdir_format) | **Default:** `"{model_username}/{responsetype}/{mediatype}/"` · **Env:** [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) |
+| [`file_options.file_format`](#file_optionsfile_format) | **Default:** `"{filename}.{ext}"` · **Env:** [`FILE_FORMAT_DEFAULT`](env.md#file_format_default) |
+| [`file_options.textlength`](#file_optionstextlength) | **Default:** `0` · **CLI:** `--textlength` · **Env:** [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) |
+| [`file_options.space_replacer`](#file_optionsspace_replacer) | **Default:** `" "` · **CLI:** `--space-replacer` · **Env:** [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) |
+| [`file_options.date`](#file_optionsdate) | **Default:** `"MM-DD-YYYY"` · **Env:** [`DATE_DEFAULT`](env.md#date_default) |
+| [`file_options.text_type_default`](#file_optionstext_type_default) | **Default:** `"letter"` · **CLI:** `--text-type` · **Env:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) |
+| [`file_options.truncation_default`](#file_optionstruncation_default) | **Default:** `true` · **CLI:** `--original` · **Env:** [`TRUNCATION_DEFAULT`](env.md#truncation_default) |
+| [`file_options.filename_collision`](#file_optionsfilename_collision) | **Default:** `"media_id"` · **Env:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) |
+| [`download_options.filter`](#download_optionsfilter) | **Default:** `["Images", "Audios", "Videos"]` · **CLI:** `--mediatype` · **Env:** [`FILTER_DEFAULT`](env.md#filter_default) |
+| [`download_options.auto_resume`](#download_optionsauto_resume) | **Default:** `true` · **CLI:** `--no-auto-resume` · **Env:** [`RESUME_DEFAULT`](env.md#resume_default) |
+| [`download_options.system_free_min`](#download_optionssystem_free_min) | **Default:** `0` · **CLI:** `system_free_min` · **Env:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) |
+| [`download_options.max_post_count`](#download_optionsmax_post_count) | **Default:** `0` · **CLI:** `--max-post-count` · **Env:** [`MAX_COUNT_DEFAULT`](env.md#max_count_default) |
+| [`download_options.verify_all_integrity`](#download_optionsverify_all_integrity) | **Default:** `false` · **Env:** [`VERIFY_ALL_INTEGRITY`](env.md#verify_all_integrity) |
+| [`binary_options.ffmpeg`](#binary_optionsffmpeg) | **Default:** `""` · **Env:** [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) |
+| [`cdm_options.private-key`](#cdm_optionsprivate-key) | **Default:** `null` · **CLI:** `--private-key` |
+| [`cdm_options.client-id`](#cdm_optionsclient-id) | **Default:** `null` · **CLI:** `--client-id` |
+| [`cdm_options.key-mode-default`](#cdm_optionskey-mode-default) | **Default:** `"manual"` · **CLI:** `--key-mode` · **Env:** [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options) |
+| [`performance_options.download_sems`](#performance_optionsdownload_sems) | **Default:** `6` · **CLI:** `--downloadsem` · **Env:** [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default) |
+| [`performance_options.download_limit`](#performance_optionsdownload_limit) | **Default:** `0` · **CLI:** `--download-limit` · **Env:** [`DOWNLOAD_LIMIT_DEFAULT`](env.md#download_limit_default) |
+| [`content_filter_options.block_ads`](#content_filter_optionsblock_ads) | **Default:** `false` · **Env:** [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default) |
+| [`content_filter_options.file_size_max`](#content_filter_optionsfile_size_max) | **Default:** `0` · **CLI:** `--size-max` · **Env:** [`FILE_SIZE_MAX_DEFAULT`](env.md#file_size_max_default) |
+| [`content_filter_options.file_size_min`](#content_filter_optionsfile_size_min) | **Default:** `0` · **CLI:** `--size-min` · **Env:** [`FILE_SIZE_MIN_DEFAULT`](env.md#file_size_min_default) |
+| [`content_filter_options.length_max`](#content_filter_optionslength_max) | **Default:** `0` · **CLI:** `--length-max` · **Env:** [`MAX_LENGTH_DEFAULT`](env.md#max_length_default) |
+| [`content_filter_options.length_min`](#content_filter_optionslength_min) | **Default:** `0` · **CLI:** `--length-min` · **Env:** [`MIN_LENGTH_DEFAULT`](env.md#min_length_default) |
+| [`advanced_options.dynamic-mode-default`](#advanced_optionsdynamic-mode-default) | **Default:** `"digital"` · **CLI:** `--dynamic-rules` · **Env:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default) |
+| [`advanced_options.skip_unavailable_content`](#advanced_optionsskip_unavailable_content) | **Default:** `true` · **Env:** [`SKIP_UNAVAILABLE_DEFAULT`](env.md#skip_unavailable_default) |
+| [`advanced_options.downloadbars`](#advanced_optionsdownloadbars) | **Default:** `false` · **CLI:** `--downloadbars` · **Env:** [`PROGRESS_DEFAULT`](env.md#progress_default) |
+| [`advanced_options.cache-mode`](#advanced_optionscache-mode) | **Default:** `"sqlite"` · **Env:** [`CACHEDEFAULT`](env.md#cachedefault) |
+| [`advanced_options.rotate_logs`](#advanced_optionsrotate_logs) | **Default:** `true` · **Env:** [`ROTATE_DEFAULT`](env.md#rotate_default) |
+| [`advanced_options.sanitize_text`](#advanced_optionssanitize_text) | **Default:** `false` · **Env:** [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default) |
+| [`advanced_options.temp_dir`](#advanced_optionstemp_dir) | **Default:** `null` · **Env:** [`TEMP_FOLDER_DEFAULT`](env.md#temp_folder_default) |
+| [`advanced_options.remove_hash_match`](#advanced_optionsremove_hash_match) | **Default:** `null` · **Env:** [`HASHED_DEFAULT`](env.md#hashed_default) |
+| [`advanced_options.infinite_loop_action_mode`](#advanced_optionsinfinite_loop_action_mode) | **Default:** `false` · **Env:** [`INFINITE_LOOP_DEFAULT`](env.md#infinite_loop_default) |
+| [`advanced_options.incremental_downloads`](#advanced_optionsincremental_downloads) | **Default:** `true` · **Env:** [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default) |
+| [`advanced_options.default_user_list`](#advanced_optionsdefault_user_list) | **Default:** `"main"` · **CLI:** `--user_list` · **Env:** [`DEFAULT_USER_LIST`](env.md#default_user_list) |
+| [`advanced_options.default_black_list`](#advanced_optionsdefault_black_list) | **Default:** `[]` · **CLI:** `--black_list` · **Env:** [`DEFAULT_BLACK_LIST`](env.md#default_black_list) |
+| [`advanced_options.logs_expire_time`](#advanced_optionslogs_expire_time) | **Default:** `0` |
+| [`advanced_options.ssl_verify`](#advanced_optionsssl_verify) | **Default:** `"custom"` · **Env:** [`SSL_VALIDATION_DEFAULT`](env.md#ssl_validation_default) |
+| [`advanced_options.env_files`](#advanced_optionsenv_files) | **Default:** `[]` |
+| [`advanced_options.database_url`](#advanced_optionsdatabase_url) | **Default:** see below |
+| [`script_options.after_action_script`](#script_optionsafter_action_script) | **Default:** `null` · **CLI:** `--after-action-script` · **Env:** [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) |
+| [`script_options.post_script`](#script_optionspost_script) | **Default:** `null` · **CLI:** `--post-script` · **Env:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) |
+| [`script_options.naming_script`](#script_optionsnaming_script) | **Default:** `null` · **CLI:** `--naming-script` · **Env:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) |
+| [`script_options.after_download_script`](#script_optionsafter_download_script) | **Default:** `null` · **CLI:** `--after-download-script` · **Env:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) |
+| [`script_options.skip_download_script`](#script_optionsskip_download_script) | **Default:** `null` · **CLI:** `--skip-download-script` · **Env:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) |
+| [`responsetype.timeline`](#responsetypetimeline) | **Default:** `"Posts"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.message`](#responsetypemessage) | **Default:** `"Messages"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.archived`](#responsetypearchived) | **Default:** `"Archived"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.paid`](#responsetypepaid) | **Default:** `"Messages"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.stories`](#responsetypestories) | **Default:** `"Stories"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.highlights`](#responsetypehighlights) | **Default:** `"Stories"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.profile`](#responsetypeprofile) | **Default:** `"Profile"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.pinned`](#responsetypepinned) | **Default:** `"Posts"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.streams`](#responsetypestreams) | **Default:** `"Streams"` · **Env:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
 
 ## Top level
 

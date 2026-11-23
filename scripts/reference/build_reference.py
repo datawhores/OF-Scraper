@@ -428,15 +428,15 @@ def render_cli(notes):
     for group in groups:
         out.append(f"  - [{group}](#{anchor(group)})\n")
     out.append("\n## Quick reference\n\n")
-    out.append("| Command | Options | Summary |\n|---|---|---|\n")
+    out.append("| Command | Summary |\n|---|---|\n")
     for name, cmd in command_objects().items():
         title = "Main program (no command)" if not name else f"`{name}`"
         link_target = anchor("Main program (no command)" if not name else name)
         summary = cell(clean_help(cmd.short_help or cmd.help)) or "Run interactive menu or batch actions"
-        out.append(f"| [{title}](#{link_target}) | {len(cmd.params)} | {summary} |\n")
+        out.append(f"| [{title}](#{link_target}) ({len(cmd.params)} options) | {summary} |\n")
     for key, (_usage, summary) in SEPARATE_COMMANDS.items():
         link_target = anchor(f"{key} (separate entry point)")
-        out.append(f"| [`{key}`](#{link_target}) | argparse | {cell(summary)} |\n")
+        out.append(f"| [`{key}`](#{link_target}) (argparse) | {cell(summary)} |\n")
     out.append("\n## Commands\n\n")
     out.append("Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.\n\n")
     for name, cmd in command_objects().items():
@@ -604,20 +604,22 @@ def render_config(notes):
         label = section if section == "Top level" else f"`{section}`"
         out.append(f"- [{label}](#{anchor(section)})\n")
     out.append("\n## Quick reference\n\n")
-    out.append("| Key | Default | CLI override | Env default |\n|---|---|---|---|\n")
+    out.append("| Key | Default & overrides |\n|---|---|\n")
     for key, default in defaults.items():
         getter, module_file = getters[key]
         envs, _older = getter_details(getter, module_file, key)
         dests = sorted(dest_of_getter.get(getter, ()))
-        cli_text = ", ".join(f"`{option_heading(options[d]) if d in options else d}`" for d in dests) or "none"
-        env_text = ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs) or "none"
         default_cell = value_text(default, "json")
         if len(default_cell) > 60:
             default_cell = "see below"
-        out.append(
-            f"| [`{key}`](#{anchor(key)}) | {cell(default_cell)}"
-            f" | {cli_text} | {env_text} |\n"
-        )
+        parts = [f"**Default:** {cell(default_cell)}"]
+        if dests:
+            cli_text = ", ".join(f"`{option_heading(options[d]) if d in options else d}`" for d in dests)
+            parts.append(f"**CLI:** {cli_text}")
+        if envs:
+            env_text = ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs)
+            parts.append(f"**Env:** {env_text}")
+        out.append(f"| [`{key}`](#{anchor(key)}) | {' · '.join(parts)} |\n")
     out.append("\n")
     for section in sections:
         out.append(f"## {section if section == 'Top level' else '`' + section + '`'}\n\n")
@@ -786,11 +788,11 @@ def env_key_cell(key, envs):
     """Compact Variable / Key cell keeping the key's anchor intact."""
     a = f'<a id="{anchor(key)}"></a>'
     if not envs:
-        return f"{a}`{key}` (bare key only)"
+        return f"{a}`{key}`<br>*(bare key only)*"
     if envs == [key]:
         return f"{a}`{key}`"
     env_list = ", ".join(f"`{e}`" for e in envs)
-    return f"{a}{env_list} (`{key}`)"
+    return f"{a}{env_list}<br>Key: `{key}`"
 
 
 def render_env(notes):
@@ -851,11 +853,12 @@ def render_env(notes):
     out.append(
         "The app reads these with `os.getenv` where it uses them, not through"
         " `of_env.getattr`. Only the variable itself sets them.\n\n"
-        "| Variable | Default | Read in | Description |\n|---|---|---|---|\n"
+        "| Variable | Description |\n|---|---|\n"
     )
     for name, (path, default) in direct_env().items():
         out.append(
-            f"| `{name}` | {cell(code(default))} | `{path}` | {cell(notes.ENV_DIRECT[name].strip())} |\n"
+            f"| `{name}` | **Default:** {cell(code(default))} · **Read in:** `{path}`.<br>"
+            f"{cell(notes.ENV_DIRECT[name].strip())} |\n"
         )
     out.append("\n")
 
@@ -869,7 +872,7 @@ def render_env(notes):
             for section in active_sections:
                 if section and len(active_sections) > 1:
                     out.append(f"#### {env_section_title(section, notes)}\n\n")
-                out.append("| Variable / Key | Default | Description |\n|---|---|---|\n")
+                out.append("| Variable / Key | Description |\n|---|---|\n")
                 detailed = []
                 for key, (p, s, envs, comment) in sources.items():
                     if p != path or s != section:
@@ -886,8 +889,7 @@ def render_env(notes):
                         table_desc = desc
                     out.append(
                         f"| {env_key_cell(key, envs)}"
-                        f" | {cell(value_text(values[key]))}"
-                        f" | {cell(table_desc)} |\n"
+                        f" | **Default:** {cell(value_text(values[key]))}. {cell(table_desc)} |\n"
                     )
                 out.append("\n")
                 for key, env_text, val, desc in detailed:
@@ -899,13 +901,13 @@ def render_env(notes):
         out.append("## Unused legacy defaults\n\n")
         out.append(
             "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.\n\n"
-            "| Variable / Key | Default | Defined in | Note |\n|---|---|---|---|\n"
+            "| Variable / Key | Details |\n|---|---|\n"
         )
         for key, p, envs, val, note in unused_rows:
-            out.append(
-                f"| {env_key_cell(key, envs)}"
-                f" | {cell(value_text(val))} | `{p}` | {cell(note)} |\n"
-            )
+            details = f"**Default:** {cell(value_text(val))} · **Defined in:** `{p}`"
+            if note:
+                details += f"<br>{cell(note)}"
+            out.append(f"| {env_key_cell(key, envs)} | {details} |\n")
         out.append("\n")
     return "".join(out)
 
@@ -981,17 +983,19 @@ def render_placeholders(notes):
     out = [HEADER, "# Output template placeholders\n\n"]
     out.append(notes.PLACEHOLDER_INTRO.strip() + "\n\n")
     kinds = list(PLACEHOLDER_KINDS)
-    out.append("| Placeholder | Available in | Description |\n|---|---|---|\n")
+    out.append("| Placeholder | Description |\n|---|---|\n")
     for key in sorted(rows):
         name = f"`{{{key}}}`"
         if "_" in key:
-            name += f" (also `{{{key.replace('_', '')}}}`)"
+            name += f"<br>*(also `{{{key.replace('_', '')}}}`)*"
         available = (
             "all"
             if len(rows[key]) == len(kinds)
             else ", ".join(PLACEHOLDER_LABELS[k] for k in kinds if k in rows[key])
         )
-        out.append(f"| {name} | {available} | {cell(notes.PLACEHOLDERS[key].strip())} |\n")
+        out.append(
+            f"| {name} | **Available in:** {available}. {cell(notes.PLACEHOLDERS[key].strip())} |\n"
+        )
     out.append("\nThe underscore-free form is added for every name with an underscore (`add_no_underline`).\n")
     return "".join(out)
 
@@ -1059,18 +1063,15 @@ def render_database(notes):
         out.append(f"- [`{n}`](#{anchor(n)})\n")
     out.append("- [How the database works](#how-the-database-works)\n\n")
     out.append("## Quick reference\n\n")
-    out.append("| Table | Unique key | Summary |\n|---|---|---|\n")
+    out.append("| Table | Summary |\n|---|---|\n")
     for name, (_columns, indexes) in tables.items():
         note = notes.TABLES[name]
         uniques = [i for i in indexes if i["unique"]]
-        unique_text = (
-            "; ".join("(" + ", ".join(f"`{c}`" for c in i["columns"]) + ")" for i in uniques)
-            if uniques
-            else "none"
-        )
-        out.append(
-            f"| [`{name}`](#{anchor(name)}) | {unique_text} | {cell(first_sentence(note['summary'].strip()))} |\n"
-        )
+        summary = cell(first_sentence(note["summary"].strip()))
+        if uniques:
+            unique_text = "; ".join("(" + ", ".join(f"`{c}`" for c in i["columns"]) + ")" for i in uniques)
+            summary += f"<br>**Unique:** {unique_text}"
+        out.append(f"| [`{name}`](#{anchor(name)}) | {summary} |\n")
     out.append("\n")
     for name, (columns, indexes) in tables.items():
         note = notes.TABLES[name]
@@ -1083,7 +1084,7 @@ def render_database(notes):
                 + "; ".join("(" + ", ".join(f"`{c}`" for c in i["columns"]) + ")" for i in uniques)
                 + "\n\n"
             )
-        out.append("| Column | Type | Description |\n|---|---|---|\n")
+        out.append("| Column | Description |\n|---|---|\n")
         for col in columns:
             type_parts = [col["type"] or ""]
             flags = []
@@ -1093,12 +1094,13 @@ def render_database(notes):
                 flags.append("not null")
             if col["default"] is not None:
                 flags.append(f"default {code(col['default'])}")
-            type_text_col = " ".join(p for p in type_parts if p)
+            type_text_col = f"`{col['type']}`" if col["type"] else ""
             if flags:
                 suffix = "(" + ", ".join(flags) + ")"
                 type_text_col = f"{type_text_col} {suffix}".strip()
+            prefix = f"**Type:** {cell(type_text_col)}. " if type_text_col else ""
             out.append(
-                f"| `{col['name']}` | {cell(type_text_col)} | {cell(note['columns'][col['name']].strip())} |\n"
+                f"| `{col['name']}` | {prefix}{cell(note['columns'][col['name']].strip())} |\n"
             )
         out.append("\n<details>\n<summary>Write and migration details</summary>\n\n")
         out.append(f"**Written by:** {note['written_by'].strip()}\n\n")
