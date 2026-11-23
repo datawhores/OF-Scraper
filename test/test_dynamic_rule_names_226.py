@@ -59,7 +59,8 @@ def test_menu_offers_and_selects_the_default_rule(config, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "alias", ["dc", "digital", "digitals", "digitalcriminal", "digitalcriminals"]
+    "alias",
+    ["dc", "digital", "digitals", "digitalcriminal", "digitalcriminals", "datawhores"],
 )
 def test_menu_selects_the_rule_an_alias_picks(config, monkeypatch, alias):
     config["advanced_options"] = {"dynamic-mode-default": alias}
@@ -70,17 +71,9 @@ def test_menu_selects_the_rule_an_alias_picks(config, monkeypatch, alias):
     assert "digitalcriminals" not in question["choices"]
 
 
-def test_menu_choices_have_no_removed_rules(config, monkeypatch):
+def test_menu_choices_have_no_removed_rules_or_aliases(config, monkeypatch):
     question = _dynamic_question(monkeypatch)
     assert not {"dv", "dev", "deviint", "datawhores"} & set(question["choices"])
-
-
-def test_menu_with_saved_datawhores_selects_the_default(config, monkeypatch):
-    # a config.json written before datawhores was removed
-    config["advanced_options"] = {"dynamic-mode-default": "datawhores"}
-    question = _dynamic_question(monkeypatch)
-    assert question["default"] == "digital"
-    assert "datawhores" not in question["choices"]
 
 
 # 3. digitalcriminal is accepted
@@ -120,6 +113,7 @@ def test_every_name_get_dynamic_accepts_picks_its_rule(monkeypatch):
         "digital": "digitalcriminals",
         "digitals": "digitalcriminals",
         "digitalcriminal": "digitalcriminals",
+        "datawhores": "digitalcriminals",
         "xagler": "xagler",
         "rafa": "rafa",
         "manual": "manual",
