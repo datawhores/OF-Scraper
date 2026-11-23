@@ -73,3 +73,22 @@ def test_save_location_is_unquoted():
 
     config = {"file_options": {"save_location": r'"D:\Media\OnlyFans"'}}
     assert common_paths.get_save_location(config=config) == r"D:\Media\OnlyFans"
+
+
+def test_tests_never_use_the_real_config_folder():
+    # conftest.py gives each test session (each xdist worker) its own empty
+    # home folder in the system temp folder, so the user's real
+    # ~/.config/ofscraper is never read or written.
+    import os
+    import pathlib
+    import tempfile
+
+    import ofscraper.utils.paths.common as common_paths
+
+    temp_root = pathlib.Path(tempfile.gettempdir()).resolve()
+    home = pathlib.Path.home().resolve()
+    assert home.is_relative_to(temp_root)
+    assert common_paths.get_config_path().resolve().is_relative_to(home)
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker:
+        assert worker in home.name
