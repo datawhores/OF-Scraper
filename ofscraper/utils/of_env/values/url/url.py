@@ -11,7 +11,7 @@ def load_api_endpoints_config():
     config = {}
 
     # --- OnlyFans API Endpoints ---
-    # initEP: Initial API endpoint for session initialisation.
+    # initEP: Defined but not read anywhere. Initial API endpoint for session initialisation.
     # Default: "https://onlyfans.com/api2/v2/init"
     config["initEP"] = os.getenv(
         "OFSC_API_INIT_EP", "https://onlyfans.com/api2/v2/init"
@@ -37,7 +37,7 @@ def load_api_endpoints_config():
         "OFSC_API_ME_EP", "https://onlyfans.com/api2/v2/users/me"
     )
 
-    # subscriptionsEP: Endpoint for all subscriptions.
+    # subscriptionsEP: Defined but not read anywhere. Endpoint for all subscriptions.
     # Default: "https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite"
     config["subscriptionsEP"] = os.getenv(
         "OFSC_API_SUBSCRIPTIONS_EP",
@@ -167,11 +167,11 @@ def load_api_endpoints_config():
         "OFSC_API_FAVORITE_EP", "https://onlyfans.com/api2/v2/posts/{}/favorites/{}"
     )
 
-    # postURL: Base URL for a post on OnlyFans.
+    # postURL: Defined but not read anywhere. Base URL for a post on OnlyFans.
     # Default: "https://onlyfans.com/{}/{}"
     config["postURL"] = os.getenv("OFSC_POST_URL", "https://onlyfans.com/{}/{}")
 
-    # donateEP: The original author's donation link.
+    # donateEP: Defined but not read anywhere. The original author's donation link.
     # Default: "https://www.buymeacoffee.com/excludedBittern"
     config["donateEP"] = os.getenv(
         "OFSC_DONATE_EP", "https://www.buymeacoffee.com/excludedBittern"
@@ -191,14 +191,14 @@ def load_api_endpoints_config():
         "https://onlyfans.com/api2/v2/posts/paid/all?limit=100&skip_users=all&format=infinite&offset={}",
     )
 
-    # highlightSPECIFIC: Endpoint for a specific highlight story.
+    # highlightSPECIFIC: Defined but not read anywhere. Endpoint for a specific highlight story.
     # Default: "https://onlyfans.com/api2/v2/stories/highlights/{}"
     config["highlightSPECIFIC"] = os.getenv(
         "OFSC_HIGHLIGHT_SPECIFIC_EP",
         "https://onlyfans.com/api2/v2/stories/highlights/{}",
     )
 
-    # storiesSPECIFIC: Endpoint for a specific story.
+    # storiesSPECIFIC: Defined but not read anywhere. Endpoint for a specific story.
     # Default: "https://onlyfans.com/api2/v2/stories/{}"
     config["storiesSPECIFIC"] = os.getenv(
         "OFSC_STORIES_SPECIFIC_EP", "https://onlyfans.com/api2/v2/stories/{}"
@@ -211,7 +211,7 @@ def load_api_endpoints_config():
         "https://onlyfans.com/api2/v2/chats/{}/messages?limit=10&order=desc&skip_users=all&firstId={}",
     )
 
-    # messageTableSPECIFIC: Web UI URL for specific messages.
+    # messageTableSPECIFIC: Defined but not read anywhere. Web UI URL for specific messages.
     # Default: "https://onlyfans.com/my/chats/{}/?id={}"
     config["messageTableSPECIFIC"] = os.getenv(
         "OFSC_MESSAGE_TABLE_SPECIFIC_URL", "https://onlyfans.com/my/chats/{}/?id={}"

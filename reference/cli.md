@@ -2,12 +2,13 @@
 
 # Command-line reference
 
-Every command and option the CLI accepts. The page is built from the click program in `ofscraper/utils/args/`. Option names, types, defaults and help text come from the option definitions.
+Every command and option the CLI accepts. Built from the click program in `ofscraper/utils/args/`.
 
-Each option lists these fields, when they apply: **Also** (other names), **Dest**, **Type**, **Default**, **Commands** (which commands accept it), **Config fallback**, **Defined in**, then its help text and any **Note**. **Config fallback** means the option's value comes from that `config.json` key when the option isn't given (`merged_settings` in `ofscraper/utils/settings.py`). [README.md](README.md) explains how options, `config.json` and environment variables combine.
+**Config fallback** means the option's value comes from that `config.json` key when the option isn't given (`merged_settings` in `ofscraper/utils/settings.py`). [README.md](README.md) explains how options, `config.json` and environment variables combine.
 
 ## Contents
 
+- [Quick reference](#quick-reference)
 - [Commands](#commands)
 - [`--action` modes](#--action-modes)
 - [Options](#options)
@@ -31,11 +32,31 @@ Each option lists these fields, when they apply: **Also** (other names), **Dest*
   - [Metadata Options](#metadata-options)
   - [Sorting for the table](#sorting-for-the-table)
 
+## Quick reference
+
+| Command | Options | Summary |
+|---|---|---|
+| [Main program (no command)](#main-program-no-command) | 103 | OF-Scraper Options |
+| [`manual`](#manual) | 52 | Manually download media by providing a list of URLs or IDs |
+| [`msg_check`](#msg_check) | 52 | Produces a media table from messages with filterable entries and quick downloads |
+| [`story_check`](#story_check) | 50 | Produces a media table from stories and highlights with filterable entries and quick downloads |
+| [`paid_check`](#paid_check) | 52 | Produces a media table from purchases with filterable entries and quick downloads |
+| [`post_check`](#post_check) | 54 | Produces a media table from posts with filterable entries and quick downloads |
+| [`metadata`](#metadata) | 86 | Modify metadata or db files |
+| [`db`](#db) | 61 | Print information from the database |
+| [`move_creator_files`](#move_creator_files-separate-entry-point) | argparse | Move a creator's downloaded files to match new path settings and update recorded paths. |
+| [`postgres_export`](#postgres_export-separate-entry-point) | argparse | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
+| [`postgres_import`](#postgres_import-separate-entry-point) | argparse | Import per-creator `user_data.db` files into PostgreSQL. |
+| [`recover_collisions`](#recover_collisions-separate-entry-point) | argparse | Find recorded paths shared by different media and reset downloaded flags to re-download. |
+| [`stash_sync`](#stash_sync-separate-entry-point) | argparse | Sync downloaded media metadata from OF-Scraper databases into Stash. |
+
 ## Commands
 
 Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
+
+**Options:** 103 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -46,39 +67,39 @@ Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Th
 
 The run reads `auth.json` and `config.json` from the profile. It writes media under `save_location` and rows to each creator's `user_data.db`.
 
-Accepts 103 options. Its `--help` summary: OF-Scraper Options.
-
 ### `manual`
+
+**Options:** 52 · **`--help` summary:** Manually download media by providing a list of URLs or IDs
 
 `ofscraper manual -u URL...` or `-f FILE` (one is required). Downloads specific posts, given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids. A bare id is looked up on the timeline, then in that creator's purchases. It forces `force_all`, so existing files are downloaded again. It writes posts and media to the creator's `user_data.db` and media under `save_location`, then runs the after-download script.
 
-Accepts 52 options. Its `--help` summary: Manually download media by providing a list of URLs or IDs.
-
 ### `msg_check`
+
+**Options:** 52 · **`--help` summary:** The msg_check subcommand gathers information on media content from messages. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, a model id, or a chat URL (`onlyfans.com/my/chats/chat/<id>` or `onlyfans.com/my/chats/<id>/?id=<message id>`), whose number is taken as the model id. Any other item is skipped with a warning. It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
-Accepts 52 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
-
 ### `story_check`
+
+**Options:** 50 · **`--help` summary:** The story_check subcommand gathers information on media content from stories and highlights. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper story_check -u USERNAME...` (or `-f`). Fetches the creators' stories and highlights from the API, without the check cache. It writes them to `user_data.db` and opens the same downloadable media table.
 
-Accepts 50 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
-
 ### `paid_check`
+
+**Options:** 52 · **`--help` summary:** The paid_check subcommand gathers information on media content from purchases. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper paid_check -u USERNAME_OR_ID...` (or `-f`). Fetches each creator's purchased content, writes it to `user_data.db` and opens the media table. The content comes from the check cache unless you pass `--force`. A deleted creator, named `DELETED_MODEL_PLACEHOLDER`, is read from all purchases.
 
-Accepts 52 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
-
 ### `post_check`
+
+**Options:** 54 · **`--help` summary:** The post_check subcommand gathers information on media content from posts. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper post_check -u URL_OR_USERNAME...` or `-f FILE`. Takes `onlyfans.com/<username>` URLs or bare usernames. It fetches the areas in `--check-area` (default Timeline, Pinned, Archived and Streams; Labels is also available), writes them to `user_data.db` and opens the media table. The areas come from the check cache unless you pass `--force`. All check commands set `force_all` and `after=0`.
 
-Accepts 54 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
-
 ### `metadata`
+
+**Options:** 86 · **`--help` summary:** Uses API to modify db files without the need for downloading
 
 `ofscraper metadata --metadata check|update|complete`, with the usual user and area options (`--scrape-paid` takes a mode too). It uses the API to update the creators' `user_data.db` without downloading. The modes differ as follows:
 
@@ -88,13 +109,11 @@ Accepts 54 options. Its `--help` summary: The post_check subcommand gathers info
 
 `--mark-stray` marks database media that are missing from the scrape (within `--after` and `--before`) as locked. `--anon` uses anonymous credentials.
 
-Accepts 86 options. Its `--help` summary: Uses API to modify db files without the need for downloading.
-
 ### `db`
 
-`ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. `--post-id` and `--media-id` take one id, or several separated by commas or spaces. An id is decimal digits, from any script. A value with no id in it, or with anything else (such as `²` or `-4`), is a usage error. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV. `--unmark-permanent-skips` narrows the rows to the permanent `skip_download_script` skips and sets them back to not downloaded after printing them.
+**Options:** 61 · **`--help` summary:** Print information from the database
 
-Accepts 61 options. Its `--help` summary: Print information from the database.
+`ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. `--post-id` and `--media-id` take one id, or several separated by commas or spaces. An id is decimal digits, from any script. A value with no id in it, or with anything else (such as `²` or `-4`), is a usage error. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV. `--unmark-permanent-skips` narrows the rows to the permanent `skip_download_script` skips and sets them back to not downloaded after printing them.
 
 ### `move_creator_files` (separate entry point)
 
@@ -199,1076 +218,1085 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 
 #### `--version`
 
-- **Also:** `-v`
-- **Dest:** `version` · **Type:** flag · **Default:** off
-- **Commands:** all
-- Show the version and exit.
+**Also:** `-v` · **Type:** flag · **Default:** off · **Commands:** all
+
+Show the version and exit.
+
+**Dest:** `version`
 
 #### `--config`
 
-- **Also:** `-cg`
-- **Dest:** `config` · **Type:** text · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Change location of config folder/file
+**Also:** `-cg` · **Type:** text · **Default:** none · **Commands:** all
+
+Change location of config folder/file
+
+**Dest:** `config` · **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 
 #### `--profile`
 
-- **Also:** `-r`
-- **Dest:** `profile` · **Type:** text · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Change which profile to use. If not set, the default profile from config.json is used. Profiles are always inside the config.json parent directory.
+**Also:** `-r` · **Type:** text · **Default:** none · **Commands:** all
+
+Change which profile to use. If not set, the default profile from config.json is used. Profiles are always inside the config.json parent directory.
+
+**Dest:** `profile` · **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 
 #### `--site`
 
-- **Dest:** `site` · **Type:** one of `onlyfans`, `fansly` · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Site to use for this run: onlyfans or fansly. If not set, the profile's site.json decides, and OnlyFans is the default.
+**Type:** one of `onlyfans`, `fansly` · **Default:** none · **Commands:** all
+
+Site to use for this run: onlyfans or fansly. If not set, the profile's site.json decides, and OnlyFans is the default.
+
+**Dest:** `site` · **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 
 #### `--env-files`
 
-- **Dest:** `env_files` · **Type:** path; repeatable · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Environment file to load (.env, .yaml/.yml or .json). Can be given more than once; later files win.
-- **Note:** Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.
+**Type:** path; repeatable · **Default:** none · **Commands:** all
+
+Environment file to load (.env, .yaml/.yml or .json). Can be given more than once; later files win.
+
+Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.
+
+**Dest:** `env_files` · **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
 
 ### Logging Options
 
 #### `--output`
 
-- **Also:** `-p`
-- **Dest:** `output_level` · **Type:** one of `PROMPT`, `LOW`, `NORMAL`, `DEBUG` · **Default:** `'NORMAL'`
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Set console output log level
-- **Note:** `LOW` and `PROMPT` hide status lines and the live progress screen. Errors and prompts still show. `LOW` also shows warnings; `PROMPT` shows only errors.
+**Also:** `-p` · **Type:** one of `PROMPT`, `LOW`, `NORMAL`, `DEBUG` · **Default:** `'NORMAL'` · **Commands:** all
+
+Set console output log level
+
+`LOW` and `PROMPT` hide status lines and the live progress screen. Errors and prompts still show. `LOW` also shows warnings; `PROMPT` shows only errors.
+
+**Dest:** `output_level` · **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
 
 #### `--no-live-screen`
 
-- **Also:** `-nl`, `--no-live`, `--no-rich`
-- **Dest:** `no_rich` · **Type:** flag · **Default:** off
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Turn off Rich UI live display features
+**Also:** `-nl`, `--no-live`, `--no-rich` · **Type:** flag · **Default:** off · **Commands:** all
+
+Turn off Rich UI live display features
+
+**Dest:** `no_rich` · **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
 
 #### `--discord`
 
-- **Also:** `-dc`
-- **Dest:** `discord_level` · **Type:** one of `OFF`, `LOW`, `NORMAL` · **Default:** `'OFF'`
-- **Commands:** all
-- **Config fallback:** `discord`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Set Discord log level
+**Also:** `-dc` · **Type:** one of `OFF`, `LOW`, `NORMAL` · **Default:** `'OFF'` · **Commands:** all · **Config fallback:** `discord`
+
+Set Discord log level
+
+**Dest:** `discord_level` · **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
 
 #### `--log`
 
-- **Also:** `-l`
-- **Dest:** `log_level` · **Type:** one of `OFF`, `LOW`, `NORMAL`, `DEBUG`, `TRACE` · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Set log file level
+**Also:** `-l` · **Type:** one of `OFF`, `LOW`, `NORMAL`, `DEBUG`, `TRACE` · **Default:** none · **Commands:** all
+
+Set log file level
+
+**Dest:** `log_level` · **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
 
 ### Download Options
 
 #### `--no-auto-resume`
 
-- **Also:** `-ar`
-- **Dest:** `no_auto_resume` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `download_options.auto_resume`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Clean up temp .part files (removes resume ability)
-- **Note:** Turns `download_options.auto_resume` off for the run.
+**Also:** `-ar` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `download_options.auto_resume`
+
+Clean up temp .part files (removes resume ability)
+
+Turns `download_options.auto_resume` off for the run.
+
+**Dest:** `no_auto_resume` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 #### `--downloadbars`
 
-- **Also:** `-db`, `--download-bars`, `--download-bar`
-- **Dest:** `downloadbars` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `advanced_options.downloadbars`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Show individual download progress bars
+**Also:** `-db`, `--download-bars`, `--download-bar` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `advanced_options.downloadbars`
+
+Show individual download progress bars
+
+**Dest:** `downloadbars` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 #### `--downloadsem`
 
-- **Also:** `-sd`, `--downloadsems`, `--download-sems`, `--download-sem`, `--sems`, `--sem`
-- **Dest:** `download_sem` · **Type:** integer · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `performance_options.download_sems`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Number of downloads at the same time (overrides performance_options.download_sems).
+**Also:** `-sd`, `--downloadsems`, `--download-sems`, `--download-sem`, `--sems`, `--sem` · **Type:** integer · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `performance_options.download_sems`
+
+Number of downloads at the same time (overrides performance_options.download_sems).
+
+**Dest:** `download_sem` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 #### `--download-limit`
 
-- **Also:** `-dl`
-- **Dest:** `download_limit` · **Type:** text, parsed by `parse_size` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `performance_options.download_limit`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Maximum download speed per second. Accepts a human-readable size ('10MB') or bytes per second.
-- **Note:** Values below 1024 bytes per second are raised to 1024. All downloads in the run share the limit.
+**Also:** `-dl` · **Type:** text, parsed by `parse_size` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `performance_options.download_limit`
+
+Maximum download speed per second. Accepts a human-readable size ('10MB') or bytes per second.
+
+Values below 1024 bytes per second are raised to 1024. All downloads in the run share the limit.
+
+**Dest:** `download_limit` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 #### `--allow-dupes`
 
-- **Also:** `-ad`, `--allow-dupe-downloads`, `--no-allow-dupes`
-- **Dest:** `allow_dupe_downloads` · **Type:** flag · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Download media that is in several posts once for each post, instead of once (default: ALLOW_DUPE_MEDIA, off)
-- **Note:** Without this option, `ALLOW_DUPE_MEDIA` decides (`merged_settings`); `--no-allow-dupes` turns it off for the run. When on, media appearing in several posts is downloaded once per post, and each copy is tracked per `(media_id, post_id)` (`downloaded_media_ids`), so later runs still download copies from posts not yet saved. Applies to OnlyFans and Fansly. Each copy gets its own file (see `file_options.filename_collision`) and its own `medias` row update. A Purchased copy is downloaded like any other post's copy, even if the media is also in Messages or another post. However, a message listed in Purchased under the same ID counts as one post and is downloaded once. The `metadata` command and the Fansly silent-video check read each post's own record. Copies already marked downloaded by a run without this option still count as downloaded.
+**Also:** `-ad`, `--allow-dupe-downloads`, `--no-allow-dupes` · **Type:** flag · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Download media that is in several posts once for each post, instead of once (default: ALLOW_DUPE_MEDIA, off)
+
+Without this option, `ALLOW_DUPE_MEDIA` decides (`merged_settings`); `--no-allow-dupes` turns it off for the run. When on, media appearing in several posts is downloaded once per post, and each copy is tracked per `(media_id, post_id)` (`downloaded_media_ids`), so later runs still download copies from posts not yet saved. Applies to OnlyFans and Fansly. Each copy gets its own file (see `file_options.filename_collision`) and its own `medias` row update. A Purchased copy is downloaded like any other post's copy, even if the media is also in Messages or another post. However, a message listed in Purchased under the same ID counts as one post and is downloaded once. The `metadata` command and the Fansly silent-video check read each post's own record. Copies already marked downloaded by a run without this option still count as downloaded.
+
+**Dest:** `allow_dupe_downloads` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 ### Media Filters Options
 
 #### `--quality`
 
-- **Also:** `-q`
-- **Dest:** `quality` · **Type:** one of `240`, `720`, `source` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Lowest video quality to accept (downloads the smallest available at or above it, or source)
-- **Note:** The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.
+**Also:** `-q` · **Type:** one of `240`, `720`, `source` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Lowest video quality to accept (downloads the smallest available at or above it, or source)
+
+The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.
+
+**Dest:** `quality` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--mediatype`
 
-- **Also:** `-mt`, `--mediatypes`, `--media-types`, `--media-type`
-- **Dest:** `mediatypes` · **Type:** one of `Videos`, `Audios`, `Images`; repeatable · **Default:** `[]`
-- **Commands:** all
-- **Config fallback:** `download_options.filter`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Filter by media type (Videos, Audios, Images)
+**Also:** `-mt`, `--mediatypes`, `--media-types`, `--media-type` · **Type:** one of `Videos`, `Audios`, `Images`; repeatable · **Default:** `[]` · **Commands:** all · **Config fallback:** `download_options.filter`
+
+Filter by media type (Videos, Audios, Images)
+
+**Dest:** `mediatypes` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--size-max`
 
-- **Also:** `-sx`
-- **Dest:** `size_max` · **Type:** text, parsed by `parse_size` · **Default:** none
-- **Commands:** all
-- **Config fallback:** `content_filter_options.file_size_max`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)
+**Also:** `-sx` · **Type:** text, parsed by `parse_size` · **Default:** none · **Commands:** all · **Config fallback:** `content_filter_options.file_size_max`
+
+Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)
+
+**Dest:** `size_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--size-min`
 
-- **Also:** `-sm`
-- **Dest:** `size_min` · **Type:** text, parsed by `parse_size` · **Default:** none
-- **Commands:** all
-- **Config fallback:** `content_filter_options.file_size_min`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)
+**Also:** `-sm` · **Type:** text, parsed by `parse_size` · **Default:** none · **Commands:** all · **Config fallback:** `content_filter_options.file_size_min`
+
+Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)
+
+**Dest:** `size_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--length-max`
 
-- **Also:** `-lx`
-- **Dest:** `length_max` · **Type:** integer range · **Default:** none
-- **Commands:** all
-- **Config fallback:** `content_filter_options.length_max`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Max duration in seconds (whole number, e.g. 90); only applies to videos
+**Also:** `-lx` · **Type:** integer range · **Default:** none · **Commands:** all · **Config fallback:** `content_filter_options.length_max`
+
+Max duration in seconds (whole number, e.g. 90); only applies to videos
+
+**Dest:** `length_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--length-min`
 
-- **Also:** `-lm`
-- **Dest:** `length_min` · **Type:** integer range · **Default:** none
-- **Commands:** all
-- **Config fallback:** `content_filter_options.length_min`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Min duration in seconds (whole number, e.g. 90); only applies to videos
+**Also:** `-lm` · **Type:** integer range · **Default:** none · **Commands:** all · **Config fallback:** `content_filter_options.length_min`
+
+Min duration in seconds (whole number, e.g. 90); only applies to videos
+
+**Dest:** `length_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--media-id`
 
-- **Also:** `-mid`
-- **Dest:** `media_id` · **Type:** text; repeatable · **Default:** none
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`, `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Filter media based on media id
+**Also:** `-mid` · **Type:** text; repeatable · **Default:** none · **Commands:** all
+
+Filter media based on media id
+
+**Dest:** `media_id` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`, `ofscraper/utils/args/parse/arguments/metadata_filters.py`
 
 #### `--max-media-count`
 
-- **Also:** `-mxc`
-- **Dest:** `max_count` · **Type:** integer · **Default:** `0`
-- **Commands:** main program, `manual`, `metadata`, `db`
-- **Config fallback:** `download_options.max_post_count`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Maximum number of media to process
+**Also:** `-mxc` · **Type:** integer · **Default:** `0` · **Commands:** main program, `manual`, `metadata`, `db` · **Config fallback:** `download_options.max_post_count`
+
+Maximum number of media to process
+
+**Dest:** `max_count` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--media-sort`
 
-- **Also:** `-mst`
-- **Dest:** `mediasort` · **Type:** one of `random`, `text`, `text`, `date`, `filename` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/media_content.py`
-- Changes media processing order before actions (e.g. for download)
+**Also:** `-mst` · **Type:** one of `random`, `text`, `text`, `date`, `filename` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Changes media processing order before actions (e.g. for download)
+
+**Dest:** `mediasort` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--media-desc`
 
-- **Also:** `-mdc`
-- **Dest:** `media_desc` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Sort the media list in descending order
+**Also:** `-mdc` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Sort the media list in descending order
+
+**Dest:** `media_desc` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--force-all`
 
-- **Also:** `-e`, `--dupe`, `--dupe-all`
-- **Dest:** `force_all` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Download all found files regardless of database presence
+**Also:** `-e`, `--dupe`, `--dupe-all` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `metadata`
+
+Download all found files regardless of database presence
+
+**Dest:** `force_all` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--force-model-unique`
 
-- **Also:** `-eq`, `--dupe-model-unique`, `--dupe-model`
-- **Dest:** `force_model_unique` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Only download found files with media ids not present for the current model in the database
+**Also:** `-eq`, `--dupe-model-unique`, `--dupe-model` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `metadata`
+
+Only download found files with media ids not present for the current model in the database
+
+**Dest:** `force_model_unique` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--before`
 
-- **Also:** `-be`
-- **Dest:** `before` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `manual`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Process media from posts at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
-- **Note:** On Fansly, a timeline or message scan starts at this date instead of the newest post, skipping newer pages. With `--after`, only pages in that range are fetched. Walls (the Labels area) and purchases are still scanned normally.
+**Also:** `-be` · **Type:** Arrow · **Default:** none · **Commands:** main program, `manual`, `metadata`
+
+Process media from posts at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
+
+On Fansly, a timeline or message scan starts at this date instead of the newest post, skipping newer pages. With `--after`, only pages in that range are fetched. Walls (the Labels area) and purchases are still scanned normally.
+
+**Dest:** `before` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--after`
 
-- **Also:** `-af`
-- **Dest:** `after` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `manual`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Process media from posts at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
+**Also:** `-af` · **Type:** Arrow · **Default:** none · **Commands:** main program, `manual`, `metadata`
+
+Process media from posts at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
+
+**Dest:** `after` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--redownload`
 
-- **Also:** `-rd`, `--re-download`
-- **Dest:** `redownload` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Forces scanning and redownloading of all files in selected post types
-- **Note:** Sets `force_all`, `--after 2000` and `--before` tomorrow for the run. Every item is scanned and downloaded again. The merge happens in `merged_settings`.
+**Also:** `-rd`, `--re-download` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `metadata`
+
+Forces scanning and redownloading of all files in selected post types
+
+Sets `force_all`, `--after 2000` and `--before` tomorrow for the run. Every item is scanned and downloaded again. The merge happens in `merged_settings`.
+
+**Dest:** `redownload` · **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
 
 #### `--preview`
 
-- **Also:** `-pv`, `-npv`, `--no-preview`
-- **Dest:** `preview` · **Type:** flag · **Default:** none
-- **Commands:** `db`
-- Filter media by preview status. [select one --preview or --no-preview]
+**Also:** `-pv`, `-npv`, `--no-preview` · **Type:** flag · **Default:** none · **Commands:** `db`
+
+Filter media by preview status. [select one --preview or --no-preview]
+
+**Dest:** `preview`
 
 #### `--created-before`
 
-- **Also:** `-cb`
-- **Dest:** `created_before` · **Type:** Arrow · **Default:** none
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Only media created on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+**Also:** `-cb` · **Type:** Arrow · **Default:** none · **Commands:** `db`
+
+Only media created on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+
+**Dest:** `created_before` · **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
 
 #### `--created-after`
 
-- **Also:** `-cf`
-- **Dest:** `created_after` · **Type:** Arrow · **Default:** none
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Only media created on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+**Also:** `-cf` · **Type:** Arrow · **Default:** none · **Commands:** `db`
+
+Only media created on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+
+**Dest:** `created_after` · **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
 
 ### Filename Modification Options
 
 #### `--original`
 
-- **Also:** `-g`
-- **Dest:** `original` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `file_options.truncation_default`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- Don't truncate long paths
-- **Note:** Turns off file name truncation for the run, whatever `file_options.truncation_default` says.
+**Also:** `-g` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `file_options.truncation_default`
+
+Don't truncate long paths
+
+Turns off file name truncation for the run, whatever `file_options.truncation_default` says.
+
+**Dest:** `original` · **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
 
 #### `--space-replacer`
 
-- **Also:** `-sr`
-- **Dest:** `space_replacer` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `file_options.space_replacer`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- Character to replace spaces with
+**Also:** `-sr` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `file_options.space_replacer`
+
+Character to replace spaces with
+
+**Dest:** `space_replacer` · **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
 
 #### `--textlength`
 
-- **Also:** `-tl`
-- **Dest:** `textlength` · **Type:** integer · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `file_options.textlength`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- Max length of text
+**Also:** `-tl` · **Type:** integer · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `file_options.textlength`
+
+Max length of text
+
+**Dest:** `textlength` · **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
 
 #### `--text-type`
 
-- **Also:** `-tt`
-- **Dest:** `text_type` · **Type:** one of `word`, `letter` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `file_options.text_type_default`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- Measure text length by word or letter
+**Also:** `-tt` · **Type:** one of `word`, `letter` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `file_options.text_type_default`
+
+Measure text length by word or letter
+
+**Dest:** `text_type` · **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
 
 ### Posts Filters Options
 
 #### `--posts`
 
-- **Also:** `-o`, `--post`
-- **Dest:** `posts` · **Type:** one of `Highlights`, `All`, `Archived`, `Messages`, `Timeline`, `Pinned`, `Streams`, `Stories`, `Purchased`, `Profile`, `Labels`, `Labels+`, `Labels*`; repeatable · **Default:** `[]`
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Select areas for batch actions (comma or space separated). Note: 'all' excludes labels unless OFSC_INCLUDE_LABELS_ALL is on. To include them, use 'all,labels' or specific tags like 'labels+' or 'labels*'.
+**Also:** `-o`, `--post` · **Type:** one of `Highlights`, `All`, `Archived`, `Messages`, `Timeline`, `Pinned`, `Streams`, `Stories`, `Purchased`, `Profile`, `Labels`, `Labels+`, `Labels*`; repeatable · **Default:** `[]` · **Commands:** main program, `metadata`, `db`
+
+Select areas for batch actions (comma or space separated). Note: 'all' excludes labels unless OFSC_INCLUDE_LABELS_ALL is on. To include them, use 'all,labels' or specific tags like 'labels+' or 'labels*'.
+
+**Dest:** `posts` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--download-area`
 
-- **Also:** `-da`
-- **Dest:** `download_area` · **Type:** one of `Highlights`, `All`, `Archived`, `Messages`, `Timeline`, `Pinned`, `Stories`, `Purchased`, `Profile`, `Streams`, `Labels`, `Labels+`, `Labels*`; repeatable · **Default:** `[]`
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Perform download in specified areas (comma or space separated). Has preference over --posts for download action
+**Also:** `-da` · **Type:** one of `Highlights`, `All`, `Archived`, `Messages`, `Timeline`, `Pinned`, `Stories`, `Purchased`, `Profile`, `Streams`, `Labels`, `Labels+`, `Labels*`; repeatable · **Default:** `[]` · **Commands:** main program
+
+Perform download in specified areas (comma or space separated). Has preference over --posts for download action
+
+**Dest:** `download_area` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--like-area`
 
-- **Also:** `-la`
-- **Dest:** `like_area` · **Type:** one of `All`, `Archived`, `Timeline`, `Pinned`, `Labels`, `Streams`; repeatable · **Default:** `[]`
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Perform like/unlike in selected areas (comma or space separated). Has preference over --posts for like action
+**Also:** `-la` · **Type:** one of `All`, `Archived`, `Timeline`, `Pinned`, `Labels`, `Streams`; repeatable · **Default:** `[]` · **Commands:** main program
+
+Perform like/unlike in selected areas (comma or space separated). Has preference over --posts for like action
+
+**Dest:** `like_area` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--protected-only`
 
-- **Also:** `-to`, `-no`, `--normal-only`
-- **Dest:** `download_type` · **Type:** flag · **Default:** none
-- **Commands:** main program, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`, `db`
-- Filter downloads by type. --protected-only: For content that requires decryption. --normal-only: For content that does not require decryption.
+**Also:** `-to`, `-no`, `--normal-only` · **Type:** flag · **Default:** none · **Commands:** main program, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`, `db`
+
+Filter downloads by type. --protected-only: For content that requires decryption. --normal-only: For content that does not require decryption.
+
+**Dest:** `download_type`
 
 #### `--post-id`
 
-- **Also:** `-pd`, `--postid`
-- **Dest:** `post_id` · **Type:** text; repeatable · **Default:** none
-- **Commands:** main program, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts based on post id
+**Also:** `-pd`, `--postid` · **Type:** text; repeatable · **Default:** none · **Commands:** main program, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`, `db`
+
+Filter posts based on post id
+
+**Dest:** `post_id` · **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--max-post-count`
 
-- **Also:** `-xc`
-- **Dest:** `max_count` · **Type:** integer · **Default:** `0`
-- **Commands:** main program
-- **Config fallback:** `download_options.max_post_count`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Maximum number of media items to process per creator (same setting as --max-media-count).
+**Also:** `-xc` · **Type:** integer · **Default:** `0` · **Commands:** main program · **Config fallback:** `download_options.max_post_count`
+
+Maximum number of media items to process per creator (same setting as --max-media-count).
+
+**Dest:** `max_count` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--post-sort`
 
-- **Also:** `-pst`
-- **Dest:** `post_sort` · **Type:** one of `date` · **Default:** `'date'`
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Changes post processing order before actions (e.g. for like or unlike)
+**Also:** `-pst` · **Type:** one of `date` · **Default:** `'date'` · **Commands:** main program, `metadata`
+
+Changes post processing order before actions (e.g. for like or unlike)
+
+**Dest:** `post_sort` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--post-desc`
 
-- **Also:** `-pdc`
-- **Dest:** `post_desc` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Sort the post list in descending order (e.g. for like or unlike)
+**Also:** `-pdc` · **Type:** flag · **Default:** off · **Commands:** main program
+
+Sort the post list in descending order (e.g. for like or unlike)
+
+**Dest:** `post_desc` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--filter`
 
-- **Also:** `-ft`
-- **Dest:** `filter` · **Type:** text; repeatable · **Default:** `['.*']`
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts by regex (case-sensitive if uppercase characters included) uses raw Python string
+**Also:** `-ft` · **Type:** text; repeatable · **Default:** `['.*']` · **Commands:** main program, `metadata`
+
+Filter posts by regex (case-sensitive if uppercase characters included) uses raw Python string
+
+**Dest:** `filter` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--neg-filter`
 
-- **Also:** `-nf`
-- **Dest:** `neg_filter` · **Type:** text; repeatable · **Default:** `[]`
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts to exclude those matching regex (case-sensitive if uppercase characters included) uses raw Python string
+**Also:** `-nf` · **Type:** text; repeatable · **Default:** `[]` · **Commands:** main program, `metadata`
+
+Filter posts to exclude those matching regex (case-sensitive if uppercase characters included) uses raw Python string
+
+**Dest:** `neg_filter` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--block-ads`
 
-- **Also:** `-ba`
-- **Dest:** `block_ads` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts with regex to block posts with common words for advertisements
+**Also:** `-ba` · **Type:** flag · **Default:** off · **Commands:** main program
+
+Filter posts with regex to block posts with common words for advertisements
+
+**Dest:** `block_ads` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--label`
 
-- **Also:** `-lb`
-- **Dest:** `label` · **Type:** text; repeatable · **Default:** `[]`
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter by label
+**Also:** `-lb` · **Type:** text; repeatable · **Default:** `[]` · **Commands:** main program, `metadata`
+
+Filter by label
+
+**Dest:** `label` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--mass-only` (main program)
 
-- **Also:** `-mm`, `-ms`, `--mass-skip`
-- **Dest:** `mass_msg` · **Type:** flag · **Default:** none
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
+**Also:** `-mm`, `-ms`, `--mass-skip` · **Type:** flag · **Default:** none · **Commands:** main program
+
+Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
+
+**Dest:** `mass_msg` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--only-timed`
 
-- **Also:** `-ok`, `-sk`, `--skip-timed`
-- **Dest:** `timed_only` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`
-- Flag for enabling/disabling promotional or temporary posts [select one --only-timed or --skip-timed]
+**Also:** `-ok`, `-sk`, `--skip-timed` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`
+
+Flag for enabling/disabling promotional or temporary posts [select one --only-timed or --skip-timed]
+
+**Dest:** `timed_only`
 
 #### `--scrape-paid`
 
-- **Also:** `-sp`
-- **Dest:** `scrape_paid` · **Type:** flag · **Default:** off
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`, `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- Scrape entire paid page (can take a very long time)
+**Also:** `-sp` · **Type:** flag · **Default:** off · **Commands:** main program, `metadata`
+
+Scrape entire paid page (can take a very long time)
+
+**Dest:** `scrape_paid` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`, `ofscraper/utils/args/parse/group_bundles/metadata.py`
 
 #### `--text` (main program)
 
-- **Also:** `-t`, `--download-text`
-- **Dest:** `text` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download text files alongside media
+**Also:** `-t`, `--download-text` · **Type:** flag · **Default:** off · **Commands:** main program
+
+Download text files alongside media
+
+**Dest:** `text` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--text-only` (main program)
 
-- **Also:** `-tx`, `--download-text-only`
-- **Dest:** `text_only` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download ONLY text files, skipping all media
-- **Note:** Also turns on `--text`. Text files are written and media is skipped.
+**Also:** `-tx`, `--download-text-only` · **Type:** flag · **Default:** off · **Commands:** main program
+
+Download ONLY text files, skipping all media
+
+Also turns on `--text`. Text files are written and media is skipped.
+
+**Dest:** `text_only` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--mass-only` (`metadata`)
 
-- **Also:** `-mm`, `--mass-skip`
-- **Dest:** `mass_msg` · **Type:** flag · **Default:** none
-- **Commands:** `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
+**Also:** `-mm`, `--mass-skip` · **Type:** flag · **Default:** none · **Commands:** `metadata`
+
+Flag for enabling/disabling mass content or promos [select one --mass-only or --mass-skip]
+
+**Dest:** `mass_msg` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 ### Automation Options
 
 #### `--action`
 
-- **Also:** `-a`, `--actions`
-- **Dest:** `actions` · **Type:** one of `unlike`, `like`, `download`; repeatable · **Default:** `[]`
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Select batch action(s) to perform [like,unlike,download]. Accepts space or comma-separated list. Like and unlike cannot be combined.
+**Also:** `-a`, `--actions` · **Type:** one of `unlike`, `like`, `download`; repeatable · **Default:** `[]` · **Commands:** main program
+
+Select batch action(s) to perform [like,unlike,download]. Accepts space or comma-separated list. Like and unlike cannot be combined.
+
+**Dest:** `actions` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--daemon`
 
-- **Also:** `-d`
-- **Dest:** `daemon` · **Type:** float · **Default:** none
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Run script in the background. Set value for how many minutes between script runs
+**Also:** `-d` · **Type:** float · **Default:** none · **Commands:** main program
+
+Run script in the background. Set value for how many minutes between script runs
+
+**Dest:** `daemon` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live`
 
-- **Dest:** `live` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Fansly only: record the selected creators (all followed creators without -u) who are live now, then continue
+**Type:** flag · **Default:** off · **Commands:** main program
+
+Fansly only: record the selected creators (all followed creators without -u) who are live now, then continue
+
+**Dest:** `live` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-watch`
 
-- **Dest:** `live_watch` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Fansly only: keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes
+**Type:** flag · **Default:** off · **Commands:** main program
+
+Fansly only: keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes
+
+**Dest:** `live_watch` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-interval`
 
-- **Dest:** `live_interval` · **Type:** integer range · **Default:** none
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Fansly only: seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)
+**Type:** integer range · **Default:** none · **Commands:** main program
+
+Fansly only: seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)
+
+**Dest:** `live_interval` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-max`
 
-- **Dest:** `live_max` · **Type:** integer range · **Default:** none
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Fansly only: most livestreams recorded at the same time (default 2)
+**Type:** integer range · **Default:** none · **Commands:** main program
+
+Fansly only: most livestreams recorded at the same time (default 2)
+
+**Dest:** `live_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-chat`
 
-- **Dest:** `live_chat` · **Type:** flag · **Default:** off
-- **Commands:** main program
-- **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
-- Fansly only: also save livestream chat to a .jsonl file (read-only; off by default)
+**Type:** flag · **Default:** off · **Commands:** main program
+
+Fansly only: also save livestream chat to a .jsonl file (read-only; off by default)
+
+**Dest:** `live_chat` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 ### User Selection Options
 
 #### `--usernames` (`usernames`)
 
-- **Also:** `-u`, `--username`, `--users`, `--user`
-- **Dest:** `usernames` · **Type:** text; repeatable · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Select which usernames to process (name,name2). Set to ALL for all users
+**Also:** `-u`, `--username`, `--users`, `--user` · **Type:** text; repeatable · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Select which usernames to process (name,name2). Set to ALL for all users
+
+**Dest:** `usernames` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
 
 #### `--excluded-username`
 
-- **Also:** `-eu`
-- **Dest:** `excluded_username` · **Type:** text; repeatable · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
-- Select which usernames to exclude (name,name2). Has preference over --username. Also skips these models during --scrape-paid, e.g. --scrape-paid --excluded-username name
+**Also:** `-eu` · **Type:** text; repeatable · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Select which usernames to exclude (name,name2). Has preference over --username. Also skips these models during --scrape-paid, e.g. --scrape-paid --excluded-username name
+
+**Dest:** `excluded_username` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
 
 #### `--user_list`
 
-- **Also:** `-ul`, `--user-list`, `--userlist`, `--userlists`, `--user-lists`
-- **Dest:** `userlist` · **Type:** text; repeatable · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Config fallback:** `advanced_options.default_user_list`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
-- Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF
+**Also:** `-ul`, `--user-list`, `--userlist`, `--userlists`, `--user-lists` · **Type:** text; repeatable · **Default:** none · **Commands:** main program, `metadata`, `db` · **Config fallback:** `advanced_options.default_user_list`
+
+Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF
+
+**Dest:** `userlist` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
 
 #### `--black_list`
 
-- **Also:** `-bl`, `--black-lists`, `--blacklist`, `--blacklists`, `--black-list`
-- **Dest:** `blacklist` · **Type:** text; repeatable · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Config fallback:** `advanced_options.default_black_list`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
-- Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF
+**Also:** `-bl`, `--black-lists`, `--blacklist`, `--blacklists`, `--black-list` · **Type:** text; repeatable · **Default:** none · **Commands:** main program, `metadata`, `db` · **Config fallback:** `advanced_options.default_black_list`
+
+Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF
+
+**Dest:** `blacklist` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_select.py`
 
 ### User List Filter Options
 
 #### `--current-price`
 
-- **Also:** `-cp`
-- **Dest:** `current_price` · **Type:** one of `paid`, `free` · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price
+**Also:** `-cp` · **Type:** one of `paid`, `free` · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price
+
+**Dest:** `current_price` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
 
 #### `--renewal-price`
 
-- **Also:** `-rp`
-- **Dest:** `renewal_price` · **Type:** one of `paid`, `free` · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Filter accounts based on either the lowest claimable promotional price, or regular price
+**Also:** `-rp` · **Type:** one of `paid`, `free` · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts based on either the lowest claimable promotional price, or regular price
+
+**Dest:** `renewal_price` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
 
 #### `--regular-price`
 
-- **Also:** `-gp`
-- **Dest:** `regular_price` · **Type:** one of `paid`, `free` · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Filter accounts based on the regular price
+**Also:** `-gp` · **Type:** one of `paid`, `free` · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts based on the regular price
+
+**Dest:** `regular_price` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
 
 #### `--promo-price`
 
-- **Also:** `-pp`
-- **Dest:** `promo_price` · **Type:** one of `paid`, `free` · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Filter accounts based on either the lowest promotional price regardless of claimability, or regular price
+**Also:** `-pp` · **Type:** one of `paid`, `free` · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts based on either the lowest promotional price regardless of claimability, or regular price
+
+**Dest:** `promo_price` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
 
 #### `--last-seen-only`
 
-- **Also:** `-lo`, `-ls`, `--last-seen-skip`
-- **Dest:** `last_seen` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- Flag for filtering accounts based on last seen being visible [select one --last-seen-only or --last-seen-skip]
+**Also:** `-lo`, `-ls`, `--last-seen-skip` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for filtering accounts based on last seen being visible [select one --last-seen-only or --last-seen-skip]
+
+**Dest:** `last_seen`
 
 #### `--free-trial-only`
 
-- **Also:** `-fo`, `-fs`, `--free-trial-skip`
-- **Dest:** `free_trial` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
-- Flag for enabling/disabling accounts with free trial [must be normally paid] [select one --free-trial-only or --free-trial-skip]
+**Also:** `-fo`, `-fs`, `--free-trial-skip` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for enabling/disabling accounts with free trial [must be normally paid] [select one --free-trial-only or --free-trial-skip]
+
+**Dest:** `free_trial` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 
 #### `--promo-only`
 
-- **Also:** `-po`, `-ps`, `--promo-skip`
-- **Dest:** `promo` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- Flag for enabling/disabling accounts with a claimable promo price [select one --promo-only or --promo-skip]
+**Also:** `-po`, `-ps`, `--promo-skip` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for enabling/disabling accounts with a claimable promo price [select one --promo-only or --promo-skip]
+
+**Dest:** `promo`
 
 #### `--all-promo-only`
 
-- **Also:** `-ao`, `--all-promo-skip`
-- **Dest:** `all_promo` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Flag for enabling/disabling accounts with any promo price [select one --all-promo-only or --all-promo-skip]
+**Also:** `-ao`, `--all-promo-skip` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for enabling/disabling accounts with any promo price [select one --all-promo-only or --all-promo-skip]
+
+**Dest:** `all_promo` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
 
 #### `--active-subscription`
 
-- **Also:** `-ts`, `--active-subscriptions`, `-es`, `--expired-subscription`, `--expired-subscriptions`
-- **Dest:** `sub_status` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- Flag for enabling/disabling accounts with active or expired subscription [select one --active-subscription or --expired-subscription]
+**Also:** `-ts`, `--active-subscriptions`, `-es`, `--expired-subscription`, `--expired-subscriptions` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for enabling/disabling accounts with active or expired subscription [select one --active-subscription or --expired-subscription]
+
+**Dest:** `sub_status`
 
 #### `--renew-on`
 
-- **Also:** `-ro`, `-rf`, `--renew-off`
-- **Dest:** `renewal` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- Flag for enabling/disabling accounts with the renew flag on [select one --renew-on or --renew-off]
+**Also:** `-ro`, `-rf`, `--renew-off` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Flag for enabling/disabling accounts with the renew flag on [select one --renew-on or --renew-off]
+
+**Dest:** `renewal`
 
 ### Advanced User List Filter Options
 
 #### `--promo-price-min`
 
-- **Also:** `-ppn`
-- **Dest:** `promo_price_min` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the lowest promo price matches or falls above the provided value
+**Also:** `-ppn` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the lowest promo price matches or falls above the provided value
+
+**Dest:** `promo_price_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--promo-price-max`
 
-- **Also:** `-ppm`
-- **Dest:** `promo_price_max` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the lowest promo price matches or falls below the provided value
+**Also:** `-ppm` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the lowest promo price matches or falls below the provided value
+
+**Dest:** `promo_price_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--regular-price-min`
 
-- **Also:** `-gpn`
-- **Dest:** `regular_price_min` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the regular price matches or falls above the provided value
+**Also:** `-gpn` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the regular price matches or falls above the provided value
+
+**Dest:** `regular_price_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--regular-price-max`
 
-- **Also:** `-gpm`
-- **Dest:** `regular_price_max` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the regular price matches or falls below the provided value
+**Also:** `-gpm` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the regular price matches or falls below the provided value
+
+**Dest:** `regular_price_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--current-price-min`
 
-- **Also:** `-cpn`
-- **Dest:** `current_price_min` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the current regular price matches or falls above the provided value
+**Also:** `-cpn` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the current regular price matches or falls above the provided value
+
+**Dest:** `current_price_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--current-price-max`
 
-- **Also:** `-cpm`
-- **Dest:** `current_price_max` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the current price matches or falls below the provided value
+**Also:** `-cpm` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the current price matches or falls below the provided value
+
+**Dest:** `current_price_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--renewal-price-min`
 
-- **Also:** `-rpn`
-- **Dest:** `renewal_price_min` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the renewal regular price matches or falls above the provided value
+**Also:** `-rpn` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the renewal regular price matches or falls above the provided value
+
+**Dest:** `renewal_price_min` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--renewal-price-max`
 
-- **Also:** `-rpm`
-- **Dest:** `renewal_price_max` · **Type:** integer · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts where the renewal price matches or falls below the provided value
+**Also:** `-rpm` · **Type:** integer · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts where the renewal price matches or falls below the provided value
+
+**Dest:** `renewal_price_max` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--last-seen-before`
 
-- **Also:** `-lsb`
-- **Dest:** `last_seen_before` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by last seen being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-lsb` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by last seen being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `last_seen_before` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--last-seen-after`
 
-- **Also:** `-lsa`
-- **Dest:** `last_seen_after` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by last seen being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-lsa` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by last seen being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `last_seen_after` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--expired-after`
 
-- **Also:** `-ea`
-- **Dest:** `expired_after` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-ea` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `expired_after` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--expired-before`
 
-- **Also:** `-eb`
-- **Dest:** `expired_before` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-eb` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `expired_before` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--subscribed-after`
 
-- **Also:** `-sa`
-- **Dest:** `subscribed_after` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by subscription date being after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-sa` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by subscription date being after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `subscribed_after` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 #### `--subscribed-before`
 
-- **Also:** `-sb`
-- **Dest:** `subscribed_before` · **Type:** Arrow · **Default:** none
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by subscription date being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+**Also:** `-sb` · **Type:** Arrow · **Default:** none · **Commands:** main program, `metadata`, `db`
+
+Filter accounts by subscription date being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
+
+**Dest:** `subscribed_before` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
 
 ### Model Sort & Processing Order Options
 
 #### `--sort`
 
-- **Also:** `-st`
-- **Dest:** `sort` · **Type:** one of `name`, `subscribed`, `expired`, `current-price`, `renewal-price`, `regular-price`, `promo-price`, `last-seen` · **Default:** `'Name'`
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_sort.py`
-- What to sort the model list by
+**Also:** `-st` · **Type:** one of `name`, `subscribed`, `expired`, `current-price`, `renewal-price`, `regular-price`, `promo-price`, `last-seen` · **Default:** `'Name'` · **Commands:** main program, `metadata`, `db`
+
+What to sort the model list by
+
+**Dest:** `sort` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_sort.py`
 
 #### `--desc`
 
-- **Also:** `-ds`
-- **Dest:** `desc` · **Type:** flag · **Default:** off
-- **Commands:** main program, `metadata`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/user_sort.py`
-- Sort the model list in descending order
+**Also:** `-ds` · **Type:** flag · **Default:** off · **Commands:** main program, `metadata`, `db`
+
+Sort the model list in descending order
+
+**Dest:** `desc` · **Defined in:** `ofscraper/utils/args/parse/arguments/user_sort.py`
 
 ### Advanced Search & Processing Options
 
 #### `--users-first`
 
-- **Also:** `-uf`, `--user-first`, `--usersfirst`, `--userfirst`
-- **Dest:** `users_first` · **Type:** flag · **Default:** off
-- **Commands:** main program, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_processing.py`
-- Process all users first rather than one at a time (affects --action)
+**Also:** `-uf`, `--user-first`, `--usersfirst`, `--userfirst` · **Type:** flag · **Default:** off · **Commands:** main program, `metadata`
+
+Process all users first rather than one at a time (affects --action)
+
+**Dest:** `users_first` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_processing.py`
 
 #### `--username-individual-search`
 
-- **Also:** `-fi`, `--user-individual-search`, `-fl`, `--username-list-search`, `--user-list-search`
-- **Dest:** `username_search` · **Type:** flag · **Default:** none
-- **Commands:** main program, `metadata`
-- How to find the --username creators. -fi: look up each username on its own. -fl: fetch your subscriptions and lists, then pick the names. With neither, -fi is used when --username has no more than one name per 12 subscriptions, otherwise -fl.
+**Also:** `-fi`, `--user-individual-search`, `-fl`, `--username-list-search`, `--user-list-search` · **Type:** flag · **Default:** none · **Commands:** main program, `metadata`
+
+How to find the --username creators. -fi: look up each username on its own. -fl: fetch your subscriptions and lists, then pick the names. With neither, -fi is used when --username has no more than one name per 12 subscriptions, otherwise -fl.
+
+**Dest:** `username_search`
 
 ### Program Scripts
 
 #### `--after-action-script`
 
-- **Also:** `-aas`
-- **Dest:** `after_action_script` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Config fallback:** `script_options.after_action_script`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script after an action for a model completes.
+**Also:** `-aas` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check` · **Config fallback:** `script_options.after_action_script`
+
+Runs a script after an action for a model completes.
+
+**Dest:** `after_action_script` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 #### `--naming-script`
 
-- **Also:** `-ns`
-- **Dest:** `naming_script` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Config fallback:** `script_options.naming_script`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script to generate the final filename or path for a media item.
+**Also:** `-ns` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check` · **Config fallback:** `script_options.naming_script`
+
+Runs a script to generate the final filename or path for a media item.
+
+**Dest:** `naming_script` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 #### `--post-script`
 
-- **Also:** `-ps`
-- **Dest:** `post_script` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Config fallback:** `script_options.post_script`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script after processing all users (e.g. after a full scrape).
+**Also:** `-ps` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check` · **Config fallback:** `script_options.post_script`
+
+Runs a script after processing all users (e.g. after a full scrape).
+
+**Dest:** `post_script` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 #### `--after-download-script`
 
-- **Also:** `-adl`
-- **Dest:** `after_download_script` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Config fallback:** `script_options.after_download_script`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script after a download completes.
+**Also:** `-adl` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check` · **Config fallback:** `script_options.after_download_script`
+
+Runs a script after a download completes.
+
+**Dest:** `after_download_script` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 #### `--skip-download-script`
 
-- **Also:** `-sdl`
-- **Dest:** `skip_download_script` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Config fallback:** `script_options.skip_download_script`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script to decide whether to skip a download.
+**Also:** `-sdl` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check` · **Config fallback:** `script_options.skip_download_script`
+
+Runs a script to decide whether to skip a download.
+
+**Dest:** `skip_download_script` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 #### `--retry-permanent-skips`
 
-- **Dest:** `retry_permanent_skips` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Ask the skip download script again about the files it skipped for good (skip-permanent) for the creators in this run
-- **Note:** Stops treating files skipped for good by `skip_download_script` (`medias.skip_permanent = 1`) as downloaded for this run, so they are passed to the script again for the selected creators. Areas are scanned in full unless `--after` is given, since those files can be in older posts. A file the script keeps is downloaded; `skip-permanent` keeps it skipped for good; a plain skip counts as skipped and resets it to not downloaded so the next run asks again. Without a script set, nothing skips them, so they download. Real downloads and other rows don't change.
+**Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
+
+Ask the skip download script again about the files it skipped for good (skip-permanent) for the creators in this run
+
+Stops treating files skipped for good by `skip_download_script` (`medias.skip_permanent = 1`) as downloaded for this run, so they are passed to the script again for the selected creators. Areas are scanned in full unless `--after` is given, since those files can be in older posts. A file the script keeps is downloaded; `skip-permanent` keeps it skipped for good; a plain skip counts as skipped and resets it to not downloaded so the next run asks again. Without a script set, nothing skips them, so they download. Real downloads and other rows don't change.
+
+**Dest:** `retry_permanent_skips` · **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 
 ### Advanced Program Options
 
 #### `--no-cache`
 
-- **Also:** `-nc`
-- **Dest:** `no_cache` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Disable cache and force a fresh sequential API scan
-- **Note:** Disables both the general cache and the API cache for the run, and turns off incremental downloads. Setting `advanced_options.cache-mode` to `disabled` in `config.json` does the same.
+**Also:** `-nc` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Disable cache and force a fresh sequential API scan
+
+Disables both the general cache and the API cache for the run, and turns off incremental downloads. Setting `advanced_options.cache-mode` to `disabled` in `config.json` does the same.
+
+**Dest:** `no_cache` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--no-api-cache`
 
-- **Also:** `-nca`
-- **Dest:** `no_api_cache` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Force a fresh sequential API scan
-- **Note:** Disables only the API response cache. Setting `advanced_options.cache-mode` to `api_disabled` does the same.
+**Also:** `-nca` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Force a fresh sequential API scan
+
+Disables only the API response cache. Setting `advanced_options.cache-mode` to `api_disabled` does the same.
+
+**Dest:** `no_api_cache` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--key-mode`
 
-- **Also:** `-k`
-- **Dest:** `key_mode` · **Type:** one of `cdrm`, `manual` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `cdm_options.key-mode-default`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Key mode for decrypting content (cdrm is deprecated: its service no longer works)
-- **Note:** `manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos fail with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.
+**Also:** `-k` · **Type:** one of `cdrm`, `manual` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `cdm_options.key-mode-default`
+
+Key mode for decrypting content (cdrm is deprecated: its service no longer works)
+
+`manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos fail with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.
+
+**Dest:** `key_mode` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--private-key`
 
-- **Also:** `-pk`
-- **Dest:** `private_key` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `cdm_options.private-key`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Private key path for manual key mode
+**Also:** `-pk` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `cdm_options.private-key`
+
+Private key path for manual key mode
+
+**Dest:** `private_key` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--client-id`
 
-- **Also:** `-ci`
-- **Dest:** `client_id` · **Type:** text · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `cdm_options.client-id`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Client ID path for manual key mode
+**Also:** `-ci` · **Type:** text · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `cdm_options.client-id`
+
+Client ID path for manual key mode
+
+**Dest:** `client_id` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--dynamic-rules`
 
-- **Also:** `-dr`, `--dynamic-rule`
-- **Dest:** `dynamic_rules` · **Type:** one of `digitalcriminals`, `manual`, `generic`, `xagler`, `rafa`, `dc`, `digital`, `digitals`, `digitalcriminal`, `datawhores` · **Default:** none
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Config fallback:** `advanced_options.dynamic-mode-default`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Dynamic signing rule source
+**Also:** `-dr`, `--dynamic-rule` · **Type:** one of `digitalcriminals`, `manual`, `generic`, `xagler`, `rafa`, `dc`, `digital`, `digitals`, `digitalcriminal`, `datawhores` · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `advanced_options.dynamic-mode-default`
+
+Dynamic signing rule source
+
+**Dest:** `dynamic_rules` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--update-profile`
 
-- **Also:** `-up`
-- **Dest:** `update_profile` · **Type:** flag · **Default:** off
-- **Commands:** all
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Get up-to-date profile info instead of using cache
+**Also:** `-up` · **Type:** flag · **Default:** off · **Commands:** all
+
+Get up-to-date profile info instead of using cache
+
+**Dest:** `update_profile` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 #### `--auth-fail`
 
-- **Also:** `-al`, `--auth-quit`
-- **Dest:** `auth_fail` · **Type:** flag · **Default:** off
-- **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Quit on authentication failure rather than prompting
+**Also:** `-al`, `--auth-quit` · **Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+Quit on authentication failure rather than prompting
+
+**Dest:** `auth_fail` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 ### Other options
 
 #### `--force`
 
-- **Also:** `-fo`, `--forced`, `--forced-scan`, `--force-scan`
-- **Dest:** `force` · **Type:** flag · **Default:** off
-- **Commands:** `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
-- Force retrieval of new posts info from API
+**Also:** `-fo`, `--forced`, `--forced-scan`, `--force-scan` · **Type:** flag · **Default:** off · **Commands:** `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
+
+Force retrieval of new posts info from API
+
+**Dest:** `force` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 
 #### `--text` (`manual`, `msg_check`, `paid_check`, `post_check`)
 
-- **Also:** `-tn`, `--download-text`
-- **Dest:** `text` · **Type:** flag · **Default:** off
-- **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download text files in addition to media
+**Also:** `-tn`, `--download-text` · **Type:** flag · **Default:** off · **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
+
+Download text files in addition to media
+
+**Dest:** `text` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--text-only` (`manual`, `msg_check`, `paid_check`, `post_check`)
 
-- **Also:** `-tp`, `--download-text-only`
-- **Dest:** `text_only` · **Type:** flag · **Default:** off
-- **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download text files, skipping media
-- **Note:** Also turns on `--text`. Text files are written and media is skipped.
+**Also:** `-tp`, `--download-text-only` · **Type:** flag · **Default:** off · **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
+
+Download text files, skipping media
+
+Also turns on `--text`. Text files are written and media is skipped.
+
+**Dest:** `text_only` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--url`
 
-- **Also:** `-u`
-- **Dest:** `url` · **Type:** text; repeatable · **Default:** none
-- **Commands:** `manual`, `msg_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Scan posts via space or comma separated list of URLs
+**Also:** `-u` · **Type:** text; repeatable · **Default:** none · **Commands:** `manual`, `msg_check`, `post_check`
+
+Scan posts via space or comma separated list of URLs
+
+**Dest:** `url` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
 
 #### `--file` (`file`)
 
-- **Also:** `-f`
-- **Dest:** `file` · **Type:** file; repeatable · **Default:** none
-- **Commands:** `manual`, `msg_check`, `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
-- Scan posts via a file with line-separated URL(s)
+**Also:** `-f` · **Type:** file; repeatable · **Default:** none · **Commands:** `manual`, `msg_check`, `post_check`
+
+Scan posts via a file with line-separated URL(s)
+
+**Dest:** `file` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 
 #### `--usernames` (`check_usernames`)
 
-- **Also:** `-u`, `--username`, `--users`, `--user`
-- **Dest:** `check_usernames` · **Type:** text; repeatable · **Default:** none
-- **Commands:** `story_check`, `paid_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Creators to scan, by username (name,name2).
+**Also:** `-u`, `--username`, `--users`, `--user` · **Type:** text; repeatable · **Default:** none · **Commands:** `story_check`, `paid_check`
+
+Creators to scan, by username (name,name2).
+
+**Dest:** `check_usernames` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
 
 #### `--file` (`file_usernames`)
 
-- **Also:** `-f`
-- **Dest:** `file_usernames` · **Type:** file; repeatable · **Default:** none
-- **Commands:** `story_check`, `paid_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
-- Scan via a file with line-separated username(s)
+**Also:** `-f` · **Type:** file; repeatable · **Default:** none · **Commands:** `story_check`, `paid_check`
+
+Scan via a file with line-separated username(s)
+
+**Dest:** `file_usernames` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`
 
 #### `--export`
 
-- **Also:** `-ep`
-- **Dest:** `export` · **Type:** path · **Default:** none
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
-- Export the table as a CSV file
+**Also:** `-ep` · **Type:** path · **Default:** none · **Commands:** `db`
+
+Export the table as a CSV file
+
+**Dest:** `export` · **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
 
 #### `--unmark-permanent-skips`
 
-- **Dest:** `unmark_permanent_skips` · **Type:** flag · **Default:** off
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
-- Un-mark the files the skip download script skipped for good (skip-permanent) among the selected rows, so the next run asks the script about them again. Filter with the creator, post id and media id options
-- **Note:** `ofscraper db` only. From the rows selected by the other options (creator, `--post-id`, `--media-id` and the media filters), keeps only those `skip_download_script` skipped for good, prints them, and resets them to not downloaded with `skip_permanent` cleared. The next normal run asks the script about them again. Because download state is shared across a media item's rows, its rows in other posts change too. Other rows never change. Without this flag, `db` is read-only.
+**Type:** flag · **Default:** off · **Commands:** `db`
+
+Un-mark the files the skip download script skipped for good (skip-permanent) among the selected rows, so the next run asks the script about them again. Filter with the creator, post id and media id options
+
+`ofscraper db` only. From the rows selected by the other options (creator, `--post-id`, `--media-id` and the media filters), keeps only those `skip_download_script` skipped for good, prints them, and resets them to not downloaded with `skip_permanent` cleared. The next normal run asks the script about them again. Because download state is shared across a media item's rows, its rows in other posts change too. Other rows never change. Without this flag, `db` is read-only.
+
+**Dest:** `unmark_permanent_skips` · **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
 
 ### Table Filter Options
 
 #### `--unlocked`
 
-- **Also:** `-ucl`, `-lc`, `--locked`
-- **Dest:** `unlocked` · **Type:** flag · **Default:** none
-- **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- Filter media by whether it's unlocked. [select one --unlocked or --locked]
+**Also:** `-ucl`, `-lc`, `--locked` · **Type:** flag · **Default:** none · **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
+
+Filter media by whether it's unlocked. [select one --unlocked or --locked]
+
+**Dest:** `unlocked`
 
 #### `--downloaded`
 
-- **Also:** `-dwl`, `-ndw`, `--not-downloaded`
-- **Dest:** `downloaded` · **Type:** flag · **Default:** none
-- **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- Filter media by whether it's downloaded. [select one --downloaded or --not-downloaded]
+**Also:** `-dwl`, `-ndw`, `--not-downloaded` · **Type:** flag · **Default:** none · **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
+
+Filter media by whether it's downloaded. [select one --downloaded or --not-downloaded]
+
+**Dest:** `downloaded`
 
 #### `--posted-after`
 
-- **Also:** `-pf`
-- **Dest:** `posted_after` · **Type:** Arrow · **Default:** none
-- **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Only media from posts posted on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+**Also:** `-pf` · **Type:** Arrow · **Default:** none · **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
+
+Only media from posts posted on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+
+**Dest:** `posted_after` · **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
 
 #### `--posted-before`
 
-- **Also:** `-pb`
-- **Dest:** `posted_before` · **Type:** Arrow · **Default:** none
-- **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Only media from posts posted on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+**Also:** `-pb` · **Type:** Arrow · **Default:** none · **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
+
+Only media from posts posted on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
+
+**Dest:** `posted_before` · **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
 
 ### Content Options
 
 #### `--timeline-strict`
 
-- **Also:** `-tls`
-- **Dest:** `timeline_strict` · **Type:** flag · **Default:** off
-- **Commands:** `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- When timeline is selected, removes pinned and archived posts
+**Also:** `-tls` · **Type:** flag · **Default:** off · **Commands:** `post_check`
+
+When timeline is selected, removes pinned and archived posts
+
+**Dest:** `timeline_strict` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--check-area`
 
-- **Also:** `-ca`, `--post`, `--posts`
-- **Dest:** `check_area` · **Type:** one of `All`, `Archived`, `Timeline`, `Pinned`, `Labels`, `Streams`; repeatable · **Default:** `['Timeline', 'Pinned', 'Archived', 'Streams']`
-- **Commands:** `post_check`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Select areas to check (multiple allowed, separated by spaces)
+**Also:** `-ca`, `--post`, `--posts` · **Type:** one of `All`, `Archived`, `Timeline`, `Pinned`, `Labels`, `Streams`; repeatable · **Default:** `['Timeline', 'Pinned', 'Archived', 'Streams']` · **Commands:** `post_check`
+
+Select areas to check (multiple allowed, separated by spaces)
+
+**Dest:** `check_area` · **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
 
 ### Metadata Options
 
 #### `--metadata`
 
-- **Also:** `-md`
-- **Dest:** `metadata` · **Type:** one of `complete`, `update`, `check` · **Default:** none
-- **Commands:** `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- METADATA MODES check: Updates metadata fields for the specified area via an API This option does not check for new filenames update: This mode performs two actions: 1. Updates download status and filenames based on the presence of actual files 2. Updates metadata fields for the specified area via an API complete: Marks the download as complete and updates metadata fields via an API It also uses a new filename if one is available
+**Also:** `-md` · **Type:** one of `complete`, `update`, `check` · **Default:** none · **Commands:** `metadata`
+
+METADATA MODES check: Updates metadata fields for the specified area via an API This option does not check for new filenames update: This mode performs two actions: 1. Updates download status and filenames based on the presence of actual files 2. Updates metadata fields for the specified area via an API complete: Marks the download as complete and updates metadata fields via an API It also uses a new filename if one is available
+
+**Dest:** `metadata` · **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
 
 #### `--mark-stray-locked`
 
-- **Also:** `-ms`, `--mark-stray`
-- **Dest:** `mark_stray` · **Type:** flag · **Default:** off
-- **Commands:** `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- Sets unmatched media items as locked. This is done per API type excluding labels, and is limited to --after and --before range.
+**Also:** `-ms`, `--mark-stray` · **Type:** flag · **Default:** off · **Commands:** `metadata`
+
+Sets unmatched media items as locked. This is done per API type excluding labels, and is limited to --after and --before range.
+
+**Dest:** `mark_stray` · **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
 
 #### `--anon`
 
-- **Also:** `-an`
-- **Dest:** `anon` · **Type:** flag · **Default:** off
-- **Commands:** `metadata`
-- **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- Use anonymous credentials. Forces --individual flag and removes --list flag. Most media is ignored.
+**Also:** `-an` · **Type:** flag · **Default:** off · **Commands:** `metadata`
+
+Use anonymous credentials. Forces --individual flag and removes --list flag. Most media is ignored.
+
+**Dest:** `anon` · **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
 
 ### Sorting for the table
 
 #### `--db-sort`
 
-- **Also:** `-dst`
-- **Dest:** `db_sort` · **Type:** one of `posted`, `created`, `filename`, `length`, `postid`, `mediaid`, `size` · **Default:** `'posted'`
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Changes order of table
+**Also:** `-dst` · **Type:** one of `posted`, `created`, `filename`, `length`, `postid`, `mediaid`, `size` · **Default:** `'posted'` · **Commands:** `db`
+
+Changes order of table
+
+**Dest:** `db_sort` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 
 #### `--db-asc`
 
-- **Also:** `-bdc`
-- **Dest:** `db_asc` · **Type:** flag · **Default:** off
-- **Commands:** `db`
-- **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Change the sort order of the table to ascending
+**Also:** `-bdc` · **Type:** flag · **Default:** off · **Commands:** `db`
+
+Change the sort order of the table to ascending
+
+**Dest:** `db_asc` · **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
 

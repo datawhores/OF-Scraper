@@ -49,6 +49,7 @@ The values shown are the defaults with no environment variables set. Paths under
 - [OnlyFans API addresses](#onlyfans-api-addresses)
 - [Dynamic rule addresses](#dynamic-rule-addresses)
 - [Other addresses](#other-addresses)
+- [Unused legacy defaults](#unused-legacy-defaults)
 
 ## Rate-limit and backoff settings
 
@@ -100,7 +101,6 @@ Defined in `ofscraper/utils/of_env/values/action/download.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="space_download_message"></a>`SPACE_DOWNLOAD_MESSAGE` | `SPACE_DOWNLOAD_MESSAGE` | `'Skipping download because space min has been reached'` | Error message raised when free disk space drops below `system_free_min`. The retry handler also matches this string so the download isn't retried. |
-| <a id="download_thread_min"></a>`DOWNLOAD_THREAD_MIN` | `DOWNLOAD_THREAD_MIN` | `35` | Defined but not read anywhere. |
 | <a id="download_num_tries"></a>`DOWNLOAD_NUM_TRIES` | `DOWNLOAD_NUM_TRIES` | `3` | Maximum number of download attempts outside check mode. |
 | <a id="download_num_tries_check"></a>`DOWNLOAD_NUM_TRIES_CHECK` | `DOWNLOAD_NUM_TRIES_CHECK` | `3` | Maximum number of download attempts in check mode (`*_check` commands). |
 
@@ -108,25 +108,14 @@ Defined in `ofscraper/utils/of_env/values/action/download.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="max_progress_bars"></a>`MAX_PROGRESS_BARS` | `MAX_PROGRESS_BARS` | `60` | Defined but not read anywhere. |
-| <a id="min_add_progress_bars"></a>`MIN_ADD_PROGRESS_BARS` | `MIN_ADD_PROGRESS_BARS` | `40` | Defined but not read anywhere. |
 | <a id="show_dl_chunks"></a>`SHOW_DL_CHUNKS` | `SHOW_DL_CHUNKS` | `False` | When on, logs download chunk progress at `SHOW_DL_CHUNKS_LEVEL` instead of `TRACE`. |
 | <a id="show_dl_chunks_level"></a>`SHOW_DL_CHUNKS_LEVEL` | `SHOW_DL_CHUNKS_LEVEL` | `'Warning'` | Log level used for download chunk progress messages when `SHOW_DL_CHUNKS` is on. |
-| <a id="multiprogress_job_update_freq"></a>`MULTIPROGRESS_JOB_UPDATE_FREQ` | `MULTIPROGRESS_JOB_UPDATE_FREQ` | `1.5` | Defined but not read anywhere. |
-| <a id="progress_job_update_freq"></a>`PROGRESS_JOB_UPDATE_FREQ` | `PROGRESS_JOB_UPDATE_FREQ` | `2.5` | Defined but not read anywhere. |
-| <a id="overall_multi_progress_thread_sleep"></a>`OVERALL_MULTI_PROGRESS_THREAD_SLEEP` | `OVERALL_MULTI_PROGRESS_THREAD_SLEEP` | `0.1` | Defined but not read anywhere. |
-| <a id="job_multi_progress_thread_sleep"></a>`JOB_MULTI_PROGRESS_THREAD_SLEEP` | `JOB_MULTI_PROGRESS_THREAD_SLEEP` | `0.1` | Defined but not read anywhere. |
 
 ### Forced keys
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdm_force_key"></a>`CDM_FORCE_KEY` | `CDM_FORCE_KEY` | `True` | Defined but not read anywhere. |
-| <a id="meta_force_key"></a>`META_FORCE_KEY` | `META_FORCE_KEY` | `True` | Defined but not read anywhere. |
-| <a id="download_force_key"></a>`DOWNLOAD_FORCE_KEY` | `DOWNLOAD_FORCE_KEY` | `True` | Defined but not read anywhere. |
-| <a id="mpd_force_key"></a>`MPD_FORCE_KEY` | `MPD_FORCE_KEY` | `True` | Defined but not read anywhere. |
 | <a id="api_force_key"></a>`API_FORCE_KEY` | `API_FORCE_KEY` | `False` | Adds the `FORCED_NEW` action to OnlyFans API, download and metadata requests. Currently has no effect: request signing ignores that action. |
-| <a id="profile_force_key"></a>`PROFILE_FORCE_KEY` | `PROFILE_FORCE_KEY` | `False` | Defined but not read anywhere. |
 | <a id="verify_all_integrity"></a>`VERIFY_ALL_INTEGRITY` | `OFSC_VERIFY_ALL_INTEGRITY` | `False` | Default for `download_options.verify_all_integrity` (checks non-DRM video/audio downloads and Fansly streams with `ffprobe`). |
 
 ## Likes
@@ -146,7 +135,6 @@ Defined in `ofscraper/utils/of_env/values/action/metadata.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="remove_unviewable_metadata"></a>`REMOVE_UNVIEWABLE_METADATA` | `REMOVE_UNVIEWABLE_METADATA` | `False` | Defined but not read anywhere. |
 | <a id="quality_unknown_default"></a>`QUALITY_UNKNOWN_DEFAULT` | `QUALITY_UNKNOWN_DEFAULT` | `'source'` | Fallback value for the `{quality}` placeholder when a media item's quality isn't known (such as non-videos or text files). |
 | <a id="alt_force_key"></a>`ALT_FORCE_KEY` | `OFSC_ALT_FORCE_KEY` | `True` | When on, the `metadata` command signs its request for protected (MPD) media (`commands/metadata/manager.py`). |
 
@@ -160,47 +148,39 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 |---|---|---|---|
 | <a id="connect_timeout"></a>`CONNECT_TIMEOUT` | `OFSC_CONNECT_TIMEOUT` | `15` | Default connection timeout, in seconds, for HTTP sessions that don't pass their own. |
 | <a id="pool_connect_timeout"></a>`POOL_CONNECT_TIMEOUT` | `OFSC_POOL_CONNECT_TIMEOUT` | `15` | Default time, in seconds, allowed to get a connection, for HTTP sessions that don't pass their own. |
-| <a id="of_read_timeout"></a>`OF_READ_TIMEOUT` | `OFSC_READ_TIMEOUT` | `60` | Longest wait for the next piece of a response (seconds), for requests that don't pass their own read timeout. It isn't a limit on the whole response: a slow response that keeps sending is fine. On a kept connection that has answered before, a GET's answer must start within a third of this, or that connection is dropped and the request is retried. 0 means no limit (the session manager turns it into None). |
+| <a id="of_read_timeout"></a>`OF_READ_TIMEOUT` | `OFSC_READ_TIMEOUT` | `60` | Longest wait for the next piece of a response (seconds), for requests that don't pass their own read timeout. [Details](#of_read_timeout-details). |
 | <a id="max_connections"></a>`MAX_CONNECTIONS` | `OFSC_MAX_CONNECTIONS` | `200` | Default maximum simultaneous connections for HTTP sessions that don't pass their own limit. |
 | <a id="api_max_connection"></a>`API_MAX_CONNECTION` | `OFSC_API_MAX_CONNECTION` | `100` | Default maximum simultaneous connections for API sessions (OnlyFans and Fansly). |
 | <a id="total_timeout"></a>`TOTAL_TIMEOUT` | `OFSC_TOTAL_TIMEOUT` | `None` | Default total request timeout, in seconds, for HTTP sessions that don't pass their own (`None` means no limit). |
 | <a id="keep_alive"></a>`KEEP_ALIVE` | `OFSC_KEEP_ALIVE` | `20` | The most idle connections the sync client keeps open to use again. A count, not a time. The async client, which downloads, has no such limit. |
 | <a id="keep_alive_exp"></a>`KEEP_ALIVE_EXP` | `OFSC_KEEP_ALIVE_EXP` | `10` | How long an idle connection is kept open to use again (seconds). Applies to both clients. 0 keeps none: each connection is closed after use. |
 
+#### <a id="of_read_timeout-details"></a>`OF_READ_TIMEOUT`
+
+**Environment variable:** `OFSC_READ_TIMEOUT` · **Default:** `60`
+
+Longest wait for the next piece of a response (seconds), for requests that don't pass their own read timeout. It isn't a limit on the whole response: a slow response that keeps sending is fine. On a kept connection that has answered before, a GET's answer must start within a third of this, or that connection is dropped and the request is retried. 0 means no limit (the session manager turns it into None).
+
 ### Proxies
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="proxy"></a>`PROXY` | `OFSC_PROXY` | `None` | Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. |
-| <a id="proxy_mounts"></a>`PROXY_MOUNTS` | `OFSC_PROXY_MOUNTS` | `None` | Defined but not read anywhere. |
-| <a id="proxy_auth"></a>`PROXY_AUTH` | `OFSC_PROXY_AUTH` | `None` | Defined but not read anywhere. |
 
 ### Chunking
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="max_chunk_size"></a>`MAX_CHUNK_SIZE` | `OFSC_MAX_CHUNK_SIZE` | `134217728` | Defined but not read anywhere. |
-| <a id="min_chunk_size"></a>`MIN_CHUNK_SIZE` | `OFSC_MIN_CHUNK_SIZE` | `65536` | Defined but not read anywhere. |
-| <a id="chunk_update_count"></a>`CHUNK_UPDATE_COUNT` | `OFSC_CHUNK_UPDATE_COUNT` | `12` | Defined but not read anywhere. |
-| <a id="chunk_size_update_count"></a>`CHUNK_SIZE_UPDATE_COUNT` | `OFSC_CHUNK_SIZE_UPDATE_COUNT` | `15` | Defined but not read anywhere. |
-| <a id="chunk_memory_split"></a>`CHUNK_MEMORY_SPLIT` | `OFSC_CHUNK_MEMORY_SPLIT` | `64` | Defined but not read anywhere. |
-| <a id="chunk_file_split"></a>`CHUNK_FILE_SPLIT` | `OFSC_CHUNK_FILE_SPLIT` | `64` | Defined but not read anywhere. |
-| <a id="max_read_size"></a>`MAX_READ_SIZE` | `OFSC_MAX_READ_SIZE` | `16777216` | Defined but not read anywhere. |
 | <a id="chunk_timeout_sec"></a>`CHUNK_TIMEOUT_SEC` | `OFSC_CHUNK_TIMEOUT_SEC` | `30` | Read timeout, in seconds, for download and Fansly stream requests (overrides `OF_READ_TIMEOUT` for downloads). |
 
 ### Semaphore and Concurrency
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="req_semaphore_multi"></a>`REQ_SEMAPHORE_MULTI` | `OFSC_REQ_SEMAPHORE_MULTI` | `5` | Defined but not read anywhere. |
 | <a id="scrape_paid_sems"></a>`SCRAPE_PAID_SEMS` | `OFSC_SCRAPE_PAID_SEMS` | `10` | Maximum concurrent requests when scraping the paid page (`--scrape-paid`). |
 | <a id="subscription_sems"></a>`SUBSCRIPTION_SEMS` | `OFSC_SUBSCRIPTION_SEMS` | `5` | Maximum concurrent requests when fetching subscription lists and profiles. |
-| <a id="like_max_sems"></a>`LIKE_MAX_SEMS` | `OFSC_LIKE_MAX_SEMS` | `12` | Defined but not read anywhere. |
-| <a id="max_sems_batch_download"></a>`MAX_SEMS_BATCH_DOWNLOAD` | `OFSC_MAX_SEMS_BATCH_DOWNLOAD` | `12` | Defined but not read anywhere. |
-| <a id="max_sems_single_thread_download"></a>`MAX_SEMS_SINGLE_THREAD_DOWNLOAD` | `OFSC_MAX_SEMS_SINGLE_THREAD_DOWNLOAD` | `50` | Defined but not read anywhere. |
 | <a id="session_manager_sync_sem_default"></a>`SESSION_MANAGER_SYNC_SEM_DEFAULT` | `OFSC_SESSION_MANAGER_SYNC_SEM_DEFAULT` | `3` | Default maximum concurrent synchronous requests per `sessionManager`. |
 | <a id="session_manager_sem_default"></a>`SESSION_MANAGER_SEM_DEFAULT` | `OFSC_SESSION_MANAGER_SEM_DEFAULT` | `10` | Default maximum concurrent async requests per `sessionManager`. |
-| <a id="max_thread_workers"></a>`MAX_THREAD_WORKERS` | `OFSC_MAX_THREAD_WORKERS` | `20` | Defined but not read anywhere. |
 
 ### Retry and Wait
 
@@ -211,17 +191,8 @@ Defined in `ofscraper/utils/of_env/values/req/req.py`.
 | <a id="of_num_retries_session_default"></a>`OF_NUM_RETRIES_SESSION_DEFAULT` | `OFSC_NUM_RETRIES_SESSION_DEFAULT` | `10` | Default maximum number of attempts for a request in `sessionManager`. |
 | <a id="of_min_wait_api"></a>`OF_MIN_WAIT_API` | `OFSC_MIN_WAIT_API` | `2.0` | Minimum wait, in seconds, between retries for API, download, MPD and CDM key requests. |
 | <a id="of_max_wait_api"></a>`OF_MAX_WAIT_API` | `OFSC_MAX_WAIT_API` | `3.0` | Maximum wait, in seconds, between retries for API, download, MPD and CDM key requests. |
-| <a id="of_auth_min_wait"></a>`OF_AUTH_MIN_WAIT` | `OFSC_AUTH_MIN_WAIT` | `3.0` | Defined but not read anywhere. |
-| <a id="of_auth_max_wait"></a>`OF_AUTH_MAX_WAIT` | `OFSC_AUTH_MAX_WAIT` | `3.0` | Defined but not read anywhere. |
 | <a id="download_num_tries_req"></a>`DOWNLOAD_NUM_TRIES_REQ` | `OFSC_DOWNLOAD_NUM_TRIES_REQ` | `5` | Maximum request-level attempts per download outside check mode. |
 | <a id="download_num_tries_check_req"></a>`DOWNLOAD_NUM_TRIES_CHECK_REQ` | `OFSC_DOWNLOAD_NUM_TRIES_CHECK_REQ` | `2` | Maximum request-level attempts per download in check mode (`*_check` commands). |
-| <a id="auth_num_tries"></a>`AUTH_NUM_TRIES` | `OFSC_AUTH_NUM_TRIES` | `3` | Defined but not read anywhere. |
-
-### Other
-
-| Key | Environment variable | Default | Description |
-|---|---|---|---|
-| <a id="message_sleep_default"></a>`MESSAGE_SLEEP_DEFAULT` | `OFSC_MESSAGE_SLEEP_DEFAULT` | `0` | Defined but not read anywhere. |
 
 ## Rate-limit values per request type
 
@@ -404,7 +375,6 @@ Defined in `ofscraper/utils/of_env/values/req/api.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="max_timeline_individual_search"></a>`MAX_TIMELINE_INDIVIDUAL_SEARCH` | `OFSC_MAX_TIMELINE_INDIVIDUAL_SEARCH` | `10` | Maximum number of `--post-id` IDs fetched individually for timeline posts before falling back to a full timeline scan. |
-| <a id="max_pinned_individual_search"></a>`MAX_PINNED_INDIVIDUAL_SEARCH` | `OFSC_MAX_PINNED_INDIVIDUAL_SEARCH` | `10` | Defined but not read anywhere. |
 | <a id="max_archived_individual_search"></a>`MAX_ARCHIVED_INDIVIDUAL_SEARCH` | `OFSC_MAX_ARCHIVED_INDIVIDUAL_SEARCH` | `10` | Maximum number of `--post-id` IDs fetched individually for archived posts before falling back to a full archived scan. |
 | <a id="max_messages_individual_search"></a>`MAX_MESSAGES_INDIVIDUAL_SEARCH` | `OFSC_MAX_MESSAGES_INDIVIDUAL_SEARCH` | `10` | Maximum number of `--post-id` IDs fetched individually for messages before falling back to a full messages scan. |
 | <a id="max_streams_individual_search"></a>`MAX_STREAMS_INDIVIDUAL_SEARCH` | `OFSC_MAX_STREAMS_INDIVIDUAL_SEARCH` | `10` | Maximum number of `--post-id` IDs fetched individually for streams before falling back to a full streams scan. |
@@ -415,8 +385,6 @@ Defined in `ofscraper/utils/of_env/values/req/api.py`.
 |---|---|---|---|
 | <a id="api_indvidiual_num_tries"></a>`API_INDVIDIUAL_NUM_TRIES` | `OFSC_API_INDIVIDUAL_NUM_TRIES` | `3` | Default maximum number of attempts for an API session request (`ofsession`), unless the caller passes `retries`. |
 | <a id="rate_limit_num_tries"></a>`RATE_LIMIT_NUM_TRIES` | `OFSC_RATE_LIMIT_NUM_TRIES` | `8` | Number of tries for a request that keeps getting a 429. The backoff wait grows between tries, so these span minutes. |
-| <a id="api_paid_num_tries"></a>`API_PAID_NUM_TRIES` | `OFSC_API_PAID_NUM_TRIES` | `8` | Defined but not read anywhere. |
-| <a id="api_check_num_tries"></a>`API_CHECK_NUM_TRIES` | `OFSC_API_CHECK_NUM_TRIES` | `10` | Defined but not read anywhere. |
 | <a id="api_num_tries"></a>`API_NUM_TRIES` | `OFSC_API_NUM_TRIES` | `10` | Used only as the denominator in `[attempt X/Y]` log messages (`commands/scraper/actions/utils/log.py`); doesn't control retry counts. |
 | <a id="api_like_num_tries"></a>`API_LIKE_NUM_TRIES` | `OFSC_API_LIKE_NUM_TRIES` | `5` | Default maximum number of attempts on the like/unlike session (`like.py`), though individual like/unlike requests override it with `LIKE_MAX_RETRIES`. |
 
@@ -434,7 +402,6 @@ Defined in `ofscraper/utils/of_env/values/req/api.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="api_timeout_per_task"></a>`API_TIMEOUT_PER_TASK` | `OFSC_API_TIMEOUT_PER_TASK` | `500` | Total timeout, in seconds, for each API session request in main scraper and metadata runs. |
-| <a id="api_request_threadonly"></a>`API_REQUEST_THREADONLY` | `OFSC_API_REQUEST_THREADONLY` | `['Windows', 'Linux', 'Darwin']` | Defined but not read anywhere. |
 | <a id="api_req_sem_max"></a>`API_REQ_SEM_MAX` | `OFSC_API_REQ_SEM_MAX` | `12` | Maximum concurrent API requests in main scraper and metadata runs. |
 | <a id="api_req_check_max"></a>`API_REQ_CHECK_MAX` | `OFSC_API_REQ_CHECK_MAX` | `12` | Maximum concurrent API requests in check (`*_check`) and `manual` modes. |
 
@@ -450,7 +417,6 @@ Defined in `ofscraper/utils/of_env/values/req/mpd.py`.
 | <a id="mpd_pool_connect_timeout"></a>`MPD_POOL_CONNECT_TIMEOUT` | `OFSC_MPD_POOL_CONNECT_TIMEOUT` | `45` | Time, in seconds, allowed to get a connection when fetching DRM manifests (MPD). |
 | <a id="mpd_max_sems"></a>`MPD_MAX_SEMS` | `OFSC_MPD_MAX_SEMS` | `10` | Maximum concurrent requests when fetching DRM manifests (MPD). |
 | <a id="mpd_num_tries"></a>`MPD_NUM_TRIES` | `OFSC_MPD_NUM_TRIES` | `5` | Maximum number of attempts when fetching DRM manifests (MPD). |
-| <a id="mpd_session_sleep_init"></a>`MPD_SESSION_SLEEP_INIT` | `OFSC_MPD_SESSION_SLEEP_INIT` | `45` | Defined but not read anywhere. MPD requests use the standard `SESSION_*` values. |
 
 ## CDM
 
@@ -458,13 +424,9 @@ Defined in `ofscraper/utils/of_env/values/req/cdm.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdm_test_timeout"></a>`CDM_TEST_TIMEOUT` | `OFSC_CDM_TEST_TIMEOUT` | `30` | Defined but not read anywhere. |
 | <a id="cdm_timeout"></a>`CDM_TIMEOUT` | `OFSC_CDM_TIMEOUT` | `40` | Total request timeout, in seconds, for CDM licence requests. |
-| <a id="cdm_min_wait"></a>`CDM_MIN_WAIT` | `OFSC_CDM_MIN_WAIT` | `1.5` | Defined but not read anywhere. |
-| <a id="cdm_max_wait"></a>`CDM_MAX_WAIT` | `OFSC_CDM_MAX_WAIT` | `6.0` | Defined but not read anywhere. |
 | <a id="cdm_num_tries"></a>`CDM_NUM_TRIES` | `OFSC_CDM_NUM_TRIES` | `8` | Maximum number of attempts for CDM licence requests outside check mode. |
 | <a id="cdm_num_tries_check"></a>`CDM_NUM_TRIES_CHECK` | `OFSC_CDM_NUM_TRIES_CHECK` | `1` | Maximum number of attempts for CDM licence requests in check mode (`*_check` commands). |
-| <a id="cdm_test_num_tries"></a>`CDM_TEST_NUM_TRIES` | `OFSC_CDM_TEST_NUM_TRIES` | `2` | Defined but not read anywhere. |
 
 ## Authentication
 
@@ -512,7 +474,6 @@ Defined in `ofscraper/utils/of_env/values/general.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="supress_outputs"></a>`SUPRESS_OUTPUTS` | `OFSC_SUPRESS_OUTPUTS` | `['CRITICAL', 'ERROR', 'LOW', 'OFF', 'PROMPT', 'WARNING']` | Output levels (`--output`) at which `lowstdout()` silences standard output. |
-| <a id="refreshscreen"></a>`refreshScreen` | `OFSC_REFRESH_SCREEN` | `50` | Defined but not read anywhere. |
 | <a id="show_avatar"></a>`SHOW_AVATAR` | `OFSC_SHOW_AVATAR` | `True` | Whether to include the creator's avatar URL in scrape headers and summaries. |
 | <a id="show_results_log"></a>`SHOW_RESULTS_LOG` | `OFSC_SHOW_RESULTS_LOG` | `True` | Whether to print the final run summary log at exit. |
 | <a id="model_price_placeholder"></a>`MODEL_PRICE_PLACEHOLDER` | `OFSC_MODEL_PRICE_PLACEHOLDER` | `'Unknown_Price'` | Fallback value for price placeholders (`{current_price}`, `{regular_price}`, `{promo_price}`, `{renewal_price}`) when a creator's model isn't loaded. |
@@ -530,7 +491,6 @@ Defined in `ofscraper/utils/of_env/values/general.py`.
 | <a id="number_regex"></a>`NUMBER_REGEX` | `OFSC_NUMBER_REGEX` | `'[0-9]'` | Single-character regex class used to match numeric IDs in URLs for `manual` and `*_check` commands. |
 | <a id="username_regex"></a>`USERNAME_REGEX` | `OFSC_USERNAME_REGEX` | `'[^/]'` | Single-character regex class used to match usernames in URLs for `manual` and `*_check` commands. |
 | <a id="buf_size"></a>`BUF_SIZE` | `OFSC_BUF_SIZE` | `1048576` | Read buffer size, in bytes, used when hashing files (including the duplicate check before a download is moved into place). |
-| <a id="large_trace_chunk_size"></a>`LARGE_TRACE_CHUNK_SIZE` | `OFSC_LARGE_TRACE_CHUNK_SIZE` | `100` | Defined but not read anywhere. |
 | <a id="skip_unavailable_default"></a>`SKIP_UNAVAILABLE_DEFAULT` | `OFSC_SKIP_UNAVAILABLE_DEFAULT` | `True` | Default for `advanced_options.skip_unavailable_content`. |
 | <a id="expired_grace_default"></a>`EXPIRED_GRACE_DEFAULT` | `OFSC_EXPIRED_GRACE_DEFAULT` | `1` | Grace period, in days, after a subscription's expiry during which the creator is still treated as active for filtering and scanning. |
 
@@ -543,7 +503,6 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="sanitize_db_default"></a>`SANITIZE_DB_DEFAULT` | `OFSC_SANITIZE_DB_DEFAULT` | `False` | Default for `advanced_options.sanitize_text` (whether post and message text is sanitised before storing in the database). |
-| <a id="suppress_log_level"></a>`SUPPRESS_LOG_LEVEL` | `OFSC_SUPPRESS_LOG_LEVEL` | `21` | Defined but not read anywhere. |
 | <a id="resume_default"></a>`RESUME_DEFAULT` | `OFSC_RESUME_DEFAULT` | `True` | Default for `download_options.auto_resume` (whether leftover `.part` files are resumed). |
 | <a id="cachedefault"></a>`CACHEDEFAULT` | `OFSC_CACHE_DEFAULT` | `'sqlite'` | Default for `advanced_options.cache-mode` (`sqlite`, `json`, `disabled` or `api_disabled`). |
 | <a id="key_default"></a>`KEY_DEFAULT` | `OFSC_KEY_DEFAULT` | `'manual'` | Default for `cdm_options.key-mode-default` (`manual`; `cdrm` is deprecated because its service no longer works). |
@@ -558,14 +517,12 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="save_path_default"></a>`SAVE_PATH_DEFAULT` | `OFSC_SAVE_PATH_DEFAULT` | `'{home_directory}/Data/ofscraper'` | Default for `file_options.save_location` (root folder for downloads). |
 | <a id="date_default"></a>`DATE_DEFAULT` | `OFSC_DATE_DEFAULT` | `'MM-DD-YYYY'` | Default for `file_options.date` (arrow date format for the `{date}` placeholder). |
 | <a id="profile_default"></a>`PROFILE_DEFAULT` | `OFSC_PROFILE_DEFAULT` | `'main_profile'` | Default for `main_profile` (profile folder name in the config directory). |
-| <a id="premium_default"></a>`PREMIUM_DEFAULT` | `OFSC_PREMIUM_DEFAULT` | `'Premium'` | Defined but not read anywhere. |
 | <a id="ffmpeg_default"></a>`FFMPEG_DEFAULT` | `OFSC_FFMPEG_DEFAULT` | `''` | Default for `binary_options.ffmpeg` (path to the ffmpeg executable). |
 | <a id="discord_default"></a>`DISCORD_DEFAULT` | `OFSC_DISCORD_DEFAULT` | `''` | Default for `discord` (Discord webhook URL for log messages). |
-| <a id="threads_default"></a>`THREADS_DEFAULT` | `OFSC_THREADS_DEFAULT` | `2` | Defined but not read anywhere. |
 | <a id="download_sem_default"></a>`DOWNLOAD_SEM_DEFAULT` | `OFSC_DOWNLOAD_SEM_DEFAULT` | `6` | Default for `performance_options.download_sems` (number of concurrent downloads). |
-| <a id="fansly_stream_segments"></a>`FANSLY_STREAM_SEGMENTS` | `OFSC_FANSLY_STREAM_SEGMENTS` | `8` | How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally (`fansly_stream_download.py`). Fetched segments are kept so a stopped download can resume. 0 hands the whole stream to ffmpeg, one segment at a time, with no resume. Streams the local downloader can't handle still go to ffmpeg: live HLS (no `#EXT-X-ENDLIST`), HLS with encryption other than AES-128, and DASH that is protected, live, multi-period or uses unsupported addressing. Total concurrent downloads are still capped by `download_sems`. |
-| <a id="silent_rechecks"></a>`SILENT_RECHECKS` | `OFSC_SILENT_RECHECKS` | `3` | How many times to recheck a Fansly video that was saved without sound because the CDN refused its separate audio track and the direct file had no audio (`download/utils/silent.py`). Each check fetches the audio playlist and its first segment with fresh links, once at the end of the run that saved it and once on each later download run for that creator that includes videos. If the audio succeeds, the video is downloaded again and replaces the silent file once it passes checks. After this many refused checks, the video is kept as is. Checks that fail for other reasons (network, rate limit) don't count. 0 turns rechecks off. |
-| <a id="fansly_full_scan_days"></a>`FANSLY_FULL_SCAN_DAYS` | `OFSC_FANSLY_FULL_SCAN_DAYS` | `7` | How often, in days, a Fansly download run scans a creator's timeline and messages in full. Between full scans, a run stops an area where the last finished scan began (see `advanced_options.incremental_downloads`). A post that appears later with an older date is found by the next full scan, so this is the longest it can be missed. 0 scans in full every time (`ofscraper/sites/fansly/incremental.py`). |
+| <a id="fansly_stream_segments"></a>`FANSLY_STREAM_SEGMENTS` | `OFSC_FANSLY_STREAM_SEGMENTS` | `8` | How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally (`fansly_stream_download.py`). [Details](#fansly_stream_segments-details). |
+| <a id="silent_rechecks"></a>`SILENT_RECHECKS` | `OFSC_SILENT_RECHECKS` | `3` | How many times to recheck a Fansly video that was saved without sound because the CDN refused its separate audio track and the direct file had no audio (`download/utils/silent.py`). [Details](#silent_rechecks-details). |
+| <a id="fansly_full_scan_days"></a>`FANSLY_FULL_SCAN_DAYS` | `OFSC_FANSLY_FULL_SCAN_DAYS` | `7` | How often, in days, a Fansly download run scans a creator's timeline and messages in full. [Details](#fansly_full_scan_days-details). |
 | <a id="text_type_default"></a>`TEXT_TYPE_DEFAULT` | `OFSC_TEXT_TYPE_DEFAULT` | `'letter'` | Default for `file_options.text_type_default` (`letter` or `word`). |
 | <a id="truncation_default"></a>`TRUNCATION_DEFAULT` | `OFSC_TRUNCATION_DEFAULT` | `True` | Default for `file_options.truncation_default` (whether long file paths are shortened to fit OS limits). |
 | <a id="filename_collision_default"></a>`FILENAME_COLLISION_DEFAULT` | `OFSC_FILENAME_COLLISION_DEFAULT` | `'media_id'` | What to do when a download's path is already taken by a different media. "media_id" appends _<media_id>; "overwrite" keeps the old behaviour (one file replaces the other). |
@@ -573,7 +530,6 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="temp_folder_default"></a>`TEMP_FOLDER_DEFAULT` | `OFSC_TEMP_FOLDER_DEFAULT` | `None` | Default for `advanced_options.temp_dir` (root folder for `.part` files). |
 | <a id="rotate_default"></a>`ROTATE_DEFAULT` | `OFSC_ROTATE_DEFAULT` | `True` | Default for `advanced_options.rotate_logs` (whether each run writes its own log file in a per-day folder). |
 | <a id="system_freemin_default"></a>`SYSTEM_FREEMIN_DEFAULT` | `OFSC_SYSTEM_FREEMIN_DEFAULT` | `0` | Default for `download_options.system_free_min` (minimum free disk space in bytes; 0 disables the check). |
-| <a id="avatar_default"></a>`AVATAR_DEFAULT` | `OFSC_AVATAR_DEFAULT` | `True` | Defined but not read anywhere. |
 | <a id="infinite_loop_default"></a>`INFINITE_LOOP_DEFAULT` | `OFSC_INFINITE_LOOP_DEFAULT` | `False` | Default for `advanced_options.infinite_loop_action_mode` (whether action mode prompts to continue after each run). |
 | <a id="incremental_downloads_default"></a>`INCREMENTAL_DOWNLOADS_DEFAULT` | `OFSC_INCREMENTAL_DOWNLOADS_DEFAULT`, `OFSC_ENABLE_AUTO_AFTER_DEFAULT` | `True` | Default for `advanced_options.incremental_downloads` (also reads `OFSC_ENABLE_AUTO_AFTER_DEFAULT`). |
 | <a id="default_user_list"></a>`DEFAULT_USER_LIST` | `OFSC_DEFAULT_USER_LIST` | `'main'` | Default for `advanced_options.default_user_list` (user lists selected when `--user-list` isn't given). |
@@ -583,16 +539,32 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="default_log_level"></a>`DEFAULT_LOG_LEVEL` | `OFSC_DEFAULT_LOG_LEVEL` | `'DEBUG'` | Default log file level when `--log` isn't given. |
 | <a id="include_labels_all"></a>`INCLUDE_LABELS_ALL` | `OFSC_INCLUDE_LABELS_ALL` | `False` | When on, `--posts all` (and `--download-area all` / `--like-area all`) also includes the Labels area. |
 | <a id="labels_concurrency"></a>`LABELS_CONCURRENCY` | `OFSC_LABELS_CONCURRENCY` | `2` | How many labels are paged at the same time. |
-| <a id="discord_thread_override"></a>`DISCORD_THREAD_OVERRIDE` | `OFSC_DISCORD_THREAD_OVERRIDE` | `False` | Defined but not read anywhere. |
 | <a id="discord_async"></a>`DISCORD_ASYNC` | `OFSC_DISCORD_ASYNC` | `False` | When on, sends Discord webhook log messages asynchronously instead of synchronously. |
 | <a id="use_wiv_cache_key"></a>`USE_WIV_CACHE_KEY` | `OFSC_USE_WIV_CACHE_KEY` | `True` | Whether to cache Widevine decryption keys by PSSH (`keyhelpers.py`). |
 | <a id="after_action_script_default"></a>`AFTER_ACTION_SCRIPT_DEFAULT` | `OFSC_AFTER_ACTION_SCRIPT_DEFAULT` | `None` | Default for `script_options.after_action_script`. |
 | <a id="post_script_default"></a>`POST_SCRIPT_DEFAULT` | `OFSC_POST_SCRIPT_DEFAULT` | `None` | Default for `script_options.post_script`. |
 | <a id="skip_download_script_default"></a>`SKIP_DOWNLOAD_SCRIPT_DEFAULT` | `OFSC_SKIP_DOWNLOAD_SCRIPT_DEFAULT` | `None` | Default for `script_options.skip_download_script`. |
 | <a id="after_download_script_default"></a>`AFTER_DOWNLOAD_SCRIPT_DEFAULT` | `OFSC_AFTER_DOWNLOAD_SCRIPT_DEFAULT` | `None` | Default for `script_options.after_download_script`. |
-| <a id="env_files_default"></a>`ENV_FILES_DEFAULT` | `OFSC_ENV_FILES_DEFAULT` | `''` | Defined but not read anywhere. |
 | <a id="naming_script_default"></a>`NAMING_SCRIPT_DEFAULT` | `OFSC_NAMING_SCRIPT_DEFAULT` | `None` | Default for `script_options.naming_script`. |
 | <a id="download_limit_default"></a>`DOWNLOAD_LIMIT_DEFAULT` | `OFSC_DOWNLOAD_LIMIT_DEFAULT` | `0` | Default for `performance_options.download_limit` (maximum download speed in bytes per second; 0 means unlimited). |
+
+#### <a id="fansly_stream_segments-details"></a>`FANSLY_STREAM_SEGMENTS`
+
+**Environment variable:** `OFSC_FANSLY_STREAM_SEGMENTS` · **Default:** `8`
+
+How many files of one Fansly stream (HLS segments, AES-128 keys, DASH segments) are fetched at once before ffmpeg joins them locally (`fansly_stream_download.py`). Fetched segments are kept so a stopped download can resume. 0 hands the whole stream to ffmpeg, one segment at a time, with no resume. Streams the local downloader can't handle still go to ffmpeg: live HLS (no `#EXT-X-ENDLIST`), HLS with encryption other than AES-128, and DASH that is protected, live, multi-period or uses unsupported addressing. Total concurrent downloads are still capped by `download_sems`.
+
+#### <a id="silent_rechecks-details"></a>`SILENT_RECHECKS`
+
+**Environment variable:** `OFSC_SILENT_RECHECKS` · **Default:** `3`
+
+How many times to recheck a Fansly video that was saved without sound because the CDN refused its separate audio track and the direct file had no audio (`download/utils/silent.py`). Each check fetches the audio playlist and its first segment with fresh links, once at the end of the run that saved it and once on each later download run for that creator that includes videos. If the audio succeeds, the video is downloaded again and replaces the silent file once it passes checks. After this many refused checks, the video is kept as is. Checks that fail for other reasons (network, rate limit) don't count. 0 turns rechecks off.
+
+#### <a id="fansly_full_scan_days-details"></a>`FANSLY_FULL_SCAN_DAYS`
+
+**Environment variable:** `OFSC_FANSLY_FULL_SCAN_DAYS` · **Default:** `7`
+
+How often, in days, a Fansly download run scans a creator's timeline and messages in full. Between full scans, a run stops an area where the last finished scan began (see `advanced_options.incremental_downloads`). A post that appears later with an older date is found by the next full scan, so this is the longest it can be missed. 0 scans in full every time (`ofscraper/sites/fansly/incremental.py`).
 
 ### Format strings
 
@@ -607,7 +579,6 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="response_type_default"></a>`RESPONSE_TYPE_DEFAULT` | `OFSC_RESPONSE_TYPE_DEFAULT` | a dict of 9 entries (see the source) | Default for the `responsetype` map in `config.json` (accepts a JSON object via `OFSC_RESPONSE_TYPE_DEFAULT`). |
-| <a id="empty_media_default"></a>`EMPTY_MEDIA_DEFAULT` | `OFSC_EMPTY_MEDIA_DEFAULT` | `{}` | Defined but not read anywhere. |
 | <a id="filter_default"></a>`FILTER_DEFAULT` | `OFSC_FILTER_DEFAULT` | `['Images', 'Audios', 'Videos']` | Default for `download_options.filter` (media types to download; accepts a comma-separated list via `OFSC_FILTER_DEFAULT`). |
 | <a id="ssl_validation_default"></a>`SSL_VALIDATION_DEFAULT` | `OFSC_SSL_VALIDATION_DEFAULT` | `'custom'` | The default for `advanced_options.ssl_verify`, used when the config has no usable value. |
 
@@ -626,9 +597,7 @@ Defined in `ofscraper/utils/of_env/values/time.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="hourly_expiry"></a>`HOURLY_EXPIRY` | `OFSC_HOURLY_EXPIRY` | `3600` | Defined but not read anywhere. |
 | <a id="thirty_expiry"></a>`THIRTY_EXPIRY` | `OFSC_THIRTY_EXPIRY` | `1800` | Cache lifetime, in seconds, for OnlyFans dynamic signing rules. |
-| <a id="size_timeout"></a>`SIZE_TIMEOUT` | `OFSC_SIZE_TIMEOUT` | `1209600` | Defined but not read anywhere. |
 | <a id="database_timeout"></a>`DATABASE_TIMEOUT` | `OFSC_DATABASE_TIMEOUT` | `300` | Timeout, in seconds, for SQLite and PostgreSQL database locks and connections. |
 | <a id="key_expiry"></a>`KEY_EXPIRY` | `OFSC_KEY_EXPIRY` | `None` | Cache lifetime, in seconds, for Widevine decryption keys (`None` means no expiry). |
 | <a id="response_expiry"></a>`RESPONSE_EXPIRY` | `OFSC_RESPONSE_EXPIRY` | `5000000` | Cache lifetime, in seconds, for scraped paid-page responses. |
@@ -668,11 +637,34 @@ Defined in `ofscraper/utils/of_env/values/live.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="supress_api_display"></a>`SUPRESS_API_DISPLAY` | `OFSC_SUPRESS_API_DISPLAY` | `None` | Hides the API progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`. |
-| <a id="supress_download_display"></a>`SUPRESS_DOWNLOAD_DISPLAY` | `OFSC_SUPRESS_DOWNLOAD_DISPLAY` | `None` | Hides the download progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`. |
-| <a id="supress_subscription_display"></a>`SUPRESS_SUBSCRIPTION_DISPLAY` | `OFSC_SUPRESS_SUBSCRIPTION_DISPLAY` | `None` | Hides the subscription progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`. |
-| <a id="supress_like_display"></a>`SUPRESS_LIKE_DISPLAY` | `OFSC_SUPRESS_LIKE_DISPLAY` | `None` | Hides the like progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`. |
-| <a id="download_live_display"></a>`DOWNLOAD_LIVE_DISPLAY` | `OFSC_DOWNLOAD_LIVE_DISPLAY` | `True` | Defined but not read anywhere. |
+| <a id="supress_api_display"></a>`SUPRESS_API_DISPLAY` | `OFSC_SUPRESS_API_DISPLAY` | `None` | Hides the API progress display when on. [Details](#supress_api_display-details). |
+| <a id="supress_download_display"></a>`SUPRESS_DOWNLOAD_DISPLAY` | `OFSC_SUPRESS_DOWNLOAD_DISPLAY` | `None` | Hides the download progress display when on. [Details](#supress_download_display-details). |
+| <a id="supress_subscription_display"></a>`SUPRESS_SUBSCRIPTION_DISPLAY` | `OFSC_SUPRESS_SUBSCRIPTION_DISPLAY` | `None` | Hides the subscription progress display when on. [Details](#supress_subscription_display-details). |
+| <a id="supress_like_display"></a>`SUPRESS_LIKE_DISPLAY` | `OFSC_SUPRESS_LIKE_DISPLAY` | `None` | Hides the like progress display when on. [Details](#supress_like_display-details). |
+
+#### <a id="supress_api_display-details"></a>`SUPRESS_API_DISPLAY`
+
+**Environment variable:** `OFSC_SUPRESS_API_DISPLAY` · **Default:** `None`
+
+Hides the API progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
+
+#### <a id="supress_download_display-details"></a>`SUPRESS_DOWNLOAD_DISPLAY`
+
+**Environment variable:** `OFSC_SUPRESS_DOWNLOAD_DISPLAY` · **Default:** `None`
+
+Hides the download progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
+
+#### <a id="supress_subscription_display-details"></a>`SUPRESS_SUBSCRIPTION_DISPLAY`
+
+**Environment variable:** `OFSC_SUPRESS_SUBSCRIPTION_DISPLAY` · **Default:** `None`
+
+Hides the subscription progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
+
+#### <a id="supress_like_display-details"></a>`SUPRESS_LIKE_DISPLAY`
+
+**Environment variable:** `OFSC_SUPRESS_LIKE_DISPLAY` · **Default:** `None`
+
+Hides the like progress display when on. The value is read as on/off: `true` or `1` (any case) is on, and anything else is off, which shows the display. This holds for the bare name too, which has no default to take a type from. It applies only while that screen is up. Unset, the display follows `--output` and `--no-rich`.
 
 ## Logging
 
@@ -680,10 +672,7 @@ Defined in `ofscraper/utils/of_env/values/logger.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="logger_timeout"></a>`LOGGER_TIMEOUT` | `OFSC_LOGGER_TIMEOUT` | `0.4` | Defined but not read anywhere. |
 | <a id="log_display_timeout"></a>`LOG_DISPLAY_TIMEOUT` | `OFSC_LOG_DISPLAY_TIMEOUT` | `0.8` | Base pause, in seconds, used when waiting after printing a warning (for example, `unique_name_warning()` sleeps for `LOG_DISPLAY_TIMEOUT * 3`). |
-| <a id="forced_thread_timeout"></a>`FORCED_THREAD_TIMEOUT` | `OFSC_FORCED_THREAD_TIMEOUT` | `5` | Defined but not read anywhere. |
-| <a id="logname"></a>`logname` | `OFSC_LOGNAME` | `'ofscraper'` | Defined but not read anywhere. |
 
 ## Subprocess log levels and free-space check
 
@@ -700,8 +689,14 @@ Defined in `ofscraper/utils/of_env/values/system.py`.
 | <a id="log_subprocess_level"></a>`LOG_SUBPROCESS_LEVEL` | `OFSC_LOG_SUBPROCESS_LEVEL`, `OFSC_LOG_SUBPROCESS_LEVELL` | `10` | Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, and it is still read. |
 | <a id="ffmpeg_subprocess_level"></a>`FFMPEG_SUBPROCESS_LEVEL` | `OFSC_FFMPEG_SUBPROCESS_LEVEL` | `10` | Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ffprobe_subprocess_level"></a>`FFPROBE_SUBPROCESS_LEVEL` | `OFSC_FFPROBE_SUBPROCESS_LEVEL` | `10` | Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
-| <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | `OFSC_DATABASE_URL` | `''` | A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image). |
+| <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | `OFSC_DATABASE_URL` | `''` | A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. [Details](#ofsc_database_url-details). |
 | <a id="disk_space_check_path"></a>`DISK_SPACE_CHECK_PATH` | `OFSC_DISK_SPACE_CHECK_PATH` | `'/'` | The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be. |
+
+#### <a id="ofsc_database_url-details"></a>`OFSC_DATABASE_URL`
+
+**Environment variable:** `OFSC_DATABASE_URL` · **Default:** `''`
+
+A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image).
 
 ## Menu choices
 
@@ -731,12 +726,6 @@ Defined in `ofscraper/utils/of_env/values/prompts.py`.
 |---|---|---|---|
 | <a id="checktablepromptchoices"></a>`checkTablePromptChoices` | none (bare key only) | a dict of 4 entries (see the source) | Menu entries for picking which check table the Action Menu opens. Not read from the environment. |
 
-### Username or List Choices
-
-| Key | Environment variable | Default | Description |
-|---|---|---|---|
-| <a id="usernameorlistchoices"></a>`usernameOrListChoices` | none (bare key only) | a dict of 3 entries (see the source) | Menu entries for picking creators interactively. Not read from the environment. |
-
 ### Profiles Prompt Choices
 
 | Key | Environment variable | Default | Description |
@@ -755,13 +744,10 @@ Defined in `ofscraper/utils/of_env/values/path/files.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="preferences"></a>`preferences` | `OFSC_PREFERENCES_FILE` | `'pref_config.py'` | Defined but not read anywhere. |
 | <a id="configpath"></a>`configPath` | `OFSC_CONFIG_DIR` | `'.config/ofscraper'` | Folder relative to the home directory where `config.json` and profiles live. |
 | <a id="configfile"></a>`configFile` | `OFSC_CONFIG_FILE_NAME` | `'config.json'` | Name of the main configuration file inside the config folder. |
 | <a id="authfile"></a>`authFile` | `OFSC_AUTH_FILE_NAME` | `'auth.json'` | Name of the OnlyFans credentials file inside the profile folder. |
-| <a id="databasefile"></a>`databaseFile` | `OFSC_DATABASE_FILE_NAME` | `'models.db'` | Defined but not read anywhere. |
 | <a id="mainprofile"></a>`mainProfile` | `OFSC_MAIN_PROFILE_NAME` | `'main_profile'` | Key name in `config.json` that stores the default profile name. |
-| <a id="requestauth"></a>`requestAuth` | `OFSC_REQUEST_AUTH_FILE_NAME` | `'request_auth.json'` | Defined but not read anywhere. |
 
 ## Filename generation and temp files
 
@@ -785,7 +771,6 @@ Defined in `ofscraper/utils/of_env/values/path/length.py`.
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
 | <a id="max_text_length"></a>`MAX_TEXT_LENGTH` | `OFSC_MAX_TEXT_LENGTH` | `70` | Wrap width, in characters, when writing downloaded post text files. |
-| <a id="max_text_worker"></a>`MAX_TEXT_WORKER` | `OFSC_MAX_TEXT_WORKER` | `30` | Defined but not read anywhere. |
 | <a id="windows_max_path_bytes"></a>`WINDOWS_MAX_PATH_BYTES` | `OFSC_WINDOWS_MAX_PATH_BYTES` | `530` | Maximum full path length, in bytes, before truncation on Windows. |
 | <a id="mac_max_path"></a>`MAC_MAX_PATH` | `OFSC_MAC_MAX_PATH` | `255` | Maximum full path length, in characters, before truncation on macOS. |
 | <a id="linux_max_file_name_bytes"></a>`LINUX_MAX_FILE_NAME_BYTES` | `OFSC_LINUX_MAX_FILE_NAME_BYTES` | `254` | Maximum filename length, in bytes, before truncation on Linux. |
@@ -808,11 +793,9 @@ Defined in `ofscraper/utils/of_env/values/url/url.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="initep"></a>`initEP` | `OFSC_API_INIT_EP` | `'https://onlyfans.com/api2/v2/init'` | Initial API endpoint for session initialisation. |
 | <a id="licence_url"></a>`LICENCE_URL` | `OFSC_API_LICENCE_URL` | `'https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine'` | URL for media DRM licence acquisition. |
 | <a id="individual_timeline"></a>`INDIVIDUAL_TIMELINE` | `OFSC_API_INDIVIDUAL_TIMELINE` | `'https://onlyfans.com/api2/v2/posts/{}?skip_users=all'` | Endpoint for a single timeline post. |
 | <a id="meep"></a>`meEP` | `OFSC_API_ME_EP` | `'https://onlyfans.com/api2/v2/users/me'` | Endpoint for the current user's profile information. |
-| <a id="subscriptionsep"></a>`subscriptionsEP` | `OFSC_API_SUBSCRIPTIONS_EP` | `'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'` | Endpoint for all subscriptions. |
 | <a id="subscriptionsactiveep"></a>`subscriptionsActiveEP` | `OFSC_API_SUBSCRIPTIONS_ACTIVE_EP` | `'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=active&format=infinite'` | Endpoint for active subscriptions. |
 | <a id="subscriptionsexpiredep"></a>`subscriptionsExpiredEP` | `OFSC_API_SUBSCRIPTIONS_EXPIRED_EP` | `'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=expired&format=infinite'` | Endpoint for expired subscriptions. |
 | <a id="subscribecountep"></a>`subscribeCountEP` | `OFSC_API_SUBSCRIBE_COUNT_EP` | `'https://onlyfans.com/api2/v2/subscriptions/count/all'` | Endpoint for subscription count. |
@@ -831,14 +814,9 @@ Defined in `ofscraper/utils/of_env/values/url/url.py`.
 | <a id="messagesep"></a>`messagesEP` | `OFSC_API_MESSAGES_EP` | `'https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&order=desc&skip_users=all&skip_users_dups=1'` | Endpoint for chat messages. |
 | <a id="messagesnextep"></a>`messagesNextEP` | `OFSC_API_MESSAGES_NEXT_EP` | `'https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&id={}&order=desc&skip_users=all&skip_users_dups=1'` | Endpoint for next set of chat messages. |
 | <a id="favoriteep"></a>`favoriteEP` | `OFSC_API_FAVORITE_EP` | `'https://onlyfans.com/api2/v2/posts/{}/favorites/{}'` | Endpoint for liking or unliking a post. |
-| <a id="posturl"></a>`postURL` | `OFSC_POST_URL` | `'https://onlyfans.com/{}/{}'` | Base URL for a post on OnlyFans. |
-| <a id="donateep"></a>`donateEP` | `OFSC_DONATE_EP` | `'https://www.buymeacoffee.com/excludedBittern'` | The original author's donation link. |
 | <a id="purchased_contentep"></a>`purchased_contentEP` | `OFSC_PURCHASED_CONTENT_EP` | `'https://onlyfans.com/api2/v2/posts/paid/all?limit=100&skip_users=all&format=infinite&offset={}&author={}'` | Endpoint for purchased content by user ID. |
 | <a id="purchased_contentall"></a>`purchased_contentALL` | `OFSC_PURCHASED_CONTENT_ALL_EP` | `'https://onlyfans.com/api2/v2/posts/paid/all?limit=100&skip_users=all&format=infinite&offset={}'` | Endpoint for all purchased content. |
-| <a id="highlightspecific"></a>`highlightSPECIFIC` | `OFSC_HIGHLIGHT_SPECIFIC_EP` | `'https://onlyfans.com/api2/v2/stories/highlights/{}'` | Endpoint for a specific highlight story. |
-| <a id="storiesspecific"></a>`storiesSPECIFIC` | `OFSC_STORIES_SPECIFIC_EP` | `'https://onlyfans.com/api2/v2/stories/{}'` | Endpoint for a specific story. |
 | <a id="messagespecific"></a>`messageSPECIFIC` | `OFSC_MESSAGE_SPECIFIC_EP` | `'https://onlyfans.com/api2/v2/chats/{}/messages?limit=10&order=desc&skip_users=all&firstId={}'` | Endpoint for specific chat messages (by first ID). |
-| <a id="messagetablespecific"></a>`messageTableSPECIFIC` | `OFSC_MESSAGE_TABLE_SPECIFIC_URL` | `'https://onlyfans.com/my/chats/{}/?id={}'` | Web UI URL for specific messages. |
 | <a id="labelsep"></a>`labelsEP` | `OFSC_LABELS_EP` | `'https://onlyfans.com/api2/v2/users/{}/labels?limit=100&offset={}&order=desc&non-empty=1'` | Endpoint for user's labels. |
 | <a id="labelledpostsep"></a>`labelledPostsEP` | `OFSC_LABELLED_POSTS_EP` | `'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&offset={}&order=publish_date_desc&skip_users=all&counters=0&format=infinite&label={}'` | Endpoint for posts under a specific label. |
 | <a id="listep"></a>`listEP` | `OFSC_LIST_EP` | `'https://onlyfans.com/api2/v2/lists?offset={}&skip_users=all&limit=100&format=infinite'` | Endpoint for user's custom lists. |
@@ -863,7 +841,13 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="cdrm"></a>`CDRM` | `OFSC_CDRM_URL` | `'https://cdrm-project.com/api/decrypt'` | URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is sent the request headers, cookies included. The default, `cdrm-project.com`, isn't contacted: protected videos fail with a message to use `manual` key mode. Set it only to a server you run yourself. |
+| <a id="cdrm"></a>`CDRM` | `OFSC_CDRM_URL` | `'https://cdrm-project.com/api/decrypt'` | URL of a self-hosted decryption server for the deprecated `cdrm` key mode. [Details](#cdrm-details). |
+
+#### <a id="cdrm-details"></a>`CDRM`
+
+**Environment variable:** `OFSC_CDRM_URL` · **Default:** `'https://cdrm-project.com/api/decrypt'`
+
+URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is sent the request headers, cookies included. The default, `cdrm-project.com`, isn't contacted: protected videos fail with a message to use `manual` key mode. Set it only to a server you run yourself.
 
 ### Bad URL Host
 
@@ -875,5 +859,85 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 
 | Key | Environment variable | Default | Description |
 |---|---|---|---|
-| <a id="media_host_suffixes"></a>`MEDIA_HOST_SUFFIXES` | `OFSC_MEDIA_HOST_SUFFIXES` | `[]` | Extra domains (added to the built-in `onlyfans.com`) allowed to receive OnlyFans login cookies and headers during downloads (`ofscraper/utils/host_allowlist.py`). A host matches a domain or any subdomain of it, so `cdn.example.com` allows `media.cdn.example.com` but not `evil-cdn.example.com`; only http and https links match. A normal file on an unlisted host is downloaded without login credentials, with one warning per host. A DRM video whose manifest or licence URL is on an unlisted host isn't downloaded and fails with a warning naming the host. Adding a domain never removes the built-in ones. Fansly isn't checked because its token goes only to its API host. |
+| <a id="media_host_suffixes"></a>`MEDIA_HOST_SUFFIXES` | `OFSC_MEDIA_HOST_SUFFIXES` | `[]` | Extra domains (added to the built-in `onlyfans.com`) allowed to receive OnlyFans login cookies and headers during downloads (`ofscraper/utils/host_allowlist.py`). [Details](#media_host_suffixes-details). |
+
+#### <a id="media_host_suffixes-details"></a>`MEDIA_HOST_SUFFIXES`
+
+**Environment variable:** `OFSC_MEDIA_HOST_SUFFIXES` · **Default:** `[]`
+
+Extra domains (added to the built-in `onlyfans.com`) allowed to receive OnlyFans login cookies and headers during downloads (`ofscraper/utils/host_allowlist.py`). A host matches a domain or any subdomain of it, so `cdn.example.com` allows `media.cdn.example.com` but not `evil-cdn.example.com`; only http and https links match. A normal file on an unlisted host is downloaded without login credentials, with one warning per host. A DRM video whose manifest or licence URL is on an unlisted host isn't downloaded and fails with a warning naming the host. Adding a domain never removes the built-in ones. Fansly isn't checked because its token goes only to its API host.
+
+## Unused legacy defaults
+
+Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.
+
+| Key | Environment variable | Default | Defined in | Note |
+|---|---|---|---|---|
+| <a id="download_thread_min"></a>`DOWNLOAD_THREAD_MIN` | `DOWNLOAD_THREAD_MIN` | `35` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="max_progress_bars"></a>`MAX_PROGRESS_BARS` | `MAX_PROGRESS_BARS` | `60` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="min_add_progress_bars"></a>`MIN_ADD_PROGRESS_BARS` | `MIN_ADD_PROGRESS_BARS` | `40` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="multiprogress_job_update_freq"></a>`MULTIPROGRESS_JOB_UPDATE_FREQ` | `MULTIPROGRESS_JOB_UPDATE_FREQ` | `1.5` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="progress_job_update_freq"></a>`PROGRESS_JOB_UPDATE_FREQ` | `PROGRESS_JOB_UPDATE_FREQ` | `2.5` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="overall_multi_progress_thread_sleep"></a>`OVERALL_MULTI_PROGRESS_THREAD_SLEEP` | `OVERALL_MULTI_PROGRESS_THREAD_SLEEP` | `0.1` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="job_multi_progress_thread_sleep"></a>`JOB_MULTI_PROGRESS_THREAD_SLEEP` | `JOB_MULTI_PROGRESS_THREAD_SLEEP` | `0.1` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="cdm_force_key"></a>`CDM_FORCE_KEY` | `CDM_FORCE_KEY` | `True` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="meta_force_key"></a>`META_FORCE_KEY` | `META_FORCE_KEY` | `True` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="download_force_key"></a>`DOWNLOAD_FORCE_KEY` | `DOWNLOAD_FORCE_KEY` | `True` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="mpd_force_key"></a>`MPD_FORCE_KEY` | `MPD_FORCE_KEY` | `True` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="profile_force_key"></a>`PROFILE_FORCE_KEY` | `PROFILE_FORCE_KEY` | `False` | `ofscraper/utils/of_env/values/action/download.py` |  |
+| <a id="remove_unviewable_metadata"></a>`REMOVE_UNVIEWABLE_METADATA` | `REMOVE_UNVIEWABLE_METADATA` | `False` | `ofscraper/utils/of_env/values/action/metadata.py` |  |
+| <a id="proxy_mounts"></a>`PROXY_MOUNTS` | `OFSC_PROXY_MOUNTS` | `None` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="proxy_auth"></a>`PROXY_AUTH` | `OFSC_PROXY_AUTH` | `None` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_chunk_size"></a>`MAX_CHUNK_SIZE` | `OFSC_MAX_CHUNK_SIZE` | `134217728` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="min_chunk_size"></a>`MIN_CHUNK_SIZE` | `OFSC_MIN_CHUNK_SIZE` | `65536` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="chunk_update_count"></a>`CHUNK_UPDATE_COUNT` | `OFSC_CHUNK_UPDATE_COUNT` | `12` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="chunk_size_update_count"></a>`CHUNK_SIZE_UPDATE_COUNT` | `OFSC_CHUNK_SIZE_UPDATE_COUNT` | `15` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="chunk_memory_split"></a>`CHUNK_MEMORY_SPLIT` | `OFSC_CHUNK_MEMORY_SPLIT` | `64` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="chunk_file_split"></a>`CHUNK_FILE_SPLIT` | `OFSC_CHUNK_FILE_SPLIT` | `64` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_read_size"></a>`MAX_READ_SIZE` | `OFSC_MAX_READ_SIZE` | `16777216` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="req_semaphore_multi"></a>`REQ_SEMAPHORE_MULTI` | `OFSC_REQ_SEMAPHORE_MULTI` | `5` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="like_max_sems"></a>`LIKE_MAX_SEMS` | `OFSC_LIKE_MAX_SEMS` | `12` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_sems_batch_download"></a>`MAX_SEMS_BATCH_DOWNLOAD` | `OFSC_MAX_SEMS_BATCH_DOWNLOAD` | `12` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_sems_single_thread_download"></a>`MAX_SEMS_SINGLE_THREAD_DOWNLOAD` | `OFSC_MAX_SEMS_SINGLE_THREAD_DOWNLOAD` | `50` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_thread_workers"></a>`MAX_THREAD_WORKERS` | `OFSC_MAX_THREAD_WORKERS` | `20` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="of_auth_min_wait"></a>`OF_AUTH_MIN_WAIT` | `OFSC_AUTH_MIN_WAIT` | `3.0` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="of_auth_max_wait"></a>`OF_AUTH_MAX_WAIT` | `OFSC_AUTH_MAX_WAIT` | `3.0` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="auth_num_tries"></a>`AUTH_NUM_TRIES` | `OFSC_AUTH_NUM_TRIES` | `3` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="message_sleep_default"></a>`MESSAGE_SLEEP_DEFAULT` | `OFSC_MESSAGE_SLEEP_DEFAULT` | `0` | `ofscraper/utils/of_env/values/req/req.py` |  |
+| <a id="max_pinned_individual_search"></a>`MAX_PINNED_INDIVIDUAL_SEARCH` | `OFSC_MAX_PINNED_INDIVIDUAL_SEARCH` | `10` | `ofscraper/utils/of_env/values/req/api.py` |  |
+| <a id="api_paid_num_tries"></a>`API_PAID_NUM_TRIES` | `OFSC_API_PAID_NUM_TRIES` | `8` | `ofscraper/utils/of_env/values/req/api.py` |  |
+| <a id="api_check_num_tries"></a>`API_CHECK_NUM_TRIES` | `OFSC_API_CHECK_NUM_TRIES` | `10` | `ofscraper/utils/of_env/values/req/api.py` |  |
+| <a id="api_request_threadonly"></a>`API_REQUEST_THREADONLY` | `OFSC_API_REQUEST_THREADONLY` | `['Windows', 'Linux', 'Darwin']` | `ofscraper/utils/of_env/values/req/api.py` |  |
+| <a id="mpd_session_sleep_init"></a>`MPD_SESSION_SLEEP_INIT` | `OFSC_MPD_SESSION_SLEEP_INIT` | `45` | `ofscraper/utils/of_env/values/req/mpd.py` | MPD requests use the standard `SESSION_*` values. |
+| <a id="cdm_test_timeout"></a>`CDM_TEST_TIMEOUT` | `OFSC_CDM_TEST_TIMEOUT` | `30` | `ofscraper/utils/of_env/values/req/cdm.py` |  |
+| <a id="cdm_min_wait"></a>`CDM_MIN_WAIT` | `OFSC_CDM_MIN_WAIT` | `1.5` | `ofscraper/utils/of_env/values/req/cdm.py` |  |
+| <a id="cdm_max_wait"></a>`CDM_MAX_WAIT` | `OFSC_CDM_MAX_WAIT` | `6.0` | `ofscraper/utils/of_env/values/req/cdm.py` |  |
+| <a id="cdm_test_num_tries"></a>`CDM_TEST_NUM_TRIES` | `OFSC_CDM_TEST_NUM_TRIES` | `2` | `ofscraper/utils/of_env/values/req/cdm.py` |  |
+| <a id="refreshscreen"></a>`refreshScreen` | `OFSC_REFRESH_SCREEN` | `50` | `ofscraper/utils/of_env/values/general.py` |  |
+| <a id="large_trace_chunk_size"></a>`LARGE_TRACE_CHUNK_SIZE` | `OFSC_LARGE_TRACE_CHUNK_SIZE` | `100` | `ofscraper/utils/of_env/values/general.py` |  |
+| <a id="suppress_log_level"></a>`SUPPRESS_LOG_LEVEL` | `OFSC_SUPPRESS_LOG_LEVEL` | `21` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="premium_default"></a>`PREMIUM_DEFAULT` | `OFSC_PREMIUM_DEFAULT` | `'Premium'` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="threads_default"></a>`THREADS_DEFAULT` | `OFSC_THREADS_DEFAULT` | `2` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="avatar_default"></a>`AVATAR_DEFAULT` | `OFSC_AVATAR_DEFAULT` | `True` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="discord_thread_override"></a>`DISCORD_THREAD_OVERRIDE` | `OFSC_DISCORD_THREAD_OVERRIDE` | `False` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="env_files_default"></a>`ENV_FILES_DEFAULT` | `OFSC_ENV_FILES_DEFAULT` | `''` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="empty_media_default"></a>`EMPTY_MEDIA_DEFAULT` | `OFSC_EMPTY_MEDIA_DEFAULT` | `{}` | `ofscraper/utils/of_env/values/main.py` |  |
+| <a id="hourly_expiry"></a>`HOURLY_EXPIRY` | `OFSC_HOURLY_EXPIRY` | `3600` | `ofscraper/utils/of_env/values/time.py` |  |
+| <a id="size_timeout"></a>`SIZE_TIMEOUT` | `OFSC_SIZE_TIMEOUT` | `1209600` | `ofscraper/utils/of_env/values/time.py` |  |
+| <a id="download_live_display"></a>`DOWNLOAD_LIVE_DISPLAY` | `OFSC_DOWNLOAD_LIVE_DISPLAY` | `True` | `ofscraper/utils/of_env/values/live.py` |  |
+| <a id="logger_timeout"></a>`LOGGER_TIMEOUT` | `OFSC_LOGGER_TIMEOUT` | `0.4` | `ofscraper/utils/of_env/values/logger.py` |  |
+| <a id="forced_thread_timeout"></a>`FORCED_THREAD_TIMEOUT` | `OFSC_FORCED_THREAD_TIMEOUT` | `5` | `ofscraper/utils/of_env/values/logger.py` |  |
+| <a id="logname"></a>`logname` | `OFSC_LOGNAME` | `'ofscraper'` | `ofscraper/utils/of_env/values/logger.py` |  |
+| <a id="usernameorlistchoices"></a>`usernameOrListChoices` | none (bare key only) | a dict of 3 entries (see the source) | `ofscraper/utils/of_env/values/prompts.py` | Menu entries for picking creators interactively. Not read from the environment. |
+| <a id="preferences"></a>`preferences` | `OFSC_PREFERENCES_FILE` | `'pref_config.py'` | `ofscraper/utils/of_env/values/path/files.py` |  |
+| <a id="databasefile"></a>`databaseFile` | `OFSC_DATABASE_FILE_NAME` | `'models.db'` | `ofscraper/utils/of_env/values/path/files.py` |  |
+| <a id="requestauth"></a>`requestAuth` | `OFSC_REQUEST_AUTH_FILE_NAME` | `'request_auth.json'` | `ofscraper/utils/of_env/values/path/files.py` |  |
+| <a id="max_text_worker"></a>`MAX_TEXT_WORKER` | `OFSC_MAX_TEXT_WORKER` | `30` | `ofscraper/utils/of_env/values/path/length.py` |  |
+| <a id="initep"></a>`initEP` | `OFSC_API_INIT_EP` | `'https://onlyfans.com/api2/v2/init'` | `ofscraper/utils/of_env/values/url/url.py` | Initial API endpoint for session initialisation. |
+| <a id="subscriptionsep"></a>`subscriptionsEP` | `OFSC_API_SUBSCRIPTIONS_EP` | `'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'` | `ofscraper/utils/of_env/values/url/url.py` | Endpoint for all subscriptions. |
+| <a id="posturl"></a>`postURL` | `OFSC_POST_URL` | `'https://onlyfans.com/{}/{}'` | `ofscraper/utils/of_env/values/url/url.py` | Base URL for a post on OnlyFans. |
+| <a id="donateep"></a>`donateEP` | `OFSC_DONATE_EP` | `'https://www.buymeacoffee.com/excludedBittern'` | `ofscraper/utils/of_env/values/url/url.py` | The original author's donation link. |
+| <a id="highlightspecific"></a>`highlightSPECIFIC` | `OFSC_HIGHLIGHT_SPECIFIC_EP` | `'https://onlyfans.com/api2/v2/stories/highlights/{}'` | `ofscraper/utils/of_env/values/url/url.py` | Endpoint for a specific highlight story. |
+| <a id="storiesspecific"></a>`storiesSPECIFIC` | `OFSC_STORIES_SPECIFIC_EP` | `'https://onlyfans.com/api2/v2/stories/{}'` | `ofscraper/utils/of_env/values/url/url.py` | Endpoint for a specific story. |
+| <a id="messagetablespecific"></a>`messageTableSPECIFIC` | `OFSC_MESSAGE_TABLE_SPECIFIC_URL` | `'https://onlyfans.com/my/chats/{}/?id={}'` | `ofscraper/utils/of_env/values/url/url.py` | Web UI URL for specific messages. |
 

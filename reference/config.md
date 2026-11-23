@@ -4,10 +4,11 @@
 
 Every key `config.json` holds, in the order the file is written (`ofscraper/utils/config/schema.py`). Defaults are what a new config gets.
 
-Each key lists these fields, when they apply: **Default**, **Read by** (the getter), **Default from** (the environment default behind it), **Also reads** (older key names), **CLI override**, then a description. `auto_update_config` rebuilds the file from the getters and writes it back. So the getter reads an older key name once, and the file is saved under the current name. **CLI override** means a command-line option takes precedence for that run (`merged_settings` in `ofscraper/utils/settings.py`).
+`auto_update_config` rebuilds the file from the getters and writes it back, so an older key name is read once and saved under the current name. **CLI override** means a command-line option takes precedence for that run (`merged_settings` in `ofscraper/utils/settings.py`).
 
 ## Contents
 
+- [Quick reference](#quick-reference)
 - [Top level](#top-level)
 - [`file_options`](#file_options)
 - [`download_options`](#download_options)
@@ -19,355 +20,382 @@ Each key lists these fields, when they apply: **Default**, **Read by** (the gett
 - [`script_options`](#script_options)
 - [`responsetype`](#responsetype)
 
+## Quick reference
+
+| Key | Default | CLI override | Env default |
+|---|---|---|---|
+| [`main_profile`](#main_profile) | `"main_profile"` | none | [`PROFILE_DEFAULT`](env.md#profile_default), [`mainProfile`](env.md#mainprofile) |
+| [`metadata`](#metadata) | `"{configpath}/{profile}/.data/{model_id}"` | none | [`METADATA_DEFAULT`](env.md#metadata_default) |
+| [`discord`](#discord) | `""` | `--discord` | [`DISCORD_DEFAULT`](env.md#discord_default) |
+| [`file_options.save_location`](#file_optionssave_location) | `"{home_directory}/Data/ofscraper"` | none | [`SAVE_PATH_DEFAULT`](env.md#save_path_default) |
+| [`file_options.dir_format`](#file_optionsdir_format) | `"{model_username}/{responsetype}/{mediatype}/"` | none | [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) |
+| [`file_options.file_format`](#file_optionsfile_format) | `"{filename}.{ext}"` | none | [`FILE_FORMAT_DEFAULT`](env.md#file_format_default) |
+| [`file_options.textlength`](#file_optionstextlength) | `0` | `--textlength` | [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) |
+| [`file_options.space_replacer`](#file_optionsspace_replacer) | `" "` | `--space-replacer` | [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) |
+| [`file_options.date`](#file_optionsdate) | `"MM-DD-YYYY"` | none | [`DATE_DEFAULT`](env.md#date_default) |
+| [`file_options.text_type_default`](#file_optionstext_type_default) | `"letter"` | `--text-type` | [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) |
+| [`file_options.truncation_default`](#file_optionstruncation_default) | `true` | `--original` | [`TRUNCATION_DEFAULT`](env.md#truncation_default) |
+| [`file_options.filename_collision`](#file_optionsfilename_collision) | `"media_id"` | none | [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) |
+| [`download_options.filter`](#download_optionsfilter) | `["Images", "Audios", "Videos"]` | `--mediatype` | [`FILTER_DEFAULT`](env.md#filter_default) |
+| [`download_options.auto_resume`](#download_optionsauto_resume) | `true` | `--no-auto-resume` | [`RESUME_DEFAULT`](env.md#resume_default) |
+| [`download_options.system_free_min`](#download_optionssystem_free_min) | `0` | `system_free_min` | [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) |
+| [`download_options.max_post_count`](#download_optionsmax_post_count) | `0` | `--max-post-count` | [`MAX_COUNT_DEFAULT`](env.md#max_count_default) |
+| [`download_options.verify_all_integrity`](#download_optionsverify_all_integrity) | `false` | none | [`VERIFY_ALL_INTEGRITY`](env.md#verify_all_integrity) |
+| [`binary_options.ffmpeg`](#binary_optionsffmpeg) | `""` | none | [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) |
+| [`cdm_options.private-key`](#cdm_optionsprivate-key) | `null` | `--private-key` | none |
+| [`cdm_options.client-id`](#cdm_optionsclient-id) | `null` | `--client-id` | none |
+| [`cdm_options.key-mode-default`](#cdm_optionskey-mode-default) | `"manual"` | `--key-mode` | [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options) |
+| [`performance_options.download_sems`](#performance_optionsdownload_sems) | `6` | `--downloadsem` | [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default) |
+| [`performance_options.download_limit`](#performance_optionsdownload_limit) | `0` | `--download-limit` | [`DOWNLOAD_LIMIT_DEFAULT`](env.md#download_limit_default) |
+| [`content_filter_options.block_ads`](#content_filter_optionsblock_ads) | `false` | none | [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default) |
+| [`content_filter_options.file_size_max`](#content_filter_optionsfile_size_max) | `0` | `--size-max` | [`FILE_SIZE_MAX_DEFAULT`](env.md#file_size_max_default) |
+| [`content_filter_options.file_size_min`](#content_filter_optionsfile_size_min) | `0` | `--size-min` | [`FILE_SIZE_MIN_DEFAULT`](env.md#file_size_min_default) |
+| [`content_filter_options.length_max`](#content_filter_optionslength_max) | `0` | `--length-max` | [`MAX_LENGTH_DEFAULT`](env.md#max_length_default) |
+| [`content_filter_options.length_min`](#content_filter_optionslength_min) | `0` | `--length-min` | [`MIN_LENGTH_DEFAULT`](env.md#min_length_default) |
+| [`advanced_options.dynamic-mode-default`](#advanced_optionsdynamic-mode-default) | `"digital"` | `--dynamic-rules` | [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default) |
+| [`advanced_options.skip_unavailable_content`](#advanced_optionsskip_unavailable_content) | `true` | none | [`SKIP_UNAVAILABLE_DEFAULT`](env.md#skip_unavailable_default) |
+| [`advanced_options.downloadbars`](#advanced_optionsdownloadbars) | `false` | `--downloadbars` | [`PROGRESS_DEFAULT`](env.md#progress_default) |
+| [`advanced_options.cache-mode`](#advanced_optionscache-mode) | `"sqlite"` | none | [`CACHEDEFAULT`](env.md#cachedefault) |
+| [`advanced_options.rotate_logs`](#advanced_optionsrotate_logs) | `true` | none | [`ROTATE_DEFAULT`](env.md#rotate_default) |
+| [`advanced_options.sanitize_text`](#advanced_optionssanitize_text) | `false` | none | [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default) |
+| [`advanced_options.temp_dir`](#advanced_optionstemp_dir) | `null` | none | [`TEMP_FOLDER_DEFAULT`](env.md#temp_folder_default) |
+| [`advanced_options.remove_hash_match`](#advanced_optionsremove_hash_match) | `null` | none | [`HASHED_DEFAULT`](env.md#hashed_default) |
+| [`advanced_options.infinite_loop_action_mode`](#advanced_optionsinfinite_loop_action_mode) | `false` | none | [`INFINITE_LOOP_DEFAULT`](env.md#infinite_loop_default) |
+| [`advanced_options.incremental_downloads`](#advanced_optionsincremental_downloads) | `true` | none | [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default) |
+| [`advanced_options.default_user_list`](#advanced_optionsdefault_user_list) | `"main"` | `--user_list` | [`DEFAULT_USER_LIST`](env.md#default_user_list) |
+| [`advanced_options.default_black_list`](#advanced_optionsdefault_black_list) | `[]` | `--black_list` | [`DEFAULT_BLACK_LIST`](env.md#default_black_list) |
+| [`advanced_options.logs_expire_time`](#advanced_optionslogs_expire_time) | `0` | none | none |
+| [`advanced_options.ssl_verify`](#advanced_optionsssl_verify) | `"custom"` | none | [`SSL_VALIDATION_DEFAULT`](env.md#ssl_validation_default) |
+| [`advanced_options.env_files`](#advanced_optionsenv_files) | `[]` | none | none |
+| [`advanced_options.database_url`](#advanced_optionsdatabase_url) | see below | none | none |
+| [`script_options.after_action_script`](#script_optionsafter_action_script) | `null` | `--after-action-script` | [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) |
+| [`script_options.post_script`](#script_optionspost_script) | `null` | `--post-script` | [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) |
+| [`script_options.naming_script`](#script_optionsnaming_script) | `null` | `--naming-script` | [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) |
+| [`script_options.after_download_script`](#script_optionsafter_download_script) | `null` | `--after-download-script` | [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) |
+| [`script_options.skip_download_script`](#script_optionsskip_download_script) | `null` | `--skip-download-script` | [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) |
+| [`responsetype.timeline`](#responsetypetimeline) | `"Posts"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.message`](#responsetypemessage) | `"Messages"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.archived`](#responsetypearchived) | `"Archived"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.paid`](#responsetypepaid) | `"Messages"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.stories`](#responsetypestories) | `"Stories"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.highlights`](#responsetypehighlights) | `"Stories"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.profile`](#responsetypeprofile) | `"Profile"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.pinned`](#responsetypepinned) | `"Posts"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+| [`responsetype.streams`](#responsetypestreams) | `"Streams"` | none | [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) |
+
 ## Top level
 
 ### `main_profile`
 
-- **Default:** `"main_profile"` · **Read by:** `get_main_profile()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`PROFILE_DEFAULT`](env.md#profile_default), [`mainProfile`](env.md#mainprofile)
-- The name of the profile folder in the config directory. The folder holds `auth.json`, the cache and (by default) the per-creator databases. The name also appears in log file names. The `--profile` option overrides it for one run.
+**Default:** `"main_profile"` · **Env default:** [`PROFILE_DEFAULT`](env.md#profile_default), [`mainProfile`](env.md#mainprofile) · **Read by:** `get_main_profile()` in `ofscraper/utils/config/data.py`
+
+The name of the profile folder in the config directory. The folder holds `auth.json`, the cache and (by default) the per-creator databases. The name also appears in log file names. The `--profile` option overrides it for one run.
 
 ### `metadata`
 
-- **Default:** `"{configpath}/{profile}/.data/{model_id}"` · **Read by:** `get_metadata()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`METADATA_DEFAULT`](env.md#metadata_default)
-- The folder pattern for each creator's `user_data.db`. It uses placeholders such as `{configpath}`, `{profile}`, `{model_id}` and `{model_username}`. On Fansly runs a site subfolder is appended unless the pattern already contains a site-specific placeholder, so the two sites never share a database.
+**Default:** `"{configpath}/{profile}/.data/{model_id}"` · **Env default:** [`METADATA_DEFAULT`](env.md#metadata_default) · **Read by:** `get_metadata()` in `ofscraper/utils/config/data.py`
+
+The folder pattern for each creator's `user_data.db`. It uses placeholders such as `{configpath}`, `{profile}`, `{model_id}` and `{model_username}`. On Fansly runs a site subfolder is appended unless the pattern already contains a site-specific placeholder, so the two sites never share a database.
 
 ### `discord`
 
-- **Default:** `""` · **Read by:** `get_discord()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DISCORD_DEFAULT`](env.md#discord_default)
-- **CLI override:** `--discord`
-- The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `LOW` or `NORMAL`. The option defaults to `OFF`.
+**Default:** `""` · **CLI override:** `--discord` · **Env default:** [`DISCORD_DEFAULT`](env.md#discord_default) · **Read by:** `get_discord()` in `ofscraper/utils/config/data.py`
+
+The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `LOW` or `NORMAL`. The option defaults to `OFF`.
 
 ## `file_options`
 
 ### `file_options.save_location`
 
-- **Default:** `"{home_directory}/Data/ofscraper"` · **Read by:** `get_save_location()` in `ofscraper/utils/paths/common.py`
-- **Default from:** [`SAVE_PATH_DEFAULT`](env.md#save_path_default)
-- The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it, unless `dir_format` or `file_format` uses `{site_name}` (or `{sitename}`): then each site's folder comes from the template, so `{site_name}/{model_username}/...` gives `<save location>/Onlyfans/...` and `<save location>/Fansly/...`. The database path and the `{save_location}` and `{root}` values keep the `Fansly` subfolder either way. Surrounding quotes from the Windows "Copy as path" command are stripped.
+**Default:** `"{home_directory}/Data/ofscraper"` · **Env default:** [`SAVE_PATH_DEFAULT`](env.md#save_path_default) · **Read by:** `get_save_location()` in `ofscraper/utils/paths/common.py`
+
+The root folder for downloads. `dir_format` is resolved under it. It is also the temp-file root when `temp_dir` is unset. Fansly runs save to a `Fansly` subfolder of it, unless `dir_format` or `file_format` uses `{site_name}` (or `{sitename}`): then each site's folder comes from the template, so `{site_name}/{model_username}/...` gives `<save location>/Onlyfans/...` and `<save location>/Fansly/...`. The database path and the `{save_location}` and `{root}` values keep the `Fansly` subfolder either way. Surrounding quotes from the Windows "Copy as path" command are stripped.
 
 ### `file_options.dir_format`
 
-- **Default:** `"{model_username}/{responsetype}/{mediatype}/"` · **Read by:** `get_dirformat()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default)
-- The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path.
+**Default:** `"{model_username}/{responsetype}/{mediatype}/"` · **Env default:** [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) · **Read by:** `get_dirformat()` in `ofscraper/utils/config/data.py`
+
+The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path.
 
 ### `file_options.file_format`
 
-- **Default:** `"{filename}.{ext}"` · **Read by:** `get_fileformat()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FILE_FORMAT_DEFAULT`](env.md#file_format_default)
-- The file name pattern for each download. It is built from placeholders such as `{filename}`, `{ext}`, `{date}`, `{text}` and `{media_id}`. It is ignored for a file when `naming_script` returns a path.
+**Default:** `"{filename}.{ext}"` · **Env default:** [`FILE_FORMAT_DEFAULT`](env.md#file_format_default) · **Read by:** `get_fileformat()` in `ofscraper/utils/config/data.py`
+
+The file name pattern for each download. It is built from placeholders such as `{filename}`, `{ext}`, `{date}`, `{text}` and `{media_id}`. It is ignored for a file when `naming_script` returns a path.
 
 ### `file_options.textlength`
 
-- **Default:** `0` · **Read by:** `get_textlength()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`TEXTLENGTH_DEFAULT`](env.md#textlength_default)
-- **CLI override:** `--textlength`
-- The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, according to `text_type_default`. 0 means no limit. The `-tl`/`--textlength` option overrides it.
+**Default:** `0` · **CLI override:** `--textlength` · **Env default:** [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) · **Read by:** `get_textlength()` in `ofscraper/utils/config/data.py`
+
+The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, according to `text_type_default`. 0 means no limit. The `-tl`/`--textlength` option overrides it.
 
 ### `file_options.space_replacer`
 
-- **Default:** `" "` · **Read by:** `get_spacereplacer()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default)
-- **Also reads:** `space-replacer`
-- **CLI override:** `--space-replacer`
-- The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. An empty value falls back to a space. The `-sr`/`--space-replacer` option overrides it.
+**Default:** `" "` · **CLI override:** `--space-replacer` · **Env default:** [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) · **Also reads:** `space-replacer` · **Read by:** `get_spacereplacer()` in `ofscraper/utils/config/data.py`
+
+The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. An empty value falls back to a space. The `-sr`/`--space-replacer` option overrides it.
 
 ### `file_options.date`
 
-- **Default:** `"MM-DD-YYYY"` · **Read by:** `get_date()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DATE_DEFAULT`](env.md#date_default)
-- An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads.
+**Default:** `"MM-DD-YYYY"` · **Env default:** [`DATE_DEFAULT`](env.md#date_default) · **Read by:** `get_date()` in `ofscraper/utils/config/data.py`
+
+An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads.
 
 ### `file_options.text_type_default`
 
-- **Default:** `"letter"` · **Read by:** `get_textType()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default)
-- **CLI override:** `--text-type`
-- Whether `textlength` counts `letter`s or `word`s. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
+**Default:** `"letter"` · **CLI override:** `--text-type` · **Env default:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) · **Read by:** `get_textType()` in `ofscraper/utils/config/data.py`
+
+Whether `textlength` counts `letter`s or `word`s. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
 
 ### `file_options.truncation_default`
 
-- **Default:** `true` · **Read by:** `get_truncation()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`TRUNCATION_DEFAULT`](env.md#truncation_default)
-- **CLI override:** `--original`
-- When true, final file paths longer than the operating system's limit are shortened to fit. The `-g`/`--original` flag turns truncation off for one run.
+**Default:** `true` · **CLI override:** `--original` · **Env default:** [`TRUNCATION_DEFAULT`](env.md#truncation_default) · **Read by:** `get_truncation()` in `ofscraper/utils/config/data.py`
+
+When true, final file paths longer than the operating system's limit are shortened to fit. The `-g`/`--original` flag turns truncation off for one run.
 
 ### `file_options.filename_collision`
 
-- **Default:** `"media_id"` · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default)
-- What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
+**Default:** `"media_id"` · **Env default:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
+
+What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
 
 ## `download_options`
 
 ### `download_options.filter`
 
-- **Default:** `["Images", "Audios", "Videos"]` · **Read by:** `get_filter()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FILTER_DEFAULT`](env.md#filter_default)
-- **Also reads:** `content_filter_options`
-- **CLI override:** `--mediatype`
-- The media types to process: a list or comma-separated string of Images, Audios and Videos (case-insensitive). An empty list processes all types. The `-mt`/`--mediatype` option overrides it.
+**Default:** `["Images", "Audios", "Videos"]` · **CLI override:** `--mediatype` · **Env default:** [`FILTER_DEFAULT`](env.md#filter_default) · **Also reads:** `content_filter_options` · **Read by:** `get_filter()` in `ofscraper/utils/config/data.py`
+
+The media types to process: a list or comma-separated string of Images, Audios and Videos (case-insensitive). An empty list processes all types. The `-mt`/`--mediatype` option overrides it.
 
 ### `download_options.auto_resume`
 
-- **Default:** `true` · **Read by:** `get_part_file_clean()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESUME_DEFAULT`](env.md#resume_default)
-- **Also reads:** `partfileclean`
-- **CLI override:** `--no-auto-resume`
-- When true, a leftover `.part` file is resumed with an HTTP range request. When false, partial files are deleted and downloads restart. The `-ar`/`--no-auto-resume` flag forces it off for one run.
+**Default:** `true` · **CLI override:** `--no-auto-resume` · **Env default:** [`RESUME_DEFAULT`](env.md#resume_default) · **Also reads:** `partfileclean` · **Read by:** `get_part_file_clean()` in `ofscraper/utils/config/data.py`
+
+When true, a leftover `.part` file is resumed with an HTTP range request. When false, partial files are deleted and downloads restart. The `-ar`/`--no-auto-resume` flag forces it off for one run.
 
 ### `download_options.system_free_min`
 
-- **Default:** `0` · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default)
-- **CLI override:** `system_free_min`
-- The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on `OFSC_DISK_SPACE_CHECK_PATH` (default `/`), not on `save_location`. There is no CLI option for it.
+**Default:** `0` · **CLI override:** `system_free_min` · **Env default:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
+
+The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on `OFSC_DISK_SPACE_CHECK_PATH` (default `/`), not on `save_location`. There is no CLI option for it.
 
 ### `download_options.max_post_count`
 
-- **Default:** `0` · **Read by:** `get_max_post_count()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`MAX_COUNT_DEFAULT`](env.md#max_count_default)
-- **CLI override:** `--max-post-count`
-- The most media items (not posts) to download or process per creator, after all other filters. 0 means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
+**Default:** `0` · **CLI override:** `--max-post-count` · **Env default:** [`MAX_COUNT_DEFAULT`](env.md#max_count_default) · **Read by:** `get_max_post_count()` in `ofscraper/utils/config/data.py`
+
+The most media items (not posts) to download or process per creator, after all other filters. 0 means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
 
 ### `download_options.verify_all_integrity`
 
-- **Default:** `false` · **Read by:** `get_verify_all_integrity()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`VERIFY_ALL_INTEGRITY`](env.md#verify_all_integrity)
-- When true, `ffprobe` checks ordinary (non-DRM) video and audio downloads and Fansly streams against the expected duration. A truncated file is deleted and reported as failed. It requires `ffprobe`. There is no CLI option for it.
+**Default:** `false` · **Env default:** [`VERIFY_ALL_INTEGRITY`](env.md#verify_all_integrity) · **Read by:** `get_verify_all_integrity()` in `ofscraper/utils/config/data.py`
+
+When true, `ffprobe` checks ordinary (non-DRM) video and audio downloads and Fansly streams against the expected duration. A truncated file is deleted and reported as failed. It requires `ffprobe`. There is no CLI option for it.
 
 ## `binary_options`
 
 ### `binary_options.ffmpeg`
 
-- **Default:** `""` · **Read by:** `get_ffmpeg()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FFMPEG_DEFAULT`](env.md#ffmpeg_default)
-- The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. Surrounding quotes are stripped.
+**Default:** `""` · **Env default:** [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) · **Read by:** `get_ffmpeg()` in `ofscraper/utils/config/data.py`
+
+The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. Surrounding quotes are stripped.
 
 ## `cdm_options`
 
 ### `cdm_options.private-key`
 
-- **Default:** `null` · **Read by:** `get_private_key()` in `ofscraper/utils/config/data.py`
-- **CLI override:** `--private-key`
-- The path to the Widevine CDM private key file (`private_key.pem`). It is read when key-mode is `manual`. The `-pk`/`--private-key` option overrides it. Surrounding quotes are stripped.
+**Default:** `null` · **CLI override:** `--private-key` · **Read by:** `get_private_key()` in `ofscraper/utils/config/data.py`
+
+The path to the Widevine CDM private key file (`private_key.pem`). It is read when key-mode is `manual`. The `-pk`/`--private-key` option overrides it. Surrounding quotes are stripped.
 
 ### `cdm_options.client-id`
 
-- **Default:** `null` · **Read by:** `get_client_id()` in `ofscraper/utils/config/data.py`
-- **CLI override:** `--client-id`
-- The path to the Widevine CDM client ID blob (`client_id.bin`). It is read when key-mode is `manual`. The `-ci`/`--client-id` option overrides it. Surrounding quotes are stripped.
+**Default:** `null` · **CLI override:** `--client-id` · **Read by:** `get_client_id()` in `ofscraper/utils/config/data.py`
+
+The path to the Widevine CDM client ID blob (`client_id.bin`). It is read when key-mode is `manual`. The `-ci`/`--client-id` option overrides it. Surrounding quotes are stripped.
 
 ### `cdm_options.key-mode-default`
 
-- **Default:** `"manual"` · **Read by:** `get_key_mode()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options)
-- **CLI override:** `--key-mode`
-- How DRM content keys are obtained. `manual` (the default) uses the local CDM files in `private-key` and `client-id`. `cdrm` is deprecated: cdrm-project.com no longer works and isn't contacted, so protected videos fail with a message to switch to `manual`; each run that uses it warns. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included. A config that already says `cdrm` keeps it. Other values fall back to the default. The `-k`/`--key-mode` option overrides it.
+**Default:** `"manual"` · **CLI override:** `--key-mode` · **Env default:** [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options) · **Read by:** `get_key_mode()` in `ofscraper/utils/config/data.py`
+
+How DRM content keys are obtained. `manual` (the default) uses the local CDM files in `private-key` and `client-id`. `cdrm` is deprecated: cdrm-project.com no longer works and isn't contacted, so protected videos fail with a message to switch to `manual`; each run that uses it warns. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included. A config that already says `cdrm` keeps it. Other values fall back to the default. The `-k`/`--key-mode` option overrides it.
 
 ## `performance_options`
 
 ### `performance_options.download_sems`
 
-- **Default:** `6` · **Read by:** `get_download_semaphores()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default)
-- **CLI override:** `--downloadsem`
-- The number of downloads that run at the same time. The worker thread pool is twice this size. It must be at least 1, and 0 or a negative number falls back to the default. The `--sem`/`-sd` option overrides it.
+**Default:** `6` · **CLI override:** `--downloadsem` · **Env default:** [`DOWNLOAD_SEM_DEFAULT`](env.md#download_sem_default) · **Read by:** `get_download_semaphores()` in `ofscraper/utils/config/data.py`
+
+The number of downloads that run at the same time. The worker thread pool is twice this size. It must be at least 1, and 0 or a negative number falls back to the default. The `--sem`/`-sd` option overrides it.
 
 ### `performance_options.download_limit`
 
-- **Default:** `0` · **Read by:** `get_download_limit()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DOWNLOAD_LIMIT_DEFAULT`](env.md#download_limit_default)
-- **CLI override:** `--download-limit`
-- The maximum download speed in bytes per second, shared across downloads. It accepts a size string such as `10MB`. 0 means unlimited, and any non-zero value below 1024 is raised to 1024. The `-dl`/`--download-limit` option overrides it.
+**Default:** `0` · **CLI override:** `--download-limit` · **Env default:** [`DOWNLOAD_LIMIT_DEFAULT`](env.md#download_limit_default) · **Read by:** `get_download_limit()` in `ofscraper/utils/config/data.py`
+
+The maximum download speed in bytes per second, shared across downloads. It accepts a size string such as `10MB`. 0 means unlimited, and any non-zero value below 1024 is raised to 1024. The `-dl`/`--download-limit` option overrides it.
 
 ## `content_filter_options`
 
 ### `content_filter_options.block_ads`
 
-- **Default:** `false` · **Read by:** `get_block_ads()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default)
-- When true, posts whose text matches a built-in advertising regex (#ad, giveaway, shoutout, promo and similar) are excluded. This is added on top of any `--neg-filter` patterns. The `-ba`/`--block-ads` flag turns it on for one run.
+**Default:** `false` · **Env default:** [`BLOCKED_ADS_DEFAULT`](env.md#blocked_ads_default) · **Read by:** `get_block_ads()` in `ofscraper/utils/config/data.py`
+
+When true, posts whose text matches a built-in advertising regex (#ad, giveaway, shoutout, promo and similar) are excluded. This is added on top of any `--neg-filter` patterns. The `-ba`/`--block-ads` flag turns it on for one run.
 
 ### `content_filter_options.file_size_max`
 
-- **Default:** `0` · **Read by:** `get_filesize_max()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FILE_SIZE_MAX_DEFAULT`](env.md#file_size_max_default)
-- **Also reads:** `download_options`, `file_size_limit`
-- **CLI override:** `--size-max`
-- Media larger than this are skipped at download time. The `db` command and the table view also apply it. It accepts bytes or a size string such as `500MB`. 0 means no limit, and an unparseable value is treated as 0. The `-sx`/`--size-max` option overrides it.
+**Default:** `0` · **CLI override:** `--size-max` · **Env default:** [`FILE_SIZE_MAX_DEFAULT`](env.md#file_size_max_default) · **Also reads:** `download_options`, `file_size_limit` · **Read by:** `get_filesize_max()` in `ofscraper/utils/config/data.py`
+
+Media larger than this are skipped at download time. The `db` command and the table view also apply it. It accepts bytes or a size string such as `500MB`. 0 means no limit, and an unparseable value is treated as 0. The `-sx`/`--size-max` option overrides it.
 
 ### `content_filter_options.file_size_min`
 
-- **Default:** `0` · **Read by:** `get_filesize_min()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`FILE_SIZE_MIN_DEFAULT`](env.md#file_size_min_default)
-- **Also reads:** `download_options`
-- **CLI override:** `--size-min`
-- Media smaller than this are skipped at download time. The `db` command and the table view also apply it. It accepts bytes or a size string. 0 means no limit, and an unparseable value is treated as 0. The `-sm`/`--size-min` option overrides it.
+**Default:** `0` · **CLI override:** `--size-min` · **Env default:** [`FILE_SIZE_MIN_DEFAULT`](env.md#file_size_min_default) · **Also reads:** `download_options` · **Read by:** `get_filesize_min()` in `ofscraper/utils/config/data.py`
+
+Media smaller than this are skipped at download time. The `db` command and the table view also apply it. It accepts bytes or a size string. 0 means no limit, and an unparseable value is treated as 0. The `-sm`/`--size-min` option overrides it.
 
 ### `content_filter_options.length_max`
 
-- **Default:** `0` · **Read by:** `get_max_length()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`MAX_LENGTH_DEFAULT`](env.md#max_length_default)
-- **Also reads:** `download_options`
-- **CLI override:** `--length-max`
-- The maximum duration in seconds. Longer videos are filtered out. Only videos with a known duration are affected, not audio or images. 0 means no limit. The `-lx`/`--length-max` option overrides it.
+**Default:** `0` · **CLI override:** `--length-max` · **Env default:** [`MAX_LENGTH_DEFAULT`](env.md#max_length_default) · **Also reads:** `download_options` · **Read by:** `get_max_length()` in `ofscraper/utils/config/data.py`
+
+The maximum duration in seconds. Longer videos are filtered out. Only videos with a known duration are affected, not audio or images. 0 means no limit. The `-lx`/`--length-max` option overrides it.
 
 ### `content_filter_options.length_min`
 
-- **Default:** `0` · **Read by:** `get_min_length()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`MIN_LENGTH_DEFAULT`](env.md#min_length_default)
-- **Also reads:** `download_options`
-- **CLI override:** `--length-min`
-- The minimum duration in seconds. Shorter videos are filtered out. Only videos with a known duration are affected, not audio or images. 0 means no limit. The `-lm`/`--length-min` option overrides it.
+**Default:** `0` · **CLI override:** `--length-min` · **Env default:** [`MIN_LENGTH_DEFAULT`](env.md#min_length_default) · **Also reads:** `download_options` · **Read by:** `get_min_length()` in `ofscraper/utils/config/data.py`
+
+The minimum duration in seconds. Shorter videos are filtered out. Only videos with a known duration are affected, not audio or images. 0 means no limit. The `-lm`/`--length-min` option overrides it.
 
 ## `advanced_options`
 
 ### `advanced_options.dynamic-mode-default`
 
-- **Default:** `"digital"` · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default)
-- **CLI override:** `--dynamic-rules`
-- Which source of OnlyFans request-signing rules to use. Allowed values: `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`, `datawhores`; the config menu lists and saves it as `digital`), `generic` (needs `OF_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). Unknown values fall back to the default with a warning. `datawhores` was its own rule source until OnlyFans stopped accepting its rule; it's now an alias for `digitalcriminals`, so configs that name it keep working. If the chosen source fails, isn't configured, or returns an unusable rule (incomplete, or obsolete such as a 2024 rule OnlyFans rejects), `digitalcriminals`, `rafa` and `xagler` are tried in order and the one used is logged. If none returns a usable rule, the auth check reports that auth couldn't be verified rather than bad auth, and the next request tries again. The `-dr`/`--dynamic-rules` option overrides it.
+**Default:** `"digital"` · **CLI override:** `--dynamic-rules` · **Env default:** [`DYNAMIC_OPTIONS_ALL`](env.md#dynamic_options_all), [`DYNAMIC_RULE_DEFAULT`](env.md#dynamic_rule_default) · **Read by:** `get_dynamic()` in `ofscraper/utils/config/data.py`
+
+Which source of OnlyFans request-signing rules to use. Allowed values: `xagler`, `rafa`, `digitalcriminals` (aliases `dc`, `digital`, `digitals`, `digitalcriminal`, `datawhores`; the config menu lists and saves it as `digital`), `generic` (needs `OF_DYNAMIC_GENERIC_URL`) and `manual` (needs `OFSC_DYNAMIC_RULE_MANUAL`). Unknown values fall back to the default with a warning. `datawhores` was its own rule source until OnlyFans stopped accepting its rule; it's now an alias for `digitalcriminals`, so configs that name it keep working. If the chosen source fails, isn't configured, or returns an unusable rule (incomplete, or obsolete such as a 2024 rule OnlyFans rejects), `digitalcriminals`, `rafa` and `xagler` are tried in order and the one used is logged. If none returns a usable rule, the auth check reports that auth couldn't be verified rather than bad auth, and the next request tries again. The `-dr`/`--dynamic-rules` option overrides it.
 
 ### `advanced_options.skip_unavailable_content`
 
-- **Default:** `true` · **Read by:** `get_skip_unavailable_content()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SKIP_UNAVAILABLE_DEFAULT`](env.md#skip_unavailable_default)
-- When true, timeline, pinned, archived, stories and highlights are not scraped for creators whose subscription has expired. Profile, purchased content and messages are still scraped. Labels and streams are scraped only for active subscriptions, whatever this setting says.
+**Default:** `true` · **Env default:** [`SKIP_UNAVAILABLE_DEFAULT`](env.md#skip_unavailable_default) · **Read by:** `get_skip_unavailable_content()` in `ofscraper/utils/config/data.py`
+
+When true, timeline, pinned, archived, stories and highlights are not scraped for creators whose subscription has expired. Profile, purchased content and messages are still scraped. Labels and streams are scraped only for active subscriptions, whatever this setting says.
 
 ### `advanced_options.downloadbars`
 
-- **Default:** `false` · **Read by:** `get_show_downloadprogress()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`PROGRESS_DEFAULT`](env.md#progress_default)
-- **CLI override:** `--downloadbars`
-- When true, the app shows a progress bar for each file being downloaded, in addition to the overall progress. The `-db`/`--downloadbars` flag can turn it on but not off.
+**Default:** `false` · **CLI override:** `--downloadbars` · **Env default:** [`PROGRESS_DEFAULT`](env.md#progress_default) · **Read by:** `get_show_downloadprogress()` in `ofscraper/utils/config/data.py`
+
+When true, the app shows a progress bar for each file being downloaded, in addition to the overall progress. The `-db`/`--downloadbars` flag can turn it on but not off.
 
 ### `advanced_options.cache-mode`
 
-- **Default:** `"sqlite"` · **Read by:** `cache_mode_helper()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`CACHEDEFAULT`](env.md#cachedefault)
-- The storage backend for the on-disk cache. `sqlite` stores pickled values in the `cache_sql` folder. `json` stores JSON values in the `cache_json` folder. `disabled` turns off the cache, the API cache and incremental downloads, like `--no-cache`. `api_disabled` turns off only the API response cache, like `--no-api-cache`, and keeps sqlite storage. Other values fall back to the default.
+**Default:** `"sqlite"` · **Env default:** [`CACHEDEFAULT`](env.md#cachedefault) · **Read by:** `cache_mode_helper()` in `ofscraper/utils/config/data.py`
+
+The storage backend for the on-disk cache. `sqlite` stores pickled values in the `cache_sql` folder. `json` stores JSON values in the `cache_json` folder. `disabled` turns off the cache, the API cache and incremental downloads, like `--no-cache`. `api_disabled` turns off only the API response cache, like `--no-api-cache`, and keeps sqlite storage. Other values fall back to the default.
 
 ### `advanced_options.rotate_logs`
 
-- **Default:** `true` · **Read by:** `get_rotate_logs()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`ROTATE_DEFAULT`](env.md#rotate_default)
-- When true, each run writes its own log file in a per-day folder under the logging directory. When false, all runs of a day append to one file. It must be true for `logs_expire_time` to delete old logs.
+**Default:** `true` · **Env default:** [`ROTATE_DEFAULT`](env.md#rotate_default) · **Read by:** `get_rotate_logs()` in `ofscraper/utils/config/data.py`
+
+When true, each run writes its own log file in a per-day folder under the logging directory. When false, all runs of a day append to one file. It must be true for `logs_expire_time` to delete old logs.
 
 ### `advanced_options.sanitize_text`
 
-- **Default:** `false` · **Read by:** `get_sanitizeDB()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default)
-- When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, raw API text is stored. This doesn't affect file names. Fansly style codes are always stripped regardless of this setting (from the database, `.txt` files, file names, text filters and script input): `[s:lg]`, `[c:blue]`, `**bold**`, `*italic*`, `~~`, `[text](url)` links (keeping only their text) and backslash escapes (keeping the escaped character). Text saved by earlier versions keeps them until a `--metadata` run rewrites it, and `stash_sync` copies saved text as is.
+**Default:** `false` · **Env default:** [`SANITIZE_DB_DEFAULT`](env.md#sanitize_db_default) · **Read by:** `get_sanitizeDB()` in `ofscraper/utils/config/data.py`
+
+When true, post and message text is stored in the database with HTML tags removed and whitespace collapsed. When false, raw API text is stored. This doesn't affect file names. Fansly style codes are always stripped regardless of this setting (from the database, `.txt` files, file names, text filters and script input): `[s:lg]`, `[c:blue]`, `**bold**`, `*italic*`, `~~`, `[text](url)` links (keeping only their text) and backslash escapes (keeping the escaped character). Text saved by earlier versions keeps them until a `--metadata` run rewrites it, and `stash_sync` copies saved text as is.
 
 ### `advanced_options.temp_dir`
 
-- **Default:** `null` · **Read by:** `get_TempDir()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`TEMP_FOLDER_DEFAULT`](env.md#temp_folder_default)
-- The root folder for in-progress (`.part`) downloads. It is laid out with `dir_format`, like the final location. When unset, temp files are written under `save_location`. Surrounding quotes are stripped.
+**Default:** `null` · **Env default:** [`TEMP_FOLDER_DEFAULT`](env.md#temp_folder_default) · **Read by:** `get_TempDir()` in `ofscraper/utils/config/data.py`
+
+The root folder for in-progress (`.part`) downloads. It is laid out with `dir_format`, like the final location. When unset, temp files are written under `save_location`. Surrounding quotes are stripped.
 
 ### `advanced_options.remove_hash_match`
 
-- **Default:** `null` · **Read by:** `get_hash()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`HASHED_DEFAULT`](env.md#hashed_default)
-- `true` hashes every download and, after each creator finishes, deletes later files whose hash matches an earlier file for the same creator and media type, keeping the first copy. A file is deleted only if its content still matches the kept file. Files shared by several posts, and per-post copies under `--allow-dupes`, are left alone. The first run with it on also removes duplicates recorded by earlier runs. For each removed copy, the database then points to the kept file. Nothing is removed in a text-only run, from the check table, or once a stop is requested. Only `true` deletes (via `OFSC_HASHED_DEFAULT`: `true`, `1`, `yes` or `on`). `false` only records hashes; `null` skips hashing.
+**Default:** `null` · **Env default:** [`HASHED_DEFAULT`](env.md#hashed_default) · **Read by:** `get_hash()` in `ofscraper/utils/config/data.py`
+
+`true` hashes every download and, after each creator finishes, deletes later files whose hash matches an earlier file for the same creator and media type, keeping the first copy. A file is deleted only if its content still matches the kept file. Files shared by several posts, and per-post copies under `--allow-dupes`, are left alone. The first run with it on also removes duplicates recorded by earlier runs. For each removed copy, the database then points to the kept file. Nothing is removed in a text-only run, from the check table, or once a stop is requested. Only `true` deletes (via `OFSC_HASHED_DEFAULT`: `true`, `1`, `yes` or `on`). `false` only records hashes; `null` skips hashing.
 
 ### `advanced_options.infinite_loop_action_mode`
 
-- **Default:** `false` · **Read by:** `get_InfiniteLoop()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`INFINITE_LOOP_DEFAULT`](env.md#infinite_loop_default)
-- When true, action mode (`--action`) asks after each run whether to continue, and offers another action instead of exiting.
+**Default:** `false` · **Env default:** [`INFINITE_LOOP_DEFAULT`](env.md#infinite_loop_default) · **Read by:** `get_InfiniteLoop()` in `ofscraper/utils/config/data.py`
+
+When true, action mode (`--action`) asks after each run whether to continue, and offers another action instead of exiting.
 
 ### `advanced_options.incremental_downloads`
 
-- **Default:** `true` · **Read by:** `get_incremental_downloads()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default)
-- **Also reads:** `enable_auto_after`
-- When true and no `--after` is given, each area is scanned only from the newest previously scanned post instead of from the start. Like and unlike actions and forced full scans still scan everything. `--no-cache` or cache-mode `disabled` turns it off for the run. The legacy key `advanced_options.enable_auto_after` is read when this key is missing.
+**Default:** `true` · **Env default:** [`INCREMENTAL_DOWNLOADS_DEFAULT`](env.md#incremental_downloads_default) · **Also reads:** `enable_auto_after` · **Read by:** `get_incremental_downloads()` in `ofscraper/utils/config/data.py`
+
+When true and no `--after` is given, each area is scanned only from the newest previously scanned post instead of from the start. Like and unlike actions and forced full scans still scan everything. `--no-cache` or cache-mode `disabled` turns it off for the run. The legacy key `advanced_options.enable_auto_after` is read when this key is missing.
 
 On Fansly download runs, the timeline and messages are paged newest first, and each finished scan records the newest post it saw. The next run stops at the first page whose posts are all at or below that post, once no older post has media left to download. Only an unstopped download scan that reached the last page (or stopped by this rule) records the marker; runs that need the whole list first (`--max-post-count` or sort options) never use it. A full scan still runs on a creator's first run, when access changed (subscribed, following or tier), with `--post-id` or `--force-all`, when the last full scan is older than `FANSLY_FULL_SCAN_DAYS` days (default 7), or in the full-scan cases above. A post that appears later with an older date, or media added later to an already-scanned post, is found only by a full scan (`--after 2000` forces one).
 
 ### `advanced_options.default_user_list`
 
-- **Default:** `"main"` · **Read by:** `get_default_userlist()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DEFAULT_USER_LIST`](env.md#default_user_list)
-- **CLI override:** `--user_list`
-- The OnlyFans user lists to select creators from when `-ul`/`--user-list` is not given. It is a list or a comma-separated string. The reserved names `ofscraper.main`, `ofscraper.active` and `ofscraper.expired` mean all, active and expired subscriptions. Names are matched case-insensitively.
+**Default:** `"main"` · **CLI override:** `--user_list` · **Env default:** [`DEFAULT_USER_LIST`](env.md#default_user_list) · **Read by:** `get_default_userlist()` in `ofscraper/utils/config/data.py`
+
+The OnlyFans user lists to select creators from when `-ul`/`--user-list` is not given. It is a list or a comma-separated string. The reserved names `ofscraper.main`, `ofscraper.active` and `ofscraper.expired` mean all, active and expired subscriptions. Names are matched case-insensitively.
 
 ### `advanced_options.default_black_list`
 
-- **Default:** `[]` · **Read by:** `get_default_blacklist()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`DEFAULT_BLACK_LIST`](env.md#default_black_list)
-- **CLI override:** `--black_list`
-- The OnlyFans user lists whose members are excluded from selection when `-bl`/`--black-list` is not given. It is a list or a comma-separated string. Names are matched case-insensitively.
+**Default:** `[]` · **CLI override:** `--black_list` · **Env default:** [`DEFAULT_BLACK_LIST`](env.md#default_black_list) · **Read by:** `get_default_blacklist()` in `ofscraper/utils/config/data.py`
+
+The OnlyFans user lists whose members are excluded from selection when `-bl`/`--black-list` is not given. It is a list or a comma-separated string. Names are matched case-insensitively.
 
 ### `advanced_options.logs_expire_time`
 
-- **Default:** `0` · **Read by:** `get_logs_expire()` in `ofscraper/utils/config/data.py`
-- The age in hours after which `.log` files in the logging directory are deleted at cleanup, along with empty log folders. 0 disables it. Nothing is deleted unless `rotate_logs` is true.
+**Default:** `0` · **Read by:** `get_logs_expire()` in `ofscraper/utils/config/data.py`
+
+The age in hours after which `.log` files in the logging directory are deleted at cleanup, along with empty log folders. 0 disables it. Nothing is deleted unless `rotate_logs` is true.
 
 ### `advanced_options.ssl_verify`
 
-- **Default:** `"custom"` · **Read by:** `get_ssl_verify()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SSL_VALIDATION_DEFAULT`](env.md#ssl_validation_default)
-- The TLS mode for HTTP sessions. `false` (also `0`, `none` or empty) turns certificate verification off. `default` uses Python's standard SSL context. Any other value (normally `custom`) uses the hardened custom context in `cert.py`, which shapes the TLS fingerprint. A legacy JSON boolean (`true` or `false`) is read as `custom`.
+**Default:** `"custom"` · **Env default:** [`SSL_VALIDATION_DEFAULT`](env.md#ssl_validation_default) · **Read by:** `get_ssl_verify()` in `ofscraper/utils/config/data.py`
+
+The TLS mode for HTTP sessions. `false` (also `0`, `none` or empty) turns certificate verification off. `default` uses Python's standard SSL context. Any other value (normally `custom`) uses the hardened custom context in `cert.py`, which shapes the TLS fingerprint. A legacy JSON boolean (`true` or `false`) is read as `custom`.
 
 ### `advanced_options.env_files`
 
-- **Default:** `[]` · **Read by:** `get_env_files()` in `ofscraper/utils/config/data.py`
-- **Also reads:** `script_options`, `scripts`
-- A list of `.env`, `.yaml`/`.yml` or `.json` files whose values are loaded as environment variables (`OFSC_*` overrides) before settings are built. Later files override earlier ones. Before them, the app loads a `.env` file found by python-dotenv. It searches upward from `ofscraper/utils/of_env/`, and from the working folder only in the standalone binaries, the REPL or a debugger. The `--env-files` option replaces this list for one run.
+**Default:** `[]` · **Also reads:** `script_options`, `scripts` · **Read by:** `get_env_files()` in `ofscraper/utils/config/data.py`
+
+A list of `.env`, `.yaml`/`.yml` or `.json` files whose values are loaded as environment variables (`OFSC_*` overrides) before settings are built. Later files override earlier ones. Before them, the app loads a `.env` file found by python-dotenv. It searches upward from `ofscraper/utils/of_env/`, and from the working folder only in the standalone binaries, the REPL or a debugger. The `--env-files` option replaces this list for one run.
 
 ### `advanced_options.database_url`
 
-- **Default:** `"Not set in this file. To use PostgreSQL, set the OFSC_DATABASE_URL environment variable, or put it in a file listed in env_files (it holds a password). See POSTGRESQL.md."` · **Read by:** `get_database_url_note()` in `ofscraper/utils/config/data.py`
-- Not a setting: a note for anyone who looks for the PostgreSQL address here. The address is the [`OFSC_DATABASE_URL`](env.md#ofsc_database_url) environment default, which is kept out of this file because it holds a password (see `POSTGRESQL.md`). Whatever is written in this key is ignored and replaced by the note.
+**Default:** `"Not set in this file. To use PostgreSQL, set the OFSC_DATABASE_URL environment variable, or put it in a file listed in env_files (it holds a password). See POSTGRESQL.md."` · **Read by:** `get_database_url_note()` in `ofscraper/utils/config/data.py`
+
+Not a setting: a note for anyone who looks for the PostgreSQL address here. The address is the [`OFSC_DATABASE_URL`](env.md#ofsc_database_url) environment default, which is kept out of this file because it holds a password (see `POSTGRESQL.md`). Whatever is written in this key is ignored and replaced by the note.
 
 ## `script_options`
 
 ### `script_options.after_action_script`
 
-- **Default:** `null` · **Read by:** `get_after_action_script()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default)
-- **Also reads:** `advanced_options`
-- **CLI override:** `--after-action-script`
-- An executable that runs after each user is processed by the like, unlike or download actions. It also runs after scrape-paid, check and manual downloads. It receives JSON with the username, media and posts on stdin. The `-aas`/`--after-action-script` option overrides it.
+**Default:** `null` · **CLI override:** `--after-action-script` · **Env default:** [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) · **Also reads:** `advanced_options` · **Read by:** `get_after_action_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs after each user is processed by the like, unlike or download actions. It also runs after scrape-paid, check and manual downloads. It receives JSON with the username, media and posts on stdin. The `-aas`/`--after-action-script` option overrides it.
 
 ### `script_options.post_script`
 
-- **Default:** `null` · **Read by:** `get_post_script()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default)
-- **Also reads:** `advanced_options`, `scripts`
-- **CLI override:** `--post-script`
-- An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities. The `-ps`/`--post-script` option overrides it.
+**Default:** `null` · **CLI override:** `--post-script` · **Env default:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_post_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities. The `-ps`/`--post-script` option overrides it.
 
 ### `script_options.naming_script`
 
-- **Default:** `null` · **Read by:** `get_naming_script()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default)
-- **Also reads:** `advanced_options`, `scripts`
-- **CLI override:** `--naming-script`
-- An executable that runs for each download to choose its path. It receives JSON about the media, post and current formats on stdin. Non-empty stdout is used as the full file path, in place of `dir_format` and `file_format`. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-ns`/`--naming-script` option overrides it.
+**Default:** `null` · **CLI override:** `--naming-script` · **Env default:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_naming_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs for each download to choose its path. It receives JSON about the media, post and current formats on stdin. Non-empty stdout is used as the full file path, in place of `dir_format` and `file_format`. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-ns`/`--naming-script` option overrides it.
 
 ### `script_options.after_download_script`
 
-- **Default:** `null` · **Read by:** `get_after_download_script()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default)
-- **Also reads:** `advanced_options`, `scripts`
-- **CLI override:** `--after-download-script`
-- An executable that runs after each file is downloaded (text files included). It receives the final file path on stdin. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-adl`/`--after-download-script` option overrides it.
+**Default:** `null` · **CLI override:** `--after-download-script` · **Env default:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_after_download_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs after each file is downloaded (text files included). It receives the final file path on stdin. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-adl`/`--after-download-script` option overrides it.
 
 ### `script_options.skip_download_script`
 
-- **Default:** `null` · **Read by:** `get_skip_download_script()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default)
-- **Also reads:** `advanced_options`, `scripts`
-- **CLI override:** `--skip-download-script`
-- An executable that runs before each download. Receives JSON about the media, post and total size on stdin, and is called once per file (per track for DRM video) per run. Printing `false` or nothing skips the file for this run only: it is counted as skipped, not saved as downloaded, and asked about again on the next run. Printing `skip-permanent` (any case) skips it for good: counted as skipped and saved as downloaded with no file, so it isn't asked about again. Undo permanent skips with `--retry-permanent-skips` or `ofscraper db --unmark-permanent-skips`. Any other output, or a failed script, lets the download proceed. Before #351, `false` and nothing also saved the file as downloaded; print `skip-permanent` to keep that behaviour. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-sdl`/`--skip-download-script` option overrides it.
+**Default:** `null` · **CLI override:** `--skip-download-script` · **Env default:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_skip_download_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs before each download. Receives JSON about the media, post and total size on stdin, and is called once per file (per track for DRM video) per run. Printing `false` or nothing skips the file for this run only: it is counted as skipped, not saved as downloaded, and asked about again on the next run. Printing `skip-permanent` (any case) skips it for good: counted as skipped and saved as downloaded with no file, so it isn't asked about again. Undo permanent skips with `--retry-permanent-skips` or `ofscraper db --unmark-permanent-skips`. Any other output, or a failed script, lets the download proceed. Before #351, `false` and nothing also saved the file as downloaded; print `skip-permanent` to keep that behaviour. Programs the script starts are stopped once it exits, times out or is cancelled, and when ofscraper exits (a warning is logged when the script exits and leaves any running). `nohup` and `&` don't keep a program running. On Linux and macOS, a program started in its own session (for example with `setsid`) is left running; on Windows, none is. The `-sdl`/`--skip-download-script` option overrides it.
 
 ## `responsetype`
 
@@ -375,56 +403,55 @@ These values are the folder names that fill `{responsetype}` in `dir_format`. Fo
 
 ### `responsetype.timeline`
 
-- **Default:** `"Posts"` · **Read by:** `get_timeline_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- **Also reads:** `post`
-- The folder name used for `{responsetype}` for timeline posts. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Posts"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Also reads:** `post` · **Read by:** `get_timeline_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for timeline posts. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.message`
 
-- **Default:** `"Messages"` · **Read by:** `get_messages_progress_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for messages. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Messages"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_messages_progress_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for messages. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.archived`
 
-- **Default:** `"Archived"` · **Read by:** `get_archived_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for archived posts. It takes precedence over pinned and other types. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Archived"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_archived_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for archived posts. It takes precedence over pinned and other types. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.paid`
 
-- **Default:** `"Messages"` · **Read by:** `get_paid_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for purchased (paid) content found by `--scrape-paid` or the purchased area. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Messages"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_paid_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for purchased (paid) content found by `--scrape-paid` or the purchased area. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.stories`
 
-- **Default:** `"Stories"` · **Read by:** `get_stories_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for stories. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Stories"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_stories_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for stories. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.highlights`
 
-- **Default:** `"Stories"` · **Read by:** `get_highlights_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for story highlights. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Stories"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_highlights_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for story highlights. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.profile`
 
-- **Default:** `"Profile"` · **Read by:** `get_profile_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for profile media (avatar and header images). The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Profile"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_profile_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for profile media (avatar and header images). The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.pinned`
 
-- **Default:** `"Posts"` · **Read by:** `get_pinned_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for pinned posts. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Posts"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_pinned_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for pinned posts. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 
 ### `responsetype.streams`
 
-- **Default:** `"Streams"` · **Read by:** `get_streams_responsetype()` in `ofscraper/utils/config/data.py`
-- **Default from:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default)
-- The folder name used for `{responsetype}` for streams. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
+**Default:** `"Streams"` · **Env default:** [`RESPONSE_TYPE_DEFAULT`](env.md#response_type_default) · **Read by:** `get_streams_responsetype()` in `ofscraper/utils/config/data.py`
+
+The folder name used for `{responsetype}` for streams. The value is capitalised, so only its first letter stays uppercase. An empty value falls back to the type name.
 

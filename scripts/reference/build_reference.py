@@ -412,13 +412,9 @@ def render_cli(notes):
 
     out = [HEADER, "# Command-line reference\n\n"]
     out.append(
-        "Every command and option the CLI accepts. The page is built from the click"
-        " program in `ofscraper/utils/args/`. Option names, types, defaults and help text"
-        " come from the option definitions.\n\n"
-        "Each option lists these fields, when they apply: **Also** (other names),"
-        " **Dest**, **Type**, **Default**, **Commands** (which commands accept it),"
-        " **Config fallback**, **Defined in**, then its help text and any **Note**."
-        " **Config fallback** means the option's value comes from that `config.json` key"
+        "Every command and option the CLI accepts. Built from the click"
+        " program in `ofscraper/utils/args/`.\n\n"
+        "**Config fallback** means the option's value comes from that `config.json` key"
         " when the option isn't given (`merged_settings` in"
         " `ofscraper/utils/settings.py`). [README.md](README.md) explains how options,"
         " `config.json` and environment variables combine.\n\n"
@@ -428,20 +424,29 @@ def render_cli(notes):
         if entry["group"] not in groups:
             groups.append(entry["group"])
     out.append("## Contents\n\n")
-    out.append("- [Commands](#commands)\n- [`--action` modes](#--action-modes)\n- [Options](#options)\n")
+    out.append("- [Quick reference](#quick-reference)\n- [Commands](#commands)\n- [`--action` modes](#--action-modes)\n- [Options](#options)\n")
     for group in groups:
         out.append(f"  - [{group}](#{anchor(group)})\n")
-    out.append("\n")
-    out.append("## Commands\n\n")
+    out.append("\n## Quick reference\n\n")
+    out.append("| Command | Options | Summary |\n|---|---|---|\n")
+    for name, cmd in command_objects().items():
+        title = "Main program (no command)" if not name else f"`{name}`"
+        link_target = anchor("Main program (no command)" if not name else name)
+        summary = cell(clean_help(cmd.short_help or cmd.help)) or "Run interactive menu or batch actions"
+        out.append(f"| [{title}](#{link_target}) | {len(cmd.params)} | {summary} |\n")
+    for key, (_usage, summary) in SEPARATE_COMMANDS.items():
+        link_target = anchor(f"{key} (separate entry point)")
+        out.append(f"| [`{key}`](#{link_target}) | argparse | {cell(summary)} |\n")
+    out.append("\n## Commands\n\n")
     out.append("Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.\n\n")
     for name, cmd in command_objects().items():
         key = name or "(main)"
         title = "Main program (no command)" if not name else f"`{name}`"
         out.append(f"### {title}\n\n")
+        help_summary = cell(clean_help(cmd.help)) or "none"
+        out.append(f"**Options:** {len(cmd.params)} · **`--help` summary:** {help_summary}\n\n")
         out.append(notes.COMMANDS[key].strip() + "\n\n")
-        count = len(cmd.params)
-        out.append(f"Accepts {count} options. Its `--help` summary: {cell(clean_help(cmd.help)) or 'none'}.\n\n")
-    for key, usage in SEPARATE_COMMANDS.items():
+    for key, (usage, _summary) in SEPARATE_COMMANDS.items():
         out.append(f"### `{key}` (separate entry point)\n\n")
         out.append(notes.COMMANDS[key].strip() + "\n\n")
         out.append(render_argparse(key, usage))
@@ -473,42 +478,56 @@ def render_cli(notes):
             out.append(f"#### {heading_text}\n\n")
             names = list(param.opts) + list(param.secondary_opts)
             others = [n for n in names if n != heading]
-            if others:
-                out.append("- **Also:** " + ", ".join(code(n) for n in others) + "\n")
-            out.append(
-                f"- **Dest:** `{param.name}` · **Type:** {type_text(param)}"
-                f" · **Default:** {default_text(param)}\n"
-            )
             cmds = entry["commands"]
-            if len(cmds) == len(COMMANDS):
-                out.append("- **Commands:** all\n")
-            else:
-                out.append("- **Commands:** " + ", ".join(command_label(c) for c in cmds) + "\n")
+            cmd_text = "all" if len(cmds) == len(COMMANDS) else ", ".join(command_label(c) for c in cmds)
+            meta = []
+            if others:
+                meta.append("**Also:** " + ", ".join(code(n) for n in others))
+            meta.append(f"**Type:** {type_text(param)}")
+            meta.append(f"**Default:** {default_text(param)}")
+            meta.append(f"**Commands:** {cmd_text}")
             linked = sorted(key_of_getter.get(g, f"{g}()") for g in links.get(param.name, ()))
             if linked:
-                out.append("- **Config fallback:** " + ", ".join(f"`{k}`" for k in linked) + "\n")
-            files = sorted(set().union(*[definitions.get(n, set()) for n in param.opts]) if param.opts else set())
-            if files:
-                out.append("- **Defined in:** " + ", ".join(f"`{f}`" for f in files) + "\n")
-            if getattr(param, "hidden", False):
-                out.append("- Hidden from `--help`.\n")
+                meta.append("**Config fallback:** " + ", ".join(f"`{k}`" for k in linked))
+            out.append(" · ".join(meta) + "\n\n")
             help_text = clean_help(param.help)
             if help_text:
-                out.append(f"- {help_text}\n")
+                out.append(f"{help_text}\n\n")
             note = notes.CLI.get(param.name)
             if note:
-                out.append(f"- **Note:** {note.strip()}\n")
-            out.append("\n")
+                out.append(f"{note.strip()}\n\n")
+            files = sorted(set().union(*[definitions.get(n, set()) for n in param.opts]) if param.opts else set())
+            source_parts = [f"**Dest:** `{param.name}`"]
+            if files:
+                source_parts.append("**Defined in:** " + ", ".join(f"`{f}`" for f in files))
+            if getattr(param, "hidden", False):
+                source_parts.append("Hidden from `--help`")
+            out.append(" · ".join(source_parts) + "\n\n")
     return "".join(out)
 
 
-# argparse tools under ofscraper/commands that aren't part of the CLI: module -> usage
+# argparse tools under ofscraper/commands that aren't part of the CLI: module -> (usage, summary)
 SEPARATE_COMMANDS = {
-    "move_creator_files": "(DATABASE | --postgres --creator NAME) [OPTIONS]",
-    "postgres_export": "FOLDER [OPTIONS]",
-    "postgres_import": "FOLDER [OPTIONS]",
-    "recover_collisions": "(DATABASE | --postgres --creator NAME) [OPTIONS]",
-    "stash_sync": "(PATH... | --postgres) [OPTIONS]",
+    "move_creator_files": (
+        "(DATABASE | --postgres --creator NAME) [OPTIONS]",
+        "Move a creator's downloaded files to match new path settings and update recorded paths.",
+    ),
+    "postgres_export": (
+        "FOLDER [OPTIONS]",
+        "Export creators from PostgreSQL back to per-creator `user_data.db` files.",
+    ),
+    "postgres_import": (
+        "FOLDER [OPTIONS]",
+        "Import per-creator `user_data.db` files into PostgreSQL.",
+    ),
+    "recover_collisions": (
+        "(DATABASE | --postgres --creator NAME) [OPTIONS]",
+        "Find recorded paths shared by different media and reset downloaded flags to re-download.",
+    ),
+    "stash_sync": (
+        "(PATH... | --postgres) [OPTIONS]",
+        "Sync downloaded media metadata from OF-Scraper databases into Stash.",
+    ),
 }
 
 
@@ -569,13 +588,10 @@ def render_config(notes):
     out.append(
         "Every key `config.json` holds, in the order the file is written"
         " (`ofscraper/utils/config/schema.py`). Defaults are what a new config gets.\n\n"
-        "Each key lists these fields, when they apply: **Default**, **Read by** (the"
-        " getter), **Default from** (the environment default behind it), **Also reads**"
-        " (older key names), **CLI override**, then a description."
-        " `auto_update_config` rebuilds the file from the getters and writes it back."
-        " So the getter reads an older key name once, and the file is saved under the"
-        " current name. **CLI override** means a command-line option takes precedence"
-        " for that run (`merged_settings` in `ofscraper/utils/settings.py`).\n\n"
+        "`auto_update_config` rebuilds the file from the getters and writes it back,"
+        " so an older key name is read once and saved under the current name."
+        " **CLI override** means a command-line option takes precedence for that run"
+        " (`merged_settings` in `ofscraper/utils/settings.py`).\n\n"
     )
     sections = []
     for key in defaults:
@@ -583,9 +599,25 @@ def render_config(notes):
         if section not in sections:
             sections.append(section)
     out.append("## Contents\n\n")
+    out.append("- [Quick reference](#quick-reference)\n")
     for section in sections:
         label = section if section == "Top level" else f"`{section}`"
         out.append(f"- [{label}](#{anchor(section)})\n")
+    out.append("\n## Quick reference\n\n")
+    out.append("| Key | Default | CLI override | Env default |\n|---|---|---|---|\n")
+    for key, default in defaults.items():
+        getter, module_file = getters[key]
+        envs, _older = getter_details(getter, module_file, key)
+        dests = sorted(dest_of_getter.get(getter, ()))
+        cli_text = ", ".join(f"`{option_heading(options[d]) if d in options else d}`" for d in dests) or "none"
+        env_text = ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs) or "none"
+        default_cell = value_text(default, "json")
+        if len(default_cell) > 60:
+            default_cell = "see below"
+        out.append(
+            f"| [`{key}`](#{anchor(key)}) | {cell(default_cell)}"
+            f" | {cli_text} | {env_text} |\n"
+        )
     out.append("\n")
     for section in sections:
         out.append(f"## {section if section == 'Top level' else '`' + section + '`'}\n\n")
@@ -598,19 +630,18 @@ def render_config(notes):
             getter, module_file = getters[key]
             envs, older = getter_details(getter, module_file, key)
             out.append(f"### `{key}`\n\n")
-            out.append(
-                f"- **Default:** {value_text(default, 'json')}"
-                f" · **Read by:** `{getter}()` in `{module_file}`\n"
-            )
-            if envs:
-                out.append("- **Default from:** " + ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs) + "\n")
-            if older:
-                out.append("- **Also reads:** " + ", ".join(f"`{k}`" for k in older) + "\n")
+            meta = [f"**Default:** {value_text(default, 'json')}"]
             dests = sorted(dest_of_getter.get(getter, ()))
             if dests:
                 flags = [option_heading(options[d]) if d in options else d for d in dests]
-                out.append("- **CLI override:** " + ", ".join(f"`{f}`" for f in flags) + "\n")
-            out.append(f"- {notes.CONFIG[key].strip()}\n\n")
+                meta.append("**CLI override:** " + ", ".join(f"`{f}`" for f in flags))
+            if envs:
+                meta.append("**Env default:** " + ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs))
+            if older:
+                meta.append("**Also reads:** " + ", ".join(f"`{k}`" for k in older))
+            meta.append(f"**Read by:** `{getter}()` in `{module_file}`")
+            out.append(" · ".join(meta) + "\n\n")
+            out.append(notes.CONFIG[key].strip() + "\n\n")
     return "".join(out)
 
 
@@ -722,6 +753,22 @@ def env_description(key, comment, notes):
 
 
 ENV_VALUES_DIR = "ofscraper/utils/of_env/values/"
+UNUSED_PREFIX = "Defined but not read anywhere"
+
+
+def unused_note(desc):
+    """the text after "Defined but not read anywhere", or None if desc doesn't start with it"""
+    if not desc.startswith(UNUSED_PREFIX):
+        return None
+    return desc[len(UNUSED_PREFIX) :].lstrip(".").strip()
+
+
+def first_sentence(text):
+    """text up to the first ". ", not counting the dot in e.g. or i.e."""
+    for m in re.finditer(r"\. ", text):
+        if not re.search(r"\b(e\.g|i\.e)$", text[: m.start()]):
+            return text[: m.start()] + "."
+    return text.rstrip(".") + "."
 
 
 def env_section_title(section, notes):
@@ -754,11 +801,29 @@ def render_env(notes):
     if unused:
         raise ValueError(f"notes.ENV_FILES lists files with no defaults: {', '.join(unused)}")
     files = [p for p in titles if p in found]
+    file_sections = {}
+    unused_rows = []
+    for path in files:
+        active_sections = []
+        for key, (p, section, envs, comment) in sources.items():
+            if p != path:
+                continue
+            desc = env_description(key, comment, notes)
+            note = unused_note(desc)
+            if note is not None:
+                unused_rows.append((key, p, envs, values[key], note))
+                continue
+            if section not in active_sections:
+                active_sections.append(section)
+        if active_sections:
+            file_sections[path] = active_sections
     out.append("## Contents\n\n")
     out.append("- [Rate-limit and backoff settings](#rate-limit-and-backoff-settings)\n")
     out.append("- [Read directly from the environment](#read-directly-from-the-environment)\n")
-    for path in files:
+    for path in file_sections:
         out.append(f"- [{titles[path]}](#{anchor(titles[path])})\n")
+    if unused_rows:
+        out.append("- [Unused legacy defaults](#unused-legacy-defaults)\n")
     out.append("\n")
     out.append("## Rate-limit and backoff settings\n\n" + notes.ENV_SLEEPER.strip() + "\n\n")
     out.append("## Read directly from the environment\n\n")
@@ -772,27 +837,50 @@ def render_env(notes):
             f"| `{name}` | {cell(code(default))} | `{path}` | {cell(notes.ENV_DIRECT[name].strip())} |\n"
         )
     out.append("\n")
-    for path in files:
+    for path, active_sections in file_sections.items():
         out.append(f"## {titles[path]}\n\nDefined in `{path}`.\n\n")
-        sections = []
-        for key, (p, section, *_r) in sources.items():
-            if p == path and section not in sections:
-                sections.append(section)
-        for section in sections:
+        for section in active_sections:
             # a file with one section needs no subheading under its own title
-            if section and len(sections) > 1:
+            if section and len(active_sections) > 1:
                 out.append(f"### {env_section_title(section, notes)}\n\n")
             out.append("| Key | Environment variable | Default | Description |\n|---|---|---|---|\n")
+            detailed = []
             for key, (p, s, envs, comment) in sources.items():
                 if p != path or s != section:
                     continue
+                desc = env_description(key, comment, notes)
+                if unused_note(desc) is not None:
+                    continue
                 env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
+                if len(desc) > 240:
+                    first = first_sentence(desc)
+                    table_desc = f"{first} [Details](#{anchor(key)}-details)."
+                    detailed.append((key, env_text, values[key], desc))
+                else:
+                    table_desc = desc
                 out.append(
                     f'| <a id="{anchor(key)}"></a>`{key}` | {env_text}'
                     f" | {cell(value_text(values[key]))}"
-                    f" | {cell(env_description(key, comment, notes))} |\n"
+                    f" | {cell(table_desc)} |\n"
                 )
             out.append("\n")
+            for key, env_text, val, desc in detailed:
+                out.append(f'#### <a id="{anchor(key)}-details"></a>`{key}`\n\n')
+                out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
+                out.append(f"{desc}\n\n")
+    if unused_rows:
+        out.append("## Unused legacy defaults\n\n")
+        out.append(
+            "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.\n\n"
+            "| Key | Environment variable | Default | Defined in | Note |\n|---|---|---|---|---|\n"
+        )
+        for key, p, envs, val, note in unused_rows:
+            env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
+            out.append(
+                f'| <a id="{anchor(key)}"></a>`{key}` | {env_text}'
+                f" | {cell(value_text(val))} | `{p}` | {cell(note)} |\n"
+            )
+        out.append("\n")
     return "".join(out)
 
 
