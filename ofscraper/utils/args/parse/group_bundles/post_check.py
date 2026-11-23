@@ -13,9 +13,9 @@ def post_check_args(func):
         "post_check",
         short_help="""\b
                 Produces a media table from posts with filterable entries and quick downloads""",
-        help="""The post_check subcommand gathers information on media content from posts
-    It presents this data in a table format with filtering options for focused searches 
-    Allows unlocked media entries to be directly downloaded through the table""",
+        help="""The post_check subcommand gathers information on media content from posts.
+    It presents this data in a table format with filtering options for focused searches.
+    Allows unlocked media entries to be directly downloaded through the table.""",
         show_constraints=True,
     )
     @url_group

@@ -15,9 +15,9 @@ def story_check_args(func):
         short_help="""\b
                 Produces a media table from stories and highlights with filterable entries and quick downloads""",
         help="""
-    The story_check subcommand gathers information on media content from stories and highlights
-    It presents this data in a table format with filtering options for focused searches 
-    Allows unlocked media entries to be directly downloaded through the table
+    The story_check subcommand gathers information on media content from stories and highlights.
+    It presents this data in a table format with filtering options for focused searches.
+    Allows unlocked media entries to be directly downloaded through the table.
     """,
         show_constraints=True,
     )

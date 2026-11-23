@@ -47,7 +47,7 @@ def load_live_display_config():
     # If set via environment, it's True for "true" or "1" and False otherwise; unset, it remains None.
     config["SUPRESS_LIKE_DISPLAY"] = _optional_bool(os.getenv("OFSC_SUPRESS_LIKE_DISPLAY"))
 
-    # DOWNLOAD_LIVE_DISPLAY: Whether to enable live download progress display.
+    # DOWNLOAD_LIVE_DISPLAY: Defined but not read anywhere.
     # Default: True
     config["DOWNLOAD_LIVE_DISPLAY"] = os.getenv(
         "OFSC_DOWNLOAD_LIVE_DISPLAY", "True"

@@ -12,10 +12,10 @@ def load_dynamic_rules_config():
     config = {}
 
     # --- Dynamic Rules Configuration ---
-    # DYNAMIC_RULE_MANUAL: The specific manual dynamic rule to use. Defaults to None.
+    # DYNAMIC_RULE_MANUAL: JSON object containing custom OnlyFans dynamic signing rules, used when `dynamic-mode-default` is `manual`.
     config["DYNAMIC_RULE_MANUAL"] = os.getenv("OFSC_DYNAMIC_RULE_MANUAL", None)
 
-    # DYNAMIC_OPTIONS: List of available dynamic rule options.
+    # DYNAMIC_OPTIONS: Dynamic rule sources shown in the interactive config menu.
     # Default: ["digitalcriminals", "manual", "generic", "xagler", "rafa"]
     dynamic_options_env = os.getenv("OFSC_DYNAMIC_OPTIONS")
     if dynamic_options_env:
@@ -26,7 +26,7 @@ def load_dynamic_rules_config():
         config["DYNAMIC_OPTIONS"] = const.DYNAMIC_OPTIONS
 
 
-    # DYNAMIC_OPTIONS_ALL: Comprehensive list of all dynamic rule options including aliases.
+    # DYNAMIC_OPTIONS_ALL: Accepted values (including aliases) when validating `advanced_options.dynamic-mode-default`.
     #
     # This list is derived from DYNAMIC_OPTIONS, so it should be built after DYNAMIC_OPTIONS is set.
     dynamic_options_all_env = os.getenv("OFSC_DYNAMIC_OPTIONS_ALL")
@@ -43,8 +43,8 @@ def load_dynamic_rules_config():
             *const.DYNAMIC_ALIASES,
         ]
 
-    # DYNAMIC_RULE_DEFAULT: The default dynamic rule when none is specified.
-    # Default: "rafa"
+    # DYNAMIC_RULE_DEFAULT: Default for `advanced_options.dynamic-mode-default` when unset or invalid.
+    # Default: "digital"
     config["DYNAMIC_RULE_DEFAULT"] = os.getenv("OFSC_DYNAMIC_RULE_DEFAULT", "digital")
 
     return config

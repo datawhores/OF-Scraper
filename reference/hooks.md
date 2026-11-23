@@ -53,7 +53,7 @@ Subscribers get these keyword arguments:
 - `item_downloaded` is sent before `after_download_script` runs, and a stop during the script still counts the item as downloaded.
 - It's sent for normal files, DRM videos and Fansly HLS/DASH streams.
 - The Fansly check of videos saved without sound runs after a run's downloads. When it saves a video again with sound, it also sends `item_downloaded`, with no `item_finished` after it.
-- An item a stop ended before it started gets no `item_finished`.
+- An item cancelled by a stop before it starts gets no `item_finished`.
 
 `item_finished`'s `result` and `reason`:
 
@@ -64,7 +64,7 @@ Subscribers get these keyword arguments:
 | `skipped` | `size limit`, `skip_download_script`, `CDM keys not found`, `protected stream`, or `skipped` |
 | `failed` | `no link` (locked or removed media), the error's text, or `download failed` when there's no error |
 
-Note on the error's text: links are removed, also JSON-escaped and percent-encoded ones. A link without a scheme keeps its address but loses everything after the `?`. Cookies and the home folder's name are hidden as in the logs.
+Note on error text: links (including JSON-escaped and percent-encoded ones) are removed. A link without a scheme keeps its address but drops everything after the `?`. Cookies and the home folder's name are hidden as in the logs.
 
 A subscriber can be a plain function or an `async def` one. An error in a subscriber is logged at debug level and doesn't affect the download.
 
@@ -85,7 +85,7 @@ stop.request()  # from any thread
 stop.clear()    # before the next scan
 ```
 
-> ⚠️ **`stop.DownloadsStopped` is a `BaseException`.** After a `stop.request()`, post fetches raise it (a scrape's and a check scan's), and a scrape raises it once a creator's downloads have stopped. `except Exception` doesn't catch it. A whole scrape run through `scraperManager.runner` catches it and, outside the menu, exits with `SystemExit(130)` instead.
+> ⚠️ **`stop.DownloadsStopped` is a `BaseException`.** After a `stop.request()`, post fetches (in both scrapes and check scans) raise it, and a scrape raises it once a creator's downloads have stopped. `except Exception` doesn't catch it. A whole scrape run through `scraperManager.runner` catches it and, outside the menu, exits with `SystemExit(130)` instead.
 
 ## Check tables
 
@@ -298,7 +298,7 @@ if postgres.enabled():
 | Function | Returns | What it does |
 |---|---|---|
 | `ofscraper.db.postgres.enabled()` | bool | True when `OFSC_DATABASE_URL` is set. It's read through `of_env.getattr`, so an env file named in `config.json` counts. |
-| `ofscraper.db.postgres.describe(database_url=None)` | str | the server and database the URL names, without the login (`host:port/dbname`), for messages. It gives `the configured database` when it can't read the URL for certain. |
+| `ofscraper.db.postgres.describe(database_url=None)` | str | the server and database the URL names, without the login (`host:port/dbname`), for messages. Returns `the configured database` if the URL can't be parsed reliably. |
 | `ofscraper.db.postgres.sqlite_files_notice(tool)` | str | the sentence a tool that still works on `user_data.db` files shows while PostgreSQL is on. The caller checks `enabled()` first. Merge Databases shows it. |
 | `ofscraper.utils.profiles.manage.postgres_profiles_notice()` | None | with PostgreSQL on, prints that every profile uses the same database. The profile menu calls it after switching the active or default profile. |
 

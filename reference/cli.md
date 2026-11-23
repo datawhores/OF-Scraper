@@ -52,31 +52,31 @@ Accepts 103 options. Its `--help` summary: OF-Scraper Options.
 
 `ofscraper manual -u URL...` or `-f FILE` (one is required). Downloads specific posts, given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids. A bare id is looked up on the timeline, then in that creator's purchases. It forces `force_all`, so existing files are downloaded again. It writes posts and media to the creator's `user_data.db` and media under `save_location`, then runs the after-download script.
 
-Accepts 52 options. Its `--help` summary: Manually download media by providing a list of urls or IDs.
+Accepts 52 options. Its `--help` summary: Manually download media by providing a list of URLs or IDs.
 
 ### `msg_check`
 
 `ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, a model id, or a chat URL (`onlyfans.com/my/chats/chat/<id>` or `onlyfans.com/my/chats/<id>/?id=<message id>`), whose number is taken as the model id. Any other item is skipped with a warning. It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
-Accepts 52 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 52 options. Its `--help` summary: The msg_check subcommand gathers information on media content from messages. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
 
 ### `story_check`
 
 `ofscraper story_check -u USERNAME...` (or `-f`). Fetches the creators' stories and highlights from the API, without the check cache. It writes them to `user_data.db` and opens the same downloadable media table.
 
-Accepts 50 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 50 options. Its `--help` summary: The story_check subcommand gathers information on media content from stories and highlights. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
 
 ### `paid_check`
 
 `ofscraper paid_check -u USERNAME_OR_ID...` (or `-f`). Fetches each creator's purchased content, writes it to `user_data.db` and opens the media table. The content comes from the check cache unless you pass `--force`. A deleted creator, named `DELETED_MODEL_PLACEHOLDER`, is read from all purchases.
 
-Accepts 52 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 52 options. Its `--help` summary: The paid_check subcommand gathers information on media content from purchases. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
 
 ### `post_check`
 
 `ofscraper post_check -u URL_OR_USERNAME...` or `-f FILE`. Takes `onlyfans.com/<username>` URLs or bare usernames. It fetches the areas in `--check-area` (default Timeline, Pinned, Archived and Streams; Labels is also available), writes them to `user_data.db` and opens the media table. The areas come from the check cache unless you pass `--force`. All check commands set `force_all` and `after=0`.
 
-Accepts 54 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts It presents this data in a table format with filtering options for focused searches Allows unlocked media entries to be directly downloaded through the table.
+Accepts 54 options. Its `--help` summary: The post_check subcommand gathers information on media content from posts. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table..
 
 ### `metadata`
 
@@ -98,13 +98,13 @@ Accepts 61 options. Its `--help` summary: Print information from the database.
 
 ### `move_creator_files` (separate entry point)
 
-`python -m ofscraper.commands.move_creator_files (DB | --postgres --creator NAME [--site SITE]) [--apply] [--to NAME] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `MOVING_FILES.md`). It works offline on one creator's `user_data.db`: it moves the files the database records under another of the creator's names to the folder of their current name, and sets `directory` in their `medias` rows to match. It goes only by the recorded paths, never by the scraper's settings. Without `--apply` it prints a JSON report and changes nothing.
+`python -m ofscraper.commands.move_creator_files (DB | --postgres --creator NAME [--site SITE]) [--apply] [--to NAME] [--path-root DIR]`. Uses argparse and is not part of the CLI (see `MOVING_FILES.md`). Works offline on one creator's `user_data.db`: moves files recorded under another of the creator's names to the folder of their current name, and updates `directory` in their `medias` rows to match. Uses only recorded paths, never the scraper's settings. Without `--apply`, prints a JSON report and changes nothing.
 
-- **The name the files go to** is the one seen last (`profiles.last_seen_at`). If the names have no dates and there is more than one, it asks for `--to NAME`, which must be a name the database records.
-- **What is moved:** a recorded folder with exactly one part that is another of the creator's names, in small letters as the scraper writes it, followed by one or two of the scraper's own folders (`Posts`, `Images`). A path where the name is followed by anything else (a folder above the library with the same name), or where `{first_letter}` above it would change, is left and listed. That part becomes the new name; nothing else in the path changes, and a file's own name never does.
-- **Each file on its own:** a file at its old place is renamed to its new place if that is free. A file that is at the new place already only gets its rows changed, if its size is the one recorded. If both places hold a file, both stay and the rows are left. It never replaces or deletes a file, and touches only the files the database records for the creator. Old folders the move left empty are removed.
-- **No undo file.** The row changes are saved together at the end. A run that stops part way is finished by running the same command again, and `--to OLDNAME --apply` moves everything back under the old name.
-- **With `--postgres`** it works on one creator's rows in the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (see `POSTGRESQL.md`). `--creator` names the creator as for `recover_collisions`.
+- **Target name:** uses the most recently seen name (`profiles.last_seen_at`). If no names have dates and there is more than one, asks for `--to NAME`, which must be a name recorded in the database.
+- **What is moved:** a recorded folder with exactly one path segment matching another of the creator's names (in lower case, as the scraper writes it), followed by one or two of the scraper's own folders (`Posts`, `Images`). Paths where the name is followed by anything else (such as a folder above the library with the same name), or where `{first_letter}` above it would change, are skipped and listed. Only that segment changes; the rest of the path and the file name stay the same.
+- **Per-file handling:** moves a file from its old path to the new path if that spot is free. If a file is already at the new path with the recorded size, only the database rows are updated. If both places hold a file, both are left alone and the rows aren't changed. Never replaces or deletes files, and touches only files the database records for that creator. Removes old folders left empty by the move.
+- **No undo file:** row changes are saved together at the end. If a run stops partway, rerun the same command to finish; `--to OLDNAME --apply` moves everything back.
+- **With `--postgres`:** works on one creator's rows in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`). `--creator` identifies the creator the same way as in `recover_collisions`.
 
 Run `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --creator NAME) [OPTIONS]`.
 
@@ -118,7 +118,7 @@ Run `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --cr
 
 ### `postgres_export` (separate entry point)
 
-`python -m ofscraper.commands.postgres_export FOLDER [--apply] [--site SITE]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). The other direction of `postgres_import`: it writes what the PostgreSQL database that `OFSC_DATABASE_URL` names holds back to SQLite files, one per creator, at `FOLDER/<model_id>/user_data.db` (the layout of a profile's `.data` folder with the default `metadata`). PostgreSQL is only read, in one read-only transaction. Without `--apply` it only reports which files would be written. A `user_data.db` that already exists is never changed: its creator is left out and listed, and another FOLDER gets their rows out. Each file is made by the code that makes a new creator's database (so it has today's tables and every upgrade step recorded), under a `.partial` name beside its place, read back the way the import reads a file, and only then given its name. `--site` chooses the site when PostgreSQL has rows for more than one.
+`python -m ofscraper.commands.postgres_export FOLDER [--apply] [--site SITE]`. Uses argparse and is not part of the CLI (see `POSTGRESQL.md`). The reverse of `postgres_import`: exports rows from the PostgreSQL database named by `OFSC_DATABASE_URL` back to per-creator SQLite files at `FOLDER/<model_id>/user_data.db` (the default `metadata` layout under a profile's `.data` folder). Reads PostgreSQL in one read-only transaction. Without `--apply`, reports which files would be written. Never modifies an existing `user_data.db`: that creator is skipped and listed, so you can export them to another `FOLDER`. Each file is created with the standard new-database builder (with current tables and all upgrade flags), written to a `.partial` file first, verified by reading it back like `postgres_import`, and only then renamed. `--site` picks the site when PostgreSQL holds rows for more than one.
 
 Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
 
@@ -128,7 +128,7 @@ Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
 
 ### `postgres_import` (separate entry point)
 
-`python -m ofscraper.commands.postgres_import FOLDER [--apply] [--skip-bad-files]`. It uses argparse and is not part of the CLI (see `POSTGRESQL.md`). It brings the `user_data.db` files found under FOLDER into the PostgreSQL database that `OFSC_DATABASE_URL` names. The files are only copied: each copy is brought up to date the way a scan would, and its rows are converted to PostgreSQL's column types and written to the schema of the file's site. Without `--apply` it only reports what would be brought in and what stands in the way: a value a column can't hold, a creator found in two files, a creator PostgreSQL already has rows for, a file from a newer version. With `--apply` everything goes in in one transaction.
+`python -m ofscraper.commands.postgres_import FOLDER [--apply] [--skip-bad-files]`. Uses argparse and is not part of the CLI (see `POSTGRESQL.md`). Imports `user_data.db` files found under `FOLDER` into the PostgreSQL database named by `OFSC_DATABASE_URL`. Original files are never modified: each copy is upgraded like a normal scan, then its rows are converted to PostgreSQL column types and written to that file's site schema. Without `--apply`, reports what would be imported and any blockers (a value a column can't hold, a creator found in two files, a creator already in PostgreSQL, or a file from a newer version). With `--apply`, imports everything in one transaction.
 
 Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
 
@@ -139,9 +139,9 @@ Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
 
 ### `recover_collisions` (separate entry point)
 
-`python -m ofscraper.commands.recover_collisions (DB | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--undo FILE] [--path-root DIR]`. It uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). It works offline on one creator's `user_data.db` and finds recorded paths that different media share. It prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews the restore of those flags, or with `--apply` performs it. It never touches media files and doesn't contact OnlyFans.
+`python -m ofscraper.commands.recover_collisions (DB | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--undo FILE] [--path-root DIR]`. Uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). Works offline on one creator's `user_data.db`, finds recorded paths shared by different media, and prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews restoring those flags, or restores them with `--apply`. Never touches media files or contacts OnlyFans.
 
-With `--postgres` it works on one creator's rows in the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (see `POSTGRESQL.md`), and finds and changes what it would in a file with the same rows. `--creator` names the creator by username or id and must fit exactly one: a name more than one creator goes by (an id both sites have, an id that is another creator's username, a username two creators have had) is refused with a list of them, and needs `--site` or a username or id that only one of them has. Without `--apply` the connection is read-only. With it, everything is one transaction: the undo file is written first, to `--undo-dir`, which `--apply` needs (a folder that is kept; in Docker a mounted one), each row is changed only while it still holds what was read from it, and a row the scraper changed meanwhile stops the run with nothing changed. Once the changes are being saved, the undo file is kept whatever stops the command (a lost connection, Ctrl-C), and the command says that it isn't known whether they were. The report also says which creator the name turned out to be (`creator`: site, id, username). The undo file names a row by its media and post ids, not by its `id`, and records what the row held and the server and database it was made on; `--undo` restores all of its rows or none, and refuses another creator, another site, an undo file written for a `user_data.db`, and rows that have changed since. A path that is a full path only on another system than the one the command runs on is refused.
+With `--postgres`, works on one creator's rows in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`), producing the same results as a SQLite file with the same rows. `--creator` takes a username or ID and must match exactly one creator: an ambiguous name (an ID present on both sites, an ID matching another creator's username, or a username shared by two creators) is refused with a list of matches, requiring `--site` or a unique username/ID. Without `--apply`, the connection is read-only. With `--apply`, all updates run in one transaction: the undo file is written first to `--undo-dir` (required with `--apply`; use a folder that's kept, and in Docker a mounted one), and each row is updated only if it still matches what was read, aborting with no changes if the scraper modified a row meanwhile. Once saving starts, the undo file is kept even if the command is interrupted (such as a lost connection or Ctrl-C), and the command notes that commit status is unknown. The report includes the resolved creator (`creator`: site, id, username). The undo file identifies rows by `(media_id, post_id)` rather than `id`, recording prior values plus the server and database. `--undo` restores all rows or none, and refuses a different creator, site, SQLite undo file, or rows changed since. Paths that are absolute only on another OS are refused.
 
 Run `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --creator NAME) [OPTIONS]`.
 
@@ -156,7 +156,7 @@ Run `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --cr
 
 ### `stash_sync` (separate entry point)
 
-`python -m ofscraper.commands.stash_sync (PATH... | --postgres [--site SITE] [--creator NAME]) [--apply] [--scan] [--path-map LOCAL=STASH]`. It uses argparse and is not part of the CLI (see `STASH.md`). It reads creators' `user_data.db` files offline (a folder such as `<profile>/.data` is searched for them), or with `--postgres` the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (read-only; every creator of both sites unless `--site` or `--creator` narrow it), and, over Stash's GraphQL API, fills empty fields of each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. A Fansly database (`schema_flags` `site=fansly`) gets the `Fansly` studio and links, @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. It never overwrites a value already in Stash, and without `--apply` it only prints a JSON report. It doesn't contact OnlyFans or Fansly.
+`python -m ofscraper.commands.stash_sync (PATH... | --postgres [--site SITE] [--creator NAME]) [--apply] [--scan] [--path-map LOCAL=STASH]`. Uses argparse and is not part of the CLI (see `STASH.md`). Reads creators' `user_data.db` files offline (searching folders such as `<profile>/.data`), or with `--postgres` reads the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (read-only; all creators on both sites unless narrowed with `--site` or `--creator`). Over Stash's GraphQL API, fills empty fields on each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. Fansly databases (`schema_flags` `site=fansly`) get the `Fansly` studio and links instead of OnlyFans ones, plus @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. Never overwrites existing Stash values, never contacts OnlyFans or Fansly, and without `--apply` only prints a JSON report.
 
 Run `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`.
 
@@ -177,10 +177,10 @@ Run `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`.
 ### Scripts in `scripts/`
 
 - `scripts/commit_version.sh`: CI helper. Works out the commit-based version string, hashes and push type from git for the build workflows.
-- `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]`. Lists the usernames each creator account has had, from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder), with the days each name was first and last seen and the name a deleted account's folder would get. `--add` appends a name, and `--seen` gives it a date (`2024-03-01` or `2024-03-01T09:30:00+00:00`; UTC unless it has an offset, no more than a day ahead, and not for the deleted-account placeholder). `--add` refuses a name or date that would change the folder name of a deleted account, unless `--force` is given. `--force` doesn't choose that name: a name becomes it when its `--seen` is later than every other name's last-seen date. The files it reads are OnlyFans databases only.
+- `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]`. Lists the usernames each creator account has had from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder), along with first-seen and last-seen dates and the folder name a deleted account would use. `--add` appends a name, and `--seen` sets its date (`2024-03-01` or `2024-03-01T09:30:00+00:00`; UTC unless an offset is given, at most one day ahead, and not allowed for the deleted-account placeholder). `--add` refuses a name or date that would change a deleted account's folder name unless `--force` is given. `--force` doesn't pick that name directly: a name becomes the deleted-account folder name only when its `--seen` date is newer than every other name's last-seen date. File mode reads OnlyFans databases only.
 
-With `--postgres [--site onlyfans|fansly]` (default `onlyfans`, and no `--data-dir`) it lists and adds names in that site's `profiles` table in the PostgreSQL database that `OFSC_DATABASE_URL` names in the environment it is run in (see `POSTGRESQL.md`): the same listing, CSV, folder name and refusals as for files with the same rows, for the creators PostgreSQL has rows for. `--add` there writes one row (`user_id` is the creator's id) and its dates in one transaction, kept only if nothing is refused. It needs the PostgreSQL driver and the scraper of the checkout the script is in.
-- `scripts/determine_docker_stable_dev_tags.py`: CI helper. Asks the GitHub API for commit timestamps to decide the stable and dev Docker image tags.
+With `--postgres [--site onlyfans|fansly]` (default `onlyfans`, without `--data-dir`), lists and adds names in that site's `profiles` table in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`), with the same listing, CSV output, folder-name rules and refusals. `--add` writes one row (`user_id` is the creator's ID) and its dates in one transaction, kept only if nothing is refused. Requires the PostgreSQL driver and the scraper from the same checkout.
+- `scripts/determine_docker_stable_dev_tags.py`: Older CI helper that the current Docker image workflow doesn't call. Asks the GitHub API for commit timestamps to pick Docker image tags.
 - `scripts/entry/`: Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.
 - `scripts/lint/`: CI lint helper. `python scripts/lint/check_blind_except.py [--update]` counts ruff's BLE001 (blind except) and S110 (try/except/pass) findings per file in `ofscraper/data/api` and `ofscraper/db` and fails when a count differs from `blind_except_baseline.json`. `--update` rewrites the baseline; commit it after removing findings.
 - `scripts/retry_action.sh`: CI helper. Retries a command up to N times, with a sleep between attempts.
@@ -190,7 +190,7 @@ With `--postgres [--site onlyfans|fansly]` (default `onlyfans`, and no `--data-d
 The main program's `--action` (`-a`) picks what a non-interactive run does; without it, the interactive menu asks. Values can be combined (e.g. `download,like`).
 
 - `unlike`: Removes likes from already-liked posts in the selected like areas, the same way as `like`. It runs `like.process_unlike`. It can't be combined with `like`.
-- `like`: Likes (favorites) posts in the selected like areas that aren't liked yet. It sends one request at a time, with a random sleep between requests (`MIN/MAX_SLEEP_DURATION_LIKE`). A post that toggles the wrong way is toggled again. It runs `like.process_like`, then the after-like action script. The code warns that OnlyFans allows about 1000 likes per hour.
+- `like`: Likes (favourites) posts in the selected like areas that aren't liked yet. It sends one request at a time, with a random sleep between requests (`MIN/MAX_SLEEP_DURATION_LIKE`). A post that toggles the wrong way is toggled again. It runs `like.process_like`, then the after-like action script. The code warns that OnlyFans allows about 1000 likes per hour.
 - `download`: Scrapes the selected areas (`--posts`) for each selected creator. It downloads the media that pass the filters into `save_location`, using `dir_format` and `file_format`, and records them in the creator's `user_data.db`. With `--text` (or `--text-only`) it also writes post text to `.txt` files. It runs `downloader()` in `commands/scraper/actions/download`, then the after-download action script.
 
 ## Options
@@ -218,21 +218,21 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `profile` · **Type:** text · **Default:** none
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Change which profile you want to use If not set then the default profile is used, based on the config.json file Profiles are always within the config.json file parent directory
+- Change which profile to use. If not set, the default profile from config.json is used. Profiles are always inside the config.json parent directory.
 
 #### `--site`
 
 - **Dest:** `site` · **Type:** one of `onlyfans`, `fansly` · **Default:** none
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Site to use for this run: onlyfans or fansly If not set, the profile's site.json decides, and OnlyFans is the default
+- Site to use for this run: onlyfans or fansly. If not set, the profile's site.json decides, and OnlyFans is the default.
 
 #### `--env-files`
 
 - **Dest:** `env_files` · **Type:** path; repeatable · **Default:** none
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/program.py`
-- Path to a custom environment variables file (.env).
+- Environment file to load (.env, .yaml/.yml or .json). Can be given more than once; later files win.
 - **Note:** Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.
 
 ### Logging Options
@@ -252,7 +252,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `no_rich` · **Type:** flag · **Default:** off
 - **Commands:** all
 - **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Turn off rich ui live display features
+- Turn off Rich UI live display features
 
 #### `--discord`
 
@@ -261,7 +261,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Config fallback:** `discord`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/logging.py`
-- Set discord log level
+- Set Discord log level
 
 #### `--log`
 
@@ -280,7 +280,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `download_options.auto_resume`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Cleanup temp .part files (removes resume ability)
+- Clean up temp .part files (removes resume ability)
 - **Note:** Turns `download_options.auto_resume` off for the run.
 
 #### `--downloadbars`
@@ -299,7 +299,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `performance_options.download_sems`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Number of concurrent downloads per thread
+- Number of downloads at the same time (overrides performance_options.download_sems).
 
 #### `--download-limit`
 
@@ -308,7 +308,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `performance_options.download_limit`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
-- Maximum download speed per second can parse Human readable string '10MB' or int representing bytes per second
+- Maximum download speed per second. Accepts a human-readable size ('10MB') or bytes per second.
 - **Note:** Values below 1024 bytes per second are raised to 1024. All downloads in the run share the limit.
 
 #### `--allow-dupes`
@@ -318,7 +318,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 - Download media that is in several posts once for each post, instead of once (default: ALLOW_DUPE_MEDIA, off)
-- **Note:** Without the option, `ALLOW_DUPE_MEDIA` decides (`merged_settings`); `--no-allow-dupes` turns it off for the run. When on, media that is in several posts is downloaded once for each post, and a copy counts as downloaded per media and post (`downloaded_media_ids`), so a later run still downloads the copies of posts it hasn't saved. This applies to OnlyFans and Fansly. Each copy gets its own file (see `file_options.filename_collision`) and its own `medias` row update. A Purchased copy is downloaded like any other post's copy, also when the media is in Messages or was downloaded from another post; a message listed in Purchased under the same id is one post, so it is downloaded once. The `metadata` command and the Fansly check of videos saved without sound read each post's own record. Copies already marked downloaded by a run without the option count as downloaded.
+- **Note:** Without this option, `ALLOW_DUPE_MEDIA` decides (`merged_settings`); `--no-allow-dupes` turns it off for the run. When on, media appearing in several posts is downloaded once per post, and each copy is tracked per `(media_id, post_id)` (`downloaded_media_ids`), so later runs still download copies from posts not yet saved. Applies to OnlyFans and Fansly. Each copy gets its own file (see `file_options.filename_collision`) and its own `medias` row update. A Purchased copy is downloaded like any other post's copy, even if the media is also in Messages or another post. However, a message listed in Purchased under the same ID counts as one post and is downloaded once. The `metadata` command and the Fansly silent-video check read each post's own record. Copies already marked downloaded by a run without this option still count as downloaded.
 
 ### Media Filters Options
 
@@ -328,6 +328,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `quality` · **Type:** one of `240`, `720`, `source` · **Default:** none
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
+- Lowest video quality to accept (downloads the smallest available at or above it, or source)
 - **Note:** The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.
 
 #### `--mediatype`
@@ -364,7 +365,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Config fallback:** `content_filter_options.length_max`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- max duration in seconds (whole number, e.g. 90); only applies to videos
+- Max duration in seconds (whole number, e.g. 90); only applies to videos
 
 #### `--length-min`
 
@@ -373,7 +374,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** all
 - **Config fallback:** `content_filter_options.length_min`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- min duration in seconds (whole number, e.g. 90); only applies to videos
+- Min duration in seconds (whole number, e.g. 90); only applies to videos
 
 #### `--media-id`
 
@@ -398,7 +399,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `mediasort` · **Type:** one of `random`, `text`, `text`, `date`, `filename` · **Default:** none
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/media_content.py`
-- Changes media processing order before actions Example: for download
+- Changes media processing order before actions (e.g. for download)
 
 #### `--media-desc`
 
@@ -430,8 +431,8 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `before` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `manual`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Process media from posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads
-- **Note:** On Fansly a timeline or message scan starts at this date instead of at the newest post, so the newer pages are not asked for; with `--after` only the pages of the range are. Walls (the Labels area) and purchases are scanned as without it.
+- Process media from posts at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
+- **Note:** On Fansly, a timeline or message scan starts at this date instead of the newest post, skipping newer pages. With `--after`, only pages in that range are fetched. Walls (the Labels area) and purchases are still scanned normally.
 
 #### `--after`
 
@@ -439,7 +440,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `after` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `manual`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/media_content.py`
-- Process media from posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- Process media from posts at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago') for likes, unlikes, and downloads
 
 #### `--redownload`
 
@@ -455,7 +456,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Also:** `-pv`, `-npv`, `--no-preview`
 - **Dest:** `preview` · **Type:** flag · **Default:** none
 - **Commands:** `db`
-- Flag for filtering accounts based on preview status. [select one --preview or --no-preview]
+- Filter media by preview status. [select one --preview or --no-preview]
 
 #### `--created-before`
 
@@ -463,7 +464,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `created_before` · **Type:** Arrow · **Default:** none
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Process media created at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- Only media created on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
 
 #### `--created-after`
 
@@ -471,7 +472,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `created_after` · **Type:** Arrow · **Default:** none
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Process media created at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- Only media created on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
 
 ### Filename Modification Options
 
@@ -492,7 +493,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `file_options.space_replacer`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- character to replace spaces with
+- Character to replace spaces with
 
 #### `--textlength`
 
@@ -501,7 +502,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `file_options.textlength`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- max length of text
+- Max length of text
 
 #### `--text-type`
 
@@ -510,7 +511,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `file_options.text_type_default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
-- set length based on word or letter
+- Measure text length by word or letter
 
 ### Posts Filters Options
 
@@ -560,7 +561,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program
 - **Config fallback:** `download_options.max_post_count`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Maximum number of posts to process
+- Maximum number of media items to process per creator (same setting as --max-media-count).
 
 #### `--post-sort`
 
@@ -568,7 +569,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `post_sort` · **Type:** one of `date` · **Default:** `'date'`
 - **Commands:** main program, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Changes post processing order before actions Example: for like or unlike
+- Changes post processing order before actions (e.g. for like or unlike)
 
 #### `--post-desc`
 
@@ -576,7 +577,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `post_desc` · **Type:** flag · **Default:** off
 - **Commands:** main program
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Sort the post list in descending order Example: for like or unlike
+- Sort the post list in descending order (e.g. for like or unlike)
 
 #### `--filter`
 
@@ -584,7 +585,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `filter` · **Type:** text; repeatable · **Default:** `['.*']`
 - **Commands:** main program, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts by regex (case-sensitive if uppercase characters included) uses raw python string
+- Filter posts by regex (case-sensitive if uppercase characters included) uses raw Python string
 
 #### `--neg-filter`
 
@@ -592,7 +593,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `neg_filter` · **Type:** text; repeatable · **Default:** `[]`
 - **Commands:** main program, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Filter posts to exclude those matching regex (case-styensitive if uppercase characters included) uses raw python string
+- Filter posts to exclude those matching regex (case-sensitive if uppercase characters included) uses raw Python string
 
 #### `--block-ads`
 
@@ -719,7 +720,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `usernames` · **Type:** text; repeatable · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Select which username to process (name,name2). Set to ALL for all users
+- Select which usernames to process (name,name2). Set to ALL for all users
 
 #### `--excluded-username`
 
@@ -809,7 +810,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `all_promo` · **Type:** flag · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/user_list.py`
-- Flag for enabling/disabling accounts with any promo price [select one all-promo-only or --all-promo-skip]
+- Flag for enabling/disabling accounts with any promo price [select one --all-promo-only or --all-promo-skip]
 
 #### `--active-subscription`
 
@@ -823,7 +824,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Also:** `-ro`, `-rf`, `--renew-off`
 - **Dest:** `renewal` · **Type:** flag · **Default:** none
 - **Commands:** main program, `metadata`, `db`
-- Flag for enabling/disabling accounts set to renew renew flag on [select one --renew-on or --renew-off]
+- Flag for enabling/disabling accounts with the renew flag on [select one --renew-on or --renew-off]
 
 ### Advanced User List Filter Options
 
@@ -897,7 +898,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `last_seen_before` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by last seen being at or before the given date (YYYY-MM-DD format)
+- Filter accounts by last seen being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 #### `--last-seen-after`
 
@@ -905,7 +906,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `last_seen_after` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by last seen being at or after the given date (YYYY-MM-DD format)
+- Filter accounts by last seen being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 #### `--expired-after`
 
@@ -913,7 +914,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `expired_after` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD format)
+- Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 #### `--expired-before`
 
@@ -921,7 +922,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `expired_before` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD format)
+- Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 #### `--subscribed-after`
 
@@ -929,7 +930,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `subscribed_after` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by subscription date being after the given date (YYYY-MM-DD format)
+- Filter accounts by subscription date being after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 #### `--subscribed-before`
 
@@ -937,7 +938,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `subscribed_before` · **Type:** Arrow · **Default:** none
 - **Commands:** main program, `metadata`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_user_filter.py`
-- Filter accounts by sub date being at or before the given date (YYYY-MM-DD format)
+- Filter accounts by subscription date being at or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago')
 
 ### Model Sort & Processing Order Options
 
@@ -983,7 +984,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Config fallback:** `script_options.after_action_script`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script after an action for a model has completed.
+- Runs a script after an action for a model completes.
 
 #### `--naming-script`
 
@@ -992,7 +993,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Config fallback:** `script_options.naming_script`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script to dynamically generate the final filename or path for a media item.
+- Runs a script to generate the final filename or path for a media item.
 
 #### `--post-script`
 
@@ -1001,7 +1002,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Config fallback:** `script_options.post_script`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script after processing all users (e.g., after a full scrape operation)
+- Runs a script after processing all users (e.g. after a full scrape).
 
 #### `--after-download-script`
 
@@ -1010,7 +1011,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Config fallback:** `script_options.after_download_script`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs script after download has completed
+- Runs a script after a download completes.
 
 #### `--skip-download-script`
 
@@ -1019,7 +1020,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Config fallback:** `script_options.skip_download_script`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
-- Runs a script to dynamically skip a download
+- Runs a script to decide whether to skip a download.
 
 #### `--retry-permanent-skips`
 
@@ -1027,7 +1028,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/scripts.py`
 - Ask the skip download script again about the files it skipped for good (skip-permanent) for the creators in this run
-- **Note:** The files `skip_download_script` skipped for good (`medias.skip_permanent = 1`) are no longer treated as downloaded for the run, so the creators' files in the run are offered to the script again. Areas are scanned in full unless `--after` is given, since those files can be in older posts. A file the script keeps downloads. `skip-permanent` keeps it skipped for good. A plain skip counts as skipped and sets it back to not downloaded, so the next run asks again. Without a script set, nothing skips them, so they download. Real downloads and other rows don't change.
+- **Note:** Stops treating files skipped for good by `skip_download_script` (`medias.skip_permanent = 1`) as downloaded for this run, so they are passed to the script again for the selected creators. Areas are scanned in full unless `--after` is given, since those files can be in older posts. A file the script keeps is downloaded; `skip-permanent` keeps it skipped for good; a plain skip counts as skipped and resets it to not downloaded so the next run asks again. Without a script set, nothing skips them, so they download. Real downloads and other rows don't change.
 
 ### Advanced Program Options
 
@@ -1037,7 +1038,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `no_cache` · **Type:** flag · **Default:** off
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Disable cache and forces consecutive api scan
+- Disable cache and force a fresh sequential API scan
 - **Note:** Disables both the general cache and the API cache for the run, and turns off incremental downloads. Setting `advanced_options.cache-mode` to `disabled` in `config.json` does the same.
 
 #### `--no-api-cache`
@@ -1046,7 +1047,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `no_api_cache` · **Type:** flag · **Default:** off
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Forces consecutive api scan
+- Force a fresh sequential API scan
 - **Note:** Disables only the API response cache. Setting `advanced_options.cache-mode` to `api_disabled` does the same.
 
 #### `--key-mode`
@@ -1066,7 +1067,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `cdm_options.private-key`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- private key path for manual cdrm
+- Private key path for manual key mode
 
 #### `--client-id`
 
@@ -1075,7 +1076,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `cdm_options.client-id`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- client id path for manual cdrm
+- Client ID path for manual key mode
 
 #### `--dynamic-rules`
 
@@ -1084,7 +1085,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Config fallback:** `advanced_options.dynamic-mode-default`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- Dynamic signing
+- Dynamic signing rule source
 
 #### `--update-profile`
 
@@ -1100,7 +1101,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `auth_fail` · **Type:** flag · **Default:** off
 - **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
-- quit on authentication failure, rather then prompting
+- Quit on authentication failure rather than prompting
 
 ### Other options
 
@@ -1118,7 +1119,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `text` · **Type:** flag · **Default:** off
 - **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download Text files in addition to media
+- Download text files in addition to media
 
 #### `--text-only` (`manual`, `msg_check`, `paid_check`, `post_check`)
 
@@ -1126,7 +1127,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `text_only` · **Type:** flag · **Default:** off
 - **Commands:** `manual`, `msg_check`, `paid_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/post_content.py`
-- Download Text files, but skip download media
+- Download text files, skipping media
 - **Note:** Also turns on `--text`. Text files are written and media is skipped.
 
 #### `--url`
@@ -1135,7 +1136,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `url` · **Type:** text; repeatable · **Default:** none
 - **Commands:** `manual`, `msg_check`, `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Scan posts via space or comma seperated list of urls
+- Scan posts via space or comma separated list of URLs
 
 #### `--file` (`file`)
 
@@ -1151,7 +1152,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `check_usernames` · **Type:** text; repeatable · **Default:** none
 - **Commands:** `story_check`, `paid_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/check.py`, `ofscraper/utils/args/parse/arguments/user_select.py`
-- Scan stories/highlights via username(s)
+- Creators to scan, by username (name,name2).
 
 #### `--file` (`file_usernames`)
 
@@ -1167,7 +1168,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `export` · **Type:** path · **Default:** none
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
-- export the table as a csv file
+- Export the table as a CSV file
 
 #### `--unmark-permanent-skips`
 
@@ -1175,7 +1176,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/group_bundles/db.py`
 - Un-mark the files the skip download script skipped for good (skip-permanent) among the selected rows, so the next run asks the script about them again. Filter with the creator, post id and media id options
-- **Note:** `ofscraper db` only. Of the rows the other options select (creator, `--post-id`, `--media-id` and the media filters), it keeps those `skip_download_script` skipped for good, prints them, and sets them back to not downloaded with `skip_permanent` cleared. The next normal run asks the script about them again. A media's download state is kept on all of its rows, so its rows in other posts change too. Other rows never change. Without it, `db` only reads.
+- **Note:** `ofscraper db` only. From the rows selected by the other options (creator, `--post-id`, `--media-id` and the media filters), keeps only those `skip_download_script` skipped for good, prints them, and resets them to not downloaded with `skip_permanent` cleared. The next normal run asks the script about them again. Because download state is shared across a media item's rows, its rows in other posts change too. Other rows never change. Without this flag, `db` is read-only.
 
 ### Table Filter Options
 
@@ -1184,14 +1185,14 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Also:** `-ucl`, `-lc`, `--locked`
 - **Dest:** `unlocked` · **Type:** flag · **Default:** none
 - **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- Flag for filtering accounts based on whether media is unlocked [select one --unlock or --locked]
+- Filter media by whether it's unlocked. [select one --unlocked or --locked]
 
 #### `--downloaded`
 
 - **Also:** `-dwl`, `-ndw`, `--not-downloaded`
 - **Dest:** `downloaded` · **Type:** flag · **Default:** none
 - **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
-- Flag for filtering accounts based on whether media is downloaded [select one --downloaded or --not-downloaded]
+- Filter media by whether it's downloaded. [select one --downloaded or --not-downloaded]
 
 #### `--posted-after`
 
@@ -1199,7 +1200,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `posted_after` · **Type:** Arrow · **Default:** none
 - **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Filter out posts posted on or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- Only media from posts posted on or after the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
 
 #### `--posted-before`
 
@@ -1207,7 +1208,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `posted_before` · **Type:** Arrow · **Default:** none
 - **Commands:** `msg_check`, `story_check`, `paid_check`, `post_check`, `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/metadata_filters.py`
-- Filter out posts posted at on or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads
+- Only media from posts posted on or before the given date (YYYY-MM-DD, MM/DD/YYYY or a relative date such as '3 weeks ago').
 
 ### Content Options
 
@@ -1217,7 +1218,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `timeline_strict` · **Type:** flag · **Default:** off
 - **Commands:** `post_check`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- When timeline is select removes pinned and archived
+- When timeline is selected, removes pinned and archived posts
 
 #### `--check-area`
 
@@ -1243,7 +1244,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `mark_stray` · **Type:** flag · **Default:** off
 - **Commands:** `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- Sets unmatched media items as locked This is done per api type excluding labels, and is limited to --after and --before range
+- Sets unmatched media items as locked. This is done per API type excluding labels, and is limited to --after and --before range.
 
 #### `--anon`
 
@@ -1251,7 +1252,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `anon` · **Type:** flag · **Default:** off
 - **Commands:** `metadata`
 - **Defined in:** `ofscraper/utils/args/parse/group_bundles/metadata.py`
-- Use anonymise creditional forces --individual flag force --list flag to be removed most media is ignored
+- Use anonymous credentials. Forces --individual flag and removes --list flag. Most media is ignored.
 
 ### Sorting for the table
 
@@ -1269,5 +1270,5 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Dest:** `db_asc` · **Type:** flag · **Default:** off
 - **Commands:** `db`
 - **Defined in:** `ofscraper/utils/args/parse/arguments/post_content.py`
-- Change the sort order of table to ascending
+- Change the sort order of the table to ascending
 

@@ -14,9 +14,9 @@ def message_check_args(func):
         "msg_check",
         short_help="""\b
                 Produces a media table from messages with filterable entries and quick downloads""",
-        help="""The msg_check subcommand gathers information on media content from messages
-    It presents this data in a table format with filtering options for focused searches 
-    Allows unlocked media entries to be directly downloaded through the table""",
+        help="""The msg_check subcommand gathers information on media content from messages.
+    It presents this data in a table format with filtering options for focused searches.
+    Allows unlocked media entries to be directly downloaded through the table.""",
         show_constraints=True,
     )
     @common_args_check

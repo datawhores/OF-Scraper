@@ -11,15 +11,15 @@ def load_git_config():
     config = {}
 
     # --- Git Configuration ---
-    # GIT_MIN_WAIT: Minimum wait time before retrying a Git operation (seconds).
+    # GIT_MIN_WAIT: Minimum wait, in seconds, before retrying a dynamic-rules download.
     # Default: 1
     config["GIT_MIN_WAIT"] = float(os.getenv("OFSC_GIT_MIN_WAIT", "1"))
 
-    # GIT_MAX_WAIT: Maximum wait time before retrying a Git operation (seconds).
+    # GIT_MAX_WAIT: Maximum wait, in seconds, before retrying a dynamic-rules download.
     # Default: 5
     config["GIT_MAX_WAIT"] = float(os.getenv("OFSC_GIT_MAX_WAIT", "5"))
 
-    # GIT_NUM_TRIES: Number of retries for Git operations.
+    # GIT_NUM_TRIES: Maximum number of attempts when downloading dynamic signing rules.
     # Default: 3
     config["GIT_NUM_TRIES"] = int(os.getenv("OFSC_GIT_NUM_TRIES", "3"))
 

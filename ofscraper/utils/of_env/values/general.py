@@ -11,7 +11,7 @@ def load_general_config():
     config = {}
 
     # --- Output and Display Configuration ---
-    # SUPRESS_OUTPUTS: A set of log levels or output types to suppress.
+    # SUPRESS_OUTPUTS: Output levels (`--output`) at which `lowstdout()` silences standard output.
     # Default: {"CRITICAL", "ERROR", "WARNING", "OFF", "LOW", "PROMPT"}
     # Expects a comma-separated string if provided via environment variable.
     supress_outputs_env = os.getenv("OFSC_SUPRESS_OUTPUTS")
@@ -27,50 +27,50 @@ def load_general_config():
             "PROMPT",
         }
 
-    # refreshScreen: Frequency to refresh the screen (e.g., for progress updates).
+    # refreshScreen: Defined but not read anywhere.
     # Default: 50
     config["refreshScreen"] = int(os.getenv("OFSC_REFRESH_SCREEN", "50"))
 
-    # SHOW_AVATAR: Whether to show avatar in certain displays.
+    # SHOW_AVATAR: Whether to include the creator's avatar URL in scrape headers and summaries.
     # Default: True
     config["SHOW_AVATAR"] = os.getenv("OFSC_SHOW_AVATAR", "True").lower() in (
         "true",
         "1",
     )
 
-    # SHOW_RESULTS_LOG: Whether to show results in the log.
+    # SHOW_RESULTS_LOG: Whether to print the final run summary log at exit.
     # Default: True
     config["SHOW_RESULTS_LOG"] = os.getenv("OFSC_SHOW_RESULTS_LOG", "True").lower() in (
         "true",
         "1",
     )
 
-    # MODEL_PRICE_PLACEHOLDER: Placeholder text for unknown model prices.
+    # MODEL_PRICE_PLACEHOLDER: Fallback value for price placeholders (`{current_price}`, `{regular_price}`, `{promo_price}`, `{renewal_price}`) when a creator's model isn't loaded.
     # Default: "Unknown_Price"
     config["MODEL_PRICE_PLACEHOLDER"] = os.getenv(
         "OFSC_MODEL_PRICE_PLACEHOLDER", "Unknown_Price"
     )
 
-    # DELETED_MODEL_PLACEHOLDER: Placeholder text for deleted models.
+    # DELETED_MODEL_PLACEHOLDER: Fallback username prefix used for deleted accounts whose real username isn't recorded.
     # Default: "modeldeleted"
     config["DELETED_MODEL_PLACEHOLDER"] = os.getenv(
         "OFSC_DELETED_MODEL_PLACEHOLDER", "modeldeleted"
     )
 
-    # APP_TOKEN: A generic application token (example, usually sensitive and not hardcoded).
+    # APP_TOKEN: The OnlyFans `app-token` header value sent on API requests.
     # Default: "33d57ade8c02dbc5a333db99ff9ae26a"
     config["APP_TOKEN"] = os.getenv(
         "OFSC_APP_TOKEN", "33d57ade8c02dbc5a333db99ff9ae26a"
     )
 
-    # CONTINUE_BOOL: General boolean flag for continuing operations.
+    # CONTINUE_BOOL: When off, skips the interactive "Do you want to continue with script" prompt and carries on as if you answered Yes.
     # Default: True
     config["CONTINUE_BOOL"] = os.getenv("OFSC_CONTINUE_BOOL", "True").lower() in (
         "true",
         "1",
     )
 
-    # FILE_COUNT_PLACEHOLDER: Flag related to file count display or logic.
+    # FILE_COUNT_PLACEHOLDER: When on, appends `_<count>` to multi-media filenames when `file_format` doesn't include a unique filename or media ID placeholder.
     # Default: True
     config["FILE_COUNT_PLACEHOLDER"] = os.getenv(
         "OFSC_FILE_COUNT_PLACEHOLDER", "True"
@@ -89,19 +89,19 @@ def load_general_config():
     ).lower() in ("true", "1")
 
     # --- Data Processing and File Handling ---
-    # NUMBER_REGEX: Regex pattern for numbers.
+    # NUMBER_REGEX: Single-character regex class used to match numeric IDs in URLs for `manual` and `*_check` commands.
     # Default: "[0-9]"
     config["NUMBER_REGEX"] = os.getenv("OFSC_NUMBER_REGEX", "[0-9]")
 
-    # USERNAME_REGEX: Regex pattern for usernames (excluding slash).
+    # USERNAME_REGEX: Single-character regex class used to match usernames in URLs for `manual` and `*_check` commands.
     # Default: "[^/]"
     config["USERNAME_REGEX"] = os.getenv("OFSC_USERNAME_REGEX", "[^/]")
 
-    # BUF_SIZE: Buffer size for file operations (bytes).
+    # BUF_SIZE: Read buffer size, in bytes, used when hashing files (including the duplicate check before a download is moved into place).
     # Default: 1 MB (1024 * 1024)
     config["BUF_SIZE"] = int(os.getenv("OFSC_BUF_SIZE", str(1024 * 1024)))
 
-    # LARGE_TRACE_CHUNK_SIZE: Chunk size for large tracing operations.
+    # LARGE_TRACE_CHUNK_SIZE: Defined but not read anywhere.
     # Default: 100
     config["LARGE_TRACE_CHUNK_SIZE"] = int(
         os.getenv("OFSC_LARGE_TRACE_CHUNK_SIZE", "100")
@@ -109,12 +109,12 @@ def load_general_config():
 
 
 
-    # SKIP_UNAVAILABLE_DEFAULT: Default to True (Yes)
+    # SKIP_UNAVAILABLE_DEFAULT: Default for `advanced_options.skip_unavailable_content`.
     config["SKIP_UNAVAILABLE_DEFAULT"] = os.getenv(
         "OFSC_SKIP_UNAVAILABLE_DEFAULT", "True"
     ).lower() in ("true", "1")
 
-    # EXPIRED_GRACE_DEFAULT: Default to 1 day
+    # EXPIRED_GRACE_DEFAULT: Grace period, in days, after a subscription's expiry during which the creator is still treated as active for filtering and scanning.
     config["EXPIRED_GRACE_DEFAULT"] = int(
         os.getenv("OFSC_EXPIRED_GRACE_DEFAULT", "1")
     )

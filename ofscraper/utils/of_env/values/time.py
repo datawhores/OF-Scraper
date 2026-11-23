@@ -11,23 +11,23 @@ def load_expiry_config():
     config = {}
 
     # --- Expiry and Timeout Configuration ---
-    # HOURLY_EXPIRY: Expiry time in seconds for hourly items.
+    # HOURLY_EXPIRY: Defined but not read anywhere.
     # Default: 3600 (1 hour)
     config["HOURLY_EXPIRY"] = int(os.getenv("OFSC_HOURLY_EXPIRY", "3600"))
 
-    # THIRTY_EXPIRY: Expiry time in seconds for thirty-minute items.
+    # THIRTY_EXPIRY: Cache lifetime, in seconds, for OnlyFans dynamic signing rules.
     # Default: 1800 (30 minutes)
     config["THIRTY_EXPIRY"] = int(os.getenv("OFSC_THIRTY_EXPIRY", "1800"))
 
-    # SIZE_TIMEOUT: Timeout for size-related data (seconds).
+    # SIZE_TIMEOUT: Defined but not read anywhere.
     # Default: 1209600 (2 weeks)
     config["SIZE_TIMEOUT"] = int(os.getenv("OFSC_SIZE_TIMEOUT", "1209600"))
 
-    # DATABASE_TIMEOUT: Timeout for database operations (seconds).
+    # DATABASE_TIMEOUT: Timeout, in seconds, for SQLite and PostgreSQL database locks and connections.
     # Default: 300 (5 minutes)
     config["DATABASE_TIMEOUT"] = int(os.getenv("OFSC_DATABASE_TIMEOUT", "300"))
 
-    # KEY_EXPIRY: Expiry time for decryption keys (seconds). Defaults to None (no expiry).
+    # KEY_EXPIRY: Cache lifetime, in seconds, for Widevine decryption keys (`None` means no expiry).
     key_expiry_env = os.getenv("OFSC_KEY_EXPIRY", None)
     if key_expiry_env is not None:
         try:
@@ -40,29 +40,29 @@ def load_expiry_config():
     else:
         config["KEY_EXPIRY"] = None
 
-    # RESPONSE_EXPIRY: Expiry time for API responses (seconds).
+    # RESPONSE_EXPIRY: Cache lifetime, in seconds, for scraped paid-page responses.
     # Default: 5000000
     config["RESPONSE_EXPIRY"] = int(os.getenv("OFSC_RESPONSE_EXPIRY", "5000000"))
 
-    # DBINTERVAL: Interval for database-related operations (seconds).
+    # DBINTERVAL: Minimum time, in seconds, between rotating `user_data_copy_N.db` backups.
     # Default: 86400 (1 day)
     config["DBINTERVAL"] = int(os.getenv("OFSC_DBINTERVAL", "86400"))
 
-    # DAY_SECONDS: Number of seconds in a day.
+    # DAY_SECONDS: Cache lifetime, in seconds, for username-to-model-ID lookups.
     # Default: 86400
     config["DAY_SECONDS"] = int(os.getenv("OFSC_DAY_SECONDS", "86400"))
 
-    # THREE_DAY_SECONDS: Number of seconds in three days.
+    # THREE_DAY_SECONDS: Cache lifetime, in seconds, for check-mode API caches.
     # Default: 259200 (DAY_SECONDS * 3)
     config["THREE_DAY_SECONDS"] = int(
         os.getenv("OFSC_THREE_DAY_SECONDS", str(86400 * 3))
     )
 
-    # PROFILE_DATA_EXPIRY: Expiry time for profile data (seconds).
+    # PROFILE_DATA_EXPIRY: Cache lifetime, in seconds, for synchronous creator profile lookups.
     # Default: 86400 (1 day)
     config["PROFILE_DATA_EXPIRY"] = int(os.getenv("OFSC_PROFILE_DATA_EXPIRY", "86400"))
 
-    # PROFILE_DATA_EXPIRY_ASYNC: Expiry time for async profile data (seconds).
+    # PROFILE_DATA_EXPIRY_ASYNC: Cache lifetime, in seconds, for async creator profile lookups.
     # Default: 86400 (1 day)
     config["PROFILE_DATA_EXPIRY_ASYNC"] = int(
         os.getenv("OFSC_PROFILE_DATA_EXPIRY_ASYNC", "86400")

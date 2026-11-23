@@ -1,6 +1,8 @@
 # Fansly stream videos resume from kept segments, not a part file
 
-On OnlyFans a stopped or failed download keeps its part file, and the next run asks for the remaining bytes. A Fansly posted video delivered as a stream can't work that way: ffmpeg writes its part file while joining the stream, and a cut-off one can't be continued. So a stopped or failed stream download keeps its downloaded segments in a hidden folder next to the part file (a leading `.` in the name, plus the hidden attribute on Windows), and the next run fetches only the missing segments before joining them. Turning off auto resume removes the folder, as it does a part file.
+On OnlyFans, a stopped or failed download keeps its part file and the next run requests the remaining bytes. A Fansly posted video delivered as a stream can't work that way: ffmpeg writes its part file while joining the stream, and a cut-off file can't be continued.
+
+Instead, a stopped or failed stream download keeps its downloaded segments in a hidden folder next to the part file (a leading `.` in the name, plus the hidden attribute on Windows), and the next run fetches only the missing segments before joining them. Turning off auto resume removes the folder, just as it removes a part file.
 
 ## Considered options
 

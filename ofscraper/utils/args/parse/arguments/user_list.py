@@ -86,8 +86,8 @@ all_promo_option = click.option(
     "all_promo",
     help="""
         \b
-        Flag for enabling/disabling  accounts with any promo price
-        [select one all-promo-only or --all-promo-skip]""",
+        Flag for enabling/disabling accounts with any promo price
+        [select one --all-promo-only or --all-promo-skip]""",
     default=None,
     required=False,
     is_flag=True,
@@ -99,7 +99,7 @@ sub_status_option = click.option(
     "--active-subscriptions/--expired-subscriptions",
     "sub_status",
     help="""\b
-    Flag for enabling/disabling  accounts with active or expired subscription
+    Flag for enabling/disabling accounts with active or expired subscription
     [select one --active-subscription or --expired-subscription]""",
     default=None,
     required=False,
@@ -112,7 +112,7 @@ renewal_option = click.option(
     "renewal",
     help="""
     \b
-    Flag for enabling/disabling accounts set to renew renew flag on 
+    Flag for enabling/disabling accounts with the renew flag on
     [select one --renew-on or --renew-off]""",
     default=None,
     required=False,

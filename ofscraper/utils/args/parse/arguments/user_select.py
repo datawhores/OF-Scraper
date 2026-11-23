@@ -11,7 +11,7 @@ usernames_option = click.option(
     "--username",
     "--users",
     "--user",
-    help="Select which username to process (name,name2). Set to ALL for all users",
+    help="Select which usernames to process (name,name2). Set to ALL for all users",
     default=None,
     multiple=True,  # Use `multiple=True` for accepting multiple values
     callback=UsernameParse,

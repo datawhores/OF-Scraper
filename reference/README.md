@@ -1,41 +1,47 @@
 # OF-Scraper reference
 
-This reference covers everything the program can be told to do. It is written for coding agents (and people) who need an answer without tracing the code. The user guide is at [cloakedkeys.gitbook.io/ofsc](https://cloakedkeys.gitbook.io/ofsc).
+This reference covers everything the program can be told to do. It is written for coding agents (and people) who need an answer without tracing the code. For the user guide, see [cloakedkeys.gitbook.io/ofsc](https://cloakedkeys.gitbook.io/ofsc).
 
 | File | Covers |
 |---|---|
-| [cli.md](cli.md) | Commands, `--action` modes, and every command-line option: name, type, default, which commands accept it, its `config.json` fallback, and where it's defined |
+| [cli.md](cli.md) | Commands, `--action` modes, and every command-line option: name, type, default, which commands accept it, its `config.json` fallback, and where it is defined |
 | [config.md](config.md) | Every `config.json` key: default, getter, older key names still read, the environment default behind it, and the option that overrides it |
 | [env.md](env.md) | Every built-in default in `ofscraper/utils/of_env/values/`, the environment variables that override them, and the backoff settings |
-| [placeholders.md](placeholders.md) | The names usable in `dir_format`, `file_format`, `metadata` and text file names |
+| [placeholders.md](placeholders.md) | The names usable in `dir_format`, `file_format`, `metadata`, and text file names |
 | [database.md](database.md) | The tables in each creator's `user_data.db`: columns, unique keys, and what writes each row |
 
-`scripts/reference/build_reference.py` generates those five files from the code. It takes the descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file and [hooks.md](hooks.md) are written by hand.
+`scripts/reference/build_reference.py` generates those five files from the code, pulling descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file and [hooks.md](hooks.md) are written by hand.
 
 ## Where a setting's value comes from
 
-For one run, the app decides a setting in this order. The first source that gives a value wins.
+### Setting precedence
+
+For a run, the app resolves each setting in this order. The first source that provides a value wins:
 
 1. **A command-line option**, when the option has a `config.json` fallback ([cli.md](cli.md) lists them).
-   - `merged_settings` in `ofscraper/utils/settings.py` does the merge.
-   - Most options are merged with `option or config`: the config value is used when the option is not set. An option set to a false value (0 or an empty string) is treated as not set, so the config value is used.
-   - A flag that only turns something on can't turn a config setting off.
-2. **`config.json`**, read by the getters in `ofscraper/utils/config/data.py` and `ofscraper/utils/paths/common.py`. A getter also accepts older key names and locations (see [config.md](config.md)).
+   - `merged_settings` in `ofscraper/utils/settings.py` performs the merge.
+   - Most options are merged with `option or config`: the config value is used when the option is not set. An option set to a false value (`0` or an empty string) is treated as not set, so the config value is used.
+   - A flag that only turns something on cannot turn a config setting off.
+2. **`config.json`**, read by the getters in `ofscraper/utils/config/data.py` and `ofscraper/utils/paths/common.py`. Getters also accept older key names and locations (see [config.md](config.md)).
 3. **The built-in default**, used when the key is missing or empty.
    - The app reads it with `of_env.getattr`, so an environment variable can change it (see [env.md](env.md)).
-   - Two kinds of variable work. The listed variable (usually `OFSC_<NAME>`) is read when the defaults load. The bare key name is read on every lookup.
-   - Environment variables change only defaults. They don't override a value that is in `config.json`.
-
-Environment variables come from these sources, each overriding the one before:
-1. The process environment.
-2. A `.env` file found by python-dotenv. It searches upward from `ofscraper/utils/of_env/`. It searches from the working folder only in the standalone binaries, the REPL or a debugger.
-3. The files in `advanced_options.env_files`.
-
-The `--env-files` option is not loaded at present.
+   - Two variable forms work: the listed variable (usually `OFSC_<NAME>`) is read when defaults load, and the bare key name is read on every lookup.
+   - Environment variables change only defaults; they do not override a value set in `config.json`.
 
 Some settings have no `config.json` key. These are the backoff values, the timeouts, the API URLs and most of [env.md](env.md). Only the environment can change them.
 
+### Environment variable sources
+
+Environment variables come from these sources, each overriding the one before:
+
+1. The process environment.
+2. A `.env` file found by `python-dotenv`. It searches upward from `ofscraper/utils/of_env/`, and searches from the working folder only in standalone binaries, the REPL, or a debugger.
+3. The files given with `--env-files`, or the files in `advanced_options.env_files` when the option isn't used. They load in order, and later files win.
+
+### Site selection
+
 Which site a run uses is decided in this order:
+
 1. `--site`.
 2. `site.json` in the profile folder (`{"site": "fansly"}`).
 3. OnlyFans (`ofscraper/sites/__init__.py`).
@@ -43,14 +49,14 @@ Which site a run uses is decided in this order:
 ## What writes files
 
 - **`config.json`:** `auto_update_config` rewrites it from the getters when its keys differ from the current schema. The getter's return value is what gets saved, so a getter must return what belongs in the file. The interactive Config menu also writes it.
-- **`auth.json` and `fansly_auth.json`:** the Auth menu and the login prompts write them.
-- **Each creator's `user_data.db`:** any scrape writes it. That covers the `download`, `like` and `unlike` actions, `manual`, the `*_check` commands and `metadata`. [database.md](database.md) lists which rows each one writes, and the backups made beside the database.
-- **Media:** files go under the save location, through `dir_format` and `file_format`. Downloads are written as `.part` files (in `advanced_options.temp_dir` when set) and then moved into place. `--no-auto-resume` deletes leftover `.part` files instead of resuming them.
-- **`db --export PATH`:** writes a CSV.
-- **`recover_collisions --apply`:** resets `downloaded` flags and writes an undo file beside the database. With `--postgres` the flags are in PostgreSQL, and the undo file goes to `--undo-dir`, which `--apply` then needs.
-- **`move_creator_files --apply`:** moves a creator's recorded files from the folder of another of their names to the current name's, and updates `directory` in their media rows. It replaces and deletes no file; it removes only folders the move left empty.
-- **`postgres_export --apply`:** writes a new `user_data.db` for each creator PostgreSQL has rows for, under the folder it is given. It never changes a file that is already there.
-- **Logs and cache:** logs go to the `logging` folder. The cache goes to the profile's cache folder. `--no-cache` and `--no-api-cache` stop cache writes.
+- **`auth.json` and `fansly_auth.json`:** Written by the Auth menu and login prompts.
+- **Each creator's `user_data.db`:** Written by any scrape (`download`, `like`, `unlike`, `manual`, `*_check`, and `metadata`). [database.md](database.md) lists which rows each command writes, and the backups made beside the database.
+- **Media:** Saved under the save location using `dir_format` and `file_format`. Downloads are written as `.part` files (in `advanced_options.temp_dir` when set) and moved into place when finished. `--no-auto-resume` deletes leftover `.part` files instead of resuming them.
+- **`db --export PATH`:** Writes a CSV.
+- **`recover_collisions --apply`:** Resets `downloaded` flags and writes an undo file beside the database. With `--postgres`, the flags are updated in PostgreSQL and the undo file goes to `--undo-dir` (required with `--apply`).
+- **`move_creator_files --apply`:** Moves a creator's recorded files from the folder of another of their names to the current name's folder, and updates `directory` in their media rows. It replaces and deletes no files, and removes only folders the move left empty.
+- **`postgres_export --apply`:** Writes a new `user_data.db` for each creator PostgreSQL has rows for, under the folder it is given. It never changes a file that is already there.
+- **Logs and cache:** Logs go to the `logging` folder. The cache goes to the profile's cache folder. `--no-cache` and `--no-api-cache` stop cache writes.
 
 ## Default folder layout
 
@@ -76,40 +82,40 @@ Which site a run uses is decided in this order:
 
 The media path comes from `file_options.dir_format` (`{model_username}/{responsetype}/{mediatype}/`) and `file_options.file_format` (`{filename}.{ext}`). See [placeholders.md](placeholders.md).
 
-## Features only this fork has
+## Features added since 3.14.7
 
-Upstream's docs don't cover these:
+The older documentation doesn't cover these:
 
 - **Fansly** as a second site:
-  - `--site`, the profile's `site.json` and `fansly_auth.json`.
-  - Fansly posts, messages and purchases (`-o timeline,messages,purchased`).
-  - Fansly labels (`-o labels`, `labels+`, `labels*`): each wall, a named tab on the creator's profile, is a label. The main "Posts" wall is the whole timeline, so it's skipped. With the default `dir_format`, wall posts are saved with the timeline and their labels are recorded in the `labels` table. Add `{label}` to `dir_format` for a folder per wall. Other areas (pinned, archived, stories, highlights, streams, profile) are skipped on Fansly.
+  - `--site`, the profile's `site.json`, and `fansly_auth.json`.
+  - Fansly posts, messages, and purchases (`-o timeline,messages,purchased`).
+  - Fansly labels (`-o labels`, `labels+`, `labels*`): each wall (a named tab on the creator's profile) is a label. The main "Posts" wall is the whole timeline, so it is skipped. With the default `dir_format`, wall posts are saved with the timeline and their labels are recorded in the `labels` table; add `{label}` to `dir_format` for a folder per wall. Other areas (pinned, archived, stories, highlights, streams, profile) are skipped on Fansly.
   - HLS/DASH video.
   - Livestream recording (`--live`, `--live-watch`, `--live-interval`, `--live-max`, `--live-chat`).
   - Fansly media save under `<save location>/Fansly`, unless `dir_format` or `file_format` uses `{site_name}`, which then names each site's folder.
   - Fansly databases carry a `site` row in `schema_flags`.
 - **`file_options.filename_collision`** (environment default `FILENAME_COLLISION_DEFAULT`): decides what happens when two media would get the same file name.
-- **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See `COLLISION_RECOVERY.md`.
-- **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See `STASH.md`.
+- **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See [COLLISION_RECOVERY.md](../COLLISION_RECOVERY.md).
+- **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See [STASH.md](../STASH.md).
 - **`scripts/creator_names.py`**: lists and records the usernames a creator account has had.
-- **`move_creator_files`** (`python -m ofscraper.commands.move_creator_files`): moves a creator's downloaded files to the folder of their current name and updates the recorded folders. See `MOVING_FILES.md`.
-- **PostgreSQL** (`OFSC_DATABASE_URL`): keeps the database in one PostgreSQL database, not in a SQLite file per creator. See `POSTGRESQL.md`.
-- **`postgres_import`** (`python -m ofscraper.commands.postgres_import`): brings existing `user_data.db` files into that PostgreSQL database. See `POSTGRESQL.md`.
-- **`postgres_export`** (`python -m ofscraper.commands.postgres_export`): writes what that PostgreSQL database holds back to one `user_data.db` per creator. See `POSTGRESQL.md`.
+- **`move_creator_files`** (`python -m ofscraper.commands.move_creator_files`): moves a creator's downloaded files to the folder of their current name and updates the recorded folders. See [MOVING_FILES.md](../MOVING_FILES.md).
+- **PostgreSQL** (`OFSC_DATABASE_URL`): keeps the database in one PostgreSQL database, not in a SQLite file per creator. See [POSTGRESQL.md](../POSTGRESQL.md).
+- **`postgres_import`** (`python -m ofscraper.commands.postgres_import`): brings existing `user_data.db` files into that PostgreSQL database. See [POSTGRESQL.md](../POSTGRESQL.md).
+- **`postgres_export`** (`python -m ofscraper.commands.postgres_export`): writes what that PostgreSQL database holds back to one `user_data.db` per creator. See [POSTGRESQL.md](../POSTGRESQL.md).
 - **`OF_READ_TIMEOUT`**: a default read timeout for requests.
 - **`LABELS_CONCURRENCY`**: a concurrency default for label scans.
 - **Behaviour changes** listed in the release notes. For example, `--before` and `--after` accept `MM/DD/YYYY` and relative dates, a failed run exits with status 1, and command-line mistakes print a usage message.
 
 ## Hooks for add-ons
 
-Code running in the same process, such as the GUI patch or a plugin, can follow downloads, stop them, gather check-table rows, check the auth and read the database without changing the scraper's files. [hooks.md](hooks.md) lists these functions and events.
+Code running in the same process, such as the GUI patch or a plugin, can follow downloads, stop them, gather check-table rows, check the auth, and read the database without changing the scraper's files. [hooks.md](hooks.md) lists these functions and events.
 
 ## Keeping this up to date
 
-A change that adds, renames or removes a command-line option, `config.json` key, environment default, placeholder or database column must update `scripts/reference/notes.py` and regenerate the files:
+A change that adds, renames, or removes a command-line option, `config.json` key, environment default, placeholder, or database column must update `scripts/reference/notes.py` and regenerate the files:
 
 ```bash
 PYTHONPATH=. .venv/Scripts/python scripts/reference/build_reference.py
 ```
 
-`test/test_reference.py` checks both, so CI fails until it's done.
+`test/test_reference.py` checks both, so CI fails until it is done.

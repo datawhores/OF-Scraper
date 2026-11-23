@@ -11,11 +11,11 @@ def load_mpd_config():
     config = {}
 
     # --- MPD Configuration ---
-    # MPD_CONNECT_TIMEOUT: Connection timeout for MPD operations (seconds).
+    # MPD_CONNECT_TIMEOUT: Connection timeout, in seconds, when fetching DRM manifests (MPD).
     # Default: 45
     config["MPD_CONNECT_TIMEOUT"] = int(os.getenv("OFSC_MPD_CONNECT_TIMEOUT", "45"))
 
-    # MPD_TOTAL_TIMEOUT: Total timeout for MPD operations (seconds). Defaults to None.
+    # MPD_TOTAL_TIMEOUT: Total request timeout, in seconds, when fetching DRM manifests (MPD) (`None` means no limit).
     #
     # If set via environment, it will be an integer; otherwise, it remains None.
     mpd_total_timeout_env = os.getenv("OFSC_MPD_TOTAL_TIMEOUT", None)
@@ -32,25 +32,25 @@ def load_mpd_config():
             None  # Explicitly set to None if not in env or invalid
         )
 
-    # MPD_READ_TIMEOUT: Read timeout for MPD operations (seconds).
+    # MPD_READ_TIMEOUT: Read timeout, in seconds, when fetching DRM manifests (MPD).
     # Default: 200
     config["MPD_READ_TIMEOUT"] = int(os.getenv("OFSC_MPD_READ_TIMEOUT", "200"))
 
-    # MPD_POOL_CONNECT_TIMEOUT: Pool connection timeout for MPD operations (seconds).
+    # MPD_POOL_CONNECT_TIMEOUT: Time, in seconds, allowed to get a connection when fetching DRM manifests (MPD).
     # Default: 45
     config["MPD_POOL_CONNECT_TIMEOUT"] = int(
         os.getenv("OFSC_MPD_POOL_CONNECT_TIMEOUT", "45")
     )
 
-    # MPD_MAX_SEMS: Maximum semaphores for MPD operations.
+    # MPD_MAX_SEMS: Maximum concurrent requests when fetching DRM manifests (MPD).
     # Default: 10
     config["MPD_MAX_SEMS"] = int(os.getenv("OFSC_MPD_MAX_SEMS", "10"))
 
-    # MPD_NUM_TRIES: Number of retries for MPD operations.
+    # MPD_NUM_TRIES: Maximum number of attempts when fetching DRM manifests (MPD).
     # Default: 5
     config["MPD_NUM_TRIES"] = int(os.getenv("OFSC_MPD_NUM_TRIES", "5"))
 
-    # MPD_NUM_TRIES: Time to sleep on mpd 429/504 errors.
+    # MPD_SESSION_SLEEP_INIT: Time to sleep on mpd 429/504 errors.
     # Default: 45
     config["MPD_SESSION_SLEEP_INIT"] = int(
         os.getenv("OFSC_MPD_SESSION_SLEEP_INIT", "45")

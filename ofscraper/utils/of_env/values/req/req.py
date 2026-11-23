@@ -12,11 +12,11 @@ def load_network_config():
     config = {}
 
     # --- Connection and Timeout Configuration ---
-    # CONNECT_TIMEOUT: Connection timeout for general network operations (seconds).
+    # CONNECT_TIMEOUT: Default connection timeout, in seconds, for HTTP sessions that don't pass their own.
     # Default: 15
     config["CONNECT_TIMEOUT"] = int(os.getenv("OFSC_CONNECT_TIMEOUT", "15"))
 
-    # POOL_CONNECT_TIMEOUT: Connection timeout for pooled connections (seconds).
+    # POOL_CONNECT_TIMEOUT: Default time, in seconds, allowed to get a connection, for HTTP sessions that don't pass their own.
     # Default: 15
     config["POOL_CONNECT_TIMEOUT"] = int(os.getenv("OFSC_POOL_CONNECT_TIMEOUT", "15"))
 
@@ -30,15 +30,15 @@ def load_network_config():
     # Default: 60
     config["OF_READ_TIMEOUT"] = int(os.getenv("OFSC_READ_TIMEOUT", "60"))
 
-    # MAX_CONNECTIONS: Maximum number of simultaneous network connections.
+    # MAX_CONNECTIONS: Default maximum simultaneous connections for HTTP sessions that don't pass their own limit.
     # Default: 200
     config["MAX_CONNECTIONS"] = int(os.getenv("OFSC_MAX_CONNECTIONS", "200"))
 
-    # API_MAX_CONNECTION: Maximum number of API connections.
+    # API_MAX_CONNECTION: Default maximum simultaneous connections for API sessions (OnlyFans and Fansly).
     # Default: 100
     config["API_MAX_CONNECTION"] = int(os.getenv("OFSC_API_MAX_CONNECTION", "100"))
 
-    # TOTAL_TIMEOUT: Total timeout for operations (seconds). Defaults to None.
+    # TOTAL_TIMEOUT: Default total request timeout, in seconds, for HTTP sessions that don't pass their own (`None` means no limit).
     total_timeout_env = os.getenv("OFSC_TOTAL_TIMEOUT", None)
     if total_timeout_env is not None:
         try:
@@ -60,152 +60,152 @@ def load_network_config():
     config["KEEP_ALIVE_EXP"] = int(os.getenv("OFSC_KEEP_ALIVE_EXP", "10"))
 
     # --- Proxy Configuration ---
-    # PROXY: Proxy URL. Defaults to None.
+    # PROXY: Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment.
     config["PROXY"] = os.getenv("OFSC_PROXY", None)
 
-    # PROXY_MOUNTS: Proxy mounts configuration (string, specific format expected by application). Defaults to None.
+    # PROXY_MOUNTS: Defined but not read anywhere.
     config["PROXY_MOUNTS"] = os.getenv("OFSC_PROXY_MOUNTS", None)
 
-    # PROXY_AUTH: Proxy authentication credentials (string, specific format expected by application). Defaults to None.
+    # PROXY_AUTH: Defined but not read anywhere.
     config["PROXY_AUTH"] = os.getenv("OFSC_PROXY_AUTH", None)
 
     # --- Chunking Configuration ---
-    # MAX_CHUNK_SIZE: Maximum size of a download chunk (bytes).
+    # MAX_CHUNK_SIZE: Defined but not read anywhere.
     # Default: 128 MB (1024 * 1024 * 128)
     config["MAX_CHUNK_SIZE"] = int(
         os.getenv("OFSC_MAX_CHUNK_SIZE", str(1024 * 1024 * 128))
     )
 
-    # MIN_CHUNK_SIZE: Minimum size of a download chunk (bytes).
+    # MIN_CHUNK_SIZE: Defined but not read anywhere.
     # Default: 64 KB (64 * 1024)
     config["MIN_CHUNK_SIZE"] = int(os.getenv("OFSC_MIN_CHUNK_SIZE", str(64 * 1024)))
 
-    # CHUNK_UPDATE_COUNT: Number of chunks before updating progress.
+    # CHUNK_UPDATE_COUNT: Defined but not read anywhere.
     # Default: 12
     config["CHUNK_UPDATE_COUNT"] = int(os.getenv("OFSC_CHUNK_UPDATE_COUNT", "12"))
 
-    # CHUNK_SIZE_UPDATE_COUNT: Number of chunks before updating chunk size dynamically.
+    # CHUNK_SIZE_UPDATE_COUNT: Defined but not read anywhere.
     # Default: 15
     config["CHUNK_SIZE_UPDATE_COUNT"] = int(
         os.getenv("OFSC_CHUNK_SIZE_UPDATE_COUNT", "15")
     )
 
-    # CHUNK_MEMORY_SPLIT: Ideal memory split for chunk processing (e.g., in MB).
+    # CHUNK_MEMORY_SPLIT: Defined but not read anywhere.
     # Default: 64
     config["CHUNK_MEMORY_SPLIT"] = int(os.getenv("OFSC_CHUNK_MEMORY_SPLIT", "64"))
 
-    # CHUNK_FILE_SPLIT: Ideal file split size for chunk processing (e.g., in MB).
+    # CHUNK_FILE_SPLIT: Defined but not read anywhere.
     # Default: 64
     config["CHUNK_FILE_SPLIT"] = int(os.getenv("OFSC_CHUNK_FILE_SPLIT", "64"))
 
-    # MAX_READ_SIZE: Maximum size to read at once (bytes).
+    # MAX_READ_SIZE: Defined but not read anywhere.
     # Default: 16 MB (1024 * 1024 * 16)
     config["MAX_READ_SIZE"] = int(
         os.getenv("OFSC_MAX_READ_SIZE", str(1024 * 1024 * 16))
     )
 
-    # CHUNK_TIMEOUT_SEC: Timeout for individual chunk downloads (seconds).
+    # CHUNK_TIMEOUT_SEC: Read timeout, in seconds, for download and Fansly stream requests (overrides `OF_READ_TIMEOUT` for downloads).
     # Default: 30
     config["CHUNK_TIMEOUT_SEC"] = int(os.getenv("OFSC_CHUNK_TIMEOUT_SEC", "30"))
 
     # --- Semaphore and Concurrency Configuration ---
-    # REQ_SEMAPHORE_MULTI: Semaphore limit for multiple requests.
+    # REQ_SEMAPHORE_MULTI: Defined but not read anywhere.
     # Default: 5
     config["REQ_SEMAPHORE_MULTI"] = int(os.getenv("OFSC_REQ_SEMAPHORE_MULTI", "5"))
 
-    # SCRAPE_PAID_SEMS: Semaphore limit for scraping paid content.
+    # SCRAPE_PAID_SEMS: Maximum concurrent requests when scraping the paid page (`--scrape-paid`).
     # Default: 10
     config["SCRAPE_PAID_SEMS"] = int(os.getenv("OFSC_SCRAPE_PAID_SEMS", "10"))
 
-    # SUBSCRIPTION_SEMS: Semaphore limit for subscription-related operations.
+    # SUBSCRIPTION_SEMS: Maximum concurrent requests when fetching subscription lists and profiles.
     # Default: 5
     config["SUBSCRIPTION_SEMS"] = int(os.getenv("OFSC_SUBSCRIPTION_SEMS", "5"))
 
-    # LIKE_MAX_SEMS: Maximum semaphores for like operations.
+    # LIKE_MAX_SEMS: Defined but not read anywhere.
     # Default: 12
     config["LIKE_MAX_SEMS"] = int(os.getenv("OFSC_LIKE_MAX_SEMS", "12"))
 
-    # MAX_SEMS_BATCH_DOWNLOAD: Maximum semaphores for batch downloads.
+    # MAX_SEMS_BATCH_DOWNLOAD: Defined but not read anywhere.
     # Default: 12
     config["MAX_SEMS_BATCH_DOWNLOAD"] = int(
         os.getenv("OFSC_MAX_SEMS_BATCH_DOWNLOAD", "12")
     )
 
-    # MAX_SEMS_SINGLE_THREAD_DOWNLOAD: Maximum semaphores for single-thread downloads.
+    # MAX_SEMS_SINGLE_THREAD_DOWNLOAD: Defined but not read anywhere.
     # Default: 50
     config["MAX_SEMS_SINGLE_THREAD_DOWNLOAD"] = int(
         os.getenv("OFSC_MAX_SEMS_SINGLE_THREAD_DOWNLOAD", "50")
     )
 
-    # SESSION_MANAGER_SYNC_SEM_DEFAULT: Default semaphore for session manager sync operations.
+    # SESSION_MANAGER_SYNC_SEM_DEFAULT: Default maximum concurrent synchronous requests per `sessionManager`.
     # Default: 3
     config["SESSION_MANAGER_SYNC_SEM_DEFAULT"] = int(
         os.getenv("OFSC_SESSION_MANAGER_SYNC_SEM_DEFAULT", "3")
     )
 
-    # SESSION_MANAGER_SEM_DEFAULT: Default semaphore for general session manager operations.
+    # SESSION_MANAGER_SEM_DEFAULT: Default maximum concurrent async requests per `sessionManager`.
     # Default: 10
     config["SESSION_MANAGER_SEM_DEFAULT"] = int(
         os.getenv("OFSC_SESSION_MANAGER_SEM_DEFAULT", "10")
     )
 
-    # MAX_THREAD_WORKERS: Maximum number of threads for worker pools.
+    # MAX_THREAD_WORKERS: Defined but not read anywhere.
     # Default: 20
     config["MAX_THREAD_WORKERS"] = int(os.getenv("OFSC_MAX_THREAD_WORKERS", "20"))
 
     # --- Retry and Wait Configuration ---
-    # OF_MIN_WAIT_SESSION_DEFAULT: Minimum wait time for session operations (seconds).
+    # OF_MIN_WAIT_SESSION_DEFAULT: Default minimum wait, in seconds, between retries in `sessionManager`.
     # Default: 2
     config["OF_MIN_WAIT_SESSION_DEFAULT"] = float(
         os.getenv("OFSC_MIN_WAIT_SESSION_DEFAULT", "2")
     )
 
-    # OF_MAX_WAIT_SESSION_DEFAULT: Maximum wait time for session operations (seconds).
+    # OF_MAX_WAIT_SESSION_DEFAULT: Default maximum wait, in seconds, between retries in `sessionManager`.
     # Default: 3
     config["OF_MAX_WAIT_SESSION_DEFAULT"] = float(
         os.getenv("OFSC_MAX_WAIT_SESSION_DEFAULT", "3")
     )
 
-    # OF_NUM_RETRIES_SESSION_DEFAULT: Number of retries for session operations.
+    # OF_NUM_RETRIES_SESSION_DEFAULT: Default maximum number of attempts for a request in `sessionManager`.
     # Default: 10
     config["OF_NUM_RETRIES_SESSION_DEFAULT"] = int(
         os.getenv("OFSC_NUM_RETRIES_SESSION_DEFAULT", "10")
     )
 
-    # OF_MIN_WAIT_API: Minimum wait time for API calls (seconds).
+    # OF_MIN_WAIT_API: Minimum wait, in seconds, between retries for API, download, MPD and CDM key requests.
     # Default: 2
     config["OF_MIN_WAIT_API"] = float(os.getenv("OFSC_MIN_WAIT_API", "2"))
 
-    # OF_MAX_WAIT_API: Maximum wait time for API calls (seconds).
+    # OF_MAX_WAIT_API: Maximum wait, in seconds, between retries for API, download, MPD and CDM key requests.
     # Default: 3
     config["OF_MAX_WAIT_API"] = float(os.getenv("OFSC_MAX_WAIT_API", "3"))
 
-    # OF_AUTH_MIN_WAIT: Minimum wait time for authentication operations (seconds).
+    # OF_AUTH_MIN_WAIT: Defined but not read anywhere.
     # Default: 3
     config["OF_AUTH_MIN_WAIT"] = float(os.getenv("OFSC_AUTH_MIN_WAIT", "3"))
 
-    # OF_AUTH_MAX_WAIT: Maximum wait time for authentication operations (seconds).
+    # OF_AUTH_MAX_WAIT: Defined but not read anywhere.
     # Default: 3
     config["OF_AUTH_MAX_WAIT"] = float(os.getenv("OFSC_AUTH_MAX_WAIT", "3"))
 
-    # DOWNLOAD_NUM_TRIES_REQ: Number of download retries for requests.
+    # DOWNLOAD_NUM_TRIES_REQ: Maximum request-level attempts per download outside check mode.
     # Default: 5
     config["DOWNLOAD_NUM_TRIES_REQ"] = int(
         os.getenv("OFSC_DOWNLOAD_NUM_TRIES_REQ", "5")
     )
 
-    # DOWNLOAD_NUM_TRIES_CHECK_REQ: Number of download check retries for requests.
+    # DOWNLOAD_NUM_TRIES_CHECK_REQ: Maximum request-level attempts per download in check mode (`*_check` commands).
     # Default: 2
     config["DOWNLOAD_NUM_TRIES_CHECK_REQ"] = int(
         os.getenv("OFSC_DOWNLOAD_NUM_TRIES_CHECK_REQ", "2")
     )
 
-    # AUTH_NUM_TRIES: Number of retries for authentication attempts.
+    # AUTH_NUM_TRIES: Defined but not read anywhere.
     # Default: 3
     config["AUTH_NUM_TRIES"] = int(os.getenv("OFSC_AUTH_NUM_TRIES", "3"))
 
     # --- Miscellaneous ---
-    # MESSAGE_SLEEP_DEFAULT: Default sleep duration for messages (seconds).
+    # MESSAGE_SLEEP_DEFAULT: Defined but not read anywhere.
     # Default: 0
     config["MESSAGE_SLEEP_DEFAULT"] = int(os.getenv("OFSC_MESSAGE_SLEEP_DEFAULT", "0"))
 

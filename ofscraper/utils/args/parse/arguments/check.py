@@ -29,7 +29,7 @@ check_areas = click.option(
 url_option = click.option(
     "-u",
     "--url",
-    help="Scan posts via space or comma seperated list of urls",
+    help="Scan posts via space or comma separated list of URLs",
     default=None,
     multiple=True,
     callback=StringSplitParse,
@@ -62,7 +62,7 @@ user_option = click.option(
     "--users",
     "--user",
     "check_usernames",
-    help="Scan stories/highlights via username(s)",
+    help="Creators to scan, by username (name,name2).",
     default=None,
     multiple=True,
     callback=StringSplitParse,
@@ -83,9 +83,7 @@ text_only_option = click.option(
     "--text-only",
     "--download-text-only",
     "text_only",
-    help="""
-    Download Text files, but skip download media
-    """,
+    help="Download text files, skipping media",
     default=False,
     is_flag=True,
 )
@@ -95,9 +93,7 @@ text_option = click.option(
     "--text",
     "--download-text",
     "text",
-    help="""
-    Download Text files in addition to media
-    """,
+    help="Download text files in addition to media",
     default=False,
     is_flag=True,
 )
@@ -106,11 +102,7 @@ check_mode_media_sort = click.option(
     "-mst",
     "--media-sort",
     "mediasort",
-    help="""
-    \b
-    Changes media processing order before actions
-    Example: for download
-    """,
+    help="Changes media processing order before actions (e.g. for download)",
     default=None,
     required=False,
     type=click.Choice(

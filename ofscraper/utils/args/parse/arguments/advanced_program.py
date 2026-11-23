@@ -5,7 +5,7 @@ from ofscraper.utils.const import KEY_OPTIONS, DYNAMIC_OPTIONS, DYNAMIC_ALIASES
 no_cache_option = click.option(
     "-nc",
     "--no-cache",
-    help="Disable cache and forces consecutive api scan",
+    help="Disable cache and force a fresh sequential API scan",
     default=False,
     is_flag=True,
 )  # Define individual options
@@ -14,7 +14,7 @@ no_cache_option = click.option(
 no_api_cache_option = click.option(
     "-nca",
     "--no-api-cache",
-    help="Forces consecutive api scan",
+    help="Force a fresh sequential API scan",
     default=False,
     is_flag=True,
 )
@@ -32,7 +32,7 @@ private_key_option = click.option(
     "-pk",
     "--private-key",
     "private_key",
-    help="private key path for manual cdrm",
+    help="Private key path for manual key mode",
     default=None,
 )
 
@@ -40,7 +40,7 @@ client_id_option = click.option(
     "-ci",
     "--client-id",
     "client_id",
-    help="client id path for manual cdrm",
+    help="Client ID path for manual key mode",
     default=None,
 )
 
@@ -49,7 +49,7 @@ auth_fail = click.option(
     "--auth-fail",
     "--auth-quit",
     "auth_fail",
-    help="quit on authentication failure, rather then prompting",
+    help="Quit on authentication failure rather than prompting",
     default=False,
     is_flag=True,
 )
@@ -57,7 +57,7 @@ dynamic_rules_option = click.option(
     "-dr",
     "--dynamic-rules",
     "--dynamic-rule",
-    help="Dynamic signing",
+    help="Dynamic signing rule source",
     default=None,
     # the same names config.json accepts, short names included (#232)
     type=click.Choice([*DYNAMIC_OPTIONS, *DYNAMIC_ALIASES], case_sensitive=False),

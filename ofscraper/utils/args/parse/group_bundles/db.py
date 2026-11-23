@@ -53,13 +53,13 @@ def db_args(func):
     @click.command(
         "db",
         help="Print information from the database",
-        short_help="print information from the database",
+        short_help="Print information from the database",
         show_constraints=True,
     )
     @click.option(
         "-ep",
         "--export",
-        help="export the table as a csv file",
+        help="Export the table as a CSV file",
         type=click.Path(
             path_type=pathlib.Path,
             writable=True,
@@ -89,7 +89,7 @@ def db_args(func):
         db_sort_option,
         db_desc_option,
         max_media_count_option,
-        help="Select hard limit and sorting for retrived items",
+        help="Select hard limit and sorting for retrieved items",
     )
     @click.option_group(
         media_filter_options_desc,

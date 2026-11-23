@@ -11,7 +11,7 @@ def load_discord_config():
     config = {}
 
     # --- Discord Configuration ---
-    # DISCORD_TOTAL_TIMEOUT: Total timeout for Discord operations (seconds). Defaults to None.
+    # DISCORD_TOTAL_TIMEOUT: Total request timeout, in seconds, when sending Discord webhook log messages (`None` means no limit).
     #
     # If set via environment, it will be an integer; otherwise, it remains None.
     discord_total_timeout_env = os.getenv("OFSC_DISCORD_TOTAL_TIMEOUT", None)
@@ -28,15 +28,15 @@ def load_discord_config():
             None  # Explicitly set to None if not in env or invalid
         )
 
-    # DISCORD_MIN_WAIT: Minimum wait time for Discord operations (seconds).
+    # DISCORD_MIN_WAIT: Minimum wait, in seconds, before retrying a failed Discord webhook request.
     # Default: 1
     config["DISCORD_MIN_WAIT"] = float(os.getenv("OFSC_DISCORD_MIN_WAIT", "1"))
 
-    # DISCORD_MAX_WAIT: Maximum wait time for Discord operations (seconds).
+    # DISCORD_MAX_WAIT: Maximum wait, in seconds, before retrying a failed Discord webhook request.
     # Default: 5
     config["DISCORD_MAX_WAIT"] = float(os.getenv("OFSC_DISCORD_MAX_WAIT", "5"))
 
-    # DISCORD_NUM_TRIES: Number of retries for Discord operations.
+    # DISCORD_NUM_TRIES: Maximum number of attempts for each Discord webhook request.
     # Default: 3
     config["DISCORD_NUM_TRIES"] = int(os.getenv("OFSC_DISCORD_NUM_TRIES", "3"))
 

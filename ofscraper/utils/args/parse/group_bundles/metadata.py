@@ -46,7 +46,7 @@ METADATA_OPTIONS = ["complete", "update", "check"]
 def metadata_args(func):
     @click.command(
         "metadata",
-        short_help=" Modify metadata or db files",
+        short_help="Modify metadata or db files",
         help="""
 Uses API to modify db files without the need for downloading
 """,
@@ -81,9 +81,9 @@ It also uses a new filename if one is available
             "mark_stray",
             help="""
         \b
-        Sets unmatched media items as locked
-        This is done per api type excluding labels, 
-        and is limited to --after and --before range
+        Sets unmatched media items as locked.
+        This is done per API type excluding labels,
+        and is limited to --after and --before range.
         """,
             flag_value=True,
             is_flag=True,
@@ -94,10 +94,9 @@ It also uses a new filename if one is available
             "anon",
             help="""
         \b
-        Use anonymise creditional
-        forces --individual flag
-        force --list flag to be removed
-        most media is ignored
+        Use anonymous credentials.
+        Forces --individual flag and removes --list flag.
+        Most media is ignored.
         """,
             flag_value=True,
             is_flag=True,
@@ -112,7 +111,7 @@ It also uses a new filename if one is available
         click.option(
             "-sp",
             "--scrape-paid",
-            help="Similar to --metadata, but only for --scrape paid",
+            help="Similar to --metadata, but only for --scrape-paid",
             metavar="METADATA MODE",
             type=click.Choice(METADATA_OPTIONS),
         ),
