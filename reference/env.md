@@ -432,6 +432,9 @@ Defined in `ofscraper/utils/of_env/values/req/api.py`.
 
 Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 
+<details>
+<summary>Show all rate-limit sleeper keys (98 keys)</summary>
+
 #### Standard API: rate limits (429, 504)
 
 | Variable / Key | Description |
@@ -599,6 +602,8 @@ Defined in `ofscraper/utils/of_env/values/req/ratelimit.py`.
 | <a id="subscription_session_403_sleep_decay_threshold"></a>`OFSC_SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD`<br>Key: `SUBSCRIPTION_SESSION_403_SLEEP_DECAY_THRESHOLD` | **Default:** `65.0`. Seconds without an error or a change after which the wait shrinks. |
 | <a id="subscription_session_403_sleep_decay_factor"></a>`OFSC_SUBSCRIPTION_SESSION_403_SLEEP_DECAY_FACTOR`<br>Key: `SUBSCRIPTION_SESSION_403_SLEEP_DECAY_FACTOR` | **Default:** `1.5`. The wait is divided by this when it shrinks. |
 | <a id="subscription_session_403_min_sleep"></a>`OFSC_SUBSCRIPTION_SESSION_403_MIN_SLEEP`<br>Key: `SUBSCRIPTION_SESSION_403_MIN_SLEEP` | **Default:** `0.0`. The smallest wait, and the minimum gap kept between requests, in seconds. The wait starts here. |
+
+</details>
 
 ### Authentication
 
@@ -777,6 +782,9 @@ Defined in `ofscraper/utils/of_env/values/prompts.py`.
 
 Defined in `ofscraper/utils/of_env/values/url/url.py`.
 
+<details>
+<summary>Show OnlyFans API endpoint URLs (28 keys)</summary>
+
 | Variable / Key | Description |
 |---|---|
 | <a id="licence_url"></a>`OFSC_API_LICENCE_URL`<br>Key: `LICENCE_URL` | **Default:** `'https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine'`. URL for media DRM licence acquisition. |
@@ -807,6 +815,8 @@ Defined in `ofscraper/utils/of_env/values/url/url.py`.
 | <a id="labelledpostsep"></a>`OFSC_LABELLED_POSTS_EP`<br>Key: `labelledPostsEP` | **Default:** `'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&offset={}&order=publish_date_desc&skip_users=all&counters=0&format=infinite&label={}'`. Endpoint for posts under a specific label. |
 | <a id="listep"></a>`OFSC_LIST_EP`<br>Key: `listEP` | **Default:** `'https://onlyfans.com/api2/v2/lists?offset={}&skip_users=all&limit=100&format=infinite'`. Endpoint for user's custom lists. |
 | <a id="listusersep"></a>`OFSC_LIST_USERS_EP`<br>Key: `listusersEP` | **Default:** `'https://onlyfans.com/api2/v2/lists/{}/users?offset={}&limit=100&format=infinite'`. Endpoint for users within a specific list. |
+
+</details>
 
 ### Dynamic rule addresses
 
@@ -856,6 +866,9 @@ Extra domains (added to the built-in `onlyfans.com`) allowed to receive OnlyFans
 ## Unused legacy defaults
 
 Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.
+
+<details>
+<summary>Show unused legacy defaults (67 keys)</summary>
 
 | Variable / Key | Details |
 |---|---|
@@ -926,4 +939,6 @@ Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently
 | <a id="highlightspecific"></a>`OFSC_HIGHLIGHT_SPECIFIC_EP`<br>Key: `highlightSPECIFIC` | **Default:** `'https://onlyfans.com/api2/v2/stories/highlights/{}'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Endpoint for a specific highlight story. |
 | <a id="storiesspecific"></a>`OFSC_STORIES_SPECIFIC_EP`<br>Key: `storiesSPECIFIC` | **Default:** `'https://onlyfans.com/api2/v2/stories/{}'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Endpoint for a specific story. |
 | <a id="messagetablespecific"></a>`OFSC_MESSAGE_TABLE_SPECIFIC_URL`<br>Key: `messageTableSPECIFIC` | **Default:** `'https://onlyfans.com/my/chats/{}/?id={}'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Web UI URL for specific messages. |
+
+</details>
 
