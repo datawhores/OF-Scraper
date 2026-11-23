@@ -23,7 +23,7 @@ This file is written by hand. Check an entry against the code before relying on 
 | [`stop.request()` / `stop.clear()`](#stopping-downloads) | `ofscraper.commands.scraper.actions.download.stop` | sync code, any thread | stop running downloads and post fetches |
 | [`gather_rows(command)`](#gather_rowscommand) | `ofscraper.commands.check` | worker thread with no running loop | get check-table rows without the Textual table |
 | [`reset_table_data()`](#gather_rowscommand) | `ofscraper.commands.check` | sync code | forget the last scan's rows |
-| [`process_user_batch(...)`](#process_user_batchusername-model_id-media_list-post_list-row_list) | `ofscraper.commands.check` | worker thread with no running loop | download one creator's check-table rows |
+| [`process_user_batch(...)`](#process_user_batch) | `ofscraper.commands.check` | worker thread with no running loop | download one creator's check-table rows |
 | [`auth_status()`](#auth_status) | `ofscraper.data.api.init` | sync code | check the auth and say why it couldn't be checked |
 | [`check_auth(include_main_menu=False)`](#check_authinclude_main_menufalse) | `ofscraper.utils.checkers` | sync code | check the auth, prompting when it's rejected |
 | [`unavailable_message(e)`](#unavailable_messagee) | `ofscraper.data.api.init` | sync code | tell a network or server failure from an auth failure |
@@ -131,7 +131,9 @@ rows = gather_rows("post_check")
 
 **PostgreSQL:** the downloaded state and file names come from `get_media_post_files_downloaded`, so they come from PostgreSQL when it's on.
 
-### `process_user_batch(username, model_id, media_list, post_list, row_list)`
+### `process_user_batch`
+
+`process_user_batch(username, model_id, media_list, post_list, row_list)`
 
 **Module:** `ofscraper.commands.check` · **Execution:** sync, uses `@run` inside · **Returns:** a dict of the batch's totals
 

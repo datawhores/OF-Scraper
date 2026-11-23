@@ -21,18 +21,18 @@ The tables and columns below are what a new `user_data.db` has after `ofscraper.
 
 ## Quick reference
 
-| Table | Unique key | Summary |
-|---|---|---|
-| [`labels`](#labels) | (`post_id`, `label_id`, `model_id`) | Links the creator's post labels (collections) to posts. |
-| [`medias`](#medias) | (`media_id`, `model_id`, `post_id`) | One row per media item (image, video, audio) seen in a post, message, story or other area. |
-| [`messages`](#messages) | (`post_id`, `model_id`) | One row per direct message seen in the chat with the creator, from either side. |
-| [`models`](#models) | (`model_id`) | The creator account ids whose data is stored in this database. |
-| [`others`](#others) | (`post_id`, `model_id`) | A legacy table for content outside the main areas. |
-| [`posts`](#posts) | (`post_id`, `model_id`) | One row per timeline, pinned, archived, streams, paid or label post seen for the creator. |
-| [`products`](#products) | (`post_id`, `model_id`) | A legacy table for paid products. |
-| [`profiles`](#profiles) | (`user_id`, `username`) | The usernames the creator account has been seen under in this database, and when each was first and last seen. |
-| [`schema_flags`](#schema_flags) | (`flag_name`) | Key/value markers that record which schema migrations have run on this file, plus the site the database belongs to. |
-| [`stories`](#stories) | (`post_id`, `model_id`) | One row per story or highlight story seen for the creator. |
+| Table | Summary |
+|---|---|
+| [`labels`](#labels) | Links the creator's post labels (collections) to posts.<br>**Unique:** (`post_id`, `label_id`, `model_id`) |
+| [`medias`](#medias) | One row per media item (image, video, audio) seen in a post, message, story or other area.<br>**Unique:** (`media_id`, `model_id`, `post_id`) |
+| [`messages`](#messages) | One row per direct message seen in the chat with the creator, from either side.<br>**Unique:** (`post_id`, `model_id`) |
+| [`models`](#models) | The creator account ids whose data is stored in this database.<br>**Unique:** (`model_id`) |
+| [`others`](#others) | A legacy table for content outside the main areas.<br>**Unique:** (`post_id`, `model_id`) |
+| [`posts`](#posts) | One row per timeline, pinned, archived, streams, paid or label post seen for the creator.<br>**Unique:** (`post_id`, `model_id`) |
+| [`products`](#products) | A legacy table for paid products.<br>**Unique:** (`post_id`, `model_id`) |
+| [`profiles`](#profiles) | The usernames the creator account has been seen under in this database, and when each was first and last seen.<br>**Unique:** (`user_id`, `username`) |
+| [`schema_flags`](#schema_flags) | Key/value markers that record which schema migrations have run on this file, plus the site the database belongs to.<br>**Unique:** (`flag_name`) |
+| [`stories`](#stories) | One row per story or highlight story seen for the creator.<br>**Unique:** (`post_id`, `model_id`) |
 
 ## `labels`
 
@@ -40,14 +40,14 @@ Links the creator's post labels (collections) to posts. One row per (label, post
 
 **Unique:** (`post_id`, `label_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `label_id` | INTEGER | The site label id. On Fansly, the wall id. |
-| `name` | VARCHAR | The label name. On Fansly, the wall name without trailing spaces. |
-| `type` | VARCHAR | The label type from the API. `wall` for Fansly walls. |
-| `post_id` | INTEGER | The id of a post carrying the label. |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `label_id` | **Type:** `INTEGER`. The site label id. On Fansly, the wall id. |
+| `name` | **Type:** `VARCHAR`. The label name. On Fansly, the wall name without trailing spaces. |
+| `type` | **Type:** `VARCHAR`. The label type from the API. `wall` for Fansly walls. |
+| `post_id` | **Type:** `INTEGER`. The id of a post carrying the label. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -69,27 +69,27 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 
 **Unique:** (`media_id`, `model_id`, `post_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `media_id` | INTEGER | The site media id. |
-| `post_id` | INTEGER (not null) | The id of the post, message or story the media belongs to. |
-| `link` | VARCHAR | The download URL, or the MPD manifest URL for DRM video. `NULL` when the API gave neither. |
-| `directory` | VARCHAR | The folder the file was saved to. Set on download or by the `metadata` command. |
-| `filename` | VARCHAR | The file name the media was saved under. |
-| `size` | INTEGER | The saved file size in bytes. |
-| `api_type` | VARCHAR | The area the media came from, as a capitalised response type (Timeline, Archived, Pinned, Streams, Messages, Stories, Highlights, Paid, Profile and so on). |
-| `media_type` | VARCHAR | The capitalised media type (Images, Videos, Audios and so on). |
-| `preview` | INTEGER | 1 if the media is a preview, else 0. On OnlyFans, the post carries preview media. On Fansly, the item is flagged `isPreview`. |
-| `linked` | BOOL | 1 if the API gave a URL or MPD for the media, else 0. |
-| `downloaded` | BOOL | 1 once the media counts as downloaded (file saved, forced, or marked by the `metadata` command). Otherwise 0 or `NULL`. Used to skip already-downloaded media. |
-| `created_at` | TIMESTAMP | The media creation time from the API (`createdAt`, else `postedAt`, else the post date). |
-| `posted_at` | TIMESTAMP | The date of the parent post or message. |
-| `duration` | VARCHAR | The media duration as a formatted string. `NULL` when unknown. |
-| `unlocked` | BOOL | 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
-| `hash` | VARCHAR | The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
-| `skip_permanent` | BOOL | 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. `--retry-permanent-skips` and `ofscraper db --unmark-permanent-skips` undo it. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `media_id` | **Type:** `INTEGER`. The site media id. |
+| `post_id` | **Type:** `INTEGER` (not null). The id of the post, message or story the media belongs to. |
+| `link` | **Type:** `VARCHAR`. The download URL, or the MPD manifest URL for DRM video. `NULL` when the API gave neither. |
+| `directory` | **Type:** `VARCHAR`. The folder the file was saved to. Set on download or by the `metadata` command. |
+| `filename` | **Type:** `VARCHAR`. The file name the media was saved under. |
+| `size` | **Type:** `INTEGER`. The saved file size in bytes. |
+| `api_type` | **Type:** `VARCHAR`. The area the media came from, as a capitalised response type (Timeline, Archived, Pinned, Streams, Messages, Stories, Highlights, Paid, Profile and so on). |
+| `media_type` | **Type:** `VARCHAR`. The capitalised media type (Images, Videos, Audios and so on). |
+| `preview` | **Type:** `INTEGER`. 1 if the media is a preview, else 0. On OnlyFans, the post carries preview media. On Fansly, the item is flagged `isPreview`. |
+| `linked` | **Type:** `BOOL`. 1 if the API gave a URL or MPD for the media, else 0. |
+| `downloaded` | **Type:** `BOOL`. 1 once the media counts as downloaded (file saved, forced, or marked by the `metadata` command). Otherwise 0 or `NULL`. Used to skip already-downloaded media. |
+| `created_at` | **Type:** `TIMESTAMP`. The media creation time from the API (`createdAt`, else `postedAt`, else the post date). |
+| `posted_at` | **Type:** `TIMESTAMP`. The date of the parent post or message. |
+| `duration` | **Type:** `VARCHAR`. The media duration as a formatted string. `NULL` when unknown. |
+| `unlocked` | **Type:** `BOOL`. 1 if the account can view the media (API `canView` and a link exists). Set to 0 when stray-media cleanup decides the item is gone. |
+| `hash` | **Type:** `VARCHAR`. The file hash recorded at download, when hashing is enabled. Used to find duplicate files. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
+| `skip_permanent` | **Type:** `BOOL`. 1 when `skip_download_script` printed `skip-permanent`: the item is saved as downloaded with no file and isn't asked about again. `NULL` for every other row, including real downloads, other items saved as downloaded with no file, and rows saved before the column existed. A later download write clears it; the `metadata` command keeps it while the item stays downloaded with no file on disk. `--retry-permanent-skips` and `ofscraper db --unmark-permanent-skips` undo it. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -115,19 +115,19 @@ One row per direct message seen in the chat with the creator, from either side.
 
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER (not null) | The site message id. |
-| `text` | VARCHAR | The message text. It is sanitised first when the `sanitize-db-text` option is on. |
-| `price` | INTEGER | The message price (0 when free). |
-| `paid` | BOOLEAN | Truthy when the message is open or opened, has viewable media, or has a price. |
-| `archived` | BOOLEAN | 1 if the API marks the message archived (normally 0). |
-| `created_at` | TIMESTAMP | The message date. |
-| `user_id` | INTEGER | The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
-| `model_id` | INTEGER | The creator account id the chat belongs to. |
-| `is_deleted` | BOOLEAN (default `0`) | 1 when a scan decided the message no longer exists. Default 0. |
-| `group_id` | VARCHAR | Fansly only: the conversation id (`groupId`), so a message's page is its conversation's, `https://fansly.com/messages/<group_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | **Type:** `INTEGER` (not null). The site message id. |
+| `text` | **Type:** `VARCHAR`. The message text. It is sanitised first when the `sanitize-db-text` option is on. |
+| `price` | **Type:** `INTEGER`. The message price (0 when free). |
+| `paid` | **Type:** `BOOLEAN`. Truthy when the message is open or opened, has viewable media, or has a price. |
+| `archived` | **Type:** `BOOLEAN`. 1 if the API marks the message archived (normally 0). |
+| `created_at` | **Type:** `TIMESTAMP`. The message date. |
+| `user_id` | **Type:** `INTEGER`. The id of the sender (`fromUser`). It lets you tell the creator's messages from the account's own. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the chat belongs to. |
+| `is_deleted` | **Type:** `BOOLEAN` (default `0`). 1 when a scan decided the message no longer exists. Default 0. |
+| `group_id` | **Type:** `VARCHAR`. Fansly only: the conversation id (`groupId`), so a message's page is its conversation's, `https://fansly.com/messages/<group_id>`. `NULL` for OnlyFans messages and for rows saved before the column existed; the next messages scan that sees the message fills it in. `stash_sync` uses it for a Fansly message's link. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -148,10 +148,10 @@ The creator account ids whose data is stored in this database.
 
 **Unique:** (`model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `model_id` | INTEGER (not null) | The creator account id. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `model_id` | **Type:** `INTEGER` (not null). The creator account id. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -166,16 +166,16 @@ A legacy table for content outside the main areas. It is created and migrated, b
 
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER (not null) | The id of the item. |
-| `text` | VARCHAR | The text. |
-| `price` | INTEGER | The price. |
-| `paid` | INTEGER | The paid flag. |
-| `archived` | BOOLEAN | The archived flag. |
-| `created_at` | TIMESTAMP | The creation date. |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | **Type:** `INTEGER` (not null). The id of the item. |
+| `text` | **Type:** `VARCHAR`. The text. |
+| `price` | **Type:** `INTEGER`. The price. |
+| `paid` | **Type:** `INTEGER`. The paid flag. |
+| `archived` | **Type:** `BOOLEAN`. The archived flag. |
+| `created_at` | **Type:** `TIMESTAMP`. The creation date. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -190,22 +190,22 @@ One row per timeline, pinned, archived, streams, paid or label post seen for the
 
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER (not null) | The site post id. |
-| `text` | VARCHAR | The post text. It is sanitised first when the `sanitize-db-text` option is on. |
-| `price` | INTEGER | The post price (0 when free). |
-| `paid` | INTEGER | Truthy when the post is open or opened, has viewable media, or has a price. |
-| `archived` | BOOLEAN | 1 if the API marks the post archived. |
-| `pinned` | BOOLEAN | 1 if the API marks the post pinned. |
-| `stream` | BOOLEAN | 1 if the post has a stream id (a streams post). |
-| `opened` | BOOLEAN | 1 if the API marks the post opened. |
-| `created_at` | TIMESTAMP | The post date (`postedAt`, else `createdAt`). |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
-| `is_deleted` | BOOLEAN (default `0`) | 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
-| `purchase_type` | VARCHAR | For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). It is `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches), for Fansly purchases, and for rows saved before the column existed. A bought message saved by `paid_check` or `msg_check` still goes to `messages` without a purchase type. A later timeline or messages scan never clears it, and a purchase scan fills it in for an existing row. `stash_sync` links a bought post's file to its page when this is `post`. |
-| `mentions` | VARCHAR | Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | **Type:** `INTEGER` (not null). The site post id. |
+| `text` | **Type:** `VARCHAR`. The post text. It is sanitised first when the `sanitize-db-text` option is on. |
+| `price` | **Type:** `INTEGER`. The post price (0 when free). |
+| `paid` | **Type:** `INTEGER`. Truthy when the post is open or opened, has viewable media, or has a price. |
+| `archived` | **Type:** `BOOLEAN`. 1 if the API marks the post archived. |
+| `pinned` | **Type:** `BOOLEAN`. 1 if the API marks the post pinned. |
+| `stream` | **Type:** `BOOLEAN`. 1 if the post has a stream id (a streams post). |
+| `opened` | **Type:** `BOOLEAN`. 1 if the API marks the post opened. |
+| `created_at` | **Type:** `TIMESTAMP`. The post date (`postedAt`, else `createdAt`). |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
+| `is_deleted` | **Type:** `BOOLEAN` (default `0`). 1 when a scan decided the post no longer exists on the site. Such posts are left out of the date lookups that drive later scans. Default 0. |
+| `purchase_type` | **Type:** `VARCHAR`. For an OnlyFans purchase, whether the bought item was a `post` or a `message` (the purchase's `responseType`). It is `NULL` for rows not saved from a purchases list (the Purchased area, `paid_check`, or the purchases `msg_check` fetches), for Fansly purchases, and for rows saved before the column existed. A bought message saved by `paid_check` or `msg_check` still goes to `messages` without a purchase type. A later timeline or messages scan never clears it, and a purchase scan fills it in for an existing row. `stash_sync` links a bought post's file to its page when this is `post`. |
+| `mentions` | **Type:** `VARCHAR`. Fansly only: the post's `accountMentions` list as JSON text, exactly as the API sent it (`[]` when the post tags nobody). `NULL` for OnlyFans posts, Fansly purchases, and rows saved before the column existed; the next scan that sees the post fills it in. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -226,17 +226,17 @@ A legacy table for paid products. It is created and migrated, but no current cod
 
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER (not null) | The id of the product or its post. |
-| `text` | VARCHAR | The product text. |
-| `price` | INTEGER | The price. |
-| `paid` | INTEGER | The paid flag. |
-| `archived` | BOOLEAN | The archived flag. |
-| `created_at` | TIMESTAMP | The creation date. |
-| `title` | VARCHAR | The product title. |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | **Type:** `INTEGER` (not null). The id of the product or its post. |
+| `text` | **Type:** `VARCHAR`. The product text. |
+| `price` | **Type:** `INTEGER`. The price. |
+| `paid` | **Type:** `INTEGER`. The paid flag. |
+| `archived` | **Type:** `BOOLEAN`. The archived flag. |
+| `created_at` | **Type:** `TIMESTAMP`. The creation date. |
+| `title` | **Type:** `VARCHAR`. The product title. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -251,13 +251,13 @@ The usernames the creator account has been seen under in this database, and when
 
 **Unique:** (`user_id`, `username`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `user_id` | INTEGER (not null) | The creator account id. It has the same value as `model_id` elsewhere, and is named `user_id` for legacy reasons. |
-| `username` | VARCHAR (not null) | The username the account had when it was seen. |
-| `first_seen_at` | TIMESTAMP | When the scraper first worked on the account under this username: ISO text in UTC, to the second (`2024-03-01T09:30:00+00:00`). Empty (NULL) when that isn't known. |
-| `last_seen_at` | TIMESTAMP | When the scraper last worked on the account under this username, in the same form. Empty (NULL) when that isn't known. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `user_id` | **Type:** `INTEGER` (not null). The creator account id. It has the same value as `model_id` elsewhere, and is named `user_id` for legacy reasons. |
+| `username` | **Type:** `VARCHAR` (not null). The username the account had when it was seen. |
+| `first_seen_at` | **Type:** `TIMESTAMP`. When the scraper first worked on the account under this username: ISO text in UTC, to the second (`2024-03-01T09:30:00+00:00`). Empty (NULL) when that isn't known. |
+| `last_seen_at` | **Type:** `TIMESTAMP`. When the scraper last worked on the account under this username, in the same form. Empty (NULL) when that isn't known. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -279,10 +279,10 @@ Key/value markers that record which schema migrations have run on this file, plu
 
 **Unique:** (`flag_name`)
 
-| Column | Type | Description |
-|---|---|---|
-| `flag_name` | TEXT (PK) | The migration flag name (see the flag list above) or `site`. |
-| `flag_value` | TEXT | 1 for a completed migration step (only rows with value 1 count as done). For the `site` row, the site name. |
+| Column | Description |
+|---|---|
+| `flag_name` | **Type:** `TEXT` (PK). The migration flag name (see the flag list above) or `site`. |
+| `flag_value` | **Type:** `TEXT`. 1 for a completed migration step (only rows with value 1 count as done). For the `site` row, the site name. |
 
 <details>
 <summary>Write and migration details</summary>
@@ -336,16 +336,16 @@ One row per story or highlight story seen for the creator.
 
 **Unique:** (`post_id`, `model_id`)
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER (PK, not null) | Row id (`INTEGER PRIMARY KEY`), internal only. |
-| `post_id` | INTEGER (not null) | The site story id. |
-| `text` | VARCHAR | The story text, else its title, else an empty string. |
-| `price` | INTEGER | The price (normally 0). |
-| `paid` | INTEGER | The paid/open flag, computed as for posts. |
-| `archived` | BOOLEAN | The archived flag from the API (normally 0). |
-| `created_at` | TIMESTAMP | The story date. |
-| `model_id` | INTEGER | The creator account id the row belongs to. |
+| Column | Description |
+|---|---|
+| `id` | **Type:** `INTEGER` (PK, not null). Row id (`INTEGER PRIMARY KEY`), internal only. |
+| `post_id` | **Type:** `INTEGER` (not null). The site story id. |
+| `text` | **Type:** `VARCHAR`. The story text, else its title, else an empty string. |
+| `price` | **Type:** `INTEGER`. The price (normally 0). |
+| `paid` | **Type:** `INTEGER`. The paid/open flag, computed as for posts. |
+| `archived` | **Type:** `BOOLEAN`. The archived flag from the API (normally 0). |
+| `created_at` | **Type:** `TIMESTAMP`. The story date. |
+| `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
 
 <details>
 <summary>Write and migration details</summary>

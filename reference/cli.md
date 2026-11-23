@@ -34,21 +34,21 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 ## Quick reference
 
-| Command | Options | Summary |
-|---|---|---|
-| [Main program (no command)](#main-program-no-command) | 103 | OF-Scraper Options |
-| [`manual`](#manual) | 52 | Manually download media by providing a list of URLs or IDs |
-| [`msg_check`](#msg_check) | 52 | Produces a media table from messages with filterable entries and quick downloads |
-| [`story_check`](#story_check) | 50 | Produces a media table from stories and highlights with filterable entries and quick downloads |
-| [`paid_check`](#paid_check) | 52 | Produces a media table from purchases with filterable entries and quick downloads |
-| [`post_check`](#post_check) | 54 | Produces a media table from posts with filterable entries and quick downloads |
-| [`metadata`](#metadata) | 86 | Modify metadata or db files |
-| [`db`](#db) | 61 | Print information from the database |
-| [`move_creator_files`](#move_creator_files-separate-entry-point) | argparse | Move a creator's downloaded files to match new path settings and update recorded paths. |
-| [`postgres_export`](#postgres_export-separate-entry-point) | argparse | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
-| [`postgres_import`](#postgres_import-separate-entry-point) | argparse | Import per-creator `user_data.db` files into PostgreSQL. |
-| [`recover_collisions`](#recover_collisions-separate-entry-point) | argparse | Find recorded paths shared by different media and reset downloaded flags to re-download. |
-| [`stash_sync`](#stash_sync-separate-entry-point) | argparse | Sync downloaded media metadata from OF-Scraper databases into Stash. |
+| Command | Summary |
+|---|---|
+| [Main program (no command)](#main-program-no-command) (103 options) | OF-Scraper Options |
+| [`manual`](#manual) (52 options) | Manually download media by providing a list of URLs or IDs |
+| [`msg_check`](#msg_check) (52 options) | Produces a media table from messages with filterable entries and quick downloads |
+| [`story_check`](#story_check) (50 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
+| [`paid_check`](#paid_check) (52 options) | Produces a media table from purchases with filterable entries and quick downloads |
+| [`post_check`](#post_check) (54 options) | Produces a media table from posts with filterable entries and quick downloads |
+| [`metadata`](#metadata) (86 options) | Modify metadata or db files |
+| [`db`](#db) (61 options) | Print information from the database |
+| [`move_creator_files`](#move_creator_files-separate-entry-point) (argparse) | Move a creator's downloaded files to match new path settings and update recorded paths. |
+| [`postgres_export`](#postgres_export-separate-entry-point) (argparse) | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
+| [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
+| [`recover_collisions`](#recover_collisions-separate-entry-point) (argparse) | Find recorded paths shared by different media and reset downloaded flags to re-download. |
+| [`stash_sync`](#stash_sync-separate-entry-point) (argparse) | Sync downloaded media metadata from OF-Scraper databases into Stash. |
 
 ## Commands
 
