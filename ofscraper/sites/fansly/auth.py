@@ -19,6 +19,7 @@ import re
 import time
 
 from ofscraper.sites.fansly import constants
+import ofscraper.utils.encoding as encoding
 
 log = logging.getLogger("shared")
 
@@ -86,8 +87,7 @@ def read_auth(path=None) -> dict:
         return empty()
     if _cache["path"] == path and _cache["mtime"] == mtime:
         return dict(_cache["auth"])
-    with open(path, encoding="utf-8") as f:
-        auth = normalize(json.load(f))
+    auth = normalize(json.loads(encoding.read_text_file(path)))
     hide_token(auth.get("authorization_token"))
     _cache.update(path=path, mtime=mtime, auth=dict(auth))
     return auth
