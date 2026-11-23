@@ -14,6 +14,7 @@ r"""
 import json
 import logging
 
+import ofscraper.utils.encoding as encoding
 import ofscraper.utils.paths.common as common_paths
 
 log = logging.getLogger("shared")
@@ -28,9 +29,7 @@ def get_auth_dict(authStr=None):
 
 def get_auth_string():
     authFile = common_paths.get_auth_file()
-    with open(authFile, "r") as f:
-        authText = f.read()
-    return authText
+    return encoding.read_text_file(authFile)
 
 
 def get_empty():

@@ -8,6 +8,7 @@ from ofscraper.utils.markup import escape_text
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
+import ofscraper.utils.encoding as encoding
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 
@@ -29,7 +30,7 @@ def make_config(config=False):
     if not p.parent.is_dir():
         p.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(p, "w") as f:
+    with open(p, "w", encoding="utf-8") as f:
         f.write(json.dumps(config, indent=4))
     console.print(f"config file created at {escape_text(p)}")
 
@@ -87,9 +88,7 @@ def open_config():
 
 def config_string():
     p = pathlib.Path(common_paths.get_config_path())
-    with open(p, "r") as f:
-        configText = f.read()
-    return configText
+    return encoding.read_text_file(p)
 
 
 def write_config(updated_config):
@@ -99,7 +98,7 @@ def write_config(updated_config):
     p = common_paths.get_config_path()
     if not p.parent.is_dir():
         p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w") as f:
+    with open(p, "w", encoding="utf-8") as f:
         f.write(json.dumps(updated_config, indent=4))
 
 

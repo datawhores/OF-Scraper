@@ -65,6 +65,6 @@ def _make_auth_attempt(auth, browserSelect):
     auth = auth_schema.auth_schema(auth)
     if not check_auth_warning(auth):
         return None
-    with open(authFile, "w") as f:
+    with open(authFile, "w", encoding="utf-8") as f:
         f.write(json.dumps(auth, indent=4))
     return auth

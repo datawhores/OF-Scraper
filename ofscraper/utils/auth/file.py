@@ -108,6 +108,6 @@ def edit_auth():
 def write_auth(auth):
     if isinstance(auth, dict):
         auth = json.dumps(auth, indent=4)
-    with open(common_paths.get_auth_file(), "w") as f:
+    with open(common_paths.get_auth_file(), "w", encoding="utf-8") as f:
         f.write(auth)
     return auth_dict.get_auth_dict(auth)

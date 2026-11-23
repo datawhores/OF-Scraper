@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.encoding as encoding
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
 
@@ -14,10 +15,9 @@ def config_context():
     while True:
         try:
             p = pathlib.Path(common_paths.get_config_path())
-            with open(p, "r") as f:
-                # valid JSON that isn't an object of settings, e.g. a list,
-                # is broken the same way as a syntax error
-                config_file.unwrap(json.load(f))
+            # valid JSON that isn't an object of settings, e.g. a list,
+            # is broken the same way as a syntax error
+            config_file.unwrap(json.loads(encoding.read_text_file(p)))
         except FileNotFoundError:
             config_file.make_config()
             continue

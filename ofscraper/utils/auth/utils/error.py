@@ -60,7 +60,7 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                         continue
                 elif auth_prompt == "reset":
                     # Overwrite with a blank, valid JSON
-                    with open(common_paths.get_auth_file(), "w") as f:
+                    with open(common_paths.get_auth_file(), "w", encoding="utf-8") as f:
                         f.write(json.dumps(auth_dict.get_empty(), indent=4))
                     console.print("`auth.json` has been reset.")
                 elif auth_prompt in {"quit", "main"}:
@@ -84,6 +84,6 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
 @back_to_menu
 def _manual_auth(authStr):
     updated_auth = prompts.manual_auth_prompt(authStr)
-    with open(common_paths.get_auth_file(), "w") as f:
+    with open(common_paths.get_auth_file(), "w", encoding="utf-8") as f:
         f.write(updated_auth)
     return True
