@@ -38,7 +38,7 @@ async def get_models(all_main_models: bool = False) -> list:
             parsed_subscriptions = await get_via_list(count)
         elif "ALL" in settings.get_settings().usernames:
             parsed_subscriptions = await get_via_list(count)
-        elif settings.get_settings().username_search == "indvidual":
+        elif settings.get_settings().username_search == "individual":
             parsed_subscriptions = await get_via_individual()
         elif settings.get_settings().username_search == "list":
             parsed_subscriptions = await get_via_list(count)

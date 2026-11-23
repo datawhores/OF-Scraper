@@ -972,7 +972,7 @@ The main program's `--action` (`-a`) picks what a non-interactive run does; with
 - **Also:** `-fi`, `--user-individual-search`, `-fl`, `--username-list-search`, `--user-list-search`
 - **Dest:** `username_search` · **Type:** flag · **Default:** none
 - **Commands:** main program, `metadata`
-- Set the search strategy when --username is provided. --individual: Search each username as a separate request. --list: Search entire enabled lists before filtering (default).
+- How to find the --username creators. -fi: look up each username on its own. -fl: fetch your subscriptions and lists, then pick the names. With neither, -fi is used when --username has no more than one name per 12 subscriptions, otherwise -fl.
 
 ### Program Scripts
 
