@@ -24,7 +24,12 @@ Community fixes for the GUI patch go to `cjb900/OF-Scraper-GUI`.
 - **Parallel work:** use git worktrees, one per branch (e.g. `../ofs-wt/<name>`). Run code from a worktree with `PYTHONPATH=.` and the main checkout's venv.
 
 ## Tests
-- **Run:** `python -m pytest -n auto test` (`test/legacy` is excluded by config; add `-m "not slow"` for a fast local loop that skips heavy integration tests). Every fix needs a test that fails without it; check that by running the test against the previous commit.
+- **Run:** `python -m pytest -n auto test` runs everything (`test/legacy` is excluded by config). CI runs it on every PR, on Python 3.11 and 3.15.
+- **How much to test locally:**
+  - **Bug fixes: write the failing test first.** Before changing `ofscraper/`, write one test that reproduces the bug through the real entry point with as little mocked as possible (real files on disk, a real empty config), run just that test, and see it fail with the bug. Then fix it. A test written after the fix, around mocked internals, tends to mirror the diff instead of catching the bug. Add it to the existing test file for that area. Wording, help text and small UI tweaks don't need a test.
+  - **Most changes:** run only the test files for the area you touched (`python -m pytest test/test_<area>*.py`), push, and let CI run the full suite.
+  - **High-risk areas:** the database (migrations, merges, PostgreSQL), file writes and moves (`.part` resume, collision recovery), and auth, DRM, the TLS fingerprint and log redaction. A mistake there can lose data or leak secrets, so also run `python -m pytest -n auto -m "not slow" test` before pushing.
+- **A test that fails only in parallel, or only on its own:** rerun it alone (`python -m pytest test/test_foo.py::test_bar`). Failing only under `-n auto` points to shared state between tests (a file, port or global); passing only under `-n auto` points to a hidden dependency on test order.
 - **Warnings are errors** (`filterwarnings` in `pyproject.toml`), so invalid escape sequences, unclosed files or sqlite connections, and exceptions in background threads fail the run. Fix the cause: use raw strings for Windows paths and `closing()` for sqlite connections (`with sqlite3.connect(...)` only commits, it doesn't close). Add a filter only for a third-party warning you can't fix, with a comment explaining why.
 - **`test/conftest.py` handles two quirks you'll hit in scripts too:**
   - `ofscraper` parses `sys.argv` the first time settings are read, so clear it (`sys.argv = sys.argv[:1]`) before importing the app in a script, and never pass your script's own arguments on the command line. Use environment variables instead.
@@ -71,7 +76,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python -c "from ofscraper.__ma
 - **If a check fails with no steps run, read its annotation.** A billing or spending-limit refusal isn't a code failure. Report it, and run the test job locally on the PR head instead.
 
 ## PRs
-- **Reference:** a PR that adds, renames or removes a command-line option, `config.json` key, environment default, placeholder or database column updates `scripts/reference/notes.py` and reruns `scripts/reference/build_reference.py`. `test/test_reference.py` fails until it does.
+- **Reference:** a PR that adds, renames or removes a command-line option, `config.json` key, environment default, placeholder or database column updates `scripts/reference/notes.py` and reruns `scripts/reference/build_reference.py`. `test/test_reference.py` fails until it does. New `help=` text and `# KEY: description` comments in `ofscraper/utils/of_env/values/` follow the style notes at the top of `notes.py`, and a setting nothing reads says "Defined but not read anywhere."
 - **Scope:** one fix per PR, and link the issue (`Fixes #N`) when the PR fully fixes it. Keep diffs minimal and match the surrounding style.
 - **Title:** conventional-commit style, e.g. `fix(drm): ...`. Squash merges reuse it as `title (#N)`.
 - **Merge strategy:** squash by default. Tests run on a PR's head, not on each commit, and most PRs are one fix with follow-up commits, so only the squashed result is known to work. Use a rebase merge only when a PR's commits are deliberately separate steps and each one passes the test suite on its own (tidy the branch with `git commit --fixup` and `git rebase --autosquash` first). Avoid plain merge commits on `main`.
