@@ -133,6 +133,67 @@ def test_every_environment_default_is_described(build, notes, environment):
         assert any(re.fullmatch(pattern, key) for key in keys), f"{pattern} matches nothing"
 
 
+def unused_notes(build, notes):
+    """unused key -> the text after "Defined but not read anywhere" (may be empty)"""
+    result = {}
+    for key, (_path, _section, _envs, comment) in build.env_sources().items():
+        note = build.unused_note(build.env_description(key, comment, notes))
+        if note is not None:
+            result[key] = note
+    return result
+
+
+def test_an_unused_default_keeps_the_rest_of_its_description(build, notes, environment):
+    with_text = {k: v for k, v in unused_notes(build, notes).items() if v}
+    assert with_text, "expected at least one unused default with a note (MPD_SESSION_SLEEP_INIT)"
+    rows = {}
+    for line in (build.OUT / "env.md").read_text(encoding="utf-8").splitlines():
+        m = re.match(r'\| <a id="([^"]+)"></a>', line)
+        if m:
+            rows[m.group(1)] = line
+    lost = sorted(
+        key for key, note in with_text.items() if build.cell(note) not in rows.get(build.anchor(key), "")
+    )
+    assert lost == [], "env.md drops the note on these unused defaults"
+
+
+def test_the_details_summary_does_not_stop_at_an_abbreviation(build):
+    assert build.first_sentence("Use a list, e.g. `[1, 2]`. Then more.") == "Use a list, e.g. `[1, 2]`."
+    assert build.first_sentence("One, i.e. two. Three.") == "One, i.e. two."
+    assert build.first_sentence("No full stop") == "No full stop."
+
+
+# keys read through a name built at run time, not written out in full
+def dynamically_read_keys():
+    text = (ROOT / "ofscraper/managers/sessionmanager/sleepers.py").read_text(encoding="utf-8")
+    prefixes = re.findall(r'_create_sleeper\(\s*"([A-Z0-9_]+)"', text)
+    suffixes = re.findall(r'getattr\(f"\{prefix\}(_[A-Z0-9_]+)"\)', text)
+    assert prefixes and suffixes, "sleepers.py no longer builds keys the way this test expects"
+    return {p + s for p in prefixes for s in suffixes}
+
+
+def test_every_environment_default_is_read_or_marked_unused(build, notes, environment):
+    # a key counts as read when its name appears as a whole word in ofscraper/
+    # outside of_env/values (of_env.getattr("KEY"), max_individual="KEY",
+    # _value(config, "KEY", ...)), or when sleepers.py builds it from a prefix
+    skip = ROOT / "ofscraper/utils/of_env/values"
+    code = "\n".join(
+        p.read_text(encoding="utf-8")
+        for p in sorted((ROOT / "ofscraper").rglob("*.py"))
+        if skip not in p.parents
+    )
+    dynamic = dynamically_read_keys()
+    unused = unused_notes(build, notes)
+    unread = sorted(
+        key
+        for key in build.env_sources()
+        if key not in unused
+        and key not in dynamic
+        and not re.search(r"(?<![A-Za-z0-9_])" + re.escape(key) + r"(?![A-Za-z0-9_])", code)
+    )
+    assert unread == [], 'defaults nothing reads: say "Defined but not read anywhere." in their description'
+
+
 def test_a_comment_over_several_lines_is_the_whole_description(build):
     lines = [
         "    # KEY: First line,",

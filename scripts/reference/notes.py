@@ -134,7 +134,7 @@ ENV = {
     "configPromptChoices": "Menu entries of the interactive config editor. Not read from the environment.",
     "actionPromptChoices": "Menu entries for picking actions interactively. Not read from the environment.",
     "checkTablePromptChoices": "Menu entries for picking which check table the Action Menu opens. Not read from the environment.",
-    "usernameOrListChoices": "Menu entries for picking creators interactively. Not read from the environment.",
+    "usernameOrListChoices": "Defined but not read anywhere. Menu entries for picking creators interactively. Not read from the environment.",
     "profilesPromptChoices": "Menu entries of the interactive profile menu. Not read from the environment.",
     "modelPrompt": "Menu entries for filtering and sorting the creator list interactively. Not read from the environment.",
     "LOG_SUBPROCESS_LEVEL": "Log level for subprocess output that has no more specific setting. `OFSC_LOG_SUBPROCESS_LEVELL` is the old misspelled name, and it is still read.",
