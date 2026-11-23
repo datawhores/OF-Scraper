@@ -44,8 +44,18 @@ def check_cdm():
         )
         return True
     elif keymode == "cdrm":
-        alert.print(f"[red]{CDRM_DEPRECATED}\n[/red]")
+        import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
+
+        message = CDRM_DEPRECATED
+        if keyhelpers.cdrm_unavailable():
+            # the default address: nothing is sent, and the videos aren't
+            # downloaded, as they can't get a key (#681)
+            message = (
+                "Nothing is sent to cdrm-project.com, so DRM videos are skipped "
+                f"before download. {CDRM_DEPRECATED}"
+            )
+        alert.print(f"[red]{message}\n[/red]")
         # debug: the console already shows it
-        log.debug(CDRM_DEPRECATED)
+        log.debug(message)
     # cdrm's service no longer works, so there's nothing to probe
     return False
