@@ -21,9 +21,11 @@ username_search_option = click.option(
     "username_search", # The new, shared destination
     help="""
         \b
-        Set the search strategy when --username is provided.
-        --individual: Search each username as a separate request.
-        --list: Search entire enabled lists before filtering (default).
+        How to find the --username creators.
+        -fi: look up each username on its own.
+        -fl: fetch your subscriptions and lists, then pick the names.
+        With neither, -fi is used when --username has no more than
+        one name per 12 subscriptions, otherwise -fl.
     """,
     # The default from the callback will be used.
     # We set default=None here so the callback is triggered correctly.
