@@ -17,7 +17,6 @@ import sys
 import types
 from concurrent.futures import ThreadPoolExecutor
 
-import aioprocessing
 import ofscraper.utils.console as console_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.logs.logger as logger
@@ -58,8 +57,6 @@ class DownloadContext:
         self.log = None
         for name in _COUNTERS:
             setattr(self, name, 0)
-        self.count_lock = None
-        self.chunk_lock = None
         self.thread = None
         self.sem = None
         self.dirSet = None
@@ -78,13 +75,11 @@ class DownloadContext:
         return ctx
 
     def init_run_state(self, download_sems=None, log=None, console=None):
-        """Reset the counters and make the locks, pool, semaphore and folder
+        """Reset the counters and make the lock, pool, semaphore and folder
         sets for a run. download_sems defaults to the setting. They're made
         in the order main_globals() made them."""
         for name in _COUNTERS:
             setattr(self, name, 0)
-        self.count_lock = aioprocessing.AioLock()
-        self.chunk_lock = aioprocessing.AioLock()
         if download_sems is None:
             download_sems = settings.get_settings().download_sems
         self.thread = ThreadPoolExecutor(max_workers=download_sems * 2)
