@@ -42,3 +42,21 @@ def test_export_keeps_every_creators_rows(monkeypatch, tmp_path):
     # before the fix each creator rewrote the file, so only the last one's
     # (here empty) export survived
     assert written == [(1, 10, "100 bytes"), (1, 11, "100 bytes"), (2, 20, "100 bytes")]
+
+
+def test_export_is_utf8_whatever_the_locale(monkeypatch, tmp_path):
+    # Python 3.11 to 3.14 on Windows default open() to the ANSI code page;
+    # stand that in for any OS so the test means the same everywhere
+    def cp1252_open(*args, **kwargs):
+        kwargs.setdefault("encoding", "cp1252")
+        return open(*args, **kwargs)
+
+    monkeypatch.setattr(db_command, "open", cp1252_open, raising=False)
+    export = tmp_path / "out"
+    monkeypatch.setattr(db_command.settings, "get_settings", lambda: SimpleNamespace(export=export))
+    text = "café \U0001f600 中文 Łódź"  # emoji, CJK, Polish: not in cp1252
+
+    db_command.write_csv([{"media_id": 1, "text": text}])
+
+    with open(export.with_suffix(".csv"), encoding="utf-8", newline="") as f:
+        assert list(csv.DictReader(f)) == [{"media_id": "1", "text": text}]
