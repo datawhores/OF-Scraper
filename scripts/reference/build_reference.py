@@ -942,17 +942,30 @@ def placeholder_table():
     return rows
 
 
+PLACEHOLDER_LABELS = {
+    "metadata": "`metadata`",
+    "dir": "`dir_format`",
+    "file": "`file_format`",
+    "text": "`--text`",
+}
+
+
 def render_placeholders(notes):
     rows = placeholder_table()
     out = [HEADER, "# Output template placeholders\n\n"]
     out.append(notes.PLACEHOLDER_INTRO.strip() + "\n\n")
     kinds = list(PLACEHOLDER_KINDS)
-    out.append("| Placeholder | Also | " + " | ".join(PLACEHOLDER_KINDS[k][0] for k in kinds) + " | Description |\n")
-    out.append("|---|---|" + "---|" * len(kinds) + "---|\n")
+    out.append("| Placeholder | Available in | Description |\n|---|---|---|\n")
     for key in sorted(rows):
-        alias = f"`{{{key.replace('_', '')}}}`" if "_" in key else ""
-        marks = " | ".join("yes" if k in rows[key] else "" for k in kinds)
-        out.append(f"| `{{{key}}}` | {alias} | {marks} | {cell(notes.PLACEHOLDERS[key].strip())} |\n")
+        name = f"`{{{key}}}`"
+        if "_" in key:
+            name += f" (also `{{{key.replace('_', '')}}}`)"
+        available = (
+            "all"
+            if len(rows[key]) == len(kinds)
+            else ", ".join(PLACEHOLDER_LABELS[k] for k in kinds if k in rows[key])
+        )
+        out.append(f"| {name} | {available} | {cell(notes.PLACEHOLDERS[key].strip())} |\n")
     out.append("\nThe underscore-free form is added for every name with an underscore (`add_no_underline`).\n")
     return "".join(out)
 
