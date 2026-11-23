@@ -1082,7 +1082,7 @@ Disables only the API response cache. Setting `advanced_options.cache-mode` to `
 
 Key mode for decrypting content (cdrm is deprecated: its service no longer works)
 
-`manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos fail with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.
+`manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos are skipped before download, with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.
 
 **Dest:** `key_mode` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 

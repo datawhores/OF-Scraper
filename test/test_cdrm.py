@@ -143,6 +143,74 @@ def test_cdrm_headers_are_a_python_literal(monkeypatch):
     }
 
 
+class _Started(Exception):
+    pass
+
+
+def _run_drm_item(monkeypatch):
+    """Run one DRM item through the protected media downloader, in key mode
+    cdrm. Starting a transfer raises _Started."""
+    import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
+    import ofscraper.commands.scraper.actions.download.managers.alt_download as alt_download
+
+    monkeypatch.setattr(
+        keyhelpers.settings,
+        "get_settings",
+        lambda: SimpleNamespace(key_mode="cdrm", client_id=None, private_key=None),
+    )
+    monkeypatch.setattr(alt_download.stop, "started", lambda ele: None)
+    monkeypatch.setattr(alt_download.common_logs, "get_medialog", lambda ele: "media")
+    monkeypatch.setattr(
+        alt_download.host_allowlist, "ensure_allowed_download_url", lambda *a: None
+    )
+    placeholders = Mock(side_effect=_Started)
+    monkeypatch.setattr(alt_download.placeholder, "Placeholders", placeholders)
+    log = Mock()
+    manager = SimpleNamespace(ctx=SimpleNamespace(log=log), _force_download=Mock())
+    ele = SimpleNamespace(mpd="https://cdn/x.mpd", license="https://lic")
+    session = _Session()
+
+    result = asyncio.run(
+        alt_download.AltDownloadManager._alt_download_item(
+            manager, session, ele, "a creator", 1
+        )
+    )
+    return result, ele, log, placeholders, session
+
+
+def test_default_cdrm_address_skips_drm_before_download(monkeypatch):
+    # nothing can give the key, so the video isn't downloaded first and
+    # left as .part files on every run (#681)
+    monkeypatch.delenv("OFSC_CDRM_URL", raising=False)
+
+    result, ele, log, placeholders, session = _run_drm_item(monkeypatch)
+
+    assert result == ("forced_skipped", 0)  # counted as skipped, not failed
+    placeholders.assert_not_called()
+    assert session.calls == []
+    assert ele.download_reason == "key mode cdrm has no server"
+    log.info.assert_called_once()
+    assert "DRM video skipped: key mode cdrm has no server" in log.info.call_args.args[0]
+
+
+def test_own_cdrm_server_still_downloads(monkeypatch):
+    use_cdrm_url(monkeypatch)
+    with pytest.raises(_Started):
+        _run_drm_item(monkeypatch)
+
+
+def test_cdrm_unavailable_only_for_the_retired_default(monkeypatch):
+    mode = SimpleNamespace(key_mode="cdrm")
+    monkeypatch.setattr(keyhelpers.settings, "get_settings", lambda: mode)
+    monkeypatch.delenv("OFSC_CDRM_URL", raising=False)
+    assert keyhelpers.cdrm_unavailable() is True
+    mode.key_mode = "manual"
+    assert keyhelpers.cdrm_unavailable() is False
+    mode.key_mode = "cdrm"
+    use_cdrm_url(monkeypatch)
+    assert keyhelpers.cdrm_unavailable() is False
+
+
 @pytest.mark.parametrize(
     "url, retired",
     [

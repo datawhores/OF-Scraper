@@ -94,6 +94,12 @@ class AltDownloadManager(DownloadManager):
             )
             ele.download_reason = "CDM keys not found"
             return "forced_skipped", 0
+        if keyhelpers.cdrm_unavailable():
+            self.ctx.log.info(
+                f"{common_logs.get_medialog(ele)} DRM video skipped: key mode cdrm has no server"
+            )
+            ele.download_reason = "key mode cdrm has no server"
+            return "forced_skipped", 0
         # the manifest, its files and the licence request carry the OnlyFans
         # login: a host outside the allowed list fails the item before any
         # of them is sent

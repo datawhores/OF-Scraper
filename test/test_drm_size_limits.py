@@ -131,6 +131,8 @@ def _run(
             key_mode="cdrm",
         ),
     )
+    # as with a self-hosted cdrm server: the default one skips DRM videos (#681)
+    monkeypatch.setattr(ad.keyhelpers, "cdrm_unavailable", lambda: False)
     monkeypatch.setattr(common_globals, "log", _Log(), raising=False)
     monkeypatch.setattr(common_globals, "sem", asyncio.Semaphore(1), raising=False)
     # the local server's manifest may be sent the login

@@ -78,6 +78,33 @@ def test_cdrm_warns_once_and_does_not_probe_the_service(monkeypatch, screen):
     assert any("cdrm is deprecated" in r.getMessage() for r in screen.records)
 
 
+def test_cdrm_startup_says_videos_are_skipped_with_the_default_address(
+    monkeypatch, screen
+):
+    monkeypatch.delenv("OFSC_CDRM_URL", raising=False)
+    _key_mode(monkeypatch, "cdrm")
+    network.check_cdm()
+    out = screen.buf.getvalue()
+    assert out.count("skipped before download") == 1
+    assert "key mode manual" in out
+
+
+def test_cdrm_startup_with_own_server_does_not_say_skipped(monkeypatch, screen):
+    # as OFSC_CDRM_URL does: it's read once, at import
+    real_getattr = of_env.getattr
+    own = "https://cdrm.example.test/api/decrypt"
+    monkeypatch.setattr(
+        of_env,
+        "getattr",
+        lambda key, default=None: own if key == "CDRM" else real_getattr(key, default),
+    )
+    _key_mode(monkeypatch, "cdrm")
+    network.check_cdm()
+    out = screen.buf.getvalue()
+    assert "cdrm is deprecated" in out
+    assert "skipped" not in out
+
+
 def test_check_mode_does_not_call_the_deprecation_an_error(monkeypatch, screen):
     import ofscraper.commands.check as check
 

@@ -74,6 +74,8 @@ def test_stop_running_batch_keeps_part_and_never_finalises(
 
     monkeypatch.setattr(download.common_globals, "mainProcessVariableInit", init)
     monkeypatch.setattr(download.settings, "get_settings", lambda: SimpleNamespace(text=False, text_only=False, download_limit=0, key_mode="cdrm"))
+    # as with a self-hosted cdrm server: the default one skips DRM videos (#681)
+    monkeypatch.setattr(alt_download.keyhelpers, "cdrm_unavailable", lambda: False)
     monkeypatch.setattr(download, "get_max_workers", lambda: 2)
     monkeypatch.setattr(download.manager, "Manager", SimpleNamespace(session=SimpleNamespace(get_download_session=session)))
     monkeypatch.setattr(download.progress_utils, "setup_live", lambda _: nullcontext())

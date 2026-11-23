@@ -255,6 +255,15 @@ def cdrm_retired(url):
     return host == "cdrm-project.com" or host.endswith(".cdrm-project.com")
 
 
+def cdrm_unavailable():
+    """True when key mode cdrm has no server to ask: OFSC_CDRM_URL is the
+    retired cdrm-project.com, the default. Its DRM videos can't get a key,
+    so they're skipped before download (#681)."""
+    if settings.get_settings().key_mode != "cdrm":
+        return False
+    return cdrm_retired(of_env.getattr("CDRM"))
+
+
 _cdrm_retired_logged = False
 
 

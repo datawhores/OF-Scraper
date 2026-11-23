@@ -79,6 +79,7 @@ def _setup(monkeypatch):
     monkeypatch.setattr(ad, "get_alt_params", lambda ele: {})
     monkeypatch.setattr(ad, "get_medialog", lambda ele: "")
     monkeypatch.setattr(ad.keyhelpers, "missing_cdm_keys", lambda: None)
+    monkeypatch.setattr(ad.keyhelpers, "cdrm_unavailable", lambda: False)
     # the login the session and the DRM downloader add (made-up values)
     monkeypatch.setattr(sm.auth_requests, "add_cookies", lambda: {"sess": SESSION})
     monkeypatch.setattr(sm.auth_requests, "make_headers", lambda: {"user-id": "1", "x-bc": "made-up"})

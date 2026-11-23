@@ -217,7 +217,7 @@ The path to the Widevine CDM client ID blob (`client_id.bin`). It is read when k
 
 **Default:** `"manual"` · **CLI override:** `--key-mode` · **Env default:** [`KEY_DEFAULT`](env.md#key_default), [`KEY_OPTIONS`](env.md#key_options) · **Read by:** `get_key_mode()` in `ofscraper/utils/config/data.py`
 
-How DRM content keys are obtained. `manual` (the default) uses the local CDM files in `private-key` and `client-id`. `cdrm` is deprecated: cdrm-project.com no longer works and isn't contacted, so protected videos fail with a message to switch to `manual`; each run that uses it warns. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included. A config that already says `cdrm` keeps it. Other values fall back to the default. The `-k`/`--key-mode` option overrides it.
+How DRM content keys are obtained. `manual` (the default) uses the local CDM files in `private-key` and `client-id`. `cdrm` is deprecated: cdrm-project.com no longer works and isn't contacted, so protected videos are skipped before download, with a message to switch to `manual`; each run that uses it warns. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included. A config that already says `cdrm` keeps it. Other values fall back to the default. The `-k`/`--key-mode` option overrides it.
 
 ## `performance_options`
 
