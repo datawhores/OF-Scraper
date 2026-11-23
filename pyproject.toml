@@ -48,6 +48,7 @@ dependencies = [
 dev = ["autopep8>=2.0.2,<2.4.0", "pyinstaller"]
 test = [
   "pytest>=9.0.3,<9.3.0",
+  "pytest-xdist>=3.6.0,<4",
   "coverage>=7.15.4,<7.18.0",
   "pytest-cov~=7.1.0",
   "random-unicode-emoji~=3.0",
@@ -97,6 +98,9 @@ filterwarnings = ["error"]
 testpaths = ["test"]
 # test/legacy targets the pre-3.12 module layout and no longer imports
 norecursedirs = ["legacy"]
+markers = [
+  "slow: subprocess, ffmpeg, real-timeout, or bulk-DB integration tests (skip locally with -m 'not slow')",
+]
 
 [tool.ruff]
 # lint the application only; test/ and scripts/ aren't checked yet

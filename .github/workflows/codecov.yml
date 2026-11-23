@@ -66,7 +66,7 @@ jobs:
       - name: create required folder
         run: mkdir -p /home/runner/.config/ofscraper/main_profile
       - name: Run tests and collect coverage
-        run: uv run --frozen pytest test --cov-report term --cov-report xml:coverage.xml --cov=ofscraper
+        run: uv run --frozen pytest -n auto test --cov-report term --cov-report xml:coverage.xml --cov=ofscraper
       - name: Upload coverage to Codecov
         if: ${{ !cancelled() && matrix.python-version == '3.15.2' }}
         uses: codecov/codecov-action@v7

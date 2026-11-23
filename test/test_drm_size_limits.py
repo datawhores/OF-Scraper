@@ -25,6 +25,7 @@ import pathlib
 from types import SimpleNamespace
 
 import pytest
+
 from aiohttp import web
 from tenacity import stop_after_attempt, wait_none
 

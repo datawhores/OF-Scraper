@@ -17,6 +17,7 @@ import socket
 from types import SimpleNamespace
 
 import pytest
+
 from aiohttp import web
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
@@ -138,6 +139,7 @@ def test_the_default_is_ten_seconds():
         assert of_env.getattr("KEEP_ALIVE_EXP") == 10
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("seconds", [0, -5])
 def test_kept_for_no_time_means_closed_after_use(seconds):
     """Given 0, aiohttp never closed an idle connection: it only cleans up

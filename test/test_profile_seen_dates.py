@@ -210,6 +210,7 @@ NAME_SETS = [
 @pytest.mark.parametrize(
     "layout", ["today's", "from before the dates", "from 2023"]
 )
+@pytest.mark.slow
 def test_without_dates_the_name_is_the_one_chosen_before(path, names, layout):
     # nobody's folder changes because of the upgrade: also in a file the
     # upgrade hasn't reached, which a deleted account's is read as it is
@@ -803,6 +804,7 @@ WIDENED = [
 ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("has, brought, after", WIDENED)
 def test_a_merge_widens_the_dates_of_a_name_both_have(
     db, tmp_path, monkeypatch, has, brought, after

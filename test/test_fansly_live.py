@@ -451,6 +451,7 @@ def probe(path):
 
 # ------------------------------------------------------------------ DoD 2
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_growing_live_playlist_then_endlist_gives_one_playable_mp4(hls, tmp_path):
     fetch_channel, calls = channel_feed(hls, ["t1"])
@@ -477,6 +478,7 @@ def test_growing_live_playlist_then_endlist_gives_one_playable_mp4(hls, tmp_path
 
 # ------------------------------------------------------------------ DoD 3
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_403_mid_stream_refreshes_the_url_and_continues_into_part2(hls, tmp_path):
     hls.expire_after = {"t1": 2}  # the first token dies after two playlist reloads
@@ -495,6 +497,7 @@ def test_403_mid_stream_refreshes_the_url_and_continues_into_part2(hls, tmp_path
         assert float(probe(part)["format"]["duration"]) > 0
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_repeated_403_after_refresh_stops_cleanly_at_the_limit(hls, tmp_path):
     hls.expire_after = {"t1": 2}

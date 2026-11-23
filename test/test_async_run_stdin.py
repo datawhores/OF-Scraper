@@ -182,6 +182,7 @@ def test_second_cancel_during_cleanup_still_raises(spawned):
     assert pending == []
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("input", [None, b"data"])
 def test_timeout_kills_script(spawned, input):
     async def main():
@@ -316,6 +317,7 @@ async def _wait_for_file(path):
     raise AssertionError("background program did not start")
 
 
+@pytest.mark.slow
 def test_timeout_does_not_wait_for_background_program(background_script):
     cmd, pid_file = background_script
 
@@ -511,6 +513,7 @@ def test_no_warning_without_leftover_programs(caplog):
     assert caplog.text == ""
 
 
+@pytest.mark.slow
 def test_background_program_stopped_on_timeout(background_script):
     cmd, pid_file = background_script
     with pytest.raises(TimeoutError):

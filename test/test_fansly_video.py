@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 
 import aiohttp
 import pytest
+
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
@@ -706,6 +707,7 @@ def fast_retries(monkeypatch, attempts=2):
                         lambda: real(stop=stop_after_attempt(attempts), wait=wait_none()))
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("mode", ["stall", "trickle"])
 def test_stalled_stream_fails_in_bounded_time_and_leaves_no_part(env, tmp_path, monkeypatch, mode):
@@ -828,6 +830,7 @@ def test_video_without_the_audio_its_playlist_lists_is_saved_and_logged(env, tmp
     assert "segments have no audio" in caplog.text and "without sound" in caplog.text
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("refused", ["playlist", "segment"])
 def test_refused_audio_track_saves_the_video_and_logs_why(env, tmp_path, caplog, refused):
@@ -853,6 +856,7 @@ def test_refused_audio_track_saves_the_video_and_logs_why(env, tmp_path, caplog,
     assert len(env.ffmpeg_runs) == 1
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("case", ["accepted_after_refresh", "refused_again", "no_direct_file"])
 def test_a_refused_video_segment_gets_new_links_then_the_direct_file(
@@ -957,6 +961,7 @@ def warnings_in(caplog):
     return " ".join(r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING)
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("refused", ["playlist", "segment"])
 def test_refused_audio_is_taken_from_the_direct_file(env, tmp_path, caplog, refused):
@@ -976,6 +981,7 @@ def test_refused_audio_is_taken_from_the_direct_file(env, tmp_path, caplog, refu
     assert len(env.marks) == 1
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_direct_file_without_sound_saves_the_stream_as_it_is(env, tmp_path, caplog):
     run = refused_audio_download(env, tmp_path, caplog, direct_args=("-s", "80x60", "-an"))
@@ -986,6 +992,7 @@ def test_a_direct_file_without_sound_saves_the_stream_as_it_is(env, tmp_path, ca
     assert len(env.ffmpeg_runs) == 1
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("times", [1, 2])
 def test_a_refused_direct_file_gets_a_new_link_once(env, tmp_path, caplog, monkeypatch, times):
@@ -1018,6 +1025,7 @@ def test_a_refused_direct_file_gets_a_new_link_once(env, tmp_path, caplog, monke
         assert "without sound" in warnings_in(caplog)
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_direct_file_of_another_length_is_not_used(env, tmp_path, caplog):
     run = refused_audio_download(env, tmp_path, caplog, direct_args=("-s", "80x60", "-t", "2"))
@@ -1027,6 +1035,7 @@ def test_a_direct_file_of_another_length_is_not_used(env, tmp_path, caplog):
     assert files_in(env.out, env.temp) == [run.out.name]
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_copy_with_the_direct_sound_that_fails_the_check_is_discarded(env, tmp_path, caplog, monkeypatch):
     real = video.incomplete_reason
@@ -1078,6 +1087,7 @@ def saved_silent_with_warning(run, caplog, why):
     assert "without sound" in warnings_in(caplog)
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_direct_file_that_cannot_be_read_is_not_taken_for_silence(env, tmp_path, caplog):
     # an error page where the file should be says nothing about the sound
@@ -1131,6 +1141,7 @@ def picture_after_sound(path, tmp_path):
     return flash - tone
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_video_that_starts_long_after_its_sound_is_not_used(env, tmp_path, caplog):
     # by half a second: more than frames stored ahead explain, and nothing
@@ -1149,6 +1160,7 @@ def test_times_of_packets_marked_as_not_played_are_left_out():
     assert stream_mod._read_times("0.5\n1.0,\n", played=True) == [0.5, 1.0]
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_packets_the_file_marks_as_hidden_do_not_count(env, tmp_path, caplog, rate=44100):
     # 60 fps video with AAC sound, as phones record it. An MP4 keeps the
@@ -1167,6 +1179,7 @@ def test_packets_the_file_marks_as_hidden_do_not_count(env, tmp_path, caplog, ra
     assert "without sound" not in warnings_in(caplog)
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("cut", [1, 7], ids=["a-short-cut", "a-cut-deeper-than-64-frames"])
 def test_a_direct_file_cut_without_re_encoding_is_used(env, tmp_path, caplog, cut):
@@ -1248,6 +1261,7 @@ def stored_ahead(tmp_path, source, rate, shape="ffmpeg"):
 @pytest.mark.parametrize(
     "shape, rate", [("ffmpeg", 24), ("ffmpeg", 30), ("ffmpeg", 60), ("saved", 30), ("saved", 60)]
 )
+@pytest.mark.slow
 def test_frames_stored_ahead_with_no_edit_list_keep_the_direct_files_sync(
     env, tmp_path, caplog, shape, rate
 ):
@@ -1268,6 +1282,7 @@ def test_frames_stored_ahead_with_no_edit_list_keep_the_direct_files_sync(
     )
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @needs_x264
 def test_a_joined_copy_whose_sound_moved_against_the_video_is_not_used(
@@ -1292,6 +1307,7 @@ def test_a_joined_copy_whose_sound_moved_against_the_video_is_not_used(
     [(["-bf", "3"], ["-bf", "0"]), (["-bf", "0"], ["-bf", "3"])],
     ids=["b-frames-in-the-direct-file", "b-frames-in-the-stream"],
 )
+@pytest.mark.slow
 def test_frames_stored_in_another_order_do_not_read_as_an_offset(
     env, tmp_path, caplog, direct, stream
 ):
@@ -1350,6 +1366,7 @@ def test_a_sound_copy_left_by_a_killed_run_is_removed(env, tmp_path):
     assert files_in(env.out, env.temp) == [f"{ele.filename}.mp4"]
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_sound_that_is_not_aac_is_not_used(env, tmp_path, caplog):
     data = direct_bytes(tmp_path, *TEST_VIDEO, *sine(3), "-c:v", "mpeg4", "-g", "10",
@@ -1358,6 +1375,7 @@ def test_sound_that_is_not_aac_is_not_used(env, tmp_path, caplog):
     saved_silent_with_warning(run, caplog, "is mp3, not AAC")
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_sound_that_covers_part_of_the_video_is_not_used(env, tmp_path, caplog):
     data = direct_bytes(tmp_path, *TEST_VIDEO, *sine(1.5), "-c:v", "mpeg4", "-g", "10",
@@ -1366,6 +1384,7 @@ def test_sound_that_covers_part_of_the_video_is_not_used(env, tmp_path, caplog):
     saved_silent_with_warning(run, caplog, "covers 1.")
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("failure", ["time limit", "ffprobe error", "disk full", "locked file"])
 def test_any_failure_while_adding_the_sound_saves_the_silent_copy(
@@ -1449,6 +1468,7 @@ def sound_marks(monkeypatch):
     return marks
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_video_saved_silent_because_its_audio_was_refused_is_flagged(
         env, tmp_path, caplog, sound_marks):
@@ -1457,6 +1477,7 @@ def test_a_video_saved_silent_because_its_audio_was_refused_is_flagged(
     assert sound_marks == [("flag", run.ele.id, str(run.out))]
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_video_with_its_sound_from_the_direct_file_is_not_flagged(
         env, tmp_path, caplog, sound_marks):
@@ -1476,6 +1497,7 @@ def test_segments_without_their_listed_sound_are_not_flagged(env, tmp_path, soun
     assert sound_marks == [("clear", ele.id)]
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("sound", [True, False])
 def test_downloading_a_silent_video_again_replaces_it_only_with_sound(
@@ -1510,6 +1532,7 @@ def test_downloading_a_silent_video_again_replaces_it_only_with_sound(
     OSError(errno.ENOSPC, "No space left on device"),
     FileNotFoundError("the drive is gone"),
 ], ids=["in-use", "disk-full", "drive-gone"])
+@pytest.mark.slow
 def test_the_silent_copy_stays_until_the_copy_with_sound_replaces_it(
         env, tmp_path, caplog, sound_marks, monkeypatch, error):
     old = env.out / "saved-earlier.mp4"
@@ -1538,6 +1561,7 @@ def test_the_silent_copy_stays_until_the_copy_with_sound_replaces_it(
     assert "could not be replaced" in run.ele.not_kept
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("skipped_by", ["size", "script", "script-for-good"])
 def test_a_copy_with_sound_that_a_filter_skips_leaves_the_silent_copy_and_its_row(
@@ -1646,6 +1670,7 @@ def test_a_video_saved_from_its_direct_file_needs_no_more_audio_checks(
     # the master playlist says nothing about the audio: no check is used
     ("master_refused", stream_mod.silent.FAILED),
 ])
+@pytest.mark.slow
 def test_the_audio_check_asks_for_the_playlist_and_its_first_file(env, tmp_path, case, expected):
     video_segments = make_segments(tmp_path, "v", "-an", "-bsf:v", "dump_extra=freq=keyframe")
     audio_segments = make_segments(tmp_path, "a", "-vn")
@@ -1861,6 +1886,7 @@ def make_clip_segments(tmp_path, name, rate, vf=None):
     return {p.name: p.read_bytes() for p in sorted(seg_dir.glob(f"{name}-*.ts"))}
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("path", ["ffmpeg", "parallel"])
 @pytest.mark.parametrize("fault", ["half", "stall", "404"])
@@ -1891,6 +1917,7 @@ def test_a_skipped_segment_fails_the_item(env, tmp_path, monkeypatch, fault, pat
     assert env.marks == [] and len(env.ffmpeg_runs) == (1 if path == "ffmpeg" else 0)
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 @pytest.mark.parametrize("clip", ["cfr", "ntsc_rounded", "variable_rate", "no_metadata"])
 def test_a_clean_copy_passes_the_skipped_segment_check(env, tmp_path, clip):
@@ -2172,6 +2199,7 @@ def probe_streams(path):
     return sorted(json.loads(out)["streams"], key=lambda s: s["codec_type"])
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_segments_are_fetched_in_parallel_within_the_limit_and_match_ffmpeg(env, tmp_path, monkeypatch):
     segments = make_many_segments(tmp_path, "segment")
@@ -2264,6 +2292,7 @@ def test_cancelled_parallel_download_keeps_the_segments(env, tmp_path):
     assert env.marks == [] and env.ffmpeg_runs == []
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_a_trickling_segment_hits_the_overall_time_limit(env, tmp_path, monkeypatch):
     monkeypatch.setattr(stream_mod, "STREAM_TIMEOUT_FLOOR", 4)
@@ -2431,6 +2460,7 @@ def test_join_works_when_the_folder_name_has_a_hash(env, tmp_path, monkeypatch):
     assert list(hashed.iterdir()) == []
 
 
+@pytest.mark.slow
 @needs_ffmpeg
 def test_the_join_gets_only_the_time_left(env, tmp_path, monkeypatch):
     monkeypatch.setattr(stream_mod, "STREAM_TIMEOUT_FLOOR", 30)

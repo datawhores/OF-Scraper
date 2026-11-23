@@ -380,6 +380,7 @@ def test_with_apply_each_creator_gets_their_rows(tmp_path):
     assert (database.opened, database.closed) == (1, 1)
 
 
+@pytest.mark.slow
 def test_a_file_is_one_the_scraper_would_have_made(tmp_path):
     database = two_creators(tmp_path)
     out = tmp_path / "out"
@@ -426,6 +427,7 @@ def test_a_file_the_scraper_wrote_comes_back_row_for_row(tmp_path):
     assert layout(out / "111" / DATABASE) == layout(original)
 
 
+@pytest.mark.slow
 def test_what_was_brought_in_comes_back_as_the_import_carried_it(tmp_path):
     folder = tmp_path / "data"
     path = current_file(folder / "111" / DATABASE, 111)
@@ -474,6 +476,7 @@ def test_what_was_brought_in_comes_back_as_the_import_carried_it(tmp_path):
     ]
 
 
+@pytest.mark.slow
 def test_what_a_scan_saved_comes_out_as_the_scraper_reads_it(tmp_path, monkeypatch):
     # two creators, saved through the functions a scan uses. Into one SQLite
     # file here: test_db_postgres_live checks PostgreSQL reads the same
@@ -655,6 +658,7 @@ def test_a_file_that_is_already_there_is_never_changed(tmp_path):
     assert {creator for _, _, creator in database.asked} == {222}
 
 
+@pytest.mark.slow
 def test_another_folder_gets_a_left_out_creators_rows_out(tmp_path):
     database = two_creators(tmp_path)
     out = tmp_path / "out"
@@ -673,6 +677,7 @@ def test_another_folder_gets_a_left_out_creators_rows_out(tmp_path):
     assert files(tmp_path / "elsewhere") == [f"111/{DATABASE}", f"222/{DATABASE}"]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("suffix", ["-wal", "-journal"])
 def test_what_sqlite_kept_beside_a_database_that_has_gone_is_in_the_way(
     tmp_path, suffix
@@ -953,6 +958,7 @@ def test_a_number_sqlite_cant_keep_stops_that_file(tmp_path):
     assert exporter.IN_POSTGRESQL in said
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("number", [2**63, -(2**63) - 1, 2**70])
 def test_a_number_too_large_for_sqlite_stops_that_file(tmp_path, number):
     def spoil(database):

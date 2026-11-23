@@ -78,6 +78,7 @@ async def _answer_late(seconds):
     return web.Response(body=BODY)
 
 
+@pytest.mark.slow
 def test_a_kept_connection_that_never_answers_is_retried_soon(request):
     _profile(request, HOST)
 
@@ -97,6 +98,7 @@ def test_a_kept_connection_that_never_answers_is_retried_soon(request):
     assert seconds < 2.5
 
 
+@pytest.mark.slow
 def test_a_slow_body_on_a_kept_connection_is_still_waited_for(request):
     _profile(request, HOST)
 
@@ -117,6 +119,7 @@ def test_a_slow_body_on_a_kept_connection_is_still_waited_for(request):
     assert len(ports) == 2 and ports[0] == ports[1]
 
 
+@pytest.mark.slow
 def test_no_cap_when_the_read_timeout_is_no_limit(request):
     _profile(request, HOST)
 
@@ -128,6 +131,7 @@ def test_no_cap_when_the_read_timeout_is_no_limit(request):
     assert len(ports) == 2 and ports[0] == ports[1]
 
 
+@pytest.mark.slow
 def test_a_post_on_a_kept_connection_is_not_capped(request):
     # a POST may not be safe to send twice (a licence request)
     _profile(request, HOST)
