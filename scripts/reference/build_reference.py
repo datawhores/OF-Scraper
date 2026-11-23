@@ -603,6 +603,7 @@ def render_config(notes):
     for section in sections:
         label = section if section == "Top level" else f"`{section}`"
         out.append(f"- [{label}](#{anchor(section)})\n")
+    env_pages = env_page_by_key(notes)
     out.append("\n## Quick reference\n\n")
     out.append("| Key | Default & overrides |\n|---|---|\n")
     for key, default in defaults.items():
@@ -617,7 +618,7 @@ def render_config(notes):
             cli_text = ", ".join(f"`{option_heading(options[d]) if d in options else d}`" for d in dests)
             parts.append(f"**CLI:** {cli_text}")
         if envs:
-            env_text = ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs)
+            env_text = ", ".join(f"[`{e}`]({env_pages.get(e, 'env.md')}#{anchor(e)})" for e in envs)
             parts.append(f"**Env:** {env_text}")
         out.append(f"| [`{key}`](#{anchor(key)}) | {' · '.join(parts)} |\n")
     out.append("\n")
@@ -638,7 +639,10 @@ def render_config(notes):
                 flags = [option_heading(options[d]) if d in options else d for d in dests]
                 meta.append("**CLI override:** " + ", ".join(f"`{f}`" for f in flags))
             if envs:
-                meta.append("**Env default:** " + ", ".join(f"[`{e}`](env.md#{anchor(e)})" for e in envs))
+                meta.append(
+                    "**Env default:** "
+                    + ", ".join(f"[`{e}`]({env_pages.get(e, 'env.md')}#{anchor(e)})" for e in envs)
+                )
             if older:
                 meta.append("**Also reads:** " + ", ".join(f"`{k}`" for k in older))
             meta.append(f"**Read by:** `{getter}()` in `{module_file}`")
@@ -795,19 +799,70 @@ def env_key_cell(key, envs):
     return f"{a}{env_list}<br>Key: `{key}`"
 
 
-COLLAPSIBLE_ENV_FILES = {
-    ENV_VALUES_DIR + "req/ratelimit.py": "Show all rate-limit sleeper keys",
-    ENV_VALUES_DIR + "url/url.py": "Show OnlyFans API endpoint URLs",
+ENV_RATELIMIT_FILES = {ENV_VALUES_DIR + "req/ratelimit.py"}
+ENV_URL_FILES = {
+    ENV_VALUES_DIR + "url/url.py",
+    ENV_VALUES_DIR + "url/dynamic.py",
+    ENV_VALUES_DIR + "url/other_url.py",
 }
 
 
-def render_env(notes):
+def env_page_by_key(notes):
+    """Map each env key to the reference page file that documents it."""
+    sources = env_sources()
+    pages = {}
+    for key, (path, _section, _envs, comment) in sources.items():
+        if unused_note(env_description(key, comment, notes)) is not None:
+            pages[key] = "env-unused.md"
+        elif path in ENV_RATELIMIT_FILES:
+            pages[key] = "env-ratelimits.md"
+        elif path in ENV_URL_FILES:
+            pages[key] = "env-urls.md"
+        else:
+            pages[key] = "env.md"
+    return pages
+
+
+def _render_env_file_tables(path, title, active_sections, sources, values, notes, heading_level="###"):
+    out = [f"{heading_level} {title}\n\nDefined in `{path}`.\n\n"]
+    sub_level = heading_level + "#"
+    detail_level = sub_level + "#"
+    for section in active_sections:
+        if section and len(active_sections) > 1:
+            out.append(f"{sub_level} {env_section_title(section, notes)}\n\n")
+        out.append("| Variable / Key | Description |\n|---|---|\n")
+        detailed = []
+        for key, (p, s, envs, comment) in sources.items():
+            if p != path or s != section:
+                continue
+            desc = env_description(key, comment, notes)
+            if unused_note(desc) is not None:
+                continue
+            env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
+            if len(desc) > 240:
+                first = first_sentence(desc)
+                table_desc = f"{first} [Details](#{anchor(key)}-details)."
+                detailed.append((key, env_text, values[key], desc))
+            else:
+                table_desc = desc
+            out.append(
+                f"| {env_key_cell(key, envs)}"
+                f" | **Default:** {cell(value_text(values[key]))}. {cell(table_desc)} |\n"
+            )
+        out.append("\n")
+        for key, env_text, val, desc in detailed:
+            out.append(f'{detail_level} <a id="{anchor(key)}-details"></a>`{key}`\n\n')
+            out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
+            out.append(f"{desc}\n\n")
+    return "".join(out)
+
+
+def render_env_pages(notes):
+    """Render the main env.md page plus the three internal sub-pages."""
     from ofscraper.utils.of_env import get_all_configs
 
     values = get_all_configs()
     sources = env_sources()
-    out = [HEADER, "# Environment defaults reference\n\n"]
-    out.append(notes.ENV_INTRO.strip() + "\n\n")
     found = []
     for key, (path, *_rest) in sources.items():
         if path not in found:
@@ -841,18 +896,33 @@ def render_env(notes):
         if active_sections:
             file_sections[path] = active_sections
 
-    active_groups = [
-        (group_title, [ENV_VALUES_DIR + name for name in names if ENV_VALUES_DIR + name in file_sections])
+    subpage_files = ENV_RATELIMIT_FILES | ENV_URL_FILES
+    main_groups = [
+        (
+            group_title,
+            [
+                ENV_VALUES_DIR + name
+                for name in names
+                if ENV_VALUES_DIR + name in file_sections and ENV_VALUES_DIR + name not in subpage_files
+            ],
+        )
         for group_title, names in notes.ENV_GROUPS
     ]
-    active_groups = [(t, ps) for t, ps in active_groups if ps]
+    main_groups = [(t, ps) for t, ps in main_groups if ps]
 
+    # 1. Main env.md (user-facing defaults)
+    out = [HEADER, "# Environment defaults reference\n\n"]
+    out.append(notes.ENV_INTRO.strip() + "\n\n")
+    out.append(
+        "The larger internal reference tables live on their own pages:\n\n"
+        "- [Rate-limit & backoff settings](env-ratelimits.md): per-request-type rate-limit and 403 backoff keys\n"
+        "- [API addresses & URLs](env-urls.md): internal OnlyFans API endpoints, dynamic rule sources and other URLs\n"
+        "- [Unused legacy defaults](env-unused.md): compatibility keys defined in `of_env/values/` but not currently read\n\n"
+    )
     out.append("## Contents\n\n")
     out.append("- [Read directly from the environment](#read-directly-from-the-environment)\n")
-    for group_title, _ps in active_groups:
+    for group_title, _ps in main_groups:
         out.append(f"- [{group_title}](#{anchor(group_title)})\n")
-    if unused_rows:
-        out.append("- [Unused legacy defaults](#unused-legacy-defaults)\n")
     out.append("\n")
 
     out.append("## Read directly from the environment\n\n")
@@ -868,65 +938,81 @@ def render_env(notes):
         )
     out.append("\n")
 
-    for group_title, paths in active_groups:
+    for group_title, paths in main_groups:
         out.append(f"## {group_title}\n\n")
         if group_title == "Network, retries and rate limits":
-            out.append(notes.ENV_SLEEPER.strip() + "\n\n")
+            out.append(
+                "For per-request-type rate-limit and 403 backoff keys and how backoff waits combine,"
+                " see [Rate-limit & backoff settings](env-ratelimits.md).\n\n"
+            )
         for path in paths:
-            active_sections = file_sections[path]
-            out.append(f"### {titles[path]}\n\nDefined in `{path}`.\n\n")
-            collapse_label = COLLAPSIBLE_ENV_FILES.get(path)
-            if collapse_label:
-                key_count = sum(
-                    1
-                    for key, (p, _s, _e, comment) in sources.items()
-                    if p == path and unused_note(env_description(key, comment, notes)) is None
+            out.append(
+                _render_env_file_tables(
+                    path, titles[path], file_sections[path], sources, values, notes, heading_level="###"
                 )
-                out.append(f"<details>\n<summary>{collapse_label} ({key_count} keys)</summary>\n\n")
-            for section in active_sections:
-                if section and len(active_sections) > 1:
-                    out.append(f"#### {env_section_title(section, notes)}\n\n")
-                out.append("| Variable / Key | Description |\n|---|---|\n")
-                detailed = []
-                for key, (p, s, envs, comment) in sources.items():
-                    if p != path or s != section:
-                        continue
-                    desc = env_description(key, comment, notes)
-                    if unused_note(desc) is not None:
-                        continue
-                    env_text = ", ".join(f"`{e}`" for e in envs) or "none (bare key only)"
-                    if len(desc) > 240:
-                        first = first_sentence(desc)
-                        table_desc = f"{first} [Details](#{anchor(key)}-details)."
-                        detailed.append((key, env_text, values[key], desc))
-                    else:
-                        table_desc = desc
-                    out.append(
-                        f"| {env_key_cell(key, envs)}"
-                        f" | **Default:** {cell(value_text(values[key]))}. {cell(table_desc)} |\n"
-                    )
-                out.append("\n")
-                for key, env_text, val, desc in detailed:
-                    out.append(f'##### <a id="{anchor(key)}-details"></a>`{key}`\n\n')
-                    out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
-                    out.append(f"{desc}\n\n")
-            if collapse_label:
-                out.append("</details>\n\n")
+            )
 
-    if unused_rows:
-        out.append("## Unused legacy defaults\n\n")
-        out.append(
-            "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.\n\n"
-            f"<details>\n<summary>Show unused legacy defaults ({len(unused_rows)} keys)</summary>\n\n"
-            "| Variable / Key | Details |\n|---|---|\n"
+    # 2. env-ratelimits.md
+    rl_out = [HEADER, "# Rate-limit & backoff settings\n\n"]
+    rl_out.append(
+        "Per-request-type rate-limit and 403 backoff defaults. See [Environment defaults](env.md)"
+        " for how `OFSC_*` variables, bare key names and `.env` files are loaded.\n\n"
+    )
+    rl_out.append("## How backoff works\n\n")
+    rl_out.append(notes.ENV_SLEEPER.strip() + "\n\n")
+    rl_paths = [p for p in files if p in ENV_RATELIMIT_FILES and p in file_sections]
+    rl_out.append("## Contents\n\n")
+    for path in rl_paths:
+        for section in file_sections[path]:
+            if section:
+                label = env_section_title(section, notes)
+                rl_out.append(f"- [{label}](#{anchor(label)})\n")
+    rl_out.append("\n")
+    for path in rl_paths:
+        rl_out.append(
+            _render_env_file_tables(
+                path, titles[path], file_sections[path], sources, values, notes, heading_level="##"
+            )
         )
-        for key, p, envs, val, note in unused_rows:
-            details = f"**Default:** {cell(value_text(val))} · **Defined in:** `{p}`"
-            if note:
-                details += f"<br>{cell(note)}"
-            out.append(f"| {env_key_cell(key, envs)} | {details} |\n")
-        out.append("\n</details>\n\n")
-    return "".join(out)
+
+    # 3. env-urls.md
+    url_out = [HEADER, "# API addresses & URLs\n\n"]
+    url_out.append(
+        "Internal OnlyFans API endpoints, dynamic rule sources and other URL defaults."
+        " See [Environment defaults](env.md) for how `OFSC_*` variables, bare key names and `.env` files are loaded.\n\n"
+    )
+    url_paths = [p for p in files if p in ENV_URL_FILES and p in file_sections]
+    url_out.append("## Contents\n\n")
+    for path in url_paths:
+        url_out.append(f"- [{titles[path]}](#{anchor(titles[path])})\n")
+    url_out.append("\n")
+    for path in url_paths:
+        url_out.append(
+            _render_env_file_tables(
+                path, titles[path], file_sections[path], sources, values, notes, heading_level="##"
+            )
+        )
+
+    # 4. env-unused.md
+    unused_out = [HEADER, "# Unused legacy defaults\n\n"]
+    unused_out.append(
+        "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app."
+        " See [Environment defaults](env.md) for active settings.\n\n"
+        "| Variable / Key | Details |\n|---|---|\n"
+    )
+    for key, p, envs, val, note in unused_rows:
+        details = f"**Default:** {cell(value_text(val))} · **Defined in:** `{p}`"
+        if note:
+            details += f"<br>{cell(note)}"
+        unused_out.append(f"| {env_key_cell(key, envs)} | {details} |\n")
+    unused_out.append("\n")
+
+    return {
+        "env.md": "".join(out),
+        "env-ratelimits.md": "".join(rl_out),
+        "env-urls.md": "".join(url_out),
+        "env-unused.md": "".join(unused_out),
+    }
 
 
 # --------------------------------------------------------------------------
@@ -1139,7 +1225,7 @@ def render_all():
         return {
             "cli.md": render_cli(notes),
             "config.md": render_config(notes),
-            "env.md": render_env(notes),
+            **render_env_pages(notes),
             "placeholders.md": render_placeholders(notes),
             "database.md": render_database(notes),
         }

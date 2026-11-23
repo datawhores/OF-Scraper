@@ -6,11 +6,11 @@ This reference covers everything the program can be told to do. It is written fo
 |---|---|
 | [cli.md](cli.md) | Commands, `--action` modes, and every command-line option: name, type, default, which commands accept it, its `config.json` fallback, and where it is defined |
 | [config.md](config.md) | Every `config.json` key: default, getter, older key names still read, the environment default behind it, and the option that overrides it |
-| [env.md](env.md) | Every built-in default in `ofscraper/utils/of_env/values/`, the environment variables that override them, and the backoff settings |
+| [env.md](env.md) | Built-in defaults in `ofscraper/utils/of_env/values/` and the environment variables that override them (with [env-ratelimits.md](env-ratelimits.md), [env-urls.md](env-urls.md), and [env-unused.md](env-unused.md) for backoff keys, API URLs, and legacy unused defaults) |
 | [placeholders.md](placeholders.md) | The names usable in `dir_format`, `file_format`, `metadata`, and text file names |
 | [database.md](database.md) | The tables in each creator's `user_data.db`: columns, unique keys, and what writes each row |
 
-`scripts/reference/build_reference.py` generates those five files from the code, pulling descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file and [hooks.md](hooks.md) are written by hand.
+`scripts/reference/build_reference.py` generates those files from the code, pulling descriptions from `scripts/reference/notes.py`. `test/test_reference.py` fails when the files are out of date or when something has no description. This file and [hooks.md](hooks.md) are written by hand.
 
 ## Where a setting's value comes from
 

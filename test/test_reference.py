@@ -147,14 +147,14 @@ def test_an_unused_default_keeps_the_rest_of_its_description(build, notes, envir
     with_text = {k: v for k, v in unused_notes(build, notes).items() if v}
     assert with_text, "expected at least one unused default with a note (MPD_SESSION_SLEEP_INIT)"
     rows = {}
-    for line in (build.OUT / "env.md").read_text(encoding="utf-8").splitlines():
+    for line in (build.OUT / "env-unused.md").read_text(encoding="utf-8").splitlines():
         m = re.match(r'\| <a id="([^"]+)"></a>', line)
         if m:
             rows[m.group(1)] = line
     lost = sorted(
         key for key, note in with_text.items() if build.cell(note) not in rows.get(build.anchor(key), "")
     )
-    assert lost == [], "env.md drops the note on these unused defaults"
+    assert lost == [], "env-unused.md drops the note on these unused defaults"
 
 
 def test_the_details_summary_does_not_stop_at_an_abbreviation(build):
