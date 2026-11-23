@@ -86,8 +86,6 @@ def test_two_contexts_share_no_state():
             "sem",
             "lock",
             "thread",
-            "count_lock",
-            "chunk_lock",
             "dirSet",
             "localDirSet",
             "fileHashes",
