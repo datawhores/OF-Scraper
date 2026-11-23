@@ -116,3 +116,24 @@ def test_hand_edited_auth_is_written_as_utf8(monkeypatch, auth_path, system_enco
     auth_error._manual_auth("{}")
     assert auth_path.read_bytes() == edited.encode("utf-8")
     assert auth_dict.get_auth_dict() == {"sess": SAVE_PATH}
+
+
+@pytest.mark.parametrize("saved_as", list(SAVED_AS))
+def test_fansly_auth_loads_with_the_right_characters(tmp_path, system_encoding, saved_as):
+    import ofscraper.sites.fansly.auth as fansly_auth
+
+    path = tmp_path / "fansly_auth.json"
+    path.write_bytes(_file(saved_as, "user_agent"))
+    fansly_auth._cache.update(path=None, mtime=None, auth=None)
+    assert fansly_auth.read_auth(path)["user_agent"] == SAVE_PATH
+
+
+@pytest.mark.parametrize("saved_as", list(SAVED_AS))
+def test_invalid_fansly_auth_still_raises_a_json_error(tmp_path, system_encoding, saved_as):
+    import ofscraper.sites.fansly.auth as fansly_auth
+
+    path = tmp_path / "fansly_auth.json"
+    path.write_bytes(_file(saved_as, "user_agent", complete=False))
+    fansly_auth._cache.update(path=None, mtime=None, auth=None)
+    with pytest.raises(json.JSONDecodeError):
+        fansly_auth.read_auth(path)
