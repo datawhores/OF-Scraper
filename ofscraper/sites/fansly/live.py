@@ -588,22 +588,9 @@ def requested(s=None) -> bool:
     return opts["once"] or opts["watch"]
 
 
-_warned = False
-
-
 def enabled(s=None) -> bool:
-    """Livestream options apply to Fansly profiles only; OnlyFans ignores them."""
-    global _warned
-    import ofscraper.sites as sites
-
-    if not requested(s):
-        return False
-    if not sites.is_fansly():
-        if not _warned:
-            log.warning("--live/--live-watch only apply to Fansly profiles; ignoring them")
-            _warned = True
-        return False
-    return True
+    """Whether --live or --live-watch was given (Fansly and OnlyFans profiles)."""
+    return requested(s)
 
 
 def once_enabled(s=None) -> bool:
@@ -705,6 +692,13 @@ def start_watch_thread(runner=None) -> LiveThread:
 
 async def run(watch: bool = False, stop: asyncio.Event = None):
     """Record the selected creators who are live: once, or watching until stopped."""
+    import ofscraper.sites as sites
+
+    if not sites.is_fansly():
+        from ofscraper.sites.onlyfans import live as onlyfans_live
+
+        return await onlyfans_live.run(watch, stop)
+
     import ofscraper.managers.manager as manager
     import ofscraper.utils.paths.common as common_paths
     import ofscraper.utils.system.ffmpeg as ffmpeg_finder

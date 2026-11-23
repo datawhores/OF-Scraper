@@ -134,7 +134,6 @@ def fansly_settings(monkeypatch, tmp_path):
                         lambda path=None: {"authorization_token": TOKEN, "user_agent": UA})
     monkeypatch.setattr(common_paths, "get_save_location", lambda config=None: str(tmp_path))
     monkeypatch.setattr(ffmpeg_finder, "get_ffmpeg", lambda: "ffmpeg")
-    monkeypatch.setattr(live, "_warned", False)
     return apply
 
 
@@ -813,20 +812,31 @@ def test_live_thread_stops_cleanly():
     assert not t.is_alive() and runner.stopped
 
 
-@pytest.mark.parametrize("flags", [{"live": True}, {"live_watch": True},
-                                   {"live": True, "live_watch": True, "live_chat": True}])
-def test_onlyfans_profile_ignores_live_options(monkeypatch, fansly_settings, flags):
-    fansly_settings(site="onlyfans", **flags)
+def test_onlyfans_profile_records_livestreams_too(monkeypatch, fansly_settings):
+    fansly_settings(site="onlyfans", live=True)
     seen = []
     monkeypatch.setattr(settings, "get_args", lambda copy=False: SimpleNamespace(
         daemon=None, actions=[], scrape_paid=False))
     monkeypatch.setattr(scraper, "process_prompts", lambda: seen.append("prompts"))
     monkeypatch.setattr(scraper, "check_auth", lambda: seen.append("auth"))
-    monkeypatch.setattr(live, "run_blocking", lambda *a, **k: seen.append("live"))
-    monkeypatch.setattr(live, "run", lambda *a, **k: pytest.fail("no livestream calls on OnlyFans"))
-    assert not live.enabled() and not live.once_enabled() and not live.watch_enabled()
+    monkeypatch.setattr(live, "run_blocking", lambda watch, runner=None: seen.append(("live", watch)))
+    assert live.enabled() and live.once_enabled() and not live.watch_enabled()
     scraper.scrapper()
-    assert seen == ["prompts"]  # exactly today's OnlyFans path
+    assert seen == ["auth", ("live", False)]
+
+
+def test_run_on_an_onlyfans_profile_uses_the_onlyfans_recorder(monkeypatch, fansly_settings):
+    from ofscraper.sites.onlyfans import live as onlyfans_live
+
+    fansly_settings(site="onlyfans", live=True)
+    seen = []
+
+    async def onlyfans_run(watch, stop):
+        seen.append(watch)
+
+    monkeypatch.setattr(onlyfans_live, "run", onlyfans_run)
+    asyncio.run(live.run(False, asyncio.Event()))
+    assert seen == [False]
 
 
 # ------------------------------------------------------------------ review fixes
