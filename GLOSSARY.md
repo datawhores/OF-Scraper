@@ -1,13 +1,13 @@
 # OF-Scraper
 
-Downloads the posts, messages, stories, and paid content a user can access on OnlyFans and Fansly, and records Fansly livestreams.
+Downloads the posts, messages, stories, and paid content a user can access on OnlyFans and Fansly, and records Fansly and OnlyFans livestreams.
 
 ## Media
 
 | Term | Meaning | Avoid |
 |---|---|---|
 | **Posted video** | A video a creator posted, with a fixed length. On Fansly it may be delivered as a single file or as a stream; either way it is a posted video. | stream download, live-stream download |
-| **Livestream recording** | A capture of a Fansly creator's broadcast while it is live, possibly in several numbered parts with a sidecar describing them. Stopping a recording ends it; what was captured is a finished recording, never a stopped download. | stream video, livestream download |
+| **Livestream recording** | A capture of a creator's broadcast while it is live. On Fansly it may be in several numbered parts with a sidecar describing them; on OnlyFans it is one `.webm` recorded in a browser. Stopping a recording ends it; what was captured is a finished recording, never a stopped download. | stream video, livestream download |
 
 ## Check table
 

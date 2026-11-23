@@ -31,31 +31,31 @@ action_option = click.option(
     callback=StringSplitParse,
 )
 
-# Fansly livestream recording. These do nothing on OnlyFans profiles.
+# Livestream recording (Fansly, and OnlyFans with the optional "live" extra).
 live_option = click.option(
     "--live",
-    help="Fansly only: record the selected creators (all followed creators without -u) who are live now, then continue",
+    help="Record the selected creators (all followed creators without -u) who are live now, then continue. OnlyFans needs the optional live install (a Chromium browser)",
     is_flag=True,
     default=False,
 )
 
 live_watch_option = click.option(
     "--live-watch",
-    help="Fansly only: keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes",
+    help="Keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes",
     is_flag=True,
     default=False,
 )
 
 live_interval_option = click.option(
     "--live-interval",
-    help="Fansly only: seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)",
+    help="Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)",
     type=click.IntRange(min=10),
     default=None,
 )
 
 live_max_option = click.option(
     "--live-max",
-    help="Fansly only: most livestreams recorded at the same time (default 2)",
+    help="Most livestreams recorded at the same time (default 2)",
     type=click.IntRange(min=1),
     default=None,
 )

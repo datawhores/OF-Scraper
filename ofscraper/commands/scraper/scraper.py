@@ -65,7 +65,7 @@ class scraperManager(CommandManager):
     def _runner(self, menu=False):
         check_auth(include_main_menu=menu)
         if live.once_enabled():
-            # Fansly --live: record who is live now, then do the other actions
+            # --live: record who is live now, then do the other actions
             if live.run_blocking(watch=False, menu=menu):
                 final_action()
                 return
