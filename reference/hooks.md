@@ -4,6 +4,17 @@ Code that runs in the same process as the scraper, such as the GUI patch or a pl
 
 This file is written by hand. Check an entry against the code before relying on it.
 
+## Contents
+
+- [Quick reference](#quick-reference)
+- [Calling async code](#calling-async-code)
+- [Downloads](#downloads)
+- [Check tables](#check-tables)
+- [Auth](#auth)
+- [Purchased content](#purchased-content)
+- [Database reads](#database-reads)
+- [GUI patch migration map](#gui-patch-migration-map)
+
 ## Quick reference
 
 | Hook | Module | Call from | Purpose |
