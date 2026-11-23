@@ -56,10 +56,15 @@ def test_config_rewrite_keeps_empty_ffmpeg(ffmpeg_env):
     assert new["binary_options"]["ffmpeg"] == ""
 
 
-def test_settings_falls_back_to_env_default_for_empty_ffmpeg(ffmpeg_env, monkeypatch):
+def test_settings_falls_back_to_env_default_for_empty_ffmpeg(ffmpeg_env, monkeypatch, tmp_path):
+    import ofscraper.utils.config.config as config_
+    import ofscraper.utils.paths.common as common_paths
     import ofscraper.utils.settings as settings
 
-    monkeypatch.setattr(settings.config_data, "get_ffmpeg", lambda: "")
+    # fresh config path with no config.json yet (#692)
+    monkeypatch.setattr(common_paths, "get_config_path", lambda: tmp_path / "config.json")
+    monkeypatch.setattr(config_, "config", None)
+    monkeypatch.setattr(settings.config_data, "get_ffmpeg", lambda config=None: "")
     assert settings.merged_settings().ffmpeg == "/opt/ffmpeg"
 
 
