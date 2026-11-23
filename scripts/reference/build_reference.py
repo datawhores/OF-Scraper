@@ -1047,21 +1047,35 @@ def database_schema():
 def render_database(notes):
     tables = database_schema()
     out = [HEADER, "# Database reference (`user_data.db`)\n\n"]
-    out.append(notes.DATABASE_NOTES.strip() + "\n\n")
     out.append(
-        "The tables and columns below are what a new database has after"
+        "The tables and columns below are what a new `user_data.db` has after"
         " `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables`"
-        " run. The create statements are in `ofscraper/db/operations_/`.\n\n"
+        " run (`ofscraper/db/operations_/`). See [How the database works](#how-the-database-works)"
+        " for connections, backups, merging, Fansly separation and PostgreSQL.\n\n"
     )
     out.append("## Contents\n\n")
+    out.append("- [Quick reference](#quick-reference)\n")
     for n in tables:
         out.append(f"- [`{n}`](#{anchor(n)})\n")
+    out.append("- [How the database works](#how-the-database-works)\n\n")
+    out.append("## Quick reference\n\n")
+    out.append("| Table | Unique key | Summary |\n|---|---|---|\n")
+    for name, (_columns, indexes) in tables.items():
+        note = notes.TABLES[name]
+        uniques = [i for i in indexes if i["unique"]]
+        unique_text = (
+            "; ".join("(" + ", ".join(f"`{c}`" for c in i["columns"]) + ")" for i in uniques)
+            if uniques
+            else "none"
+        )
+        out.append(
+            f"| [`{name}`](#{anchor(name)}) | {unique_text} | {cell(first_sentence(note['summary'].strip()))} |\n"
+        )
     out.append("\n")
     for name, (columns, indexes) in tables.items():
         note = notes.TABLES[name]
         out.append(f"## `{name}`\n\n")
         out.append(note["summary"].strip() + "\n\n")
-        out.append(f"**Written by:** {note['written_by'].strip()}\n\n")
         uniques = [i for i in indexes if i["unique"]]
         if uniques:
             out.append(
@@ -1069,15 +1083,28 @@ def render_database(notes):
                 + "; ".join("(" + ", ".join(f"`{c}`" for c in i["columns"]) + ")" for i in uniques)
                 + "\n\n"
             )
-        out.append("| Column | Type | Not null | Default | Description |\n|---|---|---|---|---|\n")
+        out.append("| Column | Type | Description |\n|---|---|---|\n")
         for col in columns:
-            pk = " (primary key)" if col["pk"] else ""
-            default = "" if col["default"] is None else code(col["default"])
+            type_parts = [col["type"] or ""]
+            flags = []
+            if col["pk"]:
+                flags.append("PK")
+            if col["notnull"]:
+                flags.append("not null")
+            if col["default"] is not None:
+                flags.append(f"default {code(col['default'])}")
+            type_text_col = " ".join(p for p in type_parts if p)
+            if flags:
+                suffix = "(" + ", ".join(flags) + ")"
+                type_text_col = f"{type_text_col} {suffix}".strip()
             out.append(
-                f"| `{col['name']}`{pk} | {col['type'] or ''} | {'yes' if col['notnull'] else ''}"
-                f" | {cell(default)} | {cell(note['columns'][col['name']].strip())} |\n"
+                f"| `{col['name']}` | {cell(type_text_col)} | {cell(note['columns'][col['name']].strip())} |\n"
             )
-        out.append("\n")
+        out.append("\n<details>\n<summary>Write and migration details</summary>\n\n")
+        out.append(f"**Written by:** {note['written_by'].strip()}\n\n")
+        out.append("</details>\n\n")
+    out.append("## How the database works\n\n")
+    out.append(notes.DATABASE_NOTES.strip() + "\n")
     return "".join(out)
 
 
