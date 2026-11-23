@@ -795,6 +795,12 @@ def env_key_cell(key, envs):
     return f"{a}{env_list}<br>Key: `{key}`"
 
 
+COLLAPSIBLE_ENV_FILES = {
+    ENV_VALUES_DIR + "req/ratelimit.py": "Show all rate-limit sleeper keys",
+    ENV_VALUES_DIR + "url/url.py": "Show OnlyFans API endpoint URLs",
+}
+
+
 def render_env(notes):
     from ofscraper.utils.of_env import get_all_configs
 
@@ -869,6 +875,14 @@ def render_env(notes):
         for path in paths:
             active_sections = file_sections[path]
             out.append(f"### {titles[path]}\n\nDefined in `{path}`.\n\n")
+            collapse_label = COLLAPSIBLE_ENV_FILES.get(path)
+            if collapse_label:
+                key_count = sum(
+                    1
+                    for key, (p, _s, _e, comment) in sources.items()
+                    if p == path and unused_note(env_description(key, comment, notes)) is None
+                )
+                out.append(f"<details>\n<summary>{collapse_label} ({key_count} keys)</summary>\n\n")
             for section in active_sections:
                 if section and len(active_sections) > 1:
                     out.append(f"#### {env_section_title(section, notes)}\n\n")
@@ -896,11 +910,14 @@ def render_env(notes):
                     out.append(f'##### <a id="{anchor(key)}-details"></a>`{key}`\n\n')
                     out.append(f"**Environment variable:** {env_text} · **Default:** {value_text(val)}\n\n")
                     out.append(f"{desc}\n\n")
+            if collapse_label:
+                out.append("</details>\n\n")
 
     if unused_rows:
         out.append("## Unused legacy defaults\n\n")
         out.append(
             "Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently read anywhere in the app.\n\n"
+            f"<details>\n<summary>Show unused legacy defaults ({len(unused_rows)} keys)</summary>\n\n"
             "| Variable / Key | Details |\n|---|---|\n"
         )
         for key, p, envs, val, note in unused_rows:
@@ -908,7 +925,7 @@ def render_env(notes):
             if note:
                 details += f"<br>{cell(note)}"
             out.append(f"| {env_key_cell(key, envs)} | {details} |\n")
-        out.append("\n")
+        out.append("\n</details>\n\n")
     return "".join(out)
 
 
