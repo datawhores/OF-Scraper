@@ -7,7 +7,7 @@ CDRM_DEPRECATED = (
     "Key mode cdrm is deprecated and will be removed: its service, "
     "cdrm-project.com, no longer works, so DRM videos can't be decrypted with it. "
     "Use key mode manual with your own CDM files: "
-    "https://cloakedkeys.gitbook.io/ofsc/cdm-options"
+    "https://cloakedkeys.gitbook.io/ofsc/setup/cdm-options"
 )
 
 
@@ -34,13 +34,13 @@ def check_cdm():
                 f"[yellow]CDM keys not detected ({missing}).\n"
                 "This may affect the download of files with DRM: they're skipped "
                 "until client-id and private-key are set under cdm_options.\n"
-                "https://cloakedkeys.gitbook.io/ofsc/cdm-options\n[/yellow]"
+                "https://cloakedkeys.gitbook.io/ofsc/setup/cdm-options\n[/yellow]"
             )
             # debug: the console already shows it
             log.debug(f"CDM keys not detected ({missing}); DRM files will be skipped")
             return True
         console.print(
-            "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://cloakedkeys.gitbook.io/ofsc/cdm-options\n\n[/yellow]"
+            "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://cloakedkeys.gitbook.io/ofsc/setup/cdm-options\n\n[/yellow]"
         )
         return True
     elif keymode == "cdrm":

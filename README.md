@@ -91,7 +91,7 @@ Run `ofscraper` and follow the prompts. The first run asks for your auth details
 <details>
 <summary><b>Protected videos stay as <code>.part</code> files</b></summary>
 
-- Set up `cdm_options` in your config. See the [CDM guide](https://cloakedkeys.gitbook.io/ofsc/cdm-options).
+- Set up `cdm_options` in your config. See the [CDM guide](https://cloakedkeys.gitbook.io/ofsc/setup/cdm-options).
 - Install ffmpeg 6 or newer and put its full path in `binary_options` → `ffmpeg`.
 
 </details>

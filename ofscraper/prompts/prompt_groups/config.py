@@ -43,7 +43,7 @@ SPEED_MIN = 64 * 1000 // 8  # 64 Kbps; slower would stall every download
 
 def funct(prompt_):
     console.print("""
-    For more Details => https://cloakedkeys.gitbook.io/ofsc/getting-started/config-options
+    For more Details => https://cloakedkeys.gitbook.io/ofsc/setup/getting-started/config-options
     
     [General Options]
     main_profile: default profile attached to config
