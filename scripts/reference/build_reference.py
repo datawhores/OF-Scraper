@@ -1013,8 +1013,11 @@ def render_database(notes):
         "The tables and columns below are what a new database has after"
         " `ofscraper.db.operations.create_tables` and `ofscraper.db.transition.modify_tables`"
         " run. The create statements are in `ofscraper/db/operations_/`.\n\n"
-        "Tables: " + ", ".join(f"[`{n}`](#{anchor(n)})" for n in tables) + ".\n\n"
     )
+    out.append("## Contents\n\n")
+    for n in tables:
+        out.append(f"- [`{n}`](#{anchor(n)})\n")
+    out.append("\n")
     for name, (columns, indexes) in tables.items():
         note = notes.TABLES[name]
         out.append(f"## `{name}`\n\n")
