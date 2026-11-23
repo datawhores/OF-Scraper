@@ -445,7 +445,7 @@ def write_csv(rows):
                 header.append(key)
     filename = settings.get_settings().export.with_suffix(".csv")
     filename.parent.mkdir(parents=True, exist_ok=True)
-    with open(filename, "w", newline="") as csvfile:
+    with open(filename, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=header)
         writer.writeheader()
         for row in rows:
