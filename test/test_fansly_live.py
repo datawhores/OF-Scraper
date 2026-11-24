@@ -1140,3 +1140,116 @@ def test_api_username_is_cleaned_before_it_becomes_a_folder(tmp_path, name):
     assert livestreams.parent.parent == tmp_path / "Fansly"  # one folder level, inside Fansly
     assert livestreams.parent.name not in ("", ".", "..")
     assert not set("/\\:") & set(livestreams.parent.name + base.name)
+
+# ------------------------------------------------------------------ search & logging
+
+def test_fansly_individual_search_queries_target_channel_without_following_list(
+    monkeypatch, fansly_settings
+):
+    from ofscraper.sites.fansly import constants
+
+    fansly_settings(
+        live=True,
+        usernames=("creator_a",),
+        excluded_username=[],
+        username_search="individual",
+    )
+
+    def playlist(url):
+        if "master.m3u8" in url:
+            return MASTER
+        return "#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2.0,\ns1.ts\n#EXT-X-ENDLIST\n"
+
+    client = FakeClient({
+        constants.api_url("account?usernames=creator_a"): {
+            "success": True,
+            "response": [{"id": CREATOR_A[0], "username": CREATOR_A[1]}],
+        },
+        live_api.channel_url(CREATOR_A[0]): channel_response(
+            CREATOR_A[0], "https://live.example.invalid/a/master.m3u8?token=tok1"
+        ),
+        "https://live.example.invalid/": playlist,
+        "https://cdn.example.invalid/": playlist,
+    })
+    install_session(monkeypatch, client)
+
+    recorded = []
+
+    async def fake_ffmpeg(cmd, stop=None):
+        recorded.append(cmd[-1])
+        with open(cmd[-1], "wb") as f:
+            f.write(b"\0" * 32)
+        return 0
+
+    monkeypatch.setattr(live, "run_ffmpeg", fake_ffmpeg)
+    asyncio.run(live.run(watch=False))
+
+    assert len(recorded) == 1
+    assert not any(u == live_api.ONLINE_URL for u, _ in client.calls)
+
+def test_fansly_list_search_ignores_unfollowed_usernames(monkeypatch, fansly_settings):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live=True, usernames=("creator_c",), username_search="list")
+
+    async def fail_lookup(c, usernames):
+        pytest.fail("accounts_by_username should not run in -fl list mode")
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fail_lookup)
+
+    client = FakeClient({
+        live_api.ONLINE_URL: online_response(CREATOR_A, CREATOR_B),
+    })
+    install_session(monkeypatch, client)
+    monkeypatch.setattr(live, "run_ffmpeg", lambda *a, **k: pytest.fail("nothing should record"))
+
+    asyncio.run(live.run(watch=False))
+    assert [u for u, _ in client.calls] == [live_api.ONLINE_URL]
+
+
+def test_fansly_auto_fallback_resolves_unfollowed_target_once_across_polls(
+    monkeypatch, fansly_settings
+):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=("creator_c",), username_search=None)
+    lookup_calls = []
+
+    async def fake_by_username(c, usernames):
+        lookup_calls.append(list(usernames))
+        return [{"id": CREATOR_C[0], "username": CREATOR_C[1]}]
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+
+    polls = 0
+    stop = asyncio.Event()
+
+    def channel(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 3:
+            stop.set()
+        return channel_response(CREATOR_C[0], "", status=0)
+
+    client = FakeClient({
+        live_api.ONLINE_URL: online_response(CREATOR_A),
+        live_api.channel_url(CREATOR_C[0]): channel,
+    })
+    install_session(monkeypatch, client)
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(
+                fetch_online,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+    asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+
+    assert lookup_calls == [["creator_c"]]
+    assert polls == 3
