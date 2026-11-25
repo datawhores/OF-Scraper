@@ -1122,6 +1122,54 @@ def test_a_per_page_of_zero_draws_the_default_page_size(stub_env_hf):
     asyncio.run(drive())
 
 
+def test_page_cart_actions_use_the_default_page_size_for_zero(stub_env_hf):
+    # with 0 in a Per Page box the page actions worked on an empty page
+    media_rows = [
+        _media_row_hf(n, post_date="2024-05-01", post_id=n, media_id=n)
+        for n in range(1, 4)
+    ]
+    post_rows = post_metrics.build_post_centric_rows(
+        [_post_obj_hf(n, 0, [_media_obj_hf(n, n)]) for n in range(1, 4)], "creator_a", 1
+    )
+
+    def carts():
+        return [r["download_cart"] for r in media_rows]
+
+    async def drive():
+        app = _app_hf(media_rows, post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            for prefix in ("main", "post", "cart"):
+                app.query_one(f"#{prefix}_per_page_input").value = "0"
+            await pilot.pause(0.5)
+
+            for add in (
+                app.action_select_current_page,
+                app.action_select_unique_current_page,
+                app.action_select_page_undownloaded,
+            ):
+                add()
+                assert carts() == ["[added]"] * 3
+                app.action_clear_current_page()
+                assert carts() == ["[]"] * 3
+
+            await pilot.click("#post_tab")
+            await pilot.pause()
+            for add in (app.action_select_current_page, app.action_select_page_undownloaded):
+                add()
+                assert carts() == ["[added]"] * 3
+                app.action_clear_current_page()
+                assert carts() == ["[]"] * 3
+
+            app.action_select_current_page()
+            await pilot.click("#cart")
+            await pilot.pause()
+            app.action_clear_current_page()
+            assert carts() == ["[]"] * 3
+
+    asyncio.run(drive())
+
+
 def test_a_per_page_redraw_after_the_app_closed_does_nothing(stub_env_hf):
     # the 0.3 s wait can end while the app is closing and its inputs are gone
     async def drive():

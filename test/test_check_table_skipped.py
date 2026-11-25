@@ -66,6 +66,7 @@ class _FakeApp:
     _run_unique_selection = table_app.InputApp._run_unique_selection
     on_data_table_cell_selected = table_app.InputApp.on_data_table_cell_selected
     add_to_row_queue = table_app.InputApp.add_to_row_queue
+    _per_page = table_app.InputApp._per_page
 
     def __init__(self, rows):
         self.table_data = rows

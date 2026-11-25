@@ -655,11 +655,11 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = self._per_page("main") or AMOUNT_PER_PAGE
             start = (self.main_page - 1) * num_page
             self._add_items_to_cart(self._filtered_rows[start : start + num_page])
         elif active == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
             start = (self.post_page - 1) * num_page
             self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=False)
 
@@ -696,7 +696,7 @@ class InputApp(App):
             or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
-        num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
+        num_page = self._per_page("main") or AMOUNT_PER_PAGE
         start = (self.main_page - 1) * num_page
         self._run_unique_selection(self._filtered_rows[start : start + num_page])
 
@@ -740,7 +740,7 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = self._per_page("main") or AMOUNT_PER_PAGE
             start = (self.main_page - 1) * num_page
             for row in self._filtered_rows[start : start + num_page]:
                 if row.get("download_type") == "unknown" or not row.get("unlocked"):
@@ -755,7 +755,7 @@ class InputApp(App):
             self.set_page()
             self.update_cart_info()
         elif active == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
             start = (self.post_page - 1) * num_page
             self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=True)
 
@@ -787,16 +787,14 @@ class InputApp(App):
             return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "media_table_page":
-            num_page = int(
-                self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
-            )
+            num_page = self._per_page("main") or AMOUNT_PER_PAGE
             start = (self.main_page - 1) * num_page
             for row in self._filtered_rows[start : start + num_page]:
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
 
         elif active_tab == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
             start = (self.post_page - 1) * num_page
             self._clear_posts_from_cart(self._filtered_post_rows[start : start + num_page])
 
@@ -804,9 +802,7 @@ class InputApp(App):
             cart_rows = [
                 row for row in self.table_data if row.get("download_cart") == "[added]"
             ]
-            num_page = int(
-                self.query_one("#cart_per_page_input").value or AMOUNT_PER_PAGE
-            )
+            num_page = self._per_page("cart") or AMOUNT_PER_PAGE
             start = (self.cart_page - 1) * num_page
             for row in cart_rows[start : start + num_page]:
                 row["download_cart"] = "[]"
@@ -1263,7 +1259,7 @@ class InputApp(App):
             table.add_column(label, key=str(ele), width=width)
 
     def update_search_info(self):
-        num_page = self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
+        num_page = self._per_page("main") or AMOUNT_PER_PAGE
         sort_key = self._sortkey or "number"
         sort_dir = "Desc" if self._reverse else "Asc"
         clean_sort_name = re.sub("_", " ", sort_key).title()
@@ -1585,7 +1581,7 @@ class InputApp(App):
 
     def update_post_search_info(self) -> None:
         try:
-            num_page = self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
             sort_dir = "Desc" if self._post_reverse else "Asc"
             clean_sort = re.sub("_", " ", self._post_sortkey or "number").title()
             total_posts = len(self.post_data)
