@@ -9,7 +9,9 @@ the browser's MediaRecorder (see ``live_capture``).
 
 - **Who is live:** an active subscription with ``hasStream`` set, from the
   same subscriptions list the scraper reads. Creators chosen with ``-u`` and
-  the individual search are asked one by one with the still-live check.
+  the individual search are asked one by one with the still-live check, up
+  to ``LIVE_INDIVIDUAL_MAX`` of them, as are chosen creators who aren't
+  active subscriptions.
 - **Still live:** ``users/{username}/streams/active``, asked while recording.
 
 Recordings go to
@@ -196,23 +198,41 @@ def select_streams(online: list, usernames=None, excluded=None) -> list:
     return [s for s in out if matches(s, wanted)]
 
 
-async def _check_targets_concurrently(check_session, targets, initial_live: set) -> list:
-    """Check cached targets concurrently on the single-attempt session."""
+async def _check_targets_concurrently(check_session, targets, initial_live: set, cache=None) -> list:
+    """Check cached targets concurrently on the single-attempt session.
+
+    A check that fails counts as offline; that is warned about once until
+    the checks work again (``cache`` keeps the streak across polls)."""
     sem = asyncio.Semaphore(_check_concurrency())
+    failed = []
 
     async def check_one(target):
         if target["accountId"] in initial_live:
             return target
         async with sem:
-            if await still_live(check_session, target["username"]):
-                return target
-        return None
+            answer = await still_live(check_session, target["username"])
+        if answer is None:
+            failed.append(target["username"])
+        return target if answer else None
 
     results = await asyncio.gather(
         *(check_one(t) for t in targets),
         return_exceptions=True,
     )
+    state = cache if cache is not None else {}
+    if failed and not state.get("checks_failed"):
+        log.warning(
+            f"OnlyFans live check failed for {len(failed)} creator(s); "
+            "they count as offline until a check works"
+        )
+    elif failed:
+        log.debug(f"OnlyFans live check failed for {len(failed)} creator(s)")
+    state["checks_failed"] = bool(failed)
     return [r for r in results if isinstance(r, dict)]
+
+
+def _individual_max() -> int:
+    return max(0, int(of_env.getattr("LIVE_INDIVIDUAL_MAX")))
 
 
 async def get_online_streams(c, checks=None) -> list:
@@ -251,8 +271,10 @@ async def get_online_streams(c, checks=None) -> list:
     if not targets:
         return []
 
-    if all_users or search_mode == "list":
-        if first_lookup:
+    list_mode = all_users or search_mode == "list"
+    # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
+    if list_mode or len(targets) > _individual_max():
+        if first_lookup and list_mode:
             return [t for t in targets.values() if t["accountId"] in initial_live]
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
@@ -261,14 +283,14 @@ async def get_online_streams(c, checks=None) -> list:
         listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
         unlisted = [t for t in targets.values() if t["accountId"] not in listed | live_ids]
         live_ids |= {
-            t["accountId"] for t in await _check_targets_concurrently(check_session, unlisted, set())
+            t["accountId"] for t in await _check_targets_concurrently(check_session, unlisted, set(), cache)
         }
         # the cached target, which keeps the name a renamed creator was looked up as
         return [t for t in targets.values() if t["accountId"] in live_ids]
 
     # Individual target path (-fi or auto-selected individual search):
     # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
-    return await _check_targets_concurrently(check_session, list(targets.values()), initial_live)
+    return await _check_targets_concurrently(check_session, list(targets.values()), initial_live, cache)
 
 
 def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:

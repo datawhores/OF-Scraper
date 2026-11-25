@@ -759,6 +759,63 @@ def test_list_targets_missing_from_active_subscriptions_are_asked_directly(
     assert checks.urls == ["https://onlyfans.com/api2/v2/users/creator_a/streams/active?view=full_with_check"]
 
 
+def test_many_named_creators_are_checked_from_the_subscription_list(monkeypatch, onlyfans_settings):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    names = ["creator_a", "creator_b", "creator_c"]
+    onlyfans_settings(live_watch=True, usernames=names, username_search="individual")
+
+    async def fake_get_models():
+        return [Model({"id": i, "username": n, "hasStream": False}) for i, n in enumerate(names, 1)]
+
+    scans = []
+
+    async def fake_active(c):
+        scans.append(1)
+        yield [{"id": 1, "username": "creator_a", "hasStream": False},
+               {"id": 2, "username": "creator_b", "hasStream": True},
+               {"id": 3, "username": "creator_c", "hasStream": False}]
+
+    real_getattr = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr",
+                        lambda key, default=None: 2 if key == "LIVE_INDIVIDUAL_MAX" else real_getattr(key, default))
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    checks = Client(Response(200, {"isActive": True}))
+    token = live._TARGET_CACHE.set({})
+    try:
+        result = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert result == [{"accountId": 2, "username": "creator_b"}]
+    assert scans == [1]
+    assert checks.urls == []  # one list scan, not a request per creator
+
+
+def test_failed_live_checks_warn_once_per_failure_streak(monkeypatch, onlyfans_settings, caplog):
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a"], username_search="individual")
+
+    async def fake_get_models():
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    refused = Client(Response(429))
+    token = live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            for client in (refused, refused, Client(Response(200, {"isActive": False})), refused):
+                asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=client))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    warnings = [r for r in caplog.records if "live check failed" in r.getMessage()]
+    assert len(warnings) == 2  # once per streak of failed checks
+
+
 def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onlyfans_settings):
     import ofscraper.data.api.subscriptions.subscriptions as subs
     import ofscraper.data.models.utils.retriver as retriver

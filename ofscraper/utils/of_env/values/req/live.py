@@ -23,6 +23,12 @@ def load_req_live_config():
         1, int(os.getenv("OFSC_LIVE_CHECK_TIMEOUT", "15"))
     )
 
+    # LIVE_INDIVIDUAL_MAX: Most OnlyFans creators chosen with `-u` that each `--live` / `--live-watch` check asks one by one; with more, a check reads the subscription list instead.
+    # Default: 10
+    config["LIVE_INDIVIDUAL_MAX"] = max(
+        0, int(os.getenv("OFSC_LIVE_INDIVIDUAL_MAX", "10"))
+    )
+
     # LIVE_JITTER: Maximum random jitter in seconds added to the `--live-watch` polling interval.
     # Default: 10
     config["LIVE_JITTER"] = max(0, int(os.getenv("OFSC_LIVE_JITTER", "10")))
