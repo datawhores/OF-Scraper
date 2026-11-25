@@ -1170,6 +1170,48 @@ def test_page_cart_actions_use_the_default_page_size_for_zero(stub_env_hf):
     asyncio.run(drive())
 
 
+def test_page_cart_actions_act_on_the_page_as_drawn(stub_env_hf):
+    # drawn 50 per page, then the box emptied without a redraw: the page
+    # actions still work on the 50 rows shown, not 100 from the empty box
+    media_rows = [
+        _media_row_hf(n, post_date="2024-05-01", post_id=n, media_id=n)
+        for n in range(1, 121)
+    ]
+
+    def added():
+        return [r["index"] for r in media_rows if r["download_cart"] == "[added]"]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+
+            async def show_page_2_of_50(cart):
+                for r in media_rows:
+                    r["download_cart"] = cart
+                box = app.query_one("#main_per_page_input")
+                box.value = "50"
+                app.main_page = 2
+                app.set_page()
+                box.value = ""
+                await pilot.pause(0.5)
+
+            for add in (
+                app.action_select_current_page,
+                app.action_select_unique_current_page,
+                app.action_select_page_undownloaded,
+            ):
+                await show_page_2_of_50("[]")
+                add()
+                assert added() == list(range(51, 101))
+
+            await show_page_2_of_50("[added]")
+            app.action_clear_current_page()
+            assert added() == list(range(1, 51)) + list(range(101, 121))
+
+    asyncio.run(drive())
+
+
 def test_a_per_page_redraw_after_the_app_closed_does_nothing(stub_env_hf):
     # the 0.3 s wait can end while the app is closing and its inputs are gone
     async def drive():

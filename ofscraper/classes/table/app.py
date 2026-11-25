@@ -310,6 +310,12 @@ class InputApp(App):
         val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
         return int(val) if val.isnumeric() and int(val) > 0 else None
 
+    def _page_rows(self, prefix, rows):
+        """The rows on the current page, as drawn."""
+        size = self._shown_per_page.get(prefix, AMOUNT_PER_PAGE)
+        start = (getattr(self, f"{prefix}_page") - 1) * size
+        return rows[start : start + size]
+
     def _apply_per_page(self, prefix):
         self._per_page_timers.pop(prefix, None)
         try:
@@ -655,13 +661,9 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = self._per_page("main") or AMOUNT_PER_PAGE
-            start = (self.main_page - 1) * num_page
-            self._add_items_to_cart(self._filtered_rows[start : start + num_page])
+            self._add_items_to_cart(self._page_rows("main", self._filtered_rows))
         elif active == "post_table_page":
-            num_page = self._per_page("post") or AMOUNT_PER_PAGE
-            start = (self.post_page - 1) * num_page
-            self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=False)
+            self._add_posts_to_cart(self._page_rows("post", self._filtered_post_rows), new_only=False)
 
     def action_select_all_filtered(self) -> None:
         if self.is_sidebar_open:
@@ -696,9 +698,7 @@ class InputApp(App):
             or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
-        num_page = self._per_page("main") or AMOUNT_PER_PAGE
-        start = (self.main_page - 1) * num_page
-        self._run_unique_selection(self._filtered_rows[start : start + num_page])
+        self._run_unique_selection(self._page_rows("main", self._filtered_rows))
 
     def action_select_unique_all_filtered(self) -> None:
         if (
@@ -740,9 +740,7 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = self._per_page("main") or AMOUNT_PER_PAGE
-            start = (self.main_page - 1) * num_page
-            for row in self._filtered_rows[start : start + num_page]:
+            for row in self._page_rows("main", self._filtered_rows):
                 if row.get("download_type") == "unknown" or not row.get("unlocked"):
                     continue
                 if not row["downloaded"] and row["download_cart"] in {
@@ -755,9 +753,7 @@ class InputApp(App):
             self.set_page()
             self.update_cart_info()
         elif active == "post_table_page":
-            num_page = self._per_page("post") or AMOUNT_PER_PAGE
-            start = (self.post_page - 1) * num_page
-            self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=True)
+            self._add_posts_to_cart(self._page_rows("post", self._filtered_post_rows), new_only=True)
 
     def action_select_all_undownloaded(self) -> None:
         if self.is_sidebar_open:
@@ -787,24 +783,18 @@ class InputApp(App):
             return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "media_table_page":
-            num_page = self._per_page("main") or AMOUNT_PER_PAGE
-            start = (self.main_page - 1) * num_page
-            for row in self._filtered_rows[start : start + num_page]:
+            for row in self._page_rows("main", self._filtered_rows):
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
 
         elif active_tab == "post_table_page":
-            num_page = self._per_page("post") or AMOUNT_PER_PAGE
-            start = (self.post_page - 1) * num_page
-            self._clear_posts_from_cart(self._filtered_post_rows[start : start + num_page])
+            self._clear_posts_from_cart(self._page_rows("post", self._filtered_post_rows))
 
         elif active_tab == "cart_page":
             cart_rows = [
                 row for row in self.table_data if row.get("download_cart") == "[added]"
             ]
-            num_page = self._per_page("cart") or AMOUNT_PER_PAGE
-            start = (self.cart_page - 1) * num_page
-            for row in cart_rows[start : start + num_page]:
+            for row in self._page_rows("cart", cart_rows):
                 row["download_cart"] = "[]"
 
         self.set_page()
