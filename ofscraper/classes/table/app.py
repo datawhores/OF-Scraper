@@ -14,6 +14,7 @@ from ofscraper.classes.table.sections.table import get_styled, get_post_styled
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
+from ofscraper.classes.table.fields.timefield import hms_to_seconds
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
@@ -1024,7 +1025,7 @@ class InputApp(App):
                         0.0 if price_str.lower() in {"", "free"} else float(price_str)
                     )
                 elif key == "length":
-                    sort_val = arrow.get(raw_val or "0:0:0", ["h:m:s"]).timestamp()
+                    sort_val = hms_to_seconds(raw_val)
                 elif key == "post_date":
                     sort_val = arrow.get(raw_val).timestamp()
                 elif key in {"post_id", "media_id"}:

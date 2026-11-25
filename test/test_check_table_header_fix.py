@@ -274,6 +274,23 @@ def test_long_and_fractional_lengths_pass_a_length_filter(stub_env, length):
 
     asyncio.run(drive())
 
+def test_long_and_fractional_lengths_sort_by_their_real_length():
+    lengths = ["2 days, 0:00:00", "2:00:00", "0:01:30.500000", "1 day, 1:00:00", "0:01:00"]
+    app = table_app.InputApp()
+    app.table_data = [_media_row(n, length=v) for n, v in enumerate(lengths, 1)]
+    app._reverse = False
+
+    app._sort_runner("length")
+
+    assert [r["length"] for r in app.table_data] == [
+        "0:01:00",
+        "0:01:30.500000",
+        "2:00:00",
+        "1 day, 1:00:00",
+        "2 days, 0:00:00",
+    ]
+
+
 def _count_page_builds(monkeypatch):
     counts = {"main": 0, "post": 0, "cart": 0}
     for prefix, name in (

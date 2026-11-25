@@ -5,6 +5,25 @@ from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 
 
+def hms_to_seconds(value) -> int:
+    """Seconds in a table length; "N/A" or empty is 0."""
+    if value in (None, "", "N\\A", "N/A"):
+        return 0
+    # str(timedelta): "1 day, 1:00:00" from 24 hours, "0:01:30.500000"
+    # for a fraction of a second
+    days = 0
+    text = str(value)
+    if "day" in text:
+        day_part, _, text = text.partition(",")
+        days = int(day_part.split()[0])
+    parts = [int(float(p)) for p in text.strip().split(":")]
+    if len(parts) == 3:
+        return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if len(parts) == 2:
+        return parts[0] * 60 + parts[1]
+    return parts[0]
+
+
 class TimeField(Container):
     DEFAULT_CSS = """
     TimeField {
@@ -83,24 +102,6 @@ class TimeField(Container):
         for ele in self.query(IntegerInput):
             ele.value = ""
 
-    @staticmethod
-    def _hms_to_seconds(value) -> int:
-        if value in (None, "", "N\\A", "N/A"):
-            return 0
-        # str(timedelta): "1 day, 1:00:00" from 24 hours, "0:01:30.500000"
-        # for a fraction of a second
-        days = 0
-        text = str(value)
-        if "day" in text:
-            day_part, _, text = text.partition(",")
-            days = int(day_part.split()[0])
-        parts = [int(float(p)) for p in text.strip().split(":")]
-        if len(parts) == 3:
-            return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
-        if len(parts) == 2:
-            return parts[0] * 60 + parts[1]
-        return parts[0]
-
     def compare(self, value):
         min_sec = (
             int(self.query_one("#min_hour").value or 0) * 3600
@@ -115,7 +116,7 @@ class TimeField(Container):
         if min_sec == 0 and max_sec == 0:
             return True
         try:
-            cur_sec = self._hms_to_seconds(value)
+            cur_sec = hms_to_seconds(value)
         except (TypeError, ValueError):
             return False
         if max_sec == 0:
