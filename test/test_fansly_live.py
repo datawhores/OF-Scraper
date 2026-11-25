@@ -1310,6 +1310,100 @@ def test_fansly_auto_fallback_asks_for_the_following_list_again_after_a_failure(
     assert channel_calls == ["creator_b"]
 
 
+def fast_watcher(base):
+    """``base`` (LiveWatcher) polling every 10 ms, for watch-mode tests."""
+
+    class Fast(base):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(fetch_online, record, max_concurrent=kwargs.get("max_concurrent", 2),
+                             interval=0.01, jitter=0, once=kwargs.get("once", False))
+
+    return Fast
+
+
+def test_fansly_a_name_the_lookup_missed_is_looked_up_again(monkeypatch, fansly_settings):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=("creator_c",), username_search=None)
+    lookups = []
+
+    async def fake_by_username(c, usernames):
+        lookups.append(list(usernames))
+        # empty the first time (a one-off), found after that
+        return [] if len(lookups) == 1 else [{"id": CREATOR_C[0], "username": CREATOR_C[1]}]
+
+    async def fake_following_ids(c, user_id):
+        return [CREATOR_A[0]]
+
+    import ofscraper.utils.me as me_util
+
+    monkeypatch.setattr(me_util, "get_id", lambda: "999", raising=False)
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    monkeypatch.setattr(fansly_api, "following_ids", fake_following_ids)
+    polls, channel_calls = 0, []
+    stop = asyncio.Event()
+
+    def online(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 4:
+            stop.set()
+        return online_response(CREATOR_A)
+
+    def channel_c(url):
+        channel_calls.append(1)
+        return channel_response(CREATOR_C[0], "", status=0)
+
+    install_session(monkeypatch, FakeClient({
+        live_api.ONLINE_URL: online,
+        live_api.channel_url(CREATOR_C[0]): channel_c,
+    }))
+    monkeypatch.setattr(live, "LiveWatcher", fast_watcher(live.LiveWatcher))
+    asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+    assert len(lookups) == 2  # missed once, found on the next poll, then cached
+    assert channel_calls  # and checked once found
+
+
+def test_fansly_a_creator_the_filter_lookup_missed_is_checked_again(monkeypatch, fansly_settings):
+    from ofscraper.managers.model import ModelManager
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=None, promo=False)
+    lookups = []
+
+    async def fake_by_username(c, usernames):
+        lookups.append(list(usernames))
+        return [] if len(lookups) == 1 else [{"id": CREATOR_A[0], "username": CREATOR_A[1]}]
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    monkeypatch.setattr(ModelManager, "filter_models", lambda self, models: list(models))
+    polls = 0
+    stop = asyncio.Event()
+
+    def online(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 3:
+            stop.set()
+        return online_response(CREATOR_A)
+
+    install_session(monkeypatch, FakeClient({live_api.ONLINE_URL: online}))
+    recorded = []
+
+    class FakeRecorder:
+        def __init__(self, stream, *args, **kwargs):
+            self.stream = stream
+
+        async def run(self, stop_event):
+            recorded.append(self.stream["username"])
+            await stop_event.wait()
+
+    monkeypatch.setattr(live, "LiveRecorder", FakeRecorder)
+    monkeypatch.setattr(live, "LiveWatcher", fast_watcher(live.LiveWatcher))
+    asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+    assert recorded == ["creator_a"]
+
+
 def test_a_failed_channel_check_keeps_the_other_live_creators(monkeypatch, fansly_settings, caplog):
     from ofscraper.sites.fansly import api as fansly_api
 

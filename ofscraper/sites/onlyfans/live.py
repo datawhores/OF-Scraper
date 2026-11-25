@@ -174,6 +174,8 @@ async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has
     # it as it was, so the next poll looks up everything again
     import ofscraper.utils.settings as settings
 
+    cache["poll"] = poll = cache.get("poll", 0) + 1
+    misses = cache.setdefault("misses", {})
     if "targets" not in cache or cache["unresolved"] is None:
         targets, initial_live, unresolved = await _resolve_target_creators(
             usernames, excluded, all_users=all_users, has_filters=has_filters
@@ -183,10 +185,15 @@ async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has
         if unresolved and getattr(settings.get_settings(), "blacklist", None):
             more, more_live, unresolved = await _look_up_names(unresolved, excluded, has_filters, cache)
             targets, initial_live = targets + more, initial_live | more_live
+        shared.count_misses(misses, unresolved or [], unresolved or [])
     elif cache["unresolved"]:
-        targets, initial_live, unresolved = await _look_up_names(
-            cache["unresolved"], excluded, has_filters, cache
-        )
+        # a name that keeps missing (a typo, a deleted account) is asked less often
+        due = [n for n in cache["unresolved"] if shared.lookup_due(misses, n, poll)]
+        if not due:
+            return set()
+        targets, initial_live, missing = await _look_up_names(due, excluded, has_filters, cache)
+        shared.count_misses(misses, due, missing)
+        unresolved = [n for n in cache["unresolved"] if n not in due] + missing
     else:
         return set()
 

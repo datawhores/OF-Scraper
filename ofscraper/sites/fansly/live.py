@@ -600,6 +600,24 @@ def warn_streak(streaks: dict, key: str, message: str = None) -> None:
     streaks[key] = bool(message)
 
 
+def lookup_due(misses: dict, name: str, poll: int) -> bool:
+    """Whether to look up a name the lookups missed again on this poll: on
+    every poll for its first 3 misses, then on every 10th poll."""
+    return misses.get(name, 0) < 3 or poll % 10 == 0
+
+
+def count_misses(misses: dict, tried, missing) -> None:
+    """Record a lookup of the ``tried`` names: ``missing`` ones get one more
+    miss, found ones are forgotten. A name reaching 3 misses is warned about once."""
+    for name in tried:
+        if name not in missing:
+            misses.pop(name, None)
+            continue
+        misses[name] = misses.get(name, 0) + 1
+        if misses[name] == 3:
+            log.warning(f"Still can't look up {name} for livestreams; trying again every 10th check")
+
+
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
@@ -768,6 +786,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
         announced_live_ids = set()
         announced_no_targets = False
         streaks = {}
+        lookups = {"poll": 0, "misses": {}}
         resolved_cache = {}
         unfollowed_cache = {}
         filtered_cache = {}
@@ -789,12 +808,19 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             return following_set
 
         async def _resolve_fansly_targets(names, unfollowed_only: bool = False):
-            unresolved = [u for u in names if u and str(u).lower() not in resolved_cache]
+            # a name the lookup didn't return isn't cached: it is asked again,
+            # less often once it keeps missing
+            unresolved = [
+                u for u in names
+                if u and str(u).lower() not in resolved_cache
+                and lookup_due(lookups["misses"], str(u).lower(), lookups["poll"])
+            ]
             if unresolved:
                 models = [
                     Model(m)
                     for m in await fansly_scrape.get_models(unresolved, c=c)
                 ]
+                returned = {k for m in models for k in (m.name.lower(), str(m.id))}
                 if opts["has_filters"] and models:
                     mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
                     models = mm.filter_models(models)
@@ -803,12 +829,17 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     target = {"accountId": str(m.id), "username": m.name}
                     by_key[m.name.lower()] = target
                     by_key[str(m.id)] = target
-                for u in unresolved:
-                    key = str(u).lower()
-                    resolved_cache[key] = by_key.get(key)
+                keys = [str(u).lower() for u in unresolved]
+                for key in keys:
+                    if key in returned:
+                        resolved_cache[key] = by_key.get(key)
+                count_misses(lookups["misses"], keys, [k for k in keys if k not in returned])
 
             if unfollowed_only:
-                pending = [u for u in names if u and str(u).lower() not in unfollowed_cache]
+                pending = [
+                    u for u in names
+                    if u and str(u).lower() not in unfollowed_cache and str(u).lower() in resolved_cache
+                ]
                 followed = await _get_following_set() if pending else None
                 # without the following list this poll checks them all, and
                 # the list is asked for again next poll
@@ -893,6 +924,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
 
         async def fetch_online():
             nonlocal announced_no_targets
+            lookups["poll"] += 1
             usernames = opts["usernames"]
             name_list = [usernames] if isinstance(usernames, str) else list(usernames or [])
             search_mode = opts["username_search"]
@@ -946,9 +978,13 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         ]
                         mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
                         allowed_ids = {str(m.id) for m in mm.filter_models(models)}
+                        returned = {str(m.id) for m in models}
+                        # an account the lookup didn't return is left out this
+                        # poll only, not for the session
                         for s in unchecked:
                             aid = str(s["accountId"])
-                            filtered_cache[aid] = aid in allowed_ids
+                            if aid in returned:
+                                filtered_cache[aid] = aid in allowed_ids
                     selected = [
                         s for s in selected if filtered_cache.get(str(s["accountId"]), False)
                     ]

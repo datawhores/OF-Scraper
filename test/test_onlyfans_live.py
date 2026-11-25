@@ -961,6 +961,37 @@ def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
     assert "Could not look up" not in caplog.text
 
 
+def test_a_name_that_keeps_missing_is_looked_up_less_often(monkeypatch, onlyfans_settings, caplog):
+    import ofscraper.data.api.subscriptions.individual as individual
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a", "no_such_name"], username_search="individual")
+
+    async def fake_get_models():
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+
+    looked_up = []
+
+    async def fake_individual(accounts=None):
+        looked_up.append(list(accounts))
+        return []
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(individual, "get_subscription", fake_individual)
+    token = live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            for _ in range(25):
+                asyncio.run(live.get_online_streams(Client(Response(200, {})),
+                                                    checks=Client(Response(200, {"isActive": False}))))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    # three misses in a row (the first lookup and two more), then every 10th poll
+    assert len(looked_up) == 4
+    assert caplog.text.count("every 10th check") == 1
+
+
 def test_a_lookup_that_raised_is_tried_again_next_poll(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model
