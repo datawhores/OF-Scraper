@@ -483,8 +483,11 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 auth = auth_file.read_auth()
                 proxy = _session_proxy(c)
                 try:
-                    log.info(f"Recording OnlyFans livestream for {username} -> {out}")
-                    await record_in_thread(
+                    # capture says when it really starts recording: a page
+                    # with nothing to record (a ticketed stream, the login
+                    # page) shouldn't announce a recording every poll
+                    log.debug(f"Recording OnlyFans livestream for {username} -> {out}")
+                    saved = await record_in_thread(
                         live_capture.capture,
                         stop_event,
                         username=username,
@@ -494,7 +497,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                         ffmpeg=ffmpeg,
                         proxy=proxy,
                     )
-                    log.info(f"Finished OnlyFans livestream recording for {username}")
+                    (log.info if saved else log.debug)(f"Finished OnlyFans livestream recording for {username}")
                 except live_capture.BrowserMissing as e:
                     if not warned:
                         warned.append(True)

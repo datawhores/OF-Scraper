@@ -1251,6 +1251,27 @@ def test_concurrent_individual_checks_respect_env_concurrency_and_stream_url(
         of_env.get_all_configs(forced=True)
 
 
+def test_a_recording_is_announced_only_when_something_was_captured(monkeypatch, onlyfans_settings, caplog):
+    onlyfans_settings(live=True)
+    install_session(monkeypatch, Client(Response(404)))
+
+    async def online(c, checks=None):
+        return [{"accountId": 1, "username": "creator_a"}, {"accountId": 2, "username": "creator_b"}]
+
+    def capture(username, out, **kwargs):
+        # creator_b's page showed nothing to record (a ticketed stream, the login page)
+        return out if username == "creator_a" else None
+
+    monkeypatch.setattr(live, "get_online_streams", online)
+    monkeypatch.setattr(live_capture, "playwright_ready", lambda: True)
+    monkeypatch.setattr(live_capture, "capture", capture)
+    with caplog.at_level("DEBUG", logger="shared"):
+        asyncio.run(live.run(False, asyncio.Event()))
+    info = [r.getMessage() for r in caplog.records if r.levelname == "INFO" and "OnlyFans livestream" in r.getMessage()]
+    assert any("creator_a" in m for m in info)
+    assert not any("creator_b" in m for m in info)
+
+
 def test_idle_and_live_status_logs_announce_transitions_once(monkeypatch, onlyfans_settings, caplog):
     onlyfans_settings(live_watch=True, live_interval=10, usernames=["creator_a"])
     install_session(monkeypatch, Client(Response(404)))
