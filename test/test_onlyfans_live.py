@@ -816,6 +816,32 @@ def test_failed_live_checks_warn_once_per_failure_streak(monkeypatch, onlyfans_s
     assert len(warnings) == 2  # once per streak of failed checks
 
 
+def test_a_lookup_that_raised_is_tried_again_next_poll(monkeypatch, onlyfans_settings):
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a"], username_search="individual")
+    calls = []
+
+    async def fake_get_models():
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("lookup failed")
+        return [Model({"id": 1, "username": "creator_a", "hasStream": True})]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    checks = Client(Response(200, {"isActive": True}))
+    token = live._TARGET_CACHE.set({})
+    try:
+        with pytest.raises(RuntimeError):
+            asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+        second = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert second == [{"accountId": 1, "username": "creator_a"}]
+    assert len(calls) == 2
+
+
 def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onlyfans_settings):
     import ofscraper.data.api.subscriptions.subscriptions as subs
     import ofscraper.data.models.utils.retriver as retriver

@@ -151,8 +151,9 @@ async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has
     first poll, then on later polls the ones a failed lookup left out, so one
     failure doesn't leave a creator unwatched all session. Returns the ids the
     lookup saw live."""
+    # the cache is filled only after a lookup succeeds: one that raised leaves
+    # it as it was, so the next poll looks up everything again
     if "targets" not in cache:
-        cache["targets"] = {}
         models, names = None, usernames
     elif cache["unresolved"] is None:
         models, names = None, usernames
@@ -168,7 +169,7 @@ async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has
     targets, initial_live, unresolved = await _resolve_target_creators(
         names, excluded, all_users=all_users, has_filters=has_filters, models=models
     )
-    cache["targets"].update({t["accountId"]: t for t in targets})
+    cache.setdefault("targets", {}).update({t["accountId"]: t for t in targets})
     cache["unresolved"] = unresolved
     if unresolved is None or unresolved:
         missing = "the creator list" if unresolved is None else ", ".join(map(str, unresolved))
