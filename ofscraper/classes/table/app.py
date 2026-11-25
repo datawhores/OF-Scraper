@@ -1230,7 +1230,7 @@ class InputApp(App):
             elif ele == "other_posts_with_media":
                 width = 22
             else:
-                width = max(10, header_width)
+                width = max(18, header_width)
 
             if str(ele) == self._sortkey:
                 arrow_char = " ▼" if self._reverse else " ▲"
@@ -1446,7 +1446,7 @@ class InputApp(App):
         for ele in self.visible_post_cols:
             base_label = self._two_line_header(re.sub("_", " ", ele).title())
             header_width = max(len(line) for line in base_label.splitlines()) + 4
-            width = 45 if ele == "text" else max(10, header_width)
+            width = 45 if ele == "text" else max(16, header_width)
             if str(ele) == self._post_sortkey:
                 arrow_char = " ▼" if self._post_reverse else " ▲"
                 label = f"{base_label}{arrow_char}"
