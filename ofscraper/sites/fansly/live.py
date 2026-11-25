@@ -760,6 +760,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
         announced_live_ids = set()
         announced_no_targets = False
         poll_failed = False
+        checks_failed = False
         resolved_cache = {}
         unfollowed_cache = {}
         filtered_cache = {}
@@ -849,9 +850,17 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 *(check_one(t) for t in targets),
                 return_exceptions=True,
             )
-            for r in results:
-                if isinstance(r, Exception):
-                    raise r
+            # a failed check skips that creator only, not the creators already
+            # found live; it warns once until the checks work again
+            nonlocal checks_failed
+            failed = [(t, r) for t, r in zip(targets, results) if isinstance(r, Exception)]
+            for target, error in failed:
+                log.debug(f"Fansly: live check for {target['username']} failed: {error}")
+            if failed and not checks_failed:
+                log.warning(
+                    f"Fansly: live check failed for {len(failed)} creator(s): {failed[0][1]}"
+                )
+            checks_failed = bool(failed)
             return [r for r in results if isinstance(r, dict)]
 
         def _log_poll_state(selected):

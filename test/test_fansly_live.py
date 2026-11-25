@@ -1319,6 +1319,46 @@ def test_fansly_auto_fallback_asks_for_the_following_list_again_after_a_failure(
     assert channel_calls == ["creator_b"]
 
 
+def test_a_failed_channel_check_keeps_the_other_live_creators(monkeypatch, fansly_settings, caplog):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live=True, usernames=("creator_a", "creator_c"), username_search=None)
+
+    async def fake_by_username(c, usernames):
+        return [{"id": CREATOR_C[0], "username": CREATOR_C[1]}]
+
+    async def fake_following_ids(c, user_id):
+        return [CREATOR_A[0]]  # creator_c isn't followed, so its channel is asked
+
+    import ofscraper.utils.me as me_util
+
+    monkeypatch.setattr(me_util, "get_id", lambda: "999", raising=False)
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    monkeypatch.setattr(fansly_api, "following_ids", fake_following_ids)
+
+    def channel_c(url):
+        raise RuntimeError("channel check failed")
+
+    install_session(monkeypatch, FakeClient({
+        live_api.ONLINE_URL: online_response(CREATOR_A),
+        live_api.channel_url(CREATOR_C[0]): channel_c,
+    }))
+    recorded = []
+
+    class FakeRecorder:
+        def __init__(self, stream, *args, **kwargs):
+            self.stream = stream
+
+        async def run(self, stop_event):
+            recorded.append(self.stream["username"])
+
+    monkeypatch.setattr(live, "LiveRecorder", FakeRecorder)
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(live.run(watch=False))
+    assert recorded == ["creator_a"]
+    assert "live check failed for 1 creator(s): channel check failed" in caplog.text
+
+
 def test_fansly_auto_fallback_skips_channel_polls_for_followed_offline_creators(
     monkeypatch, fansly_settings
 ):
