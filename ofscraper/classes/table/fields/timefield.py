@@ -1,4 +1,3 @@
-import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
