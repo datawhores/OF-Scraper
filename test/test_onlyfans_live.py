@@ -816,6 +816,53 @@ def test_failed_live_checks_warn_once_per_failure_streak(monkeypatch, onlyfans_s
     assert len(warnings) == 2  # once per streak of failed checks
 
 
+def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
+    monkeypatch, onlyfans_settings, caplog
+):
+    import ofscraper.data.api.subscriptions.individual as individual
+    import ofscraper.data.api.subscriptions.lists as lists
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a", "creator_b"],
+                      username_search="list", blacklist=["blocked"])
+
+    async def fake_get_models():  # the list lookup drops creator_b: it's on the black list
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+
+    looked_up = []
+
+    async def fake_individual(accounts=None):
+        looked_up.append(list(accounts))
+        return [{"id": 2, "username": "creator_b", "hasStream": True, "looked_up_as": ["creator_b"]}]
+
+    async def fake_blacklist():
+        return {2}
+
+    async def fake_active(c):
+        yield [{"id": 1, "username": "creator_a", "hasStream": False},
+               {"id": 2, "username": "creator_b", "hasStream": True}]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(individual, "get_subscription", fake_individual)
+    monkeypatch.setattr(lists, "get_blacklist", fake_blacklist)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    install_session(monkeypatch, Client(Response(200, {})),
+                    model_manager=SimpleNamespace(filter_models=lambda models: list(models)))
+    token = live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            results = [asyncio.run(live.get_online_streams(Client(Response(200, {})),
+                                                           checks=Client(Response(200, {}))))
+                       for _ in range(3)]
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert results == [[], [], []]
+    assert len(looked_up) <= 1
+    assert "Could not look up" not in caplog.text
+
+
 def test_a_lookup_that_raised_is_tried_again_next_poll(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model

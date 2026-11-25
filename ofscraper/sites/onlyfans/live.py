@@ -146,6 +146,25 @@ async def _resolve_target_creators(usernames, excluded, all_users: bool, has_fil
     return targets, initially_live, unresolved
 
 
+async def _look_up_names(names, excluded, has_filters: bool, cache: dict):
+    """Look up -u names one by one, returning (targets, initially_live_ids,
+    unresolved). A creator on a ``--black-list`` list counts as found and left
+    out, not as missing."""
+    import ofscraper.data.api.subscriptions.individual as individual
+    import ofscraper.data.api.subscriptions.lists as lists
+    from ofscraper.classes.of.models import Model
+
+    found = [Model(x) for x in await individual.get_subscription(list(names))]
+    _, unresolved = username_match.select_models(found, names)
+    if "blacklist_ids" not in cache:
+        cache["blacklist_ids"] = set(await lists.get_blacklist())
+    kept = [m for m in found if m.id not in cache["blacklist_ids"]]
+    targets, initial_live, _ = await _resolve_target_creators(
+        names, excluded, all_users=False, has_filters=has_filters, models=kept
+    )
+    return targets, initial_live, unresolved
+
+
 async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has_filters: bool) -> set:
     """Look up the target creators into ``cache["targets"]``: all of them on the
     first poll, then on later polls the ones a failed lookup left out, so one
@@ -153,22 +172,24 @@ async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has
     lookup saw live."""
     # the cache is filled only after a lookup succeeds: one that raised leaves
     # it as it was, so the next poll looks up everything again
-    if "targets" not in cache:
-        models, names = None, usernames
-    elif cache["unresolved"] is None:
-        models, names = None, usernames
-    elif cache["unresolved"]:
-        import ofscraper.data.api.subscriptions.individual as individual
-        from ofscraper.classes.of.models import Model
+    import ofscraper.utils.settings as settings
 
-        names = cache["unresolved"]
-        models = [Model(x) for x in await individual.get_subscription(names)]
+    if "targets" not in cache or cache["unresolved"] is None:
+        targets, initial_live, unresolved = await _resolve_target_creators(
+            usernames, excluded, all_users=all_users, has_filters=has_filters
+        )
+        # the list lookup drops creators on a --black-list list, so a named one
+        # would look missing: look those names up to tell the two apart
+        if unresolved and getattr(settings.get_settings(), "blacklist", None):
+            more, more_live, unresolved = await _look_up_names(unresolved, excluded, has_filters, cache)
+            targets, initial_live = targets + more, initial_live | more_live
+    elif cache["unresolved"]:
+        targets, initial_live, unresolved = await _look_up_names(
+            cache["unresolved"], excluded, has_filters, cache
+        )
     else:
         return set()
 
-    targets, initial_live, unresolved = await _resolve_target_creators(
-        names, excluded, all_users=all_users, has_filters=has_filters, models=models
-    )
     cache.setdefault("targets", {}).update({t["accountId"]: t for t in targets})
     cache["unresolved"] = unresolved
     if unresolved is None or unresolved:
