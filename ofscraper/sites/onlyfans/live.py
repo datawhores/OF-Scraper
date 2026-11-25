@@ -129,10 +129,12 @@ async def _fetch_models(c, cache: dict, names=None) -> list:
 
     if names is not None:
         return [Model(x) for x in await individual.get_subscription(list(names))]
-    own = ModelManager.user_lists() - ModelManager.built_in_lists("RESERVED", "ACTIVE", "EXPIRED")
-    members = await _list_members(own)
-    cache["named_ids"] = {u.get("id") for u in members}
-    found = await subscriptions.activeHelper(None, c) + await subscriptions.expiredHelper(None, c)
+    chosen = ModelManager.user_lists()
+    members = await _list_members(chosen - ModelManager.built_in_lists("RESERVED", "ACTIVE", "EXPIRED"))
+    expired = await subscriptions.expiredHelper(None, c)
+    named = members + (expired if chosen & ModelManager.built_in_lists("EXPIRED") else [])
+    cache["named_ids"] = {u.get("id") for u in named}
+    found = await subscriptions.activeHelper(None, c) + expired
     return [Model(x) for x in found + members]
 
 
@@ -293,12 +295,11 @@ def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, li
     list (expired, or only on a user list) that were chosen by name, at most
     LIVE_INDIVIDUAL_MAX of them, taking turns across polls.
 
-    Chosen by name: every target with -u; without it, the members of an
-    explicit --user-list (not the default lists). Other filters choose from
-    the subscriptions, so only active subscriptions are watched then. A failed
-    scan (no pages) says nothing about who is missing, so nobody is asked."""
-    if not pages:
-        return []
+    Chosen by name: every target with -u; without it, the members of the
+    user's own lists chosen with --user-list, and the expired subscriptions
+    with --user-list expired. Other filters choose from the subscriptions, so
+    only active subscriptions are watched then. Empty ``pages`` is an account
+    with no active subscriptions: a failed read raises before this."""
     named = cache.get("named_ids", set()) if all_users else set(targets)
     if all_users and not named and not cache.get("told"):
         cache["told"] = True
@@ -357,7 +358,8 @@ async def get_online_streams(c, checks=None) -> list:
 
     # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
     if list_mode or len(targets) > _individual_max():
-        pages = [page async for page in scrape_subscriptions_active(c)]
+        # a failed read fails the poll: it would look like nobody is subscribed
+        pages = [page async for page in scrape_subscriptions_active(c, strict=True)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
         direct = _direct_targets(cache, all_users, targets, pages, live_ids)
         live_ids |= {

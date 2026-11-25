@@ -493,11 +493,12 @@ def test_the_install_hint_is_logged_once(monkeypatch, onlyfans_settings, caplog)
 
 # ------------------------------------------------------------------ search, caching & logging
 
-def serve_models(monkeypatch, fake_get_models, by_name=None, lists=None):
+def serve_models(monkeypatch, fake_get_models, by_name=None, lists=None, expired=()):
     """Answer the creator lookups from ``fake_get_models``: the subscription
     list read (each one an active subscription) and, unless ``by_name`` answers
     them, the lookups of -u names one by one. ``lists`` maps a list name to its
-    members. The scraper's retriever, with its screen, must not run."""
+    members; ``expired`` are the expired subscriptions. The scraper's
+    retriever, with its screen, must not run."""
     import ofscraper.data.api.subscriptions.individual as individual
     import ofscraper.data.api.subscriptions.subscriptions as subs
     from ofscraper.data.models.utils import retriver
@@ -505,8 +506,8 @@ def serve_models(monkeypatch, fake_get_models, by_name=None, lists=None):
     async def listed(*_):
         return [m.model for m in await fake_get_models()]
 
-    async def nothing(*_):
-        return []
+    async def expired_subs(*_):
+        return list(expired)
 
     async def members(names):
         return [u for n in names or () for u in (lists or {}).get(n, [])]
@@ -515,7 +516,7 @@ def serve_models(monkeypatch, fake_get_models, by_name=None, lists=None):
         pytest.fail("the live watcher must not run the scraper's retriever")
 
     monkeypatch.setattr(subs, "activeHelper", listed)
-    monkeypatch.setattr(subs, "expiredHelper", nothing)
+    monkeypatch.setattr(subs, "expiredHelper", expired_subs)
     monkeypatch.setattr(individual, "get_subscription", by_name or listed)
     monkeypatch.setattr(live, "_list_members", members)
     monkeypatch.setattr(retriver, "get_models", no_retriever)
@@ -528,7 +529,7 @@ def test_without_username_and_filters_it_scans_active_subscriptions(monkeypatch,
     onlyfans_settings(live=True, usernames=None, excluded_username=None)
     used = []
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         used.append("active_subs")
         yield [
             {"id": 1, "username": "creator_a", "hasStream": True},
@@ -602,7 +603,7 @@ def test_with_username_list_search_uses_batch_subscriptions_across_polls(
             Model({"id": 2, "username": "creator_b", "hasStream": True}),
         ]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         batch_calls.append(1)
         yield [
             {"id": 1, "username": "creator_a", "hasStream": True},
@@ -669,7 +670,7 @@ def test_a_skip_flag_counts_as_a_user_filter(monkeypatch, onlyfans_settings):
         resolved.append(1)
         return [Model({"id": 1, "username": "creator_a", "hasStream": True})]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield [{"id": 2, "username": "creator_b", "hasStream": True}]
 
     serve_models(monkeypatch, fake_get_models)
@@ -743,7 +744,7 @@ def test_a_creator_not_found_at_first_is_looked_up_again(
             return [m.model for m in await fake_get_models()]
         return [{"id": 2, "username": "creator_b", "hasStream": True, "looked_up_as": ["creator_b"]}]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield [{"id": 2, "username": "creator_b", "hasStream": True}]
 
     serve_models(monkeypatch, fake_get_models, by_name=fake_individual)
@@ -776,7 +777,7 @@ def test_list_targets_missing_from_active_subscriptions_are_asked_directly(
         return [Model({"id": 1, "username": "creator_a", "hasStream": False}),
                 Model({"id": 2, "username": "creator_b", "hasStream": False})]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield [{"id": 2, "username": "creator_b", "hasStream": False}]
 
     serve_models(monkeypatch, fake_get_models)
@@ -804,7 +805,7 @@ def test_many_named_creators_are_checked_from_the_subscription_list(monkeypatch,
 
     scans = []
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         scans.append(1)
         yield [{"id": 1, "username": "creator_a", "hasStream": False},
                {"id": 2, "username": "creator_b", "hasStream": True},
@@ -847,23 +848,29 @@ def test_failed_live_checks_warn_once_per_failure_streak(monkeypatch, onlyfans_s
     assert len(warnings) == 2  # once per streak of failed checks
 
 
-def _direct_check_run(monkeypatch, onlyfans_settings, active_pages, polls=3, members=None, most=None, **values):
-    """Poll a few times over 3 creators missing from the active list; returns
-    the usernames asked directly on each poll."""
+def _direct_check_run(monkeypatch, onlyfans_settings, active_pages, polls=3, members=None, most=None,
+                      expired=False, **values):
+    """Poll a few times over 3 creators missing from the active list (expired
+    subscriptions with ``expired``); returns the usernames asked directly on
+    each poll. ``active_pages`` None: reading the active list fails."""
     import ofscraper.data.api.subscriptions.subscriptions as subs
     from ofscraper.classes.of.models import Model
 
     onlyfans_settings(live_watch=True, **values)
+    creators = [Model({"id": i, "username": f"creator_{i}", "hasStream": False}) for i in (1, 2, 3)]
 
     async def fake_get_models():
-        return [Model({"id": i, "username": f"creator_{i}", "hasStream": False}) for i in (1, 2, 3)]
+        return [] if expired else creators
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
+        if active_pages is None:
+            raise RuntimeError("active subscriptions: HTTP 500")
         for page in active_pages:
             yield page
 
     on_list = [{"id": i, "username": f"creator_{i}"} for i in (members or [])]
-    serve_models(monkeypatch, fake_get_models, lists={n: on_list for n in values.get("userlist") or []})
+    serve_models(monkeypatch, fake_get_models, lists={n: on_list for n in values.get("userlist") or []},
+                 expired=[m.model for m in creators] if expired else ())
     monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
     if most is not None:
         real_getattr = of_env.getattr
@@ -876,7 +883,10 @@ def _direct_check_run(monkeypatch, onlyfans_settings, active_pages, polls=3, mem
     try:
         for _ in range(polls):
             checks = Client(Response(200, {"isActive": False}))
-            asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+            try:
+                asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+            except RuntimeError:
+                pass  # a failed poll: the watcher warns and polls again later
             asked.append(sorted(u.split("/users/")[1].split("/")[0] for u in checks.urls))
     finally:
         live._TARGET_CACHE.reset(token)
@@ -897,7 +907,7 @@ def test_the_first_list_poll_asks_named_creators_missing_from_active_subscriptio
     async def fake_get_models():  # an expired subscription; its record has no hasStream
         return [Model({"id": 1, "username": "creator_a"})]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield [{"id": 99, "username": "creator_99", "hasStream": False}]
 
     serve_models(monkeypatch, fake_get_models)
@@ -931,9 +941,32 @@ def test_direct_checks_take_turns_above_the_cap(monkeypatch, onlyfans_settings):
 
 
 def test_a_failed_active_scan_asks_nobody_directly(monkeypatch, onlyfans_settings):
+    asked = _direct_check_run(monkeypatch, onlyfans_settings, None,
+                              usernames=["creator_1", "creator_2", "creator_3"], username_search="list")
+    assert asked == [[], [], []]
+
+
+def test_with_no_active_subscriptions_named_creators_are_still_asked(monkeypatch, onlyfans_settings):
+    # an account with only expired subscriptions: the active list is read fine and empty
     asked = _direct_check_run(monkeypatch, onlyfans_settings, [],
                               usernames=["creator_1", "creator_2", "creator_3"], username_search="list")
-    assert asked[1:] == [[], []]
+    assert asked == [["creator_1", "creator_2", "creator_3"]] * 3
+
+
+def test_with_the_expired_list_expired_subscriptions_are_asked(monkeypatch, onlyfans_settings):
+    asked = _direct_check_run(monkeypatch, onlyfans_settings, [], expired=True, userlist=["expired"])
+    assert asked == [["creator_1", "creator_2", "creator_3"]] * 3
+
+
+def test_the_active_list_is_read_strictly(monkeypatch):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+
+    async def scan(strict):
+        return [page async for page in subs.scrape_subscriptions_active(Client(Response(500)), strict=strict)]
+
+    assert asyncio.run(scan(False)) == []  # the scraper's read ends quietly
+    with pytest.raises(Exception):
+        asyncio.run(scan(True))
 
 
 def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
@@ -955,7 +988,7 @@ def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
         looked_up.append(list(accounts))
         return [{"id": 2, "username": "creator_b", "hasStream": True, "looked_up_as": ["creator_b"]}]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield [{"id": 1, "username": "creator_a", "hasStream": False},
                {"id": 2, "username": "creator_b", "hasStream": True}]
 
@@ -1043,7 +1076,7 @@ def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onl
         calls.append(1)
         return answers[len(calls) - 1]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         yield []
 
     serve_models(monkeypatch, fake_get_models)
@@ -1136,7 +1169,7 @@ def test_all_with_user_filters_caches_targets_and_uses_batch_subscriptions(
     def fake_filter_models(self, models):
         return [m for m in models if m.id == 1]
 
-    async def fake_active(c):
+    async def fake_active(c, strict=False):
         batch_calls.append(1)
         yield [
             {"id": 1, "username": "creator_a", "hasStream": True},

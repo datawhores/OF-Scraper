@@ -170,10 +170,11 @@ def _subscription_page_step(url, count):
     return step if step > 0 else count
 
 
-async def scrape_subscriptions_active(c, offset=0):
+async def scrape_subscriptions_active(c, offset=0, strict=False):
     """
     Async Generator Worker Loop for active subscriptions.
-    Yields batches page-by-page.
+    Yields batches page-by-page. With ``strict``, a failed request raises
+    instead of ending the list, so an empty list and a failed one differ.
     """
     current_offset = offset
     empty_pages = 0
@@ -184,6 +185,8 @@ async def scrape_subscriptions_active(c, offset=0):
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Subscription API Error: {r.status}")
+                    if strict:
+                        raise RuntimeError(f"active subscriptions: HTTP {r.status}")
                     break
 
                 response = await r.json_()
@@ -213,8 +216,12 @@ async def scrape_subscriptions_active(c, offset=0):
 
         except asyncio.TimeoutError:
             log.debug(f"Task timed out {url}")
+            if strict:
+                raise
             break
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
