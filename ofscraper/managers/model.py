@@ -67,6 +67,9 @@ class ModelManager:
         "renewal",
     )
 
+    # on/off flags (--promo-only/--promo-skip and so on): False is a filter too
+    TRISTATE_FILTERS = ("last_seen", "free_trial", "promo", "all_promo", "sub_status", "renewal")
+
     DEFAULT_LISTS = {"main", "ofscraper.main", "active", "ofscraper.active"}
 
     # =========================================================================
@@ -295,6 +298,9 @@ class ModelManager:
                     return True
             elif attr == "blacklist":
                 if any(str(x).strip() for x in (value or [])):
+                    return True
+            elif attr in cls.TRISTATE_FILTERS:
+                if value is not None:
                     return True
             elif value not in (None, False, "", [], ()):
                 return True

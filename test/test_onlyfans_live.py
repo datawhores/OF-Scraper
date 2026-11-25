@@ -629,6 +629,63 @@ def test_a_renamed_creator_is_found_by_the_old_name(monkeypatch, onlyfans_settin
     assert recorded == ["creator_new"]
 
 
+def test_a_skip_flag_counts_as_a_user_filter(monkeypatch, onlyfans_settings):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    # --promo-skip sets promo to False, which is a filter, not "no filter"
+    onlyfans_settings(live_watch=True, usernames=None, promo=False)
+    resolved = []
+
+    async def fake_get_models():
+        resolved.append(1)
+        return [Model({"id": 1, "username": "creator_a", "hasStream": True})]
+
+    async def fake_active(c):
+        yield [{"id": 2, "username": "creator_b", "hasStream": True}]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    install_session(monkeypatch, Client(Response(200, {})),
+                    model_manager=SimpleNamespace(filter_models=lambda models: list(models)))
+    token = live._TARGET_CACHE.set({})
+    try:
+        asyncio.run(live.get_online_streams(Client(Response(200, {}))))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert resolved == [1]
+
+
+def test_renew_off_filters_the_named_creators(monkeypatch, onlyfans_settings):
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live=True, usernames=["creator_a", "creator_b"],
+                      username_search="individual", renewal=False)
+
+    async def fake_get_models():
+        return [Model({"id": 1, "username": "creator_a", "hasStream": True}),
+                Model({"id": 2, "username": "creator_b", "hasStream": True})]
+
+    filtered = []
+
+    def filter_models(models):
+        filtered.append([m.name for m in models])
+        return [m for m in models if m.name == "creator_a"]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    install_session(monkeypatch, Client(Response(200, {})),
+                    model_manager=SimpleNamespace(filter_models=filter_models))
+    token = live._TARGET_CACHE.set({})
+    try:
+        result = asyncio.run(live.get_online_streams(Client(Response(200, {}))))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert filtered == [["creator_a", "creator_b"]]
+    assert result == [{"accountId": 1, "username": "creator_a"}]
+
+
 def test_target_creators_are_resolved_once_across_watch_polls(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model
