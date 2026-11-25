@@ -95,3 +95,15 @@ class ResponseField(SelectField):
             self.query_one(SelectionList).select(self._streams)
         elif val == "Messages":
             self.query_one(SelectionList).select(self._messages)
+
+    def compare(self, value):
+        normalized = str(value or "").strip().capitalize()
+        aliases = {
+            "Stream": "Streams",
+            "Message": "Messages",
+            "Highlight": "Highlights",
+            "Story": "Stories",
+        }
+        normalized = aliases.get(normalized, normalized)
+        return normalized in self.query_one(SelectionList).selected
+

@@ -84,35 +84,39 @@ class TimeField(Container):
         for ele in self.query(IntegerInput):
             ele.value = ""
 
-    def compare(self, value):
-        max_val = arrow.get(
-            "{hour}:{minute}:{second}".format(
-                hour=self.query_one("#max_hour").value or 0,
-                minute=self.query_one("#max_minute").value or 0,
-                second=self.query_one("#max_second").value or 0,
-            ),
-            ["h:m:s"],
-        )
-        min_val = arrow.get(
-            "{hour}:{minute}:{second}".format(
-                hour=self.query_one("#min_hour").value or 0,
-                minute=self.query_one("#min_minute").value or 0,
-                second=self.query_one("#min_second").value or 0,
-            ),
-            ["h:m:s"],
-        )
-        compare_value = arrow.get(
-            "0:0:0" if value in {"N\\A", "N/A"} else value, ["h:m:s"]
-        )
+    @staticmethod
+    def _hms_to_seconds(value) -> int:
+        if value in (None, "", "N\\A", "N/A"):
+            return 0
+        parts = [int(p) for p in str(value).split(":")]
+        if len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        if len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+        return parts[0]
 
-        if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):
+    def compare(self, value):
+        min_sec = (
+            int(self.query_one("#min_hour").value or 0) * 3600
+            + int(self.query_one("#min_minute").value or 0) * 60
+            + int(self.query_one("#min_second").value or 0)
+        )
+        max_sec = (
+            int(self.query_one("#max_hour").value or 0) * 3600
+            + int(self.query_one("#max_minute").value or 0) * 60
+            + int(self.query_one("#max_second").value or 0)
+        )
+        if min_sec == 0 and max_sec == 0:
             return True
-        elif max_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value >= min_val
-        elif min_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value <= max_val
-        else:
-            return compare_value.is_between(min_val, max_val, bounds="[]")
+        try:
+            cur_sec = self._hms_to_seconds(value)
+        except (TypeError, ValueError):
+            return False
+        if max_sec == 0:
+            return cur_sec >= min_sec
+        if min_sec == 0:
+            return cur_sec <= max_sec
+        return min_sec <= cur_sec <= max_sec
 
     @property
     def key(self):

@@ -51,9 +51,13 @@ class NumField(Vertical):
         self.query_one(self.Field).value = self.default
 
     def compare(self, value):
-        if self.query_one(self.Field).value == "":
+        target = self.query_one(self.Field).value.strip()
+        if target == "":
             return True
-        return int(self.query_one(self.Field).value) == int(value)
+        try:
+            return int(target) == int(value)
+        except (TypeError, ValueError):
+            return False
 
     @property
     def integer_input(self):

@@ -32,21 +32,32 @@ class PriceField(Vertical):
             yield IntegerInput(placeholder="Max Price (e.g. 25)", id=f"{self.filter_name}_max")
 
     def update_table_val(self, val):
-        if val.lower() == "free":
-            val = "0"
+        cleaned = str(val or "").strip().lstrip("$").replace(",", "")
+        if cleaned.lower() in {"free", "unlocked"}:
+            cleaned = "0"
         for ele in self.query(IntegerInput):
-            ele.value = val
+            ele.value = cleaned
 
     def reset(self):
         for ele in self.query(IntegerInput):
             ele.value = ""
 
     def compare(self, value):
-        val_lower = str(value).lower()
-        if val_lower == "free":
-            value = "0"
-        maxvalue = float(self.query_one(f"#{self.filter_name}_max").value or 0)
-        minvalue = float(self.query_one(f"#{self.filter_name}_min").value or 0)
-        if not maxvalue and not minvalue:
+        raw_min = self.query_one(f"#{self.filter_name}_min").value.strip()
+        raw_max = self.query_one(f"#{self.filter_name}_max").value.strip()
+        if not raw_min and not raw_max:
             return True
-        return float(value) >= minvalue and float(value) <= maxvalue
+        val_str = str(value or "").strip().lstrip("$").replace(",", "").lower()
+        if val_str in {"free", "unlocked", ""}:
+            numeric = 0.0
+        else:
+            try:
+                numeric = float(val_str)
+            except ValueError:
+                return False
+        if raw_min and numeric < float(raw_min):
+            return False
+        if raw_max and numeric > float(raw_max):
+            return False
+        return True
+

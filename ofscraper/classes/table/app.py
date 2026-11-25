@@ -108,7 +108,7 @@ class InputApp(App):
     # --- UI Events ---
     def on_data_table_header_selected(self, event):
         clean_label = event.label.plain.replace(" ▼", "").replace(" ▲", "")
-        key = re.sub(" ", "_", clean_label).lower()
+        key = re.sub(r"\s+", "_", clean_label.strip()).lower()
         table_id = event.control.id
         if key == "download_cart":
             if table_id == "media_table":
@@ -279,6 +279,20 @@ class InputApp(App):
             self.handle_pagination("post", "post_go")
         elif input_id in ["cart_page_input", "cart_per_page_input"]:
             self.handle_pagination("cart", "cart_go")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        input_id = event.input.id
+        val = str(event.value or "").strip()
+        if not (val.isnumeric() and int(val) > 0):
+            return
+        if input_id == "main_per_page_input":
+            self.set_page()
+            self.update_search_info()
+        elif input_id == "post_per_page_input":
+            self.set_post_page()
+            self.update_post_search_info()
+        elif input_id == "cart_per_page_input":
+            self.update_cart_table()
 
     def on_key(self, event: events.Key) -> None:
         if event.character in {";", "'"}:
@@ -966,6 +980,8 @@ class InputApp(App):
                 is_empty = True
             elif key == "post_date" and str(raw_val) == "Probably Deleted":
                 is_empty = True
+            elif key == "price" and str(raw_val or "").strip().lower() in {"unlocked", "n/a", "n\\a"}:
+                is_empty = True
 
             if not is_empty:
                 if key == "number":
@@ -976,8 +992,9 @@ class InputApp(App):
                 elif key == "post_media_count":
                     sort_val = int(raw_val or 0)
                 elif key == "price":
+                    price_str = str(raw_val or "").strip().lstrip("$").replace(",", "")
                     sort_val = (
-                        0 if str(raw_val).lower() == "free" else float(raw_val or 0)
+                        0.0 if price_str.lower() in {"", "free"} else float(price_str)
                     )
                 elif key == "length":
                     sort_val = arrow.get(raw_val or "0:0:0", ["h:m:s"]).timestamp()
@@ -1184,18 +1201,36 @@ class InputApp(App):
         self.update_search_info()
         self.update_cart_info()
 
+    @staticmethod
+    def _two_line_header(title: str) -> str:
+        words = title.split()
+        if len(words) <= 1:
+            return f"\n{title}"
+        best_idx = 1
+        best_diff = float("inf")
+        for i in range(1, len(words)):
+            diff = abs(len(" ".join(words[:i])) - len(" ".join(words[i:])))
+            if diff < best_diff:
+                best_diff = diff
+                best_idx = i
+        return f"{' '.join(words[:best_idx])}\n{' '.join(words[best_idx:])}"
+
     def _insert_visible_table(self, target_table=None):
         table = target_table if target_table is not None else self.table
         table.clear(True)
         table.fixed_rows = 0
         table.zebra_stripes = True
+        table.header_height = 2
 
         for ele in self.visible_media_cols:
-            width = 18
-            width = 50 if ele == "text" else width
-            width = 30 if ele == "other_posts_with_media" else width
-
-            base_label = re.sub("_", " ", ele).title()
+            base_label = self._two_line_header(re.sub("_", " ", ele).title())
+            header_width = max(len(line) for line in base_label.splitlines()) + 4
+            if ele == "text":
+                width = 50
+            elif ele == "other_posts_with_media":
+                width = 22
+            else:
+                width = max(10, header_width)
 
             if str(ele) == self._sortkey:
                 arrow_char = " ▼" if self._reverse else " ▲"
@@ -1407,9 +1442,11 @@ class InputApp(App):
         table.clear(True)
         table.fixed_rows = 0
         table.zebra_stripes = True
+        table.header_height = 2
         for ele in self.visible_post_cols:
-            base_label = re.sub("_", " ", ele).title()
-            width = 45 if ele == "text" else max(16, len(base_label) + 4)
+            base_label = self._two_line_header(re.sub("_", " ", ele).title())
+            header_width = max(len(line) for line in base_label.splitlines()) + 4
+            width = 45 if ele == "text" else max(10, header_width)
             if str(ele) == self._post_sortkey:
                 arrow_char = " ▼" if self._post_reverse else " ▲"
                 label = f"{base_label}{arrow_char}"

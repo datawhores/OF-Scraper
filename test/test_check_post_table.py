@@ -92,7 +92,7 @@ def test_build_post_centric_rows_all_vs_new_metrics(monkeypatch):
     assert r0["cost_per_vid_sec"] == "N/A"
     assert r0["new_cost_per_vid_sec"] == "N/A"
     assert r0["cost_per_photo"] == "$0.00"
-    assert r0["new_cost_per_photo"] == "Unlocked"
+    assert r0["new_cost_per_photo"] == "Free"
 
     # Mixed $20 bundle: All = 4 media (2 photos, 100s video); New = 2 media (1 photo, 40s video)
     r1 = rows[1]
@@ -245,7 +245,7 @@ def test_post_media_filter_and_header_widths(stub_env, monkeypatch):
 
             # 1. Column widths fit every header including sort indicator
             for col in app.post_table.ordered_columns:
-                assert col.width >= len(col.label.plain) + 2
+                assert col.width >= max(len(line) for line in col.label.plain.splitlines()) + 2
 
             # 2. Default: nothing selected -> all 3 posts shown
             sel = app.query_one("#post_mediatype").query_one(SelectionList)
