@@ -13,6 +13,7 @@ import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.system.ffmpeg as ffmpeg_finder
 from ofscraper.sites.fansly import live as shared
 from ofscraper.sites.onlyfans import live_capture
+from ofscraper.utils import username_match
 
 log = logging.getLogger("shared")
 
@@ -96,21 +97,40 @@ async def _resolve_target_creators(usernames, excluded, all_users: bool, has_fil
             mm = ModelManager()
         models = mm.filter_models(models)
 
-    selected = shared.select_streams(
-        [
-            {
-                "accountId": m.id,
-                "username": m.name,
-                "_hasStream": bool(getattr(m.model, "get", lambda *_: False)("hasStream")),
-            }
-            for m in models or ()
-        ],
-        None if all_users else usernames,
-        excluded,
-    )
-    targets = [{"accountId": s["accountId"], "username": s["username"]} for s in selected]
-    initially_live = {s["accountId"] for s in selected if s.get("_hasStream")}
+    # the scraper's matcher: a renamed creator also matches the name it was looked up as (#662)
+    wanted = username_match.username_keys(None if all_users else usernames)
+    skip = username_match.username_keys(excluded)
+    targets, initially_live = [], set()
+    for m in models or ():
+        if username_match.model_matches(m, skip):
+            continue
+        if wanted and "all" not in wanted and not username_match.model_matches(m, wanted):
+            continue
+        target = {"accountId": m.id, "username": m.name}
+        looked_up_as = m.model.get("looked_up_as")
+        if looked_up_as:
+            target["looked_up_as"] = list(looked_up_as)
+        targets.append(target)
+        if m.model.get("hasStream"):
+            initially_live.add(m.id)
     return targets, initially_live
+
+
+def select_streams(online: list, usernames=None, excluded=None) -> list:
+    """``shared.select_streams``, also matching a stream by the name its creator
+    was looked up as, so ``-u oldname`` keeps a renamed creator (#662)."""
+
+    def matches(stream, keys):
+        return username_match.matches_account(
+            stream.get("username"), stream.get("accountId"), keys
+        ) or not keys.isdisjoint(username_match.username_keys(stream.get("looked_up_as")))
+
+    wanted = username_match.username_keys(usernames)
+    skip = username_match.username_keys(excluded)
+    out = [s for s in online if not matches(s, skip)]
+    if not wanted or "all" in wanted:
+        return out
+    return [s for s in out if matches(s, wanted)]
 
 
 async def _check_targets_concurrently(check_session, targets, initial_live: set) -> list:
@@ -167,7 +187,7 @@ async def get_online_streams(c, checks=None) -> list:
             targets, initial_live = await _resolve_target_creators(
                 usernames, excluded, all_users=all_users, has_filters=has_filters
             )
-            cache["filtered_ids"] = {t["accountId"] for t in targets}
+            cache["filtered_ids"] = {t["accountId"]: t for t in targets}
             if not targets:
                 log.warning("No matching creators found to check for livestreams.")
                 return []
@@ -177,7 +197,8 @@ async def get_online_streams(c, checks=None) -> list:
         if not allowed_ids:
             return []
         pages = [page async for page in scrape_subscriptions_active(c)]
-        return [s for s in live_subscriptions(pages) if s["accountId"] in allowed_ids]
+        # the cached target, which keeps the name a renamed creator was looked up as
+        return [allowed_ids[s["accountId"]] for s in live_subscriptions(pages) if s["accountId"] in allowed_ids]
 
     # Individual target path (-fi or auto-selected individual search):
     # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
@@ -269,7 +290,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                     raise
 
                 poll_failed = False
-                selected = shared.select_streams(online, opts["usernames"], opts["excluded"])
+                selected = select_streams(online, opts["usernames"], opts["excluded"])
                 current_ids = {s["accountId"] for s in selected}
                 announced_live_ids &= current_ids
 

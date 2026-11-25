@@ -557,6 +557,33 @@ def test_with_username_list_search_uses_batch_subscriptions_across_polls(
     assert checks_client.urls == []
 
 
+@pytest.mark.parametrize("search_mode", ["individual", "list"])
+def test_a_renamed_creator_is_found_by_the_old_name(monkeypatch, onlyfans_settings, search_mode):
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live=True, usernames=["creator_old"], username_search=search_mode)
+
+    async def fake_get_models():
+        return [
+            Model({"id": 1, "username": "creator_new", "hasStream": True,
+                   "looked_up_as": ["creator_old"]}),
+            Model({"id": 2, "username": "creator_b", "hasStream": True}),
+        ]
+
+    recorded = []
+
+    def capture(halt, username, out, auth, still_live, ffmpeg, proxy):
+        recorded.append(username)
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    install_session(monkeypatch, Client(Response(200, {"isActive": True})))
+    monkeypatch.setattr(live_capture, "playwright_ready", lambda: True)
+    monkeypatch.setattr(live_capture, "capture", capture)
+    asyncio.run(live.run(False, asyncio.Event()))
+    assert recorded == ["creator_new"]
+
+
 def test_target_creators_are_resolved_once_across_watch_polls(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model
