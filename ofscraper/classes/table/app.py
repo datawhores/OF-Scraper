@@ -1257,7 +1257,7 @@ class InputApp(App):
             if ele == "text":
                 width = 50
             elif ele == "other_posts_with_media":
-                width = 22
+                width = 30
             else:
                 width = max(18, header_width)
 

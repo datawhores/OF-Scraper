@@ -129,6 +129,24 @@ def test_long_values_stay_on_one_line(stub_env):
     asyncio.run(drive())
 
 
+def test_two_other_post_ids_stay_on_one_line(stub_env):
+    # "[1234567890, 1234567891]" is 24 characters
+    media_rows = [
+        _media_row(
+            1, post_date="2024-05-01", other_posts_with_media=[1234567890, 1234567891]
+        )
+    ]
+
+    async def drive():
+        app = _app(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            assert "other_posts_with_media" in app.table.ordered_columns_keys
+            assert [r.height for r in app.table.rows.values()] == [1]
+
+    asyncio.run(drive())
+
+
 def test_new_cost_says_unlocked_for_a_bought_post_and_free_for_a_free_one(monkeypatch):
     monkeypatch.setattr(
         post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
