@@ -307,9 +307,9 @@ class ModelManager:
         for main scraper operations.
 
         This method handles the decision tree for standard scraper runs:
-1. CLI Arguments: If '--username' is provided, it filters the current cache for matches.
-2. Daemon Mode: If running in the background, it uses previous or provided selections.
-3. Interactive Prompt: If no explicit instructions exist, it launches the UI menu
+        1. CLI Arguments: If '--username' is provided, it filters the current cache for matches.
+        2. Daemon Mode: If running in the background, it uses previous or provided selections.
+        3. Interactive Prompt: If no explicit instructions exist, it launches the UI menu
            via 'retriver.get_selected_model'.
 
         Note: This is NOT used by 'add_models' (Check modes), which injects targets directly.

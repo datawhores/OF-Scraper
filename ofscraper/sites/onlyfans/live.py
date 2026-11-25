@@ -1,3 +1,23 @@
+"""Record OnlyFans livestreams (``--live`` / ``--live-watch``).
+
+Based on the Live Stream Monitor plugin by cjb900 (cjb900/OF-Scraper-GUI).
+
+OnlyFans livestreams are WebRTC (Agora), not an HLS playlist ffmpeg could
+read, so a recording is made by the stream page itself: a Chromium browser
+(Playwright) opens it with the auth.json login and records the player with
+the browser's MediaRecorder (see ``live_capture``).
+
+- **Who is live:** an active subscription with ``hasStream`` set, from the
+  same subscriptions list the scraper reads. Creators chosen with ``-u`` and
+  the individual search are asked one by one with the still-live check.
+- **Still live:** ``users/{username}/streams/active``, asked while recording.
+
+Recordings go to
+``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``.
+The watcher, the Ctrl+C handling and the options are shared with Fansly
+(``ofscraper.sites.fansly.live``).
+"""
+
 import asyncio
 import contextvars
 import datetime
