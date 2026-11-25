@@ -127,3 +127,20 @@ def test_long_values_stay_on_one_line(stub_env):
             assert [r.height for r in app.post_table.rows.values()] == [1]
 
     asyncio.run(drive())
+
+
+def test_new_cost_says_unlocked_for_a_bought_post_and_free_for_a_free_one(monkeypatch):
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    free_post = _post_obj(10, 0, [_media_obj(1, 10)])
+    bought_post = _post_obj(20, 12.0, [_media_obj(2, 20)])
+
+    free_row, bought_row = post_metrics.build_post_centric_rows(
+        [free_post, bought_post], "creator_a", 1
+    )
+
+    assert free_row["new_cost_per_photo"] == "Free"
+    assert free_row["new_cost_per_media"] == "Free"
+    assert bought_row["new_cost_per_photo"] == "Unlocked"
+    assert bought_row["new_cost_per_media"] == "Unlocked"

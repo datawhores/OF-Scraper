@@ -44,7 +44,7 @@ def _fmt_new_cost(
     if all_denominator <= 0:
         return "N/A"
     if is_unlocked:
-        return "Free"
+        return "Free" if price <= 0 else "Unlocked"
     if new_denominator <= 0:
         return "All Dupes"
     return f"${price / new_denominator:.2f}{suffix}"
