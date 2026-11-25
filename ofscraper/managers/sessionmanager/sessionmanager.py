@@ -1035,6 +1035,11 @@ class sessionManager:
     def sleep(self, val):
         self._rate_limit_sleeper.sleep = val
 
+    @property
+    def proxy(self) -> Optional[str]:
+        """The proxy this session's requests go through, if any."""
+        return self._proxy
+
     def _httpx_funct(self, method, follow_redirects=httpx.USE_CLIENT_DEFAULT, **kwargs):
         # Same as Client.request(), minus its deprecation warning for
         # per-request cookies: build_request merges them with the client's

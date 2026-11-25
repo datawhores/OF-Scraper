@@ -352,6 +352,27 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
     assert len(reads) == 2  # auth.json is read for each recording
 
 
+def test_the_browser_gets_the_sessions_proxy(monkeypatch, onlyfans_settings):
+    from ofscraper.managers.sessionmanager.sessionmanager import sessionManager
+
+    onlyfans_settings(live=True)
+    install_session(monkeypatch, sessionManager(proxy="http://proxy.invalid:8080"))
+
+    async def online(c, checks=None):
+        return [{"accountId": 1, "username": "creator_a"}]
+
+    proxies = []
+
+    def capture(halt, username, out, auth, still_live, ffmpeg, proxy):
+        proxies.append(proxy)
+
+    monkeypatch.setattr(live, "get_online_streams", online)
+    monkeypatch.setattr(live_capture, "playwright_ready", lambda: True)
+    monkeypatch.setattr(live_capture, "capture", capture)
+    asyncio.run(live.run(False, asyncio.Event()))
+    assert proxies == ["http://proxy.invalid:8080"]
+
+
 def test_a_missing_chromium_says_how_to_install_it(monkeypatch, onlyfans_settings, caplog):
     onlyfans_settings(live=True)
     install_session(monkeypatch, Client(Response(404)))
