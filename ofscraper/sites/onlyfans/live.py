@@ -227,28 +227,6 @@ async def record_in_thread(fn, stop_event: asyncio.Event, *args, **kwargs):
             pass
 
 
-async def _session_auth(c) -> dict:
-    """Cookies and user-agent the capture browser needs for this account."""
-    cookies = []
-    if hasattr(c, "cookies"):
-        for ck in c.cookies or ():
-            if isinstance(ck, dict):
-                cookies.append(ck)
-            else:
-                cookies.append(
-                    {
-                        "name": getattr(ck, "name", ""),
-                        "value": getattr(ck, "value", ""),
-                        "domain": getattr(ck, "domain", ".onlyfans.com"),
-                        "path": getattr(ck, "path", "/"),
-                    }
-                )
-    user_agent = ""
-    if hasattr(c, "headers") and isinstance(c.headers, dict):
-        user_agent = c.headers.get("user-agent") or c.headers.get("User-Agent") or ""
-    return {"cookies": cookies, "user_agent": user_agent}
-
-
 def _session_proxy(c) -> str | None:
     return getattr(c, "proxy", None)
 
