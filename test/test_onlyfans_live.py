@@ -1039,6 +1039,24 @@ def test_a_name_that_keeps_missing_is_looked_up_less_often(monkeypatch, onlyfans
     assert caplog.text.count("every 10th check") == 1
 
 
+@pytest.mark.parametrize("watch", [True, False])
+def test_a_missed_lookup_promises_a_retry_only_when_watching(monkeypatch, onlyfans_settings, caplog, watch):
+    onlyfans_settings(live=not watch, live_watch=watch, usernames=["no_such_name"], username_search="individual")
+
+    async def nobody():
+        return []
+
+    serve_models(monkeypatch, nobody)
+    token = live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            asyncio.run(live.get_online_streams(Client(Response(200, {}))))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert "Could not look up no_such_name" in caplog.text
+    assert ("next check" in caplog.text) == watch
+
+
 def test_a_lookup_that_raised_is_tried_again_next_poll(monkeypatch, onlyfans_settings):
     from ofscraper.classes.of.models import Model
 

@@ -232,8 +232,11 @@ async def _update_targets(c, cache: dict, usernames, excluded, all_users: bool, 
     cache["unresolved"] = unresolved
     if unresolved is None or unresolved:
         missing = "the creator list" if unresolved is None else ", ".join(map(str, unresolved))
+        import ofscraper.utils.settings as settings
+
+        again = "; trying again on the next check" if getattr(settings.get_settings(), "live_watch", False) else ""
         (log.debug if cache.get("warned") else log.warning)(
-            f"Could not look up {missing} to check for livestreams; trying again on the next check"
+            f"Could not look up {missing} to check for livestreams{again}"
         )
         cache["warned"] = True
     elif not cache["targets"]:
