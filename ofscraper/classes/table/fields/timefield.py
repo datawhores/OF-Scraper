@@ -87,9 +87,16 @@ class TimeField(Container):
     def _hms_to_seconds(value) -> int:
         if value in (None, "", "N\\A", "N/A"):
             return 0
-        parts = [int(p) for p in str(value).split(":")]
+        # str(timedelta): "1 day, 1:00:00" from 24 hours, "0:01:30.500000"
+        # for a fraction of a second
+        days = 0
+        text = str(value)
+        if "day" in text:
+            day_part, _, text = text.partition(",")
+            days = int(day_part.split()[0])
+        parts = [int(float(p)) for p in text.strip().split(":")]
         if len(parts) == 3:
-            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+            return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
         if len(parts) == 2:
             return parts[0] * 60 + parts[1]
         return parts[0]

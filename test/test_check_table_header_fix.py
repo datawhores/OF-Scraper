@@ -208,3 +208,23 @@ def test_an_earliest_date_alone_keeps_todays_posts(stub_env, monkeypatch, now, p
             assert [r["index"] for r in app._filtered_rows] == [1]
 
     asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "length",
+    ["1 day, 1:00:00", "2 days, 0:00:05", "1:30:00.500000"],
+)
+def test_long_and_fractional_lengths_pass_a_length_filter(stub_env, length):
+    # str(timedelta) adds "N day(s), " from 24 hours and a fraction for
+    # non-whole seconds; neither was read, so any length filter hid the row
+    media_rows = [_media_row(1, length=length), _media_row(2, length="0:10:00")]
+
+    async def drive():
+        app = _app(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#length").query_one("#min_hour").value = "1"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
