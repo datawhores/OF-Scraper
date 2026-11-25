@@ -197,6 +197,7 @@ async def get_online_streams(c, checks=None) -> list:
 def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:
     when = when or datetime.datetime.now(datetime.timezone.utc)
     stamp = when.strftime("%Y%m%d_%H%M%S")
+    username = shared.folder_name(username)
     return (
         pathlib.Path(save_location)
         / "OnlyFans"

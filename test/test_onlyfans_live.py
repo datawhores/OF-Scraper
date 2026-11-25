@@ -114,6 +114,13 @@ def test_recording_path_mirrors_the_fansly_layout(tmp_path):
     )
 
 
+def test_recording_path_stays_in_the_save_folder(tmp_path):
+    when = datetime.datetime(2026, 11, 23, 8, 5, 9, tzinfo=datetime.timezone.utc)
+    out = live.recording_path(tmp_path, "../creator_a.", when)
+    assert out.resolve().is_relative_to((tmp_path / "OnlyFans").resolve())
+    assert ".." not in out.parts
+
+
 # ------------------------------------------------------------------ the browser login
 
 def test_login_cookies_carry_the_auth_json_login():
