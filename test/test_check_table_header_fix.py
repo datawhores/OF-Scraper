@@ -297,6 +297,33 @@ def test_typing_a_per_page_value_builds_the_table_once(stub_env, monkeypatch):
 
     asyncio.run(drive())
 
+def test_a_per_page_of_zero_draws_the_default_page_size(stub_env):
+    # 0 stays in the box (it isn't above 0, so typing it redraws nothing);
+    # the next filter, sort or cart redraw divided by it
+    media_rows = [_media_row(n, post_date="2024-05-01") for n in range(1, 4)]
+    media_rows[0]["download_cart"] = "[added]"
+    post_rows = post_metrics.build_post_centric_rows(
+        [_post_obj(n, 0, [_media_obj(n, n)]) for n in range(1, 4)], "creator_a", 1
+    )
+
+    async def drive():
+        app = _app(media_rows, post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            for prefix in ("main", "post", "cart"):
+                app.query_one(f"#{prefix}_per_page_input").value = "0"
+            await pilot.pause(0.5)
+            app.filter_table()
+            app.filter_post_table()
+            app.update_cart_table()
+            await pilot.pause()
+            assert app.table.row_count == 3
+            assert app.post_table.row_count == 3
+            assert app.query_one("#cart_data_table").row_count == 1
+
+    asyncio.run(drive())
+
+
 def test_a_per_page_redraw_after_the_app_closed_does_nothing(stub_env):
     # the 0.3 s wait can end while the app is closing and its inputs are gone
     async def drive():

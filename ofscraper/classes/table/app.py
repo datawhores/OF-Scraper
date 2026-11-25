@@ -1117,7 +1117,7 @@ class InputApp(App):
             per_page_val = self.query_one("#cart_per_page_input").value
             num_page = (
                 int(per_page_val)
-                if per_page_val and str(per_page_val).isnumeric()
+                if per_page_val and str(per_page_val).isnumeric() and int(per_page_val) > 0
                 else AMOUNT_PER_PAGE
             )
             self._shown_per_page["cart"] = num_page
@@ -1192,7 +1192,7 @@ class InputApp(App):
             per_page_val = self.query_one("#main_per_page_input").value
             num_page = (
                 int(per_page_val)
-                if per_page_val and str(per_page_val).isnumeric()
+                if per_page_val and str(per_page_val).isnumeric() and int(per_page_val) > 0
                 else AMOUNT_PER_PAGE
             )
             self._shown_per_page["main"] = num_page
@@ -1576,7 +1576,7 @@ class InputApp(App):
             table.clear()
             rows = self._filtered_post_rows
             per_page_val = self.query_one("#post_per_page_input").value
-            num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() else AMOUNT_PER_PAGE
+            num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() and int(per_page_val) > 0 else AMOUNT_PER_PAGE
             self._shown_per_page["post"] = num_page
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
             if self.post_page > total_pages:
