@@ -104,11 +104,19 @@ async def still_live(c, username):
         return None
 
 
-async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool):
-    """Resolve target creators once via retriver + ModelManager, returning (targets, initially_live_ids)."""
-    import ofscraper.data.models.utils.retriver as retriver
+async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool, models=None):
+    """Resolve target creators via retriver + ModelManager, returning
+    (targets, initially_live_ids, unresolved). ``unresolved`` lists the -u names
+    no creator came back for, or is None when no creator came back at all."""
+    if models is None:
+        import ofscraper.data.models.utils.retriver as retriver
 
-    models = await retriver.get_models()
+        models = await retriver.get_models()
+    if all_users:
+        unresolved = None if not models else []
+    else:
+        names = [usernames] if isinstance(usernames, str) else list(usernames or [])
+        _, unresolved = username_match.select_models(models or [], names)
     if has_filters and models:
         mm = getattr(manager.Manager, "model_manager", None)
         if mm is None:
@@ -133,7 +141,42 @@ async def _resolve_target_creators(usernames, excluded, all_users: bool, has_fil
         targets.append(target)
         if m.model.get("hasStream"):
             initially_live.add(m.id)
-    return targets, initially_live
+    return targets, initially_live, unresolved
+
+
+async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has_filters: bool) -> set:
+    """Look up the target creators into ``cache["targets"]``: all of them on the
+    first poll, then on later polls the ones a failed lookup left out, so one
+    failure doesn't leave a creator unwatched all session. Returns the ids the
+    lookup saw live."""
+    if "targets" not in cache:
+        cache["targets"] = {}
+        models, names = None, usernames
+    elif cache["unresolved"] is None:
+        models, names = None, usernames
+    elif cache["unresolved"]:
+        import ofscraper.data.api.subscriptions.individual as individual
+        from ofscraper.classes.of.models import Model
+
+        names = cache["unresolved"]
+        models = [Model(x) for x in await individual.get_subscription(names)]
+    else:
+        return set()
+
+    targets, initial_live, unresolved = await _resolve_target_creators(
+        names, excluded, all_users=all_users, has_filters=has_filters, models=models
+    )
+    cache["targets"].update({t["accountId"]: t for t in targets})
+    cache["unresolved"] = unresolved
+    if unresolved is None or unresolved:
+        missing = "the creator list" if unresolved is None else ", ".join(map(str, unresolved))
+        (log.debug if cache.get("warned") else log.warning)(
+            f"Could not look up {missing} to check for livestreams; trying again on the next check"
+        )
+        cache["warned"] = True
+    elif not cache["targets"]:
+        log.warning("No matching creators found to check for livestreams.")
+    return initial_live
 
 
 def select_streams(online: list, usernames=None, excluded=None) -> list:
@@ -202,37 +245,23 @@ async def get_online_streams(c, checks=None) -> list:
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
     # - Explicit --username with -fl (--username-list-search)
-    if all_users or search_mode == "list":
-        if "filtered_ids" not in cache:
-            targets, initial_live = await _resolve_target_creators(
-                usernames, excluded, all_users=all_users, has_filters=has_filters
-            )
-            cache["filtered_ids"] = {t["accountId"]: t for t in targets}
-            if not targets:
-                log.warning("No matching creators found to check for livestreams.")
-                return []
-            return [t for t in targets if t["accountId"] in initial_live]
+    first_lookup = "targets" not in cache
+    initial_live = await _update_targets(cache, usernames, excluded, all_users, has_filters)
+    targets = cache["targets"]
+    if not targets:
+        return []
 
-        allowed_ids = cache["filtered_ids"]
-        if not allowed_ids:
-            return []
+    if all_users or search_mode == "list":
+        if first_lookup:
+            return [t for t in targets.values() if t["accountId"] in initial_live]
         pages = [page async for page in scrape_subscriptions_active(c)]
+        live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
         # the cached target, which keeps the name a renamed creator was looked up as
-        return [allowed_ids[s["accountId"]] for s in live_subscriptions(pages) if s["accountId"] in allowed_ids]
+        return [t for t in targets.values() if t["accountId"] in live_ids]
 
     # Individual target path (-fi or auto-selected individual search):
     # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
-    initial_live = set()
-    if "targets" not in cache:
-        targets, initial_live = await _resolve_target_creators(
-            usernames, excluded, all_users=False, has_filters=has_filters
-        )
-        cache["targets"] = targets
-        if not targets:
-            log.warning("No matching creators found to check for livestreams.")
-            return []
-
-    return await _check_targets_concurrently(check_session, cache["targets"], initial_live)
+    return await _check_targets_concurrently(check_session, list(targets.values()), initial_live)
 
 
 def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:

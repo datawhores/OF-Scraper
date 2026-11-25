@@ -686,6 +686,81 @@ def test_renew_off_filters_the_named_creators(monkeypatch, onlyfans_settings):
     assert result == [{"accountId": 1, "username": "creator_a"}]
 
 
+@pytest.mark.parametrize("search_mode", ["individual", "list"])
+def test_a_creator_not_found_at_first_is_looked_up_again(
+    monkeypatch, onlyfans_settings, caplog, search_mode
+):
+    import ofscraper.data.api.subscriptions.individual as individual
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a", "creator_b"],
+                      username_search=search_mode)
+
+    async def fake_get_models():
+        # creator_b's lookup failed this time (the lookup logs and goes on)
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+
+    looked_up = []
+
+    async def fake_individual(accounts=None):
+        looked_up.append(list(accounts))
+        return [{"id": 2, "username": "creator_b", "hasStream": True, "looked_up_as": ["creator_b"]}]
+
+    async def fake_active(c):
+        yield [{"id": 2, "username": "creator_b", "hasStream": True}]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(individual, "get_subscription", fake_individual)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    checks = Client(Response(200, {"isActive": False}))
+    token = live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            first = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+            second = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+            third = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert first == []
+    assert [s["username"] for s in second] == ["creator_b"]
+    assert [s["username"] for s in third] == (["creator_b"] if search_mode == "list" else [])
+    assert looked_up == [["creator_b"]]  # once found, it isn't looked up again
+    assert caplog.text.count("creator_b") == 1  # one warning while it's missing
+
+
+def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onlyfans_settings):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=None, userlist=["vip"])
+    answers = [[], [Model({"id": 1, "username": "creator_a", "hasStream": True})]]
+    calls = []
+
+    async def fake_get_models():
+        calls.append(1)
+        return answers[len(calls) - 1]
+
+    async def fake_active(c):
+        yield []
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    install_session(monkeypatch, Client(Response(200, {})),
+                    model_manager=SimpleNamespace(filter_models=lambda models: list(models)))
+    token = live._TARGET_CACHE.set({})
+    try:
+        first = asyncio.run(live.get_online_streams(Client(Response(200, {}))))
+        second = asyncio.run(live.get_online_streams(Client(Response(200, {}))))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert first == []
+    assert second == [{"accountId": 1, "username": "creator_a"}]
+    assert len(calls) == 2
+
+
 def test_target_creators_are_resolved_once_across_watch_polls(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model
