@@ -638,3 +638,161 @@ def test_a_picked_length_leaves_zero_parts_empty(start_lenunits):
         assert not field.compare("0:02:00")
 
     _drive_lenunits(steps)
+
+
+# ----------------------------------------------------------------------
+# Check table date and length filters: unreadable bounds, an earliest
+# date alone, and day-long or fractional lengths.
+# ----------------------------------------------------------------------
+
+import asyncio
+import queue
+from types import SimpleNamespace
+
+import pytest
+
+import ofscraper.classes.table.app as table_app
+import ofscraper.classes.table.utils.post_metrics as post_metrics
+
+
+class _Settings_hf(SimpleNamespace):
+    def __getattr__(self, name):
+        return None
+
+
+@pytest.fixture
+def stub_env_hf(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_settings",
+        lambda *a, **k: _Settings_hf(db_sort="number", desc=False),
+    )
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_args",
+        lambda *a, **k: SimpleNamespace(text=False, text_only=False),
+    )
+    monkeypatch.setattr(table_app.settings, "update_args", lambda *a, **k: None)
+    monkeypatch.setattr(table_app, "row_queue", queue.Queue())
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+
+
+def _media_row_hf(index, **values):
+    row = {
+        "index": index,
+        "number": index,
+        "download_cart": "[]",
+        "username": "creator_a",
+        "downloaded": False,
+        "unlocked": True,
+        "download_type": "normal",
+        "other_posts_with_media": [],
+        "post_media_count": 1,
+        "mediatype": "Videos",
+        "post_date": "2024-05-01 12:00:00",
+        "length": "0:01:00",
+        "responsetype": "Timeline",
+        "price": "Free",
+        "post_id": 100 + index,
+        "media_id": 1000 + index,
+        "text": "post",
+    }
+    row.update(values)
+    return row
+
+
+def _app_hf(media_rows, post_rows):
+    app = table_app.InputApp()
+    app.table_data = media_rows
+    app.post_data = post_rows
+    app._sortkey = None
+    app._reverse = False
+    return app
+
+
+@pytest.mark.parametrize("field", ["#minDate", "#maxDate"])
+@pytest.mark.parametrize("bound", ["2025.13.45", "01/02/2025", "soon"])
+def test_an_unreadable_date_bound_does_not_hide_rows(stub_env_hf, field, bound):
+    media_rows = [
+        _media_row_hf(1, post_date="2024-05-01 12:00:00"),
+        _media_row_hf(2, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one(field).value = bound
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1, 2]
+
+    asyncio.run(drive())
+
+
+def test_a_readable_date_bound_still_filters(stub_env_hf):
+    media_rows = [
+        _media_row_hf(1, post_date="2024-05-01 12:00:00"),
+        _media_row_hf(2, post_date="2026-05-01 12:00:00"),
+        _media_row_hf(3, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2025.01.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [2]
+
+    asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "now, posted",
+    [
+        # east of UTC in the afternoon: today's local midnight is yesterday in UTC
+        ("2026-03-10T15:00:00+10:00", "2026-03-10 03:00:00"),
+        # west of UTC in the evening: the post's UTC date is already tomorrow
+        ("2026-03-10T20:00:00-05:00", "2026-03-11 00:30:00"),
+    ],
+)
+def test_an_earliest_date_alone_keeps_todays_posts(stub_env_hf, monkeypatch, now, posted):
+    import ofscraper.classes.table.fields.datefield as datefield
+
+    fixed = datefield.arrow.get(now)
+    monkeypatch.setattr(datefield.arrow, "now", lambda *a, **k: fixed)
+    media_rows = [_media_row_hf(1, post_date=posted)]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2026.03.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "length",
+    ["1 day, 1:00:00", "2 days, 0:00:05", "1:30:00.500000"],
+)
+def test_long_and_fractional_lengths_pass_a_length_filter(stub_env_hf, length):
+    # str(timedelta) adds "N day(s), " from 24 hours and a fraction for
+    # non-whole seconds; neither was read, so any length filter hid the row
+    media_rows = [_media_row_hf(1, length=length), _media_row_hf(2, length="0:10:00")]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#length").query_one("#min_hour").value = "1"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())

@@ -620,3 +620,75 @@ def test_posts_tab_hint_offers_only_keys_that_work_there(stub_env):
             assert "(o)" not in hint
 
     asyncio.run(drive())
+
+
+# ----------------------------------------------------------------------
+# Post table: New Cost says Free or Unlocked, and bought posts sort last.
+# ----------------------------------------------------------------------
+
+
+def _media_obj_hf(mid, pid, mtype="images", canview=True):
+    return SimpleNamespace(
+        id=mid,
+        post_id=pid,
+        mediatype=mtype,
+        numeric_duration=None,
+        duration=None,
+        canview=canview,
+    )
+
+
+def _post_obj_hf(pid, price, items, date="2024-05-01 12:00:00"):
+    return SimpleNamespace(
+        id=pid,
+        price=price,
+        opened=1,
+        all_media=items,
+        responsetype="timeline",
+        formatted_date=date,
+        db_sanitized_text="post",
+    )
+
+
+def test_new_cost_says_unlocked_for_a_bought_post_and_free_for_a_free_one(monkeypatch):
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    free_post = _post_obj_hf(10, 0, [_media_obj_hf(1, 10)])
+    bought_post = _post_obj_hf(20, 12.0, [_media_obj_hf(2, 20)])
+
+    free_row, bought_row = post_metrics.build_post_centric_rows(
+        [free_post, bought_post], "creator_a", 1
+    )
+
+    assert free_row["new_cost_per_photo"] == "Free"
+    assert free_row["new_cost_per_media"] == "Free"
+    assert bought_row["new_cost_per_photo"] == "Unlocked"
+    assert bought_row["new_cost_per_media"] == "Unlocked"
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_bought_posts_sort_last_by_new_cost_either_way(monkeypatch, reverse):
+    # like "Unlocked" in the media table's price column, a bought post has no
+    # cost left to compare, so it stays at the bottom in both directions
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    posts = [
+        _post_obj_hf(10, 0, [_media_obj_hf(1, 10)]),  # free
+        _post_obj_hf(20, 12.0, [_media_obj_hf(2, 20)]),  # bought
+        _post_obj_hf(30, 10.0, [_media_obj_hf(3, 30, canview=False)]),  # locked
+    ]
+    app = table_app.InputApp()
+    app.post_data = post_metrics.build_post_centric_rows(posts, "creator_a", 1)
+    assert [r["new_cost_per_media"] for r in app.post_data] == [
+        "Free",
+        "Unlocked",
+        "$10.00",
+    ]
+
+    app._post_reverse = reverse
+    app._post_sort_runner("new_cost_per_media")
+
+    expected = [30, 10, 20] if reverse else [10, 30, 20]
+    assert [r["post_id"] for r in app.post_data] == expected
