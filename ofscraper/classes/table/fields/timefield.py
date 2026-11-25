@@ -88,13 +88,8 @@ class TimeField(Container):
 
     def _fill(self, container, val):
         inputs = list(self.query_one(container).query(IntegerInput))
-        if isinstance(val, (int, float)) or str(val).isnumeric():
-            val = int(val)
-            parts = [val // 3600, (val % 3600) // 60, val % 60]
-        elif val != "N/A" and val != "N\\A":
-            parts = [int(x) for x in str(val).split(":")]
-        else:
-            parts = [0, 0, 0]
+        val = hms_to_seconds(val)
+        parts = [val // 3600, (val % 3600) // 60, val % 60]
         for box, part in zip(inputs, parts):
             box.value = str(part) if part else ""
 
