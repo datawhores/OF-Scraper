@@ -126,6 +126,7 @@ def fansly_settings(monkeypatch, tmp_path):
         stub = SimpleNamespace(**{**dict(real), "site": "fansly", "usernames": None,
                                   "excluded_username": None, "live": False, "live_watch": False,
                                   "live_interval": None, "live_max": None, "live_chat": False,
+                                  "username_search": None, "userlist": None, "blacklist": None,
                                   **values})
         monkeypatch.setattr(settings, "get_settings", lambda: stub)
         return stub
@@ -1253,3 +1254,231 @@ def test_fansly_auto_fallback_resolves_unfollowed_target_once_across_polls(
 
     assert lookup_calls == [["creator_c"]]
     assert polls == 3
+
+def test_fansly_auto_fallback_skips_channel_polls_for_followed_offline_creators(
+    monkeypatch, fansly_settings
+):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=("creator_b", "creator_c"), username_search=None)
+    lookup_calls = []
+    channel_calls = []
+
+    async def fake_by_username(c, usernames):
+        lookup_calls.append(list(usernames))
+        return [
+            {"id": CREATOR_B[0], "username": CREATOR_B[1]},
+            {"id": CREATOR_C[0], "username": CREATOR_C[1]},
+        ]
+
+    async def fake_following_ids(c, user_id):
+        return [CREATOR_A[0], CREATOR_B[0]]  # creator_b is followed, creator_c is not
+
+    import ofscraper.utils.me as me_util
+
+    monkeypatch.setattr(me_util, "get_id", lambda: "999", raising=False)
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    monkeypatch.setattr(fansly_api, "following_ids", fake_following_ids)
+
+    polls = 0
+    stop = asyncio.Event()
+
+    def online(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 3:
+            stop.set()
+        return online_response(CREATOR_A)
+
+    def channel_c(url):
+        channel_calls.append("creator_c")
+        return channel_response(CREATOR_C[0], "", status=0)
+
+    def channel_b(url):
+        pytest.fail("followed offline creator_b should not be polled via get_channel")
+
+    client = FakeClient({
+        live_api.ONLINE_URL: online,
+        live_api.channel_url(CREATOR_B[0]): channel_b,
+        live_api.channel_url(CREATOR_C[0]): channel_c,
+    })
+    install_session(monkeypatch, client)
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(
+                fetch_online,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+    asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+
+    assert lookup_calls == [["creator_b", "creator_c"]]
+    assert channel_calls == ["creator_c", "creator_c", "creator_c"]
+
+
+def test_fansly_unresolved_individual_target_warns_only_once(
+    monkeypatch, fansly_settings, caplog
+):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=("missing_user",), username_search="individual")
+
+    async def fake_by_username(c, usernames):
+        return []
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    install_session(monkeypatch, FakeClient({}))
+    
+    polls = 0
+    stop = asyncio.Event()
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            async def wrapped_fetch():
+                nonlocal polls
+                polls += 1
+                res = await fetch_online()
+                if polls >= 3:
+                    stop.set()
+                return res
+
+            super().__init__(
+                wrapped_fetch,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+
+    warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelname == "WARNING" and "No matching creators found" in r.getMessage()
+    ]
+    assert warnings == ["No matching creators found to check for livestreams."]
+
+
+def test_fansly_live_now_does_not_repeat_while_queued(monkeypatch, fansly_settings, caplog):
+    fansly_settings(live_watch=True, live_max=1)
+    polls = 0
+    stop = asyncio.Event()
+    started = threading.Event()
+    finish = threading.Event()
+
+    def online(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 3:
+            stop.set()
+        return online_response(CREATOR_A, CREATOR_B)
+
+    def channel(aid):
+        return lambda url: channel_response(aid, "https://live.example.invalid/m.m3u8?token=t")
+
+    client = FakeClient({
+        live_api.ONLINE_URL: online,
+        live_api.channel_url(CREATOR_A[0]): channel(CREATOR_A[0]),
+        live_api.channel_url(CREATOR_B[0]): channel(CREATOR_B[0]),
+        "https://live.example.invalid/": "#EXTM3U\n#EXTINF:2.0,\ns.ts\n#EXT-X-ENDLIST\n",
+    })
+    install_session(monkeypatch, client)
+
+    async def fake_ffmpeg(cmd, stop_event=None):
+        started.set()
+        await asyncio.to_thread(finish.wait, 5)
+        with open(cmd[-1], "wb") as f:
+            f.write(b"x")
+        return 0
+
+    monkeypatch.setattr(live, "run_ffmpeg", fake_ffmpeg)
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(
+                fetch_online,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+
+    async def main():
+        task = asyncio.ensure_future(live.run(watch=True, stop=stop))
+        await asyncio.to_thread(started.wait, 5)
+        await asyncio.sleep(0.05)
+        finish.set()
+        await asyncio.wait_for(task, timeout=5)
+
+    with caplog.at_level("INFO", logger="shared"):
+        asyncio.run(main())
+
+    live_logs = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelname == "INFO" and r.getMessage().startswith("Live now")
+    ]
+    assert live_logs == ["Live now (2): creator_a, creator_b"]
+
+
+def test_fansly_failed_polls_warn_once_per_failure_streak(monkeypatch, fansly_settings, caplog):
+    fansly_settings(live_watch=True)
+    outcomes = iter([
+        RuntimeError("network down"),
+        RuntimeError("network down"),
+        online_response(),
+        RuntimeError("network down again"),
+    ])
+    stop = asyncio.Event()
+
+    def online(url):
+        try:
+            item = next(outcomes)
+        except StopIteration:
+            stop.set()
+            return online_response()
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    install_session(monkeypatch, FakeClient({live_api.ONLINE_URL: online}))
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(
+                fetch_online,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+
+    warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelname == "WARNING" and "Fansly livestream check failed:" in r.getMessage()
+    ]
+    assert warnings == [
+        "Fansly livestream check failed: network down",
+        "Fansly livestream check failed: network down again",
+    ]

@@ -567,58 +567,28 @@ async def _either(a: asyncio.Event, b: asyncio.Event):
 
 # ------------------------------------------------------------------ app glue
 
-_DEFAULT_LISTS = {"main", "ofscraper.main", "active", "ofscraper.active"}
+def _int_env(key: str, default: int, minimum: int = 1) -> int:
+    import ofscraper.utils.of_env.of_env as of_env
 
-_MODEL_FILTER_ATTRS = (
-    "sub_status",
-    "renewal",
-    "current_price",
-    "renewal_price",
-    "regular_price",
-    "promo_price",
-    "last_seen",
-    "free_trial",
-    "promo",
-    "all_promo",
-    "promo_price_min",
-    "promo_price_max",
-    "regular_price_min",
-    "regular_price_max",
-    "current_price_min",
-    "current_price_max",
-    "renewal_price_min",
-    "renewal_price_max",
-    "last_seen_before",
-    "last_seen_after",
-    "expired_before",
-    "expired_after",
-    "subscribed_before",
-    "subscribed_after",
-)
+    try:
+        val = of_env.getattr(key, default)
+        return max(minimum, int(default if val is None else val))
+    except (TypeError, ValueError):
+        return default
 
 
 def has_custom_user_filters(s=None) -> bool:
     """True when userlists, blacklists, or model filters narrow the creator pool."""
-    import ofscraper.utils.settings as settings
+    from ofscraper.managers.model import ModelManager
 
-    s = s or settings.get_settings()
-    userlist = [
-        x
-        for x in (getattr(s, "userlist", None) or [])
-        if x and str(x).lower() not in _DEFAULT_LISTS
-    ]
-    blacklist = [x for x in (getattr(s, "blacklist", None) or []) if x]
-    if userlist or blacklist:
-        return True
-    return any(
-        getattr(s, attr, None) not in (None, "", [], ())
-        for attr in _MODEL_FILTER_ATTRS
-    )
+    return ModelManager.has_active_filters(s)
 
 
 def wants_all_usernames(usernames) -> bool:
     """True when --username was omitted or explicitly set to ALL."""
-    names = [str(u) for u in (usernames or []) if u]
+    if isinstance(usernames, str):
+        return usernames.strip().upper() in ("", "ALL")
+    names = [str(u).strip() for u in (usernames or []) if str(u).strip()]
     return not names or any(u.upper() == "ALL" for u in names)
 
 
@@ -632,11 +602,13 @@ def options(s=None) -> dict:
         "watch": bool(getattr(s, "live_watch", False)),
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
+        "jitter": _int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0),
+        "max_failures": _int_env("LIVE_MAX_FAILURES", DEFAULT_MAX_FAILURES, minimum=1),
+        "check_concurrency": _int_env("LIVE_CHECK_CONCURRENCY", 5, minimum=1),
         "chat": bool(getattr(s, "live_chat", False)),
         "usernames": getattr(s, "usernames", None),
         "excluded": getattr(s, "excluded_username", None),
         "username_search": getattr(s, "username_search", None),
-        "anon": bool(getattr(s, "anon", False)),
         "has_filters": has_custom_user_filters(s),
     }
 
@@ -763,6 +735,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     from ofscraper.classes.of.models import Model
     from ofscraper.managers.model import ModelManager
     from ofscraper.managers.sessionmanager.sessionmanager import HEADERS
+    from ofscraper.sites.fansly import api as fansly_api
     from ofscraper.sites.fansly import auth as fansly_auth
     from ofscraper.sites.fansly import live_api, live_chat
     from ofscraper.sites.fansly import scrape as fansly_scrape
@@ -784,10 +757,30 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     async with manager.Manager.session.aget_ofsession() as c, \
             manager.Manager.session.aget_ofsession(retries=1) as playlists:
         announced_idle = False
+        announced_live_ids = set()
+        announced_no_targets = False
+        poll_failed = False
         resolved_cache = {}
-        watcher = None
+        unfollowed_cache = {}
+        filtered_cache = {}
+        following_set = None
 
-        async def _resolve_fansly_targets(names):
+        async def _get_following_set():
+            nonlocal following_set
+            if following_set is None:
+                import ofscraper.utils.me as me_util
+
+                try:
+                    following_set = {
+                        str(fid)
+                        for fid in await fansly_api.following_ids(c, me_util.get_id())
+                    }
+                except Exception as e:
+                    log.debug(f"Fansly: could not fetch following list for live fallback: {e}")
+                    following_set = None
+            return following_set
+
+        async def _resolve_fansly_targets(names, unfollowed_only: bool = False):
             unresolved = [u for u in names if u and str(u).lower() not in resolved_cache]
             if unresolved:
                 models = [
@@ -795,50 +788,72 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     for m in await fansly_scrape.get_models(unresolved, c=c)
                 ]
                 if opts["has_filters"] and models:
-                    mm = ModelManager()
-                    mm._update_all_subs(models)
-                    models = list(mm._filtered_models().values())
+                    mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
+                    models = mm.filter_models(models)
+                followed = await _get_following_set() if unfollowed_only else set()
                 by_key = {}
                 for m in models:
                     target = {"accountId": str(m.id), "username": m.name}
                     by_key[m.name.lower()] = target
                     by_key[str(m.id)] = target
                 for u in unresolved:
-                    resolved_cache[str(u).lower()] = by_key.get(str(u).lower())
+                    key = str(u).lower()
+                    target = by_key.get(key)
+                    resolved_cache[key] = target
+                    if target and (followed is None or target["accountId"] not in followed):
+                        unfollowed_cache[key] = target
+                    else:
+                        unfollowed_cache[key] = None
+
+            source = unfollowed_cache if unfollowed_only else resolved_cache
             out, seen = [], set()
             for u in names:
-                target = resolved_cache.get(str(u).lower()) if u else None
+                target = source.get(str(u).lower()) if u else None
                 if target and target["accountId"] not in seen:
                     seen.add(target["accountId"])
                     out.append(target)
             return out
 
         async def _streams_for_targets(targets):
-            found = []
-            for target in targets:
-                channel = await live_api.get_channel(c, target["accountId"])
+            if not targets:
+                return []
+            sem = asyncio.Semaphore(opts["check_concurrency"])
+
+            async def check_one(target):
+                async with sem:
+                    channel = await live_api.get_channel(c, target["accountId"])
                 if channel.get("live"):
                     stream = channel.get("stream") or {}
-                    found.append(
-                        {
-                            "accountId": str(target["accountId"]),
-                            "username": target["username"],
-                            "streamId": stream.get("id"),
-                            "channelId": channel.get("id") or stream.get("channelId"),
-                            "title": stream.get("title"),
-                            "startedAt": stream.get("startedAt"),
-                            "status": channel.get("status"),
-                        }
-                    )
-            return found
+                    return {
+                        "accountId": str(target["accountId"]),
+                        "username": target["username"],
+                        "streamId": stream.get("id"),
+                        "channelId": channel.get("id") or stream.get("channelId"),
+                        "title": stream.get("title"),
+                        "startedAt": stream.get("startedAt"),
+                        "status": channel.get("status"),
+                    }
+                return None
+
+            results = await asyncio.gather(
+                *(check_one(t) for t in targets),
+                return_exceptions=True,
+            )
+            for r in results:
+                if isinstance(r, Exception):
+                    raise r
+            return [r for r in results if isinstance(r, dict)]
 
         def _log_poll_state(selected):
-            nonlocal announced_idle
-            active_ids = watcher.active if watcher is not None else {}
-            new_live = [s for s in selected if s["accountId"] not in active_ids]
+            nonlocal announced_idle, announced_live_ids
+            current_ids = {s["accountId"] for s in selected}
+            announced_live_ids &= current_ids
+
+            new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
             if new_live:
                 names = ", ".join(s["username"] for s in new_live)
                 log.info(f"Live now ({len(new_live)}): {names}")
+                announced_live_ids.update(s["accountId"] for s in new_live)
                 announced_idle = False
             elif selected:
                 names = ", ".join(s["username"] for s in selected)
@@ -854,18 +869,22 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 log.debug("No active Fansly livestreams found.")
 
         async def fetch_online():
+            nonlocal announced_no_targets, poll_failed
             usernames = opts["usernames"]
+            name_list = [usernames] if isinstance(usernames, str) else list(usernames or [])
             search_mode = opts["username_search"]
             all_users = wants_all_usernames(usernames)
 
             try:
                 # Individual search (-fi) with explicit usernames: query only those creators
                 if not all_users and search_mode == "individual":
-                    targets = await _resolve_fansly_targets(usernames)
-                    if not targets:
+                    targets = await _resolve_fansly_targets(name_list, unfollowed_only=False)
+                    if not targets and not announced_no_targets:
                         log.warning("No matching creators found to check for livestreams.")
+                        announced_no_targets = True
                     online = await _streams_for_targets(targets)
                     selected = select_streams(online, usernames, opts["excluded"])
+                    poll_failed = False
                     _log_poll_state(selected)
                     return selected
 
@@ -873,7 +892,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 online = await live_api.get_online_streams(c)
                 selected = select_streams(online, usernames, opts["excluded"])
 
-                # Auto fallback when explicit --username creators aren't in followed online streams
+                # Auto fallback when explicit --username creators aren't followed
                 if not all_users and search_mode != "list":
                     matched_keys = username_keys(
                         [s.get("username") for s in selected]
@@ -882,32 +901,45 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     skip = username_keys(opts["excluded"])
                     missing = [
                         u
-                        for u in usernames
+                        for u in name_list
                         if u
                         and str(u).lower() not in matched_keys
                         and str(u).lower() not in skip
                     ]
                     if missing:
-                        targets = await _resolve_fansly_targets(missing)
+                        targets = await _resolve_fansly_targets(missing, unfollowed_only=True)
                         selected.extend(await _streams_for_targets(targets))
 
                 if opts["has_filters"] and selected:
-                    models = [
-                        Model(m)
-                        for m in await fansly_scrape.get_models(
-                            [s["username"] for s in selected], c=c
-                        )
+                    unchecked = [
+                        s for s in selected if str(s["accountId"]) not in filtered_cache
                     ]
-                    mm = ModelManager()
-                    mm._update_all_subs(models)
-                    allowed = {m.lower() for m in mm._filtered_models().keys()}
-                    selected = [s for s in selected if s["username"].lower() in allowed]
+                    if unchecked:
+                        models = [
+                            Model(m)
+                            for m in await fansly_scrape.get_models(
+                                [s["username"] for s in unchecked], c=c
+                            )
+                        ]
+                        mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
+                        allowed_ids = {str(m.id) for m in mm.filter_models(models)}
+                        for s in unchecked:
+                            aid = str(s["accountId"])
+                            filtered_cache[aid] = aid in allowed_ids
+                    selected = [
+                        s for s in selected if filtered_cache.get(str(s["accountId"]), False)
+                    ]
 
                 selected = select_streams(selected, usernames, opts["excluded"])
+                poll_failed = False
                 _log_poll_state(selected)
                 return selected
             except Exception as e:
-                log.warning(f"Fansly livestream check failed: {e}")
+                if not poll_failed:
+                    log.warning(f"Fansly livestream check failed: {e}")
+                    poll_failed = True
+                else:
+                    log.debug(f"Fansly livestream check failed: {e}")
                 log.debug("", exc_info=True)
                 raise
 
@@ -931,12 +963,14 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             await LiveRecorder(
                 stream, save_location, fetch_channel, fetch_text,
                 ffmpeg=ffmpeg, user_agent=auth.get("user_agent") or "", chat=chat,
+                max_failures=opts["max_failures"],
             ).run(stop_event)
 
         watcher = LiveWatcher(
             fetch_online, record,
             max_concurrent=opts["max_concurrent"],
             interval=opts["interval"],
+            jitter=opts["jitter"],
             once=not watch,
         )
         await watcher.run(stop)
