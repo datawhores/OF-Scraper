@@ -164,6 +164,33 @@ def test_new_cost_says_unlocked_for_a_bought_post_and_free_for_a_free_one(monkey
     assert bought_row["new_cost_per_media"] == "Unlocked"
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+def test_bought_posts_sort_last_by_new_cost_either_way(monkeypatch, reverse):
+    # like "Unlocked" in the media table's price column, a bought post has no
+    # cost left to compare, so it stays at the bottom in both directions
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+    posts = [
+        _post_obj(10, 0, [_media_obj(1, 10)]),  # free
+        _post_obj(20, 12.0, [_media_obj(2, 20)]),  # bought
+        _post_obj(30, 10.0, [_media_obj(3, 30, canview=False)]),  # locked
+    ]
+    app = table_app.InputApp()
+    app.post_data = post_metrics.build_post_centric_rows(posts, "creator_a", 1)
+    assert [r["new_cost_per_media"] for r in app.post_data] == [
+        "Free",
+        "Unlocked",
+        "$10.00",
+    ]
+
+    app._post_reverse = reverse
+    app._post_sort_runner("new_cost_per_media")
+
+    expected = [30, 10, 20] if reverse else [10, 30, 20]
+    assert [r["post_id"] for r in app.post_data] == expected
+
+
 @pytest.mark.parametrize("field", ["#minDate", "#maxDate"])
 @pytest.mark.parametrize("bound", ["2025.13.45", "01/02/2025", "soon"])
 def test_an_unreadable_date_bound_does_not_hide_rows(stub_env, field, bound):
