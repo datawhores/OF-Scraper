@@ -97,8 +97,6 @@ class DateField(Container):
         # filter is off and keeps rows without a date
         if min_val is None and max_val is None:
             return True
-        min_val = min_val or arrow.get(0)
-        max_val = max_val or arrow.now().floor("day")
         raw_val = str(value or "").strip()
         if not raw_val or raw_val == "Probably Deleted":
             return False
@@ -112,5 +110,9 @@ class DateField(Container):
                 parsed = arrow.get(extracted).floor("day")
             except Exception:
                 return False
-        return parsed.is_between(min_val, max_val, bounds="[]")
+        if min_val is not None and parsed < min_val:
+            return False
+        if max_val is not None and parsed > max_val:
+            return False
+        return True
 

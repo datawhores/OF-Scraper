@@ -181,3 +181,30 @@ def test_a_readable_date_bound_still_filters(stub_env):
             assert [r["index"] for r in app._filtered_rows] == [2]
 
     asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "now, posted",
+    [
+        # east of UTC in the afternoon: today's local midnight is yesterday in UTC
+        ("2026-03-10T15:00:00+10:00", "2026-03-10 03:00:00"),
+        # west of UTC in the evening: the post's UTC date is already tomorrow
+        ("2026-03-10T20:00:00-05:00", "2026-03-11 00:30:00"),
+    ],
+)
+def test_an_earliest_date_alone_keeps_todays_posts(stub_env, monkeypatch, now, posted):
+    import ofscraper.classes.table.fields.datefield as datefield
+
+    fixed = datefield.arrow.get(now)
+    monkeypatch.setattr(datefield.arrow, "now", lambda *a, **k: fixed)
+    media_rows = [_media_row(1, post_date=posted)]
+
+    async def drive():
+        app = _app(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2026.03.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
