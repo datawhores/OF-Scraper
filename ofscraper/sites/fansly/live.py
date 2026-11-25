@@ -790,7 +790,6 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 if opts["has_filters"] and models:
                     mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
                     models = mm.filter_models(models)
-                followed = await _get_following_set() if unfollowed_only else set()
                 by_key = {}
                 for m in models:
                     target = {"accountId": str(m.id), "username": m.name}
@@ -798,17 +797,28 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     by_key[str(m.id)] = target
                 for u in unresolved:
                     key = str(u).lower()
-                    target = by_key.get(key)
-                    resolved_cache[key] = target
-                    if target and (followed is None or target["accountId"] not in followed):
-                        unfollowed_cache[key] = target
-                    else:
-                        unfollowed_cache[key] = None
+                    resolved_cache[key] = by_key.get(key)
 
-            source = unfollowed_cache if unfollowed_only else resolved_cache
+            if unfollowed_only:
+                pending = [u for u in names if u and str(u).lower() not in unfollowed_cache]
+                followed = await _get_following_set() if pending else None
+                # without the following list this poll checks them all, and
+                # the list is asked for again next poll
+                if followed is not None:
+                    for u in pending:
+                        key = str(u).lower()
+                        target = resolved_cache.get(key)
+                        unfollowed_cache[key] = (
+                            target if target and target["accountId"] not in followed else None
+                        )
+
             out, seen = [], set()
             for u in names:
-                target = source.get(str(u).lower()) if u else None
+                key = str(u).lower() if u else None
+                if unfollowed_only and key in unfollowed_cache:
+                    target = unfollowed_cache[key]
+                else:
+                    target = resolved_cache.get(key) if key else None
                 if target and target["accountId"] not in seen:
                     seen.add(target["accountId"])
                     out.append(target)

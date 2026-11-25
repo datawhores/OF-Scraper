@@ -1255,6 +1255,70 @@ def test_fansly_auto_fallback_resolves_unfollowed_target_once_across_polls(
     assert lookup_calls == [["creator_c"]]
     assert polls == 3
 
+def test_fansly_auto_fallback_asks_for_the_following_list_again_after_a_failure(
+    monkeypatch, fansly_settings
+):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live_watch=True, usernames=("creator_b",), username_search=None)
+    following_calls = []
+    channel_calls = []
+
+    async def fake_by_username(c, usernames):
+        return [{"id": CREATOR_B[0], "username": CREATOR_B[1]}]
+
+    async def fake_following_ids(c, user_id):
+        following_calls.append(1)
+        if len(following_calls) == 1:
+            raise RuntimeError("following list unavailable")
+        return [CREATOR_A[0], CREATOR_B[0]]  # creator_b is followed
+
+    import ofscraper.utils.me as me_util
+
+    monkeypatch.setattr(me_util, "get_id", lambda: "999", raising=False)
+    monkeypatch.setattr(fansly_api, "accounts_by_username", fake_by_username)
+    monkeypatch.setattr(fansly_api, "following_ids", fake_following_ids)
+
+    polls = 0
+    stop = asyncio.Event()
+
+    def online(url):
+        nonlocal polls
+        polls += 1
+        if polls >= 4:
+            stop.set()
+        return online_response(CREATOR_A)
+
+    def channel_b(url):
+        channel_calls.append("creator_b")
+        return channel_response(CREATOR_B[0], "", status=0)
+
+    client = FakeClient({
+        live_api.ONLINE_URL: online,
+        live_api.channel_url(CREATOR_B[0]): channel_b,
+    })
+    install_session(monkeypatch, client)
+
+    class FastWatcher(live.LiveWatcher):
+        def __init__(self, fetch_online, record, **kwargs):
+            super().__init__(
+                fetch_online,
+                record,
+                max_concurrent=kwargs.get("max_concurrent", 2),
+                interval=0.01,
+                jitter=0,
+                once=kwargs.get("once", False),
+            )
+
+    monkeypatch.setattr(live, "LiveWatcher", FastWatcher)
+    asyncio.run(asyncio.wait_for(live.run(watch=True, stop=stop), timeout=5))
+
+    # the failed first fetch is tried again; once creator_b shows as followed,
+    # the online list covers it and its channel isn't asked any more
+    assert len(following_calls) == 2
+    assert channel_calls == ["creator_b"]
+
+
 def test_fansly_auto_fallback_skips_channel_polls_for_followed_offline_creators(
     monkeypatch, fansly_settings
 ):
