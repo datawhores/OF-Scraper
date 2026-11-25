@@ -732,9 +732,9 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     import ofscraper.managers.manager as manager
     import ofscraper.utils.paths.common as common_paths
     import ofscraper.utils.system.ffmpeg as ffmpeg_finder
+    from ofscraper.managers.sessionmanager.sessionmanager import HEADERS
     from ofscraper.classes.of.models import Model
     from ofscraper.managers.model import ModelManager
-    from ofscraper.managers.sessionmanager.sessionmanager import HEADERS
     from ofscraper.sites.fansly import api as fansly_api
     from ofscraper.sites.fansly import auth as fansly_auth
     from ofscraper.sites.fansly import live_api, live_chat
@@ -980,9 +980,8 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     auth.get("authorization_token"),
                 )
             await LiveRecorder(
-                stream, save_location, fetch_channel, fetch_text,
+                stream, save_location, fetch_channel, fetch_text, max_failures=opts["max_failures"],
                 ffmpeg=ffmpeg, user_agent=auth.get("user_agent") or "", chat=chat,
-                max_failures=opts["max_failures"],
             ).run(stop_event)
 
         watcher = LiveWatcher(

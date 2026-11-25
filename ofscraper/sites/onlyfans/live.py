@@ -333,11 +333,9 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
     """Check once (--live) or watch (--live-watch) and record OnlyFans streams."""
     opts = shared.options()
     if opts["chat"]:
-        log.warning("--live-chat only applies to Fansly; ignoring it for OnlyFans.")
-
-    if not live_capture.playwright_ready():  # logs how to install it
+        log.warning("--live-chat only applies to Fansly; OnlyFans recordings have no chat file")
+    if not live_capture.playwright_ready():
         return
-
     save_location = common_paths.get_save_location()
     ffmpeg = ffmpeg_finder.get_ffmpeg() or None
     cache_token = _TARGET_CACHE.set({})

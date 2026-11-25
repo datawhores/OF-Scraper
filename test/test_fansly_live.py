@@ -1133,15 +1133,6 @@ def test_only_https_variant_urls_reach_ffmpeg(tmp_path):
     assert sidecar["parts"] == []
 
 
-@pytest.mark.parametrize("name", ["../escape", "a/b", "a\\b", "..", "x:y"])
-def test_api_username_is_cleaned_before_it_becomes_a_folder(tmp_path, name):
-    base = live.recording_base(tmp_path, name, STARTED_MS)
-    livestreams = base.parent
-    assert livestreams.name == "Livestreams"
-    assert livestreams.parent.parent == tmp_path / "Fansly"  # one folder level, inside Fansly
-    assert livestreams.parent.name not in ("", ".", "..")
-    assert not set("/\\:") & set(livestreams.parent.name + base.name)
-
 # ------------------------------------------------------------------ search & logging
 
 def test_fansly_individual_search_queries_target_channel_without_following_list(
@@ -1586,3 +1577,13 @@ def test_fansly_failed_polls_warn_once_per_failure_streak(monkeypatch, fansly_se
         "Fansly livestream check failed: network down",
         "Fansly livestream check failed: network down again",
     ]
+
+
+@pytest.mark.parametrize("name", ["../escape", "a/b", "a\\b", "..", "x:y"])
+def test_api_username_is_cleaned_before_it_becomes_a_folder(tmp_path, name):
+    base = live.recording_base(tmp_path, name, STARTED_MS)
+    livestreams = base.parent
+    assert livestreams.name == "Livestreams"
+    assert livestreams.parent.parent == tmp_path / "Fansly"  # one folder level, inside Fansly
+    assert livestreams.parent.name not in ("", ".", "..")
+    assert not set("/\\:") & set(livestreams.parent.name + base.name)
