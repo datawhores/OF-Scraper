@@ -319,6 +319,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                     return future.result(timeout=_check_timeout())
                 except Exception as e:
                     log.debug(f"{username}: live check timed out/failed: {e}")
+                    future.cancel()
                     return None
 
             async def record(stream: dict, stop_event: asyncio.Event):

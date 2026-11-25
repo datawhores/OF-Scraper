@@ -378,6 +378,38 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
     assert len(reads) == 2  # auth.json is read for each recording
 
 
+def test_a_timed_out_live_check_is_cancelled(monkeypatch, onlyfans_settings):
+    onlyfans_settings(live=True)
+    install_session(monkeypatch, Client(Response(200, {})))
+    real_getattr = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr",
+                        lambda key, default=None: 1 if key == "LIVE_CHECK_TIMEOUT" else real_getattr(key, default))
+    cancelled = threading.Event()
+
+    async def never_answers(c, username):
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    async def online(c, checks=None):
+        return [{"accountId": 1, "username": "creator_a"}]
+
+    results = []
+
+    def capture(halt, username, out, auth, still_live, ffmpeg, proxy):
+        results.append(still_live())
+        results.append(cancelled.wait(5))  # the check doesn't keep running on the loop
+
+    monkeypatch.setattr(live, "still_live", never_answers)
+    monkeypatch.setattr(live, "get_online_streams", online)
+    monkeypatch.setattr(live_capture, "playwright_ready", lambda: True)
+    monkeypatch.setattr(live_capture, "capture", capture)
+    asyncio.run(live.run(False, asyncio.Event()))
+    assert results == [None, True]
+
+
 def test_the_browser_gets_the_sessions_proxy(monkeypatch, onlyfans_settings):
     from ofscraper.managers.sessionmanager.sessionmanager import sessionManager
 
