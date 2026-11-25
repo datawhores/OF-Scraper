@@ -23,7 +23,7 @@ def load_req_live_config():
         1, int(os.getenv("OFSC_LIVE_CHECK_TIMEOUT", "15"))
     )
 
-    # LIVE_INDIVIDUAL_MAX: Most OnlyFans creators chosen with `-u` that each `--live` / `--live-watch` check asks one by one; with more, a check reads the subscription list instead.
+    # LIVE_INDIVIDUAL_MAX: Most OnlyFans creators chosen with `-u` that each `--live` / `--live-watch` check asks one by one; with more, a check reads the subscription list instead and asks this many of the chosen creators missing from it, taking turns.
     # Default: 10
     config["LIVE_INDIVIDUAL_MAX"] = max(
         0, int(os.getenv("OFSC_LIVE_INDIVIDUAL_MAX", "10"))

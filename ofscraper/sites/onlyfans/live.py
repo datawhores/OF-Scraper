@@ -257,6 +257,40 @@ def _individual_max() -> int:
     return max(0, int(of_env.getattr("LIVE_INDIVIDUAL_MAX")))
 
 
+async def _named_ids(cache: dict, all_users: bool, targets: dict) -> set:
+    """Targets chosen by name: every one with -u; without it, the members of
+    an explicit --user-list (not the default lists). Other filters choose from
+    the subscriptions, so only active subscriptions are watched then."""
+    if not all_users:
+        return set(targets)
+    if "named_ids" not in cache:
+        import ofscraper.data.api.subscriptions.lists as lists
+        import ofscraper.utils.settings as settings
+        from ofscraper.managers.model import ModelManager
+
+        chosen = {
+            str(x).strip().lower()
+            for x in (getattr(settings.get_settings(), "userlist", None) or [])
+            if str(x).strip()
+        }
+        if chosen - ModelManager.DEFAULT_LISTS:
+            cache["named_ids"] = {u.get("id") for u in await lists.get_otherlist()}
+        else:
+            cache["named_ids"] = set()
+            log.info("Without -u or a user list, only active subscriptions are checked for livestreams")
+    return cache["named_ids"]
+
+
+def _take_turns(cache: dict, targets: list) -> list:
+    """At most LIVE_INDIVIDUAL_MAX of ``targets``, taking turns across polls."""
+    most = _individual_max()
+    if len(targets) <= most:
+        return targets
+    start = cache.get("turn", 0) % len(targets)
+    cache["turn"] = start + most
+    return (targets + targets)[start:start + most]
+
+
 async def get_online_streams(c, checks=None) -> list:
     import ofscraper.utils.settings as settings
     from ofscraper.data.api.subscriptions.subscriptions import scrape_subscriptions_active
@@ -301,12 +335,21 @@ async def get_online_streams(c, checks=None) -> list:
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
         # targets not in the active list (expired, or only on a user list) are
-        # asked one by one, as the individual search does
-        listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
-        unlisted = [t for t in targets.values() if t["accountId"] not in listed | live_ids]
-        live_ids |= {
-            t["accountId"] for t in await _check_targets_concurrently(check_session, unlisted, set(), cache)
-        }
+        # asked one by one, as the individual search does, but only creators
+        # chosen by name; a failed scan (no pages) says nothing about who is missing
+        if pages:
+            listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
+            named = await _named_ids(cache, all_users, targets)
+            unlisted = [
+                t for t in targets.values()
+                if t["accountId"] in named and t["accountId"] not in listed | live_ids
+            ]
+            live_ids |= {
+                t["accountId"]
+                for t in await _check_targets_concurrently(
+                    check_session, _take_turns(cache, unlisted), set(), cache
+                )
+            }
         # the cached target, which keeps the name a renamed creator was looked up as
         return [t for t in targets.values() if t["accountId"] in live_ids]
 

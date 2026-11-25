@@ -816,6 +816,75 @@ def test_failed_live_checks_warn_once_per_failure_streak(monkeypatch, onlyfans_s
     assert len(warnings) == 2  # once per streak of failed checks
 
 
+def _direct_check_run(monkeypatch, onlyfans_settings, active_pages, polls=3, members=None, most=None, **values):
+    """Poll a few times over 3 creators missing from the active list; returns
+    the usernames asked directly on each poll."""
+    import ofscraper.data.api.subscriptions.lists as lists
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, **values)
+
+    async def fake_get_models():
+        return [Model({"id": i, "username": f"creator_{i}", "hasStream": False}) for i in (1, 2, 3)]
+
+    async def fake_active(c):
+        for page in active_pages:
+            yield page
+
+    async def fake_otherlist():
+        return [{"id": i} for i in (members or [])]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    monkeypatch.setattr(lists, "get_otherlist", fake_otherlist)
+    if most is not None:
+        real_getattr = of_env.getattr
+        monkeypatch.setattr(of_env, "getattr",
+                            lambda key, default=None: most if key == "LIVE_INDIVIDUAL_MAX" else real_getattr(key, default))
+    install_session(monkeypatch, Client(Response(200, {})),
+                    model_manager=SimpleNamespace(filter_models=lambda models: list(models)))
+    asked = []
+    token = live._TARGET_CACHE.set({})
+    try:
+        for _ in range(polls):
+            checks = Client(Response(200, {"isActive": False}))
+            asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+            asked.append(sorted(u.split("/users/")[1].split("/")[0] for u in checks.urls))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    return asked
+
+
+OTHER_ACTIVE = [[{"id": 99, "username": "creator_99", "hasStream": False}]]
+
+
+def test_filters_without_names_watch_active_subscriptions_only(monkeypatch, onlyfans_settings, caplog):
+    with caplog.at_level("INFO", logger="shared"):
+        asked = _direct_check_run(monkeypatch, onlyfans_settings, OTHER_ACTIVE, promo=False)
+    assert asked[1:] == [[], []]
+    assert caplog.text.count("only active subscriptions are checked") == 1
+
+
+def test_members_of_a_chosen_user_list_are_asked_directly(monkeypatch, onlyfans_settings):
+    asked = _direct_check_run(monkeypatch, onlyfans_settings, OTHER_ACTIVE, members=[1], userlist=["vip"])
+    assert asked[1:] == [["creator_1"], ["creator_1"]]
+
+
+def test_direct_checks_take_turns_above_the_cap(monkeypatch, onlyfans_settings):
+    asked = _direct_check_run(monkeypatch, onlyfans_settings, OTHER_ACTIVE, most=2,
+                              usernames=["creator_1", "creator_2", "creator_3"], username_search="list")
+    assert all(len(a) <= 2 for a in asked)
+    assert set(asked[1]) | set(asked[2]) == {"creator_1", "creator_2", "creator_3"}
+
+
+def test_a_failed_active_scan_asks_nobody_directly(monkeypatch, onlyfans_settings):
+    asked = _direct_check_run(monkeypatch, onlyfans_settings, [],
+                              usernames=["creator_1", "creator_2", "creator_3"], username_search="list")
+    assert asked[1:] == [[], []]
+
+
 def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
     monkeypatch, onlyfans_settings, caplog
 ):
@@ -894,7 +963,7 @@ def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onl
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model
 
-    onlyfans_settings(live_watch=True, usernames=None, userlist=["vip"])
+    onlyfans_settings(live_watch=True, usernames=None, promo=False)
     answers = [[], [Model({"id": 1, "username": "creator_a", "hasStream": True})]]
     calls = []
 
@@ -982,9 +1051,15 @@ def test_all_with_user_filters_caches_targets_and_uses_batch_subscriptions(
             {"id": 2, "username": "creator_b", "hasStream": True},
         ]
 
+    import ofscraper.data.api.subscriptions.lists as lists
+
+    async def fake_otherlist():
+        return []
+
     monkeypatch.setattr(retriver, "get_models", fake_get_models)
     monkeypatch.setattr(ModelManager, "filter_models", fake_filter_models)
     monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    monkeypatch.setattr(lists, "get_otherlist", fake_otherlist)
     main_client = Client(Response(200, {}))
     checks_client = Client(Response(200, {}))
 
