@@ -90,6 +90,7 @@ ENV_FILES = {
     "req/anon.py": "Anonymous requests",
     "req/discord.py": "Discord",
     "req/git.py": "Dynamic rule downloads",
+    "req/live.py": "Livestream polling and recording",
     "general.py": "Output and file handling",
     "main.py": "General defaults",
     "date.py": "Dates",
@@ -128,7 +129,7 @@ ENV_GROUPS = [
     ),
     (
         "Network, retries and rate limits",
-        ["req/req.py", "req/api.py", "req/ratelimit.py", "req/auth.py", "req/anon.py", "req/git.py"],
+        ["req/req.py", "req/api.py", "req/ratelimit.py", "req/auth.py", "req/anon.py", "req/git.py", "req/live.py"],
     ),
     ("DRM, CDM and Discord", ["req/mpd.py", "req/cdm.py", "req/discord.py"]),
     ("Logging, progress and UI", ["logger.py", "live.py", "system.py", "prompts.py"]),
