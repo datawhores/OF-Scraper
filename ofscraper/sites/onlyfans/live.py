@@ -241,15 +241,10 @@ async def _check_targets_concurrently(check_session, targets, initial_live: set,
         *(check_one(t) for t in targets),
         return_exceptions=True,
     )
-    state = cache if cache is not None else {}
-    if failed and not state.get("checks_failed"):
-        log.warning(
-            f"OnlyFans live check failed for {len(failed)} creator(s); "
-            "they count as offline until a check works"
-        )
-    elif failed:
-        log.debug(f"OnlyFans live check failed for {len(failed)} creator(s)")
-    state["checks_failed"] = bool(failed)
+    shared.warn_streak(cache if cache is not None else {}, "checks", failed and (
+        f"OnlyFans live check failed for {len(failed)} creator(s); "
+        "they count as offline until a check works"
+    ))
     return [r for r in results if isinstance(r, dict)]
 
 
@@ -257,13 +252,18 @@ def _individual_max() -> int:
     return max(0, int(of_env.getattr("LIVE_INDIVIDUAL_MAX")))
 
 
-async def _named_ids(cache: dict, all_users: bool, targets: dict) -> set:
-    """Targets chosen by name: every one with -u; without it, the members of
-    an explicit --user-list (not the default lists). Other filters choose from
-    the subscriptions, so only active subscriptions are watched then."""
-    if not all_users:
-        return set(targets)
-    if "named_ids" not in cache:
+async def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, live_ids: set) -> list:
+    """The targets to ask one by one this poll: those missing from the active
+    list (expired, or only on a user list) that were chosen by name, at most
+    LIVE_INDIVIDUAL_MAX of them, taking turns across polls.
+
+    Chosen by name: every target with -u; without it, the members of an
+    explicit --user-list (not the default lists). Other filters choose from
+    the subscriptions, so only active subscriptions are watched then. A failed
+    scan (no pages) says nothing about who is missing, so nobody is asked."""
+    if not pages:
+        return []
+    if all_users and "named_ids" not in cache:
         import ofscraper.data.api.subscriptions.lists as lists
         import ofscraper.utils.settings as settings
         from ofscraper.managers.model import ModelManager
@@ -278,17 +278,18 @@ async def _named_ids(cache: dict, all_users: bool, targets: dict) -> set:
         else:
             cache["named_ids"] = set()
             log.info("Without -u or a user list, only active subscriptions are checked for livestreams")
-    return cache["named_ids"]
-
-
-def _take_turns(cache: dict, targets: list) -> list:
-    """At most LIVE_INDIVIDUAL_MAX of ``targets``, taking turns across polls."""
+    named = cache["named_ids"] if all_users else set(targets)
+    listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
+    missing = [
+        t for t in targets.values()
+        if t["accountId"] in named and t["accountId"] not in listed | live_ids
+    ]
     most = _individual_max()
-    if len(targets) <= most:
-        return targets
-    start = cache.get("turn", 0) % len(targets)
+    if len(missing) <= most:
+        return missing
+    start = cache.get("turn", 0) % len(missing)
     cache["turn"] = start + most
-    return (targets + targets)[start:start + most]
+    return (missing + missing)[start:start + most]
 
 
 async def get_online_streams(c, checks=None) -> list:
@@ -331,22 +332,10 @@ async def get_online_streams(c, checks=None) -> list:
     if list_mode or len(targets) > _individual_max():
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
-        # targets not in the active list (expired, or only on a user list) are
-        # asked one by one, as the individual search does, but only creators
-        # chosen by name; a failed scan (no pages) says nothing about who is missing
-        if pages:
-            listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
-            named = await _named_ids(cache, all_users, targets)
-            unlisted = [
-                t for t in targets.values()
-                if t["accountId"] in named and t["accountId"] not in listed | live_ids
-            ]
-            live_ids |= {
-                t["accountId"]
-                for t in await _check_targets_concurrently(
-                    check_session, _take_turns(cache, unlisted), set(), cache
-                )
-            }
+        direct = await _direct_targets(cache, all_users, targets, pages, live_ids)
+        live_ids |= {
+            t["accountId"] for t in await _check_targets_concurrently(check_session, direct, set(), cache)
+        }
         # the cached target, which keeps the name a renamed creator was looked up as
         return [t for t in targets.values() if t["accountId"] in live_ids]
 
@@ -411,22 +400,18 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
             warned = []
             announced_idle = False
             announced_live_ids = set()
-            poll_failed = False
+            streaks = {}
 
             async def fetch_online():
-                nonlocal announced_idle, announced_live_ids, poll_failed
+                nonlocal announced_idle, announced_live_ids
                 try:
                     online = await get_online_streams(c, checks=checks)
                 except Exception as e:
-                    if not poll_failed:
-                        log.warning(f"OnlyFans livestream check failed: {e}")
-                        poll_failed = True
-                    else:
-                        log.debug(f"OnlyFans livestream check failed: {e}")
+                    shared.warn_streak(streaks, "poll", f"OnlyFans livestream check failed: {e}")
                     log.debug("", exc_info=True)
                     raise
 
-                poll_failed = False
+                shared.warn_streak(streaks, "poll")
                 selected = select_streams(online, opts["usernames"], opts["excluded"])
                 current_ids = {s["accountId"] for s in selected}
                 announced_live_ids &= current_ids

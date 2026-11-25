@@ -592,6 +592,14 @@ def wants_all_usernames(usernames) -> bool:
     return not names or any(u.upper() == "ALL" for u in names)
 
 
+def warn_streak(streaks: dict, key: str, message: str = None) -> None:
+    """Log ``message`` as a warning at the start of a streak of failures and at
+    debug after that; a call without a message ends the streak."""
+    if message:
+        (log.debug if streaks.get(key) else log.warning)(message)
+    streaks[key] = bool(message)
+
+
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
@@ -759,8 +767,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
         announced_idle = False
         announced_live_ids = set()
         announced_no_targets = False
-        poll_failed = False
-        checks_failed = False
+        streaks = {}
         resolved_cache = {}
         unfollowed_cache = {}
         filtered_cache = {}
@@ -852,15 +859,12 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             )
             # a failed check skips that creator only, not the creators already
             # found live; it warns once until the checks work again
-            nonlocal checks_failed
             failed = [(t, r) for t, r in zip(targets, results) if isinstance(r, Exception)]
             for target, error in failed:
                 log.debug(f"Fansly: live check for {target['username']} failed: {error}")
-            if failed and not checks_failed:
-                log.warning(
-                    f"Fansly: live check failed for {len(failed)} creator(s): {failed[0][1]}"
-                )
-            checks_failed = bool(failed)
+            warn_streak(streaks, "checks", failed and (
+                f"Fansly: live check failed for {len(failed)} creator(s): {failed[0][1]}"
+            ))
             return [r for r in results if isinstance(r, dict)]
 
         def _log_poll_state(selected):
@@ -888,7 +892,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 log.debug("No active Fansly livestreams found.")
 
         async def fetch_online():
-            nonlocal announced_no_targets, poll_failed
+            nonlocal announced_no_targets
             usernames = opts["usernames"]
             name_list = [usernames] if isinstance(usernames, str) else list(usernames or [])
             search_mode = opts["username_search"]
@@ -903,7 +907,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         announced_no_targets = True
                     online = await _streams_for_targets(targets)
                     selected = select_streams(online, usernames, opts["excluded"])
-                    poll_failed = False
+                    warn_streak(streaks, "poll")
                     _log_poll_state(selected)
                     return selected
 
@@ -950,15 +954,11 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     ]
 
                 selected = select_streams(selected, usernames, opts["excluded"])
-                poll_failed = False
+                warn_streak(streaks, "poll")
                 _log_poll_state(selected)
                 return selected
             except Exception as e:
-                if not poll_failed:
-                    log.warning(f"Fansly livestream check failed: {e}")
-                    poll_failed = True
-                else:
-                    log.debug(f"Fansly livestream check failed: {e}")
+                warn_streak(streaks, "poll", f"Fansly livestream check failed: {e}")
                 log.debug("", exc_info=True)
                 raise
 
