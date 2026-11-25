@@ -767,6 +767,10 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     from ofscraper.sites.fansly import scrape as fansly_scrape
 
     opts = options()
+    # Fansly lists aren't read: --user-list / --black-list choose nobody here
+    opts["has_filters"] = ModelManager.has_active_filters(lists=False)
+    if ModelManager.has_list_filters():
+        log.warning("--user-list and --black-list don't apply to Fansly livestreams; creators on those lists are still recorded")
     auth = fansly_auth.read_auth()
     save_location = common_paths.get_save_location()
     ffmpeg = ffmpeg_finder.get_ffmpeg()

@@ -1404,6 +1404,32 @@ def test_fansly_a_creator_the_filter_lookup_missed_is_checked_again(monkeypatch,
     assert recorded == ["creator_a"]
 
 
+def test_fansly_lists_choose_nobody_and_say_so(monkeypatch, fansly_settings, caplog):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live=True, usernames=None, userlist=["vip"], blacklist=["blocked"])
+
+    async def no_lookup(c, usernames):
+        pytest.fail("a list option made Fansly look creators up as a filter")
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", no_lookup)
+    install_session(monkeypatch, FakeClient({live_api.ONLINE_URL: lambda url: online_response(CREATOR_A)}))
+    recorded = []
+
+    class FakeRecorder:
+        def __init__(self, stream, *args, **kwargs):
+            self.stream = stream
+
+        async def run(self, stop_event):
+            recorded.append(self.stream["username"])
+
+    monkeypatch.setattr(live, "LiveRecorder", FakeRecorder)
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(asyncio.wait_for(live.run(watch=False, stop=asyncio.Event()), timeout=5))
+    assert recorded == ["creator_a"]
+    assert caplog.text.count("don't apply to Fansly livestreams") == 1
+
+
 def test_a_failed_fallback_lookup_keeps_the_followed_live_creators(monkeypatch, fansly_settings, caplog):
     from ofscraper.sites.fansly import api as fansly_api
 

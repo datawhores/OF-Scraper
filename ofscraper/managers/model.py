@@ -70,7 +70,30 @@ class ModelManager:
     # on/off flags (--promo-only/--promo-skip and so on): False is a filter too
     TRISTATE_FILTERS = ("last_seen", "free_trial", "promo", "all_promo", "sub_status", "renewal")
 
-    DEFAULT_LISTS = {"main", "ofscraper.main", "active", "ofscraper.active"}
+    @staticmethod
+    def built_in_lists(*kinds) -> set:
+        """The --user-list names of the built-in lists of these kinds
+        (``RESERVED``, ``ACTIVE``, ``EXPIRED``), as of_env sets them."""
+        return {
+            str(of_env.getattr(f"OFSCRAPER_{kind}_LIST{alt}")).lower()
+            for kind in kinds
+            for alt in ("", "_ALT")
+        }
+
+    @staticmethod
+    def user_lists(s=None) -> set:
+        """The --user-list names, lowercase."""
+        s = s or settings.get_settings()
+        return {str(x).strip().lower() for x in (getattr(s, "userlist", None) or []) if str(x).strip()}
+
+    @classmethod
+    def has_list_filters(cls, s=None) -> bool:
+        """True when --user-list names more than all or active subscriptions,
+        or --black-list is set."""
+        s = s or settings.get_settings()
+        return bool(cls.user_lists(s) - cls.built_in_lists("RESERVED", "ACTIVE")) or any(
+            str(x).strip() for x in (getattr(s, "blacklist", None) or [])
+        )
 
     # =========================================================================
     # 1. INITIALIZATION & BASE DATA ACCESS
@@ -283,22 +306,16 @@ class ModelManager:
         return list(temp._filtered_models().values())
 
     @classmethod
-    def has_active_filters(cls, s=None) -> bool:
-        """True when non-default userlist, blacklist, or model filters are configured."""
+    def has_active_filters(cls, s=None, lists=True) -> bool:
+        """True when non-default userlist, blacklist, or model filters are
+        configured; without ``lists``, only model filters count."""
         s = s or settings.get_settings()
+        if lists and cls.has_list_filters(s):
+            return True
         for attr in cls.FILTER_ATTRIBUTES:
             value = getattr(s, attr, None)
-            if attr == "userlist":
-                lists = {
-                    str(x).strip().lower()
-                    for x in (value or [])
-                    if str(x).strip()
-                }
-                if lists - cls.DEFAULT_LISTS:
-                    return True
-            elif attr == "blacklist":
-                if any(str(x).strip() for x in (value or [])):
-                    return True
+            if attr in ("userlist", "blacklist"):
+                continue
             elif attr in cls.TRISTATE_FILTERS:
                 if value is not None:
                     return True

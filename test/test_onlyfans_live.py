@@ -660,6 +660,16 @@ def test_a_skip_flag_counts_as_a_user_filter(monkeypatch, onlyfans_settings):
     assert resolved == [1]
 
 
+def test_the_built_in_list_names_come_from_of_env(monkeypatch, onlyfans_settings):
+    from ofscraper.managers.model import ModelManager
+
+    onlyfans_settings(live=True, userlist=["everyone"])
+    real_getattr = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr",
+                        lambda key, default=None: "everyone" if key == "OFSCRAPER_RESERVED_LIST_ALT" else real_getattr(key, default))
+    assert not ModelManager.has_active_filters()
+
+
 def test_renew_off_filters_the_named_creators(monkeypatch, onlyfans_settings):
     import ofscraper.data.models.utils.retriver as retriver
     from ofscraper.classes.of.models import Model

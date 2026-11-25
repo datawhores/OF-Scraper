@@ -272,15 +272,9 @@ async def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: li
         return []
     if all_users and "named_ids" not in cache:
         import ofscraper.data.api.subscriptions.lists as lists
-        import ofscraper.utils.settings as settings
         from ofscraper.managers.model import ModelManager
 
-        chosen = {
-            str(x).strip().lower()
-            for x in (getattr(settings.get_settings(), "userlist", None) or [])
-            if str(x).strip()
-        }
-        if chosen - ModelManager.DEFAULT_LISTS:
+        if ModelManager.user_lists() - ModelManager.built_in_lists("RESERVED", "ACTIVE"):
             cache["named_ids"] = {u.get("id") for u in await lists.get_otherlist()}
         else:
             cache["named_ids"] = set()
