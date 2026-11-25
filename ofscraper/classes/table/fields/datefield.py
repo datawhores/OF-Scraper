@@ -79,21 +79,26 @@ class DateField(Container):
             return ""
         return match.group(0)
 
+    def _parse_bound(self, raw):
+        raw = str(raw or "").strip()
+        if not raw:
+            return None
+        try:
+            return arrow.get(self.convertString(raw) or raw).floor("day")
+        except Exception:
+            return None
+
     def compare(self, value):
         min_id = "#minDate" if self.filter_name == "post_date" else f"#{self.filter_name}_minDate"
         max_id = "#maxDate" if self.filter_name == "post_date" else f"#{self.filter_name}_maxDate"
-        raw_min = self.query_one(min_id).value.strip()
-        raw_max = self.query_one(max_id).value.strip()
-        if not raw_min and not raw_max:
+        min_val = self._parse_bound(self.query_one(min_id).value)
+        max_val = self._parse_bound(self.query_one(max_id).value)
+        # an empty or unreadable bound is no limit; with neither set the
+        # filter is off and keeps rows without a date
+        if min_val is None and max_val is None:
             return True
-        try:
-            min_val = arrow.get(self.convertString(raw_min) or raw_min).floor("day") if raw_min else arrow.get(0)
-        except Exception:
-            min_val = arrow.get(0)
-        try:
-            max_val = arrow.get(self.convertString(raw_max) or raw_max).floor("day") if raw_max else arrow.now().floor("day")
-        except Exception:
-            max_val = arrow.now().floor("day")
+        min_val = min_val or arrow.get(0)
+        max_val = max_val or arrow.now().floor("day")
         raw_val = str(value or "").strip()
         if not raw_val or raw_val == "Probably Deleted":
             return False

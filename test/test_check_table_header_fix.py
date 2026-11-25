@@ -144,3 +144,40 @@ def test_new_cost_says_unlocked_for_a_bought_post_and_free_for_a_free_one(monkey
     assert free_row["new_cost_per_media"] == "Free"
     assert bought_row["new_cost_per_photo"] == "Unlocked"
     assert bought_row["new_cost_per_media"] == "Unlocked"
+
+
+@pytest.mark.parametrize("field", ["#minDate", "#maxDate"])
+@pytest.mark.parametrize("bound", ["2025.13.45", "01/02/2025", "soon"])
+def test_an_unreadable_date_bound_does_not_hide_rows(stub_env, field, bound):
+    media_rows = [
+        _media_row(1, post_date="2024-05-01 12:00:00"),
+        _media_row(2, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one(field).value = bound
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1, 2]
+
+    asyncio.run(drive())
+
+
+def test_a_readable_date_bound_still_filters(stub_env):
+    media_rows = [
+        _media_row(1, post_date="2024-05-01 12:00:00"),
+        _media_row(2, post_date="2026-05-01 12:00:00"),
+        _media_row(3, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2025.01.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [2]
+
+    asyncio.run(drive())
