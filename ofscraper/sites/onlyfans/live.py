@@ -208,23 +208,21 @@ def recording_path(save_location, username: str, when: datetime.datetime | None 
 
 async def record_in_thread(fn, stop_event: asyncio.Event, *args, **kwargs):
     halt = threading.Event()
-
-    async def watch_stop():
-        await stop_event.wait()
-        halt.set()
-
-    stop_task = asyncio.create_task(watch_stop())
+    if args:
+        job = asyncio.ensure_future(asyncio.to_thread(fn, halt, *args, **kwargs))
+    else:
+        job = asyncio.ensure_future(asyncio.to_thread(fn, halt=halt, **kwargs))
     try:
-        if args:
-            return await asyncio.to_thread(fn, halt, *args, **kwargs)
-        return await asyncio.to_thread(fn, halt=halt, **kwargs)
+        while not job.done():
+            if stop_event.is_set():
+                halt.set()
+            await asyncio.wait({job}, timeout=1)
     finally:
+        # also on Ctrl+C: the browser saves what it has before the thread ends
         halt.set()
-        stop_task.cancel()
-        try:
-            await stop_task
-        except asyncio.CancelledError:
-            pass
+        if not job.done():
+            await asyncio.wait({job}, timeout=60)
+    return job.result()
 
 
 def _session_proxy(c) -> str | None:

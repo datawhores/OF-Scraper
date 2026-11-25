@@ -274,6 +274,25 @@ def test_cancelling_lets_the_recording_save_first():
     assert saved.is_set()
 
 
+def test_cancelling_waits_for_the_recording_to_save():
+    saved = threading.Event()
+
+    def capture(halt):
+        halt.wait(10)
+        threading.Event().wait(0.5)  # the browser writing out the file
+        saved.set()
+
+    async def main():
+        task = asyncio.ensure_future(live.record_in_thread(capture, asyncio.Event()))
+        await asyncio.sleep(0.2)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        return saved.is_set()
+
+    assert asyncio.run(main())  # saved before record_in_thread gave up, not after
+
+
 @pytest.fixture
 def onlyfans_settings(monkeypatch, tmp_path):
     def apply(**values):
