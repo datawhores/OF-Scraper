@@ -106,19 +106,52 @@ async def still_live(c, username):
         return None
 
 
-async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool, models=None):
-    """Resolve target creators via retriver + ModelManager, returning
-    (targets, initially_live_ids, unresolved). ``unresolved`` lists the -u names
-    no creator came back for, or is None when no creator came back at all."""
-    if models is None:
-        import ofscraper.data.models.utils.retriver as retriver
+async def _list_members(names) -> list:
+    """The members of the user's OnlyFans lists called ``names``, read like
+    lists.get_otherlist and get_blacklist but without their screen."""
+    import ofscraper.data.api.subscriptions.lists as lists
 
-        models = await retriver.get_models()
+    names = {str(n).strip().lower() for n in names or () if str(n).strip()}
+    chosen = [x for x in await lists.get_lists() if str(x.get("name")).lower() in names] if names else []
+    return await lists.get_list_users(chosen) if chosen else []
+
+
+async def _fetch_models(c, cache: dict, names=None) -> list:
+    """The creators to choose targets from: ``names`` looked up one by one, or
+    else the active and expired subscriptions and the members of the lists
+    chosen with --user-list. Read like the scraper's retriever does, but
+    without its screen updates or its subscriber count request, which would
+    hold up this loop. The creators a list names are kept for _direct_targets."""
+    import ofscraper.data.api.subscriptions.individual as individual
+    import ofscraper.data.api.subscriptions.subscriptions as subscriptions
+    from ofscraper.classes.of.models import Model
+    from ofscraper.managers.model import ModelManager
+
+    if names is not None:
+        return [Model(x) for x in await individual.get_subscription(list(names))]
+    own = ModelManager.user_lists() - ModelManager.built_in_lists("RESERVED", "ACTIVE", "EXPIRED")
+    members = await _list_members(own)
+    cache["named_ids"] = {u.get("id") for u in members}
+    found = await subscriptions.activeHelper(None, c) + await subscriptions.expiredHelper(None, c)
+    return [Model(x) for x in found + members]
+
+
+async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool, models, cache: dict):
+    """Choose the target creators from ``models``, returning (targets,
+    initially_live_ids, unresolved). ``unresolved`` lists the -u names no
+    creator came back for, or is None when no creator came back at all. A
+    creator on a ``--black-list`` list counts as found and left out."""
+    import ofscraper.utils.settings as settings
+
     if all_users:
         unresolved = None if not models else []
     else:
         names = [usernames] if isinstance(usernames, str) else list(usernames or [])
         _, unresolved = username_match.select_models(models or [], names)
+    if "blacklist_ids" not in cache:
+        black = getattr(settings.get_settings(), "blacklist", None)
+        cache["blacklist_ids"] = {u.get("id") for u in await _list_members(black)}
+    models = [m for m in models or () if m.id not in cache["blacklist_ids"]]
     if has_filters and models:
         mm = getattr(manager.Manager, "model_manager", None)
         if mm is None:
@@ -146,52 +179,48 @@ async def _resolve_target_creators(usernames, excluded, all_users: bool, has_fil
     return targets, initially_live, unresolved
 
 
-async def _look_up_names(names, excluded, has_filters: bool, cache: dict):
-    """Look up -u names one by one, returning (targets, initially_live_ids,
-    unresolved). A creator on a ``--black-list`` list counts as found and left
-    out, not as missing."""
-    import ofscraper.data.api.subscriptions.individual as individual
-    import ofscraper.data.api.subscriptions.lists as lists
-    from ofscraper.classes.of.models import Model
-
-    found = [Model(x) for x in await individual.get_subscription(list(names))]
-    _, unresolved = username_match.select_models(found, names)
-    if "blacklist_ids" not in cache:
-        cache["blacklist_ids"] = set(await lists.get_blacklist())
-    kept = [m for m in found if m.id not in cache["blacklist_ids"]]
-    targets, initial_live, _ = await _resolve_target_creators(
-        names, excluded, all_users=False, has_filters=has_filters, models=kept
-    )
-    return targets, initial_live, unresolved
+async def _look_up_names(c, names, excluded, has_filters: bool, cache: dict):
+    """Look up -u names one by one: (targets, initially_live_ids, unresolved)."""
+    models = await _fetch_models(c, cache, names)
+    return await _resolve_target_creators(names, excluded, False, has_filters, models, cache)
 
 
-async def _update_targets(cache: dict, usernames, excluded, all_users: bool, has_filters: bool) -> set:
+# the name the lookups of all subscriptions are counted under for the backoff
+_ALL = "the creator list"
+
+
+async def _update_targets(c, cache: dict, usernames, excluded, all_users: bool, has_filters: bool, by_name: bool) -> set:
     """Look up the target creators into ``cache["targets"]``: all of them on the
-    first poll, then on later polls the ones a failed lookup left out, so one
-    failure doesn't leave a creator unwatched all session. Returns the ids the
-    lookup saw live."""
+    first poll (the -u names one by one with ``by_name``, else from the
+    subscription lists), then on later polls the ones a failed lookup left
+    out, so one failure doesn't leave a creator unwatched all session.
+    Returns the ids the lookup saw live."""
     # the cache is filled only after a lookup succeeds: one that raised leaves
     # it as it was, so the next poll looks up everything again
-    import ofscraper.utils.settings as settings
-
     cache["poll"] = poll = cache.get("poll", 0) + 1
     misses = cache.setdefault("misses", {})
     if "targets" not in cache or cache["unresolved"] is None:
+        # a lookup that keeps finding no creators at all is made less often too
+        if "targets" in cache and not shared.lookup_due(misses, _ALL, poll):
+            return set()
+        names = None if all_users else ([usernames] if isinstance(usernames, str) else list(usernames))
+        models = await _fetch_models(c, cache, names if by_name else None)
         targets, initial_live, unresolved = await _resolve_target_creators(
-            usernames, excluded, all_users=all_users, has_filters=has_filters
+            usernames, excluded, all_users, has_filters, models, cache
         )
-        # the list lookup drops creators on a --black-list list, so a named one
-        # would look missing: look those names up to tell the two apart
-        if unresolved and getattr(settings.get_settings(), "blacklist", None):
-            more, more_live, unresolved = await _look_up_names(unresolved, excluded, has_filters, cache)
+        # -u names the lists don't have, such as a creator's old name, are
+        # looked up one by one, as the scraper does (#662)
+        if unresolved and not by_name:
+            more, more_live, unresolved = await _look_up_names(c, unresolved, excluded, has_filters, cache)
             targets, initial_live = targets + more, initial_live | more_live
-        shared.count_misses(misses, unresolved or [], unresolved or [])
+        tried = [_ALL, *(unresolved or [])]
+        shared.count_misses(misses, tried, tried if unresolved is None else unresolved)
     elif cache["unresolved"]:
         # a name that keeps missing (a typo, a deleted account) is asked less often
         due = [n for n in cache["unresolved"] if shared.lookup_due(misses, n, poll)]
         if not due:
             return set()
-        targets, initial_live, missing = await _look_up_names(due, excluded, has_filters, cache)
+        targets, initial_live, missing = await _look_up_names(c, due, excluded, has_filters, cache)
         shared.count_misses(misses, due, missing)
         unresolved = [n for n in cache["unresolved"] if n not in due] + missing
     else:
@@ -259,7 +288,7 @@ def _individual_max() -> int:
     return max(0, int(of_env.getattr("LIVE_INDIVIDUAL_MAX")))
 
 
-async def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, live_ids: set) -> list:
+def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, live_ids: set) -> list:
     """The targets to ask one by one this poll: those missing from the active
     list (expired, or only on a user list) that were chosen by name, at most
     LIVE_INDIVIDUAL_MAX of them, taking turns across polls.
@@ -270,16 +299,10 @@ async def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: li
     scan (no pages) says nothing about who is missing, so nobody is asked."""
     if not pages:
         return []
-    if all_users and "named_ids" not in cache:
-        import ofscraper.data.api.subscriptions.lists as lists
-        from ofscraper.managers.model import ModelManager
-
-        if ModelManager.user_lists() - ModelManager.built_in_lists("RESERVED", "ACTIVE"):
-            cache["named_ids"] = {u.get("id") for u in await lists.get_otherlist()}
-        else:
-            cache["named_ids"] = set()
-            log.info("Without -u or a user list, only active subscriptions are checked for livestreams")
-    named = cache["named_ids"] if all_users else set(targets)
+    named = cache.get("named_ids", set()) if all_users else set(targets)
+    if all_users and not named and not cache.get("told"):
+        cache["told"] = True
+        log.info("Without -u or a user list, only active subscriptions are checked for livestreams")
     listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
     missing = [
         t for t in targets.values()
@@ -323,17 +346,20 @@ async def get_online_streams(c, checks=None) -> list:
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
     # - Explicit --username with -fl (--username-list-search)
-    initial_live = await _update_targets(cache, usernames, excluded, all_users, has_filters)
+    list_mode = all_users or search_mode == "list"
+    by_name = not list_mode and (
+        search_mode == "individual" or len(username_match.username_keys(usernames)) <= _individual_max()
+    )
+    initial_live = await _update_targets(c, cache, usernames, excluded, all_users, has_filters, by_name)
     targets = cache["targets"]
     if not targets:
         return []
 
-    list_mode = all_users or search_mode == "list"
     # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
     if list_mode or len(targets) > _individual_max():
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
-        direct = await _direct_targets(cache, all_users, targets, pages, live_ids)
+        direct = _direct_targets(cache, all_users, targets, pages, live_ids)
         live_ids |= {
             t["accountId"] for t in await _check_targets_concurrently(check_session, direct, set(), cache)
         }
