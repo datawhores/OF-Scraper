@@ -1075,6 +1075,8 @@ def test_per_page_builds_each_table_once_at_startup(stub_env_hf, monkeypatch):
 
 def test_typing_a_per_page_value_builds_the_table_once(stub_env_hf, monkeypatch):
     counts = _count_page_builds_hf(monkeypatch)
+    # long enough that a busy machine can't fire it between two keystrokes
+    monkeypatch.setattr(table_app.InputApp, "PER_PAGE_DELAY", 1.0)
 
     async def drive():
         app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
@@ -1086,7 +1088,7 @@ def test_typing_a_per_page_value_builds_the_table_once(stub_env_hf, monkeypatch)
             await pilot.pause()
             counts["main"] = 0
             await pilot.press("5", "0", "0", "0")
-            await pilot.pause(0.6)
+            await pilot.pause(1.5)
             assert counts["main"] == 1
             assert app.table.row_count == 3
 

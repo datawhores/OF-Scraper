@@ -31,6 +31,9 @@ POST_COLS_CACHE_KEY = "check_table_visible_post_cols"
 
 
 class InputApp(App):
+    # seconds a Per Page box waits after the last keystroke before redrawing
+    PER_PAGE_DELAY = 0.3
+
     BINDINGS = [
         # priority, so a focused Input (which binds ctrl+d) doesn't take them
         Binding("ctrl+s", "toggle_options_sidebar", priority=True),
@@ -299,7 +302,7 @@ class InputApp(App):
         if pending is not None:
             pending.stop()
         self._per_page_timers[prefix] = self.set_timer(
-            0.3, lambda: self._apply_per_page(prefix)
+            self.PER_PAGE_DELAY, lambda: self._apply_per_page(prefix)
         )
 
     def _per_page(self, prefix):
