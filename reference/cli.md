@@ -708,7 +708,9 @@ Record the selected creators (all followed creators without -u) who are live now
 
 **Type:** flag · **Default:** off · **Commands:** main program
 
-Keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes
+Keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes. With -u or user filters, the creators to watch are chosen once, when watching starts
+
+When `-u`, a user list or other subscription filters choose the creators, the choice is made once. New subscriptions, expired ones and changes that filters such as `--last-seen-after` depend on take effect on the next run. Without them, each OnlyFans check reads the active subscriptions again, and each Fansly check reads the followed creators who are live.
 
 **Dest:** `live_watch` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
