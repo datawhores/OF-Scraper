@@ -962,8 +962,13 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         and str(u).lower() not in skip
                     ]
                     if missing:
-                        targets = await _resolve_fansly_targets(missing, unfollowed_only=True)
-                        selected.extend(await _streams_for_targets(targets))
+                        # a failed fallback loses only the unfollowed creators this poll
+                        try:
+                            targets = await _resolve_fansly_targets(missing, unfollowed_only=True)
+                            selected.extend(await _streams_for_targets(targets))
+                            warn_streak(streaks, "fallback")
+                        except Exception as e:
+                            warn_streak(streaks, "fallback", f"Fansly: checking unfollowed creators failed: {e}")
 
                 if opts["has_filters"] and selected:
                     unchecked = [

@@ -1404,6 +1404,32 @@ def test_fansly_a_creator_the_filter_lookup_missed_is_checked_again(monkeypatch,
     assert recorded == ["creator_a"]
 
 
+def test_a_failed_fallback_lookup_keeps_the_followed_live_creators(monkeypatch, fansly_settings, caplog):
+    from ofscraper.sites.fansly import api as fansly_api
+
+    fansly_settings(live=True, usernames=("creator_a", "creator_c"), username_search=None)
+
+    async def failing_lookup(c, usernames):
+        raise RuntimeError("lookup failed")
+
+    monkeypatch.setattr(fansly_api, "accounts_by_username", failing_lookup)
+    install_session(monkeypatch, FakeClient({live_api.ONLINE_URL: online_response(CREATOR_A)}))
+    recorded = []
+
+    class FakeRecorder:
+        def __init__(self, stream, *args, **kwargs):
+            self.stream = stream
+
+        async def run(self, stop_event):
+            recorded.append(self.stream["username"])
+
+    monkeypatch.setattr(live, "LiveRecorder", FakeRecorder)
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(live.run(watch=False))
+    assert recorded == ["creator_a"]
+    assert "lookup failed" in caplog.text
+
+
 def test_a_failed_channel_check_keeps_the_other_live_creators(monkeypatch, fansly_settings, caplog):
     from ofscraper.sites.fansly import api as fansly_api
 
