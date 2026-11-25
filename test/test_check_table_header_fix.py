@@ -278,3 +278,14 @@ def test_typing_a_per_page_value_builds_the_table_once(stub_env, monkeypatch):
             assert app.table.row_count == 3
 
     asyncio.run(drive())
+
+def test_a_per_page_redraw_after_the_app_closed_does_nothing(stub_env):
+    # the 0.3 s wait can end while the app is closing and its inputs are gone
+    async def drive():
+        app = _app([_media_row(1)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+        for prefix in ("main", "post", "cart"):
+            app._apply_per_page(prefix)
+
+    asyncio.run(drive())

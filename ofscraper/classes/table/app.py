@@ -6,6 +6,7 @@ from rich.text import Text
 from textual import events
 from textual.app import App
 from textual.binding import Binding
+from textual.css.query import NoMatches
 from textual.widgets import Button, ContentSwitcher, Checkbox, Input, SelectionList
 from ofscraper.classes.table.utils.names import get_col_names, get_input_names, get_post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
 from ofscraper.classes.table.utils.lock import mutex
@@ -302,7 +303,11 @@ class InputApp(App):
 
     def _apply_per_page(self, prefix):
         self._per_page_timers.pop(prefix, None)
-        val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
+        try:
+            val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
+        except NoMatches:
+            # the app closed while the redraw was waiting
+            return
         if not (val.isnumeric() and int(val) > 0):
             return
         if self._shown_per_page.get(prefix) == int(val):
