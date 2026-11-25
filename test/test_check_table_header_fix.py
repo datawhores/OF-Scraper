@@ -228,3 +228,53 @@ def test_long_and_fractional_lengths_pass_a_length_filter(stub_env, length):
             assert [r["index"] for r in app._filtered_rows] == [1]
 
     asyncio.run(drive())
+
+def _count_page_builds(monkeypatch):
+    counts = {"main": 0, "post": 0, "cart": 0}
+    for prefix, name in (
+        ("main", "set_page"),
+        ("post", "set_post_page"),
+        ("cart", "update_cart_table"),
+    ):
+        original = getattr(table_app.InputApp, name)
+
+        def counted(self, *a, _orig=original, _prefix=prefix, **k):
+            counts[_prefix] += 1
+            return _orig(self, *a, **k)
+
+        monkeypatch.setattr(table_app.InputApp, name, counted)
+    return counts
+
+
+def test_per_page_builds_each_table_once_at_startup(stub_env, monkeypatch):
+    counts = _count_page_builds(monkeypatch)
+
+    async def drive():
+        app = _app([_media_row(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause(0.6)
+            assert counts["main"] == 1
+            assert counts["post"] == 1
+            assert counts["cart"] <= 1
+
+    asyncio.run(drive())
+
+
+def test_typing_a_per_page_value_builds_the_table_once(stub_env, monkeypatch):
+    counts = _count_page_builds(monkeypatch)
+
+    async def drive():
+        app = _app([_media_row(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause(0.6)
+            box = app.query_one("#main_per_page_input")
+            box.focus()
+            box.value = ""
+            await pilot.pause()
+            counts["main"] = 0
+            await pilot.press("5", "0", "0", "0")
+            await pilot.pause(0.6)
+            assert counts["main"] == 1
+            assert app.table.row_count == 3
+
+    asyncio.run(drive())

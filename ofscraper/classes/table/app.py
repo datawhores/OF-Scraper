@@ -64,6 +64,10 @@ class InputApp(App):
         self.main_page = 1
         self.post_page = 1
         self.cart_page = 1
+        # page size each table was last drawn with, and the pending redraw
+        # while a Per Page value is being typed
+        self._shown_per_page = {}
+        self._per_page_timers = {}
         self._post_sortkey = "number"
         self._post_reverse = False
 
@@ -281,17 +285,35 @@ class InputApp(App):
             self.handle_pagination("cart", "cart_go")
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        input_id = event.input.id
-        val = str(event.value or "").strip()
+        prefix = {
+            "main_per_page_input": "main",
+            "post_per_page_input": "post",
+            "cart_per_page_input": "cart",
+        }.get(event.input.id)
+        if prefix is None:
+            return
+        # redraw once typing pauses, not on every digit
+        pending = self._per_page_timers.get(prefix)
+        if pending is not None:
+            pending.stop()
+        self._per_page_timers[prefix] = self.set_timer(
+            0.3, lambda: self._apply_per_page(prefix)
+        )
+
+    def _apply_per_page(self, prefix):
+        self._per_page_timers.pop(prefix, None)
+        val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
         if not (val.isnumeric() and int(val) > 0):
             return
-        if input_id == "main_per_page_input":
+        if self._shown_per_page.get(prefix) == int(val):
+            return
+        if prefix == "main":
             self.set_page()
             self.update_search_info()
-        elif input_id == "post_per_page_input":
+        elif prefix == "post":
             self.set_post_page()
             self.update_post_search_info()
-        elif input_id == "cart_per_page_input":
+        else:
             self.update_cart_table()
 
     def on_key(self, event: events.Key) -> None:
@@ -1093,6 +1115,7 @@ class InputApp(App):
                 if per_page_val and str(per_page_val).isnumeric()
                 else AMOUNT_PER_PAGE
             )
+            self._shown_per_page["cart"] = num_page
 
             # 3. Calculate pagination boundaries
             total_pages = max((len(cart_rows) + num_page - 1) // num_page, 1)
@@ -1167,6 +1190,7 @@ class InputApp(App):
                 if per_page_val and str(per_page_val).isnumeric()
                 else AMOUNT_PER_PAGE
             )
+            self._shown_per_page["main"] = num_page
 
             # 2. Calculate pagination boundaries
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
@@ -1548,6 +1572,7 @@ class InputApp(App):
             rows = self._filtered_post_rows
             per_page_val = self.query_one("#post_per_page_input").value
             num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() else AMOUNT_PER_PAGE
+            self._shown_per_page["post"] = num_page
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
             if self.post_page > total_pages:
                 self.post_page = total_pages
