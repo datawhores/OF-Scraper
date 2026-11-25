@@ -640,6 +640,17 @@ def test_a_picked_length_leaves_zero_parts_empty(start_lenunits):
     _drive_lenunits(steps)
 
 
+def test_a_two_part_length_fills_hours_and_minutes(start_lenunits):
+    # "1:30" has always filled the boxes as 1 hour 30 minutes
+    async def steps(app, pilot, field):
+        field.update_table_val("1:30")
+        await _settle_lenunits(pilot)
+        assert _values(app, *MIN) == ["1", "30", ""]
+        assert _values(app, *MAX) == ["1", "30", ""]
+
+    _drive_lenunits(steps)
+
+
 # ----------------------------------------------------------------------
 # Check table date and length filters: unreadable bounds, an earliest
 # date alone, and day-long or fractional lengths.

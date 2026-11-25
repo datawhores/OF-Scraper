@@ -88,6 +88,8 @@ class TimeField(Container):
 
     def _fill(self, container, val):
         inputs = list(self.query_one(container).query(IntegerInput))
+        if str(val).count(":") == 1:
+            val = f"{val}:0"  # "1:30" fills hours and minutes
         val = hms_to_seconds(val)
         parts = [val // 3600, (val % 3600) // 60, val % 60]
         for box, part in zip(inputs, parts):
