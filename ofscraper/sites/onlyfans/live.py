@@ -257,8 +257,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
     if opts["chat"]:
         log.warning("--live-chat only applies to Fansly; ignoring it for OnlyFans.")
 
-    if not live_capture.playwright_ready():
-        log.warning(live_capture.INSTALL_HINT)
+    if not live_capture.playwright_ready():  # logs how to install it
         return
 
     save_location = common_paths.get_save_location()

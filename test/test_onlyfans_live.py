@@ -446,6 +446,19 @@ def test_live_chat_is_fansly_only(monkeypatch, onlyfans_settings, caplog):
     assert "--live-chat only applies to Fansly" in caplog.text
 
 
+def test_the_install_hint_is_logged_once(monkeypatch, onlyfans_settings, caplog):
+    onlyfans_settings(live=True)
+
+    def not_ready():  # as playwright_ready: it logs the hint itself
+        live_capture.log.warning("install it with: playwright install chromium")
+        return False
+
+    monkeypatch.setattr(live_capture, "playwright_ready", not_ready)
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(live.run(False, asyncio.Event()))
+    assert caplog.text.count("playwright install chromium") == 1
+
+
 # ------------------------------------------------------------------ search, caching & logging
 
 def test_without_username_and_filters_it_scans_active_subscriptions(monkeypatch, onlyfans_settings):
