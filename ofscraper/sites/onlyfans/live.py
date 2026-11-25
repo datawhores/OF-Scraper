@@ -256,6 +256,13 @@ async def get_online_streams(c, checks=None) -> list:
             return [t for t in targets.values() if t["accountId"] in initial_live]
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
+        # targets not in the active list (expired, or only on a user list) are
+        # asked one by one, as the individual search does
+        listed = {u.get("id") for page in pages for u in page or () if isinstance(u, dict)}
+        unlisted = [t for t in targets.values() if t["accountId"] not in listed | live_ids]
+        live_ids |= {
+            t["accountId"] for t in await _check_targets_concurrently(check_session, unlisted, set())
+        }
         # the cached target, which keeps the name a renamed creator was looked up as
         return [t for t in targets.values() if t["accountId"] in live_ids]
 

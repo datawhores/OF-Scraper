@@ -730,6 +730,35 @@ def test_a_creator_not_found_at_first_is_looked_up_again(
     assert caplog.text.count("creator_b") == 1  # one warning while it's missing
 
 
+def test_list_targets_missing_from_active_subscriptions_are_asked_directly(
+    monkeypatch, onlyfans_settings
+):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a", "creator_b"], username_search="list")
+
+    async def fake_get_models():  # creator_a is an expired subscription
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False}),
+                Model({"id": 2, "username": "creator_b", "hasStream": False})]
+
+    async def fake_active(c):
+        yield [{"id": 2, "username": "creator_b", "hasStream": False}]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    checks = Client(Response(200, {"isActive": True}))
+    token = live._TARGET_CACHE.set({})
+    try:
+        asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+        second = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert second == [{"accountId": 1, "username": "creator_a"}]
+    assert checks.urls == ["https://onlyfans.com/api2/v2/users/creator_a/streams/active?view=full_with_check"]
+
+
 def test_all_with_filters_looks_up_again_when_nothing_came_back(monkeypatch, onlyfans_settings):
     import ofscraper.data.api.subscriptions.subscriptions as subs
     import ofscraper.data.models.utils.retriver as retriver
