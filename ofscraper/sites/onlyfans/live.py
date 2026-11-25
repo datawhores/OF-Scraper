@@ -321,7 +321,6 @@ async def get_online_streams(c, checks=None) -> list:
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
     # - Explicit --username with -fl (--username-list-search)
-    first_lookup = "targets" not in cache
     initial_live = await _update_targets(cache, usernames, excluded, all_users, has_filters)
     targets = cache["targets"]
     if not targets:
@@ -330,8 +329,6 @@ async def get_online_streams(c, checks=None) -> list:
     list_mode = all_users or search_mode == "list"
     # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
     if list_mode or len(targets) > _individual_max():
-        if first_lookup and list_mode:
-            return [t for t in targets.values() if t["accountId"] in initial_live]
         pages = [page async for page in scrape_subscriptions_active(c)]
         live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
         # targets not in the active list (expired, or only on a user list) are

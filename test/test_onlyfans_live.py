@@ -590,7 +590,10 @@ def test_with_username_list_search_uses_batch_subscriptions_across_polls(
 
     token = live._TARGET_CACHE.set({})
     try:
-        assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == []
+        # the first poll reads the active list too, so it finds the live creator straight away
+        assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == [
+            {"accountId": 1, "username": "creator_a"}
+        ]
         assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == [
             {"accountId": 1, "username": "creator_a"}
         ]
@@ -598,7 +601,7 @@ def test_with_username_list_search_uses_batch_subscriptions_across_polls(
         live._TARGET_CACHE.reset(token)
 
     assert len(retriver_calls) == 1
-    assert len(batch_calls) == 1
+    assert len(batch_calls) == 2
     assert checks_client.urls == []
 
 
@@ -756,7 +759,7 @@ def test_list_targets_missing_from_active_subscriptions_are_asked_directly(
     finally:
         live._TARGET_CACHE.reset(token)
     assert second == [{"accountId": 1, "username": "creator_a"}]
-    assert checks.urls == ["https://onlyfans.com/api2/v2/users/creator_a/streams/active?view=full_with_check"]
+    assert checks.urls == ["https://onlyfans.com/api2/v2/users/creator_a/streams/active?view=full_with_check"] * 2
 
 
 def test_many_named_creators_are_checked_from_the_subscription_list(monkeypatch, onlyfans_settings):
@@ -858,6 +861,32 @@ def _direct_check_run(monkeypatch, onlyfans_settings, active_pages, polls=3, mem
 
 
 OTHER_ACTIVE = [[{"id": 99, "username": "creator_99", "hasStream": False}]]
+
+
+def test_the_first_list_poll_asks_named_creators_missing_from_active_subscriptions(
+    monkeypatch, onlyfans_settings
+):
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+    import ofscraper.data.models.utils.retriver as retriver
+    from ofscraper.classes.of.models import Model
+
+    onlyfans_settings(live=True, usernames=["creator_a"], username_search="list")
+
+    async def fake_get_models():  # an expired subscription; its record has no hasStream
+        return [Model({"id": 1, "username": "creator_a"})]
+
+    async def fake_active(c):
+        yield [{"id": 99, "username": "creator_99", "hasStream": False}]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    checks = Client(Response(200, {"isActive": True}))
+    token = live._TARGET_CACHE.set({})
+    try:
+        first = asyncio.run(live.get_online_streams(Client(Response(200, {})), checks=checks))
+    finally:
+        live._TARGET_CACHE.reset(token)
+    assert first == [{"accountId": 1, "username": "creator_a"}]
 
 
 def test_filters_without_names_watch_active_subscriptions_only(monkeypatch, onlyfans_settings, caplog):
@@ -1065,18 +1094,15 @@ def test_all_with_user_filters_caches_targets_and_uses_batch_subscriptions(
 
     token = live._TARGET_CACHE.set({})
     try:
-        assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == []
-        assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == [
-            {"accountId": 1, "username": "creator_a"}
-        ]
-        assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == [
-            {"accountId": 1, "username": "creator_a"}
-        ]
+        for _ in range(3):  # the first poll reads the active list too
+            assert asyncio.run(live.get_online_streams(main_client, checks=checks_client)) == [
+                {"accountId": 1, "username": "creator_a"}
+            ]
     finally:
         live._TARGET_CACHE.reset(token)
 
     assert len(retriver_calls) == 1
-    assert len(batch_calls) == 2
+    assert len(batch_calls) == 3
     assert checks_client.urls == []
 
 
