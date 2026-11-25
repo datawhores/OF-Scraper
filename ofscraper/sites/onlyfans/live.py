@@ -177,19 +177,31 @@ async def get_online_streams(c) -> list:
         pages = [page async for page in scrape_subscriptions_active(c)]
         return live_subscriptions(pages)
 
-    # When --username is omitted (or ALL) WITH custom filters (e.g. --user-list),
-    # use hasStream from the fetched models instead of polling streams/active per user.
-    if all_users:
-        targets, initial_live = await _resolve_target_creators(
-            usernames, excluded, all_users=True, has_filters=True
-        )
-        return [t for t in targets if t["accountId"] in initial_live]
-
-    # When specific --username targets are given (-fi, -fl, or auto-threshold),
-    # resolve the target accounts once and poll streams/active for each target.
     cache = _TARGET_CACHE.get()
     if cache is None:
         cache = {}
+
+    # When --username is omitted (or ALL) WITH custom filters (e.g. --user-list),
+    # cache the filtered creator IDs once and read hasStream from batch subscription pages.
+    if all_users:
+        if "filtered_ids" not in cache:
+            targets, initial_live = await _resolve_target_creators(
+                usernames, excluded, all_users=True, has_filters=True
+            )
+            cache["filtered_ids"] = {t["accountId"] for t in targets}
+            if not targets:
+                log.warning("No matching creators found to check for livestreams.")
+                return []
+            return [t for t in targets if t["accountId"] in initial_live]
+
+        allowed_ids = cache["filtered_ids"]
+        if not allowed_ids:
+            return []
+        pages = [page async for page in scrape_subscriptions_active(c)]
+        return [s for s in live_subscriptions(pages) if s["accountId"] in allowed_ids]
+
+    # When specific --username targets are given (-fi, -fl, or auto-threshold),
+    # resolve the target accounts once and poll streams/active for each target.
     initial_live = set()
     if "targets" not in cache:
         targets, initial_live = await _resolve_target_creators(
