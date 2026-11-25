@@ -1,166 +1,138 @@
-"""Record OnlyFans livestreams (``--live`` / ``--live-watch``).
-
-Based on the Live Stream Monitor plugin by cjb900 (cjb900/OF-Scraper-GUI).
-
-OnlyFans livestreams are WebRTC (Agora), not an HLS playlist ffmpeg could
-read, so a recording is made by the stream page itself: a Chromium browser
-(Playwright) opens it with the auth.json login and records the player with
-the browser's MediaRecorder (see ``live_capture``).
-
-- **Who is live:** an active subscription with ``hasStream`` set, from the
-  same subscriptions list the scraper reads (or resolved once via ``retriver``
-  when ``--username`` / ``-fi`` / ``-fl`` / user filters are given, then
-  polled via ``users/{username}/streams/active``).
-- **Still live:** ``users/{username}/streams/active``, asked while recording.
-
-Recordings go to
-``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``.
-The watcher, the Ctrl+C handling and the options are shared with Fansly
-(``ofscraper.sites.fansly.live``).
-"""
-
 import asyncio
 import contextvars
 import datetime
 import logging
+import os
 import pathlib
 import threading
 from urllib.parse import quote
 
+import ofscraper.managers.manager as manager
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.system.ffmpeg as ffmpeg_finder
 from ofscraper.sites.fansly import live as shared
-from ofscraper.utils.username_match import matches_account, username_keys
+from ofscraper.sites.onlyfans import live_capture
 
 log = logging.getLogger("shared")
-
-CHECK_TIMEOUT = 15
-STREAM_ACTIVE_URL = "https://onlyfans.com/api2/v2/users/{}/streams/active?view=full_with_check"
 
 _TARGET_CACHE: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
     "_onlyfans_live_target_cache", default=None
 )
 
-_DEFAULT_LISTS = {"main", "ofscraper.main", "active", "ofscraper.active"}
 
-_MODEL_FILTER_ATTRS = (
-    "sub_status",
-    "renewal",
-    "current_price",
-    "renewal_price",
-    "regular_price",
-    "promo_price",
-    "last_seen",
-    "free_trial",
-    "promo",
-    "all_promo",
-    "promo_price_min",
-    "promo_price_max",
-    "regular_price_min",
-    "regular_price_max",
-    "current_price_min",
-    "current_price_max",
-    "renewal_price_min",
-    "renewal_price_max",
-    "last_seen_before",
-    "last_seen_after",
-    "expired_before",
-    "expired_after",
-    "subscribed_before",
-    "subscribed_after",
-)
+def _check_timeout() -> int:
+    return max(1, int(of_env.getattr("LIVE_CHECK_TIMEOUT")))
 
 
-def _has_custom_user_filters(s) -> bool:
-    """True when custom userlists, blacklists, or model filters narrow the creator pool."""
-    userlist = [
-        x
-        for x in (getattr(s, "userlist", None) or [])
-        if x and str(x).lower() not in _DEFAULT_LISTS
-    ]
-    blacklist = [x for x in (getattr(s, "blacklist", None) or []) if x]
-    if userlist or blacklist:
-        return True
-    return any(
-        getattr(s, attr, None) not in (None, "", [], ())
-        for attr in _MODEL_FILTER_ATTRS
-    )
+def _check_concurrency() -> int:
+    return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
 
 
-def _wants_all_usernames(usernames) -> bool:
-    """True when --username was omitted or explicitly set to ALL."""
-    names = [str(u) for u in (usernames or []) if u]
-    return not names or any(u.upper() == "ALL" for u in names)
+def _jitter() -> int:
+    try:
+        val = of_env.getattr("LIVE_JITTER", 10)
+        return max(0, int(10 if val is None else val))
+    except (TypeError, ValueError):
+        return 10
 
 
-def recording_path(save_location, username, now=None) -> pathlib.Path:
-    """``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``"""
-    now = now or datetime.datetime.now(tz=datetime.timezone.utc)
-    username = shared.folder_name(username)
-    folder = pathlib.Path(save_location) / "OnlyFans" / username / "Livestreams"
-    return folder / f"{username}_{now.strftime('%Y%m%d_%H%M%S')}_live.webm"
+def _stream_active_url(username: str) -> str:
+    return of_env.getattr("STREAM_ACTIVE_URL").format(quote(username, safe=""))
 
 
-def live_subscriptions(pages) -> list:
-    """The creators in subscription pages who are live now, as watcher streams.
-
-    Paging by offset can list a creator twice when subscriptions change
-    during the scan, so each one is kept once.
-    """
-    out, seen = [], set()
-    for page in pages:
-        for user in page:
-            if not (user.get("hasStream") and user.get("username")):
+def live_subscriptions(pages: list) -> list:
+    """Subscriptions currently streaming from scraped active-subscription pages."""
+    out = []
+    seen = set()
+    for page in pages or ():
+        for user in page or ():
+            if not isinstance(user, dict) or not user.get("hasStream"):
                 continue
-            key = user.get("id") or user.get("username")
-            if key in seen:
+            username = user.get("username")
+            uid = user.get("id")
+            if uid is None:
+                uid = username
+            if uid is None or not username or uid in seen:
                 continue
-            seen.add(key)
-            out.append({"accountId": key, "username": user["username"]})
+            seen.add(uid)
+            out.append({"accountId": uid, "username": username})
     return out
 
 
-def stream_is_active(data):
-    """True / False from a ``streams/active`` answer; None if it can't tell."""
-    if not isinstance(data, dict):
+def stream_is_active(payload):
+    """True / False if OnlyFans' streams/active response says live/ended; None if invalid."""
+    if not isinstance(payload, dict):
         return None
-    return bool(data.get("isActive")) and not data.get("isFinished")
+    if payload.get("isFinished"):
+        return False
+    return bool(payload.get("isActive"))
 
 
-async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool) -> tuple[list, set]:
-    """Resolve the creator list via retriver/filters; returns (targets, initial_live_keys)."""
-    from ofscraper.data.models.utils import retriver
-    from ofscraper.managers.model import ModelManager
-
-    model_objs = await retriver.get_models()
-
-    if has_filters and model_objs:
-        mm = ModelManager()
-        mm._update_all_subs(model_objs)
-        model_objs = list(mm._filtered_models().values())
-
-    if not all_users:
-        import ofscraper.utils.username_match as username_match
-
-        model_objs, _ = username_match.select_models(model_objs, usernames)
-
-    skip = username_keys(excluded)
-    targets, initial_live, seen = [], set(), set()
-    for m in model_objs:
-        raw = getattr(m, "model", {}) or {}
-        username = getattr(m, "name", None) or raw.get("username")
-        if not username:
-            continue
-        key = getattr(m, "id", None) or raw.get("id") or username
-        if key in seen or matches_account(username, key, skip):
-            continue
-        seen.add(key)
-        targets.append({"accountId": key, "username": username})
-        if raw.get("hasStream"):
-            initial_live.add(key)
-
-    return targets, initial_live
+async def still_live(c, username):
+    """True / False from OnlyFans; None when the check fails."""
+    try:
+        async with c.requests_async(url=_stream_active_url(username)) as r:
+            if r.status == 404:
+                return False
+            if not (200 <= r.status < 300):
+                return None
+            return stream_is_active(await r.json_())
+    except Exception as e:
+        log.debug(f"{username}: live check failed: {e}")
+        return None
 
 
-async def get_online_streams(c) -> list:
+async def _resolve_target_creators(usernames, excluded, all_users: bool, has_filters: bool):
+    """Resolve target creators once via retriver + ModelManager, returning (targets, initially_live_ids)."""
+    import ofscraper.data.models.utils.retriver as retriver
+
+    models = await retriver.get_models()
+    if has_filters and models:
+        mm = getattr(manager.Manager, "model_manager", None)
+        if mm is None:
+            from ofscraper.managers.model import ModelManager
+
+            mm = ModelManager()
+        models = mm.filter_models(models)
+
+    selected = shared.select_streams(
+        [
+            {
+                "accountId": m.id,
+                "username": m.name,
+                "_hasStream": bool(getattr(m.model, "get", lambda *_: False)("hasStream")),
+            }
+            for m in models or ()
+        ],
+        None if all_users else usernames,
+        excluded,
+    )
+    targets = [{"accountId": s["accountId"], "username": s["username"]} for s in selected]
+    initially_live = {s["accountId"] for s in selected if s.get("_hasStream")}
+    return targets, initially_live
+
+
+async def _check_targets_concurrently(check_session, targets, initial_live: set) -> list:
+    """Check cached targets concurrently on the single-attempt session."""
+    sem = asyncio.Semaphore(_check_concurrency())
+
+    async def check_one(target):
+        if target["accountId"] in initial_live:
+            return target
+        async with sem:
+            if await still_live(check_session, target["username"]):
+                return target
+        return None
+
+    results = await asyncio.gather(
+        *(check_one(t) for t in targets),
+        return_exceptions=True,
+    )
+    return [r for r in results if isinstance(r, dict)]
+
+
+async def get_online_streams(c, checks=None) -> list:
     import ofscraper.utils.settings as settings
     from ofscraper.data.api.subscriptions.subscriptions import scrape_subscriptions_active
 
@@ -168,8 +140,14 @@ async def get_online_streams(c) -> list:
     opts = shared.options()
     usernames = opts.get("usernames") if opts.get("usernames") is not None else getattr(s, "usernames", None)
     excluded = opts.get("excluded") if opts.get("excluded") is not None else getattr(s, "excluded_username", None)
-    all_users = _wants_all_usernames(usernames)
-    has_filters = _has_custom_user_filters(s)
+    search_mode = (
+        opts.get("username_search")
+        if opts.get("username_search") is not None
+        else getattr(s, "username_search", None)
+    )
+    all_users = shared.wants_all_usernames(usernames)
+    has_filters = shared.has_custom_user_filters(s)
+    check_session = checks or c
 
     # Default when --username is omitted (or ALL) and no custom filters are active:
     # grab every live creator from active subscriptions in batch pages.
@@ -181,12 +159,13 @@ async def get_online_streams(c) -> list:
     if cache is None:
         cache = {}
 
-    # When --username is omitted (or ALL) WITH custom filters (e.g. --user-list),
-    # cache the filtered creator IDs once and read hasStream from batch subscription pages.
-    if all_users:
+    # Batch subscription path:
+    # - ALL with custom filters (--user-list, price/date filters, etc.)
+    # - Explicit --username with -fl (--username-list-search)
+    if all_users or search_mode == "list":
         if "filtered_ids" not in cache:
             targets, initial_live = await _resolve_target_creators(
-                usernames, excluded, all_users=True, has_filters=True
+                usernames, excluded, all_users=all_users, has_filters=has_filters
             )
             cache["filtered_ids"] = {t["accountId"] for t in targets}
             if not targets:
@@ -200,8 +179,8 @@ async def get_online_streams(c) -> list:
         pages = [page async for page in scrape_subscriptions_active(c)]
         return [s for s in live_subscriptions(pages) if s["accountId"] in allowed_ids]
 
-    # When specific --username targets are given (-fi, -fl, or auto-threshold),
-    # resolve the target accounts once and poll streams/active for each target.
+    # Individual target path (-fi or auto-selected individual search):
+    # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
     initial_live = set()
     if "targets" not in cache:
         targets, initial_live = await _resolve_target_creators(
@@ -212,94 +191,116 @@ async def get_online_streams(c) -> list:
             log.warning("No matching creators found to check for livestreams.")
             return []
 
-    online = []
-    for target in cache["targets"]:
-        if target["accountId"] in initial_live or await still_live(c, target["username"]):
-            online.append(target)
-    return online
+    return await _check_targets_concurrently(check_session, cache["targets"], initial_live)
 
 
-async def still_live(c, username):
-    """True / False from OnlyFans; None when the check fails."""
-    try:
-        async with c.requests_async(url=STREAM_ACTIVE_URL.format(quote(username, safe=""))) as r:
-            if r.status == 404:
-                return False
-            if not (200 <= r.status < 300):
-                return None
-            return stream_is_active(await r.json_())
-    except Exception as e:
-        log.debug(f"{username}: live check failed: {e}")
-        return None
+def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:
+    when = when or datetime.datetime.now(datetime.timezone.utc)
+    stamp = when.strftime("%Y%m%d_%H%M%S")
+    return (
+        pathlib.Path(save_location)
+        / "OnlyFans"
+        / username
+        / "Livestreams"
+        / f"{username}_{stamp}_live.webm"
+    )
 
 
-async def record_in_thread(capture, stop: asyncio.Event, **kwargs):
-    """Run the blocking ``capture(halt=...)`` in a thread; ``stop`` sets ``halt``."""
+async def record_in_thread(fn, stop_event: asyncio.Event, *args, **kwargs):
     halt = threading.Event()
-    job = asyncio.ensure_future(asyncio.to_thread(capture, halt=halt, **kwargs))
-    try:
-        while not job.done():
-            if stop.is_set():
-                halt.set()
-            await asyncio.wait({job}, timeout=1)
-    finally:
-        # also on Ctrl+C: the browser saves what it has before the thread ends
+
+    async def watch_stop():
+        await stop_event.wait()
         halt.set()
-        if not job.done():
-            await asyncio.wait({job}, timeout=60)
-    return job.result()
+
+    stop_task = asyncio.create_task(watch_stop())
+    try:
+        if args:
+            return await asyncio.to_thread(fn, halt, *args, **kwargs)
+        return await asyncio.to_thread(fn, halt=halt, **kwargs)
+    finally:
+        halt.set()
+        stop_task.cancel()
+        try:
+            await stop_task
+        except asyncio.CancelledError:
+            pass
 
 
-async def run(watch: bool = False, stop: asyncio.Event = None):
-    """Record the selected creators who are live: once, or watching until stopped."""
-    import ofscraper.managers.manager as manager
-    import ofscraper.utils.paths.common as common_paths
-    import ofscraper.utils.system.ffmpeg as ffmpeg_finder
-    from ofscraper.sites.onlyfans import live_capture
-    from ofscraper.utils.auth.file import read_auth
-    import ofscraper.utils.of_env.of_env as of_env
+async def _session_auth(c) -> dict:
+    """Cookies and user-agent the capture browser needs for this account."""
+    cookies = []
+    if hasattr(c, "cookies"):
+        for ck in c.cookies or ():
+            if isinstance(ck, dict):
+                cookies.append(ck)
+            else:
+                cookies.append(
+                    {
+                        "name": getattr(ck, "name", ""),
+                        "value": getattr(ck, "value", ""),
+                        "domain": getattr(ck, "domain", ".onlyfans.com"),
+                        "path": getattr(ck, "path", "/"),
+                    }
+                )
+    user_agent = ""
+    if hasattr(c, "headers") and isinstance(c.headers, dict):
+        user_agent = c.headers.get("user-agent") or c.headers.get("User-Agent") or ""
+    return {"cookies": cookies, "user_agent": user_agent}
 
+
+def _session_proxy(c) -> str | None:
+    return getattr(c, "proxy", None)
+
+
+async def run(watch: bool, stop: asyncio.Event | None = None):
+    """Check once (--live) or watch (--live-watch) and record OnlyFans streams."""
     opts = shared.options()
     if opts["chat"]:
-        log.warning("--live-chat only applies to Fansly; OnlyFans recordings have no chat file")
+        log.warning("--live-chat only applies to Fansly; ignoring it for OnlyFans.")
+
     if not live_capture.playwright_ready():
+        log.warning(live_capture.INSTALL_HINT)
         return
+
     save_location = common_paths.get_save_location()
-    ffmpeg = ffmpeg_finder.get_ffmpeg()
-
-    if watch:
-        log.info(
-            f"Watching for OnlyFans livestreams (polling every {opts['interval']}s, "
-            f"up to {opts['max_concurrent']} concurrent)..."
-        )
-    else:
-        log.info("Checking for active OnlyFans livestreams...")
-
+    ffmpeg = ffmpeg_finder.get_ffmpeg() or None
     cache_token = _TARGET_CACHE.set({})
+
     try:
-        # live checks get one attempt: a failed check counts as "don't know" and
-        # the next one comes a minute later, so retries would only hold up the recording
+        # Separate sessions: `c` retries batch list calls; `checks` gets one attempt
+        # per live status check so a transient failure doesn't stall polling.
         async with manager.Manager.session.aget_ofsession() as c, \
                 manager.Manager.session.aget_ofsession(retries=1) as checks:
             loop = asyncio.get_running_loop()
             warned = []
             announced_idle = False
-            watcher = None
+            announced_live_ids = set()
+            poll_failed = False
 
             async def fetch_online():
-                nonlocal announced_idle
+                nonlocal announced_idle, announced_live_ids, poll_failed
                 try:
-                    online = await get_online_streams(c)
+                    online = await get_online_streams(c, checks=checks)
                 except Exception as e:
-                    log.warning(f"OnlyFans livestream check failed: {e}")
+                    if not poll_failed:
+                        log.warning(f"OnlyFans livestream check failed: {e}")
+                        poll_failed = True
+                    else:
+                        log.debug(f"OnlyFans livestream check failed: {e}")
                     log.debug("", exc_info=True)
                     raise
+
+                poll_failed = False
                 selected = shared.select_streams(online, opts["usernames"], opts["excluded"])
-                active_ids = watcher.active if watcher is not None else {}
-                new_live = [s for s in selected if s["accountId"] not in active_ids]
+                current_ids = {s["accountId"] for s in selected}
+                announced_live_ids &= current_ids
+
+                new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
                 if new_live:
                     names = ", ".join(s["username"] for s in new_live)
                     log.info(f"Live now ({len(new_live)}): {names}")
+                    announced_live_ids.update(s["accountId"] for s in new_live)
                     announced_idle = False
                 elif selected:
                     names = ", ".join(s["username"] for s in selected)
@@ -315,37 +316,56 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     log.debug("No active OnlyFans livestreams found.")
                 return selected
 
-            async def record(stream, stop_event):
-                username = stream["username"]
-
-                def check_live():
-                    future = asyncio.run_coroutine_threadsafe(still_live(checks, username), loop)
-                    try:
-                        return future.result(timeout=CHECK_TIMEOUT)
-                    except Exception:
-                        future.cancel()
-                        return None
-
+            def check_live(username: str):
+                future = asyncio.run_coroutine_threadsafe(still_live(checks, username), loop)
                 try:
+                    return future.result(timeout=_check_timeout())
+                except Exception as e:
+                    log.debug(f"{username}: live check timed out/failed: {e}")
+                    return None
+
+            async def record(stream: dict, stop_event: asyncio.Event):
+                import ofscraper.utils.auth.file as auth_file
+
+                username = stream["username"]
+                out = recording_path(save_location, username)
+                os.makedirs(os.path.dirname(out), exist_ok=True)
+                auth = auth_file.read_auth()
+                proxy = _session_proxy(c)
+                try:
+                    log.info(f"Recording OnlyFans livestream for {username} -> {out}")
                     await record_in_thread(
-                        live_capture.capture, stop_event,
+                        live_capture.capture,
+                        stop_event,
                         username=username,
-                        out=recording_path(save_location, username),
-                        # read each time: auth.json may be renewed during --live-watch
-                        auth=read_auth(),
-                        still_live=check_live,
+                        out=out,
+                        auth=auth,
+                        still_live=lambda: check_live(username),
                         ffmpeg=ffmpeg,
-                        proxy=of_env.getattr("PROXY"),
+                        proxy=proxy,
                     )
+                    log.info(f"Finished OnlyFans livestream recording for {username}")
                 except live_capture.BrowserMissing as e:
-                    # once per run: --live-watch tries again every interval
-                    (log.debug if warned else log.warning)(str(e))
-                    warned.append(True)
+                    if not warned:
+                        warned.append(True)
+                        log.warning(str(e))
+                except Exception as e:
+                    log.warning(f"{username}: livestream recording failed: {e}")
+                    log.debug("", exc_info=True)
+
+            if watch:
+                log.info(
+                    f"Watching for OnlyFans livestreams (interval={opts['interval']}s, max_concurrent={opts['max_concurrent']})..."
+                )
+            else:
+                log.info("Checking for active OnlyFans livestreams...")
 
             watcher = shared.LiveWatcher(
-                fetch_online, record,
+                fetch_online,
+                record,
                 max_concurrent=opts["max_concurrent"],
                 interval=opts["interval"],
+                jitter=opts.get("jitter", _jitter()),
                 once=not watch,
             )
             await watcher.run(stop)
