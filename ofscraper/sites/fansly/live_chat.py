@@ -153,8 +153,9 @@ class _AiohttpSocket:
             await self.session.close()
 
 
-def aiohttp_connect(user_agent: str):
-    """Connector for the real chat socket; only browser headers, no cookies."""
+def aiohttp_connect(user_agent: str, proxy: str = None):
+    """Connector for the real chat socket; only browser headers, no cookies.
+    ``proxy`` is OFSC_PROXY, as for every other request."""
 
     async def connect():
         import aiohttp
@@ -165,6 +166,7 @@ def aiohttp_connect(user_agent: str):
                 CHAT_WS_URL,
                 headers={"User-Agent": user_agent or "", "Origin": constants.ORIGIN},
                 autoping=True,
+                proxy=proxy or None,
             )
         except Exception:
             await session.close()

@@ -17,6 +17,10 @@ _DEFAULT_PATTERNS = {
     r"([?&])Policy=[^&\"'\s]+": r"\g<1>Policy={hidden}",
     r"([?&])Signature=[^&\"'\s]+": r"\g<1>Signature={hidden}",
     r"([?&])Key-Pair-Id=[^&\"'\s]+": r"\g<1>Key-Pair-Id={hidden}",
+    # The login in a link, as OFSC_PROXY has it: http://user:password@host.
+    # Ends at the last "@" before the host, so a raw "@" in the password is
+    # hidden too. Stops at "/", so an "@" in a link's path is left alone.
+    r"""(\b[a-zA-Z][\w+.-]*://)[^\s/'"<>]+@""": r"\g<1>{hidden}@",
     # Redacts common sensitive info
     r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "{ip_address}",  # IP Addresses
     # Auth values by name, whatever the value. Masking by value covers only

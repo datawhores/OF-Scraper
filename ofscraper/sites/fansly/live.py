@@ -22,6 +22,7 @@ import asyncio
 import datetime
 import json
 import logging
+import os
 import pathlib
 import random
 import re
@@ -93,11 +94,16 @@ def mask_url_secrets(url):
 
 
 _QUERY_IN_TEXT = re.compile(r"(\w+://[^\s?'\"]+)\?[^\s'\"]*")
+# the login in a link (http://user:password@host), as an OFSC_PROXY has it;
+# it ends at the last "@" before the host, so a raw "@" in the password is kept in
+_LOGIN_IN_TEXT = re.compile(r"([a-zA-Z][\w+.-]*://)[^\s/'\"]+@")
 
 
 def strip_queries(text: str) -> str:
-    """Drop query strings from URLs in free text such as ffmpeg's errors."""
-    return _QUERY_IN_TEXT.sub(r"\1?{hidden}", text or "")
+    """Drop query strings, and logins such as a proxy's, from URLs in free
+    text such as ffmpeg's errors."""
+    text = _LOGIN_IN_TEXT.sub(r"\1{hidden}@", text or "")
+    return _QUERY_IN_TEXT.sub(r"\1?{hidden}", text)
 
 
 # ------------------------------------------------------------------ playlists
@@ -231,13 +237,41 @@ def ffmpeg_command(ffmpeg: str, url: str, out: pathlib.Path, user_agent: str = "
     return cmd
 
 
-async def run_ffmpeg(cmd: list, stop: asyncio.Event = None) -> int:
+def ffmpeg_can_use(proxy: str) -> bool:
+    """Whether ffmpeg sends its requests through this proxy. It only takes a
+    lower-case http:// address with a host, and connects directly otherwise."""
+    if not proxy.startswith("http://"):
+        return False
+    try:
+        return bool(urlparse(proxy).hostname)
+    except ValueError:
+        return False
+
+
+def ffmpeg_env(proxy: str) -> dict:
+    """ffmpeg's environment with OFSC_PROXY as its proxy.
+
+    ffmpeg reads ``http_proxy`` for every playlist reload and segment request,
+    https ones included. It goes in the environment rather than -http_proxy so
+    the proxy's login isn't in the command line, which other users can read.
+    ``no_proxy`` is dropped: OFSC_PROXY is for every request. A proxy ffmpeg
+    would ignore is refused rather than connecting directly.
+    """
+    if not ffmpeg_can_use(proxy):
+        raise ValueError("ffmpeg can only use an http:// proxy")
+    env = {k: v for k, v in os.environ.items() if k.lower() not in ("no_proxy", "http_proxy")}
+    env["http_proxy"] = proxy
+    return env
+
+
+async def run_ffmpeg(cmd: list, stop: asyncio.Event = None, proxy: str = None) -> int:
     """Run ffmpeg until it exits; on ``stop`` it is asked to finish cleanly."""
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
+        env=ffmpeg_env(proxy) if proxy else None,
     )
     waiter = asyncio.ensure_future(proc.communicate())
     stopper = asyncio.ensure_future(stop.wait()) if stop else None
@@ -286,7 +320,7 @@ class LiveRecorder:
     def __init__(self, stream: dict, save_location, fetch_channel, fetch_text,
                  ffmpeg="ffmpeg", user_agent="", ffmpeg_runner=None,
                  max_failures=DEFAULT_MAX_FAILURES, backoff=(2, 30), chat=None,
-                 schemes=FFMPEG_SCHEMES):
+                 schemes=FFMPEG_SCHEMES, proxy=None):
         self.stream = dict(stream)
         self.username = stream["username"]
         self.save_location = save_location
@@ -294,6 +328,7 @@ class LiveRecorder:
         self.fetch_text = fetch_text
         self.ffmpeg = ffmpeg
         self.user_agent = user_agent
+        self.proxy = proxy
         self.ffmpeg_runner = ffmpeg_runner or run_ffmpeg
         self.max_failures = max_failures
         self.backoff = backoff
@@ -434,7 +469,8 @@ class LiveRecorder:
         log.info(f"{self.username}: recording livestream to {out.name}")
         try:
             await self.ffmpeg_runner(
-                ffmpeg_command(self.ffmpeg, variant, out, self.user_agent), stop)
+                ffmpeg_command(self.ffmpeg, variant, out, self.user_agent), stop,
+                **({"proxy": self.proxy} if self.proxy else {}))
         finally:
             # decided from the file, so a part ffmpeg wrote is kept and listed
             # even when the runner raised or was cancelled afterwards; an
@@ -758,6 +794,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     import ofscraper.managers.manager as manager
     import ofscraper.utils.paths.common as common_paths
     import ofscraper.utils.system.ffmpeg as ffmpeg_finder
+    import ofscraper.utils.of_env.of_env as of_env
     from ofscraper.managers.sessionmanager.sessionmanager import HEADERS
     from ofscraper.classes.of.models import Model
     from ofscraper.managers.model import ModelManager
@@ -774,6 +811,17 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     auth = fansly_auth.read_auth()
     save_location = common_paths.get_save_location()
     ffmpeg = ffmpeg_finder.get_ffmpeg()
+    proxy = of_env.getattr("PROXY") or None
+    if proxy and not ffmpeg_can_use(proxy):
+        # ffmpeg would connect directly, so nothing is recorded
+        log.error(
+            "Not recording Fansly livestreams: OFSC_PROXY is set, but ffmpeg "
+            "can only use an http:// proxy (http://host:port or "
+            "http://user:password@host:port) and would connect without it. "
+            "Set OFSC_PROXY to an http:// proxy, or unset it to record "
+            "without a proxy."
+        )
+        return
 
     if watch:
         log.info(
@@ -1022,12 +1070,13 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             chat = None
             if opts["chat"]:
                 chat = live_chat.ChatRecorder(
-                    live_chat.aiohttp_connect(auth.get("user_agent")),
+                    live_chat.aiohttp_connect(auth.get("user_agent"), proxy),
                     auth.get("authorization_token"),
                 )
             await LiveRecorder(
                 stream, save_location, fetch_channel, fetch_text, max_failures=opts["max_failures"],
                 ffmpeg=ffmpeg, user_agent=auth.get("user_agent") or "", chat=chat,
+                proxy=proxy,
             ).run(stop_event)
 
         watcher = LiveWatcher(
