@@ -528,6 +528,10 @@ SEPARATE_COMMANDS = {
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Find recorded paths shared by different media and reset downloaded flags to re-download.",
     ),
+    "rename_to_format": (
+        "(DATABASE | --undo FILE) [OPTIONS]",
+        "Rename a creator's downloaded files to the current file_format and dir_format, offline.",
+    ),
     "stash_sync": (
         "(PATH... | --postgres) [OPTIONS]",
         "Sync downloaded media metadata from OF-Scraper databases into Stash.",
